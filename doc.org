@@ -7,4 +7,31 @@
 с определенной ролью и не было получено никаких возражений.
 
 Для каждого EasyTrack процесса существуют свои ограничения
-на подачу предложений.
+на подачу предложений. В остальном, процесс практически
+общий.
+
+** Tracks variants
+
+- validators requests
+- grant distibution
+- payments of rewards
+- regular insurance payments
+
+* Vote initiation
+
+Чтобы начать голосование easy-track, необходимо вызвать
+функцию start_vote. Она в свою очередь вызовет ~check_creds~
+чтобы проверить, может ли ~msg.sender~ начинать голосование.
+
+~check_creds~-функции свои для каждого easy-track.
+
+#+NAME: start_vote
+#+BEGIN_SRC vyper
+  # Starting vote process
+  @external
+  def start_vote():
+      # Check
+      check_creds()
+#+END_SRC
+
+* Минимальный порог возражений
