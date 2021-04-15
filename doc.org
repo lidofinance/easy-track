@@ -312,7 +312,7 @@ event?
 - посчитать результаты
 - убедиться, что посчитано верно
 
-#+BEGIN_SRC python :noweb yes :tangle ./tests/conftest.py
+#+BEGIN_SRC python :noweb yes :tangle ./tests/conftest.py :exports none
   import pytest
   from brownie import chain, Wei, ZERO_ADDRESS
 
@@ -444,7 +444,7 @@ event?
       return deploy
 #+END_SRC
 
-#+BEGIN_SRC python :noweb yes :tangle ./tests/test_validators_vote.py
+#+BEGIN_SRC python :noweb yes :tangle ./tests/test_validators_vote.py :exports none
   import pytest
   from brownie import Wei, chain, reverts
   from brownie.network.state import Chain
