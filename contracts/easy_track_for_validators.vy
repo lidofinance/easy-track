@@ -1,26 +1,30 @@
-validators: public(HashMap[address, bool])
-admin: public(HashMap[address, bool])
+# @version 0.2.8
+# @author Lido <info@lido.fi>
+# @licence MIT
 
-@public
+validators: public(HashMap[address, bool])
+admins: public(HashMap[address, bool])
+
+@external
 def __init__(_admin: address):
     self.admins[_admin] = True
 
-@public
-def add_validator(param):
-    assert admins[msg.sender], "not an admin"
-    self.validators[param] = True
+@external
+def add_validator(_param: address):
+    assert self.admins[msg.sender], "not an admin"
+    self.validators[_param] = True
 
-@public
-def del_validator
-    assert admins[msg.sender], "not an admin"
-    self.validators[param] = False
+@external
+def del_validator(_param: address):
+    assert self.admins[msg.sender], "not an admin"
+    self.validators[_param] = False
 
 @internal
-def _check_creds():
-    assert validators[msg.sender], "not a validator"
+def _check_creds(sender: address):
+    assert self.validators[sender], "not a validator"
 
 # Starting vote process
-@public
+@external
 def start_vote():
     # Check
-    _check_creds()
+    self._check_creds(msg.sender)
