@@ -1,18 +1,23 @@
 
 # Table of Contents
 
-1.  [Intro](#orgc68b402)
-2.  [Vote initiation](#org4f8b48f)
-    1.  [Check credentials to start vote](#org8ea0abc)
-        1.  [validator request](#orgca9f4c8)
-        2.  [grant distibution](#org6f1b27d)
-        3.  [payments of rewards](#org0717429)
-        4.  [regular insurance payments](#orgd7eeb5b)
-3.  [Минимальный порог возражений](#orgee09699)
+1.  [Intro](#org3414471)
+2.  [Vote initiation](#org2e5a21c)
+    1.  [Check credentials to start vote](#org56cd085)
+        1.  [validator request](#org9b89274)
+        2.  [grant distibution](#orgbb0478d)
+        3.  [payments of rewards](#orge2476b1)
+        4.  [regular insurance payments](#org56acb25)
+3.  [Objections](#org163c915)
+    1.  [Avoidance of malicious objections](#org43c4188)
+    2.  [Send objection function](#orgad3c816)
+4.  [Expiration of the voting period](#org8edb535)
+    1.  [Objection threshold](#org4615de2)
+5.  [Monitoring of voting](#org0c478ac)
 
 
 
-<a id="orgc68b402"></a>
+<a id="org3414471"></a>
 
 # Intro
 
@@ -32,7 +37,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org4f8b48f"></a>
+<a id="org2e5a21c"></a>
 
 # Vote initiation
 
@@ -42,6 +47,14 @@ Tracks variants:
 
 `check_creds`-функции свои для каждого easy-track.
 
+[TODO:gmm] - Минимальное время между попытками одного
+пользователя создать новое голосоваине
+
+[TODO:gmm] - Минимальный порог для начала голосования
+
+[TODO:gmm] - Нужно лочить токены, чтобы одними и теми же
+токенами нельзя было создавать голосования слишком часто
+
     # Starting vote process
     @external
     def start_vote():
@@ -49,7 +62,7 @@ Tracks variants:
         check_creds()
 
 
-<a id="org8ea0abc"></a>
+<a id="org56cd085"></a>
 
 ## Check credentials to start vote
 
@@ -57,7 +70,7 @@ Tracks variants:
 голосования свой
 
 
-<a id="orgca9f4c8"></a>
+<a id="org9b89274"></a>
 
 ### validator request
 
@@ -92,7 +105,7 @@ Tracks variants:
         validators[param] = false
 
 
-<a id="org6f1b27d"></a>
+<a id="orgbb0478d"></a>
 
 ### grant distibution
 
@@ -101,7 +114,7 @@ Tracks variants:
 правильно написать)
 
 
-<a id="org0717429"></a>
+<a id="orge2476b1"></a>
 
 ### payments of rewards
 
@@ -109,13 +122,71 @@ Tracks variants:
 он будет это делать?
 
 
-<a id="orgd7eeb5b"></a>
+<a id="org56acb25"></a>
 
 ### regular insurance payments
 
 [TODO:gmm] Тут надо делать периодический вызов?
 
 
-<a id="orgee09699"></a>
+<a id="org163c915"></a>
 
-# Минимальный порог возражений
+# Objections
+
+
+<a id="org43c4188"></a>
+
+## Avoidance of malicious objections
+
+Существует атака, при которой возражающий может продать
+проголосовавшие жетоны и сразу же купить новые, чтобы
+проголосовать снова. Чтобы этого не произошло, в контракте
+easy-track необходимо обратиться к менеджеру токенов, чтобы
+запретить передачу этих токенов до конца голосования.
+
+Еще более экономичный способ - использовать остатки на
+момент блока, в котором началось голосование. То есть
+голосовать могут только жетоны, которые не были перемещены с
+момента начала голосования.
+
+
+<a id="orgad3c816"></a>
+
+## Send objection function
+
+[TODO:gmm] send<sub>objection</sub> fun
+
+[TODO:gmm] проверка не истекло ли время голосования
+
+    # Starting vote process
+    @external
+    def send_objection():
+
+
+<a id="org8edb535"></a>
+
+# Expiration of the voting period
+
+[TODO:gmm] - Как я могу получить время, чтобы определить что
+голосование пора завершать?
+
+[TODO:gmm] - Если я завершил голосование, то здесь нужен
+event?
+
+[TODO:gmm] - Подсчет возражений
+
+[TODO:gmm] - Как мне запустить что-то по результатам?
+
+
+<a id="org4615de2"></a>
+
+## Objection threshold
+
+[TODO:gmm] Нужен свой порог для каждого трека
+
+
+<a id="org0c478ac"></a>
+
+# Monitoring of voting
+
+[TODO:gmm] - Как это делать?
