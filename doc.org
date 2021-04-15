@@ -8,10 +8,10 @@
 
 Для каждого EasyTrack процесса существуют свои ограничения
 на подачу предложений. В остальном, процесс практически
-общий.
+общий. Поэтому, чтобы сгенерировать все треки, я просто
+скомпоную их из общих и специфичных фрагментов.
 
-** Tracks variants
-
+Tracks variants:
 - validators requests
 - grant distibution
 - payments of rewards
@@ -33,5 +33,61 @@
       # Check
       check_creds()
 #+END_SRC
+
+** Check credentials to start vote
+
+Для каждого трека способ проверки прав для начала
+голосования свой
+
+*** validator request
+
+Тот кто хочет начать голосование должен быть
+валидатором. Допустим, мы ведем хеш-таблицу валидаторов,
+тогда нужна роль, которая может добавлять и удалять
+валидаторов и соответствующие функции
+
+#+NAME: check_creds_validator_request
+#+BEGIN_SRC vyper
+  # Defining a validator's map
+  validators: HashMap[uint256, bool]
+
+  # Check for validator
+  @internal
+  def check_creds():
+      assert validators(msg.sender), "not a validator"
+
+  # Defining a admins's map
+  admins: HashMap[uint256, bool]
+
+  # Init admins
+  def init_admins():
+      # assert TODO: только при старте, добавляем админа?
+
+  # Add validator
+  def add_validator(param):
+      assert admins(msg.sender), "not a admin"
+      validators[param] = true
+
+  # Del validator
+  def del_validator
+      assert admins(msg.sender), "not a admin"
+      validators[param] = false
+#+END_SRC
+
+*** grant distibution
+
+Голосование начинается, если удовлетворены требования
+пороговой подписи K из N ([TODO:gmm]я пока не знаю как это
+правильно написать)
+
+*** payments of rewards
+
+[TODO:gmm] Как я понимаю, эти пэйменты будет вызывать арагон-агент. Как
+он будет это делать?
+
+*** regular insurance payments
+
+[TODO:gmm] Тут надо делать периодический вызов?
+
 
 * Минимальный порог возражений
