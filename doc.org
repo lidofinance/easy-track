@@ -4,14 +4,9 @@
 * Intro
 
 У нас есть 4 трека, каждый из них может одновременно вести
-одно голосование.
+несколько голосований
 
-[TODO:gmm] не будет паралельных голосований на одном треке?
-
-Голосование может начать кто-то кто обладает правами, при
-этом для каждого трека эти права и процедура их проверки
-разные. Поэтому я буду подставлять различающееся в один и
-тот же шаблон контракта, чтобы DRY.
+[TODO:gmm] - Как это организовывать?
 
 Предложение считается принятым, если до его окончания не
 было получено достаточно возражений.
@@ -22,131 +17,168 @@ Tracks variants:
 - payments of rewards
 - regular insurance payments
 
-* Contract initialization
+* Init
 
-Init нужен чтобы определить, кто может добавлять тех, кому
-разрешено начинать голосование. По идее, только контракт
-всеобщего голосования DAO может сделать это.
+При инициализации запоминаем, кто ~owner~:
 
-[TODO:gmm] - В ldo_purchase_executor/script/deploy.py есть
-функция deploy_and_start_dao_vote надо посмотреть можно по
-ней что-то понять. Там же есть про деполой контракта и как
-проголосовать (отправить возражение) в dao_voting.vote что
-вероятно поможет написать тесты.
-
-[TODO:gmm] - Лучше ли обойтись только assert-ом без init-а?
-
-[TODO:gmm] - Нужен механизм, чтобы поменять адрес такого
-контракта?
-
-[TODO:gmm] - Как мне представиться контрактом голосования
-DAO, чтобы протестить это? Как написать такой тест? Как-то так?
-
-#+BEGIN_SRC vyper
-  # Lido DAO Vote contract
-  interface DaoVote:
-      def someFunc(_someparam: someType): payable
-      ...
+#+BEGIN_SRC vyper :noweb-ref data
+  owner: public(address)
 #+END_SRC
 
-#+NAME: init
+#+BEGIN_SRC vyper :noweb-ref init
+  self.owner = msg.sender
+#+END_SRC
+
+* Ownership
+
+Мы можем проверять ~onlyOwner~:
+
+#+NAME: only_owner
+#+BEGIN_SRC vyper
+  assert msg.sender = self.owner
+#+END_SRC
+
+Надо уметь менять ~owner~:
+
+#+NAME: transfer_ownership
 #+BEGIN_SRC vyper :noweb yes
   @external
-  def __init__(_admin: address):
-      self.admins[_admin] = True
+  def transferOwnership(_newOwner: address):
+      <<only_owner>>
+      self.owner = _newOwner
 #+END_SRC
 
-* Vote initiation
+* Ballot Makers and their management
 
-Начинаем голосование easy-track, вызвая ~start_vote~. Он
-вызовет ~check_creds~ чтобы проверить, может ли ~msg.sender~
-начинать голосование.
+Только "узкий круг ограниченных людей" может начинать
+голосования. Храним их тут:
 
-~check_creds~-функции свои для каждого easy-track.
+#+BEGIN_SRC vyper :noweb-ref data
+  ballotMakers: public(HashMap[address, bool])
+#+END_SRC
+
+Проверка, что начинающий голосование, относится к этому
+кругу людей:
+
+#+NAME: only_ballot_maker
+#+BEGIN_SRC vyper
+  assert ballotMakers[msg.sender] = True
+#+END_SRC
+
+~Owner~ может добавлять и удалять ~ballot makers~:
+
+#+NAME: add_ballot_maker
+#+BEGIN_SRC vyper :noweb yes
+  @external
+  def addBallotMaker(_param: address):
+      <<only_owner>>
+      ballotMakers[_param] = True
+#+END_SRC
+
+#+NAME: del_ballot_maker
+#+BEGIN_SRC vyper :noweb yes
+  @external
+  def delBallotMaker(_param: address):
+      <<only_owner>>
+      ballotMakers[_param] = False
+#+END_SRC
+
+* Ballot Time
+
+#+BEGIN_SRC vyper :noweb-ref data
+ballot_time: public(timedelta)
+#+END_SRC
+
+
+* Ballot stake
+
+Когда кто-то начинает голосование, ему нужно стейкнуть
+токены, чтобы нельзя было создавать слишком много
+голосований. Порог ниже которого голосование не начнется:
+
+#+BEGIN_SRC vyper :noweb-ref data
+  minBallotStake: public(decimal)
+#+END_SRC
+
+Проверка, что стейка достаточно для начала голосования:
+
+#+NAME: only_sufficient_stake
+#+BEGIN_SRC vyper
+  assert msg.value >= self.minBallotStake
+#+END_SRC
+
+* Ballot
+
+Голосования лежат в мапе, где ключ - хэш голосования, а
+значение - структура голосования:
+
+#+BEGIN_SRC vyper :noweb-ref data
+  ballots: public(HashMap[string[255], Ballot])
+#+END_SRC
+
+#+BEGIN_SRC vyper :noweb-ref structs
+  struct Ballot:
+    name: string[255]
+    active: bool
+    created: uint256
+    deadline: timestamp
+    result: bool
+    ballots: HashMap(uint256, decimal)
+    enact_addr: address, # TODO
+    enact_fun: address   # TODO
+#+END_SRC
+
+* Make Ballot
+
+Функция для начала голосования, после проверок создает
+новый Ballot:
+
+[TODO:gmm] - надо проверять при создании, нет ли уже такого
+голосования.
 
 [TODO:gmm] - Минимальное время между попытками одного
 пользователя создать новое голосоваине
 
-[TODO:gmm] - Минимальный порог для начала голосования
+[TODO:gmm] - Минимальный порог для начала
+голосования. ERC-20 balanceOf();
 
 [TODO:gmm] - Нужно лочить токены, чтобы одними и теми же
-токенами нельзя было создавать голосования слишком часто
+токенами нельзя было создавать голосования слишком
+часто. Контракт может забирать токены, а потом ~разрешать
+забрать~ (см. transfer() в purchase executor-e). Но это не
+очень хороший дизайн. Мы не можем апгрейдить LDO-контракт,
+потому что это геморой и стремно.  Но это не позволяет
+одновременно возражать по нескольким голосованиям.
 
-#+NAME: start_vote
+Возможная атака - создать много предложений, чтобы у
+возражающий не хватило LDO-токенов на возражения по всем
+предложениям, тогда хоть одно прокатит и можно будет вывести
+деньги, а потом быстро продать LDO.
+
+Чтобы от этого защититься, нужно при начале голосования
+лочить больше LDO чем можно выиграть протащив предложение,
+но курс может измениться.
+
+Даже если гранты переводятся на мультисиг, это требует
+только договоренности с владельцами мультисига, которые тоже
+могут иметь заинтересованность в выводе денег.
+
+#+NAME: make_ballot
 #+BEGIN_SRC vyper :noweb yes
-  # Starting vote process
   @external
-  def start_vote():
-      # Check
-      self._check_creds(msg.sender)
+  def make_ballot(_name: string[255]):
+      <<only_ballot_maker>>
+      <<only_sufficient_stake>>
+      self.ballots[_name] = Ballot({
+          name = _name,
+          active = True,
+          created = block.timestamp,
+          deadline = block.timestamp + ballot_time,
+          result = True
+      })
 #+END_SRC
 
-** Check credentials to start vote
-
-Для каждого трека способ проверки прав для начала
-голосования свой
-
-*** validator request
-
-Тот кто хочет начать голосование должен быть
-валидатором. Допустим, мы ведем хеш-таблицу валидаторов:
-
-#+BEGIN_SRC vyper :noweb-ref data_for_validators_request
-  validators: public(HashMap[address, bool])
-#+END_SRC
-
-Тогда нужен список адресов, которые может добавлять и
-удалять валидаторов:
-
-#+BEGIN_SRC vyper :noweb-ref data_for_validators_request
-  admins: public(HashMap[address, bool])
-#+END_SRC
-
-и функции добавления и удаления валидаторов:
-
-#+BEGIN_SRC vyper :noweb-ref validators_ops
-  @external
-  def add_validator(_param: address):
-      assert self.admins[msg.sender], "not an admin"
-      self.validators[_param] = True
-
-  @external
-  def del_validator(_param: address):
-      assert self.admins[msg.sender], "not an admin"
-      self.validators[_param] = False
-#+END_SRC
-
-И теперь можно проверять адрес на наличие в списке валидаторов
-
-#+NAME: check_creds_validator_request
-#+BEGIN_SRC vyper :noweb yes
-  <<validators_ops>>
-
-  @internal
-  def _check_creds(sender: address):
-      assert self.validators[sender], "not a validator"
-#+END_SRC
-
-*** grant distibution
-
-Голосование начинается, если удовлетворены требования
-пороговой подписи K из N
-
-[TODO:gmm] как написать проверку порога?
-
-*** payments of rewards
-
-[TODO:gmm] Эти пэйменты будет вызывать арагон-агент. Как?
-Мне надо достать интерфейс и посмотреть как у арагона это
-сделано?
-
-*** regular insurance payments
-
-[TODO:gmm] Тут надо делать периодический вызов? Как?
-
-* Objections
-
-** Avoidance of malicious objections
+* TODO Send objection function
 
 Существует атака, при которой возражающий может продать
 проголосовавшие жетоны и сразу же купить новые, чтобы
@@ -159,11 +191,10 @@ easy-track необходимо обратиться к менеджеру то�
 голосовать могут только жетоны, которые не были перемещены с
 момента начала голосования.
 
-** Send objection function
-
-[TODO:gmm] send_objection fun
-
-[TODO:gmm] проверка не истекло ли время голосования
+[TODO:gmm] проверка не истекло ли время
+голосования. спросить у вайпера таймстемп или текущий блок,
+есть в stacking reward contract - но там сложно
+искать. Гуглить viper current block time
 
 #+NAME: send_objection
 #+BEGIN_SRC vyper
@@ -173,113 +204,73 @@ easy-track необходимо обратиться к менеджеру то�
       ...
 #+END_SRC
 
-* Expiration of the voting period
+* Ballot Endings
 
-[TODO:gmm] - Как я могу получить время, чтобы определить что
-голосование пора завершать?
+[TODO:gmm] - Надо завершать как только возражений стало
+достаточно
+
+assert block.timestamp >= self.deadline
+
+* Other
+
+Init нужен чтобы определить, кто может добавлять тех, кому
+разрешено начинать голосование. По идее, только контракт
+всеобщего голосования DAO может сделать это.
+
+[TODO:gmm] - В ldo-purchase-executor/script/deploy.py есть
+функция deploy_and_start_dao_vote надо посмотреть можно по
+ней что-то понять. Там же есть про деполой контракта и как
+проголосовать (отправить возражение) в dao_voting.vote что
+вероятно поможет написать тесты.
+
+[TODO:gmm] - Кроме покупки страховки команда Meter
+выкатывала одно голосование за 4 разные вещи -
+посмотреть. Можно оттуда скопипастить.
+
+[TODO:gmm] - Ownable, Transfer ownership, нужен механизм,
+чтобы поменять адрес такого контракта. Сначала овнер - это
+тот кто деплоит, потом предусмотреть трансфер овнершип.
+
+[TODO:gmm] - Как мне представиться контрактом голосования
+DAO, чтобы протестить это? Как написать такой тест? Как-то
+так?
+
+#+BEGIN_SRC vyper
+  # Lido DAO Vote contract
+  interface DaoVote:
+      def someFunc(_someparam: someType): payable
+      ...
+#+END_SRC
+
+grant distibution - Голосование начинается, если удовлетворены требования
+пороговой подписи K из N
+
+[TODO:gmm] как написать проверку порога? Увеличиваем счетчик
+и проверяем мапу ключ=>bool.
+
+[TODO:gmm] Эти пэйменты будет вызывать арагон-агент. Как?
+Мне надо достать интерфейс и посмотреть как у арагона это
+сделано? Посмотреть что происходит при enacting голосования
+арагона в lido DAO, код арагона на etherscan
+
+[TODO:gmm] regular insurance payments Тут надо делать вызов
+в ручную раз в полгода
 
 [TODO:gmm] - Если голосование завершено, то здесь нужен
-event?
+event
 
-[TODO:gmm] - Подсчет возражений
-
-[TODO:gmm] - Как мне запустить что-то по результатам?
-
-** Objection threshold
-
-[TODO:gmm] Нужен свой порог для каждого трека
-
-* Execution of voting
+[TODO:gmm] - Как мне запустить что-то по результатам? В
+новом оракуле есть кусок, который позволяет зашивать
+проивольный смарт-контракт и дергать его.
 
 Если голосование успешно завершено, надо вызвать функцию,
 которая переведет деньги.
 
-[TODO:gmm] - Она внешняя?
-
-[TODO:gmm] - Вызывать через интерфейс?
-
-#+BEGIN_SRC vyper
-  @external
-  @payable
-  def execute_purchase(_ldo_receiver: address = msg.sender) -> uint256:
-      """
-      @notice Purchases for the specified address (defaults to message sender).
-      @param _ldo_receiver The address the purchase is executed for.
-      @return Vesting ID to be used with the DAO's `TokenManager` contract.
-      """
-      return self._execute_purchase(_ldo_receiver, msg.sender, msg.value)
-
-
-  @internal
-  def _execute_vote(_ldo_receiver: address, _caller: address, _eth_received: uint256) -> uint256:
-      """
-      @dev
-          We don't use any reentrancy lock here because, among all external calls in this
-          function (Vault.deposit, TokenManager.assignVested, LDO.transfer, and the default
-          payable function of the message sender), only the last one executes the code not
-          under our control, and we make this call after all state mutations.
-      """
-      assert block.timestamp < self.offer_expires_at, "offer expired"
-
-      ldo_allocation: uint256 = 0
-      eth_cost: uint256 = 0
-      ldo_allocation, eth_cost = self._get_allocation(_ldo_receiver)
-
-      assert ldo_allocation > 0, "no allocation"
-      assert _eth_received >= eth_cost, "insufficient funds"
-
-      # clear the purchaser's allocation
-      self.ldo_allocations[_ldo_receiver] = 0
-
-      # forward ETH cost of the purchase to the DAO treasury contract
-      Vault(LIDO_DAO_VAULT).deposit(
-          LIDO_DAO_VAULT_ETH_TOKEN,
-          eth_cost,
-          value=eth_cost
-      )
-
-      vesting_start: uint256 = block.timestamp
-      vesting_cliff: uint256 = vesting_start + self.vesting_cliff_delay
-      vesting_end: uint256 = vesting_start + self.vesting_end_delay
-
-      # TokenManager can only assign vested tokens from its own balance
-      assert ERC20(LDO_TOKEN).transfer(LIDO_DAO_TOKEN_MANAGER, ldo_allocation)
-
-      # assign vested LDO tokens to the purchaser from the DAO treasury reserves
-      # Vyper has no uint64 data type so we have to use raw_call instead of an interface
-      call_result: Bytes[32] = raw_call(
-          LIDO_DAO_TOKEN_MANAGER,
-          concat(
-              method_id('assignVested(address,uint256,uint64,uint64,uint64,bool)'),
-              convert(_ldo_receiver, bytes32),
-              convert(ldo_allocation, bytes32),
-              convert(vesting_start, bytes32),
-              convert(vesting_cliff, bytes32),
-              convert(vesting_end, bytes32),
-              convert(False, bytes32)
-          ),
-          max_outsize=32
-      )
-      vesting_id: uint256 = convert(extract32(call_result, 0), uint256)
-
-      log PurchaseExecuted(_ldo_receiver, ldo_allocation, eth_cost, vesting_id)
-
-      # refund any excess ETH to the caller
-      eth_refund: uint256 = _eth_received - eth_cost
-      if eth_refund > 0:
-          # use raw_call to forward all remaining gas just in case the caller is a smart contract
-          raw_call(_caller, b"", value=eth_refund)
-
-      return vesting_id
-#+END_SRC
-
-* Monitoring of voting
-
-[TODO:gmm] - Как это делать?
+Читать как сделано в арагоне. В lido dao есть адреса
+арагоновских проксиков, в арагоне написано как это работает
+(etherscan) CallData определяет что именно дергать.
 
 * Tangle
-
-[TODO:gmm] - Общие вещи если надо
 
 ** validator's requests contract
 
@@ -290,14 +281,23 @@ event?
   # @version 0.2.8
   # @author Lido <info@lido.fi>
   # @licence MIT
+  from vyper.interfaces import ERC20
 
-  <<data_for_validators_request>>
+  <<structs>>
 
-  <<init>>
+  <<data>>
 
-  <<check_creds_validator_request>>
+  @external
+  def __init__():
+      <<init>>
 
-  <<start_vote>>
+  <<transfer_ownership>>
+
+  <<add_ballot_maker>>
+
+  <<del_ballot_maker>>
+
+  <<make_ballot>>
 #+END_SRC
 
 ** test for validator's requests contract
@@ -311,6 +311,13 @@ event?
 - завершить голосование (как ускорить его?)
 - посчитать результаты
 - убедиться, что посчитано верно
+
+Нужны приемочные тесты (сценарии):
+- что изи-трек разворачивается
+- что голосование создается
+- что голосование реагирует на возражения
+- что оно завершается (промотать время brownie test time
+  прямо из теста)
 
 #+BEGIN_SRC python :noweb yes :tangle ./tests/conftest.py :exports none
   import pytest

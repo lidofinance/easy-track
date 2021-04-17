@@ -1,30 +1,51 @@
 # @version 0.2.8
 # @author Lido <info@lido.fi>
 # @licence MIT
+from vyper.interfaces import ERC20
 
-validators: public(HashMap[address, bool])
-admins: public(HashMap[address, bool])
+struct Ballot:
+  name: string[255]
+  active: bool
+  created: uint256
+  deadline: timestamp
+  result: bool
+  ballots: HashMap(uint256, decimal)
+  enact_addr: address, # TODO
+  enact_fun: address   # TODO
+
+owner: public(address)
+ballotMakers: public(HashMap[address, bool])
+ballot_time: public(timedelta)
+minBallotStake: public(decimal)
+ballots: public(HashMap[string[255], Ballot])
 
 @external
-def __init__(_admin: address):
-    self.admins[_admin] = True
+def __init__():
+    self.owner = msg.sender
 
 @external
-def add_validator(_param: address):
-    assert self.admins[msg.sender], "not an admin"
-    self.validators[_param] = True
+def transferOwnership(_newOwner: address):
+    assert msg.sender = self.owner
+    self.owner = _newOwner
 
 @external
-def del_validator(_param: address):
-    assert self.admins[msg.sender], "not an admin"
-    self.validators[_param] = False
+def addBallotMaker(_param: address):
+    assert msg.sender = self.owner
+    ballotMakers[_param] = True
 
-@internal
-def _check_creds(sender: address):
-    assert self.validators[sender], "not a validator"
-
-# Starting vote process
 @external
-def start_vote():
-    # Check
-    self._check_creds(msg.sender)
+def delBallotMaker(_param: address):
+    assert msg.sender = self.owner
+    ballotMakers[_param] = False
+
+@external
+def make_ballot(_name: string[255]):
+    assert ballotMakers[msg.sender] = True
+    assert msg.value >= self.minBallotStake
+    self.ballots[_name] = Ballot({
+        name = _name,
+        active = True,
+        created = block.timestamp,
+        deadline = block.timestamp + ballot_time,
+        result = True
+    })
