@@ -4,12 +4,16 @@
 * Intro
 
 У нас есть 4 трека, каждый из них может одновременно вести
-несколько голосований
+несколько голосований.
 
-[TODO:gmm] - Как это организовывать?
+Я пока не придумал ничего лучше, чем положить все
+настраиваемые параметры в структуру голосования.
 
-Предложение считается принятым, если до его окончания не
-было получено достаточно возражений.
+По сути треки отличаются только базовыми настройками этих
+голосований.
+
+Для всех голосований Предложение считается принятым, если до
+его окончания не было получено достаточно возражений.
 
 Tracks variants:
 - validators requests
@@ -29,6 +33,10 @@ Tracks variants:
   self.owner = msg.sender
 #+END_SRC
 
+[TODO:gmm] - Init нужен чтобы определить, кто может
+добавлять тех, кому разрешено начинать голосование. По идее,
+только контракт всеобщего голосования DAO может сделать это.
+
 * Ownership
 
 Мы можем проверять ~onlyOwner~:
@@ -38,7 +46,7 @@ Tracks variants:
   assert msg.sender = self.owner
 #+END_SRC
 
-Надо уметь менять ~owner~:
+Надо уметь трансферить ~owner~-а:
 
 #+NAME: transfer_ownership
 #+BEGIN_SRC vyper :noweb yes
@@ -48,10 +56,10 @@ Tracks variants:
       self.owner = _newOwner
 #+END_SRC
 
-* Ballot Makers and their management
+* Ballot Makers
 
 Только "узкий круг ограниченных людей" может начинать
-голосования. Храним их тут:
+голосования. Храним их в мапе:
 
 #+BEGIN_SRC vyper :noweb-ref data
   ballotMakers: public(HashMap[address, bool])
@@ -85,27 +93,61 @@ Tracks variants:
 
 * Ballot Time
 
+Для разных треков разное время, но пока так:
+
 #+BEGIN_SRC vyper :noweb-ref data
-ballot_time: public(timedelta)
+ballotTime: public(timedelta)
 #+END_SRC
 
+* Ballot Stake
 
-* Ballot stake
+Ballot maker мог бы спамить голосованиями, а учитывая что
+они по умолчанию проходят, этого нельзя допускать.
 
-Когда кто-то начинает голосование, ему нужно стейкнуть
+Мы хотим, чтобы возможность создавать easy-track голосования
+была как-то привязана к LDO-токенам. При этом, LDO-токены,
+которые иницировали голосование, не должны иметь возможность
+инициировать второе голосование, пока первое не закончилось.
+
+Возможна атака, при которой возражающий может продать
+проголосовавшие жетоны и сразу же купить новые, чтобы
+проголосовать снова. Чтобы этого не произошло, в контракте
+easy-track необходимо обратиться к менеджеру токенов, чтобы
+запретить передачу этих токенов до конца голосования. Но это
+вызывает проблемы с аудитом и обновлением LDO-контракта,
+чего хочется избежать.
+
+Можно использовать остатки на момент блока, в котором
+началось голосование. То есть голосовать могут только
+жетоны, которые не были перемещены с момента начала
+голосования. Мне показалось это сложным в реализации.
+
+Поэтому мы требуем замораживать токены в голосовании - когда
+ballot maker начинает голосование, ему нужно приложить
 токены, чтобы нельзя было создавать слишком много
-голосований. Порог ниже которого голосование не начнется:
+голосований. Порог, ниже которого голосование не начнется:
 
 #+BEGIN_SRC vyper :noweb-ref data
   minBallotStake: public(decimal)
 #+END_SRC
 
-Проверка, что стейка достаточно для начала голосования:
+Проверка, что стейка достаточно для начала голосования. Тут
+мы считаем, что порог общий для всех голосований во всех
+треках.
 
 #+NAME: only_sufficient_stake
 #+BEGIN_SRC vyper
   assert msg.value >= self.minBallotStake
 #+END_SRC
+
+[NOTE:gmm] - Возможна атака, когда ~ballot maker~ создает
+много голосований, в рассчете на то, у возражающих не хватит
+стейка чтобы возразить по всем голосованиям и какая-то часть
+голосований пройдет без возражений. Например, так можно
+вывести деньги на грантовые программы. Даже если гранты
+переводятся на мультисиг, это требует только договоренности
+с владельцами мультисига, которые тоже могут иметь
+заинтересованность в выводе денег.
 
 * Ballot
 
@@ -119,13 +161,11 @@ ballot_time: public(timedelta)
 #+BEGIN_SRC vyper :noweb-ref structs
   struct Ballot:
     name: string[255]
-    active: bool
-    created: uint256
+    ballotMaker: address
+    ballotMakerStake: wei_value
     deadline: timestamp
-    result: bool
-    ballots: HashMap(uint256, decimal)
-    enact_addr: address, # TODO
-    enact_fun: address   # TODO
+    objections: HashMap(address, wei_value)
+    objections_total: wei_value
 #+END_SRC
 
 * Make Ballot
@@ -133,103 +173,127 @@ ballot_time: public(timedelta)
 Функция для начала голосования, после проверок создает
 новый Ballot:
 
-[TODO:gmm] - надо проверять при создании, нет ли уже такого
-голосования.
+Проверка, нет ли уже такого голосования. Она нужна,
+т.к. если не проверить, то новое голосование затрет
+предыдущее.
 
-[TODO:gmm] - Минимальное время между попытками одного
-пользователя создать новое голосоваине
+#+NAME: is_ballot_not_exists
+#+BEGIN_SRC vyper
+  assert self.ballots[_name] = False
+#+END_SRC
 
-[TODO:gmm] - Минимальный порог для начала
-голосования. ERC-20 balanceOf();
+[VRFY:gmm] - Возможно нужно минимальное время между
+попытками одного пользователя создать новое голосование?
 
-[TODO:gmm] - Нужно лочить токены, чтобы одними и теми же
-токенами нельзя было создавать голосования слишком
-часто. Контракт может забирать токены, а потом ~разрешать
-забрать~ (см. transfer() в purchase executor-e). Но это не
-очень хороший дизайн. Мы не можем апгрейдить LDO-контракт,
-потому что это геморой и стремно.  Но это не позволяет
-одновременно возражать по нескольким голосованиям.
+Когда Ballot maker отдает нам свой стейк мы должны
+запомнить, сколько он застейкал, чтобы потом разрешить ему
+вернуть эту сумму.
 
-Возможная атака - создать много предложений, чтобы у
-возражающий не хватило LDO-токенов на возражения по всем
-предложениям, тогда хоть одно прокатит и можно будет вывести
-деньги, а потом быстро продать LDO.
+#+NAME: save_ballot_stake
+#+BEGIN_SRC vyper
+  self.ballots[_name].ballotMakerStake = msg.value
+#+END_SRC
 
-Чтобы от этого защититься, нужно при начале голосования
-лочить больше LDO чем можно выиграть протащив предложение,
-но курс может измениться.
+После окончания голосования, нужно разрешать вернуть стейк
+ballotMaker-у, но только всю сумму разом и только один раз.
 
-Даже если гранты переводятся на мультисиг, это требует
-только договоренности с владельцами мультисига, которые тоже
-могут иметь заинтересованность в выводе денег.
+#+NAME: withdraw_ballot_stake
+#+BEGIN_SRC vyper
+  @external
+  def withdrawBallotStake(_name: string[255]):
+      assert self.ballots[_name].active = False
+      assert self.ballots[_name].ballotMakerStake > 0
+      _ballotMaker = self.ballots[_name].ballotMaker
+      _amount: wei_value = self.ballots[_name].ballotMakerStake
+      self.ballots[_name].ballotMakerStake = 0
+      send(_ballotMaker, _amount)
+#+END_SRC
+
+Функция создания голосования:
 
 #+NAME: make_ballot
 #+BEGIN_SRC vyper :noweb yes
-  @external
+  @public
+  @payable
   def make_ballot(_name: string[255]):
       <<only_ballot_maker>>
       <<only_sufficient_stake>>
+      <<is_ballot_not_exists>>
       self.ballots[_name] = Ballot({
           name = _name,
           active = True,
-          created = block.timestamp,
-          deadline = block.timestamp + ballot_time,
+          ballotMaker = msg.sender
+          deadline = block.timestamp + self.ballotTime,
           result = True
       })
+      <<save_ballot_stake>>
 #+END_SRC
 
-* TODO Send objection function
+* Send objection
 
-Существует атака, при которой возражающий может продать
-проголосовавшие жетоны и сразу же купить новые, чтобы
-проголосовать снова. Чтобы этого не произошло, в контракте
-easy-track необходимо обратиться к менеджеру токенов, чтобы
-запретить передачу этих токенов до конца голосования.
+Проверка не истекло ли время голосования.
 
-Еще более экономичный способ - использовать остатки на
-момент блока, в котором началось голосование. То есть
-голосовать могут только жетоны, которые не были перемещены с
-момента начала голосования.
+#+NAME: only_active
+#+BEGIN_SRC vyper
+  assert block.timestamp < self.ballots[_name].deadline
+#+END_SRC
 
-[TODO:gmm] проверка не истекло ли время
-голосования. спросить у вайпера таймстемп или текущий блок,
-есть в stacking reward contract - но там сложно
-искать. Гуглить viper current block time
+Порог возражений:
+
+#+BEGIN_SRC vyper :noweb-ref data
+  objections_threshold: public(wei_value)
+#+END_SRC
+
+Проверка, достаточно ли уже возражений
+
+#+NAME: objections_not_enough
+#+BEGIN_SRC vyper
+  assert self.ballots[_name].objections_total < self.objections_threshold
+#+END_SRC
+
+Функция возражения, работает только до дедлайна и пока
+возражений недостаточно:
 
 #+NAME: send_objection
 #+BEGIN_SRC vyper
-  # Starting vote process
-  @external
-  def send_objection():
-      ...
+  @public
+  @payable
+  def sendObjection(_name: string[266]):
+      <<only_active>>
+      <<objections_not_enough>>
+      self.ballots[_name].objections[msg.sender] = msg.value
+      _total = self.ballots[_name].objections_total
+      self.ballots[_name].objections_total = total + msg.value
 #+END_SRC
 
 * Ballot Endings
 
-[TODO:gmm] - Надо завершать как только возражений стало
-достаточно
+Считаем, что у нас есть функция, которую можно вызвать, и
+она сработает, если время голосования прошло, а возражений
+поступило недостаточно.
 
-assert block.timestamp >= self.deadline
+[TODO:gmm] - Как задавать эту функцию коссвенно?
+
+#+NAME: ballot_result
+#+BEGIN_SRC vyper :noweb yes
+  @external
+  def ballotResult()
+      assert block.timestamp > self.ballots[_name].deadline
+      <<objections_not_enough>>
+      some_action_stub()
+#+END_SRC
 
 * Other
-
-Init нужен чтобы определить, кто может добавлять тех, кому
-разрешено начинать голосование. По идее, только контракт
-всеобщего голосования DAO может сделать это.
 
 [TODO:gmm] - В ldo-purchase-executor/script/deploy.py есть
 функция deploy_and_start_dao_vote надо посмотреть можно по
 ней что-то понять. Там же есть про деполой контракта и как
-проголосовать (отправить возражение) в dao_voting.vote что
-вероятно поможет написать тесты.
+проголосовать (отправить возражение) в dao_voting.vote()
+есть что-то что вероятно поможет написать тесты.
 
 [TODO:gmm] - Кроме покупки страховки команда Meter
 выкатывала одно голосование за 4 разные вещи -
 посмотреть. Можно оттуда скопипастить.
-
-[TODO:gmm] - Ownable, Transfer ownership, нужен механизм,
-чтобы поменять адрес такого контракта. Сначала овнер - это
-тот кто деплоит, потом предусмотреть трансфер овнершип.
 
 [TODO:gmm] - Как мне представиться контрактом голосования
 DAO, чтобы протестить это? Как написать такой тест? Как-то
@@ -298,6 +362,12 @@ event
   <<del_ballot_maker>>
 
   <<make_ballot>>
+
+  <<withdraw_ballot_stake>>
+
+  <<send_objection>>
+
+  <<ballot_result>>
 #+END_SRC
 
 ** test for validator's requests contract
