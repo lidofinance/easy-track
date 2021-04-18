@@ -64,8 +64,8 @@ def withdrawBallotStake(_name: string[255]):
 @public
 @payable
 def sendObjection(_name: string[266]):
-    <<only_active>>
-    <<objections_not_enough>>
+    assert block.timestamp < self.ballots[_name].deadline
+    assert self.ballots[_name].objections_total < self.objections_threshold
     self.ballots[_name].objections[msg.sender] = msg.value
     _total = self.ballots[_name].objections_total
     self.ballots[_name].objections_total = total + msg.value

@@ -1,24 +1,24 @@
 
 # Table of Contents
 
-1.  [Intro](#org1d784e5)
-2.  [Init](#org2324f95)
-3.  [Ownership](#org509748c)
-4.  [Ballot Makers](#orga8c9134)
-5.  [Ballot Time](#org7dad01b)
-6.  [Ballot Stake](#org1696c26)
-7.  [Ballot](#orgd52a6c2)
-8.  [Make Ballot](#org05b27e7)
-9.  [Send objection](#org54919e0)
-10. [Ballot Endings](#org0af002d)
-11. [Other task and todoes](#orgddd21b6)
-12. [Tangle](#orgbefae8f)
-    1.  [validator's requests contract](#orgb5ddb29)
-    2.  [test for validator's requests contract](#org0ecb456)
+1.  [Intro](#org104162f)
+2.  [Init](#orga5e22a3)
+3.  [Ownership](#org59face0)
+4.  [Ballot Makers](#org0f8677e)
+5.  [Ballot Time](#org12281c1)
+6.  [Ballot Stake](#orga6efd61)
+7.  [Ballot](#org07f91a3)
+8.  [Make Ballot](#orga0f48a0)
+9.  [Send objection](#orgbc0a23b)
+10. [Ballot Endings](#orgd31cad8)
+11. [Other task and todoes](#org0b490fc)
+12. [Tangle](#org4f5279f)
+    1.  [validator's requests contract](#org80ed004)
+    2.  [test for validator's requests contract](#orga6b1028)
 
 
 
-<a id="org1d784e5"></a>
+<a id="org104162f"></a>
 
 # Intro
 
@@ -42,7 +42,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org2324f95"></a>
+<a id="orga5e22a3"></a>
 
 # Init
 
@@ -57,7 +57,7 @@ Tracks variants:
 только контракт всеобщего голосования DAO может сделать это.
 
 
-<a id="org509748c"></a>
+<a id="org59face0"></a>
 
 # Ownership
 
@@ -73,7 +73,7 @@ Tracks variants:
         self.owner = _newOwner
 
 
-<a id="orga8c9134"></a>
+<a id="org0f8677e"></a>
 
 # Ballot Makers
 
@@ -100,7 +100,7 @@ Tracks variants:
         ballotMakers[_param] = False
 
 
-<a id="org7dad01b"></a>
+<a id="org12281c1"></a>
 
 # Ballot Time
 
@@ -109,7 +109,7 @@ Tracks variants:
     ballotTime: public(timedelta)
 
 
-<a id="org1696c26"></a>
+<a id="orga6efd61"></a>
 
 # Ballot Stake
 
@@ -157,7 +157,7 @@ ballot maker начинает голосование, ему нужно прил
 заинтересованность в выводе денег.
 
 
-<a id="orgd52a6c2"></a>
+<a id="org07f91a3"></a>
 
 # Ballot
 
@@ -175,7 +175,7 @@ ballot maker начинает голосование, ему нужно прил
       objections_total: wei_value
 
 
-<a id="org05b27e7"></a>
+<a id="orga0f48a0"></a>
 
 # Make Ballot
 
@@ -227,7 +227,7 @@ ballotMaker-у, но только всю сумму разом и только �
         self.ballots[_name].ballotMakerStake = msg.value
 
 
-<a id="org54919e0"></a>
+<a id="orgbc0a23b"></a>
 
 # Send objection
 
@@ -249,14 +249,14 @@ ballotMaker-у, но только всю сумму разом и только �
     @public
     @payable
     def sendObjection(_name: string[266]):
-        <<only_active>>
-        <<objections_not_enough>>
+        assert block.timestamp < self.ballots[_name].deadline
+        assert self.ballots[_name].objections_total < self.objections_threshold
         self.ballots[_name].objections[msg.sender] = msg.value
         _total = self.ballots[_name].objections_total
         self.ballots[_name].objections_total = total + msg.value
 
 
-<a id="org0af002d"></a>
+<a id="orgd31cad8"></a>
 
 # Ballot Endings
 
@@ -285,7 +285,7 @@ ballotMaker-у, но только всю сумму разом и только �
 event
 
 
-<a id="orgddd21b6"></a>
+<a id="org0b490fc"></a>
 
 # Other task and todoes
 
@@ -315,12 +315,12 @@ DAO, чтобы протестить это? Как написать такой 
 вручную раз в полгода
 
 
-<a id="orgbefae8f"></a>
+<a id="org4f5279f"></a>
 
 # Tangle
 
 
-<a id="orgb5ddb29"></a>
+<a id="org80ed004"></a>
 
 ## validator's requests contract
 
@@ -392,8 +392,8 @@ DAO, чтобы протестить это? Как написать такой 
     @public
     @payable
     def sendObjection(_name: string[266]):
-        <<only_active>>
-        <<objections_not_enough>>
+        assert block.timestamp < self.ballots[_name].deadline
+        assert self.ballots[_name].objections_total < self.objections_threshold
         self.ballots[_name].objections[msg.sender] = msg.value
         _total = self.ballots[_name].objections_total
         self.ballots[_name].objections_total = total + msg.value
@@ -405,7 +405,7 @@ DAO, чтобы протестить это? Как написать такой 
         some_action_stub()
 
 
-<a id="org0ecb456"></a>
+<a id="orga6b1028"></a>
 
 ## test for validator's requests contract
 

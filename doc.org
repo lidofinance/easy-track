@@ -255,7 +255,7 @@ ballotMaker-у, но только всю сумму разом и только �
 возражений недостаточно:
 
 #+NAME: send_objection
-#+BEGIN_SRC vyper
+#+BEGIN_SRC vyper :noweb yes
   @public
   @payable
   def sendObjection(_name: string[266]):
