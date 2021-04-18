@@ -1,24 +1,24 @@
 
 # Table of Contents
 
-1.  [Intro](#org843464a)
-2.  [Init](#org6948586)
-3.  [Ownership](#orgd56c6de)
-4.  [Ballot Makers](#org387d29c)
-5.  [Ballot Time](#org15e5993)
-6.  [Ballot Stake](#org1de26a0)
-7.  [Ballot](#orgb293de5)
-8.  [Make Ballot](#orgc219762)
-9.  [Send objection](#orgbe04726)
-10. [Ballot Endings](#orgdb5756e)
-11. [Other task and todoes](#org944542f)
-12. [Tangle](#org891df24)
-    1.  [validator's requests contract](#org7650e56)
-    2.  [test for validator's requests contract](#org8b4ae83)
+1.  [Intro](#org320db50)
+2.  [Init](#org99340eb)
+3.  [Ownership](#org97f65bb)
+4.  [Ballot Makers](#orgf311af7)
+5.  [Ballot Time](#orgb7ebe30)
+6.  [Ballot Stake](#org21b319e)
+7.  [Ballot](#orgb3fd56b)
+8.  [Make Ballot](#orgaf3b3c1)
+9.  [Send objection](#org8a17148)
+10. [Ballot Endings](#orga0cbb65)
+11. [Other task and todoes](#orgd746952)
+12. [Tangle](#org7f5f05c)
+    1.  [validator's requests contract](#org7988e4a)
+    2.  [test for validator's requests contract](#org52e608c)
 
 
 
-<a id="org843464a"></a>
+<a id="org320db50"></a>
 
 # Intro
 
@@ -29,9 +29,9 @@
 настраиваемые параметры в структуру голосования.
 
 По сути треки отличаются только базовыми настройками этих
-голосований.
+голосований. Мы можем сделать их отдельными контрактами.
 
-Для всех голосований Предложение считается принятым, если до
+Для всех голосований предложение считается принятым, если до
 его окончания не было получено достаточно возражений.
 
 Tracks variants:
@@ -42,7 +42,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org6948586"></a>
+<a id="org99340eb"></a>
 
 # Init
 
@@ -54,16 +54,21 @@ Tracks variants:
 
     self.owner = msg.sender
 
-[TODO:gmm] - Init нужен чтобы определить, кто может
-добавлять тех, кому разрешено начинать голосование. По идее,
-только контракт всеобщего голосования DAO может сделать это.
+Init нужен чтобы определить, кто может добавлять тех, кому
+разрешено начинать голосование. По идее, только контракт
+всеобщего голосования DAO может сделать это. Но, насколько я
+понял, мы избегаем апгрейда DAO-контрактов, поэтому пока
+рулит всем `owner`.
+
+[TODO:gmm] - Разобраться, как можно интегрироваться со
+всеобщим голосованием DAO
 
 
-<a id="orgd56c6de"></a>
+<a id="org97f65bb"></a>
 
 # Ownership
 
-Мы можем проверять `onlyOwner`:
+Проверка `onlyOwner`:
 
     assert msg.sender = self.owner
 
@@ -75,7 +80,7 @@ Tracks variants:
         self.owner = _newOwner
 
 
-<a id="org387d29c"></a>
+<a id="orgf311af7"></a>
 
 # Ballot Makers
 
@@ -84,8 +89,7 @@ Tracks variants:
 
     ballotMakers: public(HashMap[address, bool])
 
-Проверка, что начинающий голосование, относится к этому
-кругу людей:
+Проверка, что `ballot maker` относится к этому кругу людей:
 
     assert ballotMakers[msg.sender] = True
 
@@ -102,20 +106,23 @@ Tracks variants:
         ballotMakers[_param] = False
 
 
-<a id="org15e5993"></a>
+<a id="orgb7ebe30"></a>
 
 # Ballot Time
 
-Для разных треков разное время, но пока так:
+Для разных треков может быть разное время голосования, но
+пока так:
 
     ballotTime: public(timedelta)
 
+[TODO:gmm] - Как задать timedelta (в каких единицах)?
 
-<a id="org1de26a0"></a>
+
+<a id="org21b319e"></a>
 
 # Ballot Stake
 
-Ballot maker мог бы спамить голосованиями, а учитывая что
+`Ballot maker` мог бы спамить голосованиями, а учитывая что
 они по умолчанию проходят, этого нельзя допускать.
 
 Мы хотим, чтобы возможность создавать easy-track голосования
@@ -159,7 +166,7 @@ ballot maker начинает голосование, ему нужно прил
 заинтересованность в выводе денег.
 
 
-<a id="orgb293de5"></a>
+<a id="orgb3fd56b"></a>
 
 # Ballot
 
@@ -177,7 +184,7 @@ ballot maker начинает голосование, ему нужно прил
       objections_total: wei_value
 
 
-<a id="orgc219762"></a>
+<a id="orgaf3b3c1"></a>
 
 # Make Ballot
 
@@ -229,7 +236,7 @@ ballotMaker-у, но только всю сумму разом и только �
         self.ballots[_name].ballotMakerStake = msg.value
 
 
-<a id="orgbe04726"></a>
+<a id="org8a17148"></a>
 
 # Send objection
 
@@ -257,8 +264,10 @@ ballotMaker-у, но только всю сумму разом и только �
         _total = self.ballots[_name].objections_total
         self.ballots[_name].objections_total = total + msg.value
 
+[TODO:gmm] SafeMath нужно как-то объявлять?
 
-<a id="orgdb5756e"></a>
+
+<a id="orga0cbb65"></a>
 
 # Ballot Endings
 
@@ -278,7 +287,7 @@ ballotMaker-у, но только всю сумму разом и только �
 арагона на etherscan
 
     @external
-    def ballotResult()
+    def ballotResult():
         assert block.timestamp > self.ballots[_name].deadline
         assert self.ballots[_name].objections_total < self.objections_threshold
         some_action_stub()
@@ -287,7 +296,7 @@ ballotMaker-у, но только всю сумму разом и только �
 event
 
 
-<a id="org944542f"></a>
+<a id="orgd746952"></a>
 
 # Other task and todoes
 
@@ -317,12 +326,12 @@ DAO, чтобы протестить это? Как написать такой 
 вручную раз в полгода
 
 
-<a id="org891df24"></a>
+<a id="org7f5f05c"></a>
 
 # Tangle
 
 
-<a id="org7650e56"></a>
+<a id="org7988e4a"></a>
 
 ## validator's requests contract
 
@@ -401,13 +410,13 @@ DAO, чтобы протестить это? Как написать такой 
         self.ballots[_name].objections_total = total + msg.value
 
     @external
-    def ballotResult()
+    def ballotResult():
         assert block.timestamp > self.ballots[_name].deadline
         assert self.ballots[_name].objections_total < self.objections_threshold
         some_action_stub()
 
 
-<a id="org8b4ae83"></a>
+<a id="org52e608c"></a>
 
 ## test for validator's requests contract
 

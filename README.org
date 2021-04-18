@@ -10,9 +10,9 @@
 настраиваемые параметры в структуру голосования.
 
 По сути треки отличаются только базовыми настройками этих
-голосований.
+голосований. Мы можем сделать их отдельными контрактами.
 
-Для всех голосований Предложение считается принятым, если до
+Для всех голосований предложение считается принятым, если до
 его окончания не было получено достаточно возражений.
 
 Tracks variants:
@@ -35,13 +35,18 @@ Tracks variants:
   self.owner = msg.sender
 #+END_SRC
 
-[TODO:gmm] - Init нужен чтобы определить, кто может
-добавлять тех, кому разрешено начинать голосование. По идее,
-только контракт всеобщего голосования DAO может сделать это.
+Init нужен чтобы определить, кто может добавлять тех, кому
+разрешено начинать голосование. По идее, только контракт
+всеобщего голосования DAO может сделать это. Но, насколько я
+понял, мы избегаем апгрейда DAO-контрактов, поэтому пока
+рулит всем ~owner~.
+
+[TODO:gmm] - Разобраться, как можно интегрироваться со
+всеобщим голосованием DAO
 
 * Ownership
 
-Мы можем проверять ~onlyOwner~:
+Проверка ~onlyOwner~:
 
 #+NAME: only_owner
 #+BEGIN_SRC vyper
@@ -67,8 +72,7 @@ Tracks variants:
   ballotMakers: public(HashMap[address, bool])
 #+END_SRC
 
-Проверка, что начинающий голосование, относится к этому
-кругу людей:
+Проверка, что ~ballot maker~ относится к этому кругу людей:
 
 #+NAME: only_ballot_maker
 #+BEGIN_SRC vyper
@@ -95,15 +99,18 @@ Tracks variants:
 
 * Ballot Time
 
-Для разных треков разное время, но пока так:
+Для разных треков может быть разное время голосования, но
+пока так:
 
 #+BEGIN_SRC vyper :noweb-ref data
-ballotTime: public(timedelta)
+  ballotTime: public(timedelta)
 #+END_SRC
+
+[TODO:gmm] - Как задать timedelta (в каких единицах)?
 
 * Ballot Stake
 
-Ballot maker мог бы спамить голосованиями, а учитывая что
+~Ballot maker~ мог бы спамить голосованиями, а учитывая что
 они по умолчанию проходят, этого нельзя допускать.
 
 Мы хотим, чтобы возможность создавать easy-track голосования
@@ -133,6 +140,8 @@ ballot maker начинает голосование, ему нужно прил
   minBallotStake: public(decimal)
 #+END_SRC
 
+[TODO:gmm] - Какой выбрать порог (default)?
+
 Проверка, что стейка достаточно для начала голосования. Тут
 мы считаем, что порог общий для всех голосований во всех
 треках.
@@ -157,12 +166,11 @@ ballot maker начинает голосование, ему нужно прил
 значение - структура голосования:
 
 #+BEGIN_SRC vyper :noweb-ref data
-  ballots: public(HashMap[string[255], Ballot])
+  ballots: public(HashMap[bytes32, Ballot])
 #+END_SRC
 
 #+BEGIN_SRC vyper :noweb-ref structs
   struct Ballot:
-    name: string[255]
     ballotMaker: address
     ballotMakerStake: wei_value
     deadline: timestamp
@@ -181,19 +189,19 @@ ballot maker начинает голосование, ему нужно прил
 
 #+NAME: is_ballot_not_exists
 #+BEGIN_SRC vyper
-  assert self.ballots[_name] = False
+  assert self.ballots[_ballotHash] = False
 #+END_SRC
 
 [VRFY:gmm] - Возможно нужно минимальное время между
 попытками одного пользователя создать новое голосование?
 
-Когда Ballot maker отдает нам свой стейк мы должны
+Когда ~Ballot maker~ отдает нам свой стейк мы должны
 запомнить, сколько он застейкал, чтобы потом разрешить ему
 вернуть эту сумму.
 
 #+NAME: save_ballot_stake
 #+BEGIN_SRC vyper
-  self.ballots[_name].ballotMakerStake = msg.value
+  self.ballots[_ballotHash].ballotMakerStake = msg.value
 #+END_SRC
 
 После окончания голосования, нужно разрешать вернуть стейк
@@ -202,12 +210,12 @@ ballotMaker-у, но только всю сумму разом и только �
 #+NAME: withdraw_ballot_stake
 #+BEGIN_SRC vyper
   @external
-  def withdrawBallotStake(_name: string[255]):
-      assert self.ballots[_name].active = False
-      assert self.ballots[_name].ballotMakerStake > 0
-      _ballotMaker = self.ballots[_name].ballotMaker
-      _amount: wei_value = self.ballots[_name].ballotMakerStake
-      self.ballots[_name].ballotMakerStake = 0
+  def withdrawBallotStake(_ballotHash: bytes32):
+      assert self.ballots[_ballotHash].active = False
+      assert self.ballots[_ballotHash].ballotMakerStake > 0
+      _ballotMaker = self.ballots[_ballotHash].ballotMaker
+      _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
+      self.ballots[_ballotHash].ballotMakerStake = 0
       send(_ballotMaker, _amount)
 #+END_SRC
 
@@ -217,16 +225,14 @@ ballotMaker-у, но только всю сумму разом и только �
 #+BEGIN_SRC vyper :noweb yes
   @public
   @payable
-  def make_ballot(_name: string[255]):
+  def make_ballot(_ballotHash: bytes32):
       <<only_ballot_maker>>
       <<only_sufficient_stake>>
       <<is_ballot_not_exists>>
-      self.ballots[_name] = Ballot({
-          name = _name,
-          active = True,
+      self.ballots[_ballotHash] = Ballot({
           ballotMaker = msg.sender
           deadline = block.timestamp + self.ballotTime,
-          result = True
+          result = True # default True
       })
       <<save_ballot_stake>>
 #+END_SRC
@@ -237,7 +243,7 @@ ballotMaker-у, но только всю сумму разом и только �
 
 #+NAME: only_active
 #+BEGIN_SRC vyper
-  assert block.timestamp < self.ballots[_name].deadline
+  assert block.timestamp < self.ballots[_ballotHash].deadline
 #+END_SRC
 
 Порог возражений:
@@ -250,7 +256,7 @@ ballotMaker-у, но только всю сумму разом и только �
 
 #+NAME: objections_not_enough
 #+BEGIN_SRC vyper
-  assert self.ballots[_name].objections_total < self.objections_threshold
+  assert self.ballots[_ballotHash].objections_total < self.objections_threshold
 #+END_SRC
 
 Функция возражения, работает только до дедлайна и пока
@@ -260,13 +266,15 @@ ballotMaker-у, но только всю сумму разом и только �
 #+BEGIN_SRC vyper :noweb yes
   @public
   @payable
-  def sendObjection(_name: string[266]):
+  def sendObjection(_ballotHash: bytes32):
       <<only_active>>
       <<objections_not_enough>>
       self.ballots[_name].objections[msg.sender] = msg.value
       _total = self.ballots[_name].objections_total
       self.ballots[_name].objections_total = total + msg.value
 #+END_SRC
+
+[TODO:gmm] SafeMath нужно как-то объявлять?
 
 * Ballot Endings
 
@@ -278,17 +286,17 @@ ballotMaker-у, но только всю сумму разом и только �
 оракуле есть кусок, который позволяет зашивать проивольный
 смарт-контракт и дергать его - посмотреть как это
 сделано. Надо вызвать функцию, которая переведет
-деньги. Читать как сделано в арагоне. В lido dao есть адреса
+деньги. Читать как сделано в арагоне. В LIDO DAO есть адреса
 арагоновских проксиков, в арагоне написано как это работает
-(etherscan) CallData определяет что именно дергать. Также
+(etherscan). CallData определяет что именно дергать. Также
 посмотреть как у арагона это сделано? Посмотреть что
-происходит при enacting голосования арагона в lido DAO, код
-арагона на etherscan
+происходит при enacting голосования арагона в LIDO DAO, и в
+код арагона на etherscan
 
 #+NAME: ballot_result
 #+BEGIN_SRC vyper :noweb yes
   @external
-  def ballotResult()
+  def ballotResult():
       assert block.timestamp > self.ballots[_name].deadline
       <<objections_not_enough>>
       some_action_stub()
@@ -328,11 +336,6 @@ DAO, чтобы протестить это? Как написать такой 
 
 * Tangle
 
-** validator's requests contract
-
-Сделаем генерацию контракта для validator's requests
-
-#+NAME: validators_contract
 #+BEGIN_SRC vyper :noweb yes :tangle ./contracts/ValidatorsVote.vy
   # @version 0.2.8
   # @author Lido <info@lido.fi>
@@ -362,7 +365,7 @@ DAO, чтобы протестить это? Как написать такой 
   <<ballot_result>>
 #+END_SRC
 
-** test for validator's requests contract
+* Tests
 
 Это заготовки для тестов.
 

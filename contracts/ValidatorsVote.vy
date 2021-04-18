@@ -4,7 +4,6 @@
 from vyper.interfaces import ERC20
 
 struct Ballot:
-  name: string[255]
   ballotMaker: address
   ballotMakerStake: wei_value
   deadline: timestamp
@@ -15,7 +14,7 @@ owner: public(address)
 ballotMakers: public(HashMap[address, bool])
 ballotTime: public(timedelta)
 minBallotStake: public(decimal)
-ballots: public(HashMap[string[255], Ballot])
+ballots: public(HashMap[bytes32, Ballot])
 objections_threshold: public(wei_value)
 
 @external
@@ -39,26 +38,24 @@ def delBallotMaker(_param: address):
 
 @public
 @payable
-def make_ballot(_name: string[255]):
+def make_ballot(_ballotHash: bytes32):
     assert ballotMakers[msg.sender] = True
     assert msg.value >= self.minBallotStake
-    assert self.ballots[_name] = False
-    self.ballots[_name] = Ballot({
-        name = _name,
-        active = True,
+    assert self.ballots[_ballotHash] = False
+    self.ballots[_ballotHash] = Ballot({
         ballotMaker = msg.sender
         deadline = block.timestamp + self.ballotTime,
-        result = True
+        result = True # default True
     })
-    self.ballots[_name].ballotMakerStake = msg.value
+    self.ballots[_ballotHash].ballotMakerStake = msg.value
 
 @external
-def withdrawBallotStake(_name: string[255]):
-    assert self.ballots[_name].active = False
-    assert self.ballots[_name].ballotMakerStake > 0
-    _ballotMaker = self.ballots[_name].ballotMaker
-    _amount: wei_value = self.ballots[_name].ballotMakerStake
-    self.ballots[_name].ballotMakerStake = 0
+def withdrawBallotStake(_ballotHash: bytes32):
+    assert self.ballots[_ballotHash].active = False
+    assert self.ballots[_ballotHash].ballotMakerStake > 0
+    _ballotMaker = self.ballots[_ballotHash].ballotMaker
+    _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
+    self.ballots[_ballotHash].ballotMakerStake = 0
     send(_ballotMaker, _amount)
 
 @public
@@ -71,7 +68,7 @@ def sendObjection(_name: string[266]):
     self.ballots[_name].objections_total = total + msg.value
 
 @external
-def ballotResult()
+def ballotResult():
     assert block.timestamp > self.ballots[_name].deadline
     assert self.ballots[_name].objections_total < self.objections_threshold
     some_action_stub()
