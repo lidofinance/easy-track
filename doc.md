@@ -1,24 +1,24 @@
 
 # Table of Contents
 
-1.  [Intro](#org104162f)
-2.  [Init](#orga5e22a3)
-3.  [Ownership](#org59face0)
-4.  [Ballot Makers](#org0f8677e)
-5.  [Ballot Time](#org12281c1)
-6.  [Ballot Stake](#orga6efd61)
-7.  [Ballot](#org07f91a3)
-8.  [Make Ballot](#orga0f48a0)
-9.  [Send objection](#orgbc0a23b)
-10. [Ballot Endings](#orgd31cad8)
-11. [Other task and todoes](#org0b490fc)
-12. [Tangle](#org4f5279f)
-    1.  [validator's requests contract](#org80ed004)
-    2.  [test for validator's requests contract](#orga6b1028)
+1.  [Intro](#org843464a)
+2.  [Init](#org6948586)
+3.  [Ownership](#orgd56c6de)
+4.  [Ballot Makers](#org387d29c)
+5.  [Ballot Time](#org15e5993)
+6.  [Ballot Stake](#org1de26a0)
+7.  [Ballot](#orgb293de5)
+8.  [Make Ballot](#orgc219762)
+9.  [Send objection](#orgbe04726)
+10. [Ballot Endings](#orgdb5756e)
+11. [Other task and todoes](#org944542f)
+12. [Tangle](#org891df24)
+    1.  [validator's requests contract](#org7650e56)
+    2.  [test for validator's requests contract](#org8b4ae83)
 
 
 
-<a id="org104162f"></a>
+<a id="org843464a"></a>
 
 # Intro
 
@@ -42,13 +42,15 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="orga5e22a3"></a>
+<a id="org6948586"></a>
 
 # Init
 
-При инициализации запоминаем, кто `owner`:
+Переменная для хранения `owner`-а
 
     owner: public(address)
+
+При инициализации запоминаем, кто `owner`:
 
     self.owner = msg.sender
 
@@ -57,7 +59,7 @@ Tracks variants:
 только контракт всеобщего голосования DAO может сделать это.
 
 
-<a id="org59face0"></a>
+<a id="orgd56c6de"></a>
 
 # Ownership
 
@@ -73,7 +75,7 @@ Tracks variants:
         self.owner = _newOwner
 
 
-<a id="org0f8677e"></a>
+<a id="org387d29c"></a>
 
 # Ballot Makers
 
@@ -100,7 +102,7 @@ Tracks variants:
         ballotMakers[_param] = False
 
 
-<a id="org12281c1"></a>
+<a id="org15e5993"></a>
 
 # Ballot Time
 
@@ -109,7 +111,7 @@ Tracks variants:
     ballotTime: public(timedelta)
 
 
-<a id="orga6efd61"></a>
+<a id="org1de26a0"></a>
 
 # Ballot Stake
 
@@ -157,7 +159,7 @@ ballot maker начинает голосование, ему нужно прил
 заинтересованность в выводе денег.
 
 
-<a id="org07f91a3"></a>
+<a id="orgb293de5"></a>
 
 # Ballot
 
@@ -175,7 +177,7 @@ ballot maker начинает голосование, ему нужно прил
       objections_total: wei_value
 
 
-<a id="orga0f48a0"></a>
+<a id="orgc219762"></a>
 
 # Make Ballot
 
@@ -227,7 +229,7 @@ ballotMaker-у, но только всю сумму разом и только �
         self.ballots[_name].ballotMakerStake = msg.value
 
 
-<a id="orgbc0a23b"></a>
+<a id="orgbe04726"></a>
 
 # Send objection
 
@@ -256,7 +258,7 @@ ballotMaker-у, но только всю сумму разом и только �
         self.ballots[_name].objections_total = total + msg.value
 
 
-<a id="orgd31cad8"></a>
+<a id="orgdb5756e"></a>
 
 # Ballot Endings
 
@@ -285,7 +287,7 @@ ballotMaker-у, но только всю сумму разом и только �
 event
 
 
-<a id="org0b490fc"></a>
+<a id="org944542f"></a>
 
 # Other task and todoes
 
@@ -315,12 +317,12 @@ DAO, чтобы протестить это? Как написать такой 
 вручную раз в полгода
 
 
-<a id="org4f5279f"></a>
+<a id="org891df24"></a>
 
 # Tangle
 
 
-<a id="org80ed004"></a>
+<a id="org7650e56"></a>
 
 ## validator's requests contract
 
@@ -405,7 +407,7 @@ DAO, чтобы протестить это? Как написать такой 
         some_action_stub()
 
 
-<a id="orga6b1028"></a>
+<a id="org8b4ae83"></a>
 
 ## test for validator's requests contract
 

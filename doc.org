@@ -23,11 +23,13 @@ Tracks variants:
 
 * Init
 
-При инициализации запоминаем, кто ~owner~:
+Переменная для хранения ~owner~-а
 
 #+BEGIN_SRC vyper :noweb-ref data
   owner: public(address)
 #+END_SRC
+
+При инициализации запоминаем, кто ~owner~:
 
 #+BEGIN_SRC vyper :noweb-ref init
   self.owner = msg.sender
