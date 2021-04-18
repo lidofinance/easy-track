@@ -1,24 +1,23 @@
 
 # Table of Contents
 
-1.  [Intro](#org320db50)
-2.  [Init](#org99340eb)
-3.  [Ownership](#org97f65bb)
-4.  [Ballot Makers](#orgf311af7)
-5.  [Ballot Time](#orgb7ebe30)
-6.  [Ballot Stake](#org21b319e)
-7.  [Ballot](#orgb3fd56b)
-8.  [Make Ballot](#orgaf3b3c1)
-9.  [Send objection](#org8a17148)
-10. [Ballot Endings](#orga0cbb65)
-11. [Other task and todoes](#orgd746952)
-12. [Tangle](#org7f5f05c)
-    1.  [validator's requests contract](#org7988e4a)
-    2.  [test for validator's requests contract](#org52e608c)
+1.  [Intro](#org0bb1d5d)
+2.  [Init](#org93f0a07)
+3.  [Ownership](#org7893b0f)
+4.  [Ballot Makers](#orgb9dcd69)
+5.  [Ballot Time](#org69d7e9e)
+6.  [Ballot Stake](#orgb7b3c8b)
+7.  [Ballot](#org80296ef)
+8.  [Make Ballot](#org0947e43)
+9.  [Send objection](#org56f1e10)
+10. [Ballot Endings](#org5ee569e)
+11. [Other task and todoes](#org855eb7b)
+12. [Tangle](#orgee45f2a)
+13. [Tests](#orgddb1bb4)
 
 
 
-<a id="org320db50"></a>
+<a id="org0bb1d5d"></a>
 
 # Intro
 
@@ -42,7 +41,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org99340eb"></a>
+<a id="org93f0a07"></a>
 
 # Init
 
@@ -64,7 +63,7 @@ Init нужен чтобы определить, кто может добавл�
 всеобщим голосованием DAO
 
 
-<a id="org97f65bb"></a>
+<a id="org7893b0f"></a>
 
 # Ownership
 
@@ -80,7 +79,7 @@ Init нужен чтобы определить, кто может добавл�
         self.owner = _newOwner
 
 
-<a id="orgf311af7"></a>
+<a id="orgb9dcd69"></a>
 
 # Ballot Makers
 
@@ -106,7 +105,7 @@ Init нужен чтобы определить, кто может добавл�
         ballotMakers[_param] = False
 
 
-<a id="orgb7ebe30"></a>
+<a id="org69d7e9e"></a>
 
 # Ballot Time
 
@@ -118,7 +117,7 @@ Init нужен чтобы определить, кто может добавл�
 [TODO:gmm] - Как задать timedelta (в каких единицах)?
 
 
-<a id="org21b319e"></a>
+<a id="orgb7b3c8b"></a>
 
 # Ballot Stake
 
@@ -150,6 +149,8 @@ ballot maker начинает голосование, ему нужно прил
 
     minBallotStake: public(decimal)
 
+[TODO:gmm] - Какой выбрать порог (default)?
+
 Проверка, что стейка достаточно для начала голосования. Тут
 мы считаем, что порог общий для всех голосований во всех
 треках.
@@ -166,17 +167,16 @@ ballot maker начинает голосование, ему нужно прил
 заинтересованность в выводе денег.
 
 
-<a id="orgb3fd56b"></a>
+<a id="org80296ef"></a>
 
 # Ballot
 
 Голосования лежат в мапе, где ключ - хэш голосования, а
 значение - структура голосования:
 
-    ballots: public(HashMap[string[255], Ballot])
+    ballots: public(HashMap[bytes32, Ballot])
 
     struct Ballot:
-      name: string[255]
       ballotMaker: address
       ballotMakerStake: wei_value
       deadline: timestamp
@@ -184,7 +184,7 @@ ballot maker начинает голосование, ему нужно прил
       objections_total: wei_value
 
 
-<a id="orgaf3b3c1"></a>
+<a id="org0947e43"></a>
 
 # Make Ballot
 
@@ -195,54 +195,52 @@ ballot maker начинает голосование, ему нужно прил
 т.к. если не проверить, то новое голосование затрет
 предыдущее.
 
-    assert self.ballots[_name] = False
+    assert self.ballots[_ballotHash] = False
 
 [VRFY:gmm] - Возможно нужно минимальное время между
 попытками одного пользователя создать новое голосование?
 
-Когда Ballot maker отдает нам свой стейк мы должны
+Когда `Ballot maker` отдает нам свой стейк мы должны
 запомнить, сколько он застейкал, чтобы потом разрешить ему
 вернуть эту сумму.
 
-    self.ballots[_name].ballotMakerStake = msg.value
+    self.ballots[_ballotHash].ballotMakerStake = msg.value
 
 После окончания голосования, нужно разрешать вернуть стейк
 ballotMaker-у, но только всю сумму разом и только один раз.
 
     @external
-    def withdrawBallotStake(_name: string[255]):
-        assert self.ballots[_name].active = False
-        assert self.ballots[_name].ballotMakerStake > 0
-        _ballotMaker = self.ballots[_name].ballotMaker
-        _amount: wei_value = self.ballots[_name].ballotMakerStake
-        self.ballots[_name].ballotMakerStake = 0
+    def withdrawBallotStake(_ballotHash: bytes32):
+        assert self.ballots[_ballotHash].active = False
+        assert self.ballots[_ballotHash].ballotMakerStake > 0
+        _ballotMaker = self.ballots[_ballotHash].ballotMaker
+        _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
+        self.ballots[_ballotHash].ballotMakerStake = 0
         send(_ballotMaker, _amount)
 
 Функция создания голосования:
 
     @public
     @payable
-    def make_ballot(_name: string[255]):
+    def make_ballot(_ballotHash: bytes32):
         assert ballotMakers[msg.sender] = True
         assert msg.value >= self.minBallotStake
-        assert self.ballots[_name] = False
-        self.ballots[_name] = Ballot({
-            name = _name,
-            active = True,
+        assert self.ballots[_ballotHash] = False
+        self.ballots[_ballotHash] = Ballot({
             ballotMaker = msg.sender
             deadline = block.timestamp + self.ballotTime,
-            result = True
+            result = True # default True
         })
-        self.ballots[_name].ballotMakerStake = msg.value
+        self.ballots[_ballotHash].ballotMakerStake = msg.value
 
 
-<a id="org8a17148"></a>
+<a id="org56f1e10"></a>
 
 # Send objection
 
 Проверка не истекло ли время голосования.
 
-    assert block.timestamp < self.ballots[_name].deadline
+    assert block.timestamp < self.ballots[_ballotHash].deadline
 
 Порог возражений:
 
@@ -250,16 +248,16 @@ ballotMaker-у, но только всю сумму разом и только �
 
 Проверка, достаточно ли уже возражений
 
-    assert self.ballots[_name].objections_total < self.objections_threshold
+    assert self.ballots[_ballotHash].objections_total < self.objections_threshold
 
 Функция возражения, работает только до дедлайна и пока
 возражений недостаточно:
 
     @public
     @payable
-    def sendObjection(_name: string[266]):
-        assert block.timestamp < self.ballots[_name].deadline
-        assert self.ballots[_name].objections_total < self.objections_threshold
+    def sendObjection(_ballotHash: bytes32):
+        assert block.timestamp < self.ballots[_ballotHash].deadline
+        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
         self.ballots[_name].objections[msg.sender] = msg.value
         _total = self.ballots[_name].objections_total
         self.ballots[_name].objections_total = total + msg.value
@@ -267,7 +265,7 @@ ballotMaker-у, но только всю сумму разом и только �
 [TODO:gmm] SafeMath нужно как-то объявлять?
 
 
-<a id="orga0cbb65"></a>
+<a id="org5ee569e"></a>
 
 # Ballot Endings
 
@@ -279,24 +277,24 @@ ballotMaker-у, но только всю сумму разом и только �
 оракуле есть кусок, который позволяет зашивать проивольный
 смарт-контракт и дергать его - посмотреть как это
 сделано. Надо вызвать функцию, которая переведет
-деньги. Читать как сделано в арагоне. В lido dao есть адреса
+деньги. Читать как сделано в арагоне. В LIDO DAO есть адреса
 арагоновских проксиков, в арагоне написано как это работает
-(etherscan) CallData определяет что именно дергать. Также
+(etherscan). CallData определяет что именно дергать. Также
 посмотреть как у арагона это сделано? Посмотреть что
-происходит при enacting голосования арагона в lido DAO, код
-арагона на etherscan
+происходит при enacting голосования арагона в LIDO DAO, и в
+код арагона на etherscan
 
     @external
     def ballotResult():
         assert block.timestamp > self.ballots[_name].deadline
-        assert self.ballots[_name].objections_total < self.objections_threshold
+        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
         some_action_stub()
 
 [TODO:gmm] - Если голосование завершено, то здесь нужен
 event
 
 
-<a id="orgd746952"></a>
+<a id="org855eb7b"></a>
 
 # Other task and todoes
 
@@ -326,16 +324,9 @@ DAO, чтобы протестить это? Как написать такой 
 вручную раз в полгода
 
 
-<a id="org7f5f05c"></a>
+<a id="orgee45f2a"></a>
 
 # Tangle
-
-
-<a id="org7988e4a"></a>
-
-## validator's requests contract
-
-Сделаем генерацию контракта для validator's requests
 
     # @version 0.2.8
     # @author Lido <info@lido.fi>
@@ -343,7 +334,6 @@ DAO, чтобы протестить это? Как написать такой 
     from vyper.interfaces import ERC20
 
     struct Ballot:
-      name: string[255]
       ballotMaker: address
       ballotMakerStake: wei_value
       deadline: timestamp
@@ -354,7 +344,7 @@ DAO, чтобы протестить это? Как написать такой 
     ballotMakers: public(HashMap[address, bool])
     ballotTime: public(timedelta)
     minBallotStake: public(decimal)
-    ballots: public(HashMap[string[255], Ballot])
+    ballots: public(HashMap[bytes32, Ballot])
     objections_threshold: public(wei_value)
 
     @external
@@ -378,33 +368,31 @@ DAO, чтобы протестить это? Как написать такой 
 
     @public
     @payable
-    def make_ballot(_name: string[255]):
+    def make_ballot(_ballotHash: bytes32):
         assert ballotMakers[msg.sender] = True
         assert msg.value >= self.minBallotStake
-        assert self.ballots[_name] = False
-        self.ballots[_name] = Ballot({
-            name = _name,
-            active = True,
+        assert self.ballots[_ballotHash] = False
+        self.ballots[_ballotHash] = Ballot({
             ballotMaker = msg.sender
             deadline = block.timestamp + self.ballotTime,
-            result = True
+            result = True # default True
         })
-        self.ballots[_name].ballotMakerStake = msg.value
+        self.ballots[_ballotHash].ballotMakerStake = msg.value
 
     @external
-    def withdrawBallotStake(_name: string[255]):
-        assert self.ballots[_name].active = False
-        assert self.ballots[_name].ballotMakerStake > 0
-        _ballotMaker = self.ballots[_name].ballotMaker
-        _amount: wei_value = self.ballots[_name].ballotMakerStake
-        self.ballots[_name].ballotMakerStake = 0
+    def withdrawBallotStake(_ballotHash: bytes32):
+        assert self.ballots[_ballotHash].active = False
+        assert self.ballots[_ballotHash].ballotMakerStake > 0
+        _ballotMaker = self.ballots[_ballotHash].ballotMaker
+        _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
+        self.ballots[_ballotHash].ballotMakerStake = 0
         send(_ballotMaker, _amount)
 
     @public
     @payable
-    def sendObjection(_name: string[266]):
-        assert block.timestamp < self.ballots[_name].deadline
-        assert self.ballots[_name].objections_total < self.objections_threshold
+    def sendObjection(_ballotHash: bytes32):
+        assert block.timestamp < self.ballots[_ballotHash].deadline
+        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
         self.ballots[_name].objections[msg.sender] = msg.value
         _total = self.ballots[_name].objections_total
         self.ballots[_name].objections_total = total + msg.value
@@ -412,13 +400,13 @@ DAO, чтобы протестить это? Как написать такой 
     @external
     def ballotResult():
         assert block.timestamp > self.ballots[_name].deadline
-        assert self.ballots[_name].objections_total < self.objections_threshold
+        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
         some_action_stub()
 
 
-<a id="org52e608c"></a>
+<a id="orgddb1bb4"></a>
 
-## test for validator's requests contract
+# Tests
 
 Это заготовки для тестов.
 
