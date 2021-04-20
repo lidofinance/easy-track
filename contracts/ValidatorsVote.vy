@@ -4,71 +4,73 @@
 from vyper.interfaces import ERC20
 
 struct Ballot:
-  ballotMaker: address
-  ballotMakerStake: wei_value
-  deadline: timestamp
-  objections: HashMap(address, wei_value)
-  objections_total: wei_value
+  deadline: uint256
+  objections_total_weight: uint256
+  ballot_maker: address
+  snapshot_block: uint256
+  objections: HashMap(address, uint256)
 
 owner: public(address)
-ballotMakers: public(HashMap[address, bool])
-ballotTime: public(timedelta)
-minBallotStake: public(decimal)
-ballots: public(HashMap[bytes32, Ballot])
-objections_threshold: public(wei_value)
+ballot_makers: public(HashMap[address, bool])
+ballot_time: public(uint256)
+next_ballot_index: public(uint256)
+objections_threshold: public(uint256)
+ballots: public(HashMap[uint256, Ballot])
 
 @external
-def __init__():
+def __init__(
+    _ballot_time: uint256,
+    _stub: bool
+    ):
     self.owner = msg.sender
+    self.ballot_time = _ballot_time
+    self.next_ballot_index = 1
 
 @external
-def transferOwnership(_newOwner: address):
+def transferOwnership(_new_owner: address):
     assert msg.sender = self.owner
-    self.owner = _newOwner
+    self.owner = _new_owner
 
 @external
-def addBallotMaker(_param: address):
+def add_ballot_maker(_param: address):
     assert msg.sender = self.owner
-    ballotMakers[_param] = True
+    ballot_makers[_param] = True
 
 @external
-def delBallotMaker(_param: address):
+def del_ballot_maker(_param: address):
     assert msg.sender = self.owner
-    ballotMakers[_param] = False
+    ballot_makers[_param] = False
 
 @public
-@payable
 def make_ballot(_ballotHash: bytes32):
-    assert ballotMakers[msg.sender] = True
-    assert msg.value >= self.minBallotStake
-    assert self.ballots[_ballotHash] = False
-    self.ballots[_ballotHash] = Ballot({
-        ballotMaker = msg.sender
-        deadline = block.timestamp + self.ballotTime,
-        result = True # default True
+    assert ballot_makers[msg.sender] = True
+    self.ballots[self.next_ballot_index] = Ballot({
+        ballot_maker = msg.sender
+        deadline = block.timestamp + self.ballot_time,
     })
-    self.ballots[_ballotHash].ballotMakerStake = msg.value
+    self.next_ballot_index = self.next_ballot_index + 1
 
 @external
-def withdrawBallotStake(_ballotHash: bytes32):
-    assert self.ballots[_ballotHash].active = False
-    assert self.ballots[_ballotHash].ballotMakerStake > 0
-    _ballotMaker = self.ballots[_ballotHash].ballotMaker
-    _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
-    self.ballots[_ballotHash].ballotMakerStake = 0
-    send(_ballotMaker, _amount)
+def is_ballot_finished(_ballot_id: uint256):
+    if ( block.timestamp > ballots[_ballot_id].deadline ):
+       return True
+    if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
+       return True
+    return False
+
+
 
 @public
 @payable
-def sendObjection(_name: string[266]):
-    assert block.timestamp < self.ballots[_name].deadline
-    assert self.ballots[_name].objections_total < self.objections_threshold
-    self.ballots[_name].objections[msg.sender] = msg.value
-    _total = self.ballots[_name].objections_total
-    self.ballots[_name].objections_total = total + msg.value
+def sendObjection(_ballot_idx: uint256):
+    assert block.timestamp < self.ballots[_ballot_idx].deadline
+    assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
+    self.ballots[_ballot_idx].objections[msg.sender] = msg.value
+    _total = self.ballots[_ballot_idx].objections_total_weight
+    self.ballots[_ballot_idx].objections_total_weight = total + msg.value
 
 @external
 def ballotResult():
     assert block.timestamp > self.ballots[_name].deadline
-    assert self.ballots[_name].objections_total < self.objections_threshold
+    assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
     some_action_stub()

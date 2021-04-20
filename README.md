@@ -1,23 +1,23 @@
 
 # Table of Contents
 
-1.  [Intro](#org0bb1d5d)
-2.  [Init](#org93f0a07)
-3.  [Ownership](#org7893b0f)
-4.  [Ballot Makers](#orgb9dcd69)
-5.  [Ballot Time](#org69d7e9e)
-6.  [Ballot Stake](#orgb7b3c8b)
-7.  [Ballot](#org80296ef)
-8.  [Make Ballot](#org0947e43)
-9.  [Send objection](#org56f1e10)
-10. [Ballot Endings](#org5ee569e)
-11. [Other task and todoes](#org855eb7b)
-12. [Tangle](#orgee45f2a)
-13. [Tests](#orgddb1bb4)
+1.  [Intro](#org19bcd71)
+2.  [Init](#org8335468)
+3.  [Ownership](#org190f949)
+4.  [Ballot Makers](#orgbb9ae8e)
+5.  [Ballot Time](#org0b7d367)
+6.  [Ballot Stake](#orgb7a2bcc)
+7.  [Make Ballot](#orgc7a6636)
+8.  [Send objection](#org43e7901)
+9.  [Ballot](#org999172f)
+10. [Ballot Endings](#org541f67a)
+11. [Other task and todoes](#org79dec2c)
+12. [Tangle](#orgdbf5f1b)
+13. [Tests](#org0c7c36e)
 
 
 
-<a id="org0bb1d5d"></a>
+<a id="org19bcd71"></a>
 
 # Intro
 
@@ -41,7 +41,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org93f0a07"></a>
+<a id="org8335468"></a>
 
 # Init
 
@@ -63,7 +63,7 @@ Init нужен чтобы определить, кто может добавл�
 всеобщим голосованием DAO
 
 
-<a id="org7893b0f"></a>
+<a id="org190f949"></a>
 
 # Ownership
 
@@ -74,64 +74,82 @@ Init нужен чтобы определить, кто может добавл�
 Надо уметь трансферить `owner`-а:
 
     @external
-    def transferOwnership(_newOwner: address):
+    def transferOwnership(_new_owner: address):
         assert msg.sender = self.owner
-        self.owner = _newOwner
+        self.owner = _new_owner
 
 
-<a id="orgb9dcd69"></a>
+<a id="orgbb9ae8e"></a>
 
 # Ballot Makers
 
 Только "узкий круг ограниченных людей" может начинать
 голосования. Храним их в мапе:
 
-    ballotMakers: public(HashMap[address, bool])
+    ballot_makers: public(HashMap[address, bool])
 
 Проверка, что `ballot maker` относится к этому кругу людей:
 
-    assert ballotMakers[msg.sender] = True
+    assert ballot_makers[msg.sender] = True
 
 `Owner` может добавлять и удалять `ballot makers`:
 
     @external
-    def addBallotMaker(_param: address):
+    def add_ballot_maker(_param: address):
         assert msg.sender = self.owner
-        ballotMakers[_param] = True
+        ballot_makers[_param] = True
 
     @external
-    def delBallotMaker(_param: address):
+    def del_ballot_maker(_param: address):
         assert msg.sender = self.owner
-        ballotMakers[_param] = False
+        ballot_makers[_param] = False
 
 
-<a id="org69d7e9e"></a>
+<a id="org0b7d367"></a>
 
 # Ballot Time
 
-Для разных треков может быть разное время голосования, но
-пока так:
+Мы считаем голосование завершенным, если одно из условий
+истинно:
 
-    ballotTime: public(timedelta)
+-   текущее время блока больше чем значение поля deadline
+-   вес возражений выше порога возражений
 
-[TODO:gmm] - Как задать timedelta (в каких единицах)?
+Для этого нам нужны соответствующие поля в структуре
+голосования:
+
+    deadline: uint256
+    objections_total_weight: uint256
+
+И функция, которая проверят, завершено ли голосование
+
+    @external
+    def is_ballot_finished(_ballot_id: uint256):
+        if ( block.timestamp > ballots[_ballot_id].deadline ):
+           return True
+        if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
+           return True
+        return False
+
+Для разных треков может быть разное время голосования,
+поэтому нужно поле для хранения установленного времени:
+
+    ballot_time: public(uint256)
+
+Будем инициализировать это поле при иницализации контракта:
+
+    self.ballot_time = _ballot_time
+
+из соответствующего параметра:
+
+    _ballot_time: uint256,
 
 
-<a id="orgb7b3c8b"></a>
+<a id="orgb7a2bcc"></a>
 
-# Ballot Stake
+# TODO Ballot Stake
 
-`Ballot maker` мог бы спамить голосованиями, а учитывая что
-они по умолчанию проходят, этого нельзя допускать.
-
-Мы хотим, чтобы возможность создавать easy-track голосования
-была как-то привязана к LDO-токенам. При этом, LDO-токены,
-которые иницировали голосование, не должны иметь возможность
-инициировать второе голосование, пока первое не закончилось.
-
-Возможна атака, при которой возражающий может продать
-проголосовавшие жетоны и сразу же купить новые, чтобы
-проголосовать снова. Чтобы этого не произошло, в контракте
+Чтобы этого не произошло, в контракте
 easy-track необходимо обратиться к менеджеру токенов, чтобы
 запретить передачу этих токенов до конца голосования. Но это
 вызывает проблемы с аудитом и обновлением LDO-контракта,
@@ -147,125 +165,195 @@ ballot maker начинает голосование, ему нужно прил
 токены, чтобы нельзя было создавать слишком много
 голосований. Порог, ниже которого голосование не начнется:
 
-    minBallotStake: public(decimal)
-
 [TODO:gmm] - Какой выбрать порог (default)?
 
 Проверка, что стейка достаточно для начала голосования. Тут
 мы считаем, что порог общий для всех голосований во всех
 треках.
 
-    assert msg.value >= self.minBallotStake
 
-[NOTE:gmm] - Возможна атака, когда `ballot maker` создает
-много голосований, в рассчете на то, у возражающих не хватит
+<a id="orgc7a6636"></a>
+
+# Make Ballot
+
+Возможна атака, когда `ballot maker` создает много
+голосований, в рассчете на то, у возражающих не хватит
 стейка чтобы возразить по всем голосованиям и какая-то часть
 голосований пройдет без возражений. Например, так можно
-вывести деньги на грантовые программы. Даже если гранты
+выводить деньги на грантовые программы. Даже если гранты
 переводятся на мультисиг, это требует только договоренности
 с владельцами мультисига, которые тоже могут иметь
 заинтересованность в выводе денег.
 
+Была идея, чтобы возможность создавать easy-track
+голосования была как-то привязана к LDO-токенам.
 
-<a id="org80296ef"></a>
+Мы могли бы заблокировать токены двумя способами:
 
-# Ballot
+-   перевести их на контракт, и после окончания голосования
+    дать возможность забрать
+-   запретить их трансфер на время голосования, вызвав
+    токен-менеджер (требует апгрейда токен-менеджера)
 
-Голосования лежат в мапе, где ключ - хэш голосования, а
-значение - структура голосования:
+(Токен-менеджер - это контракт, который позволяет увидеть
+сколько у адреса токенов, которые он пока не может
+трансферить из-за вестинга. Смотреть тут:
+<https://github.com/aragon/aragon-apps/tree/master/apps/token-manager/contracts>)
 
-    ballots: public(HashMap[bytes32, Ballot])
+Мы не хотим апгрейдить токен-менеджер, т.к. это требует
+много телодвижений с аудитом и вообще это непросто. Но если
+мы захотим это делать, то можем включить нужный функционал в
+другие изменения.
 
-    struct Ballot:
-      ballotMaker: address
-      ballotMakerStake: wei_value
-      deadline: timestamp
-      objections: HashMap(address, wei_value)
-      objections_total: wei_value
+Еще один аспект, как минимум, по validator's easy-track:
+адрес, на котором валидаторы хотят работать с изи-треком не
+обязан совпадать с адресом на котором они держать
+LDO-токены. Также, так как валидаторы добавляются `owner`-ом
+то им не нужен минимальный стейк для создания голосования.
 
+Таким образом, мы контролируем тех, кто создает голосование,
+и если начинается спам - оперативно удаляем его. Поэтому
+дополнительные механизмы связанные с LDO-токенами не
+нужны. [TODO:gmm] - Но нужен механизм отмены спаммерских
+голосований тогда.
 
-<a id="org0947e43"></a>
+Голосования нумеруются начиная с единицы, текущенной номер
+хранится в соотвествующей переменной:
 
-# Make Ballot
+    next_ballot_index: public(uint256)
 
-Функция для начала голосования, после проверок создает
-новый Ballot:
+Она должна быть проинициализирована, когда контракт
+создается:
 
-Проверка, нет ли уже такого голосования. Она нужна,
-т.к. если не проверить, то новое голосование затрет
-предыдущее.
+    self.next_ballot_index = 1
 
-    assert self.ballots[_ballotHash] = False
-
-[VRFY:gmm] - Возможно нужно минимальное время между
+[TODO:gmm] - Возможно нужно минимальное время между
 попытками одного пользователя создать новое голосование?
-
-Когда `Ballot maker` отдает нам свой стейк мы должны
-запомнить, сколько он застейкал, чтобы потом разрешить ему
-вернуть эту сумму.
-
-    self.ballots[_ballotHash].ballotMakerStake = msg.value
-
-После окончания голосования, нужно разрешать вернуть стейк
-ballotMaker-у, но только всю сумму разом и только один раз.
-
-    @external
-    def withdrawBallotStake(_ballotHash: bytes32):
-        assert self.ballots[_ballotHash].active = False
-        assert self.ballots[_ballotHash].ballotMakerStake > 0
-        _ballotMaker = self.ballots[_ballotHash].ballotMaker
-        _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
-        self.ballots[_ballotHash].ballotMakerStake = 0
-        send(_ballotMaker, _amount)
 
 Функция создания голосования:
 
     @public
-    @payable
     def make_ballot(_ballotHash: bytes32):
-        assert ballotMakers[msg.sender] = True
-        assert msg.value >= self.minBallotStake
-        assert self.ballots[_ballotHash] = False
-        self.ballots[_ballotHash] = Ballot({
-            ballotMaker = msg.sender
-            deadline = block.timestamp + self.ballotTime,
-            result = True # default True
+        assert ballot_makers[msg.sender] = True
+        self.ballots[self.next_ballot_index] = Ballot({
+            ballot_maker = msg.sender
+            deadline = block.timestamp + self.ballot_time,
         })
-        self.ballots[_ballotHash].ballotMakerStake = msg.value
+        self.next_ballot_index = self.next_ballot_index + 1
+
+Для нее в структуре голосования нам нужны поля:
+
+    ballot_maker: address
+
+[TODO:gmm] - Для validator's easy track мы хотим проверять,
+что адрес, который создает голосование есть в Node Operator
+Registry. См. строчку 273 в файле:
+<https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOperatorsRegistry.sol>
+
+    require(msg.sender == operators[_operator_id].rewardAddress, "APP_AUTH_FAILED");
+
+Тут мы должны будем передавать operator<sub>id</sub> в функицию
+создания голосования. Проблема только в том, что мапа
+operators объявлена как internal. Но есть функция
+getNodeOperator которая view accessor для этой мапы.
 
 
-<a id="org56f1e10"></a>
+<a id="org43e7901"></a>
 
 # Send objection
 
+Возможна атака, при которой возражающий может продать
+проголосовавшие жетоны и сразу же купить новые, чтобы
+проголосовать снова. Это не бесплатная атака, учитывая цену
+газа. В случае ее реализации DAO переходит к полноценному
+голосованию по всем вопросам. Мы считаем риск небольшим и
+сейчас ничего не делаем с этой угрозой.
+
+[TODO:gmm] - Можно смотреть снапшот баланса токенов так:
+
+    import "@aragon/minime/contracts/MiniMeToken.sol";
+    uint64  snapshotBlock = getBlockNumber64() - 1;
+    uint256 votingPower = token.totalSupplyAt(snapshotBlock);
+
+Мы можем взять текущий блок минус один, и записать его в
+структуру Ballot. Когда кто-то хочет проголосовать против,
+мы можем узнать его баланс на момент этого блока и так
+определить его power.
+
+Вот тут будем хранить блок, на который считаем балансы
+
+    snapshot_block: uint256
+
+[TODO:gmm] - При инициализации надо заполнить это поле.
+
 Проверка не истекло ли время голосования.
 
-    assert block.timestamp < self.ballots[_ballotHash].deadline
+    assert block.timestamp < self.ballots[_ballot_idx].deadline
 
 Порог возражений:
 
-    objections_threshold: public(wei_value)
+    objections_threshold: public(uint256)
+
+[TODO:gmm] - инициализация порога
 
 Проверка, достаточно ли уже возражений
 
-    assert self.ballots[_ballotHash].objections_total < self.objections_threshold
+    assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
 
 Функция возражения, работает только до дедлайна и пока
 возражений недостаточно:
 
     @public
     @payable
-    def sendObjection(_ballotHash: bytes32):
-        assert block.timestamp < self.ballots[_ballotHash].deadline
-        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
-        self.ballots[_name].objections[msg.sender] = msg.value
-        _total = self.ballots[_name].objections_total
-        self.ballots[_name].objections_total = total + msg.value
+    def sendObjection(_ballot_idx: uint256):
+        assert block.timestamp < self.ballots[_ballot_idx].deadline
+        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
+        self.ballots[_ballot_idx].objections[msg.sender] = msg.value
+        _total = self.ballots[_ballot_idx].objections_total_weight
+        self.ballots[_ballot_idx].objections_total_weight = total + msg.value
 
 [TODO:gmm] SafeMath нужно как-то объявлять?
 
+[TODO:gmm] Рассчитывать objections power и total правильно.
 
-<a id="org5ee569e"></a>
+[TODO:gmm] Если нельзя иметь HashMap в структуре, то можно в
+отдельной переменной сделать HashMap от HashMap-а
+
+[TODO:gmm] События (log) (не только тут) См арагон/<sub>newVote</sub>
+
+[TODO:gmm] Посмотреть что такое allowance и permit
+(подписанные сообщения разрешающие тратить) в контексте
+траты токенов
+
+[TODO:gmm] Возможно айди голосования лучше сделать общим для
+всех треков через наследование или базовый контракт-фактори
+
+[TODO:gmm] Внимательно прочесть MiniMi-контракт, объявить
+его интерфейс, приводить к нему и заюзать
+
+Нам нужно иметь мапу в структуре голосования, которая хранит возражения:
+
+    objections: HashMap(address, uint256)
+
+
+<a id="org999172f"></a>
+
+# Ballot
+
+Голосования лежат в мапе, где ключ - индекс голосования, а
+значение - структура голосования:
+
+    ballots: public(HashMap[uint256, Ballot])
+
+    struct Ballot:
+      deadline: uint256
+      objections_total_weight: uint256
+      ballot_maker: address
+      snapshot_block: uint256
+      objections: HashMap(address, uint256)
+
+
+<a id="org541f67a"></a>
 
 # Ballot Endings
 
@@ -287,14 +375,14 @@ ballotMaker-у, но только всю сумму разом и только �
     @external
     def ballotResult():
         assert block.timestamp > self.ballots[_name].deadline
-        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
+        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
         some_action_stub()
 
 [TODO:gmm] - Если голосование завершено, то здесь нужен
 event
 
 
-<a id="org855eb7b"></a>
+<a id="org79dec2c"></a>
 
 # Other task and todoes
 
@@ -314,7 +402,7 @@ DAO, чтобы протестить это? Как написать такой 
 
     # Lido DAO Vote contract
     interface DaoVote:
-        def someFunc(_someparam: someType): payable
+        def someFunc(_someparam: someType):
         ...
 
 [TODO:gmm] grant distibution - Голосование начинается, если
@@ -323,8 +411,10 @@ DAO, чтобы протестить это? Как написать такой 
 [TODO:gmm] regular insurance payments Тут надо делать вызов
 вручную раз в полгода
 
+[TODO:gmm] - Upgradable contract?
 
-<a id="orgee45f2a"></a>
+
+<a id="orgdbf5f1b"></a>
 
 # Tangle
 
@@ -334,77 +424,79 @@ DAO, чтобы протестить это? Как написать такой 
     from vyper.interfaces import ERC20
 
     struct Ballot:
-      ballotMaker: address
-      ballotMakerStake: wei_value
-      deadline: timestamp
-      objections: HashMap(address, wei_value)
-      objections_total: wei_value
+      deadline: uint256
+      objections_total_weight: uint256
+      ballot_maker: address
+      snapshot_block: uint256
+      objections: HashMap(address, uint256)
 
     owner: public(address)
-    ballotMakers: public(HashMap[address, bool])
-    ballotTime: public(timedelta)
-    minBallotStake: public(decimal)
-    ballots: public(HashMap[bytes32, Ballot])
-    objections_threshold: public(wei_value)
+    ballot_makers: public(HashMap[address, bool])
+    ballot_time: public(uint256)
+    next_ballot_index: public(uint256)
+    objections_threshold: public(uint256)
+    ballots: public(HashMap[uint256, Ballot])
 
     @external
-    def __init__():
+    def __init__(
+        _ballot_time: uint256,
+        _stub: bool
+        ):
         self.owner = msg.sender
+        self.ballot_time = _ballot_time
+        self.next_ballot_index = 1
 
     @external
-    def transferOwnership(_newOwner: address):
+    def transferOwnership(_new_owner: address):
         assert msg.sender = self.owner
-        self.owner = _newOwner
+        self.owner = _new_owner
 
     @external
-    def addBallotMaker(_param: address):
+    def add_ballot_maker(_param: address):
         assert msg.sender = self.owner
-        ballotMakers[_param] = True
+        ballot_makers[_param] = True
 
     @external
-    def delBallotMaker(_param: address):
+    def del_ballot_maker(_param: address):
         assert msg.sender = self.owner
-        ballotMakers[_param] = False
+        ballot_makers[_param] = False
 
     @public
-    @payable
     def make_ballot(_ballotHash: bytes32):
-        assert ballotMakers[msg.sender] = True
-        assert msg.value >= self.minBallotStake
-        assert self.ballots[_ballotHash] = False
-        self.ballots[_ballotHash] = Ballot({
-            ballotMaker = msg.sender
-            deadline = block.timestamp + self.ballotTime,
-            result = True # default True
+        assert ballot_makers[msg.sender] = True
+        self.ballots[self.next_ballot_index] = Ballot({
+            ballot_maker = msg.sender
+            deadline = block.timestamp + self.ballot_time,
         })
-        self.ballots[_ballotHash].ballotMakerStake = msg.value
+        self.next_ballot_index = self.next_ballot_index + 1
 
     @external
-    def withdrawBallotStake(_ballotHash: bytes32):
-        assert self.ballots[_ballotHash].active = False
-        assert self.ballots[_ballotHash].ballotMakerStake > 0
-        _ballotMaker = self.ballots[_ballotHash].ballotMaker
-        _amount: wei_value = self.ballots[_ballotHash].ballotMakerStake
-        self.ballots[_ballotHash].ballotMakerStake = 0
-        send(_ballotMaker, _amount)
+    def is_ballot_finished(_ballot_id: uint256):
+        if ( block.timestamp > ballots[_ballot_id].deadline ):
+           return True
+        if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
+           return True
+        return False
+
+
 
     @public
     @payable
-    def sendObjection(_ballotHash: bytes32):
-        assert block.timestamp < self.ballots[_ballotHash].deadline
-        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
-        self.ballots[_name].objections[msg.sender] = msg.value
-        _total = self.ballots[_name].objections_total
-        self.ballots[_name].objections_total = total + msg.value
+    def sendObjection(_ballot_idx: uint256):
+        assert block.timestamp < self.ballots[_ballot_idx].deadline
+        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
+        self.ballots[_ballot_idx].objections[msg.sender] = msg.value
+        _total = self.ballots[_ballot_idx].objections_total_weight
+        self.ballots[_ballot_idx].objections_total_weight = total + msg.value
 
     @external
     def ballotResult():
         assert block.timestamp > self.ballots[_name].deadline
-        assert self.ballots[_ballotHash].objections_total < self.objections_threshold
+        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
         some_action_stub()
 
 
-<a id="orgddb1bb4"></a>
+<a id="org0c7c36e"></a>
 
 # Tests
 
