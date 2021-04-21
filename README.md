@@ -1,23 +1,22 @@
 
 # Table of Contents
 
-1.  [Intro](#org19bcd71)
-2.  [Init](#org8335468)
-3.  [Ownership](#org190f949)
-4.  [Ballot Makers](#orgbb9ae8e)
-5.  [Ballot Time](#org0b7d367)
-6.  [Ballot Stake](#orgb7a2bcc)
-7.  [Make Ballot](#orgc7a6636)
-8.  [Send objection](#org43e7901)
-9.  [Ballot](#org999172f)
-10. [Ballot Endings](#org541f67a)
-11. [Other task and todoes](#org79dec2c)
-12. [Tangle](#orgdbf5f1b)
-13. [Tests](#org0c7c36e)
+1.  [Intro](#org359d9a8)
+2.  [Init](#org9842a3d)
+3.  [Ownership](#orgecd16ed)
+4.  [Ballot Makers](#org80926e1)
+5.  [Ballot Time](#orgb5614c9)
+6.  [Make Ballot](#org7ddfbba)
+7.  [Send objection](#org218bcba)
+8.  [Ballot](#orge0905d7)
+9.  [Ballot Endings](#org9174c4d)
+10. [Other task and todoes](#orge015254)
+11. [Tangle](#org3dadba5)
+12. [Tests](#org16132e2)
 
 
 
-<a id="org19bcd71"></a>
+<a id="org359d9a8"></a>
 
 # Intro
 
@@ -41,7 +40,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org8335468"></a>
+<a id="org9842a3d"></a>
 
 # Init
 
@@ -63,7 +62,7 @@ Init нужен чтобы определить, кто может добавл�
 всеобщим голосованием DAO
 
 
-<a id="org190f949"></a>
+<a id="orgecd16ed"></a>
 
 # Ownership
 
@@ -79,7 +78,7 @@ Init нужен чтобы определить, кто может добавл�
         self.owner = _new_owner
 
 
-<a id="orgbb9ae8e"></a>
+<a id="org80926e1"></a>
 
 # Ballot Makers
 
@@ -105,9 +104,11 @@ Init нужен чтобы определить, кто может добавл�
         ballot_makers[_param] = False
 
 
-<a id="org0b7d367"></a>
+<a id="orgb5614c9"></a>
 
 # Ballot Time
+
+Мы считаем голосование завершенным, если одно из условий
 
 Мы считаем голосование завершенным, если одно из условий
 истинно:
@@ -145,34 +146,7 @@ Init нужен чтобы определить, кто может добавл�
     _ballot_time: uint256,
 
 
-<a id="orgb7a2bcc"></a>
-
-# TODO Ballot Stake
-
-Чтобы этого не произошло, в контракте
-easy-track необходимо обратиться к менеджеру токенов, чтобы
-запретить передачу этих токенов до конца голосования. Но это
-вызывает проблемы с аудитом и обновлением LDO-контракта,
-чего хочется избежать.
-
-Можно использовать остатки на момент блока, в котором
-началось голосование. То есть голосовать могут только
-жетоны, которые не были перемещены с момента начала
-голосования. Мне показалось это сложным в реализации.
-
-Поэтому мы требуем замораживать токены в голосовании - когда
-ballot maker начинает голосование, ему нужно приложить
-токены, чтобы нельзя было создавать слишком много
-голосований. Порог, ниже которого голосование не начнется:
-
-[TODO:gmm] - Какой выбрать порог (default)?
-
-Проверка, что стейка достаточно для начала голосования. Тут
-мы считаем, что порог общий для всех голосований во всех
-треках.
-
-
-<a id="orgc7a6636"></a>
+<a id="org7ddfbba"></a>
 
 # Make Ballot
 
@@ -252,13 +226,13 @@ Registry. См. строчку 273 в файле:
 
     require(msg.sender == operators[_operator_id].rewardAddress, "APP_AUTH_FAILED");
 
-Тут мы должны будем передавать operator<sub>id</sub> в функицию
-создания голосования. Проблема только в том, что мапа
-operators объявлена как internal. Но есть функция
-getNodeOperator которая view accessor для этой мапы.
+Тут мы должны будем передавать operator<sub>id</sub> в функцию
+создания голосования. Мапа operators объявлена как internal,
+но есть функция getNodeOperator которая view accessor для
+этой мапы, и [TODO:gmm] - ее можно заюзать через интерфейс.
 
 
-<a id="org43e7901"></a>
+<a id="org218bcba"></a>
 
 # Send objection
 
@@ -280,11 +254,34 @@ getNodeOperator которая view accessor для этой мапы.
 мы можем узнать его баланс на момент этого блока и так
 определить его power.
 
-Вот тут будем хранить блок, на который считаем балансы
+[TODO:gmm] - Нам потребуется импортировать MiniMe token (но
+я не нашел как это сделать, нашел только ERC20):
+<https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol>
+
+    from vyper.interfaces import ERC20
+
+[TODO:gmm] - Потом, видимо надо объявить интерфейсы (нужен
+balanceOfAt)
+
+    interface ERC20:
+      def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
+
+Нужна также переменная, где лежит адрес LDO-контракта
+
+    token: address(ERC20)
+
+[TODO:gmm] - Не совсем верная инициализация интерфейса в
+init-функции (пока не знаю адрес)
+
+    ERC20(contract_address)
+
+Тут будем хранить блок, на который считаем балансы
 
     snapshot_block: uint256
 
-[TODO:gmm] - При инициализации надо заполнить это поле.
+При инициализации надо заполнить это поле:
+
+    self.snapshot_block = block.number - 1
 
 Проверка не истекло ли время голосования.
 
@@ -294,7 +291,11 @@ getNodeOperator которая view accessor для этой мапы.
 
     objections_threshold: public(uint256)
 
-[TODO:gmm] - инициализация порога
+Инициализация порога возражений в init
+
+    _objections_threshold: uint256,
+
+    self.objections_threshold = _objections_threshold
 
 Проверка, достаточно ли уже возражений
 
@@ -303,40 +304,50 @@ getNodeOperator которая view accessor для этой мапы.
 Функция возражения, работает только до дедлайна и пока
 возражений недостаточно:
 
+[TODO:gmm] - Можем считать в процентах от totalSupplyAt но
+это чуть дороже по газу
+
     @public
-    @payable
     def sendObjection(_ballot_idx: uint256):
         assert block.timestamp < self.ballots[_ballot_idx].deadline
         assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
-        self.ballots[_ballot_idx].objections[msg.sender] = msg.value
+        _voting_power: uint256
+        _voting_power = token.balanceOfAt( msg.sender, self.snapshot_block )
+        self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
         _total = self.ballots[_ballot_idx].objections_total_weight
-        self.ballots[_ballot_idx].objections_total_weight = total + msg.value
+        self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
+        log.Objection(msg.sender, power)
+
+Нам нужно иметь мапу в структуре голосования, которая хранит
+возражения:
+
+    objections: HashMap(address, uint256)
+
+Не забудем про event:
+
+    log.Objection(msg.sender, power)
+
+И объявим event:
+
+    Objection: event({sender: indexed(address), power: uint256})
 
 [TODO:gmm] SafeMath нужно как-то объявлять?
 
-[TODO:gmm] Рассчитывать objections power и total правильно.
-
 [TODO:gmm] Если нельзя иметь HashMap в структуре, то можно в
 отдельной переменной сделать HashMap от HashMap-а
-
-[TODO:gmm] События (log) (не только тут) См арагон/<sub>newVote</sub>
 
 [TODO:gmm] Посмотреть что такое allowance и permit
 (подписанные сообщения разрешающие тратить) в контексте
 траты токенов
 
 [TODO:gmm] Возможно айди голосования лучше сделать общим для
-всех треков через наследование или базовый контракт-фактори
+всех треков через наследование или базовый контракт - factory
 
 [TODO:gmm] Внимательно прочесть MiniMi-контракт, объявить
 его интерфейс, приводить к нему и заюзать
 
-Нам нужно иметь мапу в структуре голосования, которая хранит возражения:
 
-    objections: HashMap(address, uint256)
-
-
-<a id="org999172f"></a>
+<a id="orge0905d7"></a>
 
 # Ballot
 
@@ -353,7 +364,7 @@ getNodeOperator которая view accessor для этой мапы.
       objections: HashMap(address, uint256)
 
 
-<a id="org541f67a"></a>
+<a id="org9174c4d"></a>
 
 # Ballot Endings
 
@@ -382,7 +393,7 @@ getNodeOperator которая view accessor для этой мапы.
 event
 
 
-<a id="org79dec2c"></a>
+<a id="orge015254"></a>
 
 # Other task and todoes
 
@@ -414,7 +425,7 @@ DAO, чтобы протестить это? Как написать такой 
 [TODO:gmm] - Upgradable contract?
 
 
-<a id="orgdbf5f1b"></a>
+<a id="org3dadba5"></a>
 
 # Tangle
 
@@ -422,6 +433,11 @@ DAO, чтобы протестить это? Как написать такой 
     # @author Lido <info@lido.fi>
     # @licence MIT
     from vyper.interfaces import ERC20
+
+    interface ERC20:
+      def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
+
+    Objection: event({sender: indexed(address), power: uint256})
 
     struct Ballot:
       deadline: uint256
@@ -434,17 +450,22 @@ DAO, чтобы протестить это? Как написать такой 
     ballot_makers: public(HashMap[address, bool])
     ballot_time: public(uint256)
     next_ballot_index: public(uint256)
+    token: address(ERC20)
     objections_threshold: public(uint256)
     ballots: public(HashMap[uint256, Ballot])
 
     @external
     def __init__(
         _ballot_time: uint256,
+        _objections_threshold: uint256,
         _stub: bool
         ):
         self.owner = msg.sender
         self.ballot_time = _ballot_time
         self.next_ballot_index = 1
+        ERC20(contract_address)
+        self.snapshot_block = block.number - 1
+        self.objections_threshold = _objections_threshold
 
     @external
     def transferOwnership(_new_owner: address):
@@ -481,13 +502,15 @@ DAO, чтобы протестить это? Как написать такой 
 
 
     @public
-    @payable
     def sendObjection(_ballot_idx: uint256):
         assert block.timestamp < self.ballots[_ballot_idx].deadline
         assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
-        self.ballots[_ballot_idx].objections[msg.sender] = msg.value
+        _voting_power: uint256
+        _voting_power = token.balanceOfAt( msg.sender, self.snapshot_block )
+        self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
         _total = self.ballots[_ballot_idx].objections_total_weight
-        self.ballots[_ballot_idx].objections_total_weight = total + msg.value
+        self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
+        log.Objection(msg.sender, power)
 
     @external
     def ballotResult():
@@ -496,7 +519,7 @@ DAO, чтобы протестить это? Как написать такой 
         some_action_stub()
 
 
-<a id="org0c7c36e"></a>
+<a id="org16132e2"></a>
 
 # Tests
 
