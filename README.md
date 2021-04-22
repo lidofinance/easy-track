@@ -1,22 +1,22 @@
 
 # Table of Contents
 
-1.  [Intro](#org359d9a8)
-2.  [Init](#org9842a3d)
-3.  [Ownership](#orgecd16ed)
-4.  [Ballot Makers](#org80926e1)
-5.  [Ballot Time](#orgb5614c9)
-6.  [Make Ballot](#org7ddfbba)
-7.  [Send objection](#org218bcba)
-8.  [Ballot](#orge0905d7)
-9.  [Ballot Endings](#org9174c4d)
-10. [Other task and todoes](#orge015254)
-11. [Tangle](#org3dadba5)
-12. [Tests](#org16132e2)
+1.  [Intro](#org9de0e7c)
+2.  [Init](#orgf5a0b31)
+3.  [Ownership](#orga558d43)
+4.  [Ballot Makers](#org7f4621b)
+5.  [Ballot Time](#orgd39fc6f)
+6.  [Make Ballot](#org235d5b9)
+7.  [Send objection](#org1b34400)
+8.  [Ballot](#org29b5c1b)
+9.  [Ballot Endings](#orgaaff7c7)
+10. [Other task and todoes](#org030421e)
+11. [Tangle](#org92b1925)
+12. [Tests](#org0dd3961)
 
 
 
-<a id="org359d9a8"></a>
+<a id="org9de0e7c"></a>
 
 # Intro
 
@@ -40,7 +40,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="org9842a3d"></a>
+<a id="orgf5a0b31"></a>
 
 # Init
 
@@ -62,7 +62,7 @@ Init нужен чтобы определить, кто может добавл�
 всеобщим голосованием DAO
 
 
-<a id="orgecd16ed"></a>
+<a id="orga558d43"></a>
 
 # Ownership
 
@@ -78,7 +78,7 @@ Init нужен чтобы определить, кто может добавл�
         self.owner = _new_owner
 
 
-<a id="org80926e1"></a>
+<a id="org7f4621b"></a>
 
 # Ballot Makers
 
@@ -104,7 +104,7 @@ Init нужен чтобы определить, кто может добавл�
         ballot_makers[_param] = False
 
 
-<a id="orgb5614c9"></a>
+<a id="orgd39fc6f"></a>
 
 # Ballot Time
 
@@ -146,7 +146,7 @@ Init нужен чтобы определить, кто может добавл�
     _ballot_time: uint256,
 
 
-<a id="org7ddfbba"></a>
+<a id="org235d5b9"></a>
 
 # Make Ballot
 
@@ -232,7 +232,7 @@ Registry. См. строчку 273 в файле:
 этой мапы, и [TODO:gmm] - ее можно заюзать через интерфейс.
 
 
-<a id="org218bcba"></a>
+<a id="org1b34400"></a>
 
 # Send objection
 
@@ -254,26 +254,17 @@ Registry. См. строчку 273 в файле:
 мы можем узнать его баланс на момент этого блока и так
 определить его power.
 
-[TODO:gmm] - Нам потребуется импортировать MiniMe token (но
-я не нашел как это сделать, нашел только ERC20):
+Нам потребуется импортировать интерфейс MiniMe token-а отсюда:
 <https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol>
 
     from vyper.interfaces import ERC20
 
-[TODO:gmm] - Потом, видимо надо объявить интерфейсы (нужен
-balanceOfAt)
-
-    interface ERC20:
+    interface MiniMe:
       def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
 
 Нужна также переменная, где лежит адрес LDO-контракта
 
-    token: address(ERC20)
-
-[TODO:gmm] - Не совсем верная инициализация интерфейса в
-init-функции (пока не знаю адрес)
-
-    ERC20(contract_address)
+    TOKEN: constant(address) = 0xDEADBEEF
 
 Тут будем хранить блок, на который считаем балансы
 
@@ -312,7 +303,7 @@ init-функции (пока не знаю адрес)
         assert block.timestamp < self.ballots[_ballot_idx].deadline
         assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
         _voting_power: uint256
-        _voting_power = token.balanceOfAt( msg.sender, self.snapshot_block )
+        _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
         self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
         _total = self.ballots[_ballot_idx].objections_total_weight
         self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
@@ -347,7 +338,7 @@ init-функции (пока не знаю адрес)
 его интерфейс, приводить к нему и заюзать
 
 
-<a id="orge0905d7"></a>
+<a id="org29b5c1b"></a>
 
 # Ballot
 
@@ -364,7 +355,7 @@ init-функции (пока не знаю адрес)
       objections: HashMap(address, uint256)
 
 
-<a id="org9174c4d"></a>
+<a id="orgaaff7c7"></a>
 
 # Ballot Endings
 
@@ -393,7 +384,7 @@ init-функции (пока не знаю адрес)
 event
 
 
-<a id="orge015254"></a>
+<a id="org030421e"></a>
 
 # Other task and todoes
 
@@ -425,7 +416,7 @@ DAO, чтобы протестить это? Как написать такой 
 [TODO:gmm] - Upgradable contract?
 
 
-<a id="org3dadba5"></a>
+<a id="org92b1925"></a>
 
 # Tangle
 
@@ -434,7 +425,7 @@ DAO, чтобы протестить это? Как написать такой 
     # @licence MIT
     from vyper.interfaces import ERC20
 
-    interface ERC20:
+    interface MiniMe:
       def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
 
     Objection: event({sender: indexed(address), power: uint256})
@@ -450,7 +441,7 @@ DAO, чтобы протестить это? Как написать такой 
     ballot_makers: public(HashMap[address, bool])
     ballot_time: public(uint256)
     next_ballot_index: public(uint256)
-    token: address(ERC20)
+    TOKEN: constant(address) = 0xDEADBEEF
     objections_threshold: public(uint256)
     ballots: public(HashMap[uint256, Ballot])
 
@@ -463,7 +454,6 @@ DAO, чтобы протестить это? Как написать такой 
         self.owner = msg.sender
         self.ballot_time = _ballot_time
         self.next_ballot_index = 1
-        ERC20(contract_address)
         self.snapshot_block = block.number - 1
         self.objections_threshold = _objections_threshold
 
@@ -506,7 +496,7 @@ DAO, чтобы протестить это? Как написать такой 
         assert block.timestamp < self.ballots[_ballot_idx].deadline
         assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
         _voting_power: uint256
-        _voting_power = token.balanceOfAt( msg.sender, self.snapshot_block )
+        _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
         self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
         _total = self.ballots[_ballot_idx].objections_total_weight
         self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
@@ -519,7 +509,7 @@ DAO, чтобы протестить это? Как написать такой 
         some_action_stub()
 
 
-<a id="org16132e2"></a>
+<a id="org0dd3961"></a>
 
 # Tests
 

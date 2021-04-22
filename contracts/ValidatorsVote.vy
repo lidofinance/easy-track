@@ -3,7 +3,7 @@
 # @licence MIT
 from vyper.interfaces import ERC20
 
-interface ERC20:
+interface MiniMe:
   def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
 
 Objection: event({sender: indexed(address), power: uint256})
@@ -19,7 +19,7 @@ owner: public(address)
 ballot_makers: public(HashMap[address, bool])
 ballot_time: public(uint256)
 next_ballot_index: public(uint256)
-token: address(ERC20)
+TOKEN: constant(address) = 0xDEADBEEF
 objections_threshold: public(uint256)
 ballots: public(HashMap[uint256, Ballot])
 
@@ -32,7 +32,6 @@ def __init__(
     self.owner = msg.sender
     self.ballot_time = _ballot_time
     self.next_ballot_index = 1
-    ERC20(contract_address)
     self.snapshot_block = block.number - 1
     self.objections_threshold = _objections_threshold
 
@@ -75,7 +74,7 @@ def sendObjection(_ballot_idx: uint256):
     assert block.timestamp < self.ballots[_ballot_idx].deadline
     assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
     _voting_power: uint256
-    _voting_power = token.balanceOfAt( msg.sender, self.snapshot_block )
+    _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
     self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
     _total = self.ballots[_ballot_idx].objections_total_weight
     self.ballots[_ballot_idx].objections_total_weight = total + _voting_power

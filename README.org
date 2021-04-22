@@ -261,33 +261,22 @@ https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOpe
 мы можем узнать его баланс на момент этого блока и так
 определить его power.
 
-[TODO:gmm] - Нам потребуется импортировать MiniMe token (но
-я не нашел как это сделать, нашел только ERC20):
+Нам потребуется импортировать интерфейс MiniMe token-а отсюда:
 https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
 
 #+BEGIN_SRC vyper :noweb-ref imports
   from vyper.interfaces import ERC20
 #+END_SRC
 
-[TODO:gmm] - Потом, видимо надо объявить интерфейсы (нужен
-balanceOfAt)
-
 #+BEGIN_SRC vyper :noweb-ref interfaces
-  interface ERC20:
+  interface MiniMe:
     def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
 #+END_SRC
 
 Нужна также переменная, где лежит адрес LDO-контракта
 
 #+BEGIN_SRC vyper :noweb-ref data
-  token: address(ERC20)
-#+END_SRC
-
-[TODO:gmm] - Не совсем верная инициализация интерфейса в
-init-функции (пока не знаю адрес)
-
-#+BEGIN_SRC vyper :noweb-ref init
-  ERC20(contract_address)
+  TOKEN: constant(address) = 0xDEADBEEF
 #+END_SRC
 
 Тут будем хранить блок, на который считаем балансы
@@ -346,7 +335,7 @@ init-функции (пока не знаю адрес)
       <<only_active>>
       <<objections_not_enough>>
       _voting_power: uint256
-      _voting_power = token.balanceOfAt( msg.sender, self.snapshot_block )
+      _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
       self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
       _total = self.ballots[_ballot_idx].objections_total_weight
       self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
