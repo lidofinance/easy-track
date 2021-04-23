@@ -50,7 +50,7 @@ Init нужен чтобы определить, кто может добавл�
 
 #+NAME: only_owner
 #+BEGIN_SRC vyper
-  assert msg.sender = self.owner
+  assert msg.sender == self.owner
 #+END_SRC
 
 Надо уметь трансферить ~owner~-а:
@@ -76,7 +76,7 @@ Init нужен чтобы определить, кто может добавл�
 
 #+NAME: only_ballot_maker
 #+BEGIN_SRC vyper
-  assert ballot_makers[msg.sender] = True
+  assert self.ballot_makers[msg.sender] == True
 #+END_SRC
 
 ~Owner~ может добавлять и удалять ~ballot makers~:
@@ -86,7 +86,7 @@ Init нужен чтобы определить, кто может добавл�
   @external
   def add_ballot_maker(_param: address):
       <<only_owner>>
-      ballot_makers[_param] = True
+      self.ballot_makers[_param] = True
 #+END_SRC
 
 #+NAME: del_ballot_maker
@@ -94,10 +94,11 @@ Init нужен чтобы определить, кто может добавл�
   @external
   def del_ballot_maker(_param: address):
       <<only_owner>>
-      ballot_makers[_param] = False
+      self.ballot_makers[_param] = False
 #+END_SRC
 
 * Ballot Time
+
 Мы считаем голосование завершенным, если одно из условий
 
 Мы считаем голосование завершенным, если одно из условий
@@ -117,13 +118,13 @@ Init нужен чтобы определить, кто может добавл�
 
 #+NAME: is_ballot_finished
 #+BEGIN_SRC vyper
-  @external
-  def is_ballot_finished(_ballot_id: uint256):
-      if ( block.timestamp > ballots[_ballot_id].deadline ):
-         return True
-      if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
-         return True
-      return False
+  # @external
+  # def is_ballot_finished(_ballot_id: uint256) -> bool:
+  #     if ( block.timestamp > self.ballots[_ballot_id].deadline ):
+  #        return True
+  #     if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
+  #        return True
+  #     return False
 #+END_SRC
 
 Для разных треков может быть разное время голосования,
@@ -209,13 +210,16 @@ LDO-токены. Также, так как валидаторы добавля�
 
 #+NAME: make_ballot
 #+BEGIN_SRC vyper :noweb yes
-  @public
+  @external
   def make_ballot(_ballotHash: bytes32):
       <<only_ballot_maker>>
       self.ballots[self.next_ballot_index] = Ballot({
-          ballot_maker = msg.sender
-          deadline = block.timestamp + self.ballot_time,
+          deadline: block.timestamp + self.ballot_time,
+          objections_total_weight: 0,
+          ballot_maker: msg.sender,
+          snapshot_block: block.number - 1
       })
+      <<set_snapshot_block>>
       self.next_ballot_index = self.next_ballot_index + 1
 #+END_SRC
 
@@ -270,13 +274,13 @@ https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
 
 #+BEGIN_SRC vyper :noweb-ref interfaces
   interface MiniMe:
-    def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
+    def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: view
 #+END_SRC
 
 Нужна также переменная, где лежит адрес LDO-контракта
 
 #+BEGIN_SRC vyper :noweb-ref data
-  TOKEN: constant(address) = 0xDEADBEEF
+  TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 #+END_SRC
 
 Тут будем хранить блок, на который считаем балансы
@@ -285,10 +289,10 @@ https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
   snapshot_block: uint256
 #+END_SRC
 
-При инициализации надо заполнить это поле:
+При создании голосования надо заполнить это поле:
 
-#+BEGIN_SRC vyper :noweb-ref init
-  self.snapshot_block = block.number - 1
+#+BEGIN_SRC vyper :noweb-ref set_snapshot_block
+  self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
 #+END_SRC
 
 Проверка не истекло ли время голосования.
@@ -319,7 +323,7 @@ https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
 
 #+NAME: objections_not_enough
 #+BEGIN_SRC vyper
-  assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
+  assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
 #+END_SRC
 
 Функция возражения, работает только до дедлайна и пока
@@ -330,35 +334,30 @@ https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
 
 #+NAME: send_objection
 #+BEGIN_SRC vyper :noweb yes
-  @public
+  @external
   def sendObjection(_ballot_idx: uint256):
       <<only_active>>
       <<objections_not_enough>>
-      _voting_power: uint256
-      _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
-      self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
-      _total = self.ballots[_ballot_idx].objections_total_weight
-      self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
-      <<log_objection>>
+      _voting_power: uint256 = MiniMe(TOKEN).balanceOfAt(msg.sender, self.ballots[_ballot_idx].snapshot_block)
+      self.objections[_ballot_idx][msg.sender] = _voting_power
+      self.ballots[_ballot_idx].objections_total_weight = _voting_power + self.ballots[_ballot_idx].objections_total_weight
+      log Objection(msg.sender, _voting_power)
 #+END_SRC
 
-Нам нужно иметь мапу в структуре голосования, которая хранит
-возражения:
+Мы не можем иметь мапу в структуре голосования, которая
+хранит возражения, поэтому их придется хранить отдельнно в
+storage переменной:
 
-#+BEGIN_SRC vyper :noweb-ref struct_ballot
-  objections: HashMap(address, uint256)
+#+BEGIN_SRC vyper :noweb-ref data
+  objections: HashMap[uint256, HashMap[address, uint256]]
 #+END_SRC
 
-Не забудем про event:
-
-#+BEGIN_SRC vyper :noweb-ref log_objection
-  log.Objection(msg.sender, power)
-#+END_SRC
-
-И объявим event:
+Не забудем объявить event:
 
 #+BEGIN_SRC vyper :noweb-ref events
-  Objection: event({sender: indexed(address), power: uint256})
+  event Objection:
+    sender: indexed(address)
+    power: uint256
 #+END_SRC
 
 [TODO:gmm] SafeMath нужно как-то объявлять?
@@ -410,14 +409,20 @@ https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
 #+NAME: ballot_result
 #+BEGIN_SRC vyper :noweb yes
   @external
-  def ballotResult():
-      assert block.timestamp > self.ballots[_name].deadline
+  def ballotResult(_ballot_idx: uint256):
+      assert block.timestamp > self.ballots[_ballot_idx].deadline
       <<objections_not_enough>>
-      some_action_stub()
+      log EnactBallot(_ballot_idx)
 #+END_SRC
 
-[TODO:gmm] - Если голосование завершено, то здесь нужен
-event
+Если голосование завершено, то здесь нужен event:
+
+#+BEGIN_SRC vyper :noweb-ref events
+  event EnactBallot:
+    idx: indexed(uint256)
+#+END_SRC
+
+
 
 * Other task and todoes
 

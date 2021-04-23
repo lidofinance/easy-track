@@ -1,22 +1,22 @@
 
 # Table of Contents
 
-1.  [Intro](#org9de0e7c)
-2.  [Init](#orgf5a0b31)
-3.  [Ownership](#orga558d43)
-4.  [Ballot Makers](#org7f4621b)
-5.  [Ballot Time](#orgd39fc6f)
-6.  [Make Ballot](#org235d5b9)
-7.  [Send objection](#org1b34400)
-8.  [Ballot](#org29b5c1b)
-9.  [Ballot Endings](#orgaaff7c7)
-10. [Other task and todoes](#org030421e)
-11. [Tangle](#org92b1925)
-12. [Tests](#org0dd3961)
+1.  [Intro](#org8860f23)
+2.  [Init](#org8f96783)
+3.  [Ownership](#orgfc34403)
+4.  [Ballot Makers](#org3e5f3f5)
+5.  [Ballot Time](#orge552331)
+6.  [Make Ballot](#orgb39d72c)
+7.  [Send objection](#org9ed412f)
+8.  [Ballot](#org4270466)
+9.  [Ballot Endings](#orgdb178d5)
+10. [Other task and todoes](#orga0cd951)
+11. [Tangle](#org9c25e74)
+12. [Tests](#orgfddfe1c)
 
 
 
-<a id="org9de0e7c"></a>
+<a id="org8860f23"></a>
 
 # Intro
 
@@ -40,7 +40,7 @@ Tracks variants:
 -   regular insurance payments
 
 
-<a id="orgf5a0b31"></a>
+<a id="org8f96783"></a>
 
 # Init
 
@@ -62,23 +62,23 @@ Init нужен чтобы определить, кто может добавл�
 всеобщим голосованием DAO
 
 
-<a id="orga558d43"></a>
+<a id="orgfc34403"></a>
 
 # Ownership
 
 Проверка `onlyOwner`:
 
-    assert msg.sender = self.owner
+    assert msg.sender == self.owner
 
 Надо уметь трансферить `owner`-а:
 
     @external
     def transferOwnership(_new_owner: address):
-        assert msg.sender = self.owner
+        assert msg.sender == self.owner
         self.owner = _new_owner
 
 
-<a id="org7f4621b"></a>
+<a id="org3e5f3f5"></a>
 
 # Ballot Makers
 
@@ -89,22 +89,22 @@ Init нужен чтобы определить, кто может добавл�
 
 Проверка, что `ballot maker` относится к этому кругу людей:
 
-    assert ballot_makers[msg.sender] = True
+    assert self.ballot_makers[msg.sender] == True
 
 `Owner` может добавлять и удалять `ballot makers`:
 
     @external
     def add_ballot_maker(_param: address):
-        assert msg.sender = self.owner
-        ballot_makers[_param] = True
+        assert msg.sender == self.owner
+        self.ballot_makers[_param] = True
 
     @external
     def del_ballot_maker(_param: address):
-        assert msg.sender = self.owner
-        ballot_makers[_param] = False
+        assert msg.sender == self.owner
+        self.ballot_makers[_param] = False
 
 
-<a id="orgd39fc6f"></a>
+<a id="orge552331"></a>
 
 # Ballot Time
 
@@ -124,13 +124,13 @@ Init нужен чтобы определить, кто может добавл�
 
 И функция, которая проверят, завершено ли голосование
 
-    @external
-    def is_ballot_finished(_ballot_id: uint256):
-        if ( block.timestamp > ballots[_ballot_id].deadline ):
-           return True
-        if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
-           return True
-        return False
+    # @external
+    # def is_ballot_finished(_ballot_id: uint256) -> bool:
+    #     if ( block.timestamp > self.ballots[_ballot_id].deadline ):
+    #        return True
+    #     if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
+    #        return True
+    #     return False
 
 Для разных треков может быть разное время голосования,
 поэтому нужно поле для хранения установленного времени:
@@ -146,7 +146,7 @@ Init нужен чтобы определить, кто может добавл�
     _ballot_time: uint256,
 
 
-<a id="org235d5b9"></a>
+<a id="orgb39d72c"></a>
 
 # Make Ballot
 
@@ -206,13 +206,16 @@ LDO-токены. Также, так как валидаторы добавля�
 
 Функция создания голосования:
 
-    @public
+    @external
     def make_ballot(_ballotHash: bytes32):
-        assert ballot_makers[msg.sender] = True
+        assert self.ballot_makers[msg.sender] == True
         self.ballots[self.next_ballot_index] = Ballot({
-            ballot_maker = msg.sender
-            deadline = block.timestamp + self.ballot_time,
+            deadline: block.timestamp + self.ballot_time,
+            objections_total_weight: 0,
+            ballot_maker: msg.sender,
+            snapshot_block: block.number - 1
         })
+        self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
         self.next_ballot_index = self.next_ballot_index + 1
 
 Для нее в структуре голосования нам нужны поля:
@@ -232,7 +235,7 @@ Registry. См. строчку 273 в файле:
 этой мапы, и [TODO:gmm] - ее можно заюзать через интерфейс.
 
 
-<a id="org1b34400"></a>
+<a id="org9ed412f"></a>
 
 # Send objection
 
@@ -260,19 +263,19 @@ Registry. См. строчку 273 в файле:
     from vyper.interfaces import ERC20
 
     interface MiniMe:
-      def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
+      def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: view
 
 Нужна также переменная, где лежит адрес LDO-контракта
 
-    TOKEN: constant(address) = 0xDEADBEEF
+    TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
 
 Тут будем хранить блок, на который считаем балансы
 
     snapshot_block: uint256
 
-При инициализации надо заполнить это поле:
+При создании голосования надо заполнить это поле:
 
-    self.snapshot_block = block.number - 1
+    self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
 
 Проверка не истекло ли время голосования.
 
@@ -290,7 +293,7 @@ Registry. См. строчку 273 в файле:
 
 Проверка, достаточно ли уже возражений
 
-    assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
+    assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
 
 Функция возражения, работает только до дедлайна и пока
 возражений недостаточно:
@@ -298,29 +301,26 @@ Registry. См. строчку 273 в файле:
 [TODO:gmm] - Можем считать в процентах от totalSupplyAt но
 это чуть дороже по газу
 
-    @public
+    @external
     def sendObjection(_ballot_idx: uint256):
         assert block.timestamp < self.ballots[_ballot_idx].deadline
-        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
-        _voting_power: uint256
-        _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
-        self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
-        _total = self.ballots[_ballot_idx].objections_total_weight
-        self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
-        log.Objection(msg.sender, power)
+        assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
+        _voting_power: uint256 = MiniMe(TOKEN).balanceOfAt(msg.sender, self.ballots[_ballot_idx].snapshot_block)
+        self.objections[_ballot_idx][msg.sender] = _voting_power
+        self.ballots[_ballot_idx].objections_total_weight = _voting_power + self.ballots[_ballot_idx].objections_total_weight
+        log Objection(msg.sender, _voting_power)
 
-Нам нужно иметь мапу в структуре голосования, которая хранит
-возражения:
+Мы не можем иметь мапу в структуре голосования, которая
+хранит возражения, поэтому их придется хранить отдельнно в
+storage переменной:
 
-    objections: HashMap(address, uint256)
+    objections: HashMap[uint256, HashMap[address, uint256]]
 
-Не забудем про event:
+Не забудем объявить event:
 
-    log.Objection(msg.sender, power)
-
-И объявим event:
-
-    Objection: event({sender: indexed(address), power: uint256})
+    event Objection:
+      sender: indexed(address)
+      power: uint256
 
 [TODO:gmm] SafeMath нужно как-то объявлять?
 
@@ -338,7 +338,7 @@ Registry. См. строчку 273 в файле:
 его интерфейс, приводить к нему и заюзать
 
 
-<a id="org29b5c1b"></a>
+<a id="org4270466"></a>
 
 # Ballot
 
@@ -352,10 +352,9 @@ Registry. См. строчку 273 в файле:
       objections_total_weight: uint256
       ballot_maker: address
       snapshot_block: uint256
-      objections: HashMap(address, uint256)
 
 
-<a id="orgaaff7c7"></a>
+<a id="orgdb178d5"></a>
 
 # Ballot Endings
 
@@ -375,16 +374,18 @@ Registry. См. строчку 273 в файле:
 код арагона на etherscan
 
     @external
-    def ballotResult():
-        assert block.timestamp > self.ballots[_name].deadline
-        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
-        some_action_stub()
+    def ballotResult(_ballot_idx: uint256):
+        assert block.timestamp > self.ballots[_ballot_idx].deadline
+        assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
+        log EnactBallot(_ballot_idx)
 
-[TODO:gmm] - Если голосование завершено, то здесь нужен
-event
+Если голосование завершено, то здесь нужен event:
+
+    event EnactBallot:
+      idx: indexed(uint256)
 
 
-<a id="org030421e"></a>
+<a id="orga0cd951"></a>
 
 # Other task and todoes
 
@@ -416,7 +417,7 @@ DAO, чтобы протестить это? Как написать такой 
 [TODO:gmm] - Upgradable contract?
 
 
-<a id="org92b1925"></a>
+<a id="org9c25e74"></a>
 
 # Tangle
 
@@ -426,23 +427,27 @@ DAO, чтобы протестить это? Как написать такой 
     from vyper.interfaces import ERC20
 
     interface MiniMe:
-      def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: constant
+      def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: view
 
-    Objection: event({sender: indexed(address), power: uint256})
+    event Objection:
+      sender: indexed(address)
+      power: uint256
+    event EnactBallot:
+      idx: indexed(uint256)
 
     struct Ballot:
       deadline: uint256
       objections_total_weight: uint256
       ballot_maker: address
       snapshot_block: uint256
-      objections: HashMap(address, uint256)
 
     owner: public(address)
     ballot_makers: public(HashMap[address, bool])
     ballot_time: public(uint256)
     next_ballot_index: public(uint256)
-    TOKEN: constant(address) = 0xDEADBEEF
+    TOKEN: constant(address) = 0x5A98FcBEA516Cf06857215779Fd812CA3beF1B32
     objections_threshold: public(uint256)
+    objections: HashMap[uint256, HashMap[address, uint256]]
     ballots: public(HashMap[uint256, Ballot])
 
     @external
@@ -454,62 +459,62 @@ DAO, чтобы протестить это? Как написать такой 
         self.owner = msg.sender
         self.ballot_time = _ballot_time
         self.next_ballot_index = 1
-        self.snapshot_block = block.number - 1
         self.objections_threshold = _objections_threshold
 
     @external
     def transferOwnership(_new_owner: address):
-        assert msg.sender = self.owner
+        assert msg.sender == self.owner
         self.owner = _new_owner
 
     @external
     def add_ballot_maker(_param: address):
-        assert msg.sender = self.owner
-        ballot_makers[_param] = True
+        assert msg.sender == self.owner
+        self.ballot_makers[_param] = True
 
     @external
     def del_ballot_maker(_param: address):
-        assert msg.sender = self.owner
-        ballot_makers[_param] = False
+        assert msg.sender == self.owner
+        self.ballot_makers[_param] = False
 
-    @public
+    @external
     def make_ballot(_ballotHash: bytes32):
-        assert ballot_makers[msg.sender] = True
+        assert self.ballot_makers[msg.sender] == True
         self.ballots[self.next_ballot_index] = Ballot({
-            ballot_maker = msg.sender
-            deadline = block.timestamp + self.ballot_time,
+            deadline: block.timestamp + self.ballot_time,
+            objections_total_weight: 0,
+            ballot_maker: msg.sender,
+            snapshot_block: block.number - 1
         })
+        self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
         self.next_ballot_index = self.next_ballot_index + 1
 
+    # @external
+    # def is_ballot_finished(_ballot_id: uint256) -> bool:
+    #     if ( block.timestamp > self.ballots[_ballot_id].deadline ):
+    #        return True
+    #     if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
+    #        return True
+    #     return False
+
+
+
     @external
-    def is_ballot_finished(_ballot_id: uint256):
-        if ( block.timestamp > ballots[_ballot_id].deadline ):
-           return True
-        if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
-           return True
-        return False
-
-
-
-    @public
     def sendObjection(_ballot_idx: uint256):
         assert block.timestamp < self.ballots[_ballot_idx].deadline
-        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
-        _voting_power: uint256
-        _voting_power = MiniMe(token).balanceOfAt(msg.sender, self.snapshot_block)
-        self.ballots[_ballot_idx].objections[msg.sender] = _voting_power
-        _total = self.ballots[_ballot_idx].objections_total_weight
-        self.ballots[_ballot_idx].objections_total_weight = total + _voting_power
-        log.Objection(msg.sender, power)
+        assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
+        _voting_power: uint256 = MiniMe(TOKEN).balanceOfAt(msg.sender, self.ballots[_ballot_idx].snapshot_block)
+        self.objections[_ballot_idx][msg.sender] = _voting_power
+        self.ballots[_ballot_idx].objections_total_weight = _voting_power + self.ballots[_ballot_idx].objections_total_weight
+        log Objection(msg.sender, _voting_power)
 
     @external
-    def ballotResult():
-        assert block.timestamp > self.ballots[_name].deadline
-        assert self.ballots[_ballot_idx].objections_total < self.objections_threshold
-        some_action_stub()
+    def ballotResult(_ballot_idx: uint256):
+        assert block.timestamp > self.ballots[_ballot_idx].deadline
+        assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
+        log EnactBallot(_ballot_idx)
 
 
-<a id="org0dd3961"></a>
+<a id="orgfddfe1c"></a>
 
 # Tests
 
