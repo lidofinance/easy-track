@@ -329,8 +329,10 @@ https://github.com/aragon/minime/blob/master/contracts/MiniMeToken.sol
 Функция возражения, работает только до дедлайна и пока
 возражений недостаточно:
 
-[TODO:gmm] - Можем считать в процентах от totalSupplyAt но
-это чуть дороже по газу
+[TODO:gmm] - Надо считать в процентах от totalSupplyAt но
+это чуть дороже по газу. "Objections_threshold должен быть в
+процентах от voting power, а не абсолютное число. потому что
+total voting power будет меняться во времени" (с) Sam
 
 #+NAME: send_objection
 #+BEGIN_SRC vyper :noweb yes
@@ -425,6 +427,11 @@ storage переменной:
 
 
 * Other task and todoes
+
+[TODO:gmm] - там ещё нужно реализовать ограничение списка
+инициаторов голосования через обращение к
+NodeOperatorsRegistry, а не локальный массив, как мы с тобой
+обсуждали в звонке (c) Sam
 
 [TODO:gmm] - В ldo-purchase-executor/script/deploy.py есть
 функция deploy_and_start_dao_vote надо посмотреть можно по
