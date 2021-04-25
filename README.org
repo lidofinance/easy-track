@@ -425,7 +425,6 @@ storage переменной:
 #+END_SRC
 
 
-
 * Other task and todoes
 
 [TODO:gmm] - там ещё нужно реализовать ограничение списка
