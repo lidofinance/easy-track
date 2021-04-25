@@ -45,9 +45,9 @@ def deploy_and_start_dao_vote(
     ldo_purchasers=LDO_PURCHASERS,
     allocations_total = ALLOCATIONS_TOTAL
 ):
-    zero_padding_len = 50 - len(ldo_purchasers)
-    ldo_recipients = [ p[0] for p in ldo_purchasers ] + [ZERO_ADDRESS] * zero_padding_len
-    ldo_allocations = [ p[1] for p in ldo_purchasers ] + [0] * zero_padding_len
+    # zero_padding_len = 50 - len(ldo_purchasers)
+    # ldo_recipients = [ p[0] for p in ldo_purchasers ] + [ZERO_ADDRESS] * zero_padding_len
+    # ldo_allocations = [ p[1] for p in ldo_purchasers ] + [0] * zero_padding_len
 
     executor = PurchaseExecutor.deploy(
         eth_to_ldo_rate,
@@ -62,15 +62,16 @@ def deploy_and_start_dao_vote(
         publish_source=False
     )
 
-    (vote_id, _) = propose_vesting_manager_contract(
-        manager_address=executor.address,
-        total_ldo_amount=sum(ldo_allocations),
-        ldo_transfer_reference=f"Transfer LDO tokens to be sold for ETH",
-        acl=interface.ACL(lido_dao_acl_address),
-        voting=interface.Voting(lido_dao_voting_address),
-        finance=interface.Finance(lido_dao_finance_address),
-        token_manager=interface.TokenManager(lido_dao_token_manager_address),
-        tx_params=tx_params
-    )
+    # (vote_id, _) = propose_vesting_manager_contract(
+    #     manager_address=executor.address,
+    #     total_ldo_amount=sum(ldo_allocations),
+    #     ldo_transfer_reference=f"Transfer LDO tokens to be sold for ETH",
+    #     acl=interface.ACL(lido_dao_acl_address),
+    #     voting=interface.Voting(lido_dao_voting_address),
+    #     finance=interface.Finance(lido_dao_finance_address),
+    #     token_manager=interface.TokenManager(lido_dao_token_manager_address),
+    #     tx_params=tx_params
+    # )
 
+    # return (executor, vote_id)
     return (executor, vote_id)

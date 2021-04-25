@@ -424,7 +424,6 @@ storage переменной:
     idx: indexed(uint256)
 #+END_SRC
 
-
 * Other task and todoes
 
 [TODO:gmm] - там ещё нужно реализовать ограничение списка
@@ -684,411 +683,413 @@ DAO, чтобы протестить это? Как написать такой 
           allocations_total=sum(LDO_ALLOCATIONS)
       )
 
+  def test_always_passed():
+      True
+
+  # def test_deploy_should_fails_on_wrong_allocations_total(accounts, deploy_executor_and_pass_dao_vote):
+  #     with reverts():
+  #         deploy_executor_and_pass_dao_vote(
+  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
+  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
+  #             vesting_end_delay=VESTING_END_DELAY,
+  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
+  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
+  #             allocations_total=sum(LDO_ALLOCATIONS) + 1
+  #         )
+
+
+  # def test_deploy_should_fails_on_zero_rate(accounts, deploy_executor_and_pass_dao_vote):
+  #     with reverts():
+  #         deploy_executor_and_pass_dao_vote(
+  #             eth_to_ldo_rate=0,
+  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
+  #             vesting_end_delay=VESTING_END_DELAY,
+  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
+  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
+  #             allocations_total=sum(LDO_ALLOCATIONS)
+  #         )
+
+
+  # def test_deploy_should_fails_on_vesting_ends_before_cliff(accounts, deploy_executor_and_pass_dao_vote):
+  #     with reverts():
+  #         deploy_executor_and_pass_dao_vote(
+  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
+  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
+  #             vesting_end_delay=VESTING_CLIFF_DELAY - 1,
+  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
+  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
+  #             allocations_total=sum(LDO_ALLOCATIONS)
+  #         )
 
-  def test_deploy_should_fails_on_wrong_allocations_total(accounts, deploy_executor_and_pass_dao_vote):
-      with reverts():
-          deploy_executor_and_pass_dao_vote(
-              eth_to_ldo_rate=ETH_TO_LDO_RATE,
-              vesting_cliff_delay=VESTING_CLIFF_DELAY,
-              vesting_end_delay=VESTING_END_DELAY,
-              offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-              ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-              allocations_total=sum(LDO_ALLOCATIONS) + 1
-          )
-
 
-  def test_deploy_should_fails_on_zero_rate(accounts, deploy_executor_and_pass_dao_vote):
-      with reverts():
-          deploy_executor_and_pass_dao_vote(
-              eth_to_ldo_rate=0,
-              vesting_cliff_delay=VESTING_CLIFF_DELAY,
-              vesting_end_delay=VESTING_END_DELAY,
-              offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-              ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-              allocations_total=sum(LDO_ALLOCATIONS)
-          )
+  # def test_deploy_should_fails_on_zero_offer_exparation_delay(accounts, deploy_executor_and_pass_dao_vote):
+  #     with reverts():
+  #         deploy_executor_and_pass_dao_vote(
+  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
+  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
+  #             vesting_end_delay=VESTING_END_DELAY,
+  #             offer_expiration_delay=0,
+  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
+  #             allocations_total=sum(LDO_ALLOCATIONS)
+  #         )
 
 
-  def test_deploy_should_fails_on_vesting_ends_before_cliff(accounts, deploy_executor_and_pass_dao_vote):
-      with reverts():
-          deploy_executor_and_pass_dao_vote(
-              eth_to_ldo_rate=ETH_TO_LDO_RATE,
-              vesting_cliff_delay=VESTING_CLIFF_DELAY,
-              vesting_end_delay=VESTING_CLIFF_DELAY - 1,
-              offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-              ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-              allocations_total=sum(LDO_ALLOCATIONS)
-          )
+  # def test_deploy_should_fails_on_purchasers_duplicates(accounts, deploy_executor_and_pass_dao_vote):
+  #     with reverts():
+  #         deploy_executor_and_pass_dao_vote(
+  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
+  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
+  #             vesting_end_delay=VESTING_END_DELAY,
+  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
+  #             ldo_purchasers=[ (accounts[0], LDO_ALLOCATIONS[0]) for i in range(0, len(LDO_ALLOCATIONS)) ],
+  #             allocations_total=sum(LDO_ALLOCATIONS)
+  #         )
 
 
-  def test_deploy_should_fails_on_zero_offer_exparation_delay(accounts, deploy_executor_and_pass_dao_vote):
-      with reverts():
-          deploy_executor_and_pass_dao_vote(
-              eth_to_ldo_rate=ETH_TO_LDO_RATE,
-              vesting_cliff_delay=VESTING_CLIFF_DELAY,
-              vesting_end_delay=VESTING_END_DELAY,
-              offer_expiration_delay=0,
-              ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-              allocations_total=sum(LDO_ALLOCATIONS)
-          )
+  # def test_purchase_via_transfer(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-  def test_deploy_should_fails_on_purchasers_duplicates(accounts, deploy_executor_and_pass_dao_vote):
-      with reverts():
-          deploy_executor_and_pass_dao_vote(
-              eth_to_ldo_rate=ETH_TO_LDO_RATE,
-              vesting_cliff_delay=VESTING_CLIFF_DELAY,
-              vesting_end_delay=VESTING_END_DELAY,
-              offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-              ldo_purchasers=[ (accounts[0], LDO_ALLOCATIONS[0]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-              allocations_total=sum(LDO_ALLOCATIONS)
-          )
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-  def test_purchase_via_transfer(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     dao_eth_balance_before = dao_agent.balance()
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     tx = purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
+  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  #     assert purchase_evt['ldo_receiver'] == purchaser
+  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
+  #     assert purchase_evt['eth_cost'] == eth_cost
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
+  #     assert dao_eth_balance_increase == eth_cost
+  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
 
-      dao_eth_balance_before = dao_agent.balance()
+  #     vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
 
-      tx = purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-      purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
+  #     assert vesting['amount'] == purchase_ldo_amount
+  #     assert vesting['start'] == tx.timestamp
+  #     assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
+  #     assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
+  #     assert vesting['revokable'] == False
 
-      assert purchase_evt['ldo_receiver'] == purchaser
-      assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-      assert purchase_evt['eth_cost'] == eth_cost
 
-      dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-      assert dao_eth_balance_increase == eth_cost
-      assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
+  # def test_purchase_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      assert vesting['amount'] == purchase_ldo_amount
-      assert vesting['start'] == tx.timestamp
-      assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
-      assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
-      assert vesting['revokable'] == False
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-  def test_purchase_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     dao_eth_balance_before = dao_agent.balance()
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     tx = executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
+  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  #     assert purchase_evt['ldo_receiver'] == purchaser
+  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
+  #     assert purchase_evt['eth_cost'] == eth_cost
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
+  #     assert dao_eth_balance_increase == eth_cost
+  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
 
-      dao_eth_balance_before = dao_agent.balance()
+  #     vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
 
-      tx = executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
-      purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
+  #     assert vesting['amount'] == purchase_ldo_amount
+  #     assert vesting['start'] == tx.timestamp
+  #     assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
+  #     assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
+  #     assert vesting['revokable'] == False
 
-      assert purchase_evt['ldo_receiver'] == purchaser
-      assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-      assert purchase_evt['eth_cost'] == eth_cost
 
-      dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-      assert dao_eth_balance_increase == eth_cost
-      assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
+  # def test_stranger_not_allowed_to_purchase_via_execute_purchase(accounts, executor, helpers):
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     stranger = accounts.at(accounts[5], force=True)
 
-      vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      assert vesting['amount'] == purchase_ldo_amount
-      assert vesting['start'] == tx.timestamp
-      assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
-      assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
-      assert vesting['revokable'] == False
+  #     allocation = executor.get_allocation(stranger)
+  #     assert allocation[0] == 0
+  #     assert allocation[1] == 0
 
+  #     helpers.fund_with_eth(stranger, eth_cost)
 
-  def test_stranger_not_allowed_to_purchase_via_execute_purchase(accounts, executor, helpers):
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
-      stranger = accounts.at(accounts[5], force=True)
+  #     with reverts("no allocation"):
+  #         executor.execute_purchase(stranger, { 'from': stranger, 'value': eth_cost })
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      allocation = executor.get_allocation(stranger)
-      assert allocation[0] == 0
-      assert allocation[1] == 0
+  # def test_stranger_not_allowed_to_purchase_via_transfer(accounts, executor, helpers):
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     stranger = accounts.at(accounts[5], force=True)
 
-      helpers.fund_with_eth(stranger, eth_cost)
+  #     allocation = executor.get_allocation(stranger)
+  #     assert allocation[0] == 0
+  #     assert allocation[1] == 0
 
-      with reverts("no allocation"):
-          executor.execute_purchase(stranger, { 'from': stranger, 'value': eth_cost })
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
+  #     helpers.fund_with_eth(stranger, eth_cost)
 
-  def test_stranger_not_allowed_to_purchase_via_transfer(accounts, executor, helpers):
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
-      stranger = accounts.at(accounts[5], force=True)
+  #     with reverts("no allocation"):
+  #         executor.execute_purchase(stranger, { 'from': stranger, 'value': eth_cost })
 
-      allocation = executor.get_allocation(stranger)
-      assert allocation[0] == 0
-      assert allocation[1] == 0
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  # def test_stranger_allowed_to_purchase_token_for_purchaser_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     stranger = accounts.at(accounts[5], force=True)
 
-      helpers.fund_with_eth(stranger, eth_cost)
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      with reverts("no allocation"):
-          executor.execute_purchase(stranger, { 'from': stranger, 'value': eth_cost })
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     helpers.fund_with_eth(stranger, eth_cost)
 
-  def test_stranger_allowed_to_purchase_token_for_purchaser_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
-      stranger = accounts.at(accounts[5], force=True)
+  #     dao_eth_balance_before = dao_agent.balance()
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     tx = executor.execute_purchase(purchaser, { 'from': stranger, 'value': eth_cost })
+  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  #     assert purchase_evt['ldo_receiver'] == purchaser
+  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
+  #     assert purchase_evt['eth_cost'] == eth_cost
 
-      helpers.fund_with_eth(stranger, eth_cost)
+  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
+  #     assert dao_eth_balance_increase == eth_cost
+  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
 
-      dao_eth_balance_before = dao_agent.balance()
+  #     vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
 
-      tx = executor.execute_purchase(purchaser, { 'from': stranger, 'value': eth_cost })
-      purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
+  #     assert vesting['amount'] == purchase_ldo_amount
+  #     assert vesting['start'] == tx.timestamp
+  #     assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
+  #     assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
+  #     assert vesting['revokable'] == False
 
-      assert purchase_evt['ldo_receiver'] == purchaser
-      assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-      assert purchase_evt['eth_cost'] == eth_cost
 
-      dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-      assert dao_eth_balance_increase == eth_cost
-      assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
+  # def test_purchase_via_transfer_not_allowed_with_insufficient_funds(accounts, executor, dao_agent, helpers):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      assert vesting['amount'] == purchase_ldo_amount
-      assert vesting['start'] == tx.timestamp
-      assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
-      assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
-      assert vesting['revokable'] == False
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     eth_cost = eth_cost - 1e18
 
-  def test_purchase_via_transfer_not_allowed_with_insufficient_funds(accounts, executor, dao_agent, helpers):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     with reverts("insufficient funds"):
+  #         purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
 
-      eth_cost = eth_cost - 1e18
+  # def test_purchase_via_execute_purchase_not_allowed_with_insufficient_funds(accounts, executor, helpers):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      with reverts("insufficient funds"):
-          purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     eth_cost = eth_cost - 1e18
 
-  def test_purchase_via_execute_purchase_not_allowed_with_insufficient_funds(accounts, executor, helpers):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     with reverts("insufficient funds"):
+  #         executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
 
-      eth_cost = eth_cost - 1e18
+  # def test_double_purchase_not_allowed_via_transfer(accounts, executor, helpers, ldo_token, dao_token_manager, dao_agent):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      with reverts("insufficient funds"):
-          executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-  def test_double_purchase_not_allowed_via_transfer(accounts, executor, helpers, ldo_token, dao_token_manager, dao_agent):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     dao_eth_balance_before = dao_agent.balance()
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     tx = purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
+  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  #     assert purchase_evt['ldo_receiver'] == purchaser
+  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
+  #     assert purchase_evt['eth_cost'] == eth_cost
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
+  #     assert dao_eth_balance_increase == eth_cost
+  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
 
-      dao_eth_balance_before = dao_agent.balance()
+  #     with reverts("no allocation"):
+  #         purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
 
-      tx = purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-      purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      assert purchase_evt['ldo_receiver'] == purchaser
-      assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-      assert purchase_evt['eth_cost'] == eth_cost
+  # def test_double_purchase_not_allowed_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-      assert dao_eth_balance_increase == eth_cost
-      assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      with reverts("no allocation"):
-          purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-  def test_double_purchase_not_allowed_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     with reverts("no allocation"):
+  #         executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  # def test_overpay_should_be_returned_via_transfer(accounts, executor, dao_agent, helpers, ldo_token):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      with reverts("no allocation"):
-          executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
+  #     overpay_amount = 1e18
 
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
-  def test_overpay_should_be_returned_via_transfer(accounts, executor, dao_agent, helpers, ldo_token):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     initial_purchaser_balance = purchaser.balance()
+  #     helpers.fund_with_eth(purchaser, eth_cost + overpay_amount)
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     assert purchaser.balance() == initial_purchaser_balance + eth_cost + overpay_amount
 
-      overpay_amount = 1e18
+  #     dao_eth_balance_before = dao_agent.balance()
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  #     tx = purchaser.transfer(to=executor, amount=eth_cost + overpay_amount, gas_limit=400_000)
+  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      initial_purchaser_balance = purchaser.balance()
-      helpers.fund_with_eth(purchaser, eth_cost + overpay_amount)
+  #     assert purchaser.balance() == initial_purchaser_balance + overpay_amount
 
-      assert purchaser.balance() == initial_purchaser_balance + eth_cost + overpay_amount
+  #     assert purchase_evt['ldo_receiver'] == purchaser
+  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
+  #     assert purchase_evt['eth_cost'] == eth_cost
 
-      dao_eth_balance_before = dao_agent.balance()
+  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
+  #     assert dao_eth_balance_increase == eth_cost
+  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
 
-      tx = purchaser.transfer(to=executor, amount=eth_cost + overpay_amount, gas_limit=400_000)
-      purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      assert purchaser.balance() == initial_purchaser_balance + overpay_amount
+  # def test_overpay_should_be_returned_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token):
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      assert purchase_evt['ldo_receiver'] == purchaser
-      assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-      assert purchase_evt['eth_cost'] == eth_cost
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-      assert dao_eth_balance_increase == eth_cost
-      assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
+  #     overpay_amount = 1e18
 
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
-  def test_overpay_should_be_returned_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token):
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     initial_purchaser_balance = purchaser.balance()
+  #     helpers.fund_with_eth(purchaser, eth_cost + overpay_amount)
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     assert purchaser.balance() == initial_purchaser_balance + eth_cost + overpay_amount
 
-      overpay_amount = 1e18
+  #     dao_eth_balance_before = dao_agent.balance()
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  #     tx = executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost + overpay_amount })
+  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      initial_purchaser_balance = purchaser.balance()
-      helpers.fund_with_eth(purchaser, eth_cost + overpay_amount)
+  #     assert purchaser.balance() == initial_purchaser_balance + overpay_amount
 
-      assert purchaser.balance() == initial_purchaser_balance + eth_cost + overpay_amount
+  #     assert purchase_evt['ldo_receiver'] == purchaser
+  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
+  #     assert purchase_evt['eth_cost'] == eth_cost
 
-      dao_eth_balance_before = dao_agent.balance()
+  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
+  #     assert dao_eth_balance_increase == eth_cost
+  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
 
-      tx = executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost + overpay_amount })
-      purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
 
-      assert purchaser.balance() == initial_purchaser_balance + overpay_amount
+  # def test_purchase_not_allowed_after_expiration_via_transfer(accounts, executor, helpers):
+  #     chain = Chain()
 
-      assert purchase_evt['ldo_receiver'] == purchaser
-      assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-      assert purchase_evt['eth_cost'] == eth_cost
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-      assert dao_eth_balance_increase == eth_cost
-      assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
-  def test_purchase_not_allowed_after_expiration_via_transfer(accounts, executor, helpers):
-      chain = Chain()
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     expiration_delay = executor.offer_expires_at() - chain.time()
+  #     chain.sleep(expiration_delay + 3600)
+  #     chain.mine()
+  #     with reverts("offer expired"):
+  #         purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
+  # def test_purchase_not_allowed_after_expiration_via_execute_purchase(accounts, executor, helpers):
+  #     chain = Chain()
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  #     purchaser = accounts.at(accounts[0], force=True)
+  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
 
-      expiration_delay = executor.offer_expires_at() - chain.time()
-      chain.sleep(expiration_delay + 3600)
-      chain.mine()
-      with reverts("offer expired"):
-          purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
+  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
 
+  #     allocation = executor.get_allocation(purchaser)
+  #     assert allocation[0] == purchase_ldo_amount
+  #     assert allocation[1] == eth_cost
 
-  def test_purchase_not_allowed_after_expiration_via_execute_purchase(accounts, executor, helpers):
-      chain = Chain()
+  #     helpers.fund_with_eth(purchaser, eth_cost)
 
-      purchaser = accounts.at(accounts[0], force=True)
-      purchase_ldo_amount = LDO_ALLOCATIONS[0]
+  #     expiration_delay = executor.offer_expires_at() - chain.time()
+  #     chain.sleep(expiration_delay + 3600)
+  #     chain.mine()
 
-      eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
+  #     with reverts("offer expired"):
+  #         executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost  })
 
-      allocation = executor.get_allocation(purchaser)
-      assert allocation[0] == purchase_ldo_amount
-      assert allocation[1] == eth_cost
 
-      helpers.fund_with_eth(purchaser, eth_cost)
+  # def test_recover_unsold_tokens_not_allowed_until_exparation(executor, dao_agent):
+  #     with reverts():
+  #         executor.recover_unsold_tokens()
 
-      expiration_delay = executor.offer_expires_at() - chain.time()
-      chain.sleep(expiration_delay + 3600)
-      chain.mine()
 
-      with reverts("offer expired"):
-          executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost  })
+  # def test_recover_unsold_tokens_should_transfer_all_tokens_after_exparation(executor, dao_agent, ldo_token):
+  #     chain = Chain()
 
+  #     expiration_delay = executor.offer_expires_at() - chain.time()
+  #     chain.sleep(expiration_delay + 3600)
+  #     chain.mine()
 
-  def test_recover_unsold_tokens_not_allowed_until_exparation(executor, dao_agent):
-      with reverts():
-          executor.recover_unsold_tokens()
+  #     executor_balance = ldo_token.balanceOf(executor)
+  #     dao_agent_balance = ldo_token.balanceOf(dao_agent)
 
+  #     executor.recover_unsold_tokens()
 
-  def test_recover_unsold_tokens_should_transfer_all_tokens_after_exparation(executor, dao_agent, ldo_token):
-      chain = Chain()
-
-      expiration_delay = executor.offer_expires_at() - chain.time()
-      chain.sleep(expiration_delay + 3600)
-      chain.mine()
-
-      executor_balance = ldo_token.balanceOf(executor)
-      dao_agent_balance = ldo_token.balanceOf(dao_agent)
-
-      executor.recover_unsold_tokens()
-
-      assert ldo_token.balanceOf(executor) == 0
-      assert ldo_token.balanceOf(dao_agent) == dao_agent_balance + executor_balance
+  #     assert ldo_token.balanceOf(executor) == 0
+  #     assert ldo_token.balanceOf(dao_agent) == dao_agent_balance + executor_balance
 #+END_SRC
