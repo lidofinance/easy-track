@@ -100,8 +100,6 @@ Init нужен чтобы определить, кто может добавл�
 * Ballot Time
 
 Мы считаем голосование завершенным, если одно из условий
-
-Мы считаем голосование завершенным, если одно из условий
 истинно:
 - текущее время блока больше чем значение поля deadline
 - вес возражений выше порога возражений
@@ -393,12 +391,14 @@ storage переменной:
 
 * Ballot Endings
 
+[TODO:gmm] - Таймаут между изи-треками
+
 Считаем, что у нас есть функция, которую можно вызвать, и
 она сработает, если время голосования прошло, а возражений
 поступило недостаточно.
 
 [TODO:gmm] - Как задавать эту функцию коссвенно? В новом
-оракуле есть кусок, который позволяет зашивать проивольный
+оракуле есть кусок, который позволяет зашивать произвольный
 смарт-контракт и дергать его - посмотреть как это
 сделано. Надо вызвать функцию, которая переведет
 деньги. Читать как сделано в арагоне. В LIDO DAO есть адреса
@@ -425,6 +425,100 @@ storage переменной:
 #+END_SRC
 
 * Other task and todoes
+
+
+Какой план на апгрейды с curve
+
+Как проводить экзекьющен чтобы отдельные треки имели
+раздельные полномочия, acl
+
+Говерментс (проблемы обговорили)
+
+-----------
+
+(Ballot Makers) Кому можно создавать голосования?
+
+Для валидаторов access list хранится в контракте Node
+Operators Registry - то же самое если access list в Gnosis
+Safe. Таким образом нужна кастомная функция проверки прав
+начала голосования. Но и такой простой вариант как сейчас -
+тоже сойдет. ACL тут не нужен пока
+
+-----------
+
+(Ownership) контракта.
+
+Кому можно создавать трек - решает ДАО. Овнершип контракта =
+арагон агент.
+
+-----------
+
+(Make Ballot)
+
+Нельзя, чтобы можно было заспамить голосование, т.е. чтобы
+голосующим не хватило денег или внимания чтобы остановить
+плохие предложения или их часть
+
+Можно сделать один общий на всех счетчик, который позволяет
+делать голосование раз в час, тогда их будет не
+более 24. Конкретное число может настраиваться (как и длина
+голосования). Можно разрешать голосование раз в 4 часа -
+ничего не случиться, если подождать 4 часа для старта.
+
+Голосующая мощность = балансу на момент Х.
+
+Идею привязывать голосование к LDO-токенам не делаем (пока).
+Это все можно вынести в "планы на будущее"
+
+----------
+
+(Send Objections)
+
+Атака с покупкой и продажей купируется историей про баланс
+на момент Х
+
+SafeMath встроенный
+
+Чтобы сделать быстрый вариант возражений, можно сразу
+отменять голосование если порог перейден, чтобы поменьше
+писать в storage
+
+Общий ID голосований возможно будет удобнее для мониторинга
+
+----------
+
+(Ballot Ending)
+
+Два варианта:
+- Простой способ - вызывать любую функцию от имени
+  агента. Небезопасно, но просто можно стащить функцию из
+  арагона и использовать ее (Forward...) Но тогда нужен
+  хороший мониторинг, который будет следить, алертить,
+  кидать в телеграмм.
+- Сложный способ - ограничить возможности вызываемых функций
+  (операторы могут только в ключи, гранты только переводить
+  фонды и.т.п). Это интереснее.
+
+----------
+
+(Other task and todoes)
+
+Upgradable не нужен. Вместо него сансетим изитрек и заводим
+новый. Параметры однако может быть нуждаются в изменениях.
+
+Но может и стоит.
+
+Или можно сделать через паттерн "Делегат" - какую функцию
+они могут вызвать чтобы проверить можно ли делать это
+голосование.
+
+Самая интересная часть, над которой можно думать.
+
+----------
+
+(Test Driven)
+
+===========
 
 [TODO:gmm] - там ещё нужно реализовать ограничение списка
 инициаторов голосования через обращение к
@@ -519,11 +613,87 @@ DAO, чтобы протестить это? Как написать такой 
 - что оно завершается (промотать время brownie test time
   прямо из теста)
 
+#+NAME: deploy_easy_track
+#+BEGIN_SRC python
+  def deploy_easy_track(
+          _ballot_time,
+          _objections_threshold,
+          _stub
+          ):
+
+      executor = ValidatorsVote.deploy(
+          _ballot_time,
+          _objections_threshold,
+          _stub=False
+          )
+
+      return executor
+#+END_SRC
+
+#+NAME: deploy_easy_track_and_start
+#+BEGIN_SRC python :noweb yes :exports none
+  @pytest.fixture(scope='module')
+  def deploy_executor_and_pass_dao_vote_2(accounts, ldo_holder, ldo_token, dao_acl, dao_voting, dao_token_manager):
+      def deploy(
+              eth_to_ldo_rate,
+              vesting_cliff_delay,
+              vesting_end_delay,
+              offer_expiration_delay,
+              ldo_purchasers,
+              allocations_total
+              ):
+          # (executor, vote_id) = deploy_and_start_dao_vote(
+          #     {'from': ldo_holder},
+          #     eth_to_ldo_rate=eth_to_ldo_rate,
+          #     vesting_cliff_delay=vesting_cliff_delay,
+          #     vesting_end_delay=vesting_end_delay,
+          #     offer_expiration_delay=offer_expiration_delay,
+          #     ldo_purchasers=ldo_purchasers,
+          #     allocations_total=allocations_total
+          # )
+
+          # print(f'vote id: {vote_id}')
+
+          # # together these accounts hold 15% of LDO total supply
+          # ldo_holders = [
+          #     '0x3e40d73eb977dc6a537af587d48316fee66e9c8c',
+          #     '0xb8d83908aab38a159f3da47a59d84db8e1838712',
+          #     '0xa2dfc431297aee387c05beef507e5335e684fbcd'
+          # ]
+
+          # for holder_addr in ldo_holders:
+          #     print('voting from acct:', holder_addr)
+          #     accounts[0].transfer(holder_addr, '0.1 ether')
+          #     account = accounts.at(holder_addr, force=True)
+          #     dao_voting.vote(vote_id, True, False, {'from': account})
+
+          # # wait for the vote to end
+          # chain.sleep(3 * 60 * 60 * 24)
+          # chain.mine()
+
+          # assert dao_voting.canExecute(vote_id)
+          # dao_voting.executeVote(vote_id, {'from': accounts[0]})
+
+          # print(f'vote executed')
+
+          # total_ldo_assignment = sum([ p[1] for p in ldo_purchasers ])
+          # assert ldo_token.balanceOf(executor) == total_ldo_assignment
+
+          # ldo_assign_role = dao_token_manager.ASSIGN_ROLE()
+          # assert dao_acl.hasPermission(executor, dao_token_manager, ldo_assign_role)
+
+          # return executor
+          print(f'stub')
+
+          return deploy
+#+END_SRC
+
 #+BEGIN_SRC python :noweb yes :tangle ./tests/conftest.py :exports none
   import pytest
   from brownie import chain, Wei, ZERO_ADDRESS
 
   from scripts.deploy import deploy_and_start_dao_vote
+  from scripts.deploy import deploy_easy_track
 
   from utils.config import (
       ldo_token_address,
@@ -532,7 +702,6 @@ DAO, чтобы протестить это? Как написать такой 
       lido_dao_voting_address,
       lido_dao_token_manager_address
   )
-
 
   @pytest.fixture(scope="function", autouse=True)
   def shared_setup(fn_isolation):
@@ -595,501 +764,109 @@ DAO, чтобы протестить это? Как написать такой 
       Helpers.eth_banker = accounts.at('0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8', force=True)
       return Helpers
 
-
-  @pytest.fixture(scope='module')
-  def deploy_executor_and_pass_dao_vote(accounts, ldo_holder, ldo_token, dao_acl, dao_voting, dao_token_manager):
-      def deploy(
-          eth_to_ldo_rate,
-          vesting_cliff_delay,
-          vesting_end_delay,
-          offer_expiration_delay,
-          ldo_purchasers,
-          allocations_total
-      ):
-          (executor, vote_id) = deploy_and_start_dao_vote(
-              {'from': ldo_holder},
-              eth_to_ldo_rate=eth_to_ldo_rate,
-              vesting_cliff_delay=vesting_cliff_delay,
-              vesting_end_delay=vesting_end_delay,
-              offer_expiration_delay=offer_expiration_delay,
-              ldo_purchasers=ldo_purchasers,
-              allocations_total=allocations_total
-          )
-
-          print(f'vote id: {vote_id}')
-
-          # together these accounts hold 15% of LDO total supply
-          ldo_holders = [
-              '0x3e40d73eb977dc6a537af587d48316fee66e9c8c',
-              '0xb8d83908aab38a159f3da47a59d84db8e1838712',
-              '0xa2dfc431297aee387c05beef507e5335e684fbcd'
-          ]
-
-          for holder_addr in ldo_holders:
-              print('voting from acct:', holder_addr)
-              accounts[0].transfer(holder_addr, '0.1 ether')
-              account = accounts.at(holder_addr, force=True)
-              dao_voting.vote(vote_id, True, False, {'from': account})
-
-          # wait for the vote to end
-          chain.sleep(3 * 60 * 60 * 24)
-          chain.mine()
-
-          assert dao_voting.canExecute(vote_id)
-          dao_voting.executeVote(vote_id, {'from': accounts[0]})
-
-          print(f'vote executed')
-
-          total_ldo_assignment = sum([ p[1] for p in ldo_purchasers ])
-          assert ldo_token.balanceOf(executor) == total_ldo_assignment
-
-          ldo_assign_role = dao_token_manager.ASSIGN_ROLE()
-          assert dao_acl.hasPermission(executor, dao_token_manager, ldo_assign_role)
-
-          return executor
-
-      return deploy
+  <<deploy_easy_track_and_start>>
 #+END_SRC
 
-#+BEGIN_SRC python :noweb yes :tangle ./tests/test_validators_vote.py :exports none
-  import pytest
-  from brownie import Wei, chain, reverts
-  from brownie.network.state import Chain
+#+BEGIN_SRC python :noweb yes :tangle ./scripts/deploy.py :exports none
+  from brownie import ZERO_ADDRESS, accounts
 
-  from purchase_config import ETH_TO_LDO_RATE_PRECISION
-
-  LDO_ALLOCATIONS = [
-      1_000 * 10**18,
-      3_000_000 * 10**18,
-      20_000_000 * 10**18
-  ]
-
-  # 100 LDO in one ETH
-  ETH_TO_LDO_RATE = 100 * 10**18
-
-  VESTING_CLIFF_DELAY = 1 * 60 * 60 * 24 * 365 # one year
-  VESTING_END_DELAY = 2 * 60 * 60 * 24 * 365 # two years
-  OFFER_EXPIRATION_DELAY = 2629746 # one month
+  try:
+      from brownie import PurchaseExecutor, interface
+  except ImportError:
+      print(
+          "You're probably running inside Brownie console. Please call `set_console_globals`, "
+          "passing `interface` and `PurchaseExecutor` global variables"
+      )
+      pass
 
 
-  @pytest.fixture(scope='function')
-  def executor(accounts, deploy_executor_and_pass_dao_vote):
-      return deploy_executor_and_pass_dao_vote(
+  def set_console_globals(**kwargs):
+      global PurchaseExecutor
+      global interface
+      PurchaseExecutor = kwargs['PurchaseExecutor']
+      interface = kwargs['interface']
+
+
+  from utils.dao import propose_vesting_manager_contract
+
+  from utils.config import (
+      lido_dao_acl_address,
+      lido_dao_voting_address,
+      lido_dao_finance_address,
+      lido_dao_token_manager_address
+  )
+
+  from purchase_config import (
+      ETH_TO_LDO_RATE,
+      VESTING_CLIFF_DELAY,
+      VESTING_END_DELAY,
+      OFFER_EXPIRATION_DELAY,
+      LDO_PURCHASERS,
+      ALLOCATIONS_TOTAL
+  )
+
+  def deploy_and_start_dao_vote(
+          tx_params,
           eth_to_ldo_rate=ETH_TO_LDO_RATE,
           vesting_cliff_delay=VESTING_CLIFF_DELAY,
           vesting_end_delay=VESTING_END_DELAY,
           offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-          ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-          allocations_total=sum(LDO_ALLOCATIONS)
-      )
+          ldo_purchasers=LDO_PURCHASERS,
+          allocations_total = ALLOCATIONS_TOTAL
+          ):
+      zero_padding_len = 50 - len(ldo_purchasers)
+      ldo_recipients = [ p[0] for p in ldo_purchasers ] + [ZERO_ADDRESS] * zero_padding_len
+      ldo_allocations = [ p[1] for p in ldo_purchasers ] + [0] * zero_padding_len
+
+      executor = PurchaseExecutor.deploy(
+          eth_to_ldo_rate,
+          vesting_cliff_delay,
+          vesting_end_delay,
+          offer_expiration_delay,
+          ldo_recipients,
+          ldo_allocations,
+          allocations_total,
+          tx_params,
+          # Etherscan doesn't support Vyper verification yet
+          publish_source=False
+          )
+
+      (vote_id, _) = propose_vesting_manager_contract(
+          manager_address=executor.address,
+          total_ldo_amount=sum(ldo_allocations),
+          ldo_transfer_reference=f"Transfer LDO tokens to be sold for ETH",
+          acl=interface.ACL(lido_dao_acl_address),
+          voting=interface.Voting(lido_dao_voting_address),
+          finance=interface.Finance(lido_dao_finance_address),
+          token_manager=interface.TokenManager(lido_dao_token_manager_address),
+          tx_params=tx_params
+          )
+
+      return (executor, vote_id)
+
+  <<deploy_easy_track>>
+#+END_SRC
+
+#+BEGIN_SRC python :noweb yes :tangle ./tests/test_validators_vote.py
+  import pytest
+  from brownie import Wei, chain, reverts
+  from brownie.network.state import Chain
+
+  # @pytest.fixture(scope='function')
+  # def executor(accounts, deploy_executor_and_pass_dao_vote):
+  #     return deploy_executor_and_pass_dao_vote(
+  #     ...
+  #     )
 
   def test_always_passed():
-      True
-
-  # def test_deploy_should_fails_on_wrong_allocations_total(accounts, deploy_executor_and_pass_dao_vote):
-  #     with reverts():
-  #         deploy_executor_and_pass_dao_vote(
-  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
-  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
-  #             vesting_end_delay=VESTING_END_DELAY,
-  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-  #             allocations_total=sum(LDO_ALLOCATIONS) + 1
-  #         )
-
-
-  # def test_deploy_should_fails_on_zero_rate(accounts, deploy_executor_and_pass_dao_vote):
-  #     with reverts():
-  #         deploy_executor_and_pass_dao_vote(
-  #             eth_to_ldo_rate=0,
-  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
-  #             vesting_end_delay=VESTING_END_DELAY,
-  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-  #             allocations_total=sum(LDO_ALLOCATIONS)
-  #         )
-
-
-  # def test_deploy_should_fails_on_vesting_ends_before_cliff(accounts, deploy_executor_and_pass_dao_vote):
-  #     with reverts():
-  #         deploy_executor_and_pass_dao_vote(
-  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
-  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
-  #             vesting_end_delay=VESTING_CLIFF_DELAY - 1,
-  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-  #             allocations_total=sum(LDO_ALLOCATIONS)
-  #         )
-
-
-  # def test_deploy_should_fails_on_zero_offer_exparation_delay(accounts, deploy_executor_and_pass_dao_vote):
-  #     with reverts():
-  #         deploy_executor_and_pass_dao_vote(
-  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
-  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
-  #             vesting_end_delay=VESTING_END_DELAY,
-  #             offer_expiration_delay=0,
-  #             ldo_purchasers=[ (accounts[i], LDO_ALLOCATIONS[i]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-  #             allocations_total=sum(LDO_ALLOCATIONS)
-  #         )
-
-
-  # def test_deploy_should_fails_on_purchasers_duplicates(accounts, deploy_executor_and_pass_dao_vote):
-  #     with reverts():
-  #         deploy_executor_and_pass_dao_vote(
-  #             eth_to_ldo_rate=ETH_TO_LDO_RATE,
-  #             vesting_cliff_delay=VESTING_CLIFF_DELAY,
-  #             vesting_end_delay=VESTING_END_DELAY,
-  #             offer_expiration_delay=OFFER_EXPIRATION_DELAY,
-  #             ldo_purchasers=[ (accounts[0], LDO_ALLOCATIONS[0]) for i in range(0, len(LDO_ALLOCATIONS)) ],
-  #             allocations_total=sum(LDO_ALLOCATIONS)
-  #         )
-
-
-  # def test_purchase_via_transfer(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     dao_eth_balance_before = dao_agent.balance()
-
-  #     tx = purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
-
-  #     assert purchase_evt['ldo_receiver'] == purchaser
-  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-  #     assert purchase_evt['eth_cost'] == eth_cost
-
-  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-  #     assert dao_eth_balance_increase == eth_cost
-  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
-
-  #     vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
-
-  #     assert vesting['amount'] == purchase_ldo_amount
-  #     assert vesting['start'] == tx.timestamp
-  #     assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
-  #     assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
-  #     assert vesting['revokable'] == False
-
-
-  # def test_purchase_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     dao_eth_balance_before = dao_agent.balance()
-
-  #     tx = executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
-  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
-
-  #     assert purchase_evt['ldo_receiver'] == purchaser
-  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-  #     assert purchase_evt['eth_cost'] == eth_cost
-
-  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-  #     assert dao_eth_balance_increase == eth_cost
-  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
-
-  #     vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
-
-  #     assert vesting['amount'] == purchase_ldo_amount
-  #     assert vesting['start'] == tx.timestamp
-  #     assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
-  #     assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
-  #     assert vesting['revokable'] == False
-
-
-  # def test_stranger_not_allowed_to_purchase_via_execute_purchase(accounts, executor, helpers):
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-  #     stranger = accounts.at(accounts[5], force=True)
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(stranger)
-  #     assert allocation[0] == 0
-  #     assert allocation[1] == 0
-
-  #     helpers.fund_with_eth(stranger, eth_cost)
-
-  #     with reverts("no allocation"):
-  #         executor.execute_purchase(stranger, { 'from': stranger, 'value': eth_cost })
-
-
-  # def test_stranger_not_allowed_to_purchase_via_transfer(accounts, executor, helpers):
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-  #     stranger = accounts.at(accounts[5], force=True)
-
-  #     allocation = executor.get_allocation(stranger)
-  #     assert allocation[0] == 0
-  #     assert allocation[1] == 0
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     helpers.fund_with_eth(stranger, eth_cost)
-
-  #     with reverts("no allocation"):
-  #         executor.execute_purchase(stranger, { 'from': stranger, 'value': eth_cost })
-
-
-  # def test_stranger_allowed_to_purchase_token_for_purchaser_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token, dao_token_manager):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-  #     stranger = accounts.at(accounts[5], force=True)
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(stranger, eth_cost)
-
-  #     dao_eth_balance_before = dao_agent.balance()
-
-  #     tx = executor.execute_purchase(purchaser, { 'from': stranger, 'value': eth_cost })
-  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
-
-  #     assert purchase_evt['ldo_receiver'] == purchaser
-  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-  #     assert purchase_evt['eth_cost'] == eth_cost
-
-  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-  #     assert dao_eth_balance_increase == eth_cost
-  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
-
-  #     vesting = dao_token_manager.getVesting(purchaser, purchase_evt['vesting_id'])
-
-  #     assert vesting['amount'] == purchase_ldo_amount
-  #     assert vesting['start'] == tx.timestamp
-  #     assert vesting['cliff'] == tx.timestamp + VESTING_CLIFF_DELAY
-  #     assert vesting['vesting'] == tx.timestamp + VESTING_END_DELAY
-  #     assert vesting['revokable'] == False
-
-
-  # def test_purchase_via_transfer_not_allowed_with_insufficient_funds(accounts, executor, dao_agent, helpers):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     eth_cost = eth_cost - 1e18
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     with reverts("insufficient funds"):
-  #         purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-
-
-  # def test_purchase_via_execute_purchase_not_allowed_with_insufficient_funds(accounts, executor, helpers):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     eth_cost = eth_cost - 1e18
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     with reverts("insufficient funds"):
-  #         executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
-
-
-  # def test_double_purchase_not_allowed_via_transfer(accounts, executor, helpers, ldo_token, dao_token_manager, dao_agent):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     dao_eth_balance_before = dao_agent.balance()
-
-  #     tx = purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
-
-  #     assert purchase_evt['ldo_receiver'] == purchaser
-  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-  #     assert purchase_evt['eth_cost'] == eth_cost
-
-  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-  #     assert dao_eth_balance_increase == eth_cost
-  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
-
-  #     with reverts("no allocation"):
-  #         purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-
-
-  # def test_double_purchase_not_allowed_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
-
-  #     with reverts("no allocation"):
-  #         executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost })
-
-
-  # def test_overpay_should_be_returned_via_transfer(accounts, executor, dao_agent, helpers, ldo_token):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     overpay_amount = 1e18
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     initial_purchaser_balance = purchaser.balance()
-  #     helpers.fund_with_eth(purchaser, eth_cost + overpay_amount)
-
-  #     assert purchaser.balance() == initial_purchaser_balance + eth_cost + overpay_amount
-
-  #     dao_eth_balance_before = dao_agent.balance()
-
-  #     tx = purchaser.transfer(to=executor, amount=eth_cost + overpay_amount, gas_limit=400_000)
-  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
-
-  #     assert purchaser.balance() == initial_purchaser_balance + overpay_amount
-
-  #     assert purchase_evt['ldo_receiver'] == purchaser
-  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-  #     assert purchase_evt['eth_cost'] == eth_cost
-
-  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-  #     assert dao_eth_balance_increase == eth_cost
-  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
-
-
-  # def test_overpay_should_be_returned_via_execute_purchase(accounts, executor, dao_agent, helpers, ldo_token):
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     overpay_amount = 1e18
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     initial_purchaser_balance = purchaser.balance()
-  #     helpers.fund_with_eth(purchaser, eth_cost + overpay_amount)
-
-  #     assert purchaser.balance() == initial_purchaser_balance + eth_cost + overpay_amount
-
-  #     dao_eth_balance_before = dao_agent.balance()
-
-  #     tx = executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost + overpay_amount })
-  #     purchase_evt = helpers.assert_single_event_named('PurchaseExecuted', tx)
-
-  #     assert purchaser.balance() == initial_purchaser_balance + overpay_amount
-
-  #     assert purchase_evt['ldo_receiver'] == purchaser
-  #     assert purchase_evt['ldo_allocation'] == purchase_ldo_amount
-  #     assert purchase_evt['eth_cost'] == eth_cost
-
-  #     dao_eth_balance_increase = dao_agent.balance() - dao_eth_balance_before
-  #     assert dao_eth_balance_increase == eth_cost
-  #     assert ldo_token.balanceOf(purchaser) == purchase_ldo_amount
-
-
-  # def test_purchase_not_allowed_after_expiration_via_transfer(accounts, executor, helpers):
-  #     chain = Chain()
-
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     expiration_delay = executor.offer_expires_at() - chain.time()
-  #     chain.sleep(expiration_delay + 3600)
-  #     chain.mine()
-  #     with reverts("offer expired"):
-  #         purchaser.transfer(to=executor, amount=eth_cost, gas_limit=400_000)
-
-
-  # def test_purchase_not_allowed_after_expiration_via_execute_purchase(accounts, executor, helpers):
-  #     chain = Chain()
-
-  #     purchaser = accounts.at(accounts[0], force=True)
-  #     purchase_ldo_amount = LDO_ALLOCATIONS[0]
-
-  #     eth_cost = purchase_ldo_amount * ETH_TO_LDO_RATE_PRECISION // ETH_TO_LDO_RATE
-
-  #     allocation = executor.get_allocation(purchaser)
-  #     assert allocation[0] == purchase_ldo_amount
-  #     assert allocation[1] == eth_cost
-
-  #     helpers.fund_with_eth(purchaser, eth_cost)
-
-  #     expiration_delay = executor.offer_expires_at() - chain.time()
-  #     chain.sleep(expiration_delay + 3600)
-  #     chain.mine()
-
-  #     with reverts("offer expired"):
-  #         executor.execute_purchase(purchaser, { 'from': purchaser, 'value': eth_cost  })
-
-
-  # def test_recover_unsold_tokens_not_allowed_until_exparation(executor, dao_agent):
-  #     with reverts():
-  #         executor.recover_unsold_tokens()
-
-
-  # def test_recover_unsold_tokens_should_transfer_all_tokens_after_exparation(executor, dao_agent, ldo_token):
-  #     chain = Chain()
-
-  #     expiration_delay = executor.offer_expires_at() - chain.time()
-  #     chain.sleep(expiration_delay + 3600)
-  #     chain.mine()
-
-  #     executor_balance = ldo_token.balanceOf(executor)
-  #     dao_agent_balance = ldo_token.balanceOf(dao_agent)
-
-  #     executor.recover_unsold_tokens()
-
-  #     assert ldo_token.balanceOf(executor) == 0
-  #     assert ldo_token.balanceOf(dao_agent) == dao_agent_balance + executor_balance
+      return True
+
+  def test_deploy_should_fails_on_something(accounts, deploy_executor_and_pass_dao_vote_2):
+      with reverts():
+          # deploy_easy_track_and_start(
+          deploy_executor_and_pass_dao_vote_2(
+              1000,
+              1000,
+              True
+          )
 #+END_SRC
