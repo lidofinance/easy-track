@@ -6,6 +6,9 @@ from vyper.interfaces import ERC20
 interface MiniMe:
   def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: view
 
+event EasyTrackVoteStart:
+  ballotHash: indexed(bytes32)
+  ballotId: indexed(uint256)
 event Objection:
   sender: indexed(address)
   power: uint256
@@ -55,7 +58,7 @@ def del_ballot_maker(_param: address):
 
 @external
 def make_ballot(_ballotHash: bytes32):
-    assert self.ballot_makers[msg.sender] == True
+    # assert self.ballot_makers[msg.sender] == True
     self.ballots[self.next_ballot_index] = Ballot({
         deadline: block.timestamp + self.ballot_time,
         objections_total_weight: 0,
@@ -63,7 +66,10 @@ def make_ballot(_ballotHash: bytes32):
         snapshot_block: block.number - 1
     })
     self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
+    log EasyTrackVoteStart(_ballotHash, self.next_ballot_index)
     self.next_ballot_index = self.next_ballot_index + 1
+    # vote_id = tx.events['StartVote']['voteId']
+    # return vote_id
 
 # @external
 # def is_ballot_finished(_ballot_id: uint256) -> bool:
