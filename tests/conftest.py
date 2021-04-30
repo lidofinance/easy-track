@@ -24,17 +24,17 @@ def ldo_holder(accounts):
 
 @pytest.fixture(scope='module')
 def dao_acl(interface):
-    return 2 # interface.ACL(lido_dao_acl_address)
+    return interface.ACL(lido_dao_acl_address)
 
 
 @pytest.fixture(scope='module')
 def dao_voting(interface):
-    return 3 # interface.Voting(lido_dao_voting_address)
+    return interface.Voting(lido_dao_voting_address)
 
 
 @pytest.fixture(scope='module')
 def dao_token_manager(interface):
-    return 4 # interface.TokenManager(lido_dao_token_manager_address)
+    return interface.TokenManager(lido_dao_token_manager_address)
 
 
 # Lido DAO Agent app
@@ -73,9 +73,8 @@ def helpers(accounts):
     Helpers.eth_banker = accounts.at('0xBE0eB53F46cd790Cd13851d5EFf43D12404d33E8', force=True)
     return Helpers
 
-# def deploy_executor_and_pass_dao_vote_2(accounts, ldo_holder, ldo_token, dao_acl, dao_voting, dao_token_manager):
 @pytest.fixture(scope='module')
-def deploy_executor_and_pass_dao_vote_2(accounts):
+def deploy_executor_and_pass_dao_vote_2(accounts, ldo_holder, ldo_token, dao_acl, dao_voting, dao_token_manager):
     def deploy(
             eth_to_ldo_rate,
             vesting_cliff_delay,
