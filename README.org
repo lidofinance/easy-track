@@ -10,7 +10,8 @@
 настраиваемые параметры в структуру голосования.
 
 По сути треки отличаются только базовыми настройками этих
-голосований. Мы можем сделать их отдельными контрактами.
+голосований. Мы можем сделать каждый трек отдельным
+контрактом.
 
 Для всех голосований предложение считается принятым, если до
 его окончания не было получено достаточно возражений.
@@ -210,7 +211,7 @@ LDO-токены. Также, так как валидаторы добавля�
 #+BEGIN_SRC vyper :noweb yes
   @external
   def make_ballot(_ballotHash: bytes32):
-      # <<only_ballot_maker>>
+      <<only_ballot_maker>>
       self.ballots[self.next_ballot_index] = Ballot({
           deadline: block.timestamp + self.ballot_time,
           objections_total_weight: 0,
@@ -648,6 +649,7 @@ DAO, чтобы протестить это? Как написать такой 
       def la_lambda():
         (executor, vote_id) = deploy_and_start_easy_track_vote(
             {'from': fx_ballot_maker}, # TODO: ACL
+            ballot_maker=fx_ballot_maker,
             ballot_time=fx_ballot_time,
             objections_threshold=fx_objections_threshold,
             stub=fx_stub
@@ -665,35 +667,41 @@ DAO, чтобы протестить это? Как написать такой 
 #+END_SRC
 
 Внутри возвращаемой лямбды вызывается функция
-~deploy_and_start_easy_track_vote~, которая деплоит трек и
-создает голосование. Она должна вернуть развернутый контракт
-и vote-id.
+~deploy_and_start_easy_track_vote~, которая:
+- разворачивает easy_track
+- добаляет ballot_makers
+- создает голосование.
+
+Она должна вернуть развернутый контракт и ~vote-id~.
 
 #+NAME: deploy_and_start_easy_track_vote
 #+BEGIN_SRC python :noweb yes
   def deploy_and_start_easy_track_vote(
           tx_params,
+          ballot_maker,
           ballot_time,
           objections_threshold,
           stub
           ):
+      # Deploy EasyTrack
       executor = ValidatorsVote.deploy(
           ballot_time,
           objections_threshold,
           stub,
           tx_params,
-          # Etherscan doesn't support Vyper verification yet
-          publish_source=False
           )
+      # Add BallotMaker
+      executor.add_ballot_maker(ballot_maker, tx_params)
       tx = executor.make_ballot(
           1,
           tx_params
           )
+      # Debug out
       tx.info()
+      # Get vote_id
       vote_id = tx.events['EasyTrackVoteStart']['ballotId']
-
+      # Ret
       return (executor, vote_id)
-      # return (executor, 0)
 #+END_SRC
 
 ** Test example
@@ -720,18 +728,118 @@ DAO, чтобы протестить это? Как написать такой 
 
 ** Test plan
 
-- закинуть возражение
-- завершить голосование (как ускорить его?)
-- посчитать результаты
-- убедиться, что посчитано верно
-
 Нужны приемочные тесты (сценарии):
-- что изи-трек разворачивается
-- что голосование создается
-- что голосование реагирует на возражения
-- что оно завершается (промотать время brownie test time
-  прямо из теста)
 
+*** Dao-voting
+
+Надо эмулировать DAO-voting в тестах, чтобы развернуть Easy
+Track.
+
+[TODO:gmm] - Я предполагаю что для DAO-голосования нужен
+файл интерефейса, который я могу взять из
+~ldo-purchase-executor/intrfaces~. Я его объявляю:
+
+#+BEGIN_SRC python
+  # Lido DAO Vault (Agent) contract
+  interface Vault:
+      def deposit(_token: address, _value: uint256): payable
+#+END_SRC
+
+Я нашел соответствие ему в ~interfaces/Agent.json~:
+
+#+BEGIN_SRC js
+  ...
+  {
+      "constant": false,
+      "inputs": [
+          {
+              "name": "_token",
+              "type": "address"
+          },
+          {
+              "name": "_value",
+              "type": "uint256"
+          }
+      ],
+      "name": "deposit",
+      "outputs": [],
+      "payable": true,
+      "stateMutability": "payable",
+      "type": "function"
+  }
+  ...
+#+END_SRC
+
+[TODO:gmm] - Не очень понять при чем тут ~deposit~.
+
+Вот тако он вызывается:
+
+#+BEGIN_SRC vyper
+  Vault(LIDO_DAO_VAULT).deposit(
+      LIDO_DAO_VAULT_ETH_TOKEN,
+      eth_cost,
+      value=eth_cost
+  )
+#+END_SRC
+
+[TODO:gmm] - Есть образец эмуляции дао-голосования в
+~conftest~, который выглядит так (я не понимаю как он
+работает).
+
+Там есть:
+- промотка времени (chain.sleep):
+- обращение через интерфейс в фикстурах (как работает?)
+
+#+BEGIN_SRC python
+  lido_dao_voting_address = '0x2e59A20f205bB85a89C53f1936454680651E618e'
+
+  @pytest.fixture(scope='module')
+  def dao_voting(interface):
+      return interface.Voting(lido_dao_voting_address)
+
+  # together these accounts hold 15% of LDO total supply
+  ldo_holders = [
+      '0x3e40d73eb977dc6a537af587d48316fee66e9c8c',
+      '0xb8d83908aab38a159f3da47a59d84db8e1838712',
+      '0xa2dfc431297aee387c05beef507e5335e684fbcd'
+  ]
+
+  for holder_addr in ldo_holders:
+      print('voting from acct:', holder_addr)
+      accounts[0].transfer(holder_addr, '0.1 ether')
+      account = accounts.at(holder_addr, force=True)
+      dao_voting.vote(vote_id, True, False, {'from': account})
+
+  # wait for the vote to end
+  chain.sleep(3 * 60 * 60 * 24)
+  chain.mine()
+
+  assert dao_voting.canExecute(vote_id)
+  dao_voting.executeVote(vote_id, {'from': accounts[0]})
+
+  print(f'vote executed')
+
+  total_ldo_assignment = sum([ p[1] for p in ldo_purchasers ])
+  assert ldo_token.balanceOf(executor) == total_ldo_assignment
+
+  ldo_assign_role = dao_token_manager.ASSIGN_ROLE()
+  assert dao_acl.hasPermission(executor, dao_token_manager, ldo_assign_role)
+
+  return executor
+#+END_SRC
+
+*** Deploy Easy Track
+
+[TODO:gmm] - Как мне обращаиться к Node Operator Registry и
+Gnosis Safe чтобы извлечь тех, кто может создавать Easy
+Track Voting?
+
+[TODO:gmm] - Как работает ACL и как я могу использовать это
+для Easy Track?
+
+*** Send Objections
+*** Finish Voting
+*** Calculate results
 * Other
 
 - Brownie сам качает нужную версию Vyper
@@ -739,7 +847,28 @@ DAO, чтобы протестить это? Как написать такой 
   ноду для форкинга из майнета.
 - Можно прикинуться любым из адресов (как?)
 - Если в brownie console написать chain[-1] можно получить
-  последний блок. Из консоли можно сделать ex=ContractName.deploy(...)
+  последний блок. Из консоли можно сделать
+  ex=ContractName.deploy(...)
+- Когда я хочу вызвать другой контракт, я объявляют
+  интерфейс, потом беру адрес этого контракта, привожу его к
+  интерфейсу и вызываю функцию контракта:
+  MyIface(addr).func(..) Если в вызове есть типы данных,
+  которые не поддерживаются в вайпер, то используем raw_call
+- [TODO:gmm] Мне надо как-то получить Node Operator Registry в папку
+  interfaces - сгенерировать ABI из исходного кода или взять
+  на Etherscan
+- deploy_and_start_dao_voting эмулирует голосование DAO
+- brownie run позволяет вызвать любой скрипт (например для
+  деплоя)
+- brownie accounts list показывает аккаунты (см. доки)
+- администратор контракта (dao agent app) должен
+  устанавливать список разрешенных адресов - например гносис
+  сэйф, чтобы выполнять операции.
+- Есть репа stacking_rewards где можно подстмотреть про
+  время голосования на высоте блока и таймштампах. vyper
+  current block time etc
+- Энактинг голосования смотреть в репке нового оракула
+- Перемотка времени - гугл brownie test time
 
 Тут конфиг, в нем куски оставлены как пример фикстур
 

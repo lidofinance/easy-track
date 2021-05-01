@@ -58,7 +58,7 @@ def del_ballot_maker(_param: address):
 
 @external
 def make_ballot(_ballotHash: bytes32):
-    # assert self.ballot_makers[msg.sender] == True
+    assert self.ballot_makers[msg.sender] == True
     self.ballots[self.next_ballot_index] = Ballot({
         deadline: block.timestamp + self.ballot_time,
         objections_total_weight: 0,
