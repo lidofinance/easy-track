@@ -68,16 +68,14 @@ def make_ballot(_ballotHash: bytes32):
     self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
     log EasyTrackVoteStart(_ballotHash, self.next_ballot_index)
     self.next_ballot_index = self.next_ballot_index + 1
-    # vote_id = tx.events['StartVote']['voteId']
-    # return vote_id
 
-# @external
-# def is_ballot_finished(_ballot_id: uint256) -> bool:
-#     if ( block.timestamp > self.ballots[_ballot_id].deadline ):
-#        return True
-#     if ( objections_threshold > ballots[_ballot_id].objections_total_weight ):
-#        return True
-#     return False
+@external
+def is_ballot_finished(_ballot_id: uint256) -> bool:
+    if ( block.timestamp > self.ballots[_ballot_id].deadline ):
+       return True
+    if ( self.objections_threshold > self.ballots[_ballot_id].objections_total_weight ):
+       return True
+    return False
 
 
 

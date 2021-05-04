@@ -47,12 +47,6 @@ def fx_objections_threshold():
 def fx_stub():
   return True
 
-lido_dao_voting_address = '0x2e59A20f205bB85a89C53f1936454680651E618e'
-
-@pytest.fixture(scope='module')
-def dao_voting(interface):
-  return interface.Voting(lido_dao_voting_address)
-
 @pytest.fixture(scope='module')
 def deploy_executor_and_pass_easy_track_vote(
         fx_ballot_maker,
