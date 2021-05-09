@@ -80,3 +80,14 @@ def test_example(deploy_executor_and_pass_easy_track_vote):
     # assert 0 == 1
     with reverts():
         accounts[0].transfer(accounts[1], "10 ether", gas_price=0)
+
+def test_nor(deploy_executor_and_pass_easy_track_vote):
+    print("TEST : NOR is running...")
+    executor = deploy_executor_and_pass_easy_track_vote()
+    print("someShit")
+    print(executor.is_node_op(0x5))
+    # Чтобы тест упал и я увидел отладочные сообщения
+    # assert 0 == 1
+    with reverts():
+        accounts[0].transfer(accounts[1], "10 ether", gas_price=0)
+    # print("TEST: NOR {res}")

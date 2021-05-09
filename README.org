@@ -280,6 +280,59 @@ https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOpe
   }
 #+END_SRC
 
+План такой:
+
+Сначала делаем тест, который проверяет есть ли конкрентный
+оператор в Node Operator Registry
+- Как узнать адрес контракта NodeOperatorsRegistry.sol
+  0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5
+- Как узнать валидный адрес какого-нибудь из операторов?
+- Как сделать (ассемблерный?) колл (может не понадобится) на
+  getNodeOperator?
+
+Если все окей, дальше делаем функцию проверки возможности
+начинать голосование и тест к ней
+
+#+BEGIN_SRC vyper :noweb-ref interfaces
+  interface Nor:
+    def getNodeOperator(_id: uint256, _fullInfo: bool) -> (bool, String[256], address, uint256, uint256, uint256, uint256): view
+#+END_SRC
+
+#+NAME: is_node_op
+#+BEGIN_SRC vyper
+  @external
+  def is_node_op(_id: uint256) -> String[256]:
+    nor_addr: address = 0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5
+    res: bool = False
+    name: String[256] = ""
+    rewardAddress: address = convert(0, address)
+    stakingLimit: uint256 = 0
+    stoppedValidators: uint256 = 0
+    totalSigningKeys: uint256 = 0
+    usedSigningKeys: uint256 = 0
+    (res, name, rewardAddress, stakingLimit, stoppedValidators, totalSigningKeys, usedSigningKeys) = Nor(nor_addr).getNodeOperator(_id, True)
+    log NodeOp(res)
+    return name
+#+END_SRC
+
+#+BEGIN_SRC vyper :noweb-ref events
+  event NodeOp:
+    res: bool
+#+END_SRC
+
+#+BEGIN_SRC vyper :noweb-ref test_nor
+  def test_nor(deploy_executor_and_pass_easy_track_vote):
+      print("TEST : NOR is running...")
+      executor = deploy_executor_and_pass_easy_track_vote()
+      print("test^output:")
+      print(executor.is_node_op(0x5))
+      # Чтобы тест упал и я увидел отладочные сообщения
+      # assert 0 == 1
+      with reverts():
+          accounts[0].transfer(accounts[1], "10 ether", gas_price=0)
+      # print("TEST: NOR {res}")
+#+END_SRC
+
 ** Possible Attacks
 
 Возможна атака, когда ~ballot maker~ создает много
@@ -292,7 +345,8 @@ https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOpe
 заинтересованность в выводе денег.
 
 Была идея, чтобы возможность создавать easy-track
-голосования была как-то привязана к LDO-токенам.
+голосования была как-то привязана к LDO-токенам. Мы от нее
+отказались.
 
 Мы могли бы заблокировать токены двумя способами:
 - перевести их на контракт, и после окончания голосования
@@ -493,9 +547,10 @@ storage переменной:
 сделано. Надо вызвать функцию, которая переведет деньги. В
 LIDO DAO есть адреса арагоновских проксиков, в арагоне
 написано как это работает (etherscan). CallData определяет
-что именно дергать.  Посмотреть как у арагона это
-сделано. Посмотреть что происходит при enacting голосования
-арагона в LIDO DAO, и в код арагона на etherscan
+что именно дергать. Посмотреть как у арагона это сделано
+(как мне это увидеть?). Посмотреть что происходит при
+enacting голосования арагона в LIDO DAO, и в код арагона на
+etherscan
 
 #+NAME: ballot_result
 #+BEGIN_SRC vyper :noweb yes
@@ -564,6 +619,49 @@ DAO, чтобы протестить это? Как написать такой 
 [TODO:gmm] regular insurance payments Тут надо делать вызов
 вручную раз в полгода
 
+-------------------------
+
+- Me: Я хочу проверить, что тот, кто создает голосование в
+EasyTrack является валидатором. Как мне получить файл
+интерфейса чтобы вызвать getNodeOperator из
+https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOperatorsRegistry.sol
+(строка 423) на нем?
+
+- Если я правильно понял, то тебе нужно сделать что-то такое:
+https://github.com/lidofinance/staking-rewards-manager/tree/main/contracts
+Здесь RewardsManager использует интерфейс StakingRrwards
+посмотри код по ссылке, там интерфейс используется в вайпере
+он руками в том же файле накидывается, упоминаются только те
+функции, которые нужны вызывающему коду
+https://github.com/lidofinance/staking-rewards-manager/blob/main/contracts/RewardsManager.vy#L8
+
+- Сам интерфейс понятно как юзать, непонятно где брать
+  условный interface/dao-voting.json
+
+для кода ты его сам накидываешь, посмотри строчку по моей
+ссылке json с интерфейсом в interfaces лежит обычно, надо в
+репке искать оооу, есть вариант, что там придется raw_call
+делать, потому что типа uint64 в вайпере нет пример того,
+как это делать:
+https://github.com/lidofinance/ldo-purchase-executor/blob/main/contracts/PurchaseExecutor.vy#L190
+
+попробую, а что делать если я хочу чтобы создавать вотинги
+могли только с гнозис-сейфа? Просто захардкодить адрес
+выглядит подозрительно просто..
+
+можно сделать настраиваемое поле, как в ownable делается
+
+- Еще есть вопрос по поводу того как протестировать что
+  дао-голосование создает изи-трек. Я смотрел тесты
+  purchaser-a но не смог сделать что то подобное (по тупости
+  наверно) Есть ли еще что посмотреть?
+
+- поищи в тестах в репках вокруг, мы много где проверяем
+  голосования — конкретнее не скажу сейчас
+
+- Sam: это реализуется механизмом вайтлиста, как мы с тобой
+  обсуждали в созвоне
+
 * Tangle
 
 #+BEGIN_SRC vyper :noweb yes :tangle ./contracts/ValidatorsVote.vy
@@ -602,6 +700,8 @@ DAO, чтобы протестить это? Как написать такой 
     <<send_objection>>
 
     <<ballot_result>>
+
+    <<is_node_op>>
 #+END_SRC
 
 * Tests
@@ -722,6 +822,8 @@ DAO, чтобы протестить это? Как написать такой 
       # assert 0 == 1
       with reverts():
           accounts[0].transfer(accounts[1], "10 ether", gas_price=0)
+
+  <<test_nor>>
 #+END_SRC
 
 ** Test plan

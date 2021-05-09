@@ -3,12 +3,16 @@
 # @licence MIT
 from vyper.interfaces import ERC20
 
+interface Nor:
+  def getNodeOperator(_id: uint256, _fullInfo: bool) -> (bool, String[256], address, uint256, uint256, uint256, uint256): view
 interface MiniMe:
   def balanceOfAt(_owner: address, _blockNumber: uint256) -> uint256: view
 
 event EasyTrackVoteStart:
   ballotHash: indexed(bytes32)
   ballotId: indexed(uint256)
+event NodeOp:
+  res: bool
 event Objection:
   sender: indexed(address)
   power: uint256
@@ -93,3 +97,17 @@ def ballotResult(_ballot_idx: uint256):
     assert block.timestamp > self.ballots[_ballot_idx].deadline
     assert self.ballots[_ballot_idx].objections_total_weight < self.objections_threshold
     log EnactBallot(_ballot_idx)
+
+@external
+def is_node_op(_id: uint256) -> String[256]:
+  nor_addr: address = 0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5
+  res: bool = False
+  name: String[256] = ""
+  rewardAddress: address = convert(0, address)
+  stakingLimit: uint256 = 0
+  stoppedValidators: uint256 = 0
+  totalSigningKeys: uint256 = 0
+  usedSigningKeys: uint256 = 0
+  (res, name, rewardAddress, stakingLimit, stoppedValidators, totalSigningKeys, usedSigningKeys) = Nor(nor_addr).getNodeOperator(_id, True)
+  log NodeOp(res)
+  return name
