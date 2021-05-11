@@ -12,7 +12,7 @@ event EasyTrackVoteStart:
   ballotHash: indexed(bytes32)
   ballotId: indexed(uint256)
 event NodeOp:
-  res: bool
+  res: address
 event Objection:
   sender: indexed(address)
   power: uint256
@@ -74,6 +74,19 @@ def make_ballot(_ballotHash: bytes32):
     self.next_ballot_index = self.next_ballot_index + 1
 
 @external
+def make_op_ballot(_ballotHash: bytes32, _op_id: uint256):
+    
+    self.ballots[self.next_ballot_index] = Ballot({
+        deadline: block.timestamp + self.ballot_time,
+        objections_total_weight: 0,
+        ballot_maker: msg.sender,
+        snapshot_block: block.number - 1
+    })
+    self.ballots[self.next_ballot_index].snapshot_block = block.number - 1
+    log EasyTrackVoteStart(_ballotHash, self.next_ballot_index)
+    self.next_ballot_index = self.next_ballot_index + 1
+
+@external
 def is_ballot_finished(_ballot_id: uint256) -> bool:
     if ( block.timestamp > self.ballots[_ballot_id].deadline ):
        return True
@@ -99,7 +112,8 @@ def ballotResult(_ballot_idx: uint256):
     log EnactBallot(_ballot_idx)
 
 @external
-def is_node_op(_id: uint256) -> String[256]:
+def is_node_op(_id: uint256) -> address:
+  # stub init
   nor_addr: address = 0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5
   res: bool = False
   name: String[256] = ""
@@ -108,6 +122,7 @@ def is_node_op(_id: uint256) -> String[256]:
   stoppedValidators: uint256 = 0
   totalSigningKeys: uint256 = 0
   usedSigningKeys: uint256 = 0
+  # get all validator's data
   (res, name, rewardAddress, stakingLimit, stoppedValidators, totalSigningKeys, usedSigningKeys) = Nor(nor_addr).getNodeOperator(_id, True)
-  log NodeOp(res)
-  return name
+  log NodeOp(rewardAddress)
+  return rewardAddress

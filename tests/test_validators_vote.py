@@ -84,8 +84,8 @@ def test_example(deploy_executor_and_pass_easy_track_vote):
 def test_nor(deploy_executor_and_pass_easy_track_vote):
     print("TEST : NOR is running...")
     executor = deploy_executor_and_pass_easy_track_vote()
-    print("someShit")
-    print(executor.is_node_op(0x5))
+    print("test^output:")
+    print(executor.is_node_op(0x5)) # stub id
     # Чтобы тест упал и я увидел отладочные сообщения
     # assert 0 == 1
     with reverts():

@@ -1,4 +1,4 @@
-# -*- mode: org; fill-column: 60; -*-
+ -*- mode: org; fill-column: 60; -*-
 #+STARTUP: showall indent hidestars
 
 * Intro
@@ -158,15 +158,15 @@ Registry. Ее вызов заменит блок <<only_ballot_maker>>. См.
 
 * Make Ballot
 
-Голосования нумеруются начиная с единицы, текущенной номер
+Голосования нумеруются начиная с единицы, текущий номер
 хранится в соотвествующей переменной:
 
 #+BEGIN_SRC vyper :noweb-ref data
   next_ballot_index: public(uint256)
 #+END_SRC
 
-Она должна быть проинициализирована, когда контракт
-создается:
+Эта переменная должна быть проинициализирована, когда
+контракт создается:
 
 #+BEGIN_SRC vyper :noweb-ref init
   self.next_ballot_index = 1
@@ -179,36 +179,86 @@ Registry. Ее вызов заменит блок <<only_ballot_maker>>. См.
 определять код, который будет выполнен, если голосование
 пройдет?
 
-Функция создания голосования:
+У нас пока есть две функции создания голосования:
+- для валидаторов
+- для всех остальных
+
+Каждая из этих функций включает общие фрагменты.
+
+Вот обычная функция голосования. Она проверяет, может ли
+sender создать голосование, создает его, эмитит событие и
+увеличивает индекс голосований:
 
 #+NAME: make_ballot
 #+BEGIN_SRC vyper :noweb yes
   @external
   def make_ballot(_ballotHash: bytes32):
       <<only_ballot_maker>>
-      self.ballots[self.next_ballot_index] = Ballot({
-          deadline: block.timestamp + self.ballot_time,
-          objections_total_weight: 0,
-          ballot_maker: msg.sender,
-          snapshot_block: block.number - 1
-      })
+      <<create_et_vote>>
       <<set_snapshot_block>>
-      log EasyTrackVoteStart(_ballotHash, self.next_ballot_index)
-      self.next_ballot_index = self.next_ballot_index + 1
+      <<log_et_vote_start>>
+      <<inc_et_idx>>
 #+END_SRC
 
-Для нее в структуре голосования нам нужны поля:
+Вот функция создания голосования операторов. Чтобы создавать
+операторские голосования, надо позволить передавать
+дополнительный параметр - идентификатор оператора, по нему
+извлекается адрес, который нужен чтобы определить,
+валидатор ли тот, кто пытается создать голосование:
+
+#+NAME: make_op_ballot
+#+BEGIN_SRC vyper :noweb yes
+  @external
+  def make_op_ballot(_ballotHash: bytes32, _op_id: uint256):
+      <<only_op_ballot_maker>>
+      <<create_et_vote>>
+      <<set_snapshot_block>>
+      <<log_et_vote_start>>
+      <<inc_et_idx>>
+#+END_SRC
+
+
+Для любых видов голосования нам нужны общие кодовые блоки,
+которые описаны в этом разделе. Специальные блоки описаны в
+подразделах
+
+Для структуры голосования нам нужно поле адреса создавшего
+голосование:
 
 #+BEGIN_SRC vyper :noweb-ref struct_ballot
   ballot_maker: address
 #+END_SRC
 
-Так как мы эмитим событие, его надо объявить:
+Так как мы эмитим событие начала голосования, его надо
+объявить:
 
 #+BEGIN_SRC vyper :noweb-ref events
   event EasyTrackVoteStart:
     ballotHash: indexed(bytes32)
     ballotId: indexed(uint256)
+#+END_SRC
+
+Этот блок создает новое голосование:
+
+#+BEGIN_SRC vyper :noweb-ref create_et_vote
+  self.ballots[self.next_ballot_index] = Ballot({
+      deadline: block.timestamp + self.ballot_time,
+      objections_total_weight: 0,
+      ballot_maker: msg.sender,
+      snapshot_block: block.number - 1
+  })
+#+END_SRC
+
+Эмитим эвент о том, что голосование началось:
+
+#+BEGIN_SRC vyper :noweb-ref log_et_vote_start
+  log EasyTrackVoteStart(_ballotHash, self.next_ballot_index)
+#+END_SRC
+
+И увеличиваем индекс голосования
+
+#+BEGIN_SRC vyper :noweb-ref inc_et_idx
+  self.next_ballot_index = self.next_ballot_index + 1
 #+END_SRC
 
 [NOTE:gmm] - Vasya:
@@ -230,8 +280,8 @@ Registry. Ее вызов заменит блок <<only_ballot_maker>>. См.
 
 * Make Ballot for Validators
 
-[TODO:gmm] - Для validator's easy track мы хотим проверять,
-что адрес, который создает голосование есть в Node Operator
+Для validator's easy track мы хотим проверять, что адрес,
+который создает голосование есть в Node Operator
 Registry. См. строчку 273 в файле:
 https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOperatorsRegistry.sol
 
@@ -241,8 +291,8 @@ https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOpe
 
 Тут мы должны будем передавать operator_id в функцию
 создания голосования. Мапа operators объявлена как internal,
-но есть функция getNodeOperator которая view accessor для
-этой мапы, и [TODO:gmm] - ее можно заюзать через интерфейс.
+но есть функция getNodeOperator которая ~view accessor~ для
+этой мапы, и ее можно заюзать через интерфейс.
 
 #+BEGIN_SRC solidity
   modifier operatorExists(uint256 _id) {
@@ -280,28 +330,38 @@ https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOpe
   }
 #+END_SRC
 
-План такой:
 
-Сначала делаем тест, который проверяет есть ли конкрентный
-оператор в Node Operator Registry
-- Как узнать адрес контракта NodeOperatorsRegistry.sol
-  0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5
-- Как узнать валидный адрес какого-нибудь из операторов?
-- Как сделать (ассемблерный?) колл (может не понадобится) на
-  getNodeOperator?
+Проверяем, что только создает голосование валидатор с
+указанным в параметрах ID:
 
-Если все окей, дальше делаем функцию проверки возможности
-начинать голосование и тест к ней
+#+NAME: only_op_ballot_maker
+#+BEGIN_SRC
+  assert msg.sender == is_node_op(_op_id)
+#+END_SRC
+
+Для этого потребуется функция, которая обращается к
+NodeOperatorRegistry, она описана в соответствущем
+подразделе: [[*Obtain validator address][Obtain validator address]]
+
+Далее создаем EasyTrack голосование обычным образом.
+
+** Obtain validator address
+
+Чтобы получить адрес валидатора понадобится интерфейс для
+обращения к NodeOperatorRegistry
 
 #+BEGIN_SRC vyper :noweb-ref interfaces
   interface Nor:
     def getNodeOperator(_id: uint256, _fullInfo: bool) -> (bool, String[256], address, uint256, uint256, uint256, uint256): view
 #+END_SRC
 
+И функция, которая возвращает адрес:
+
 #+NAME: is_node_op
 #+BEGIN_SRC vyper
   @external
-  def is_node_op(_id: uint256) -> String[256]:
+  def is_node_op(_id: uint256) -> address:
+    # stub init
     nor_addr: address = 0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5
     res: bool = False
     name: String[256] = ""
@@ -310,22 +370,28 @@ https://github.com/lidofinance/lido-dao/blob/master/contracts/0.4.24/nos/NodeOpe
     stoppedValidators: uint256 = 0
     totalSigningKeys: uint256 = 0
     usedSigningKeys: uint256 = 0
+    # get all validator's data
     (res, name, rewardAddress, stakingLimit, stoppedValidators, totalSigningKeys, usedSigningKeys) = Nor(nor_addr).getNodeOperator(_id, True)
-    log NodeOp(res)
-    return name
+    log NodeOp(rewardAddress)
+    return rewardAddress
 #+END_SRC
+
+Она включает евент, который нужен чтобы проверить что адрес
+возвращается правильно:
 
 #+BEGIN_SRC vyper :noweb-ref events
   event NodeOp:
-    res: bool
+    res: address
 #+END_SRC
+
+Я также попытался сделать тест, который это проверяет:
 
 #+BEGIN_SRC vyper :noweb-ref test_nor
   def test_nor(deploy_executor_and_pass_easy_track_vote):
       print("TEST : NOR is running...")
       executor = deploy_executor_and_pass_easy_track_vote()
       print("test^output:")
-      print(executor.is_node_op(0x5))
+      print(executor.is_node_op(0x5)) # stub id
       # Чтобы тест упал и я увидел отладочные сообщения
       # assert 0 == 1
       with reverts():
@@ -692,6 +758,8 @@ https://github.com/lidofinance/ldo-purchase-executor/blob/main/contracts/Purchas
     <<del_ballot_maker>>
 
     <<make_ballot>>
+
+    <<make_op_ballot>>
 
     <<is_ballot_finished>>
 
