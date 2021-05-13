@@ -1,5 +1,6 @@
 import pytest
 
+from brownie.network.state import Chain
 from brownie import NodeOperatorsEasyTrack, accounts, reverts
 import constants
 
@@ -112,3 +113,83 @@ def test_set_objections_threshold_called_not_by_owner(
             new_objections_threshold,
             { 'from': accounts[3] }
         )
+
+
+def test_create_voting_with_correct_node_operator_id(
+    voting_creator,
+    node_operators_easy_track
+):
+    "Must successfully create new voting with correct data"
+    chain = Chain()
+    node_operator_id = 1
+    staking_limit = 1000
+    voting_id = node_operators_easy_track.createVoting.call(
+        node_operator_id,
+        staking_limit,
+        { 'from': voting_creator }
+    )
+    assert voting_id == 1
+
+    node_operators_easy_track.createVoting(
+        node_operator_id,
+        staking_limit,
+        { 'from': voting_creator }
+    )
+
+    (
+        id,
+        duration,
+        start_date,
+        snapshot_block,
+        objections,
+        objections_threshold,
+        is_enacted,
+        is_canceled,
+        node_operator_ids,
+        staking_limits
+    ) = node_operators_easy_track.getVoting(voting_id)
+    assert id == 1
+    assert duration == constants.VOTING_DURATION
+    assert start_date == chain[-1].timestamp
+    assert snapshot_block == chain[-1].number
+    assert objections == 0
+    assert objections_threshold == constants.OBJECTIONS_THRESHOLD
+    assert not is_enacted
+    assert not is_canceled
+    assert node_operator_ids[0] == node_operator_id
+    assert staking_limits[0] == staking_limit
+
+
+def test_create_voting_called_not_by_voting_creator(node_operators_easy_track):
+    "Must fail with error 'Caller is not the voting creator'"
+    node_operator_id = 1
+    staking_limit = 1000
+    with reverts("Caller is not the voting creator"):
+        node_operators_easy_track.createVoting(
+            node_operator_id,
+            staking_limit,
+            { 'from': accounts[3] }
+        )
+
+
+def test_create_voting_with_not_existed_node_operator(
+    voting_creator,
+    node_operators_easy_track
+):
+    "Must fail with error 'NODE_OPERATOR_NOT_FOUND'"
+    node_operator_id = 10_000
+    staking_limit = 1000
+    with reverts("NODE_OPERATOR_NOT_FOUND"):
+        node_operators_easy_track.createVoting(
+            node_operator_id,
+            staking_limit,
+            { 'from': voting_creator }
+        )
+
+
+def test_create_voting_with_disabled_node_operator(
+    voting_creator,
+    node_operators_easy_track
+):
+    "Must fail with error 'Operator disabled'"
+    pass
