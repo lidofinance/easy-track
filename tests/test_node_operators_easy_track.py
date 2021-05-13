@@ -78,3 +78,37 @@ def test_set_voting_duration_called_not_by_owner(
             new_voting_duration,
             { 'from': accounts[3] }
         )
+
+
+def test_get_objections_threshold(node_operators_easy_track):
+    "Must return correct objections threshold"
+    assert node_operators_easy_track.getObjectionsThreshold(
+    ) == constants.OBJECTIONS_THRESHOLD
+
+
+def test_set_objections_threshold_called_by_owner(
+    owner,
+    node_operators_easy_track
+):
+    "Must update objections threshold"
+    new_objections_threshold = 10_000_000
+    assert node_operators_easy_track.getObjectionsThreshold(
+    ) == constants.OBJECTIONS_THRESHOLD
+    node_operators_easy_track.setObjectionsThreshold(
+        new_objections_threshold,
+        { 'from': owner }
+    )
+    assert node_operators_easy_track.getObjectionsThreshold(
+    ) == new_objections_threshold
+
+
+def test_set_objections_threshold_called_not_by_owner(
+    node_operators_easy_track
+):
+    "Must fail with error 'Ownable: caller is not the owner'"
+    new_objections_threshold = 10_000_000
+    with reverts("Ownable: caller is not the owner"):
+        node_operators_easy_track.setObjectionsThreshold(
+            new_objections_threshold,
+            { 'from': accounts[3] }
+        )

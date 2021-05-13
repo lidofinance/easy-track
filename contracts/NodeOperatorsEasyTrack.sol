@@ -76,4 +76,18 @@ contract NodeOperatorsEasyTrack is Ownable {
   function setVotingCreator(address _votingCreator) public onlyOwner {
     votingCreator = _votingCreator;
   }
+
+  /**
+  @notice Returns total balance of governance tokens required to make voting rejected
+  */
+  function getObjectionsThreshold() public view returns (uint256) {
+    return objectionsThreshold;
+  }
+
+   /**
+  @notice Set total balance of governance tokens required to make voting rejected
+  */
+  function setObjectionsThreshold(uint256 _objectionsThreshold) public onlyOwner {
+    objectionsThreshold = _objectionsThreshold;
+  }
 }
