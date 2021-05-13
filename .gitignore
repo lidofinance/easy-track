@@ -3,3 +3,8 @@ __pycache__
 .hypothesis/
 build/
 reports/
+.DS_Store
+.env
+/venv
+.vscode
+.pytest_cache
