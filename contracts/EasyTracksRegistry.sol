@@ -10,6 +10,8 @@ interface IForwardable {
 }
 
 contract EasyTracksRegistry is Ownable {
+    string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
+
     /**
      @dev upper bound for objectionsThreshold value.
      Stored in basis points (1% = 100)
@@ -24,39 +26,26 @@ contract EasyTracksRegistry is Ownable {
     /**
      @dev Aragon agent where evm script will be forwarded to
      */
-    IForwardable private aragonAgent;
+    IForwardable public aragonAgent;
 
     /**
      @dev Duration of the new motions in seconds
      */
-    uint64 private motionDuration = 48 hours;
+    uint256 public motionDuration = MIN_MOTION_DURATION;
 
     /**
      @dev Percent of governance tokens required to reject a proposal
      values stored in basis points (1% = 100).
      Default value is 0.5%
      */
-    uint64 private objectionsThreshold = 50;
+    uint256 public objectionsThreshold = 50;
 
     constructor(address _aragonAgent) {
         aragonAgent = IForwardable(_aragonAgent);
     }
 
-    /**
-     @notice Returns duration of new created motions
-     */
-    function getMotionDuration() public view returns (uint256) {
-        return motionDuration;
-    }
-
-    /**
-     @notice Percent of governance tokens required to reject a proposal in basis points (1% = 100)
-     */
-    function getObjectionsThreshold() public view returns (uint256) {
-        return objectionsThreshold;
-    }
-
-    function getAragonAgent() public view returns (address) {
-        return address(aragonAgent);
+    function setMotionDuration(uint256 _motionDuration) public onlyOwner {
+        require(_motionDuration >= MIN_MOTION_DURATION, ERROR_VALUE_TOO_SMALL);
+        motionDuration = uint64(_motionDuration);
     }
 }
