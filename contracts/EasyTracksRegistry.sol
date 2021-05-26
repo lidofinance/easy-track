@@ -11,6 +11,7 @@ interface IForwardable {
 
 contract EasyTracksRegistry is Ownable {
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
+    string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
 
     /**
      @dev upper bound for objectionsThreshold value.
@@ -47,5 +48,10 @@ contract EasyTracksRegistry is Ownable {
     function setMotionDuration(uint256 _motionDuration) public onlyOwner {
         require(_motionDuration >= MIN_MOTION_DURATION, ERROR_VALUE_TOO_SMALL);
         motionDuration = uint64(_motionDuration);
+    }
+
+    function setObjectionsThreshold(uint256 _objectionsThreshold) public onlyOwner {
+        require(_objectionsThreshold <= MAX_OBJECTIONS_THRESHOLD, ERROR_VALUE_TOO_LARGE);
+        objectionsThreshold = _objectionsThreshold;
     }
 }
