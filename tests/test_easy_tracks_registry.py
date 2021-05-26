@@ -85,3 +85,27 @@ def test_set_objections_threshold_called_with_too_large_value(
     with reverts("VALUE_TOO_LARGE"):
         easy_tracks_registry.setObjectionsThreshold(new_objections_threshold,
                                                     {'from': owner})
+
+
+def test_add_motion_executor_called_by_owner(
+    owner,
+    easy_tracks_registry,
+):
+    "Must add new executor with passed address to allowed executors list"
+    executor = accounts[2]
+    assert len(easy_tracks_registry.getMotionExecutors()) == 0
+    easy_tracks_registry.addMotionExecutor(executor, {'from': owner})
+    executors = easy_tracks_registry.getMotionExecutors()
+    assert len(executors) == 1
+    assert executors[0][0] == 1  # id
+    assert executors[0][1] == executor  # executorAddress
+
+
+def test_add_motion_executor_called_by_stranger(
+    stranger,
+    easy_tracks_registry,
+):
+    "Must fail with error 'Ownable: caller is not the owner'"
+    executor = accounts[2]
+    with reverts("Ownable: caller is not the owner"):
+        easy_tracks_registry.addMotionExecutor(executor, {'from': stranger})
