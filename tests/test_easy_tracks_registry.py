@@ -20,13 +20,17 @@ def test_set_motion_duration_called_by_owner(
     owner,
     easy_tracks_registry,
 ):
-    "Must update motion duration when value is greater or equal than MIN_MOTION_DURATION"
+    "Must update motion duration when value is greater or equal than"
+    "MIN_MOTION_DURATION and emits MotionDurationChanged event"
     new_motion_duration = 64 * 60 * 60
     assert easy_tracks_registry.motionDuration(
     ) == constants.DEFAULT_MOTION_DURATION
-    easy_tracks_registry.setMotionDuration(new_motion_duration,
-                                           {'from': owner})
+    tx = easy_tracks_registry.setMotionDuration(new_motion_duration,
+                                                {'from': owner})
     assert easy_tracks_registry.motionDuration() == new_motion_duration
+
+    assert len(tx.events) == 1
+    assert tx.events[0]['_newDuration'] == new_motion_duration
 
 
 def test_set_motion_duration_called_by_stranger(
@@ -55,14 +59,18 @@ def test_set_objections_threshold_called_by_owner(
     owner,
     easy_tracks_registry,
 ):
-    "Must update objections threshold when value is less or equal than MAX_OBJECTIONS_THRESHOLD"
+    "Must update objections threshold when value is less or equal"
+    "than MAX_OBJECTIONS_THRESHOLD and emits ObjectionsThresholdChanged event"
     new_objections_threshold = 100  # 1%
     assert easy_tracks_registry.objectionsThreshold(
     ) == constants.DEFAULT_OBJECTIONS_THRESHOLD
-    easy_tracks_registry.setObjectionsThreshold(new_objections_threshold,
-                                                {'from': owner})
+    tx = easy_tracks_registry.setObjectionsThreshold(new_objections_threshold,
+                                                     {'from': owner})
     assert easy_tracks_registry.objectionsThreshold(
     ) == new_objections_threshold
+
+    assert len(tx.events) == 1
+    assert tx.events[0]['_newThreshold'] == new_objections_threshold
 
 
 def test_set_objections_threshold_called_by_stranger(
@@ -92,13 +100,18 @@ def test_add_motion_executor_called_by_owner(
     easy_tracks_registry,
 ):
     "Must add new executor with passed address to allowed executors list"
+    "and emit ExecutorAdded event"
     executor = accounts[2]
     assert len(easy_tracks_registry.getMotionExecutors()) == 0
-    easy_tracks_registry.addMotionExecutor(executor, {'from': owner})
+    tx = easy_tracks_registry.addMotionExecutor(executor, {'from': owner})
     executors = easy_tracks_registry.getMotionExecutors()
     assert len(executors) == 1
     assert executors[0][0] == 1  # id
     assert executors[0][1] == executor  # executorAddress
+
+    assert len(tx.events) == 1
+    assert tx.events[0]['_executorId'] == 1
+    assert tx.events[0]['_executorAddress'] == executor
 
 
 def test_add_motion_executor_called_by_stranger(

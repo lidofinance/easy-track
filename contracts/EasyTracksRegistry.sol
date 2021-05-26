@@ -12,9 +12,14 @@ interface IForwardable {
 
 contract EasyTracksRegistry is Ownable {
     struct MotionExecutor {
-        uint256 id;
+        uint256 executorId;
         IEasyTrackExecutor executorAddress;
     }
+
+    event MotionDurationChanged(uint256 _newDuration);
+    event ObjectionsThresholdChanged(uint256 _newThreshold);
+    event ExecutorAdded(uint256 _executorId, address _executorAddress);
+
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
 
@@ -72,6 +77,7 @@ contract EasyTracksRegistry is Ownable {
     function setMotionDuration(uint256 _motionDuration) public onlyOwner {
         require(_motionDuration >= MIN_MOTION_DURATION, ERROR_VALUE_TOO_SMALL);
         motionDuration = uint64(_motionDuration);
+        emit MotionDurationChanged(_motionDuration);
     }
 
     /**
@@ -81,6 +87,7 @@ contract EasyTracksRegistry is Ownable {
     function setObjectionsThreshold(uint256 _objectionsThreshold) public onlyOwner {
         require(_objectionsThreshold <= MAX_OBJECTIONS_THRESHOLD, ERROR_VALUE_TOO_LARGE);
         objectionsThreshold = _objectionsThreshold;
+        emit ObjectionsThresholdChanged(_objectionsThreshold);
     }
 
     /**
@@ -88,9 +95,10 @@ contract EasyTracksRegistry is Ownable {
      Can be callend only by owner of contract.
      */
     function addMotionExecutor(address _executor) external onlyOwner {
-        uint256 id = ++lastExecutorId;
-        executorIds.push(id);
-        executors[id] = IEasyTrackExecutor(_executor);
+        uint256 executorId = ++lastExecutorId;
+        executorIds.push(executorId);
+        executors[executorId] = IEasyTrackExecutor(_executor);
+        emit ExecutorAdded(executorId, _executor);
     }
 
     /**
