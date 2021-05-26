@@ -1,0 +1,23 @@
+networks:
+  default: development
+  development:
+    cmd: ganache-cli
+    host: http://127.0.0.1
+    timeout: 120
+    cmd_settings:
+      port: 8545
+      gas_limit: 12000000
+      accounts: 10
+      evm_version: istanbul
+      mnemonic: brownie
+      fork: goerli
+
+dependencies:
+  - OpenZeppelin/openzeppelin-contracts@4.1.0
+
+# path remapping to support OpenZepplin imports with NPM-style path
+compiler:
+  solc:
+    version: 0.8.4
+    remappings:
+      - "@openzeppelin=OpenZeppelin/openzeppelin-contracts@4.1.0"
