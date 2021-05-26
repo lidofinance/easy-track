@@ -3,6 +3,7 @@ import pytest
 from brownie import EasyTracksRegistry, accounts, reverts
 
 import constants
+import random
 
 
 def test_deploy_easy_tracks_registry():
@@ -122,3 +123,79 @@ def test_add_motion_executor_called_by_stranger(
     executor = accounts[2]
     with reverts("Ownable: caller is not the owner"):
         easy_tracks_registry.addMotionExecutor(executor, {'from': stranger})
+
+
+def test_delete_motion_executor_called_by_owner(owner, easy_tracks_registry):
+    "Must delete executor from list of executors and emits ExecutorDeleted event"
+    executor = accounts[2]
+    easy_tracks_registry.addMotionExecutor(executor, {'from': owner})
+    executors = easy_tracks_registry.getMotionExecutors()
+    assert len(executors) == 1
+    tx = easy_tracks_registry.deleteMotionExecutor(executors[0][0])
+    assert len(easy_tracks_registry.getMotionExecutors()) == 0
+
+    assert len(tx.events) == 1
+    assert tx.events[0]['_executorId'] == executors[0][0]
+
+
+def test_delete_motion_executor_with_not_existed_executor_id(
+    owner,
+    easy_tracks_registry,
+):
+    "Must fail with error 'MOTION_NOT_FOUND'"
+    executor = accounts[2]
+    easy_tracks_registry.addMotionExecutor(executor, {'from': owner})
+    executors = easy_tracks_registry.getMotionExecutors()
+    assert len(executors) == 1
+    with reverts("MOTION_NOT_FOUND"):
+        easy_tracks_registry.deleteMotionExecutor(2)
+
+
+def test_delete_motion_executor_with_empty_executors(
+    owner,
+    easy_tracks_registry,
+):
+    "Must fail with error 'MOTION_NOT_FOUND'"
+    executors = easy_tracks_registry.getMotionExecutors()
+    assert len(executors) == 0
+    with reverts("MOTION_NOT_FOUND"):
+        easy_tracks_registry.deleteMotionExecutor(0)
+
+
+def test_delete_motion_executor_with_multiple_executors(
+    owner,
+    easy_tracks_registry,
+):
+    executor_addresses = []
+
+    for i in range(0, 5):
+        executor_addresses.append((i + 1, accounts[i + 2]))
+
+    for executor in executor_addresses:
+        easy_tracks_registry.addMotionExecutor(executor[1], {'from': owner})
+
+    executors = easy_tracks_registry.getMotionExecutors()
+    assert len(executors) == len(executor_addresses)
+
+    while len(executor_addresses) > 0:
+        index_to_delete = random.randint(0, len(executor_addresses) - 1)
+        (id, acc) = executor_addresses.pop(index_to_delete)
+
+        easy_tracks_registry.deleteMotionExecutor(id)
+        executors = easy_tracks_registry.getMotionExecutors()
+
+        set1 = set()
+
+        for acc in executor_addresses:
+            set1.add((acc[0], acc[1].address))
+
+        assert len(executors) == len(executor_addresses)
+
+
+def test_delete_motion_executor_called_by_stranger(
+    stranger,
+    easy_tracks_registry,
+):
+    "Must fail with error 'Ownable: caller is not the owner'"
+    with reverts("Ownable: caller is not the owner"):
+        easy_tracks_registry.deleteMotionExecutor(0, {'from': stranger})

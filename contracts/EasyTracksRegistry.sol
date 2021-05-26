@@ -12,17 +12,33 @@ interface IForwardable {
 
 contract EasyTracksRegistry is Ownable {
     struct MotionExecutor {
-        uint256 executorId;
-        IEasyTrackExecutor executorAddress;
+        uint256 id;
+        IEasyTrackExecutor executor;
+    }
+
+    struct Executors {
+        /**
+         @dev Id of last created executor
+         */
+        uint256 lastId;
+        /**
+         @dev List of active executors
+         */
+        MotionExecutor[] items;
+        /**
+         @dev Stores position of executor in `executors` array increased by 1
+         */
+        mapping(uint256 => uint256) indicesByExecutorId;
     }
 
     event MotionDurationChanged(uint256 _newDuration);
     event ObjectionsThresholdChanged(uint256 _newThreshold);
     event ExecutorAdded(uint256 _executorId, address _executorAddress);
+    event ExecutorDeleted(uint256 _executorId);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
-
+    string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
     /**
      @dev upper bound for objectionsThreshold value.
      Stored in basis points (1% = 100)
@@ -51,20 +67,7 @@ contract EasyTracksRegistry is Ownable {
      */
     uint256 public objectionsThreshold = 50;
 
-    /**
-     @dev Id of last created executor
-     */
-    uint256 private lastExecutorId;
-
-    /**
-     @dev List of active executors
-     */
-    uint256[] private executorIds;
-
-    /**
-     @dev Executors by id
-     */
-    mapping(uint256 => IEasyTrackExecutor) private executors;
+    Executors private executors;
 
     constructor(address _aragonAgent) {
         aragonAgent = IForwardable(_aragonAgent);
@@ -95,9 +98,9 @@ contract EasyTracksRegistry is Ownable {
      Can be callend only by owner of contract.
      */
     function addMotionExecutor(address _executor) external onlyOwner {
-        uint256 executorId = ++lastExecutorId;
-        executorIds.push(executorId);
-        executors[executorId] = IEasyTrackExecutor(_executor);
+        uint256 executorId = ++executors.lastId;
+        executors.items.push(MotionExecutor(executorId, IEasyTrackExecutor(_executor)));
+        executors.indicesByExecutorId[executorId] = executors.items.length;
         emit ExecutorAdded(executorId, _executor);
     }
 
@@ -105,11 +108,24 @@ contract EasyTracksRegistry is Ownable {
      @notice Returns list of active executors
      */
     function getMotionExecutors() public view returns (MotionExecutor[] memory result) {
-        uint256 count = executorIds.length;
-        result = new MotionExecutor[](count);
-        for (uint256 i = 0; i < count; i++) {
-            uint256 id = executorIds[i];
-            result[i] = MotionExecutor(id, executors[id]);
+        return executors.items;
+    }
+
+    function deleteMotionExecutor(uint256 _executorId) external onlyOwner {
+        uint256 valueIndex = executors.indicesByExecutorId[_executorId];
+        require(valueIndex > 0, ERROR_MOTION_NOT_FOUND);
+
+        uint256 indexToDelete = valueIndex - 1;
+        uint256 lastIndex = executors.items.length - 1;
+
+        if (indexToDelete != lastIndex) {
+            MotionExecutor storage lastExecutor = executors.items[lastIndex];
+            executors.items[indexToDelete] = lastExecutor;
+            executors.indicesByExecutorId[lastExecutor.id] = valueIndex;
         }
+
+        executors.items.pop();
+        delete executors.indicesByExecutorId[valueIndex];
+        emit ExecutorDeleted(_executorId);
     }
 }
