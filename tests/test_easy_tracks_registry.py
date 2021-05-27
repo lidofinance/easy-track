@@ -276,3 +276,51 @@ def test_create_motion_executor_does_not_exist(
     "Must fail with error: 'EXECUTOR_NOT_FOUND'"
     with reverts("EXECUTOR_NOT_FOUND"):
         easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+
+def test_cancel_motion_not_found(easy_tracks_registry):
+    "Must fail with error: 'MOTION_NOT_FOUND'"
+    with reverts("MOTION_NOT_FOUND"):
+        easy_tracks_registry.cancelMotion(1, "")
+
+
+def test_cancel_motion(owner, easy_tracks_registry, easy_track_executor_stub):
+    "Must remove motion and emit MotionCanceled event"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+    motions = easy_tracks_registry.getActiveMotions()
+
+    assert not easy_track_executor_stub.isBeforeCancelGuardCalled()
+    tx = easy_tracks_registry.cancelMotion(motions[0][0], "")
+    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert easy_track_executor_stub.isBeforeCancelGuardCalled()
+
+    assert len(tx.events) == 1
+    assert tx.events[0]["_motionId"] == motions[0][0]
+
+
+def test_cancel_motion_many_times(
+    owner, easy_tracks_registry, easy_track_executor_stub
+):
+    "Must remove motions in correct order"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    motion_ids = []
+    for i in range(0, 5):
+        tx = easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+        motion_ids.append(tx.events[0]["_motionId"])
+
+    while len(motion_ids) > 0:
+        index = random.randint(0, len(motion_ids) - 1)
+        id_to_delete = motion_ids.pop(index)
+        easy_tracks_registry.cancelMotion(id_to_delete, "")
+
+        motions = easy_tracks_registry.getActiveMotions()
+        assert len(motions) == len(motion_ids)
+
+        active_motion_ids = []
+        for m in motions:
+            active_motion_ids.append(m[0])
+
+        len(set(motion_ids).union(active_motion_ids)) == len(motions)

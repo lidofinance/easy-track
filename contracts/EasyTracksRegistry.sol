@@ -14,18 +14,6 @@ contract EasyTracksRegistry is Ownable {
     struct Motion {
         uint256 id;
         address executor;
-        uint64 duration;
-        uint64 startDate;
-        uint64 snapshotBlock;
-        uint64 objectionsThreshold;
-        uint256 objectionsAmount;
-        bytes data;
-        mapping(address => bool) objections;
-    }
-
-    struct MotionView {
-        uint256 id;
-        address executor;
         uint256 duration;
         uint256 startDate;
         uint256 snapshotBlock;
@@ -44,6 +32,7 @@ contract EasyTracksRegistry is Ownable {
     );
     event ExecutorDeleted(address indexed _executor);
     event MotionCreated(uint256 indexed _motionId, address indexed _executor, bytes data);
+    event MotionCanceled(uint256 indexed _motionId);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
@@ -84,6 +73,8 @@ contract EasyTracksRegistry is Ownable {
     uint256 private lastMotionId;
     Motion[] motions;
     mapping(uint256 => uint256) motionIndicesByMotionId;
+
+    mapping(uint256 => mapping(address => bool)) objections;
 
     constructor(address _aragonAgent) {
         aragonAgent = IForwardable(_aragonAgent);
@@ -160,10 +151,10 @@ contract EasyTracksRegistry is Ownable {
 
         m.id = _motionId;
         m.executor = _executor;
-        m.duration = uint64(motionDuration);
-        m.startDate = uint64(block.timestamp);
-        m.snapshotBlock = uint64(block.number);
-        m.objectionsThreshold = uint64(objectionsThreshold);
+        m.duration = motionDuration;
+        m.startDate = block.timestamp;
+        m.snapshotBlock = block.number;
+        m.objectionsThreshold = objectionsThreshold;
         m.data = _data;
 
         motionIndicesByMotionId[_motionId] = motions.length;
@@ -171,20 +162,31 @@ contract EasyTracksRegistry is Ownable {
         emit MotionCreated(_motionId, _executor, _data);
     }
 
-    function getActiveMotions() public view returns (MotionView[] memory res) {
-        uint256 motionsCount = motions.length;
-        res = new MotionView[](motions.length);
+    function cancelMotion(uint256 _motionId, bytes memory _data) public motionExists(_motionId) {
+        Motion storage m = motions[motionIndicesByMotionId[_motionId] - 1];
 
-        for (uint256 i = 0; i < motionsCount; i++) {
-            Motion storage m = motions[i];
-            res[i].id = m.id;
-            res[i].executor = m.executor;
-            res[i].duration = m.duration;
-            res[i].startDate = m.startDate;
-            res[i].snapshotBlock = m.snapshotBlock;
-            res[i].objectionsThreshold = m.objectionsThreshold;
-            res[i].data = m.data;
+        IEasyTrackExecutor(m.executor).beforeCancelMotionGuard(msg.sender, _motionId, _data);
+
+        _deleteMotion(_motionId);
+        emit MotionCanceled(_motionId);
+    }
+
+    function getActiveMotions() public view returns (Motion[] memory res) {
+        return motions;
+    }
+
+    function _deleteMotion(uint256 _motionId) private {
+        uint256 index = motionIndicesByMotionId[_motionId] - 1;
+        uint256 lastIndex = motions.length - 1;
+
+        if (index != lastIndex) {
+            Motion storage lastMotion = motions[lastIndex];
+            motions[index] = lastMotion;
+            motionIndicesByMotionId[lastMotion.id] = index + 1;
         }
+
+        motions.pop();
+        delete motionIndicesByMotionId[_motionId];
     }
 
     function _getExecutorIndex(address executorId) private view returns (uint256 _index) {
@@ -195,6 +197,11 @@ contract EasyTracksRegistry is Ownable {
 
     modifier executorExists(address _executor) {
         require(executorIndices[_executor] > 0, ERROR_EXECUTOR_NOT_FOUND);
+        _;
+    }
+
+    modifier motionExists(uint256 _motionId) {
+        require(motionIndicesByMotionId[_motionId] > 0, ERROR_MOTION_NOT_FOUND);
         _;
     }
 }
