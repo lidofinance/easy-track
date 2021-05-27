@@ -11,34 +11,45 @@ interface IForwardable {
 }
 
 contract EasyTracksRegistry is Ownable {
-    struct MotionExecutor {
+    struct Motion {
         uint256 id;
-        IEasyTrackExecutor executor;
+        address executor;
+        uint64 duration;
+        uint64 startDate;
+        uint64 snapshotBlock;
+        uint64 objectionsThreshold;
+        uint256 objectionsAmount;
+        bytes data;
+        mapping(address => bool) objections;
     }
 
-    struct Executors {
-        /**
-         @dev Id of last created executor
-         */
-        uint256 lastId;
-        /**
-         @dev List of active executors
-         */
-        MotionExecutor[] items;
-        /**
-         @dev Stores position of executor in `executors` array increased by 1
-         */
-        mapping(uint256 => uint256) indicesByExecutorId;
+    struct MotionView {
+        uint256 id;
+        address executor;
+        uint256 duration;
+        uint256 startDate;
+        uint256 snapshotBlock;
+        uint256 objectionsThreshold;
+        uint256 objectionsAmount;
+        bytes data;
     }
 
     event MotionDurationChanged(uint256 _newDuration);
     event ObjectionsThresholdChanged(uint256 _newThreshold);
-    event ExecutorAdded(uint256 _executorId, address _executorAddress);
-    event ExecutorDeleted(uint256 _executorId);
+    event ExecutorAdded(
+        address indexed _executor,
+        bytes4 _executeMethodId,
+        string _executeCalldataSignature,
+        string _description
+    );
+    event ExecutorDeleted(address indexed _executor);
+    event MotionCreated(uint256 indexed _motionId, address indexed _executor, bytes data);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
     string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
+    string private constant ERROR_EXECUTOR_ALREADY_ADDED = "EXECUTOR_ALREADY_ADDED";
+    string private constant ERROR_EXECUTOR_NOT_FOUND = "EXECUTOR_NOT_FOUND";
     /**
      @dev upper bound for objectionsThreshold value.
      Stored in basis points (1% = 100)
@@ -67,7 +78,12 @@ contract EasyTracksRegistry is Ownable {
      */
     uint256 public objectionsThreshold = 50;
 
-    Executors private executors;
+    address[] public executors;
+    mapping(address => uint256) private executorIndices;
+
+    uint256 private lastMotionId;
+    Motion[] motions;
+    mapping(uint256 => uint256) motionIndicesByMotionId;
 
     constructor(address _aragonAgent) {
         aragonAgent = IForwardable(_aragonAgent);
@@ -97,35 +113,88 @@ contract EasyTracksRegistry is Ownable {
      @notice Adds a new `_executor` into the current list of executors.
      Can be callend only by owner of contract.
      */
-    function addMotionExecutor(address _executor) external onlyOwner {
-        uint256 executorId = ++executors.lastId;
-        executors.items.push(MotionExecutor(executorId, IEasyTrackExecutor(_executor)));
-        executors.indicesByExecutorId[executorId] = executors.items.length;
-        emit ExecutorAdded(executorId, _executor);
+    function addExecutor(address _executor) external onlyOwner {
+        require(executorIndices[_executor] == 0, ERROR_EXECUTOR_ALREADY_ADDED);
+        executors.push(_executor);
+        executorIndices[_executor] = executors.length;
+        IEasyTrackExecutor ex = IEasyTrackExecutor(_executor);
+        emit ExecutorAdded(
+            _executor,
+            ex.executeMethodId(),
+            ex.executeCalldataSignature(),
+            ex.description()
+        );
     }
 
     /**
      @notice Returns list of active executors
      */
-    function getMotionExecutors() public view returns (MotionExecutor[] memory result) {
-        return executors.items;
+    function getExecutors() public view returns (address[] memory result) {
+        return executors;
     }
 
-    function deleteMotionExecutor(uint256 _executorId) external onlyOwner {
-        uint256 valueIndex = executors.indicesByExecutorId[_executorId];
-        require(valueIndex > 0, ERROR_MOTION_NOT_FOUND);
+    function deleteExecutor(address _executor) external onlyOwner {
+        uint256 index = _getExecutorIndex(_executor);
+        uint256 lastIndex = executors.length - 1;
 
-        uint256 indexToDelete = valueIndex - 1;
-        uint256 lastIndex = executors.items.length - 1;
-
-        if (indexToDelete != lastIndex) {
-            MotionExecutor storage lastExecutor = executors.items[lastIndex];
-            executors.items[indexToDelete] = lastExecutor;
-            executors.indicesByExecutorId[lastExecutor.id] = valueIndex;
+        if (index != lastIndex) {
+            address lastExecutor = executors[lastIndex];
+            executors[index] = lastExecutor;
+            executorIndices[lastExecutor] = index + 1;
         }
 
-        executors.items.pop();
-        delete executors.indicesByExecutorId[valueIndex];
-        emit ExecutorDeleted(_executorId);
+        executors.pop();
+        delete executorIndices[_executor];
+        emit ExecutorDeleted(_executor);
+    }
+
+    function createMotion(address _executor, bytes memory _data)
+        public
+        executorExists(_executor)
+        returns (uint256 _motionId)
+    {
+        IEasyTrackExecutor(_executor).beforeCreateMotionGuard(msg.sender, _data);
+
+        Motion storage m = motions.push();
+        _motionId = ++lastMotionId;
+
+        m.id = _motionId;
+        m.executor = _executor;
+        m.duration = uint64(motionDuration);
+        m.startDate = uint64(block.timestamp);
+        m.snapshotBlock = uint64(block.number);
+        m.objectionsThreshold = uint64(objectionsThreshold);
+        m.data = _data;
+
+        motionIndicesByMotionId[_motionId] = motions.length;
+
+        emit MotionCreated(_motionId, _executor, _data);
+    }
+
+    function getActiveMotions() public view returns (MotionView[] memory res) {
+        uint256 motionsCount = motions.length;
+        res = new MotionView[](motions.length);
+
+        for (uint256 i = 0; i < motionsCount; i++) {
+            Motion storage m = motions[i];
+            res[i].id = m.id;
+            res[i].executor = m.executor;
+            res[i].duration = m.duration;
+            res[i].startDate = m.startDate;
+            res[i].snapshotBlock = m.snapshotBlock;
+            res[i].objectionsThreshold = m.objectionsThreshold;
+            res[i].data = m.data;
+        }
+    }
+
+    function _getExecutorIndex(address executorId) private view returns (uint256 _index) {
+        _index = executorIndices[executorId];
+        require(_index > 0, ERROR_EXECUTOR_NOT_FOUND);
+        _index -= 1;
+    }
+
+    modifier executorExists(address _executor) {
+        require(executorIndices[_executor] > 0, ERROR_EXECUTOR_NOT_FOUND);
+        _;
     }
 }
