@@ -10,6 +10,12 @@ interface IForwardable {
     function forward(bytes memory _evmScript) external;
 }
 
+interface MiniMeToken {
+    function balanceOfAt(address _owner, uint256 _blockNumber) external returns (uint256);
+
+    function totalSupplyAt(uint256 _blockNumber) external view returns (uint256);
+}
+
 contract EasyTracksRegistry is Ownable {
     struct Motion {
         uint256 id;
@@ -19,6 +25,7 @@ contract EasyTracksRegistry is Ownable {
         uint256 snapshotBlock;
         uint256 objectionsThreshold;
         uint256 objectionsAmount;
+        uint256 objectionsAmountPct;
         bytes data;
     }
 
@@ -33,12 +40,23 @@ contract EasyTracksRegistry is Ownable {
     event ExecutorDeleted(address indexed _executor);
     event MotionCreated(uint256 indexed _motionId, address indexed _executor, bytes data);
     event MotionCanceled(uint256 indexed _motionId);
+    event ObjectionSent(
+        uint256 indexed _motionId,
+        address indexed _voterAddress,
+        uint256 _weight,
+        uint256 _votingPower
+    );
+    event MotionRejected(uint256 indexed _motionId);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
     string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
     string private constant ERROR_EXECUTOR_ALREADY_ADDED = "EXECUTOR_ALREADY_ADDED";
     string private constant ERROR_EXECUTOR_NOT_FOUND = "EXECUTOR_NOT_FOUND";
+    string private constant ERROR_ALREADY_OBJECTED = "ALREADY_OBJECTED";
+    string private constant ERROR_MOTION_PASSED = "MOTION_PASSED";
+    string private constant ERROR_NOT_ENOUGH_BALANCE = "NOT_ENOUGH_BALANCE";
+
     /**
      @dev upper bound for objectionsThreshold value.
      Stored in basis points (1% = 100)
@@ -76,15 +94,18 @@ contract EasyTracksRegistry is Ownable {
 
     mapping(uint256 => mapping(address => bool)) objections;
 
-    constructor(address _aragonAgent) {
+    MiniMeToken public governanceToken;
+
+    constructor(address _aragonAgent, address _governanceToken) {
         aragonAgent = IForwardable(_aragonAgent);
+        governanceToken = MiniMeToken(_governanceToken);
     }
 
     /**
      @notice Set duration of new created motions.
      Can be called only by the owner of contract.
      */
-    function setMotionDuration(uint256 _motionDuration) public onlyOwner {
+    function setMotionDuration(uint256 _motionDuration) external onlyOwner {
         require(_motionDuration >= MIN_MOTION_DURATION, ERROR_VALUE_TOO_SMALL);
         motionDuration = uint64(_motionDuration);
         emit MotionDurationChanged(_motionDuration);
@@ -94,7 +115,7 @@ contract EasyTracksRegistry is Ownable {
      @notice Set percent of governance tokens required to reject a proposal.
      Can be callend only by owner of contract.
      */
-    function setObjectionsThreshold(uint256 _objectionsThreshold) public onlyOwner {
+    function setObjectionsThreshold(uint256 _objectionsThreshold) external onlyOwner {
         require(_objectionsThreshold <= MAX_OBJECTIONS_THRESHOLD, ERROR_VALUE_TOO_LARGE);
         objectionsThreshold = _objectionsThreshold;
         emit ObjectionsThresholdChanged(_objectionsThreshold);
@@ -140,7 +161,7 @@ contract EasyTracksRegistry is Ownable {
     }
 
     function createMotion(address _executor, bytes memory _data)
-        public
+        external
         executorExists(_executor)
         returns (uint256 _motionId)
     {
@@ -162,13 +183,36 @@ contract EasyTracksRegistry is Ownable {
         emit MotionCreated(_motionId, _executor, _data);
     }
 
-    function cancelMotion(uint256 _motionId, bytes memory _data) public motionExists(_motionId) {
-        Motion storage m = motions[motionIndicesByMotionId[_motionId] - 1];
+    function cancelMotion(uint256 _motionId, bytes memory _data) external motionExists(_motionId) {
+        Motion storage m = _getMotion(_motionId);
 
         IEasyTrackExecutor(m.executor).beforeCancelMotionGuard(msg.sender, _motionId, _data);
 
         _deleteMotion(_motionId);
         emit MotionCanceled(_motionId);
+    }
+
+    function sendObjection(uint256 _motionId) external motionExists(_motionId) {
+        require(!objections[_motionId][msg.sender], ERROR_ALREADY_OBJECTED);
+        objections[_motionId][msg.sender] = true;
+
+        Motion storage m = _getMotion(_motionId);
+
+        require(m.startDate + m.duration > block.timestamp, ERROR_MOTION_PASSED);
+
+        uint256 balance = governanceToken.balanceOfAt(msg.sender, m.snapshotBlock);
+        require(balance > 0, ERROR_NOT_ENOUGH_BALANCE);
+
+        m.objectionsAmount += balance;
+        uint256 totalSupply = governanceToken.totalSupplyAt(m.snapshotBlock);
+        m.objectionsAmountPct = (10000 * m.objectionsAmount) / totalSupply;
+
+        emit ObjectionSent(_motionId, msg.sender, balance, totalSupply);
+
+        if (m.objectionsAmountPct > m.objectionsThreshold) {
+            _deleteMotion(_motionId);
+            emit MotionRejected(_motionId);
+        }
     }
 
     function getActiveMotions() public view returns (Motion[] memory res) {
@@ -193,6 +237,10 @@ contract EasyTracksRegistry is Ownable {
         _index = executorIndices[executorId];
         require(_index > 0, ERROR_EXECUTOR_NOT_FOUND);
         _index -= 1;
+    }
+
+    function _getMotion(uint256 _motionId) private view returns (Motion storage) {
+        return motions[motionIndicesByMotionId[_motionId] - 1];
     }
 
     modifier executorExists(address _executor) {

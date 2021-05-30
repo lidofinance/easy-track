@@ -11,11 +11,14 @@ import constants
 def test_deploy_easy_tracks_registry():
     "Must deploy EasyTracksRegistry contract with correct params"
     owner = accounts[0]
-    contract = owner.deploy(EasyTracksRegistry, constants.ARAGON_AGENT)
+    contract = owner.deploy(
+        EasyTracksRegistry, constants.ARAGON_AGENT, constants.LDO_TOKEN
+    )
 
     assert contract.motionDuration() == constants.DEFAULT_MOTION_DURATION
     assert contract.objectionsThreshold() == constants.DEFAULT_OBJECTIONS_THRESHOLD
     assert contract.aragonAgent() == constants.ARAGON_AGENT
+    assert contract.governanceToken() == constants.LDO_TOKEN
 
 
 def test_set_motion_duration_called_by_owner(
@@ -262,7 +265,8 @@ def test_create_motion(owner, easy_tracks_registry, easy_track_executor_stub):
         motions[0][5] == constants.DEFAULT_OBJECTIONS_THRESHOLD
     )  # objectionsThreshold
     assert motions[0][6] == 0  # objectionsAmount
-    assert motions[0][7] == "0x" + calldata.hex()  # data
+    assert motions[0][7] == 0  # objectionsAmountPct
+    assert motions[0][8] == "0x" + calldata.hex()  # data
 
     assert len(tx.events) == 1
     assert tx.events[0]["_motionId"] == motions[0][0]
@@ -324,3 +328,128 @@ def test_cancel_motion_many_times(
             active_motion_ids.append(m[0])
 
         len(set(motion_ids).union(active_motion_ids)) == len(motions)
+
+
+def test_send_objection_motion_not_found(easy_tracks_registry):
+    "Must fail with error: 'MOTION_NOT_FOUND'"
+    with reverts("MOTION_NOT_FOUND"):
+        easy_tracks_registry.sendObjection(1)
+
+
+def test_send_objection_multiple_times(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'ALREADY_OBJECTED'"
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+    easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})
+
+    with reverts("ALREADY_OBJECTED"):
+        easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})
+
+
+def test_send_objection_passed_motion(
+    owner,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'ERROR_MOTION_PASSED'"
+    chain = Chain()
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
+    with reverts("MOTION_PASSED"):
+        easy_tracks_registry.sendObjection(1)
+
+
+def test_send_objection_not_ldo_holder(
+    owner,
+    stranger,
+    ldo_token,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'NOT_ENOUGH_BALANCE'"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    assert ldo_token.balanceOf(stranger) == 0
+
+    with reverts("NOT_ENOUGH_BALANCE"):
+        easy_tracks_registry.sendObjection(1, {"from": stranger})
+
+
+def test_send_objection_by_tokens_holder(
+    owner,
+    ldo_holders,
+    ldo_token,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must increase motion objections on correct amount and emit ObjectionSent event"
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    tx = easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})
+
+    motions = easy_tracks_registry.getActiveMotions()
+
+    assert len(motions) == 1
+
+    total_supply = ldo_token.totalSupply()
+    holder_balance = ldo_token.balanceOf(ldo_holders[0])
+    holder_part = 10000 * holder_balance / total_supply
+
+    assert motions[0][6] == ldo_token.balanceOf(ldo_holders[0])  # objectionsAmount
+    assert motions[0][7] == holder_part  # objectionsAmountPct
+
+    assert len(tx.events) == 1
+
+    assert tx.events[0]["_motionId"] == motions[0][0]
+    assert tx.events[0]["_voterAddress"] == ldo_holders[0]
+    assert tx.events[0]["_weight"] == holder_balance
+    assert tx.events[0]["_votingPower"] == total_supply
+
+
+def test_send_objection_rejected(
+    owner,
+    ldo_holders,
+    ldo_token,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must delete motion and emit MotionRejected event"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})  # 0.2 % objections
+    easy_tracks_registry.sendObjection(1, {"from": ldo_holders[1]})  # 0.4 % objections
+
+    motions = easy_tracks_registry.getActiveMotions()
+    assert len(motions) == 1
+
+    tx = easy_tracks_registry.sendObjection(
+        1, {"from": ldo_holders[2]}
+    )  # 0.6 % objections
+
+    motions = easy_tracks_registry.getActiveMotions()
+    assert len(motions) == 0
+
+    total_supply = ldo_token.totalSupply()
+    holder_balance = ldo_token.balanceOf(ldo_holders[2])
+
+    assert len(tx.events) == 2
+
+    assert tx.events[0]["_motionId"] == 1
+    assert tx.events[0]["_voterAddress"] == ldo_holders[2]
+    assert tx.events[0]["_weight"] == holder_balance
+    assert tx.events[0]["_votingPower"] == total_supply
+
+    assert tx.events[1]["_motionId"] == 1
