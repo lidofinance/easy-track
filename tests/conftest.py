@@ -1,5 +1,12 @@
 import pytest
-from brownie import EasyTrackExecutorStub, EasyTracksRegistry, chain, Wei, ZERO_ADDRESS
+from brownie import (
+    AragonAgentMock,
+    EasyTrackExecutorStub,
+    EasyTracksRegistry,
+    chain,
+    Wei,
+    ZERO_ADDRESS,
+)
 import constants
 
 
@@ -14,8 +21,13 @@ def stranger(accounts):
 
 
 @pytest.fixture(scope="function")
-def easy_tracks_registry(owner):
-    return owner.deploy(EasyTracksRegistry, constants.ARAGON_AGENT, constants.LDO_TOKEN)
+def aragon_agent_mock(owner):
+    return owner.deploy(AragonAgentMock)
+
+
+@pytest.fixture(scope="function")
+def easy_tracks_registry(owner, aragon_agent_mock):
+    return owner.deploy(EasyTracksRegistry, aragon_agent_mock, constants.LDO_TOKEN)
 
 
 @pytest.fixture(scope="function")

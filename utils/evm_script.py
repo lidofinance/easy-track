@@ -4,13 +4,16 @@ from eth_typing.evm import HexAddress
 
 EMPTY_CALLSCRIPT = '0x00000001'
 
+
 def create_executor_id(id):
     return '0x' + str(id).zfill(8)
+
 
 def strip_byte_prefix(hexstr):
     return hexstr[2:] if hexstr[0:2] == '0x' else hexstr
 
-def encode_call_script(actions, spec_id = 1):
+
+def encode_call_script(actions, spec_id=1):
     result = create_executor_id(spec_id)
     for to, calldata in actions:
         addr_bytes = Web3.toBytes(hexstr=HexAddress(to)).hex()
@@ -18,3 +21,18 @@ def encode_call_script(actions, spec_id = 1):
         length = eth_abi.encode_single('int256', len(calldata_bytes) // 2).hex()
         result += addr_bytes + length[56:] + calldata_bytes
     return result
+
+
+def create_vote_script(voting, token_manager, vote_desc, evm_script):
+    new_vote_script = encode_call_script(
+        [
+            (
+                voting.address,
+                voting.newVote.encode_input(
+                    evm_script if evm_script is not None else EMPTY_CALLSCRIPT,
+                    vote_desc
+                )
+            )
+        ]
+    )
+    return token_manager.forward.encode_input(new_vote_script)

@@ -4,6 +4,7 @@ import pytest
 from brownie.network.state import Chain
 from brownie import EasyTrackExecutorStub, EasyTracksRegistry, accounts, reverts
 from eth_abi import encode_single
+from utils.evm_script import encode_call_script
 
 import constants
 
@@ -453,3 +454,90 @@ def test_send_objection_rejected(
     assert tx.events[0]["_votingPower"] == total_supply
 
     assert tx.events[1]["_motionId"] == 1
+
+
+def test_enact_motion_not_exist(owner, easy_tracks_registry, easy_track_executor_stub):
+    "Must fail with error: 'MOTION_NOT_FOUND'"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    with reverts("MOTION_NOT_FOUND"):
+        easy_tracks_registry.enactMotion(1)
+
+
+def test_enact_motion_not_passed(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'MOTION_NOT_PASSED'"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    with reverts("MOTION_NOT_PASSED"):
+        easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
+
+
+def test_enact_motion_executor_not_found(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'EXECUTOR_NOT_FOUND'"
+    chain = Chain()
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    easy_tracks_registry.deleteExecutor(easy_track_executor_stub, {"from": owner})
+
+    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
+
+    with reverts("EXECUTOR_NOT_FOUND"):
+        easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
+
+
+def test_enact_motion(
+    owner,
+    easy_tracks_registry,
+    aragon_agent_mock,
+    easy_track_executor_stub,
+):
+    "Must pass correct evmScript to aragon agent mock, delete motion and emit MotionEnacted event"
+    chain = Chain()
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    calldata = encode_single(
+        easy_track_executor_stub.executeCalldataSignature(),
+        [2021, accounts[1].address],
+    ).hex()
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, calldata)
+
+    motions = easy_tracks_registry.getActiveMotions()
+
+    assert len(motions) == 1
+
+    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
+
+    tx = easy_tracks_registry.enactMotion(motions[0][0])
+
+    forward_data = aragon_agent_mock.data()
+
+    assert forward_data == encode_call_script(
+        [
+            (
+                easy_track_executor_stub.address,
+                easy_track_executor_stub.dataSignature.encode_input(
+                    2021, accounts[1].address
+                ),
+            )
+        ]
+    )
+
+    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(tx.events) == 1
+    assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]

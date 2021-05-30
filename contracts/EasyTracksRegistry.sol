@@ -47,6 +47,7 @@ contract EasyTracksRegistry is Ownable {
         uint256 _votingPower
     );
     event MotionRejected(uint256 indexed _motionId);
+    event MotionEnacted(uint256 indexed _motionId);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
@@ -56,6 +57,7 @@ contract EasyTracksRegistry is Ownable {
     string private constant ERROR_ALREADY_OBJECTED = "ALREADY_OBJECTED";
     string private constant ERROR_MOTION_PASSED = "MOTION_PASSED";
     string private constant ERROR_NOT_ENOUGH_BALANCE = "NOT_ENOUGH_BALANCE";
+    string private constant ERROR_MOTION_NOT_PASSED = "MOTION_NOT_PASSED";
 
     /**
      @dev upper bound for objectionsThreshold value.
@@ -217,6 +219,29 @@ contract EasyTracksRegistry is Ownable {
 
     function getActiveMotions() public view returns (Motion[] memory res) {
         return motions;
+    }
+
+    function enactMotion(uint256 _motionId) external motionExists(_motionId) {
+        Motion memory m = _getMotion(_motionId);
+        require(m.startDate + m.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
+        require(executorIndices[m.executor] > 0, ERROR_EXECUTOR_NOT_FOUND);
+        bytes memory evmScript = _createEvmScript(m);
+        aragonAgent.forward(evmScript);
+        _deleteMotion(_motionId);
+        emit MotionEnacted(_motionId);
+    }
+
+    function _createEvmScript(Motion memory m) internal view returns (bytes memory evmScript) {
+        bytes memory specId = hex"00000001";
+        bytes4 methodId = IEasyTrackExecutor(m.executor).executeMethodId();
+
+        evmScript = bytes.concat(
+            specId,
+            bytes20(m.executor),
+            bytes4(uint32(m.data.length + 4)), // add 4 bytes from methodId manually
+            methodId,
+            m.data
+        );
     }
 
     function _deleteMotion(uint256 _motionId) private {
