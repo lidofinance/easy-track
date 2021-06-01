@@ -12,5 +12,5 @@ interface IEasyTrackExecutor {
         bytes memory _data
     ) external;
 
-    function execute(bytes calldata _motionData, bytes calldata _enactData) external;
+    function execute(bytes memory _motionData, bytes memory _enactData) external;
 }

@@ -101,6 +101,28 @@ def test_set_objections_threshold_called_with_too_large_value(
         )
 
 
+def test_set_motions_limit_called_by_owner(owner, easy_tracks_registry):
+    "Must set new value for motionsLimit"
+    new_motions_limit = 10
+    assert easy_tracks_registry.motionsLimit() == 100
+    easy_tracks_registry.setMotionsLimit(new_motions_limit)
+    assert easy_tracks_registry.motionsLimit() == new_motions_limit
+
+
+def test_set_motions_limit_called_by_stranger(stranger, easy_tracks_registry):
+    "Must fail with error: 'Ownable: caller is not the owner'"
+    new_motions_limit = 10
+    with reverts("Ownable: caller is not the owner"):
+        easy_tracks_registry.setMotionsLimit(new_motions_limit, {"from": stranger})
+
+
+def test_set_motions_limit_too_large(owner, easy_tracks_registry):
+    "Must fail with error: 'VALUE_TOO_LARGE'"
+    new_motions_limit = 1000
+    with reverts("VALUE_TOO_LARGE"):
+        easy_tracks_registry.setMotionsLimit(new_motions_limit, {"from": owner})
+
+
 def test_add_executor_called_by_owner(
     owner,
     easy_tracks_registry,
@@ -302,6 +324,24 @@ def test_create_motion_executor_does_not_exist(
     "Must fail with error: 'EXECUTOR_NOT_FOUND'"
     with reverts("EXECUTOR_NOT_FOUND"):
         easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+
+def test_create_motion_limit_reached(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'MOTIONS_LIMIT_REACHED'"
+    easy_tracks_registry.setMotionsLimit(1, {"from": owner})
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    easy_tracks_registry.createMotion(
+        easy_track_executor_stub, {"from": ldo_holders[0]}
+    )
+    with reverts("MOTIONS_LIMIT_REACHED"):
+        easy_tracks_registry.createMotion(
+            easy_track_executor_stub, {"from": ldo_holders[0]}
+        )
 
 
 def test_cancel_motion_not_found(easy_tracks_registry):

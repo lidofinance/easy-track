@@ -43,6 +43,7 @@ contract EasyTracksRegistry is Ownable {
     );
     event MotionRejected(uint256 indexed _motionId);
     event MotionEnacted(uint256 indexed _motionId);
+    event MotionsLimitChanged(uint256 _newMotionsLimit);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
@@ -53,6 +54,7 @@ contract EasyTracksRegistry is Ownable {
     string private constant ERROR_MOTION_PASSED = "MOTION_PASSED";
     string private constant ERROR_NOT_ENOUGH_BALANCE = "NOT_ENOUGH_BALANCE";
     string private constant ERROR_MOTION_NOT_PASSED = "MOTION_NOT_PASSED";
+    string private constant ERROR_MOTIONS_LIMIT_REACHED = "MOTIONS_LIMIT_REACHED";
 
     /**
      @dev upper bound for objectionsThreshold value.
@@ -64,6 +66,8 @@ contract EasyTracksRegistry is Ownable {
      @dev lower bound for motionDuration value
      */
     uint64 private constant MIN_MOTION_DURATION = 48 hours;
+
+    uint256 private constant MAX_MOTIONS_LIMIT = 100;
 
     /**
      @dev Aragon agent where evm script will be forwarded to
@@ -93,6 +97,8 @@ contract EasyTracksRegistry is Ownable {
 
     MiniMeToken public governanceToken;
 
+    uint256 public motionsLimit = MAX_MOTIONS_LIMIT;
+
     constructor(address _aragonAgent, address _governanceToken) {
         aragonAgent = IForwardable(_aragonAgent);
         governanceToken = MiniMeToken(_governanceToken);
@@ -116,6 +122,12 @@ contract EasyTracksRegistry is Ownable {
         require(_objectionsThreshold <= MAX_OBJECTIONS_THRESHOLD, ERROR_VALUE_TOO_LARGE);
         objectionsThreshold = _objectionsThreshold;
         emit ObjectionsThresholdChanged(_objectionsThreshold);
+    }
+
+    function setMotionsLimit(uint256 _motionsLimit) external onlyOwner {
+        require(_motionsLimit < MAX_MOTIONS_LIMIT, ERROR_VALUE_TOO_LARGE);
+        motionsLimit = _motionsLimit;
+        emit MotionsLimitChanged(_motionsLimit);
     }
 
     /**
@@ -210,6 +222,8 @@ contract EasyTracksRegistry is Ownable {
         executorExists(_executor)
         returns (uint256 _motionId)
     {
+        require(motions.length < motionsLimit, ERROR_MOTIONS_LIMIT_REACHED);
+
         IEasyTrackExecutor(_executor).beforeCreateMotionGuard(msg.sender, _data);
 
         Motion storage m = motions.push();

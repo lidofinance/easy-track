@@ -6,7 +6,7 @@ import "./IEasyTrackExecutor.sol";
 pragma solidity 0.8.4;
 
 abstract contract EasyTrackExecutor is IEasyTrackExecutor {
-    address private easyTracksRegistry;
+    address public easyTracksRegistry;
 
     constructor(address _easyTracksRegistry) {
         easyTracksRegistry = _easyTracksRegistry;
