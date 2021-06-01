@@ -245,7 +245,7 @@ contract EasyTracksRegistry is Ownable {
     function _cancelMotion(uint256 _motionId, bytes memory _data) internal motionExists(_motionId) {
         Motion storage m = _getMotion(_motionId);
 
-        IEasyTrackExecutor(m.executor).beforeCancelMotionGuard(msg.sender, _motionId, _data);
+        IEasyTrackExecutor(m.executor).beforeCancelMotionGuard(msg.sender, m.data, _data);
 
         _deleteMotion(_motionId);
         emit MotionCanceled(_motionId);

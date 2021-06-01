@@ -8,8 +8,8 @@ interface IEasyTrackExecutor {
 
     function beforeCancelMotionGuard(
         address _caller,
-        uint256 _motionId,
-        bytes memory _data
+        bytes memory _motionData,
+        bytes memory _cancelData
     ) external;
 
     function execute(bytes memory _motionData, bytes memory _enactData) external;

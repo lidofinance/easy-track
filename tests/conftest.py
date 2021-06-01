@@ -1,5 +1,7 @@
 import pytest
 from brownie import (
+    NodeOperatorsRegistryStub,
+    NodeOperatorsEasyTrackExecutor,
     AragonAgentMock,
     EasyTrackExecutorStub,
     EasyTracksRegistry,
@@ -38,6 +40,24 @@ def easy_track_executor_stub(owner, easy_tracks_registry):
 @pytest.fixture(scope="function")
 def ldo_token(interface):
     return interface.ERC20(constants.LDO_TOKEN)
+
+
+@pytest.fixture(scope="function")
+def node_operators_registry_stub(owner, easy_tracks_registry):
+    return owner.deploy(NodeOperatorsRegistryStub)
+
+
+@pytest.fixture(scope="function")
+def node_operators_easy_track_executor(
+    owner,
+    easy_tracks_registry,
+    node_operators_registry_stub,
+):
+    return owner.deploy(
+        NodeOperatorsEasyTrackExecutor,
+        easy_tracks_registry,
+        node_operators_registry_stub,
+    )
 
 
 @pytest.fixture(scope="function", autouse=True)

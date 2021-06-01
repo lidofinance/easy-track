@@ -15,8 +15,8 @@ contract EasyTrackExecutorStub is EasyTrackExecutor {
     struct BeforeCancelCallData {
         bool isCalled;
         address _caller;
-        uint256 _motionId;
-        bytes _data;
+        bytes _motionData;
+        bytes _cancelData;
     }
 
     struct ExecuteCallData {
@@ -37,10 +37,10 @@ contract EasyTrackExecutorStub is EasyTrackExecutor {
 
     function _beforeCancelMotionGuard(
         address _caller,
-        uint256 _motionId,
-        bytes memory _data
+        bytes memory _motionData,
+        bytes memory _cancelData
     ) internal override {
-        beforeCancelGuardCallData = BeforeCancelCallData(true, _caller, _motionId, _data);
+        beforeCancelGuardCallData = BeforeCancelCallData(true, _caller, _motionData, _cancelData);
     }
 
     function execute(bytes calldata _motionData, bytes calldata _enactData) external override {

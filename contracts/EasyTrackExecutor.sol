@@ -22,18 +22,18 @@ abstract contract EasyTrackExecutor is IEasyTrackExecutor {
 
     function beforeCancelMotionGuard(
         address _caller,
-        uint256 _motionId,
-        bytes memory _data
+        bytes memory _motionData,
+        bytes memory _cancelData
     ) external override onlyEasyTrackRegistry {
-        _beforeCancelMotionGuard(_caller, _motionId, _data);
+        _beforeCancelMotionGuard(_caller, _motionData, _cancelData);
     }
 
     function _beforeCreateMotionGuard(address _caller, bytes memory _data) internal virtual;
 
     function _beforeCancelMotionGuard(
         address _caller,
-        uint256 _motionId,
-        bytes memory _data
+        bytes memory _motionData,
+        bytes memory _cancelData
     ) internal virtual;
 
     modifier onlyEasyTrackRegistry {

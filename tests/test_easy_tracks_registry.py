@@ -368,7 +368,7 @@ def test_cancel_motion_without_data(
     before_cancel_call_data = easy_track_executor_stub.beforeCancelGuardCallData()
     assert before_cancel_call_data[0]
     assert before_cancel_call_data[1] == ldo_holders[0]
-    assert before_cancel_call_data[2] == motions[0][0]
+    assert before_cancel_call_data[2] == "0x"
     assert before_cancel_call_data[3] == "0x"
 
     assert len(tx.events) == 1
@@ -381,7 +381,6 @@ def test_cancel_motion_with_data(
     easy_tracks_registry,
     easy_track_executor_stub,
 ):
-    "Must remove motion and emit MotionCanceled event"
     "Must remove motion and emit MotionCanceled event"
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
 
@@ -397,7 +396,7 @@ def test_cancel_motion_with_data(
     before_cancel_call_data = easy_track_executor_stub.beforeCancelGuardCallData()
     assert before_cancel_call_data[0]
     assert before_cancel_call_data[1] == ldo_holders[0]
-    assert before_cancel_call_data[2] == motions[0][0]
+    assert before_cancel_call_data[2] == "0x"
     assert before_cancel_call_data[3] == calldata
 
     assert len(tx.events) == 1
