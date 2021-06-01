@@ -31,12 +31,7 @@ contract EasyTracksRegistry is Ownable {
 
     event MotionDurationChanged(uint256 _newDuration);
     event ObjectionsThresholdChanged(uint256 _newThreshold);
-    event ExecutorAdded(
-        address indexed _executor,
-        bytes4 _executeMethodId,
-        string _executeCalldataSignature,
-        string _description
-    );
+    event ExecutorAdded(address indexed _executor);
     event ExecutorDeleted(address indexed _executor);
     event MotionCreated(uint256 indexed _motionId, address indexed _executor, bytes data);
     event MotionCanceled(uint256 indexed _motionId);
@@ -131,20 +126,7 @@ contract EasyTracksRegistry is Ownable {
         require(executorIndices[_executor] == 0, ERROR_EXECUTOR_ALREADY_ADDED);
         executors.push(_executor);
         executorIndices[_executor] = executors.length;
-        IEasyTrackExecutor ex = IEasyTrackExecutor(_executor);
-        emit ExecutorAdded(
-            _executor,
-            ex.executeMethodId(),
-            ex.executeCalldataSignature(),
-            ex.description()
-        );
-    }
-
-    /**
-     @notice Returns list of active executors
-     */
-    function getExecutors() public view returns (address[] memory result) {
-        return executors;
+        emit ExecutorAdded(_executor);
     }
 
     function deleteExecutor(address _executor) external onlyOwner {
@@ -162,36 +144,31 @@ contract EasyTracksRegistry is Ownable {
         emit ExecutorDeleted(_executor);
     }
 
-    function createMotion(address _executor, bytes memory _data)
-        external
-        executorExists(_executor)
-        returns (uint256 _motionId)
-    {
-        IEasyTrackExecutor(_executor).beforeCreateMotionGuard(msg.sender, _data);
-
-        Motion storage m = motions.push();
-        _motionId = ++lastMotionId;
-
-        m.id = _motionId;
-        m.executor = _executor;
-        m.duration = motionDuration;
-        m.startDate = block.timestamp;
-        m.snapshotBlock = block.number;
-        m.objectionsThreshold = objectionsThreshold;
-        m.data = _data;
-
-        motionIndicesByMotionId[_motionId] = motions.length;
-
-        emit MotionCreated(_motionId, _executor, _data);
+    function createMotion(address _executor) external returns (uint256) {
+        return _createMotion(_executor, bytes.concat());
     }
 
-    function cancelMotion(uint256 _motionId, bytes memory _data) external motionExists(_motionId) {
-        Motion storage m = _getMotion(_motionId);
+    function createMotion(address _executor, bytes memory _data)
+        external
+        returns (uint256 _motionId)
+    {
+        return _createMotion(_executor, _data);
+    }
 
-        IEasyTrackExecutor(m.executor).beforeCancelMotionGuard(msg.sender, _motionId, _data);
+    function cancelMotion(uint256 _motionId) external {
+        _cancelMotion(_motionId, abi.encodePacked(false));
+    }
 
-        _deleteMotion(_motionId);
-        emit MotionCanceled(_motionId);
+    function cancelMotion(uint256 _motionId, bytes memory _data) external {
+        _cancelMotion(_motionId, _data);
+    }
+
+    function enactMotion(uint256 _motionId) external {
+        _enactMotion(_motionId, abi.encodePacked(false));
+    }
+
+    function enactMotion(uint256 _motionId, bytes memory _enactData) external {
+        _enactMotion(_motionId, _enactData);
     }
 
     function sendObjection(uint256 _motionId) external motionExists(_motionId) {
@@ -217,30 +194,77 @@ contract EasyTracksRegistry is Ownable {
         }
     }
 
-    function getActiveMotions() public view returns (Motion[] memory res) {
+    /**
+     @notice Returns list of active executors
+     */
+    function getExecutors() external view returns (address[] memory result) {
+        return executors;
+    }
+
+    function getActiveMotions() external view returns (Motion[] memory res) {
         return motions;
     }
 
-    function enactMotion(uint256 _motionId) external motionExists(_motionId) {
+    function _createMotion(address _executor, bytes memory _data)
+        internal
+        executorExists(_executor)
+        returns (uint256 _motionId)
+    {
+        IEasyTrackExecutor(_executor).beforeCreateMotionGuard(msg.sender, _data);
+
+        Motion storage m = motions.push();
+        _motionId = ++lastMotionId;
+
+        m.id = _motionId;
+        m.executor = _executor;
+        m.duration = motionDuration;
+        m.startDate = block.timestamp;
+        m.snapshotBlock = block.number;
+        m.objectionsThreshold = objectionsThreshold;
+        m.data = _data;
+
+        motionIndicesByMotionId[_motionId] = motions.length;
+
+        emit MotionCreated(_motionId, _executor, _data);
+    }
+
+    function _cancelMotion(uint256 _motionId, bytes memory _data) internal motionExists(_motionId) {
+        Motion storage m = _getMotion(_motionId);
+
+        IEasyTrackExecutor(m.executor).beforeCancelMotionGuard(msg.sender, _motionId, _data);
+
+        _deleteMotion(_motionId);
+        emit MotionCanceled(_motionId);
+    }
+
+    function _enactMotion(uint256 _motionId, bytes memory _enactData)
+        internal
+        motionExists(_motionId)
+    {
         Motion memory m = _getMotion(_motionId);
         require(m.startDate + m.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
         require(executorIndices[m.executor] > 0, ERROR_EXECUTOR_NOT_FOUND);
-        bytes memory evmScript = _createEvmScript(m);
+        bytes memory evmScript = _createEvmScript(m.executor, m.data, _enactData);
         aragonAgent.forward(evmScript);
         _deleteMotion(_motionId);
         emit MotionEnacted(_motionId);
     }
 
-    function _createEvmScript(Motion memory m) internal view returns (bytes memory evmScript) {
+    function _createEvmScript(
+        address _executor,
+        bytes memory _motionData,
+        bytes memory _enactData
+    ) internal pure returns (bytes memory evmScript) {
         bytes memory specId = hex"00000001";
-        bytes4 methodId = IEasyTrackExecutor(m.executor).executeMethodId();
+        bytes4 methodId = hex"1f6a1eb9";
+
+        bytes memory callData = bytes.concat(methodId, abi.encode(_motionData, _enactData));
 
         evmScript = bytes.concat(
             specId,
-            bytes20(m.executor),
-            bytes4(uint32(m.data.length + 4)), // add 4 bytes from methodId manually
-            methodId,
-            m.data
+            bytes20(address(_executor)),
+            bytes4(uint32(callData.length)), // add 4 bytes from methodId manually
+            callData
         );
     }
 

@@ -115,15 +115,7 @@ def test_add_executor_called_by_owner(
     assert executors[0] == easy_track_executor_stub
 
     assert len(tx.events) == 1
-    assert tx.events[0]["_executor"] == easy_track_executor_stub
-    assert (
-        tx.events[0]["_executeMethodId"] == easy_track_executor_stub.executeMethodId()
-    )
-    assert (
-        tx.events[0]["_executeCalldataSignature"]
-        == easy_track_executor_stub.executeCalldataSignature()
-    )
-    assert tx.events[0]["_description"] == easy_track_executor_stub.description()
+    assert tx.events["ExecutorAdded"]["_executor"] == easy_track_executor_stub
 
 
 def test_add_executor_called_by_stranger(
@@ -234,28 +226,57 @@ def test_delete_motion_executor_called_by_stranger(
         )
 
 
-def test_create_motion(owner, easy_tracks_registry, easy_track_executor_stub):
+def test_create_motion_without_data(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must create new motion with empty data field"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    easy_tracks_registry.createMotion(
+        easy_track_executor_stub, {"from": ldo_holders[0]}
+    )
+    motions = easy_tracks_registry.getActiveMotions()
+
+    # before create motion guard called
+    before_guard_call_data = easy_track_executor_stub.beforeCreateGuardCallData()
+    assert before_guard_call_data[0]
+    assert before_guard_call_data[1] == ldo_holders[0]
+    assert before_guard_call_data[2] == "0x"
+
+    assert len(motions) == 1
+    assert motions[0][8] == "0x"
+
+
+def test_create_motion_with_data(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
     "Must create new motion with correct params and emit MotionCreated event"
 
     chain = Chain()
-    assert len(easy_tracks_registry.getExecutors()) == 0
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
-    assert len(easy_tracks_registry.getExecutors()) == 1
 
-    calldata = encode_single(
-        easy_track_executor_stub.executeCalldataSignature(),
-        [2021, accounts[1].address],
-    )
     # before create motion guard wasn't called before test
-    assert not easy_track_executor_stub.isBeforeCreateGuardCalled()
+    assert not easy_track_executor_stub.beforeCreateGuardCallData()[0]
+    calldata = (
+        "0x" + encode_single("(uint256,address)", [256, accounts[0].address]).hex()
+    )
 
-    tx = easy_tracks_registry.createMotion(easy_track_executor_stub, calldata)
+    tx = easy_tracks_registry.createMotion(
+        easy_track_executor_stub, calldata, {"from": ldo_holders[0]}
+    )
     motions = easy_tracks_registry.getActiveMotions()
-
     assert len(motions) == 1
 
     # before create motion guard called
-    assert easy_track_executor_stub.isBeforeCreateGuardCalled()
+    before_guard_call_data = easy_track_executor_stub.beforeCreateGuardCallData()
+    assert before_guard_call_data[0]
+    assert before_guard_call_data[1] == ldo_holders[0]
+    assert before_guard_call_data[2] == calldata
 
     assert motions[0][0] == 1  # id
     assert motions[0][1] == easy_track_executor_stub  # executor
@@ -267,12 +288,12 @@ def test_create_motion(owner, easy_tracks_registry, easy_track_executor_stub):
     )  # objectionsThreshold
     assert motions[0][6] == 0  # objectionsAmount
     assert motions[0][7] == 0  # objectionsAmountPct
-    assert motions[0][8] == "0x" + calldata.hex()  # data
+    assert motions[0][8] == calldata  # data
 
     assert len(tx.events) == 1
     assert tx.events[0]["_motionId"] == motions[0][0]
     assert tx.events[0]["_executor"] == easy_track_executor_stub
-    assert tx.events[0]["data"] == "0x" + calldata.hex()
+    assert tx.events[0]["data"] == calldata
 
 
 def test_create_motion_executor_does_not_exist(
@@ -286,23 +307,61 @@ def test_create_motion_executor_does_not_exist(
 def test_cancel_motion_not_found(easy_tracks_registry):
     "Must fail with error: 'MOTION_NOT_FOUND'"
     with reverts("MOTION_NOT_FOUND"):
-        easy_tracks_registry.cancelMotion(1, "")
+        easy_tracks_registry.cancelMotion(1)
 
 
-def test_cancel_motion(owner, easy_tracks_registry, easy_track_executor_stub):
+def test_cancel_motion_without_data(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
     "Must remove motion and emit MotionCanceled event"
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
 
-    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+    easy_tracks_registry.createMotion(easy_track_executor_stub)
     motions = easy_tracks_registry.getActiveMotions()
 
-    assert not easy_track_executor_stub.isBeforeCancelGuardCalled()
-    tx = easy_tracks_registry.cancelMotion(motions[0][0], "")
+    assert not easy_track_executor_stub.beforeCancelGuardCallData()[0]
+    tx = easy_tracks_registry.cancelMotion(motions[0][0], {"from": ldo_holders[0]})
     assert len(easy_tracks_registry.getActiveMotions()) == 0
-    assert easy_track_executor_stub.isBeforeCancelGuardCalled()
+    before_cancel_call_data = easy_track_executor_stub.beforeCancelGuardCallData()
+    assert before_cancel_call_data[0]
+    assert before_cancel_call_data[1] == ldo_holders[0]
+    assert before_cancel_call_data[2] == motions[0][0]
+    assert before_cancel_call_data[3] == "0x"
 
     assert len(tx.events) == 1
-    assert tx.events[0]["_motionId"] == motions[0][0]
+    assert tx.events["MotionCanceled"]["_motionId"] == motions[0][0]
+
+
+def test_cancel_motion_with_data(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must remove motion and emit MotionCanceled event"
+    "Must remove motion and emit MotionCanceled event"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub)
+    motions = easy_tracks_registry.getActiveMotions()
+
+    assert not easy_track_executor_stub.beforeCancelGuardCallData()[0]
+    calldata = "0x" + encode_single("address", owner.address).hex()
+    tx = easy_tracks_registry.cancelMotion(
+        motions[0][0], calldata, {"from": ldo_holders[0]}
+    )
+    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    before_cancel_call_data = easy_track_executor_stub.beforeCancelGuardCallData()
+    assert before_cancel_call_data[0]
+    assert before_cancel_call_data[1] == ldo_holders[0]
+    assert before_cancel_call_data[2] == motions[0][0]
+    assert before_cancel_call_data[3] == calldata
+
+    assert len(tx.events) == 1
+    assert tx.events["MotionCanceled"]["_motionId"] == motions[0][0]
 
 
 def test_cancel_motion_many_times(
@@ -319,7 +378,7 @@ def test_cancel_motion_many_times(
     while len(motion_ids) > 0:
         index = random.randint(0, len(motion_ids) - 1)
         id_to_delete = motion_ids.pop(index)
-        easy_tracks_registry.cancelMotion(id_to_delete, "")
+        easy_tracks_registry.cancelMotion(id_to_delete)
 
         motions = easy_tracks_registry.getActiveMotions()
         assert len(motions) == len(motion_ids)
@@ -329,6 +388,140 @@ def test_cancel_motion_many_times(
             active_motion_ids.append(m[0])
 
         len(set(motion_ids).union(active_motion_ids)) == len(motions)
+
+
+def test_enact_motion_not_exist(owner, easy_tracks_registry, easy_track_executor_stub):
+    "Must fail with error: 'MOTION_NOT_FOUND'"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    with reverts("MOTION_NOT_FOUND"):
+        easy_tracks_registry.enactMotion(1)
+
+
+def test_enact_motion_not_passed(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'MOTION_NOT_PASSED'"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    with reverts("MOTION_NOT_PASSED"):
+        easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
+
+
+def test_enact_motion_executor_not_found(
+    owner,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must fail with error: 'EXECUTOR_NOT_FOUND'"
+    chain = Chain()
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    easy_tracks_registry.deleteExecutor(easy_track_executor_stub, {"from": owner})
+
+    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
+
+    with reverts("EXECUTOR_NOT_FOUND"):
+        easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
+
+
+def test_enact_motion(
+    owner,
+    aragon_agent_mock,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must pass correct evmScript to aragon agent mock, delete motion and emit MotionEnacted event"
+    chain = Chain()
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    calldata = encode_single(
+        "(uint256,address)",
+        [2021, accounts[1].address],
+    )
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, calldata)
+
+    motions = easy_tracks_registry.getActiveMotions()
+
+    assert len(motions) == 1
+
+    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
+
+    tx = easy_tracks_registry.enactMotion(motions[0][0])
+
+    forward_data = aragon_agent_mock.data()
+
+    assert forward_data == encode_call_script(
+        [
+            (
+                easy_track_executor_stub.address,
+                easy_track_executor_stub.execute.encode_input(calldata, ""),
+            )
+        ]
+    )
+
+    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(tx.events) == 1
+    assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
+
+
+def test_enact_motion_with_data(
+    owner,
+    aragon_agent_mock,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must pass correct evmScript to aragon agent mock, delete motion and emit MotionEnacted event"
+    chain = Chain()
+
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+
+    modion_calldata = (
+        "0x"
+        + encode_single(
+            "(uint256,address)",
+            [2021, accounts[1].address],
+        ).hex()
+    )
+
+    easy_tracks_registry.createMotion(easy_track_executor_stub, modion_calldata)
+
+    motions = easy_tracks_registry.getActiveMotions()
+
+    assert len(motions) == 1
+
+    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
+
+    enact_calldata = "0x" + encode_single("uint256[]", [1, 2, 3, 4, 5]).hex()
+
+    tx = easy_tracks_registry.enactMotion(motions[0][0], enact_calldata)
+
+    forward_data = aragon_agent_mock.data()
+
+    assert forward_data == encode_call_script(
+        [
+            (
+                easy_track_executor_stub.address,
+                easy_track_executor_stub.execute.encode_input(
+                    modion_calldata, enact_calldata
+                ),
+            )
+        ]
+    )
+
+    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(tx.events) == 1
+    assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
 
 
 def test_send_objection_motion_not_found(easy_tracks_registry):
@@ -454,90 +647,3 @@ def test_send_objection_rejected(
     assert tx.events[0]["_votingPower"] == total_supply
 
     assert tx.events[1]["_motionId"] == 1
-
-
-def test_enact_motion_not_exist(owner, easy_tracks_registry, easy_track_executor_stub):
-    "Must fail with error: 'MOTION_NOT_FOUND'"
-    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
-    with reverts("MOTION_NOT_FOUND"):
-        easy_tracks_registry.enactMotion(1)
-
-
-def test_enact_motion_not_passed(
-    owner,
-    ldo_holders,
-    easy_tracks_registry,
-    easy_track_executor_stub,
-):
-    "Must fail with error: 'MOTION_NOT_PASSED'"
-    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
-
-    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
-
-    with reverts("MOTION_NOT_PASSED"):
-        easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
-
-
-def test_enact_motion_executor_not_found(
-    owner,
-    ldo_holders,
-    easy_tracks_registry,
-    easy_track_executor_stub,
-):
-    "Must fail with error: 'EXECUTOR_NOT_FOUND'"
-    chain = Chain()
-
-    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
-
-    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
-
-    easy_tracks_registry.deleteExecutor(easy_track_executor_stub, {"from": owner})
-
-    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
-
-    with reverts("EXECUTOR_NOT_FOUND"):
-        easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
-
-
-def test_enact_motion(
-    owner,
-    easy_tracks_registry,
-    aragon_agent_mock,
-    easy_track_executor_stub,
-):
-    "Must pass correct evmScript to aragon agent mock, delete motion and emit MotionEnacted event"
-    chain = Chain()
-
-    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
-
-    calldata = encode_single(
-        easy_track_executor_stub.executeCalldataSignature(),
-        [2021, accounts[1].address],
-    ).hex()
-
-    easy_tracks_registry.createMotion(easy_track_executor_stub, calldata)
-
-    motions = easy_tracks_registry.getActiveMotions()
-
-    assert len(motions) == 1
-
-    chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
-
-    tx = easy_tracks_registry.enactMotion(motions[0][0])
-
-    forward_data = aragon_agent_mock.data()
-
-    assert forward_data == encode_call_script(
-        [
-            (
-                easy_track_executor_stub.address,
-                easy_track_executor_stub.dataSignature.encode_input(
-                    2021, accounts[1].address
-                ),
-            )
-        ]
-    )
-
-    assert len(easy_tracks_registry.getActiveMotions()) == 0
-    assert len(tx.events) == 1
-    assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]

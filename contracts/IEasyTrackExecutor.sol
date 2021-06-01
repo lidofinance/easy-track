@@ -4,12 +4,6 @@
 pragma solidity 0.8.4;
 
 interface IEasyTrackExecutor {
-    function description() external view returns (string memory);
-
-    function executeCalldataSignature() external view returns (string memory);
-
-    function executeMethodId() external view returns (bytes4);
-
     function beforeCreateMotionGuard(address _caller, bytes memory _data) external;
 
     function beforeCancelMotionGuard(
@@ -17,4 +11,6 @@ interface IEasyTrackExecutor {
         uint256 _motionId,
         bytes memory _data
     ) external;
+
+    function execute(bytes calldata _motionData, bytes calldata _enactData) external;
 }
