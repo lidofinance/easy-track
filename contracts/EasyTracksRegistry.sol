@@ -11,7 +11,7 @@ interface IForwardable {
 }
 
 interface MiniMeToken {
-    function balanceOfAt(address _owner, uint256 _blockNumber) external returns (uint256);
+    function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);
 
     function totalSupplyAt(uint256 _blockNumber) external view returns (uint256);
 }
@@ -43,7 +43,7 @@ contract EasyTracksRegistry is Ownable {
     );
     event MotionRejected(uint256 indexed _motionId);
     event MotionEnacted(uint256 indexed _motionId);
-    event MotionsLimitChanged(uint256 _newMotionsLimit);
+    event MotionsCountLimitChanged(uint256 _newMotionsCountLimit);
 
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
@@ -89,15 +89,15 @@ contract EasyTracksRegistry is Ownable {
     address[] public executors;
     mapping(address => uint256) private executorIndices;
 
+    Motion[] public motions;
     uint256 private lastMotionId;
-    Motion[] motions;
     mapping(uint256 => uint256) motionIndicesByMotionId;
 
     mapping(uint256 => mapping(address => bool)) objections;
 
     MiniMeToken public governanceToken;
 
-    uint256 public motionsLimit = MAX_MOTIONS_LIMIT;
+    uint256 public motionsCountLimit = MAX_MOTIONS_LIMIT;
 
     constructor(address _aragonAgent, address _governanceToken) {
         aragonAgent = IForwardable(_aragonAgent);
@@ -124,10 +124,10 @@ contract EasyTracksRegistry is Ownable {
         emit ObjectionsThresholdChanged(_objectionsThreshold);
     }
 
-    function setMotionsLimit(uint256 _motionsLimit) external onlyOwner {
-        require(_motionsLimit < MAX_MOTIONS_LIMIT, ERROR_VALUE_TOO_LARGE);
-        motionsLimit = _motionsLimit;
-        emit MotionsLimitChanged(_motionsLimit);
+    function setMotionsCountLimit(uint256 _motionsCountLimit) external onlyOwner {
+        require(_motionsCountLimit < MAX_MOTIONS_LIMIT, ERROR_VALUE_TOO_LARGE);
+        motionsCountLimit = _motionsCountLimit;
+        emit MotionsCountLimitChanged(_motionsCountLimit);
     }
 
     /**
@@ -213,8 +213,19 @@ contract EasyTracksRegistry is Ownable {
         return executors;
     }
 
-    function getActiveMotions() external view returns (Motion[] memory res) {
+    function getMotions() external view returns (Motion[] memory res) {
         return motions;
+    }
+
+    function canSendObjection(uint256 _motionId, address _objector)
+        external
+        view
+        motionExists(_motionId)
+        returns (bool)
+    {
+        Motion memory m = _getMotion(_motionId);
+        uint256 balance = governanceToken.balanceOfAt(_objector, m.snapshotBlock);
+        return balance > 0 && !objections[_motionId][_objector];
     }
 
     function _createMotion(address _executor, bytes memory _data)
@@ -222,7 +233,7 @@ contract EasyTracksRegistry is Ownable {
         executorExists(_executor)
         returns (uint256 _motionId)
     {
-        require(motions.length < motionsLimit, ERROR_MOTIONS_LIMIT_REACHED);
+        require(motions.length < motionsCountLimit, ERROR_MOTIONS_LIMIT_REACHED);
 
         IEasyTrackExecutor(_executor).beforeCreateMotionGuard(msg.sender, _data);
 

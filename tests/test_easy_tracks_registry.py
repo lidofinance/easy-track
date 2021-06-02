@@ -102,25 +102,31 @@ def test_set_objections_threshold_called_with_too_large_value(
 
 
 def test_set_motions_limit_called_by_owner(owner, easy_tracks_registry):
-    "Must set new value for motionsLimit"
+    "Must set new value for motionsCountLimit and emit MotionsCountLimitChanged event"
     new_motions_limit = 10
-    assert easy_tracks_registry.motionsLimit() == 100
-    easy_tracks_registry.setMotionsLimit(new_motions_limit)
-    assert easy_tracks_registry.motionsLimit() == new_motions_limit
+    assert easy_tracks_registry.motionsCountLimit() == 100
+    tx = easy_tracks_registry.setMotionsCountLimit(new_motions_limit)
+    assert easy_tracks_registry.motionsCountLimit() == new_motions_limit
+
+    assert len(tx.events) == 1
+    assert (
+        tx.events["MotionsCountLimitChanged"]["_newMotionsCountLimit"]
+        == new_motions_limit
+    )
 
 
 def test_set_motions_limit_called_by_stranger(stranger, easy_tracks_registry):
     "Must fail with error: 'Ownable: caller is not the owner'"
     new_motions_limit = 10
     with reverts("Ownable: caller is not the owner"):
-        easy_tracks_registry.setMotionsLimit(new_motions_limit, {"from": stranger})
+        easy_tracks_registry.setMotionsCountLimit(new_motions_limit, {"from": stranger})
 
 
 def test_set_motions_limit_too_large(owner, easy_tracks_registry):
     "Must fail with error: 'VALUE_TOO_LARGE'"
     new_motions_limit = 1000
     with reverts("VALUE_TOO_LARGE"):
-        easy_tracks_registry.setMotionsLimit(new_motions_limit, {"from": owner})
+        easy_tracks_registry.setMotionsCountLimit(new_motions_limit, {"from": owner})
 
 
 def test_add_executor_called_by_owner(
@@ -259,7 +265,7 @@ def test_create_motion_without_data(
     easy_tracks_registry.createMotion(
         easy_track_executor_stub, {"from": ldo_holders[0]}
     )
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
 
     # before create motion guard called
     before_guard_call_data = easy_track_executor_stub.beforeCreateGuardCallData()
@@ -291,7 +297,7 @@ def test_create_motion_with_data(
     tx = easy_tracks_registry.createMotion(
         easy_track_executor_stub, calldata, {"from": ldo_holders[0]}
     )
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
     assert len(motions) == 1
 
     # before create motion guard called
@@ -333,7 +339,7 @@ def test_create_motion_limit_reached(
     easy_track_executor_stub,
 ):
     "Must fail with error: 'MOTIONS_LIMIT_REACHED'"
-    easy_tracks_registry.setMotionsLimit(1, {"from": owner})
+    easy_tracks_registry.setMotionsCountLimit(1, {"from": owner})
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
     easy_tracks_registry.createMotion(
         easy_track_executor_stub, {"from": ldo_holders[0]}
@@ -360,11 +366,11 @@ def test_cancel_motion_without_data(
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
 
     easy_tracks_registry.createMotion(easy_track_executor_stub)
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
 
     assert not easy_track_executor_stub.beforeCancelGuardCallData()[0]
     tx = easy_tracks_registry.cancelMotion(motions[0][0], {"from": ldo_holders[0]})
-    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(easy_tracks_registry.getMotions()) == 0
     before_cancel_call_data = easy_track_executor_stub.beforeCancelGuardCallData()
     assert before_cancel_call_data[0]
     assert before_cancel_call_data[1] == ldo_holders[0]
@@ -385,14 +391,14 @@ def test_cancel_motion_with_data(
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
 
     easy_tracks_registry.createMotion(easy_track_executor_stub)
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
 
     assert not easy_track_executor_stub.beforeCancelGuardCallData()[0]
     calldata = "0x" + encode_single("address", owner.address).hex()
     tx = easy_tracks_registry.cancelMotion(
         motions[0][0], calldata, {"from": ldo_holders[0]}
     )
-    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(easy_tracks_registry.getMotions()) == 0
     before_cancel_call_data = easy_track_executor_stub.beforeCancelGuardCallData()
     assert before_cancel_call_data[0]
     assert before_cancel_call_data[1] == ldo_holders[0]
@@ -419,7 +425,7 @@ def test_cancel_motion_many_times(
         id_to_delete = motion_ids.pop(index)
         easy_tracks_registry.cancelMotion(id_to_delete)
 
-        motions = easy_tracks_registry.getActiveMotions()
+        motions = easy_tracks_registry.getMotions()
         assert len(motions) == len(motion_ids)
 
         active_motion_ids = []
@@ -490,7 +496,7 @@ def test_enact_motion(
 
     easy_tracks_registry.createMotion(easy_track_executor_stub, calldata)
 
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
 
     assert len(motions) == 1
 
@@ -509,7 +515,7 @@ def test_enact_motion(
         ]
     )
 
-    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(easy_tracks_registry.getMotions()) == 0
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
 
@@ -535,7 +541,7 @@ def test_enact_motion_with_data(
 
     easy_tracks_registry.createMotion(easy_track_executor_stub, modion_calldata)
 
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
 
     assert len(motions) == 1
 
@@ -558,7 +564,7 @@ def test_enact_motion_with_data(
         ]
     )
 
-    assert len(easy_tracks_registry.getActiveMotions()) == 0
+    assert len(easy_tracks_registry.getMotions()) == 0
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
 
@@ -631,7 +637,7 @@ def test_send_objection_by_tokens_holder(
 
     tx = easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})
 
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
 
     assert len(motions) == 1
 
@@ -665,14 +671,14 @@ def test_send_objection_rejected(
     easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})  # 0.2 % objections
     easy_tracks_registry.sendObjection(1, {"from": ldo_holders[1]})  # 0.4 % objections
 
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
     assert len(motions) == 1
 
     tx = easy_tracks_registry.sendObjection(
         1, {"from": ldo_holders[2]}
     )  # 0.6 % objections
 
-    motions = easy_tracks_registry.getActiveMotions()
+    motions = easy_tracks_registry.getMotions()
     assert len(motions) == 0
 
     total_supply = ldo_token.totalSupply()
@@ -686,3 +692,22 @@ def test_send_objection_rejected(
     assert tx.events[0]["_votingPower"] == total_supply
 
     assert tx.events[1]["_motionId"] == 1
+
+
+def test_can_send_objection(
+    owner,
+    stranger,
+    ldo_holders,
+    easy_tracks_registry,
+    easy_track_executor_stub,
+):
+    "Must return False if caller has no governance tokens or if he has already voted."
+    "Returns True in other cases"
+    easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
+    easy_tracks_registry.createMotion(easy_track_executor_stub, "")
+
+    assert not easy_tracks_registry.canSendObjection(1, stranger)
+
+    assert easy_tracks_registry.canSendObjection(1, ldo_holders[0])
+    easy_tracks_registry.sendObjection(1, {"from": ldo_holders[0]})
+    assert not easy_tracks_registry.canSendObjection(1, ldo_holders[0])
