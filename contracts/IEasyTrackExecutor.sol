@@ -12,5 +12,7 @@ interface IEasyTrackExecutor {
         bytes memory _cancelData
     ) external;
 
-    function execute(bytes memory _motionData, bytes memory _enactData) external;
+    function execute(bytes memory _motionData, bytes memory _enactData)
+        external
+        returns (bytes memory _evmScript);
 }

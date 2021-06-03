@@ -16,18 +16,19 @@ contract EasyTrackExecutorStub is EasyTrackExecutor {
         bool isCalled;
         address _caller;
         bytes _motionData;
-        bytes _cancelData;
+        bytes _executeData;
     }
 
     struct ExecuteCallData {
         bool isCalled;
         bytes motionData;
-        bytes enactData;
+        bytes executeData;
     }
 
     BeforeCreateCallData public beforeCreateGuardCallData;
     BeforeCancelCallData public beforeCancelGuardCallData;
     ExecuteCallData public executeCallData;
+    bytes public evmScript;
 
     constructor(address _easyTraksRegistry) EasyTrackExecutor(_easyTraksRegistry) {}
 
@@ -38,12 +39,21 @@ contract EasyTrackExecutorStub is EasyTrackExecutor {
     function _beforeCancelMotionGuard(
         address _caller,
         bytes memory _motionData,
-        bytes memory _cancelData
+        bytes memory _executeData
     ) internal override {
-        beforeCancelGuardCallData = BeforeCancelCallData(true, _caller, _motionData, _cancelData);
+        beforeCancelGuardCallData = BeforeCancelCallData(true, _caller, _motionData, _executeData);
     }
 
-    function execute(bytes calldata _motionData, bytes calldata _enactData) external override {
-        executeCallData = ExecuteCallData(true, _motionData, _enactData);
+    function execute(bytes calldata _motionData, bytes calldata _executeData)
+        external
+        override
+        returns (bytes memory)
+    {
+        executeCallData = ExecuteCallData(true, _motionData, _executeData);
+        return evmScript;
+    }
+
+    function setEvmScript(bytes memory _evmScript) external {
+        evmScript = _evmScript;
     }
 }

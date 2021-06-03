@@ -2,6 +2,7 @@ from brownie import NodeOperatorsEasyTrackExecutor, reverts, accounts
 from eth_abi import encode_single
 
 import constants
+from utils.evm_script import encode_call_script
 
 
 def test_deploy(owner, easy_tracks_registry):
@@ -229,14 +230,23 @@ def test_execute(
     node_operators_registry_stub,
     node_operators_easy_track_executor,
 ):
-    "Must set new staking limit for node operator with given id"
+    "Must return correct evmScript to set new staking limit for node operator"
     node_operators_registry_stub.setId(1)
     node_operators_registry_stub.setActive(True)
     node_operators_registry_stub.setStakingLimit(300)
     node_operators_registry_stub.setTotalSigningKeys(400)
 
-    node_operators_easy_track_executor.execute(
+    evm_script = node_operators_easy_track_executor.execute(
         encode_single("(uint256,uint256)", [1, 350]), "0x"
     )
 
-    assert node_operators_registry_stub.stakingLimit() == 350
+    assert evm_script == encode_call_script(
+        [
+            (
+                node_operators_registry_stub.address,
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(
+                    1, 350
+                ),
+            )
+        ]
+    )

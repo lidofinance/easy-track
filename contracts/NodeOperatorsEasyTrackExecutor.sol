@@ -61,13 +61,40 @@ contract NodeOperatorsEasyTrackExecutor is EasyTrackExecutor {
         _validateCallerIsRewardAddress(_caller, nodeOperatorData);
     }
 
-    function execute(bytes memory _motionData, bytes memory _enactData) external override {
+    function execute(bytes memory _motionData, bytes memory _enactData)
+        external
+        view
+        override
+        returns (bytes memory)
+    {
         (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeMotionData(_motionData);
 
         NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
         _validateNodeOperatorData(nodeOperatorData, _stakingLimit);
 
-        nodeOperatorsRegistry.setNodeOperatorStakingLimit(_nodeOperatorId, uint64(_stakingLimit));
+        return _createEvmScript(_nodeOperatorId, _stakingLimit);
+    }
+
+    function _createEvmScript(uint256 _nodeOperatorId, uint256 _stakingLimit)
+        private
+        view
+        returns (bytes memory)
+    {
+        bytes memory specId = hex"00000001";
+
+        bytes memory callData =
+            bytes.concat(
+                NodeOperatorsRegistry.setNodeOperatorStakingLimit.selector,
+                abi.encode(_nodeOperatorId, _stakingLimit)
+            );
+
+        return
+            bytes.concat(
+                specId,
+                bytes20(address(nodeOperatorsRegistry)),
+                bytes4(uint32(callData.length)), // add 4 bytes from methodId manually
+                callData
+            );
     }
 
     function _validateCallerIsRewardAddress(

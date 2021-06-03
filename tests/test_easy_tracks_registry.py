@@ -8,6 +8,9 @@ from utils.evm_script import encode_call_script
 
 import constants
 
+EVM_SCRIPT_STUB = "0xffffffffffffffffffffffffffffffff"
+MOTION_CALLDATA_STUB = "0xdddddddddddddddddddddddddddddddd"
+
 
 def test_deploy_easy_tracks_registry():
     "Must deploy EasyTracksRegistry contract with correct params"
@@ -478,92 +481,80 @@ def test_enact_motion_executor_not_found(
         easy_tracks_registry.enactMotion(1, {"from": ldo_holders[0]})
 
 
-def test_enact_motion(
+def test_enact_motion_no_execute_data_forward_evm_script(
     owner,
     aragon_agent_mock,
     easy_tracks_registry,
     easy_track_executor_stub,
 ):
-    "Must pass correct evmScript to aragon agent mock, delete motion and emit MotionEnacted event"
+    "Must pass only motion data to execute method,"
+    "pass correct evmScript returned by execute method to aragon agent mock,"
+    "delete motion and emit MotionEnacted event"
     chain = Chain()
 
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
 
-    calldata = encode_single(
-        "(uint256,address)",
-        [2021, accounts[1].address],
-    )
-
-    easy_tracks_registry.createMotion(easy_track_executor_stub, calldata)
+    easy_tracks_registry.createMotion(easy_track_executor_stub, MOTION_CALLDATA_STUB)
 
     motions = easy_tracks_registry.getMotions()
-
     assert len(motions) == 1
 
     chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
 
+    # prepare stub contract to return evm script
+    easy_track_executor_stub.setEvmScript(EVM_SCRIPT_STUB)
+
     tx = easy_tracks_registry.enactMotion(motions[0][0])
 
-    forward_data = aragon_agent_mock.data()
+    # validate that executor was called with correct params
+    easy_track_executor_execute_calldata = easy_track_executor_stub.executeCallData()
+    assert easy_track_executor_execute_calldata[0]  # method was called
+    assert easy_track_executor_execute_calldata[1] == MOTION_CALLDATA_STUB  # motionData
+    assert easy_track_executor_execute_calldata[2] == "0x"  # executeData
 
-    assert forward_data == encode_call_script(
-        [
-            (
-                easy_track_executor_stub.address,
-                easy_track_executor_stub.execute.encode_input(calldata, ""),
-            )
-        ]
-    )
+    # validate that agent was called with correct params
+    assert aragon_agent_mock.called()
+    assert aragon_agent_mock.data() == easy_track_executor_stub.evmScript()
 
+    # validate that motion was delete and events were emitted
     assert len(easy_tracks_registry.getMotions()) == 0
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
 
 
-def test_enact_motion_with_data(
+def test_enact_motion_with_execute_data_no_evm_script(
     owner,
     aragon_agent_mock,
     easy_tracks_registry,
     easy_track_executor_stub,
 ):
-    "Must pass correct evmScript to aragon agent mock, delete motion and emit MotionEnacted event"
+    "Must pass motion_data and execute_data to executor,"
+    "doesn't call agent forward method because executor's execute method returns empty bytes as result,"
+    "delete motion and emit MotionEnacted event"
     chain = Chain()
 
     easy_tracks_registry.addExecutor(easy_track_executor_stub, {"from": owner})
 
-    modion_calldata = (
-        "0x"
-        + encode_single(
-            "(uint256,address)",
-            [2021, accounts[1].address],
-        ).hex()
-    )
-
-    easy_tracks_registry.createMotion(easy_track_executor_stub, modion_calldata)
-
+    easy_tracks_registry.createMotion(easy_track_executor_stub, MOTION_CALLDATA_STUB)
     motions = easy_tracks_registry.getMotions()
-
     assert len(motions) == 1
 
     chain.sleep(constants.DEFAULT_MOTION_DURATION + 1)
 
-    enact_calldata = "0x" + encode_single("uint256[]", [1, 2, 3, 4, 5]).hex()
+    execute_data = "0xcccccccccccccccccccccccccccccccc"
+    tx = easy_tracks_registry.enactMotion(motions[0][0], execute_data)
 
-    tx = easy_tracks_registry.enactMotion(motions[0][0], enact_calldata)
+    # validate that executor was called with correct params
+    easy_track_executor_execute_calldata = easy_track_executor_stub.executeCallData()
+    assert easy_track_executor_execute_calldata[0]  # method was called
+    assert easy_track_executor_execute_calldata[1] == MOTION_CALLDATA_STUB  # motionData
+    assert easy_track_executor_execute_calldata[2] == execute_data  # executeData
 
-    forward_data = aragon_agent_mock.data()
+    # validate that agent wasn't called
+    assert not aragon_agent_mock.called()
+    assert aragon_agent_mock.data() == "0x"
 
-    assert forward_data == encode_call_script(
-        [
-            (
-                easy_track_executor_stub.address,
-                easy_track_executor_stub.execute.encode_input(
-                    modion_calldata, enact_calldata
-                ),
-            )
-        ]
-    )
-
+    # validate that motion was delete and events were emitted
     assert len(easy_tracks_registry.getMotions()) == 0
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]

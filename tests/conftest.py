@@ -60,42 +60,35 @@ def node_operators_easy_track_executor(
     )
 
 
-@pytest.fixture(scope="function", autouse=True)
-def shared_setup(fn_isolation):
-    pass
-
-
 @pytest.fixture(scope="function")
 def ldo_holders(accounts, ldo_token):
-    holders = accounts[-3:]
+    holders = accounts[6:9]
     total_supply = ldo_token.totalSupply()
     holder_balance = total_supply / 500  # 0.2 %
     for holder in holders:
+        balance = ldo_token.balanceOf(holder)
+        # to make sure that holder will have exact 0.2 % of total supply of tokens
+        if balance > 0:
+            ldo_token.transfer(constants.LDO_WHALE_HOLDER, balance, {"from": holder})
         ldo_token.transfer(holder, holder_balance, {"from": constants.LDO_WHALE_HOLDER})
     return holders
 
 
-@pytest.fixture(scope="module")
-def dao_acl(interface):
-    return interface.ACL(lido_dao_acl_address)
+@pytest.fixture(scope="function")
+def node_operators_registry(interface):
+    return interface.NodeOperatorsRegistry(constants.NODE_OPERATORS_REGISTRY)
 
 
-@pytest.fixture(scope="module")
-def dao_voting(interface):
-    return interface.Voting(lido_dao_voting_address)
+@pytest.fixture(scope="function")
+def voting(interface):
+    return interface.Voting(constants.VOTING)
 
 
-@pytest.fixture(scope="module")
-def dao_token_manager(interface):
-    return interface.TokenManager(lido_dao_token_manager_address)
+@pytest.fixture(scope="function")
+def token_manager(interface):
+    return interface.TokenManager(constants.TOKENS)
 
 
-# Lido DAO Agent app
-@pytest.fixture(scope="module")
-def dao_agent(interface):
-    return interface.Agent(lido_dao_agent_address)
-
-
-# @pytest.fixture(scope="module")
-# def ldo_token(interface):
-#     return interface.ERC20(ldo_token_address)
+@pytest.fixture(scope="function")
+def agent(interface):
+    return interface.Agent(constants.ARAGON_AGENT)

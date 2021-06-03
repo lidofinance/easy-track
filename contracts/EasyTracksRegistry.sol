@@ -269,28 +269,12 @@ contract EasyTracksRegistry is Ownable {
         Motion memory m = _getMotion(_motionId);
         require(m.startDate + m.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
         require(executorIndices[m.executor] > 0, ERROR_EXECUTOR_NOT_FOUND);
-        bytes memory evmScript = _createEvmScript(m.executor, m.data, _enactData);
-        aragonAgent.forward(evmScript);
+        bytes memory evmScript = IEasyTrackExecutor(m.executor).execute(m.data, _enactData);
+        if (evmScript.length > 0) {
+            aragonAgent.forward(evmScript);
+        }
         _deleteMotion(_motionId);
         emit MotionEnacted(_motionId);
-    }
-
-    function _createEvmScript(
-        address _executor,
-        bytes memory _motionData,
-        bytes memory _enactData
-    ) internal pure returns (bytes memory evmScript) {
-        bytes memory specId = hex"00000001";
-        bytes4 methodId = hex"1f6a1eb9";
-
-        bytes memory callData = bytes.concat(methodId, abi.encode(_motionData, _enactData));
-
-        evmScript = bytes.concat(
-            specId,
-            bytes20(address(_executor)),
-            bytes4(uint32(callData.length)), // add 4 bytes from methodId manually
-            callData
-        );
     }
 
     function _deleteMotion(uint256 _motionId) private {
