@@ -56,7 +56,7 @@ interface IEasyTrackExecutor {
     function execute(
         bytes memory _motionData,
         bytes memory _enactData
-    ) external;
+    ) external returns (bytes memory);
 }
 ```
 
@@ -67,7 +67,7 @@ address[] public executors;
 mapping(address => uint256) private executorIndices;
 ```
 
-To run an executor, `EasyTrackRegistry` generates an EVM script from the executor's `enact` method and forwards it to the Aragon Agent entity. On `EasyTrackRegistry` contract deployment, the Aragon Agent address is being saved in the contract and it cannot be updated later.
+To run an executor, `EasyTrackRegistry` calls executor's `execute` method and if it returns not empty slice of bytes will forward it as EVM script to Aragon Agent entity. On `EasyTrackRegistry` contract deployment, the Aragon Agent address is being saved in the contract and it cannot be updated later.
 
 ```solidity=
 address public aragonAgent;
@@ -204,7 +204,7 @@ event MotionCanceled(uint256 indexed _motionId)
 
 #### function enactMotion(uint256 _motionId, bytes memory _enactData) public  motionExists(_motionId)
 
-Method marks motion as enacted, creates EVM script from motion's executor `enact` method and forwards the script to the Aragon Agent. After that, method deletes the motion from the corresponding mapping. `EasyTrack` contract requires the role assigned to run EVM scripts on Agent entity.
+Method marks motion as enacted, calls executors `execute` method with passed params. If executor returns not empty aragon EVM script, will forward the script to the Aragon Agent. After that, method deletes the motion from the corresponding mapping. `EasyTrack` contract requires the role assigned to run EVM scripts on Agent entity.
 
 Method also has overloaded variant **`function enactMotion(uint256 _motionId) external`** which passes empty bytes array as `_enactData` value.
 
@@ -218,7 +218,7 @@ event MotionEnacted(uint256 indexed _motionId)
 ## EasyTrackExecutor
 
 
-`EasyTrackExecutor` is an abstract contract that can be used as the base class for new easy track executors. The contract has external methods `beforeCreateMotionGuard`, `beforeCancelMotionGuard` and `execute` used by `EasyTrackRegistry` in a lifecycle of motion. Methods `beforeCreateMotionGuard` and `beforeCancelMotionGuard` also check if the `msg.sender` matches the easy track registry contract address. 
+`EasyTrackExecutor` is an abstract contract that can be used as the base class for new easy track executors. The contract has external methods `beforeCreateMotionGuard`, `beforeCancelMotionGuard` and `execute` used by `EasyTrackRegistry` in a lifecycle of motion. Above methods  check if the `msg.sender` matches the easy track registry contract address. 
 
 
 ### Storage Variables
@@ -243,17 +243,19 @@ Validates that `msg.sender` equals `easyTracksRegistry` and throws `'NOT_EASY_TR
 
 #### beforeCreateMotionGuard(address _caller, bytes memory _data) external override onlyEasyTrackRegistry
 
-`EasyTracksRegistry` calls this method before the creation of a new motion, and the method only accepts calls from `EasyTracksRegistry`. `_beforeCreateMotionGuard` is internal abstract method defined in the derived contract, it contains permission checks.
+`EasyTracksRegistry` calls this method before the creation of a new motion, and the method only accepts calls from `EasyTracksRegistry`.
+Method's implementation calls internal abstract method `_beforeCreateMotionGuard` which has to be overriden in derived contract and contain additional permissions checks if needed.
 
 
 #### beforeCancelMotionGuard(address _caller, bytes memory _motionData, bytes memory _executionData) external override onlyEasyTrackRegistry
 
-`EasyTracksRegistry` calls this method before the creation of a new motion, and the method only accepts calls from `EasyTracksRegistry`. `_beforeCancelMotionGuard` is internal abstract method defined in the derived contract, it contains permission checks.
+`EasyTracksRegistry` calls this method before the creation of a new motion, and the method only accepts calls from `EasyTracksRegistry`. 
+Method's implementation calls internal abstract method `_beforeCancelMotionGuard` which has to be overriden in derived contract and contain additional permissions checks if needed.
 
 
-#### function execute(bytes memory _motionData, bytes memory _executionData) external virtual
+#### function execute(bytes memory _motionData, bytes memory _executionData) external override onlyEasyTrackRegistry returns (bytes memory)
 
-`EasyTracksRegistry` forwards EVM script with this method encoded to Aragon agent entity. Method has no implementation and must be overridden in derived contract.
+`EasyTracksRegistry` calls this method when enacts motion, and the method only accepts calls from `EasyTracksRegistry`. Method implementation calls internal abstract method `_execute` which has to be overriden in derived contract. If method returns not empty slice of bytes it will be passed to Aragon agent by the `EasyTracksRegistry` as EVM script.
 
 
 #### function _beforeCreateMotionGuard(address _caller, bytes memory _data) internal virtual
@@ -261,6 +263,10 @@ Validates that `msg.sender` equals `easyTracksRegistry` and throws `'NOT_EASY_TR
 Method has no implementation and must be overridden in derived contract.
 
 #### function _beforeCancelMotionGuard(address _caller, bytes memory _motionData, bytes memory _executionData) internal virtual
+
+Method has no implementation and must be overridden in derived contract.
+
+#### function _execute(bytes memory _motionData, bytes memory _enactData) internal virtual returns (bytes memory);
 
 Method has no implementation and must be overridden in derived contract.
 
@@ -287,71 +293,6 @@ address private trustedAddress;
 Compares the passed `_caller` value to the current `trustedAddress` value and throws `"NOT_TRUSTED_ADDRESS"` in case addresses do not match.
 
 
-## RewardsEasyTrackExecutor
-
-Implements logic to control the list of allowed LDO recipients and to transfer LDO into one or multiple allowed recipients. Inherits from `EasyTrackExecutor` and `TrustedAddress` contracts.
-
-
-### Storage Variables
-
-`rewardRecipients` mapping stores allowed reward transfer recipient addresses:
-
-```solidity=
-mapping(address => bool) private rewardRecipients;
-```
-
-An address is considered to be allowed if `rewardsRecipients[_recipient]` is true.
-
-
-### Methods
-
-
-#### function isAllowed(address _rewardAddress) public view returns (bool)
-
-Checks if `_rewardAddress` is whitelisted to receive LDO rewards.
-
-
-#### function getAllowed() public view returns (address[] memory)
-
-Returns list of allowed reward program addresses.
-
-
-#### function _beforeCreateMotionGuard(address _caller, bytes memory _data) internal override onlyTrustedAddress(_caller)
-
-Checks if a new motion can be created. `_data` bytes contains encoded value of type `(bytes3 _opertationType, address _rewardAddress, address[] _recipients, uint256[] _amounts)`. 
-`_operationType` may have values `"add"`, `"del"` or `"pay"` to add `_rewardAddress` to allowed recipients, remove `_rewardAddress` from recipients or pay to `_recipients` given `_amounts` of LDO tokens respectively. 
-Method also checks the following conditions for successfull finish:
-
-- If `_operationType` is `"add"`:
-    - Requires the given `_rewardAddress` to not already be in `rewardRecipients` and throws `"ALREADY_ALLOWED"` otherwise.
-
-- If `_operationType` is `"del"`:
-    - Requires the given `_rewardAddress` to be listed in `rewardRecipients` and throws `"ADDRESS_NOT_LISTED"` otherwise.
-
-- If `_operationType` is `"pay"`:
-    - Requires each address from `_recipients` to be whitelisted. Throws `"FORBIDDEN_ADDRESS"` otherwise. 
-
-- Else throws `"UNKNOWN_OPERATION_TYPE"`.
-
-
-#### function _beforeCancelMotionGuard(address _caller, bytes memory _motionData, bytes memory _cancelData) internal override onlyTrustedAddress(_caller)
-
-Checks if caller of the method is a trusted address.
-
-
-#### function execute(bytes memory _motionData, bytes memory _enactData) external virtual
-
-Decodes `_data` containing value of type `(bytes3 _opertationType, address _rewardAddress, address[] _recipients, uint256[] _amounts)`.
-
-- If `_operationType` is `"add"`: adds `_rewardAddress` to whitelisted addresses and throws `"ALREADY_ALLOWED"` if address has already been witelisted.
-
-- If `_operationType` is `"del"`: removes `_rewardAddress` from whitelisted addresses and throws `"ADDRESS_NOT_LISTED"` if `_rewardAddress` has not been previously whitelisted.
-
-- If `_operationType` is `"pay"`: validates that every address from `_recipients` is whitelisted and makes transfers for corresponding amounts of LDO. If one or multiple addresses are not in the whitelist, it throws `"FORBIDDEN_ADDRESS"`. 
-
-- Else throws `"UNKNOWN_OPERATION_TYPE"`
-
-
 ## TopUpRewardProgramEasyTrackExecutor
 
 Implements logic to transfer LDO into one or multiple allowed recipients. Inherits from `EasyTrackExecutor` and `TrustedAddress` contracts.
@@ -364,17 +305,17 @@ address[] public rewardPrograms;
 mapping(address => uint256) private rewardProgramIndices;
 ```
 
-Stores addresses of `AddRewardProgramEasyTrackExecutor` and `DeleteRewardProgramEasyTrackExecutor` contracts. Controlling list of allowed recipients might be done only by these addresses. Addresses set once after deploy in `initialize` method.
+Stores addresses of `AddRewardProgramEasyTrackExecutor` and `RemoveRewardProgramEasyTrackExecutor` contracts. Controlling list of allowed recipients might be done only by these addresses. Addresses set once after deploy in `initialize` method.
 
 ```solidity=
 address public addRewardProgramEasyTrackExecutor;
-address public deleteRewardProgramEasyTrackExecutor;
+address public removeRewardProgramEasyTrackExecutor;
 ```
 
 ### Methods
 
-#### function initialize(address _addRewardProgramEasyTrackExecutor, address _deleteRewardProgramEasyTrackExecutor) external
-Sets values for `addRewardProgramEasyTrackExecutor` and `deleteRewardProgramEasyTrackExecutor` variables if they haven't set yet. Throws `"ALREADY_INITIALIZED"` in other cases.
+#### function initialize(address _addRewardProgramEasyTrackExecutor, address _removeRewardProgramEasyTrackExecutor) external
+Sets values for `addRewardProgramEasyTrackExecutor` and `removeRewardProgramEasyTrackExecutor` variables if they haven't set yet. Throws `"ALREADY_INITIALIZED"` in other cases.
 
 #### function _beforeCreateMotionGuard(address _caller, bytes memory _data) internal view override onlyTrustedAddress(_caller)
 `_data` bytes contains encoded value of type `(address[] _recipients, uint256[] _amounts)`. Checks if an each address in `_recipients` array contained in list of allowed reward programs.
@@ -383,18 +324,20 @@ Sets values for `addRewardProgramEasyTrackExecutor` and `deleteRewardProgramEasy
 
 Checks if caller of the method is a trusted address.
 
-#### function execute(bytes memory _motionData, bytes memory _enactData) external override
-Validates that every address from `_recipients` is whitelisted and makes transfers for corresponding amounts of LDO. If one or multiple addresses are not in the whitelist, it throws `"FORBIDDEN_ADDRESS"` error. 
+#### function _execute(bytes memory _motionData, bytes memory _enactData) internal override returns (bytes memory)
+
+Validates that every address from `_recipients` is whitelisted and returns EVM script to make transfers for corresponding amounts of LDO. If one or multiple addresses are not in the whitelist, it throws `"FORBIDDEN_ADDRESS"` error. 
 
 #### function addRewardProgram(address _rewardProgram) external
 Adds reward program address to `rewardPrograms` if it hasn't added yet, throws `"REWARD_PROGRAM_ALREADY_ADDED"` in other cases. Might be called only by `AddRewardProgramEasyTrackExecutor` contract.
 
-#### function deleteRewardProgram(address _rewardProgram) external
-Removes reward program address from `rewardPrograms`. Throws `"REWARD_PROGRAM_NOT_FOUND"` if program address not in array. Might be called only by `DeleteRewardProgramEasyTrackExecutor` contract.
+#### function removeRewardProgram(address _rewardProgram) external
+Removes reward program address from `rewardPrograms`. Throws `"REWARD_PROGRAM_NOT_FOUND"` if program address not in array. Might be called only by `RemoveRewardProgramEasyTrackExecutor` contract.
 
 
 #### function isAllowed(address _rewardProgram) external view (returns bool)
 Shows if address is whitelisted in `rewardPrograms`.
+
 
 ## AddRewardProgramEasyTrackExecutor
 Implements logic to add new reward program from the list of allowed LDO recipients. Inherits from `EasyTrackExecutor` and `TrustedAddress` contracts.
@@ -416,11 +359,11 @@ address public topUpRewardProgramEasyTrackExecutor;
 
 Checks if caller of the method is a trusted address.
 
-#### function execute(bytes memory _motionData, bytes memory _enactData) external override
+#### function _execute(bytes memory _motionData, bytes memory _enactData) internal override returns (bytes memory)
 Calls `TopUpRewardProgramEasyTrackExecutor.addRewardProgram` method.
 
 
-## DeleteRewardProgramEasyTrackExecutor
+## RemoveRewardProgramEasyTrackExecutor
 Implements logic to delete new reward program from the list of allowed LDO recipients. Inherits from EasyTrackExecutor and TrustedAddress contracts.
 
 ### Storage Variables
@@ -439,8 +382,8 @@ address public topUpRewardProgramEasyTrackExecutor;
 
 Checks if caller of the method is a trusted address.
 
-#### function execute(bytes memory _motionData, bytes memory _enactData) external override
-Calls `TopUpRewardProgramEasyTrackExecutor.deleteRewardProgram` method.
+#### function _execute(bytes memory _motionData, bytes memory _enactData) internal override returns (bytes memory)
+Calls `TopUpRewardProgramEasyTrackExecutor.removeRewardProgram` method.
 
 
 
@@ -473,9 +416,9 @@ Runs the following checks:
 Checks if the caller of the method is a trusted address.
 
 
-#### function execute(bytes memory _motionData, bytes memory _enactData) external virtual
+#### function _execute(bytes memory _motionData, bytes memory _enactData) internal override returns (bytes memory)
 
-Decodes motion `_data` to  value of type `(uint256 _ldoAmount, uint256 _stethAmount, uint256 _ethAmount)` and transfers specified amount of tokens to `legoProgram`.
+Decodes motion `_data` to  value of type `(uint256 _ldoAmount, uint256 _stethAmount, uint256 _ethAmount)` and returns EVM script to transfer specified amount of tokens to `legoProgram`.
 
 
 ## NodeOperatorsEasyTrackExecutor
@@ -510,9 +453,9 @@ Runs checks as follows:
 Checks if the node operator id in the motion data exists in `NodeOperatorsRegistry` and if their withdrawal address matches the address of `_caller`. 
 
 
-#### function execute(bytes _data) external virtual
+#### function _execute(bytes memory _motionData, bytes memory _enactData) internal override returns (bytes memory)
 
-Runs `NodeOperatorsRegistry.setNodeOperatorStakingLimit` to update node operator staking limits. Before enacting, applies next sanity checks:
+Creates EVM script which calls `NodeOperatorsRegistry.setNodeOperatorStakingLimit` method to update node operator staking limits. Before enacting, applies next sanity checks:
 
 - Requires `NodeOperatorsRegistry` to contain node operator with given id.
 - Requires the node operator to not be disabled
