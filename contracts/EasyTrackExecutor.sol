@@ -14,6 +14,7 @@ abstract contract EasyTrackExecutor is IEasyTrackExecutor {
 
     function beforeCreateMotionGuard(address _caller, bytes memory _data)
         external
+        virtual
         override
         onlyEasyTrackRegistry
     {
@@ -28,6 +29,15 @@ abstract contract EasyTrackExecutor is IEasyTrackExecutor {
         _beforeCancelMotionGuard(_caller, _motionData, _cancelData);
     }
 
+    function execute(bytes memory _motionData, bytes memory _enactData)
+        external
+        override
+        onlyEasyTrackRegistry
+        returns (bytes memory)
+    {
+        return _execute(_motionData, _enactData);
+    }
+
     function _beforeCreateMotionGuard(address _caller, bytes memory _data) internal virtual;
 
     function _beforeCancelMotionGuard(
@@ -35,6 +45,11 @@ abstract contract EasyTrackExecutor is IEasyTrackExecutor {
         bytes memory _motionData,
         bytes memory _cancelData
     ) internal virtual;
+
+    function _execute(bytes memory _motionData, bytes memory _enactData)
+        internal
+        virtual
+        returns (bytes memory);
 
     modifier onlyEasyTrackRegistry {
         require(msg.sender == easyTracksRegistry, "NOT_EASYTRACK_REGISTRY");

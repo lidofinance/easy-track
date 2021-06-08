@@ -61,8 +61,8 @@ contract NodeOperatorsEasyTrackExecutor is EasyTrackExecutor {
         _validateCallerIsRewardAddress(_caller, nodeOperatorData);
     }
 
-    function execute(bytes memory _motionData, bytes memory _enactData)
-        external
+    function _execute(bytes memory _motionData, bytes memory _enactData)
+        internal
         view
         override
         returns (bytes memory)

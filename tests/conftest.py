@@ -1,5 +1,6 @@
 import pytest
 from brownie import (
+    TopUpRewardProgramEasyTrackExecutor,
     NodeOperatorsRegistryStub,
     NodeOperatorsEasyTrackExecutor,
     AragonAgentMock,
@@ -92,3 +93,19 @@ def token_manager(interface):
 @pytest.fixture(scope="function")
 def agent(interface):
     return interface.Agent(constants.ARAGON_AGENT)
+
+
+@pytest.fixture(scope="function")
+def top_up_reward_program_easy_track_executor(owner, easy_tracks_registry):
+    return owner.deploy(
+        TopUpRewardProgramEasyTrackExecutor,
+        easy_tracks_registry,
+        owner,
+        constants.FINANCE,
+        constants.LDO_TOKEN,
+    )
+
+
+@pytest.fixture(scope="function")
+def finance(interface):
+    return interface.Finance(constants.FINANCE)

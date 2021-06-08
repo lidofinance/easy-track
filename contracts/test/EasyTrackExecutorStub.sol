@@ -44,8 +44,8 @@ contract EasyTrackExecutorStub is EasyTrackExecutor {
         beforeCancelGuardCallData = BeforeCancelCallData(true, _caller, _motionData, _executeData);
     }
 
-    function execute(bytes calldata _motionData, bytes calldata _executeData)
-        external
+    function _execute(bytes memory _motionData, bytes memory _executeData)
+        internal
         override
         returns (bytes memory)
     {

@@ -177,10 +177,12 @@ def test_execute_node_operator_not_found(
         node_operators_easy_track_executor.execute(
             encode_single("(uint256,uint256)", [2, 500]),
             "0x",
+            {"from": easy_tracks_registry},
         )
 
 
 def test_execute_node_operator_node_operator_disabled(
+    easy_tracks_registry,
     node_operators_registry_stub,
     node_operators_easy_track_executor,
 ):
@@ -190,11 +192,14 @@ def test_execute_node_operator_node_operator_disabled(
 
     with reverts("NODE_OPERATOR_DISABLED"):
         node_operators_easy_track_executor.execute(
-            encode_single("(uint256,uint256)", [1, 200]), "0x"
+            encode_single("(uint256,uint256)", [1, 200]),
+            "0x",
+            {"from": easy_tracks_registry},
         )
 
 
 def test_execute_new_staking_limit_less_than_current(
+    easy_tracks_registry,
     node_operators_registry_stub,
     node_operators_easy_track_executor,
 ):
@@ -206,11 +211,14 @@ def test_execute_new_staking_limit_less_than_current(
 
     with reverts("STAKING_LIMIT_TOO_LOW"):
         node_operators_easy_track_executor.execute(
-            encode_single("(uint256,uint256)", [1, 200]), "0x"
+            encode_single("(uint256,uint256)", [1, 200]),
+            "0x",
+            {"from": easy_tracks_registry},
         )
 
 
 def test_execute_new_staking_limit_less_than_total_signing_keys(
+    easy_tracks_registry,
     node_operators_registry_stub,
     node_operators_easy_track_executor,
 ):
@@ -222,11 +230,14 @@ def test_execute_new_staking_limit_less_than_total_signing_keys(
 
     with reverts("NOT_ENOUGH_SIGNING_KEYS"):
         node_operators_easy_track_executor.execute(
-            encode_single("(uint256,uint256)", [1, 500]), "0x"
+            encode_single("(uint256,uint256)", [1, 500]),
+            "0x",
+            {"from": easy_tracks_registry},
         )
 
 
 def test_execute(
+    easy_tracks_registry,
     node_operators_registry_stub,
     node_operators_easy_track_executor,
 ):
@@ -236,8 +247,10 @@ def test_execute(
     node_operators_registry_stub.setStakingLimit(300)
     node_operators_registry_stub.setTotalSigningKeys(400)
 
-    evm_script = node_operators_easy_track_executor.execute(
-        encode_single("(uint256,uint256)", [1, 350]), "0x"
+    evm_script = node_operators_easy_track_executor.execute.call(
+        encode_single("(uint256,uint256)", [1, 350]),
+        "0x",
+        {"from": easy_tracks_registry},
     )
 
     assert evm_script == encode_call_script(
