@@ -2,6 +2,9 @@ from brownie.network import Chain
 from brownie import (
     EasyTracksRegistry,
     NodeOperatorsEasyTrackExecutor,
+    TopUpRewardProgramEasyTrackExecutor,
+    AddRewardProgramEasyTrackExecutor,
+    RemoveRewardProgramEasyTrackExecutor,
     accounts,
     reverts,
     history,
@@ -210,6 +213,222 @@ def test_node_operators_easy_track(
     assert new_node_operator[3] == 3  # stakingLimit
 
 
+def test_reward_programs_easy_track(
+    owner,
+    agent,
+    voting,
+    finance,
+    ldo_token,
+    ldo_holders,
+    token_manager,
+):
+    chain = Chain()
+
+    # deploy easy tracks registry
+    easy_tracks_registry = owner.deploy(EasyTracksRegistry, agent, constants.LDO_TOKEN)
+
+    # transfer ownership to agent
+    easy_tracks_registry.transferOwnership(agent, {"from": owner})
+
+    trusted_address = accounts[7]
+
+    # deploy reward program easy tracks
+    top_up_reward_program_easy_track_executor = owner.deploy(
+        TopUpRewardProgramEasyTrackExecutor,
+        easy_tracks_registry,
+        trusted_address,
+        finance,
+        ldo_token,
+    )
+
+    add_reward_program_easy_track_executor = owner.deploy(
+        AddRewardProgramEasyTrackExecutor,
+        easy_tracks_registry,
+        top_up_reward_program_easy_track_executor,
+        trusted_address,
+    )
+
+    remove_reward_program_easy_track_executor = owner.deploy(
+        RemoveRewardProgramEasyTrackExecutor,
+        easy_tracks_registry,
+        top_up_reward_program_easy_track_executor,
+        trusted_address,
+    )
+
+    top_up_reward_program_easy_track_executor.initialize(
+        add_reward_program_easy_track_executor,
+        remove_reward_program_easy_track_executor,
+    )
+
+    # create voting to add permistions to easy_tracks_registry to forward to agent
+    add_forward_permissions_evm_script = add_agent_forwarding_permission_call_script(
+        easy_tracks_registry.address
+    )
+
+    tx = token_manager.forward(
+        encode_call_script(
+            [
+                (
+                    voting.address,
+                    voting.forward.encode_input(add_forward_permissions_evm_script),
+                )
+            ]
+        ),
+        {"from": ldo_holders[0]},
+    )
+    add_forward_permissions_voting_id = tx.events["StartVote"]["voteId"]
+
+    # execute voting to add permistions to easy_tracks_registry to forward to agent
+    voting.vote(
+        add_forward_permissions_voting_id,
+        True,
+        False,
+        {"from": constants.LDO_WHALE_HOLDER},
+    )
+    chain.sleep(3 * 60 * 60 * 24)
+    chain.mine()
+    assert voting.canExecute(add_forward_permissions_voting_id)
+    voting.executeVote(add_forward_permissions_voting_id, {"from": accounts[0]})
+
+    # create voting to add permissions to agent to create new payments
+    add_create_payments_permissions_evm_script = (
+        add_to_agent_permission_create_new_payments_call_script()
+    )
+
+    tx = token_manager.forward(
+        encode_call_script(
+            [
+                (
+                    voting.address,
+                    voting.forward.encode_input(
+                        add_create_payments_permissions_evm_script
+                    ),
+                )
+            ]
+        ),
+        {"from": ldo_holders[0]},
+    )
+    add_create_payments_permissions_voting_id = tx.events["StartVote"]["voteId"]
+
+    # execute voting to add permissions to agent to set staking limit
+    voting.vote(
+        add_create_payments_permissions_voting_id,
+        True,
+        False,
+        {"from": constants.LDO_WHALE_HOLDER},
+    )
+    chain.sleep(3 * 60 * 60 * 24)
+    chain.mine()
+    assert voting.canExecute(add_create_payments_permissions_voting_id)
+    voting.executeVote(add_create_payments_permissions_voting_id, {"from": accounts[0]})
+
+    # add top_up_reward_program_easy_track_executor to registry
+    add_executor_calldata = easy_tracks_registry.addExecutor.encode_input(
+        top_up_reward_program_easy_track_executor
+    )
+
+    agent.execute(
+        easy_tracks_registry,
+        0,
+        add_executor_calldata,
+        {"from": accounts.at(constants.VOTING, force=True)},
+    )
+    executors = easy_tracks_registry.getExecutors()
+    assert len(executors) == 1
+    assert executors[0] == top_up_reward_program_easy_track_executor
+
+    # add add_reward_program_easy_track_executor to registry
+    add_executor_calldata = easy_tracks_registry.addExecutor.encode_input(
+        add_reward_program_easy_track_executor
+    )
+
+    agent.execute(
+        easy_tracks_registry,
+        0,
+        add_executor_calldata,
+        {"from": accounts.at(constants.VOTING, force=True)},
+    )
+    executors = easy_tracks_registry.getExecutors()
+    assert len(executors) == 2
+    assert executors[1] == add_reward_program_easy_track_executor
+
+    # add remove_reward_program_easy_track_executor to registry
+    add_executor_calldata = easy_tracks_registry.addExecutor.encode_input(
+        remove_reward_program_easy_track_executor
+    )
+
+    agent.execute(
+        easy_tracks_registry,
+        0,
+        add_executor_calldata,
+        {"from": accounts.at(constants.VOTING, force=True)},
+    )
+    executors = easy_tracks_registry.getExecutors()
+    assert len(executors) == 3
+    assert executors[2] == remove_reward_program_easy_track_executor
+
+    reward_program = accounts[5]
+    # create new motion to add reward program
+    motion_data = encode_single("(address)", [reward_program.address])
+    easy_tracks_registry.createMotion(
+        add_reward_program_easy_track_executor,
+        motion_data,
+        {"from": trusted_address},
+    )
+
+    motions = easy_tracks_registry.getMotions()
+    assert len(motions) == 1
+
+    chain.sleep(48 * 60 * 60 + 100)
+
+    easy_tracks_registry.enactMotion(motions[0][0])
+    assert len(easy_tracks_registry.getMotions()) == 0
+
+    reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
+    assert len(reward_programs) == 1
+    assert reward_programs[0] == reward_program
+
+    # create new motion to top up reward program
+    motion_data = encode_single(
+        "(address[],uint256[])", [[reward_program.address], [int(5e18)]]
+    )
+    easy_tracks_registry.createMotion(
+        top_up_reward_program_easy_track_executor,
+        motion_data,
+        {"from": trusted_address},
+    )
+    motions = easy_tracks_registry.getMotions()
+    assert len(motions) == 1
+
+    chain.sleep(48 * 60 * 60 + 100)
+
+    assert ldo_token.balanceOf(reward_program) == 0
+
+    easy_tracks_registry.enactMotion(motions[0][0])
+
+    assert len(easy_tracks_registry.getMotions()) == 0
+    assert ldo_token.balanceOf(reward_program) == 5e18
+
+    # create new motion to remove reward program
+
+    motion_data = encode_single("(address)", [reward_program.address])
+    easy_tracks_registry.createMotion(
+        remove_reward_program_easy_track_executor,
+        motion_data,
+        {"from": trusted_address},
+    )
+
+    motions = easy_tracks_registry.getMotions()
+    assert len(motions) == 1
+
+    chain.sleep(48 * 60 * 60 + 100)
+
+    easy_tracks_registry.enactMotion(motions[0][0])
+    assert len(easy_tracks_registry.getMotions()) == 0
+
+    assert len(top_up_reward_program_easy_track_executor.getRewardPrograms()) == 0
+
+
 def add_agent_forwarding_permission_call_script(forwarder_address):
     spec_id = "00000001"
     to_address = constants.ACL[2:]
@@ -239,4 +458,20 @@ def add_to_agent_permission_set_node_operators_stakin_limit_call_script():
         + method_id
         + constants.ARAGON_AGENT[2:].zfill(64)
         + set_staking_limit_role_data
+    )
+
+
+def add_to_agent_permission_create_new_payments_call_script():
+    spec_id = "00000001"
+    to_address = constants.ACL[2:]
+    create_payments_role_data = "00000000000000000000000075c7b1d23f1cad7fb4d60281d7069e46440bc1795de467a460382d13defdc02aacddc9c7d6605d6d4e0b8bd2f70732cae8ea17bc"
+    calldata_length = "00000064"
+    method_id = "0a8ed3db"
+    return (
+        spec_id
+        + to_address
+        + calldata_length
+        + method_id
+        + constants.ARAGON_AGENT[2:].zfill(64)
+        + create_payments_role_data
     )
