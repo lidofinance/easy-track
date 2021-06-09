@@ -1,5 +1,6 @@
 import pytest
 from brownie import (
+    AddRewardProgramEasyTrackExecutor,
     TopUpRewardProgramEasyTrackExecutor,
     NodeOperatorsRegistryStub,
     NodeOperatorsEasyTrackExecutor,
@@ -103,6 +104,20 @@ def top_up_reward_program_easy_track_executor(owner, easy_tracks_registry):
         owner,
         constants.FINANCE,
         constants.LDO_TOKEN,
+    )
+
+
+@pytest.fixture(scope="function")
+def add_reward_program_easy_track_executor(
+    owner,
+    easy_tracks_registry,
+    top_up_reward_program_easy_track_executor,
+):
+    return owner.deploy(
+        AddRewardProgramEasyTrackExecutor,
+        easy_tracks_registry,
+        top_up_reward_program_easy_track_executor,
+        owner,
     )
 
 
