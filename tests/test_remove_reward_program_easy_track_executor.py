@@ -1,7 +1,12 @@
 import random
 
 from eth_abi import encode_single
-from brownie import AddRewardProgramEasyTrackExecutor, accounts, ZERO_ADDRESS, reverts
+from brownie import (
+    RemoveRewardProgramEasyTrackExecutor,
+    accounts,
+    ZERO_ADDRESS,
+    reverts,
+)
 
 import constants
 from utils.evm_script import encode_call_script
@@ -11,7 +16,7 @@ def test_deploy(owner, easy_tracks_registry, top_up_reward_program_easy_track_ex
     "Must deploy contract with correct params"
 
     contract = owner.deploy(
-        AddRewardProgramEasyTrackExecutor,
+        RemoveRewardProgramEasyTrackExecutor,
         easy_tracks_registry,
         top_up_reward_program_easy_track_executor,
         owner,
@@ -27,11 +32,11 @@ def test_deploy(owner, easy_tracks_registry, top_up_reward_program_easy_track_ex
 
 def test_before_create_motion_guard_sender_is_not_easy_tracks_registry(
     stranger,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
 ):
     "Must fail with error 'NOT_EASYTRACK_REGISTRY'"
     with reverts("NOT_EASYTRACK_REGISTRY"):
-        add_reward_program_easy_track_executor.beforeCreateMotionGuard(
+        remove_reward_program_easy_track_executor.beforeCreateMotionGuard(
             stranger, "0x", {"from": stranger}
         )
 
@@ -39,37 +44,33 @@ def test_before_create_motion_guard_sender_is_not_easy_tracks_registry(
 def test_before_create_motion_guard_caller_is_not_trusted_address(
     stranger,
     easy_tracks_registry,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
 ):
     "Must fail with error 'ADDRESS_NOT_TRUSTED'"
     with reverts("ADDRESS_NOT_TRUSTED"):
-        add_reward_program_easy_track_executor.beforeCreateMotionGuard(
+        remove_reward_program_easy_track_executor.beforeCreateMotionGuard(
             stranger, "0x", {"from": easy_tracks_registry}
         )
 
 
-def test_before_create_motion_guard_reward_program_already_added(
+def test_before_create_motion_guard_reward_program_not_found(
     owner,
     stranger,
     easy_tracks_registry,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
     top_up_reward_program_easy_track_executor,
 ):
-    "Must fail with error 'REWARD_PROGRAM_ALREADY_ADDED'"
-    reward_program = accounts[6]
+    "Must fail with error 'REWARD_PROGRAM_NOT_FOUND'"
     top_up_reward_program_easy_track_executor.initialize(
-        add_reward_program_easy_track_executor, owner
-    )
-    motion_data = encode_single("(address)", [reward_program.address])
-    add_reward_program_easy_track_executor.execute(
-        motion_data, "0x", {"from": easy_tracks_registry}
+        owner, remove_reward_program_easy_track_executor
     )
     reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
-    assert len(reward_programs) == 1
-    assert reward_programs[0] == reward_program
+    assert len(reward_programs) == 0
 
-    with reverts("REWARD_PROGRAM_ALREADY_ADDED"):
-        add_reward_program_easy_track_executor.beforeCreateMotionGuard(
+    reward_program = accounts[6]
+    motion_data = encode_single("(address)", [reward_program.address])
+    with reverts("REWARD_PROGRAM_NOT_FOUND"):
+        remove_reward_program_easy_track_executor.beforeCreateMotionGuard(
             owner, motion_data, {"from": easy_tracks_registry}
         )
 
@@ -78,26 +79,41 @@ def test_before_create_motion_guard(
     owner,
     easy_tracks_registry,
     add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
     top_up_reward_program_easy_track_executor,
 ):
     "Must ends without error if caller is trusted address and reward program wasn't added earlier"
+
+    top_up_reward_program_easy_track_executor.initialize(
+        add_reward_program_easy_track_executor,
+        remove_reward_program_easy_track_executor,
+    )
+
     new_reward_program = accounts[6].address
+    motion_data = encode_single("(address)", [new_reward_program])
+    add_reward_program_easy_track_executor.execute(
+        motion_data, "0x", {"from": easy_tracks_registry}
+    )
+
+    reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
+    assert len(reward_programs) == 1
+    assert reward_programs[0] == new_reward_program
+
+    remove_reward_program_easy_track_executor.execute(
+        motion_data, "0x", {"from": easy_tracks_registry}
+    )
+
     reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
     assert len(reward_programs) == 0
-    add_reward_program_easy_track_executor.beforeCreateMotionGuard(
-        owner,
-        encode_single("(address)", [new_reward_program]),
-        {"from": easy_tracks_registry},
-    )
 
 
 def test_before_cancel_motion_guard_sender_is_not_easy_tracks_registry(
     stranger,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
 ):
     "Must fail with error 'NOT_EASYTRACK_REGISTRY'"
     with reverts("NOT_EASYTRACK_REGISTRY"):
-        add_reward_program_easy_track_executor.beforeCancelMotionGuard(
+        remove_reward_program_easy_track_executor.beforeCancelMotionGuard(
             stranger, "0x", "0x", {"from": stranger}
         )
 
@@ -105,11 +121,11 @@ def test_before_cancel_motion_guard_sender_is_not_easy_tracks_registry(
 def test_before_cancel_motion_guard_caller_is_not_trusted_address(
     stranger,
     easy_tracks_registry,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
 ):
     "Must fail with error 'ADDRESS_NOT_TRUSTED'"
     with reverts("ADDRESS_NOT_TRUSTED"):
-        add_reward_program_easy_track_executor.beforeCancelMotionGuard(
+        remove_reward_program_easy_track_executor.beforeCancelMotionGuard(
             stranger, "0x", "0x", {"from": easy_tracks_registry}
         )
 
@@ -117,17 +133,18 @@ def test_before_cancel_motion_guard_caller_is_not_trusted_address(
 def test_before_cancel_motion_guard(
     owner,
     easy_tracks_registry,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
 ):
     "Must ends without error if caller is trusted address and called by easy tracks registry"
-    add_reward_program_easy_track_executor.beforeCancelMotionGuard(
+
+    remove_reward_program_easy_track_executor.beforeCancelMotionGuard(
         owner, "0x", "0x", {"from": easy_tracks_registry}
     )
 
 
 def test_execute_sender_is_not_easy_tracks_registry(
     stranger,
-    add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
 ):
     "Must fail with error 'NOT_EASYTRACK_REGISTRY'"
 
@@ -135,7 +152,7 @@ def test_execute_sender_is_not_easy_tracks_registry(
     motion_data = encode_single("(address)", [reward_program])
 
     with reverts("NOT_EASYTRACK_REGISTRY"):
-        add_reward_program_easy_track_executor.execute(
+        remove_reward_program_easy_track_executor.execute(
             motion_data, "0x", {"from": stranger}
         )
 
@@ -144,20 +161,21 @@ def test_execute(
     owner,
     easy_tracks_registry,
     add_reward_program_easy_track_executor,
+    remove_reward_program_easy_track_executor,
     top_up_reward_program_easy_track_executor,
 ):
-    "Must add new reward program to top up reward program easy track executor"
+    "Must remove existed reward program from top up reward program easy track executor"
 
     reward_program = accounts[7].address
     motion_data = encode_single("(address)", [reward_program])
 
     top_up_reward_program_easy_track_executor.initialize(
-        add_reward_program_easy_track_executor, owner
+        add_reward_program_easy_track_executor,
+        remove_reward_program_easy_track_executor,
     )
 
-    reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
-    assert len(reward_programs) == 0
-
+    reward_program = accounts[6].address
+    motion_data = encode_single("(address)", [reward_program])
     add_reward_program_easy_track_executor.execute(
         motion_data, "0x", {"from": easy_tracks_registry}
     )
@@ -165,3 +183,10 @@ def test_execute(
     reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
     assert len(reward_programs) == 1
     assert reward_programs[0] == reward_program
+
+    remove_reward_program_easy_track_executor.execute(
+        motion_data, "0x", {"from": easy_tracks_registry}
+    )
+
+    reward_programs = top_up_reward_program_easy_track_executor.getRewardPrograms()
+    assert len(reward_programs) == 0

@@ -8,7 +8,7 @@ import "./TrustedAddress.sol";
 import "./EasyTrackExecutor.sol";
 import "./TopUpRewardProgramEasyTrackExecutor.sol";
 
-contract AddRewardProgramEasyTrackExecutor is EasyTrackExecutor, TrustedAddress {
+contract RemoveRewardProgramEasyTrackExecutor is EasyTrackExecutor, TrustedAddress {
     TopUpRewardProgramEasyTrackExecutor public topUpRewardProgramEasyTrackExecutor;
 
     constructor(
@@ -29,8 +29,8 @@ contract AddRewardProgramEasyTrackExecutor is EasyTrackExecutor, TrustedAddress 
     {
         address _rewardProgram = _decodeMotionData(_data);
         require(
-            !topUpRewardProgramEasyTrackExecutor.isAllowed(_rewardProgram),
-            "REWARD_PROGRAM_ALREADY_ADDED"
+            topUpRewardProgramEasyTrackExecutor.isAllowed(_rewardProgram),
+            "REWARD_PROGRAM_NOT_FOUND"
         );
     }
 
@@ -43,10 +43,11 @@ contract AddRewardProgramEasyTrackExecutor is EasyTrackExecutor, TrustedAddress 
     function _execute(bytes memory _motionData, bytes memory _enactData)
         internal
         override
-        returns (bytes memory)
+        returns (bytes memory _evmScript)
     {
         address _rewardProgram = _decodeMotionData(_motionData);
-        topUpRewardProgramEasyTrackExecutor.addRewardProgram(_rewardProgram);
+        topUpRewardProgramEasyTrackExecutor.removeRewardProgram(_rewardProgram);
+        (_rewardProgram);
     }
 
     function _decodeMotionData(bytes memory _motionData)

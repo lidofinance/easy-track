@@ -1,6 +1,7 @@
 import pytest
 from brownie import (
     AddRewardProgramEasyTrackExecutor,
+    RemoveRewardProgramEasyTrackExecutor,
     TopUpRewardProgramEasyTrackExecutor,
     NodeOperatorsRegistryStub,
     NodeOperatorsEasyTrackExecutor,
@@ -20,7 +21,10 @@ def owner(accounts):
 
 
 @pytest.fixture(scope="function")
-def stranger(accounts):
+def stranger(accounts, ldo_token):
+    balance = ldo_token.balanceOf(accounts[5])
+    if balance > 0:
+        ldo_token.transfer(constants.LDO_WHALE_HOLDER, balance, {"from": accounts[5]})
     return accounts[5]
 
 
@@ -115,6 +119,20 @@ def add_reward_program_easy_track_executor(
 ):
     return owner.deploy(
         AddRewardProgramEasyTrackExecutor,
+        easy_tracks_registry,
+        top_up_reward_program_easy_track_executor,
+        owner,
+    )
+
+
+@pytest.fixture(scope="function")
+def remove_reward_program_easy_track_executor(
+    owner,
+    easy_tracks_registry,
+    top_up_reward_program_easy_track_executor,
+):
+    return owner.deploy(
+        RemoveRewardProgramEasyTrackExecutor,
         easy_tracks_registry,
         top_up_reward_program_easy_track_executor,
         owner,
