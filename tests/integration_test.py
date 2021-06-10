@@ -5,9 +5,11 @@ from brownie import (
     TopUpRewardProgramEasyTrackExecutor,
     AddRewardProgramEasyTrackExecutor,
     RemoveRewardProgramEasyTrackExecutor,
+    LegoEasyTrackExecutor,
     accounts,
     reverts,
     history,
+    ZERO_ADDRESS,
 )
 
 import constants
@@ -310,7 +312,7 @@ def test_reward_programs_easy_track(
     )
     add_create_payments_permissions_voting_id = tx.events["StartVote"]["voteId"]
 
-    # execute voting to add permissions to agent to set staking limit
+    # execute voting to add permissions to agent to create payments
     voting.vote(
         add_create_payments_permissions_voting_id,
         True,
@@ -427,6 +429,158 @@ def test_reward_programs_easy_track(
     assert len(easy_tracks_registry.getMotions()) == 0
 
     assert len(top_up_reward_program_easy_track_executor.getRewardPrograms()) == 0
+
+
+def test_lego_easy_track_executor(
+    owner,
+    agent,
+    finance,
+    ldo_token,
+    steth_token,
+    lego_program,
+    token_manager,
+    voting,
+    ldo_holders,
+):
+    chain = Chain()
+
+    # deploy easy tracks registry
+    easy_tracks_registry = owner.deploy(EasyTracksRegistry, agent, constants.LDO_TOKEN)
+
+    # transfer ownership to agent
+    easy_tracks_registry.transferOwnership(agent, {"from": owner})
+
+    trusted_address = accounts[7]
+
+    # deploy reward program easy tracks
+    lego_easy_track_executor = owner.deploy(
+        LegoEasyTrackExecutor,
+        easy_tracks_registry,
+        trusted_address,
+        finance,
+        lego_program,
+        ldo_token,
+        steth_token,
+    )
+
+    # create voting to add permistions to easy_tracks_registry to forward to agent
+    add_forward_permissions_evm_script = add_agent_forwarding_permission_call_script(
+        easy_tracks_registry.address
+    )
+
+    tx = token_manager.forward(
+        encode_call_script(
+            [
+                (
+                    voting.address,
+                    voting.forward.encode_input(add_forward_permissions_evm_script),
+                )
+            ]
+        ),
+        {"from": ldo_holders[0]},
+    )
+    add_forward_permissions_voting_id = tx.events["StartVote"]["voteId"]
+
+    # execute voting to add permistions to easy_tracks_registry to forward to agent
+    voting.vote(
+        add_forward_permissions_voting_id,
+        True,
+        False,
+        {"from": constants.LDO_WHALE_HOLDER},
+    )
+    chain.sleep(3 * 60 * 60 * 24)
+    chain.mine()
+    assert voting.canExecute(add_forward_permissions_voting_id)
+    voting.executeVote(add_forward_permissions_voting_id, {"from": accounts[0]})
+
+    # create voting to add permissions to agent to create new payments
+    add_create_payments_permissions_evm_script = (
+        add_to_agent_permission_create_new_payments_call_script()
+    )
+
+    tx = token_manager.forward(
+        encode_call_script(
+            [
+                (
+                    voting.address,
+                    voting.forward.encode_input(
+                        add_create_payments_permissions_evm_script
+                    ),
+                )
+            ]
+        ),
+        {"from": ldo_holders[0]},
+    )
+    add_create_payments_permissions_voting_id = tx.events["StartVote"]["voteId"]
+
+    # execute voting to add permissions to agent to create new payments
+    voting.vote(
+        add_create_payments_permissions_voting_id,
+        True,
+        False,
+        {"from": constants.LDO_WHALE_HOLDER},
+    )
+    chain.sleep(3 * 60 * 60 * 24)
+    chain.mine()
+    assert voting.canExecute(add_create_payments_permissions_voting_id)
+    voting.executeVote(add_create_payments_permissions_voting_id, {"from": accounts[0]})
+
+    # add lego_easy_track_executor to registry
+    add_executor_calldata = easy_tracks_registry.addExecutor.encode_input(
+        lego_easy_track_executor
+    )
+
+    agent.execute(
+        easy_tracks_registry,
+        0,
+        add_executor_calldata,
+        {"from": accounts.at(constants.VOTING, force=True)},
+    )
+    executors = easy_tracks_registry.getExecutors()
+    assert len(executors) == 1
+    assert executors[0] == lego_easy_track_executor
+
+    # create new motion to make transfers to lego programs
+
+    ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
+
+    motion_data = encode_single(
+        "(uint256,uint256,uint256)", [ldo_amount, steth_amount, eth_amount]
+    )
+    easy_tracks_registry.createMotion(
+        lego_easy_track_executor, motion_data, {"from": trusted_address}
+    )
+
+    motions = easy_tracks_registry.getMotions()
+    assert len(motions) == 1
+
+    chain.sleep(48 * 60 * 60 + 100)
+
+    # top up agent balances
+    ldo_token.approve(agent, ldo_amount, {"from": constants.LDO_WHALE_HOLDER})
+    agent.deposit(ldo_token, ldo_amount, {"from": constants.LDO_WHALE_HOLDER})
+
+    steth_token.submit(ZERO_ADDRESS, {"from": owner, "value": "2.1 ether"})
+    steth_token.approve(agent, "2.1 ether", {"from": owner})
+    agent.deposit(steth_token, steth_amount, {"from": owner})
+
+    agent.deposit(ZERO_ADDRESS, eth_amount, {"from": owner, "value": eth_amount})
+
+    # validate agent app has enough tokens
+    assert agent.balance(ldo_token) >= ldo_amount
+    assert agent.balance(steth_token) >= steth_amount
+    assert agent.balance(ZERO_ADDRESS) >= eth_amount
+
+    assert ldo_token.balanceOf(lego_program) == 0
+    assert steth_token.balanceOf(lego_program) == 0
+    assert lego_program.balance() == 100 * 10 ** 18
+
+    easy_tracks_registry.enactMotion(motions[0][0])
+
+    assert len(easy_tracks_registry.getMotions()) == 0
+    assert ldo_token.balanceOf(lego_program) == ldo_amount
+    assert abs(steth_token.balanceOf(lego_program) - steth_amount) <= 10
+    assert lego_program.balance() == 103 * 10 ** 18
 
 
 def add_agent_forwarding_permission_call_script(forwarder_address):
