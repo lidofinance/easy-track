@@ -1,5 +1,6 @@
 import pytest
 from brownie import (
+    LegoEasyTrackExecutor,
     AddRewardProgramEasyTrackExecutor,
     RemoveRewardProgramEasyTrackExecutor,
     TopUpRewardProgramEasyTrackExecutor,
@@ -46,6 +47,11 @@ def easy_track_executor_stub(owner, easy_tracks_registry):
 @pytest.fixture(scope="function")
 def ldo_token(interface):
     return interface.ERC20(constants.LDO_TOKEN)
+
+
+@pytest.fixture(scope="function")
+def steth_token(interface):
+    return interface.Lido(constants.STETH_TOKEN)
 
 
 @pytest.fixture(scope="function")
@@ -136,6 +142,31 @@ def remove_reward_program_easy_track_executor(
         easy_tracks_registry,
         top_up_reward_program_easy_track_executor,
         owner,
+    )
+
+
+@pytest.fixture(scope="module")
+def lego_program(accounts):
+    return accounts[3]
+
+
+@pytest.fixture(scope="function")
+def lego_reward_program_easy_track_executor(
+    owner,
+    finance,
+    lego_program,
+    ldo_token,
+    steth_token,
+    easy_tracks_registry,
+):
+    return owner.deploy(
+        LegoEasyTrackExecutor,
+        easy_tracks_registry,
+        owner,
+        finance,
+        lego_program,
+        ldo_token,
+        steth_token,
     )
 
 
