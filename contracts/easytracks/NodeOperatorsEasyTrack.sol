@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.4;
 
-import "./EasyTrackExecutor.sol";
+import "../MotionsRegistry.sol";
 
 interface NodeOperatorsRegistry {
     function getNodeOperator(uint256 _id, bool _fullInfo)
@@ -22,7 +22,7 @@ interface NodeOperatorsRegistry {
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
 }
 
-contract NodeOperatorsEasyTrackExecutor is EasyTrackExecutor {
+contract NodeOperatorsEasyTrack {
     struct NodeOperatorData {
         bool active;
         address rewardAddress;
@@ -35,73 +35,53 @@ contract NodeOperatorsEasyTrackExecutor is EasyTrackExecutor {
     string private constant ERROR_STAKING_LIMIT_TOO_LOW = "STAKING_LIMIT_TOO_LOW";
     string private constant ERROR_NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
 
+    MotionsRegistry public motionsRegistry;
     NodeOperatorsRegistry public nodeOperatorsRegistry;
 
-    constructor(address _easyTracksRegistry, address _nodeOperatorsRegistry)
-        EasyTrackExecutor(_easyTracksRegistry)
-    {
+    constructor(MotionsRegistry _motionsRegistry, address _nodeOperatorsRegistry) {
+        motionsRegistry = _motionsRegistry;
         nodeOperatorsRegistry = NodeOperatorsRegistry(_nodeOperatorsRegistry);
     }
 
-    function _beforeCreateMotionGuard(address _caller, bytes memory _data) internal view override {
-        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeMotionData(_data);
-
-        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
-        _validateCallerIsRewardAddress(_caller, nodeOperatorData);
-        _validateNodeOperatorData(nodeOperatorData, _stakingLimit);
-    }
-
-    function _beforeCancelMotionGuard(
-        address _caller,
-        bytes memory _motionData,
-        bytes memory _cancelData
-    ) internal view override {
-        uint256 _nodeOperatorId = abi.decode(_cancelData, (uint256));
-        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
-        _validateCallerIsRewardAddress(_caller, nodeOperatorData);
-    }
-
-    function _execute(bytes memory _motionData, bytes memory _enactData)
-        internal
-        view
-        override
-        returns (bytes memory)
+    function createMotion(uint256 _nodeOperatorId, uint256 _stakingLimit)
+        external
+        returns (uint256)
     {
-        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeMotionData(_motionData);
-
         NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
+        _validateSenderIsRewardAddress(nodeOperatorData);
         _validateNodeOperatorData(nodeOperatorData, _stakingLimit);
-
-        return _createEvmScript(_nodeOperatorId, _stakingLimit);
+        return motionsRegistry.createMotion(_encodeMotionData(_nodeOperatorId, _stakingLimit));
     }
 
-    function _createEvmScript(uint256 _nodeOperatorId, uint256 _stakingLimit)
+    function cancelMotion(uint256 _motionId, uint256 _nodeOperatorId) external {
+        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
+        _validateSenderIsRewardAddress(nodeOperatorData);
+        motionsRegistry.cancelMotion(_motionId);
+    }
+
+    function enactMotion(uint256 _motionId) external {
+        bytes memory motionData = motionsRegistry.getMotionData(_motionId);
+        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeMotionData(motionData);
+        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
+        _validateNodeOperatorData(nodeOperatorData, _stakingLimit);
+        motionsRegistry.enactMotion(
+            _motionId,
+            motionsRegistry.createEvmScript(
+                address(nodeOperatorsRegistry),
+                abi.encodeWithSelector(
+                    nodeOperatorsRegistry.setNodeOperatorStakingLimit.selector,
+                    _nodeOperatorId,
+                    _stakingLimit
+                )
+            )
+        );
+    }
+
+    function _validateSenderIsRewardAddress(NodeOperatorData memory _nodeOperatorData)
         private
         view
-        returns (bytes memory)
     {
-        bytes memory specId = hex"00000001";
-
-        bytes memory callData =
-            bytes.concat(
-                NodeOperatorsRegistry.setNodeOperatorStakingLimit.selector,
-                abi.encode(_nodeOperatorId, _stakingLimit)
-            );
-
-        return
-            bytes.concat(
-                specId,
-                bytes20(address(nodeOperatorsRegistry)),
-                bytes4(uint32(callData.length)), // add 4 bytes from methodId manually
-                callData
-            );
-    }
-
-    function _validateCallerIsRewardAddress(
-        address _caller,
-        NodeOperatorData memory _nodeOperatorData
-    ) private pure {
-        require(_nodeOperatorData.rewardAddress == _caller, ERROR_CALLER_IS_NOT_NODE_OPERATOR);
+        require(_nodeOperatorData.rewardAddress == msg.sender, ERROR_CALLER_IS_NOT_NODE_OPERATOR);
     }
 
     function _validateNodeOperatorData(
@@ -125,6 +105,14 @@ contract NodeOperatorsEasyTrackExecutor is EasyTrackExecutor {
         _nodeOperatorData.rewardAddress = rewardAddress;
         _nodeOperatorData.stakingLimit = stakingLimit;
         _nodeOperatorData.totalSigningKeys = totalSigningKeys;
+    }
+
+    function _encodeMotionData(uint256 _nodeOperatorId, uint256 _stakingLimit)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return abi.encode(_nodeOperatorId, _stakingLimit);
     }
 
     function _decodeMotionData(bytes memory _motionData)

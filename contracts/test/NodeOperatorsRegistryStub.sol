@@ -4,12 +4,15 @@
 pragma solidity 0.8.4;
 
 contract NodeOperatorsRegistryStub {
-    string private constant ERROR_NODE_OPERATOR_NOT_FOUND = "NODE_OPERATOR_NOT_FOUND";
-    uint256 public id;
-    bool public active;
+    uint256 public id = 1;
+    bool public active = true;
     address public rewardAddress;
-    uint64 public stakingLimit;
-    uint64 public totalSigningKeys;
+    uint64 public stakingLimit = 200;
+    uint64 public totalSigningKeys = 400;
+
+    constructor(address _rewardAddress) {
+        rewardAddress = _rewardAddress;
+    }
 
     function getNodeOperator(uint256 _id, bool _fullInfo)
         external
@@ -24,7 +27,6 @@ contract NodeOperatorsRegistryStub {
             uint64 _usedSigningKeys
         )
     {
-        require(id == _id, ERROR_NODE_OPERATOR_NOT_FOUND);
         _active = active;
         _rewardAddress = rewardAddress;
         _stakingLimit = stakingLimit;
@@ -32,7 +34,6 @@ contract NodeOperatorsRegistryStub {
     }
 
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external {
-        require(id == _id, ERROR_NODE_OPERATOR_NOT_FOUND);
         stakingLimit = _stakingLimit;
     }
 
