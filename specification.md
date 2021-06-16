@@ -23,7 +23,21 @@ Returns array of active easy tracks in the registry.
 ## EvmScriptExecutor
 
 Contains logic to create and execute aragon evm scripts via forwarding to Aragon's agent.
-Method to execute script marked as internal and can be called only by inherited contract.
+
+### Methods
+
+#### function createEvmScript(address \_to, bytes memory \_evmScriptCalldata)
+
+Packs `_to` and `_evmScriptCalldata` into valid Aragon's EVM script.
+
+Has overloaded variants:
+
+- `function createEvmScript(address _to, bytes[] memory _evmScriptCalldata)`
+- `function createEvmScript(address[] memory _to, bytes[] memory _evmScriptCalldata)`
+
+#### function executeScript(bytes memory \_evmScript) internal
+
+Forwards script to Aragon's agent. Marked as internal and can be called only by inherited contract.
 
 ## MotionsRegistry
 
