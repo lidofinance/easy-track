@@ -1,20 +1,21 @@
 import pytest
+
 from brownie import (
-    LegoEasyTrack,
-    MotionsRegistryStub,
-    RemoveRewardProgramEasyTrack,
-    NodeOperatorsEasyTrack,
-    MotionsRegistry,
-    AddRewardProgramEasyTrack,
-    TopUpRewardProgramEasyTrack,
+    IncreaseNodeOperatorStakingLimit,
+    EVMScriptFactoriesRegistry,
+    EasyTrack,
+    EVMScriptExecutor,
+    EVMScriptCreator,
+    EVMScriptPermissions,
     NodeOperatorsRegistryStub,
     AragonAgentMock,
-    EasyTracksRegistry,
-    chain,
-    Wei,
-    ZERO_ADDRESS,
+    BytesUtils,
 )
 import constants
+
+##############
+# ACCOUNTS
+##############
 
 
 @pytest.fixture(scope="function")
@@ -33,52 +34,6 @@ def node_operator(accounts, ldo_token):
 
 
 @pytest.fixture(scope="function")
-def aragon_agent_mock(owner):
-    return owner.deploy(AragonAgentMock)
-
-
-@pytest.fixture(scope="function")
-def easy_tracks_registry(owner):
-    return owner.deploy(EasyTracksRegistry)
-
-
-@pytest.fixture(scope="function")
-def motions_registry(owner, aragon_agent_mock, ldo_token, easy_tracks_registry):
-    return owner.deploy(
-        MotionsRegistry, easy_tracks_registry, ldo_token, aragon_agent_mock
-    )
-
-
-@pytest.fixture(scope="function")
-def motions_registry_stub(owner):
-    return owner.deploy(MotionsRegistryStub)
-
-
-@pytest.fixture(scope="function")
-def ldo_token(interface):
-    return interface.ERC20(constants.LDO_TOKEN)
-
-
-@pytest.fixture(scope="function")
-def steth_token(interface):
-    return interface.Lido(constants.STETH_TOKEN)
-
-
-@pytest.fixture(scope="function")
-def node_operators_registry_stub(owner, easy_tracks_registry, node_operator):
-    return owner.deploy(NodeOperatorsRegistryStub, node_operator)
-
-
-@pytest.fixture(scope="function")
-def node_operators_easy_track(
-    owner, motions_registry_stub, node_operators_registry_stub
-):
-    return owner.deploy(
-        NodeOperatorsEasyTrack, motions_registry_stub, node_operators_registry_stub
-    )
-
-
-@pytest.fixture(scope="function")
 def ldo_holders(accounts, ldo_token):
     holders = accounts[6:9]
     total_supply = ldo_token.totalSupply()
@@ -90,6 +45,84 @@ def ldo_holders(accounts, ldo_token):
             ldo_token.transfer(constants.LDO_WHALE_HOLDER, balance, {"from": holder})
         ldo_token.transfer(holder, holder_balance, {"from": constants.LDO_WHALE_HOLDER})
     return holders
+
+
+##############
+# CONTRACTS
+##############
+
+
+@pytest.fixture(scope="function")
+def evm_script_factories_registry(owner):
+    return owner.deploy(EVMScriptFactoriesRegistry)
+
+
+@pytest.fixture(scope="function")
+def easy_track(owner, ldo_token):
+    return owner.deploy(EasyTrack, ldo_token)
+
+
+@pytest.fixture(scope="function")
+def evm_script_executor(owner, easy_track):
+    return owner.deploy(EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track)
+
+
+###############
+# LIBRARIES
+###############
+@pytest.fixture(scope="module", autouse=True)
+def evm_script_creator(accounts):
+    return accounts[0].deploy(EVMScriptCreator)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def evm_script_permissions(accounts):
+    return accounts[0].deploy(EVMScriptPermissions)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def bytes_utils(accounts):
+    return accounts[0].deploy(BytesUtils)
+
+
+############
+# MOCKS
+############
+
+
+@pytest.fixture(scope="function")
+def aragon_agent_mock(owner):
+    return owner.deploy(AragonAgentMock)
+
+
+@pytest.fixture(scope="function")
+def node_operators_registry_stub(owner, node_operator):
+    return owner.deploy(NodeOperatorsRegistryStub, node_operator)
+
+
+############
+# EVM SCRIPT FACTORIES
+############
+
+
+@pytest.fixture(scope="function")
+def increase_node_operator_staking_limit(owner, node_operators_registry_stub):
+    return owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry_stub)
+
+
+##########
+# INTERFACES
+##########
+
+
+@pytest.fixture(scope="function")
+def ldo_token(interface):
+    return interface.ERC20(constants.LDO_TOKEN)
+
+
+@pytest.fixture(scope="function")
+def steth_token(interface):
+    return interface.Lido(constants.STETH_TOKEN)
 
 
 @pytest.fixture(scope="function")
@@ -107,57 +140,62 @@ def token_manager(interface):
     return interface.TokenManager(constants.TOKENS)
 
 
-@pytest.fixture(scope="function")
-def agent(interface):
-    return interface.Agent(constants.ARAGON_AGENT)
+#############
+# INIT
+#############
 
 
-@pytest.fixture(scope="function")
-def top_up_reward_program_easy_track(owner, motions_registry_stub, finance, ldo_token):
-    return owner.deploy(
-        TopUpRewardProgramEasyTrack, motions_registry_stub, owner, finance, ldo_token
-    )
+@pytest.fixture(scope="function", autouse=True)
+def init(owner, easy_track, evm_script_executor):
+    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
 
 
-@pytest.fixture(scope="function")
-def add_reward_program_easy_track(
-    owner, motions_registry_stub, top_up_reward_program_easy_track
-):
-    return owner.deploy(
-        AddRewardProgramEasyTrack,
-        motions_registry_stub,
-        owner,
-        top_up_reward_program_easy_track,
-    )
+# @pytest.fixture(scope="function")
+# def top_up_reward_program_easy_track(owner, motions_registry_stub, finance, ldo_token):
+#     return owner.deploy(
+#         TopUpRewardProgramEasyTrack, motions_registry_stub, owner, finance, ldo_token
+#     )
 
 
-@pytest.fixture(scope="function")
-def remove_reward_program_easy_track(
-    owner, motions_registry_stub, top_up_reward_program_easy_track
-):
-    return owner.deploy(
-        RemoveRewardProgramEasyTrack,
-        motions_registry_stub,
-        owner,
-        top_up_reward_program_easy_track,
-    )
+# @pytest.fixture(scope="function")
+# def add_reward_program_easy_track(
+#     owner, motions_registry_stub, top_up_reward_program_easy_track
+# ):
+#     return owner.deploy(
+#         AddRewardProgramEasyTrack,
+#         motions_registry_stub,
+#         owner,
+#         top_up_reward_program_easy_track,
+#     )
 
 
-@pytest.fixture(scope="module")
-def lego_program(accounts):
-    return accounts[3]
+# @pytest.fixture(scope="function")
+# def remove_reward_program_easy_track(
+#     owner, motions_registry_stub, top_up_reward_program_easy_track
+# ):
+#     return owner.deploy(
+#         RemoveRewardProgramEasyTrack,
+#         motions_registry_stub,
+#         owner,
+#         top_up_reward_program_easy_track,
+#     )
 
 
-@pytest.fixture(scope="function")
-def lego_easy_track(owner, finance, motions_registry_stub, lego_program):
-    return owner.deploy(
-        LegoEasyTrack, motions_registry_stub, owner, finance, lego_program
-    )
+# @pytest.fixture(scope="module")
+# def lego_program(accounts):
+#     return accounts[3]
 
 
-@pytest.fixture(scope="function")
-def finance(interface):
-    return interface.Finance(constants.FINANCE)
+# @pytest.fixture(scope="function")
+# def lego_easy_track(owner, finance, motions_registry_stub, lego_program):
+#     return owner.deploy(
+#         LegoEasyTrack, motions_registry_stub, owner, finance, lego_program
+#     )
+
+
+# @pytest.fixture(scope="function")
+# def finance(interface):
+#     return interface.Finance(constants.FINANCE)
 
 
 def reset_balance(ldo_token, account):
