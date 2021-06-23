@@ -1,6 +1,7 @@
 import pytest
 
 from brownie import (
+    MotionSettings,
     IncreaseNodeOperatorStakingLimit,
     EVMScriptFactoriesRegistry,
     EasyTrack,
@@ -50,6 +51,11 @@ def ldo_holders(accounts, ldo_token):
 ##############
 # CONTRACTS
 ##############
+
+
+@pytest.fixture(scope="function")
+def motion_settings(owner):
+    return owner.deploy(MotionSettings)
 
 
 @pytest.fixture(scope="function")
