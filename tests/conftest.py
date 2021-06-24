@@ -13,6 +13,7 @@ from brownie import (
     BytesUtils,
     EVMScriptFactoryStub,
     EVMScriptExecutorStub,
+    RewardProgramsRegistry,
 )
 import constants
 
@@ -73,6 +74,11 @@ def easy_track(owner, ldo_token):
 @pytest.fixture(scope="function")
 def evm_script_executor(owner, easy_track):
     return owner.deploy(EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track)
+
+
+@pytest.fixture(scope="function")
+def reward_programs_registry(owner, evm_script_executor_stub):
+    return owner.deploy(RewardProgramsRegistry, evm_script_executor_stub)
 
 
 ###############
@@ -156,6 +162,11 @@ def voting(interface):
 @pytest.fixture(scope="function")
 def token_manager(interface):
     return interface.TokenManager(constants.TOKENS)
+
+
+@pytest.fixture(scope="function")
+def agent(interface):
+    return interface.Agent(constants.ARAGON_AGENT)
 
 
 #############
