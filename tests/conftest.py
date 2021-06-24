@@ -14,6 +14,7 @@ from brownie import (
     EVMScriptFactoryStub,
     EVMScriptExecutorStub,
     RewardProgramsRegistry,
+    AddRewardProgram,
 )
 import constants
 
@@ -81,6 +82,21 @@ def reward_programs_registry(owner, evm_script_executor_stub):
     return owner.deploy(RewardProgramsRegistry, evm_script_executor_stub)
 
 
+############
+# EVM SCRIPT FACTORIES
+############
+
+
+@pytest.fixture(scope="function")
+def increase_node_operator_staking_limit(owner, node_operators_registry_stub):
+    return owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry_stub)
+
+
+@pytest.fixture(scope="function")
+def add_reward_program(owner, reward_programs_registry):
+    return owner.deploy(AddRewardProgram, owner, reward_programs_registry)
+
+
 ###############
 # LIBRARIES
 ###############
@@ -122,16 +138,6 @@ def evm_script_factory_stub(owner):
 @pytest.fixture(scope="function")
 def evm_script_executor_stub(owner):
     return owner.deploy(EVMScriptExecutorStub)
-
-
-############
-# EVM SCRIPT FACTORIES
-############
-
-
-@pytest.fixture(scope="function")
-def increase_node_operator_staking_limit(owner, node_operators_registry_stub):
-    return owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry_stub)
 
 
 ##########
