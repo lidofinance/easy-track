@@ -3,6 +3,7 @@
 
 pragma solidity 0.8.4;
 
+import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 
 import "@openzeppelin/contracts/access/Ownable.sol";
@@ -49,21 +50,22 @@ contract EVMScriptFactoriesRegistry is Ownable {
         return evmScriptFactories;
     }
 
-    function canExecuteEVMScript(address _evmScriptFactory, bytes memory _evmScript)
-        external
-        view
-        returns (bool)
-    {
-        return _canExecuteEVMScript(_evmScriptFactory, _evmScript);
+    function isEVMScriptFactory(address _maybeEVMScriptFactory) external view returns (bool) {
+        return _isEVMScriptFactory(_maybeEVMScriptFactory);
     }
 
-    function _canExecuteEVMScript(address _evmScriptFactory, bytes memory _evmScript)
-        internal
-        view
-        returns (bool)
-    {
+    function _createEVMScript(
+        address _evmScriptFactory,
+        address _creator,
+        bytes memory _evmScriptCallData
+    ) internal returns (bytes memory _evmScript) {
+        require(_isEVMScriptFactory(_evmScriptFactory), "EVM_SCRIPT_FACTORY_NOT_FOUND");
+        _evmScript = IEVMScriptFactory(_evmScriptFactory).createEVMScript(
+            _creator,
+            _evmScriptCallData
+        );
         bytes memory permissions = evmScriptFactoryPermissions[_evmScriptFactory];
-        return permissions.canExecuteEVMScript(_evmScript);
+        require(permissions.canExecuteEVMScript(_evmScript), "HAS_NO_PERMISSIONS");
     }
 
     function _getEvmScriptFactoryIndex(address _evmScriptFactory)
