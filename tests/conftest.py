@@ -11,6 +11,8 @@ from brownie import (
     NodeOperatorsRegistryStub,
     AragonAgentMock,
     BytesUtils,
+    EVMScriptFactoryStub,
+    EVMScriptExecutorStub,
 )
 import constants
 
@@ -106,6 +108,16 @@ def node_operators_registry_stub(owner, node_operator):
     return owner.deploy(NodeOperatorsRegistryStub, node_operator)
 
 
+@pytest.fixture(scope="function")
+def evm_script_factory_stub(owner):
+    return owner.deploy(EVMScriptFactoryStub)
+
+
+@pytest.fixture(scope="function")
+def evm_script_executor_stub(owner):
+    return owner.deploy(EVMScriptExecutorStub)
+
+
 ############
 # EVM SCRIPT FACTORIES
 ############
@@ -152,8 +164,8 @@ def token_manager(interface):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def init(owner, easy_track, evm_script_executor):
-    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+def init(owner, easy_track, evm_script_executor_stub):
+    easy_track.setEvmScriptExecutor(evm_script_executor_stub, {"from": owner})
 
 
 # @pytest.fixture(scope="function")

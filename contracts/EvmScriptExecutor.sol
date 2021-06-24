@@ -3,63 +3,62 @@
 
 pragma solidity 0.8.4;
 
-interface IForwardable {
-    function forward(bytes memory _evmScript) external;
+import "./TrustedCaller.sol";
+
+interface ICallsScript {
+    function execScript(
+        bytes memory _script,
+        bytes memory,
+        address[] memory _blacklist
+    ) external returns (bytes memory);
 }
 
-contract EvmScriptExecutor {
-    bytes4 private constant SPEC_ID = hex"00000001";
-    IForwardable public aragonAgent;
+library UnstructuredStorageSlim {
+    function setStorageUint256(bytes32 position, uint256 data) internal {
+        assembly {
+            sstore(position, data)
+        }
+    }
+}
 
-    constructor(address _aragonAgent) {
-        aragonAgent = IForwardable(_aragonAgent);
+contract EVMScriptExecutor is TrustedCaller {
+    using UnstructuredStorageSlim for bytes32;
+
+    event ScriptExecuted(address indexed _caller, bytes _evmScript);
+
+    // keccak256("aragonOS.initializable.initializationBlock")
+    bytes32 internal constant INITIALIZATION_BLOCK_POSITION =
+        0xebb05b386a8d34882b8711d156f463690983dc47815980fb82aeeff1aa43579e;
+
+    address public callsScript;
+
+    constructor(address _callsScript, address _allowedCaller) TrustedCaller(_allowedCaller) {
+        INITIALIZATION_BLOCK_POSITION.setStorageUint256(block.number);
+        callsScript = _callsScript;
     }
 
-    function executeScript(bytes memory _evmScript) internal {
-        aragonAgent.forward(_evmScript);
-    }
-
-    function createEvmScript(address _to, bytes memory _evmScriptCalldata)
+    function executeEVMScript(bytes memory _evmScript)
         external
-        pure
+        onlyTrustedCaller(msg.sender)
         returns (bytes memory)
     {
-        return bytes.concat(SPEC_ID, _createEvmScript(_to, _evmScriptCalldata));
-    }
-
-    function createEvmScript(address _to, bytes[] memory _evmScriptCalldata)
-        external
-        pure
-        returns (bytes memory _evmScript)
-    {
-        for (uint256 i = 0; i < _evmScriptCalldata.length; ++i) {
-            _evmScript = bytes.concat(_evmScript, _createEvmScript(_to, _evmScriptCalldata[i]));
-        }
-        _evmScript = bytes.concat(SPEC_ID, _evmScript);
-    }
-
-    function createEvmScript(address[] memory _to, bytes[] memory _evmScriptCalldata)
-        external
-        pure
-        returns (bytes memory _evmScript)
-    {
-        require(_to.length == _evmScriptCalldata.length, "LENGTH_MISMATCH");
-        for (uint256 i = 0; i < _to.length; ++i) {
-            _evmScript = bytes.concat(_evmScript, _createEvmScript(_to[i], _evmScriptCalldata[i]));
-        }
-        _evmScript = bytes.concat(SPEC_ID, _evmScript);
-    }
-
-    function _createEvmScript(address _to, bytes memory _evmScriptCalldata)
-        private
-        pure
-        returns (bytes memory)
-    {
-        return
-            bytes.concat(
-                bytes20(_to),
-                bytes4(uint32(_evmScriptCalldata.length)),
-                _evmScriptCalldata
+        bytes memory execScriptCallData =
+            abi.encodeWithSelector(
+                ICallsScript.execScript.selector,
+                _evmScript,
+                new bytes(0),
+                new address[](0)
             );
+        (bool success, bytes memory output) = callsScript.delegatecall(execScriptCallData);
+        if (!success) {
+            assembly {
+                let ptr := mload(0x40)
+                let size := returndatasize()
+                returndatacopy(ptr, 0, size)
+                revert(ptr, size)
+            }
+        }
+        emit ScriptExecuted(msg.sender, _evmScript);
+        return output;
     }
 }
