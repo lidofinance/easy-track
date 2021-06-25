@@ -1,16 +1,19 @@
 from brownie.network import Chain
 from brownie import (
-    LegoEasyTrack,
-    EasyTracksRegistry,
-    TopUpRewardProgramEasyTrack,
-    AddRewardProgramEasyTrack,
-    RemoveRewardProgramEasyTrack,
-    MotionsRegistry,
-    NodeOperatorsEasyTrack,
+    TopUpLegoProgram,
+    EasyTrack,
+    EVMScriptExecutor,
+    TopUpRewardPrograms,
+    AddRewardProgram,
+    RemoveRewardProgram,
+    RewardProgramsRegistry,
+    IncreaseNodeOperatorStakingLimit,
     accounts,
     ZERO_ADDRESS,
+    reverts,
+    history,
 )
-
+from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 import constants
 
@@ -26,58 +29,27 @@ def test_node_operators_easy_track(
 ):
     chain = Chain()
 
-    # deploy easy tracks registry
-    easy_tracks_registry = owner.deploy(EasyTracksRegistry)
+    # deploy easy track
+    easy_track = owner.deploy(EasyTrack, ldo_token)
 
-    # deploy motions registry
-    motions_registry = owner.deploy(
-        MotionsRegistry, easy_tracks_registry, ldo_token, agent
+    # deploy evm script executor
+    evm_script_executor = owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track
     )
+
+    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
 
     # transfer ownership to agent
-    easy_tracks_registry.transferOwnership(agent, {"from": owner})
-    motions_registry.transferOwnership(agent, {"from": owner})
+    easy_track.transferOwnership(agent, {"from": owner})
 
-    node_operators_easy_track = owner.deploy(
-        NodeOperatorsEasyTrack,
-        motions_registry,
-        node_operators_registry,
+    increase_node_operator_staking_limit = owner.deploy(
+        IncreaseNodeOperatorStakingLimit, node_operators_registry
     )
 
-    # create voting to add permistions to motions_registry to forward to agent
-    add_forward_permissions_evm_script = add_agent_forwarding_permission_call_script(
-        motions_registry.address
-    )
-
-    tx = token_manager.forward(
-        encode_call_script(
-            [
-                (
-                    voting.address,
-                    voting.forward.encode_input(add_forward_permissions_evm_script),
-                )
-            ]
-        ),
-        {"from": ldo_holders[0]},
-    )
-    add_forward_permissions_voting_id = tx.events["StartVote"]["voteId"]
-
-    # execute voting to add permistions to motions_registry to forward to agent
-    voting.vote(
-        add_forward_permissions_voting_id,
-        True,
-        False,
-        {"from": constants.LDO_WHALE_HOLDER},
-    )
-    chain.sleep(3 * 60 * 60 * 24)
-    chain.mine()
-    assert voting.canExecute(add_forward_permissions_voting_id)
-    voting.executeVote(add_forward_permissions_voting_id, {"from": accounts[0]})
-
-    # create voting to add permissions to agent to set staking limit
+    # create voting to add permissions to easy track to set staking limit
 
     add_set_staking_limit_permissions_evm_script = (
-        add_to_agent_permission_set_node_operators_stakin_limit_call_script()
+        add_permission_set_node_operators_stakin_limit_call_script(evm_script_executor)
     )
 
     tx = token_manager.forward(
@@ -95,7 +67,7 @@ def test_node_operators_easy_track(
     )
     add_set_staking_limit_permissions_voting_id = tx.events["StartVote"]["voteId"]
 
-    # execute voting to add permissions to agent to set staking limit
+    # execute voting to add permissions to easy track to set staking limit
 
     voting.vote(
         add_set_staking_limit_permissions_voting_id,
@@ -106,24 +78,29 @@ def test_node_operators_easy_track(
     chain.sleep(3 * 60 * 60 * 24)
     chain.mine()
     assert voting.canExecute(add_set_staking_limit_permissions_voting_id)
+
     voting.executeVote(
         add_set_staking_limit_permissions_voting_id, {"from": accounts[0]}
     )
 
-    # add node_operators_easy_track to registry
-    add_easy_track_calldata = easy_tracks_registry.addEasyTrack.encode_input(
-        node_operators_easy_track
+    # add IncreaseNodeOperatorStakingLimit to registry
+    permissions = (
+        node_operators_registry.address
+        + node_operators_registry.setNodeOperatorStakingLimit.signature[2:]
+    )
+    add_easy_track_calldata = easy_track.addEVMScriptFactory.encode_input(
+        increase_node_operator_staking_limit, permissions
     )
 
     agent.execute(
-        easy_tracks_registry,
+        easy_track,
         0,
         add_easy_track_calldata,
         {"from": accounts.at(constants.VOTING, force=True)},
     )
-    easy_tracks = easy_tracks_registry.getEasyTracks()
-    assert len(easy_tracks) == 1
-    assert easy_tracks[0] == node_operators_easy_track
+    evm_script_factories = easy_track.getEVMScriptFactories()
+    assert len(evm_script_factories) == 1
+    assert evm_script_factories[0] == increase_node_operator_staking_limit
 
     # create vote to add test node operator
     node_operator = {"name": "test_node_operator", "address": accounts[3]}
@@ -200,18 +177,20 @@ def test_node_operators_easy_track(
     assert new_node_operator[6] == 0  # usedSigningKeys
 
     # create new motion to increase staking limit
-    node_operators_easy_track.createMotion(
-        new_node_operator_id, 3, {"from": node_operator["address"]}
+    easy_track.createMotion(
+        increase_node_operator_staking_limit,
+        "0x" + encode_single("(uint256,uint256)", [new_node_operator_id, 3]).hex(),
+        {"from": node_operator["address"]},
     )
-    motions = motions_registry.getMotions()
+    motions = easy_track.getMotions()
     assert len(motions) == 1
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    node_operators_easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0])
 
     # validate that motion was executed correctly
-    motions = motions_registry.getMotions()
+    motions = easy_track.getMotions()
     assert len(motions) == 0
     new_node_operator = node_operators_registry.getNodeOperator(
         new_node_operator_id, True
@@ -230,81 +209,45 @@ def test_reward_programs_easy_track(
 ):
     chain = Chain()
 
-    # deploy easy tracks registry
-    easy_tracks_registry = owner.deploy(EasyTracksRegistry)
+    # deploy easy track
+    easy_track = owner.deploy(EasyTrack, ldo_token)
 
-    # deploy motions registry
-    motions_registry = owner.deploy(
-        MotionsRegistry, easy_tracks_registry, ldo_token, agent
+    # deploy evm script executor
+    evm_script_executor = owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track
     )
 
+    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+
     # transfer ownership to agent
-    easy_tracks_registry.transferOwnership(agent, {"from": owner})
-    motions_registry.transferOwnership(agent, {"from": owner})
+    easy_track.transferOwnership(agent, {"from": owner})
 
     trusted_address = accounts[7]
 
+    # deploy reward programs registry
+
+    reward_programs_registry = owner.deploy(RewardProgramsRegistry, evm_script_executor)
+
     # deploy reward program easy tracks
-    top_up_reward_program_easy_track = owner.deploy(
-        TopUpRewardProgramEasyTrack,
-        motions_registry,
+    top_up_reward_programs = owner.deploy(
+        TopUpRewardPrograms,
         trusted_address,
+        reward_programs_registry,
         finance,
         ldo_token,
     )
 
-    add_reward_program_easy_track = owner.deploy(
-        AddRewardProgramEasyTrack,
-        motions_registry,
-        trusted_address,
-        top_up_reward_program_easy_track,
+    add_reward_program = owner.deploy(
+        AddRewardProgram, trusted_address, reward_programs_registry
     )
 
-    remove_reward_program_easy_track = owner.deploy(
-        RemoveRewardProgramEasyTrack,
-        motions_registry,
-        trusted_address,
-        top_up_reward_program_easy_track,
+    remove_reward_program = owner.deploy(
+        RemoveRewardProgram, trusted_address, reward_programs_registry
     )
 
-    top_up_reward_program_easy_track.initialize(
-        add_reward_program_easy_track,
-        remove_reward_program_easy_track,
-    )
-
-    # create voting to add permistions to motions_registry to forward to agent
-    add_forward_permissions_evm_script = add_agent_forwarding_permission_call_script(
-        motions_registry.address
-    )
-
-    tx = token_manager.forward(
-        encode_call_script(
-            [
-                (
-                    voting.address,
-                    voting.forward.encode_input(add_forward_permissions_evm_script),
-                )
-            ]
-        ),
-        {"from": ldo_holders[0]},
-    )
-    add_forward_permissions_voting_id = tx.events["StartVote"]["voteId"]
-
-    # execute voting to add permistions to motions_registry to forward to agent
-    voting.vote(
-        add_forward_permissions_voting_id,
-        True,
-        False,
-        {"from": constants.LDO_WHALE_HOLDER},
-    )
-    chain.sleep(3 * 60 * 60 * 24)
-    chain.mine()
-    assert voting.canExecute(add_forward_permissions_voting_id)
-    voting.executeVote(add_forward_permissions_voting_id, {"from": accounts[0]})
-
-    # create voting to add permissions to agent to create new payments
+    # create voting to add permissions to evm script executor to create new payments
     add_create_payments_permissions_evm_script = (
-        add_to_agent_permission_create_new_payments_call_script()
+        add_permission_create_new_payments_call_script(evm_script_executor)
     )
 
     tx = token_manager.forward(
@@ -334,102 +277,117 @@ def test_reward_programs_easy_track(
     assert voting.canExecute(add_create_payments_permissions_voting_id)
     voting.executeVote(add_create_payments_permissions_voting_id, {"from": accounts[0]})
 
-    # add top_up_reward_program_easy_track to registry
-    add_easy_track_calldata = easy_tracks_registry.addEasyTrack.encode_input(
-        top_up_reward_program_easy_track
+    # add top_up_reward_program to registry
+    permissions = finance.address + finance.newImmediatePayment.signature[2:]
+    add_evm_script_factory_calldata = easy_track.addEVMScriptFactory.encode_input(
+        top_up_reward_programs, permissions
     )
 
     agent.execute(
-        easy_tracks_registry,
+        easy_track,
         0,
-        add_easy_track_calldata,
+        add_evm_script_factory_calldata,
         {"from": accounts.at(constants.VOTING, force=True)},
     )
-    easy_tracks = easy_tracks_registry.getEasyTracks()
-    assert len(easy_tracks) == 1
-    assert easy_tracks[0] == top_up_reward_program_easy_track
+    evm_script_factories = easy_track.getEVMScriptFactories()
+    assert len(evm_script_factories) == 1
+    assert evm_script_factories[0] == top_up_reward_programs
 
     # add add_reward_program_easy_track to registry
-    add_easy_track_calldata = easy_tracks_registry.addEasyTrack.encode_input(
-        add_reward_program_easy_track
+    permissions = (
+        reward_programs_registry.address
+        + reward_programs_registry.addRewardProgram.signature[2:]
+    )
+    add_evm_script_factory_calldata = easy_track.addEVMScriptFactory.encode_input(
+        add_reward_program, permissions
     )
 
     agent.execute(
-        easy_tracks_registry,
+        easy_track,
         0,
-        add_easy_track_calldata,
+        add_evm_script_factory_calldata,
         {"from": accounts.at(constants.VOTING, force=True)},
     )
-    easy_tracks = easy_tracks_registry.getEasyTracks()
-    assert len(easy_tracks) == 2
-    assert easy_tracks[1] == add_reward_program_easy_track
+    evm_script_factories = easy_track.getEVMScriptFactories()
+    assert len(evm_script_factories) == 2
+    assert evm_script_factories[1] == add_reward_program
 
     # add remove_reward_program_easy_track to registry
-    add_easy_track_calldata = easy_tracks_registry.addEasyTrack.encode_input(
-        remove_reward_program_easy_track
+    permissions = (
+        reward_programs_registry.address
+        + reward_programs_registry.removeRewardProgram.signature[2:]
+    )
+    add_evm_script_factory_calldata = easy_track.addEVMScriptFactory.encode_input(
+        remove_reward_program, permissions
     )
 
     agent.execute(
-        easy_tracks_registry,
+        easy_track,
         0,
-        add_easy_track_calldata,
+        add_evm_script_factory_calldata,
         {"from": accounts.at(constants.VOTING, force=True)},
     )
-    easy_tracks = easy_tracks_registry.getEasyTracks()
-    assert len(easy_tracks) == 3
-    assert easy_tracks[2] == remove_reward_program_easy_track
+    evm_script_factories = easy_track.getEVMScriptFactories()
+    assert len(evm_script_factories) == 3
+    assert evm_script_factories[2] == remove_reward_program
 
     reward_program = accounts[5]
 
     # create new motion to add reward program
-    add_reward_program_easy_track.createMotion(
-        reward_program, {"from": trusted_address}
+    easy_track.createMotion(
+        add_reward_program,
+        encode_single("(address)", [reward_program.address]),
+        {"from": trusted_address},
     )
 
-    motions = motions_registry.getMotions()
+    motions = easy_track.getMotions()
     assert len(motions) == 1
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    add_reward_program_easy_track.enactMotion(motions[0][0])
-    assert len(motions_registry.getMotions()) == 0
+    easy_track.enactMotion(motions[0][0])
+    assert len(easy_track.getMotions()) == 0
 
-    reward_programs = top_up_reward_program_easy_track.getRewardPrograms()
+    reward_programs = reward_programs_registry.getRewardPrograms()
     assert len(reward_programs) == 1
     assert reward_programs[0] == reward_program
 
     # create new motion to top up reward program
-    top_up_reward_program_easy_track.createMotion(
-        [reward_program.address], [int(5e18)], {"from": trusted_address}
+    easy_track.createMotion(
+        top_up_reward_programs,
+        encode_single("(address[],uint256[])", [[reward_program.address], [int(5e18)]]),
+        {"from": trusted_address},
     )
-    motions = motions_registry.getMotions()
+    motions = easy_track.getMotions()
     assert len(motions) == 1
 
     chain.sleep(48 * 60 * 60 + 100)
 
     assert ldo_token.balanceOf(reward_program) == 0
 
-    top_up_reward_program_easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0])
 
-    assert len(motions_registry.getMotions()) == 0
+    assert len(easy_track.getMotions()) == 0
     assert ldo_token.balanceOf(reward_program) == 5e18
 
     # create new motion to remove reward program
-    remove_reward_program_easy_track.createMotion(
-        reward_program, {"from": trusted_address}
+    easy_track.createMotion(
+        remove_reward_program,
+        encode_single("(address)", [reward_program.address]),
+        {"from": trusted_address},
     )
 
-    motions = motions_registry.getMotions()
+    motions = easy_track.getMotions()
     assert len(motions) == 1
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    remove_reward_program_easy_track.enactMotion(motions[0][0])
-    assert len(motions_registry.getMotions()) == 0
-    assert len(top_up_reward_program_easy_track.getRewardPrograms()) == 0
+    easy_track.enactMotion(motions[0][0])
+    assert len(easy_track.getMotions()) == 0
+    assert len(reward_programs_registry.getRewardPrograms()) == 0
 
 
-def test_lego_easy_track_executor(
+def test_lego_easy_track(
     owner,
     agent,
     finance,
@@ -442,58 +400,29 @@ def test_lego_easy_track_executor(
 ):
     chain = Chain()
 
-    # deploy easy tracks registry
-    easy_tracks_registry = owner.deploy(EasyTracksRegistry)
+    # deploy easy track
+    easy_track = owner.deploy(EasyTrack, ldo_token)
 
-    # deploy motions registry
-    motions_registry = owner.deploy(
-        MotionsRegistry, easy_tracks_registry, ldo_token, agent
+    # deploy evm script executor
+    evm_script_executor = owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track
     )
 
+    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+
     # transfer ownership to agent
-    easy_tracks_registry.transferOwnership(agent, {"from": owner})
-    motions_registry.transferOwnership(agent, {"from": owner})
+    easy_track.transferOwnership(agent, {"from": owner})
 
     trusted_address = accounts[7]
 
     # deploy reward program easy tracks
-    lego_easy_track = owner.deploy(
-        LegoEasyTrack, motions_registry, trusted_address, finance, lego_program
+    top_up_lego_program = owner.deploy(
+        TopUpLegoProgram, trusted_address, finance, lego_program
     )
 
-    # create voting to add permistions to motions_registry to forward to agent
-    add_forward_permissions_evm_script = add_agent_forwarding_permission_call_script(
-        motions_registry.address
-    )
-
-    tx = token_manager.forward(
-        encode_call_script(
-            [
-                (
-                    voting.address,
-                    voting.forward.encode_input(add_forward_permissions_evm_script),
-                )
-            ]
-        ),
-        {"from": ldo_holders[0]},
-    )
-    add_forward_permissions_voting_id = tx.events["StartVote"]["voteId"]
-
-    # execute voting to add permistions to motions_registry to forward to agent
-    voting.vote(
-        add_forward_permissions_voting_id,
-        True,
-        False,
-        {"from": constants.LDO_WHALE_HOLDER},
-    )
-    chain.sleep(3 * 60 * 60 * 24)
-    chain.mine()
-    assert voting.canExecute(add_forward_permissions_voting_id)
-    voting.executeVote(add_forward_permissions_voting_id, {"from": accounts[0]})
-
-    # create voting to add permissions to agent to create new payments
+    # create voting to add permissions to evm script executor to create new payments
     add_create_payments_permissions_evm_script = (
-        add_to_agent_permission_create_new_payments_call_script()
+        add_permission_create_new_payments_call_script(evm_script_executor)
     )
 
     tx = token_manager.forward(
@@ -523,32 +452,39 @@ def test_lego_easy_track_executor(
     assert voting.canExecute(add_create_payments_permissions_voting_id)
     voting.executeVote(add_create_payments_permissions_voting_id, {"from": accounts[0]})
 
-    # add lego_easy_track to registry
-    add_easy_track_calldata = easy_tracks_registry.addEasyTrack.encode_input(
-        lego_easy_track
+    # add TopUpLegoProgram evm script to registry
+    permissions = finance.address + finance.newImmediatePayment.signature[2:]
+    add_easy_track_calldata = easy_track.addEVMScriptFactory.encode_input(
+        top_up_lego_program, permissions
     )
 
     agent.execute(
-        easy_tracks_registry,
+        easy_track,
         0,
         add_easy_track_calldata,
         {"from": accounts.at(constants.VOTING, force=True)},
     )
-    easy_tracks = easy_tracks_registry.getEasyTracks()
-    assert len(easy_tracks) == 1
-    assert easy_tracks[0] == lego_easy_track
+    evm_script_factories = easy_track.getEVMScriptFactories()
+    assert len(evm_script_factories) == 1
+    assert evm_script_factories[0] == top_up_lego_program
 
     # create new motion to make transfers to lego programs
 
     ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
 
-    lego_easy_track.createMotion(
-        [ldo_token, steth_token, ZERO_ADDRESS],
-        [ldo_amount, steth_amount, eth_amount],
+    easy_track.createMotion(
+        top_up_lego_program,
+        encode_single(
+            "(address[],uint256[])",
+            [
+                [ldo_token.address, steth_token.address, ZERO_ADDRESS],
+                [ldo_amount, steth_amount, eth_amount],
+            ],
+        ),
         {"from": trusted_address},
     )
 
-    motions = motions_registry.getMotions()
+    motions = easy_track.getMotions()
     assert len(motions) == 1
 
     chain.sleep(48 * 60 * 60 + 100)
@@ -572,18 +508,19 @@ def test_lego_easy_track_executor(
     assert steth_token.balanceOf(lego_program) == 0
     assert lego_program.balance() == 100 * 10 ** 18
 
-    lego_easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0])
 
-    assert len(motions_registry.getMotions()) == 0
+    assert len(easy_track.getMotions()) == 0
     assert ldo_token.balanceOf(lego_program) == ldo_amount
     assert abs(steth_token.balanceOf(lego_program) - steth_amount) <= 10
     assert lego_program.balance() == 103 * 10 ** 18
 
 
-def add_agent_forwarding_permission_call_script(forwarder_address):
+def add_permission_create_new_payments_call_script(entity):
     spec_id = "00000001"
     to_address = constants.ACL[2:]
-    forward_agent_role_data = "0000000000000000000000004333218072d5d7008546737786663c38b4d561a4b421f7ad7646747f3051c50c0b8e2377839296cd4973e27f63821d73e390338f"
+    app = constants.FINANCE[2:].zfill(64)
+    role = "5de467a460382d13defdc02aacddc9c7d6605d6d4e0b8bd2f70732cae8ea17bc"  # create new payments role
     calldata_length = "00000064"
     method_id = "0a8ed3db"
     return (
@@ -591,15 +528,20 @@ def add_agent_forwarding_permission_call_script(forwarder_address):
         + to_address
         + calldata_length
         + method_id
-        + forwarder_address[2:].zfill(64)
-        + forward_agent_role_data
+        + entity.address[2:].zfill(64)
+        + app
+        + role
     )
 
 
-def add_to_agent_permission_set_node_operators_stakin_limit_call_script():
+def add_permission_set_node_operators_stakin_limit_call_script(
+    entity,
+):
     spec_id = "00000001"
     to_address = constants.ACL[2:]
-    set_staking_limit_role_data = "0000000000000000000000009d4af1ee19dad8857db3a45b0374c81c8a1c632007b39e0faf2521001ae4e58cb9ffd3840a63e205d288dc9c93c3774f0d794754"
+
+    app = constants.NODE_OPERATORS_REGISTRY[2:].zfill(64)
+    role = "07b39e0faf2521001ae4e58cb9ffd3840a63e205d288dc9c93c3774f0d794754"  # set staking limit role
     calldata_length = "00000064"
     method_id = "0a8ed3db"
     return (
@@ -607,22 +549,7 @@ def add_to_agent_permission_set_node_operators_stakin_limit_call_script():
         + to_address
         + calldata_length
         + method_id
-        + constants.ARAGON_AGENT[2:].zfill(64)
-        + set_staking_limit_role_data
-    )
-
-
-def add_to_agent_permission_create_new_payments_call_script():
-    spec_id = "00000001"
-    to_address = constants.ACL[2:]
-    create_payments_role_data = "00000000000000000000000075c7b1d23f1cad7fb4d60281d7069e46440bc1795de467a460382d13defdc02aacddc9c7d6605d6d4e0b8bd2f70732cae8ea17bc"
-    calldata_length = "00000064"
-    method_id = "0a8ed3db"
-    return (
-        spec_id
-        + to_address
-        + calldata_length
-        + method_id
-        + constants.ARAGON_AGENT[2:].zfill(64)
-        + create_payments_role_data
+        + entity.address[2:].zfill(64)
+        + app
+        + role
     )

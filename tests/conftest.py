@@ -215,44 +215,6 @@ def init(owner, easy_track, evm_script_executor_stub):
     easy_track.setEvmScriptExecutor(evm_script_executor_stub, {"from": owner})
 
 
-# @pytest.fixture(scope="function")
-# def top_up_reward_program_easy_track(owner, motions_registry_stub, finance, ldo_token):
-#     return owner.deploy(
-#         TopUpRewardProgramEasyTrack, motions_registry_stub, owner, finance, ldo_token
-#     )
-
-
-# @pytest.fixture(scope="function")
-# def add_reward_program_easy_track(
-#     owner, motions_registry_stub, top_up_reward_program_easy_track
-# ):
-#     return owner.deploy(
-#         AddRewardProgramEasyTrack,
-#         motions_registry_stub,
-#         owner,
-#         top_up_reward_program_easy_track,
-#     )
-
-
-# @pytest.fixture(scope="function")
-# def remove_reward_program_easy_track(
-#     owner, motions_registry_stub, top_up_reward_program_easy_track
-# ):
-#     return owner.deploy(
-#         RemoveRewardProgramEasyTrack,
-#         motions_registry_stub,
-#         owner,
-#         top_up_reward_program_easy_track,
-#     )
-
-
-# @pytest.fixture(scope="function")
-# def lego_easy_track(owner, finance, motions_registry_stub, lego_program):
-#     return owner.deploy(
-#         LegoEasyTrack, motions_registry_stub, owner, finance, lego_program
-#     )
-
-
 def reset_balance(ldo_token, account):
     balance = ldo_token.balanceOf(account)
     if balance > 0:
