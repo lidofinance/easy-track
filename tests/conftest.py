@@ -16,6 +16,7 @@ from brownie import (
     RewardProgramsRegistry,
     AddRewardProgram,
     RemoveRewardProgram,
+    TopUpRewardPrograms,
 )
 import constants
 
@@ -103,6 +104,13 @@ def remove_reward_program(owner, reward_programs_registry):
     return owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
 
 
+@pytest.fixture(scope="function")
+def top_up_reward_programs(owner, finance, ldo_token, reward_programs_registry):
+    return owner.deploy(
+        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo_token
+    )
+
+
 ###############
 # LIBRARIES
 ###############
@@ -181,6 +189,11 @@ def agent(interface):
     return interface.Agent(constants.ARAGON_AGENT)
 
 
+@pytest.fixture(scope="function")
+def finance(interface):
+    return interface.Finance(constants.FINANCE)
+
+
 #############
 # INIT
 #############
@@ -232,11 +245,6 @@ def init(owner, easy_track, evm_script_executor_stub):
 #     return owner.deploy(
 #         LegoEasyTrack, motions_registry_stub, owner, finance, lego_program
 #     )
-
-
-# @pytest.fixture(scope="function")
-# def finance(interface):
-#     return interface.Finance(constants.FINANCE)
 
 
 def reset_balance(ldo_token, account):
