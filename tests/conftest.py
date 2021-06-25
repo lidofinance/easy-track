@@ -9,7 +9,6 @@ from brownie import (
     EVMScriptCreator,
     EVMScriptPermissions,
     NodeOperatorsRegistryStub,
-    AragonAgentMock,
     BytesUtils,
     EVMScriptFactoryStub,
     EVMScriptExecutorStub,
@@ -143,11 +142,6 @@ def bytes_utils(accounts):
 ############
 # MOCKS
 ############
-
-
-@pytest.fixture(scope="function")
-def aragon_agent_mock(owner):
-    return owner.deploy(AragonAgentMock)
 
 
 @pytest.fixture(scope="function")
