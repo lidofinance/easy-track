@@ -17,6 +17,7 @@ from brownie import (
     AddRewardProgram,
     RemoveRewardProgram,
     TopUpRewardPrograms,
+    TopUpLegoProgram,
 )
 import constants
 
@@ -52,6 +53,11 @@ def ldo_holders(accounts, ldo_token):
             ldo_token.transfer(constants.LDO_WHALE_HOLDER, balance, {"from": holder})
         ldo_token.transfer(holder, holder_balance, {"from": constants.LDO_WHALE_HOLDER})
     return holders
+
+
+@pytest.fixture(scope="module")
+def lego_program(accounts):
+    return accounts[3]
 
 
 ##############
@@ -109,6 +115,11 @@ def top_up_reward_programs(owner, finance, ldo_token, reward_programs_registry):
     return owner.deploy(
         TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo_token
     )
+
+
+@pytest.fixture(scope="function")
+def top_up_lego_program(owner, finance, lego_program):
+    return owner.deploy(TopUpLegoProgram, owner, finance, lego_program)
 
 
 ###############
@@ -233,11 +244,6 @@ def init(owner, easy_track, evm_script_executor_stub):
 #         owner,
 #         top_up_reward_program_easy_track,
 #     )
-
-
-# @pytest.fixture(scope="module")
-# def lego_program(accounts):
-#     return accounts[3]
 
 
 # @pytest.fixture(scope="function")
