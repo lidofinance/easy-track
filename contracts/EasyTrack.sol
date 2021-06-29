@@ -72,7 +72,6 @@ contract EasyTrack is
         m.duration = motionDuration;
         m.objectionsThreshold = objectionsThreshold;
 
-        m.evmScriptCallData = _evmScriptCallData;
         m.evmScriptFactory = _evmScriptFactory;
         m.evmScriptHash = keccak256(evmScript);
 
@@ -88,15 +87,13 @@ contract EasyTrack is
         emit MotionCanceled(_motionId);
     }
 
-    function enactMotion(uint256 _motionId) external {
+    function enactMotion(uint256 _motionId, bytes memory _evmScript) external {
         Motion storage m = _getMotion(_motionId);
         require(m.startDate + m.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
 
-        bytes memory evmScript =
-            _createEVMScript(m.evmScriptFactory, m.creator, m.evmScriptCallData);
-        require(m.evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
+        require(m.evmScriptHash == keccak256(_evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
 
-        evmScriptExecutor.executeEVMScript(evmScript);
+        evmScriptExecutor.executeEVMScript(_evmScript);
         _deleteMotion(_motionId);
         emit MotionEnacted(_motionId);
     }

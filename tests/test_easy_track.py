@@ -186,7 +186,6 @@ def test_create_motion(
     assert new_motion[7] == 0  # objectionsAmount
     assert new_motion[8] == 0  # objectionsAmountPct
     assert new_motion[9] == web3.keccak(hexstr=evm_script).hex()  # evmScriptHash
-    assert new_motion[10] == call_data  # evmScriptCallData
 
 
 def test_cancel_motion_not_found(owner, easy_track):
@@ -253,7 +252,7 @@ def test_cancel_motion(owner, easy_track, evm_script_factory_stub):
 
 def test_enact_motion_motion_not_found(owner, easy_track):
     with reverts("MOTION_NOT_FOUND"):
-        easy_track.enactMotion(1, {"from": owner})
+        easy_track.enactMotion(1, b"", {"from": owner})
 
 
 def test_enact_motion_motion_not_passed(owner, easy_track, evm_script_factory_stub):
@@ -278,12 +277,14 @@ def test_enact_motion_motion_not_passed(owner, easy_track, evm_script_factory_st
         )
     )
     assert len(easy_track.getMotions()) == 0
-    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
     with reverts("MOTION_NOT_PASSED"):
-        easy_track.enactMotion(motions[0][0], {"from": owner})
+        easy_track.enactMotion(
+            motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": owner}
+        )
 
 
 def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factory_stub):
@@ -317,19 +318,17 @@ def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factor
 
     # replace evm script with different params
     # to change evm script hash
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [
-                (
-                    evm_script_factory_stub.address,
-                    evm_script_factory_stub.setEVMScript.encode_input("0x001122"),
-                )
-            ]
-        )
+    wrong_evm_script = encode_call_script(
+        [
+            (
+                evm_script_factory_stub.address,
+                evm_script_factory_stub.setEVMScript.encode_input("0x001122"),
+            )
+        ]
     )
 
     with reverts("UNEXPECTED_EVM_SCRIPT"):
-        easy_track.enactMotion(motions[0][0], {"from": owner})
+        easy_track.enactMotion(motions[0][0], wrong_evm_script, {"from": owner})
 
 
 def test_enact_motion(
@@ -352,7 +351,7 @@ def test_enact_motion(
     )
     evm_script_factory_stub.setEVMScript(evm_script)
     assert len(easy_track.getMotions()) == 0
-    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
@@ -360,7 +359,9 @@ def test_enact_motion(
     chain.sleep(constants.MIN_MOTION_DURATION + 1)
 
     assert evm_script_executor_stub.evmScript() == "0x"
-    tx = easy_track.enactMotion(motions[0][0], {"from": owner})
+    tx = easy_track.enactMotion(
+        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": owner}
+    )
     assert len(easy_track.getMotions()) == 0
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
@@ -619,7 +620,7 @@ def test_cancel_motions_in_random_order(owner, easy_track, evm_script_factory_st
 
 def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
     with reverts("Ownable: caller is not the owner"):
-        easy_track.setEvmScriptExecutor(ZERO_ADDRESS, {"from": stranger})
+        easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
 
 
 def test_set_evm_script_executor_called_by_owner(owner, ldo_token, evm_script_executor):
@@ -631,5 +632,5 @@ def test_set_evm_script_executor_called_by_owner(owner, ldo_token, evm_script_ex
     easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
     assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
-    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
     assert easy_track.evmScriptExecutor() == evm_script_executor

@@ -46,7 +46,7 @@ def test_node_operators_easy_track(
         EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
 
-    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
 
     # transfer ownership to agent
     easy_track.transferOwnership(agent, {"from": owner})
@@ -186,7 +186,7 @@ def test_node_operators_easy_track(
     assert new_node_operator[6] == 0  # usedSigningKeys
 
     # create new motion to increase staking limit
-    easy_track.createMotion(
+    tx = easy_track.createMotion(
         increase_node_operator_staking_limit,
         "0x" + encode_single("(uint256,uint256)", [new_node_operator_id, 3]).hex(),
         {"from": node_operator["address"]},
@@ -196,7 +196,9 @@ def test_node_operators_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    easy_track.enactMotion(motions[0][0], {"from": stranger})
+    easy_track.enactMotion(
+        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+    )
 
     # validate that motion was executed correctly
     motions = easy_track.getMotions()
@@ -233,7 +235,7 @@ def test_reward_programs_easy_track(
         EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
 
-    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
 
     # transfer ownership to agent
     easy_track.transferOwnership(agent, {"from": owner})
@@ -350,7 +352,7 @@ def test_reward_programs_easy_track(
     reward_program = accounts[5]
 
     # create new motion to add reward program
-    easy_track.createMotion(
+    tx = easy_track.createMotion(
         add_reward_program,
         encode_single("(address)", [reward_program.address]),
         {"from": trusted_address},
@@ -361,7 +363,9 @@ def test_reward_programs_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    easy_track.enactMotion(motions[0][0], {"from": stranger})
+    easy_track.enactMotion(
+        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+    )
     assert len(easy_track.getMotions()) == 0
 
     reward_programs = reward_programs_registry.getRewardPrograms()
@@ -369,7 +373,7 @@ def test_reward_programs_easy_track(
     assert reward_programs[0] == reward_program
 
     # create new motion to top up reward program
-    easy_track.createMotion(
+    tx = easy_track.createMotion(
         top_up_reward_programs,
         encode_single("(address[],uint256[])", [[reward_program.address], [int(5e18)]]),
         {"from": trusted_address},
@@ -381,13 +385,15 @@ def test_reward_programs_easy_track(
 
     assert ldo_token.balanceOf(reward_program) == 0
 
-    easy_track.enactMotion(motions[0][0], {"from": stranger})
+    easy_track.enactMotion(
+        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+    )
 
     assert len(easy_track.getMotions()) == 0
     assert ldo_token.balanceOf(reward_program) == 5e18
 
     # create new motion to remove reward program
-    easy_track.createMotion(
+    tx = easy_track.createMotion(
         remove_reward_program,
         encode_single("(address)", [reward_program.address]),
         {"from": trusted_address},
@@ -398,7 +404,9 @@ def test_reward_programs_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    easy_track.enactMotion(motions[0][0], {"from": stranger})
+    easy_track.enactMotion(
+        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+    )
     assert len(easy_track.getMotions()) == 0
     assert len(reward_programs_registry.getRewardPrograms()) == 0
 
@@ -431,7 +439,7 @@ def test_lego_easy_track(
         EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
 
-    easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
 
     # transfer ownership to agent
     easy_track.transferOwnership(agent, {"from": owner})
@@ -495,7 +503,7 @@ def test_lego_easy_track(
 
     ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
 
-    easy_track.createMotion(
+    tx = easy_track.createMotion(
         top_up_lego_program,
         encode_single(
             "(address[],uint256[])",
@@ -531,7 +539,9 @@ def test_lego_easy_track(
     assert steth_token.balanceOf(lego_program) == 0
     assert lego_program.balance() == 100 * 10 ** 18
 
-    easy_track.enactMotion(motions[0][0], {"from": stranger})
+    easy_track.enactMotion(
+        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+    )
 
     assert len(easy_track.getMotions()) == 0
     assert ldo_token.balanceOf(lego_program) == ldo_amount
