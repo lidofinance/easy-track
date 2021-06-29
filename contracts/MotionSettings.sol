@@ -8,10 +8,6 @@ import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./EasyTrackStorage.sol";
 
 contract MotionSettings is EasyTrackStorage, OwnableUpgradeable {
-    event MotionDurationChanged(uint256 _motionDuration);
-    event MotionsCountLimitChanged(uint256 _newMotionsCountLimit);
-    event ObjectionsThresholdChanged(uint256 _newThreshold);
-
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
 
