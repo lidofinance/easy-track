@@ -93,13 +93,9 @@ def easy_track(owner, ldo_token):
 
 @pytest.fixture(scope="function")
 def evm_script_executor(owner, easy_track):
-    logic = owner.deploy(EVMScriptExecutor)
-    proxy = owner.deploy(
-        ContractProxy,
-        logic,
-        logic.__EVMScriptExecutor_init.encode_input(constants.CALLS_SCRIPT, easy_track),
+    return owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
-    return Contract.from_abi("EVMScriptExecutorProxied", proxy, EVMScriptExecutor.abi)
 
 
 @pytest.fixture(scope="function")

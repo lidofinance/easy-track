@@ -3,10 +3,7 @@
 
 pragma solidity 0.8.4;
 
-import "./TrustedCaller.sol";
-
-import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "./OwnableUpgradeable.sol";
+import "@openzeppelin/contracts/utils/StorageSlot.sol";
 
 interface ICallsScript {
     function execScript(
@@ -16,43 +13,30 @@ interface ICallsScript {
     ) external returns (bytes memory);
 }
 
-library UnstructuredStorageSlim {
-    function setStorageUint256(bytes32 position, uint256 data) internal {
-        assembly {
-            sstore(position, data)
-        }
-    }
-}
-
-contract EVMScriptExecutor is UUPSUpgradeable, OwnableUpgradeable {
-    using UnstructuredStorageSlim for bytes32;
-
+contract EVMScriptExecutor {
     event ScriptExecuted(address indexed _caller, bytes _evmScript);
-    event Initialized(address _callsScript, address _allowedCaller);
 
     // keccak256("aragonOS.initializable.initializationBlock")
     bytes32 internal constant INITIALIZATION_BLOCK_POSITION =
         0xebb05b386a8d34882b8711d156f463690983dc47815980fb82aeeff1aa43579e;
 
     address public callsScript;
-    address public trustedCaller;
+    address public easyTrack;
+    address public voting;
 
-    function __EVMScriptExecutor_init(address _callsScript, address _allowedCaller)
-        public
-        initializer
-    {
-        __Ownable_init();
-        INITIALIZATION_BLOCK_POSITION.setStorageUint256(block.number);
+    constructor(
+        address _callsScript,
+        address _easyTrack,
+        address _voting
+    ) {
+        voting = _voting;
+        easyTrack = _easyTrack;
         callsScript = _callsScript;
-        trustedCaller = _allowedCaller;
-        emit Initialized(_callsScript, _allowedCaller);
+        StorageSlot.getUint256Slot(INITIALIZATION_BLOCK_POSITION).value = block.number;
     }
 
-    function executeEVMScript(bytes memory _evmScript)
-        external
-        onlyTrustedCaller(msg.sender)
-        returns (bytes memory)
-    {
+    function executeEVMScript(bytes memory _evmScript) external returns (bytes memory) {
+        require(msg.sender == voting || msg.sender == easyTrack, "CALLER_IS_FORBIDDEN");
         bytes memory execScriptCallData =
             abi.encodeWithSelector(
                 ICallsScript.execScript.selector,
@@ -71,12 +55,5 @@ contract EVMScriptExecutor is UUPSUpgradeable, OwnableUpgradeable {
         }
         emit ScriptExecuted(msg.sender, _evmScript);
         return output;
-    }
-
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
-
-    modifier onlyTrustedCaller(address _caller) {
-        require(_caller == trustedCaller, "CALLER_IS_FORBIDDEN");
-        _;
     }
 }
