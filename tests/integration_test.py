@@ -42,17 +42,8 @@ def test_node_operators_easy_track(
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-
-    evm_script_executor_logic = owner.deploy(EVMScriptExecutor)
-    evm_script_executor_proxy = owner.deploy(
-        ContractProxy,
-        evm_script_executor_logic,
-        evm_script_executor_logic.__EVMScriptExecutor_init.encode_input(
-            constants.CALLS_SCRIPT, easy_track
-        ),
-    )
-    evm_script_executor = Contract.from_abi(
-        "EVMScriptExecutorProxied", evm_script_executor_proxy, EVMScriptExecutor.abi
+    evm_script_executor = owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
 
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
@@ -240,17 +231,8 @@ def test_reward_programs_easy_track(
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-
-    evm_script_executor_logic = owner.deploy(EVMScriptExecutor)
-    evm_script_executor_proxy = owner.deploy(
-        ContractProxy,
-        evm_script_executor_logic,
-        evm_script_executor_logic.__EVMScriptExecutor_init.encode_input(
-            constants.CALLS_SCRIPT, easy_track
-        ),
-    )
-    evm_script_executor = Contract.from_abi(
-        "EVMScriptExecutorProxied", evm_script_executor_proxy, EVMScriptExecutor.abi
+    evm_script_executor = owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
 
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
@@ -453,17 +435,8 @@ def test_lego_easy_track(
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-
-    evm_script_executor_logic = owner.deploy(EVMScriptExecutor)
-    evm_script_executor_proxy = owner.deploy(
-        ContractProxy,
-        evm_script_executor_logic,
-        evm_script_executor_logic.__EVMScriptExecutor_init.encode_input(
-            constants.CALLS_SCRIPT, easy_track
-        ),
-    )
-    evm_script_executor = Contract.from_abi(
-        "EVMScriptExecutorProxied", evm_script_executor_proxy, EVMScriptExecutor.abi
+    evm_script_executor = owner.deploy(
+        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
     )
 
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": owner})
