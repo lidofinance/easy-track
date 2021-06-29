@@ -27,7 +27,11 @@ struct Motion {
 }
 
 contract MotionSettingsStorage is Initializable {
-    uint256 public constant MAX_MOTIONS_LIMIT = 100;
+    event MotionDurationChanged(uint256 _motionDuration);
+    event MotionsCountLimitChanged(uint256 _newMotionsCountLimit);
+    event ObjectionsThresholdChanged(uint256 _newThreshold);
+
+    uint256 public constant MAX_MOTIONS_LIMIT = 24;
     /**
      @dev upper bound for objectionsThreshold value.
      Stored in basis points (1% = 100)
@@ -47,6 +51,10 @@ contract MotionSettingsStorage is Initializable {
         objectionsThreshold = 50;
         motionsCountLimit = MAX_MOTIONS_LIMIT;
         motionDuration = MIN_MOTION_DURATION;
+
+        emit MotionDurationChanged(MIN_MOTION_DURATION);
+        emit MotionsCountLimitChanged(MAX_MOTIONS_LIMIT);
+        emit ObjectionsThresholdChanged(50);
     }
 }
 
