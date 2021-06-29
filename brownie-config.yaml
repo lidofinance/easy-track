@@ -10,7 +10,7 @@ networks:
       accounts: 10
       evm_version: istanbul
       mnemonic: brownie
-      fork: goerli
+      fork: mainnet
 
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@4.1.0
