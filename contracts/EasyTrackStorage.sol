@@ -4,7 +4,7 @@
 pragma solidity 0.8.4;
 
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
-import "./EvmScriptExecutor.sol";
+import "./interfaces/IEVMScriptExecutor.sol";
 
 interface IMiniMeToken {
     function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);
@@ -69,7 +69,7 @@ contract EasyTrackStorage is Initializable, MotionSettingsStorage, EVMScriptFact
     uint256 internal lastMotionId;
 
     IMiniMeToken public governanceToken;
-    EVMScriptExecutor public evmScriptExecutor;
+    IEVMScriptExecutor public evmScriptExecutor;
 
     mapping(uint256 => uint256) internal motionIndicesByMotionId;
     mapping(uint256 => mapping(address => bool)) objections;

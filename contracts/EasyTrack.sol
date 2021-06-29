@@ -4,11 +4,12 @@
 pragma solidity 0.8.4;
 
 import "./MotionSettings.sol";
-import "./EvmScriptExecutor.sol";
-import "./EVMScriptFactoriesRegistry.sol";
-import "./interfaces/IEVMScriptFactory.sol";
-import "./OwnableUpgradable.sol";
 import "./EasyTrackStorage.sol";
+import "./OwnableUpgradeable.sol";
+import "./EVMScriptFactoriesRegistry.sol";
+
+import "./interfaces/IEVMScriptFactory.sol";
+import "./interfaces/IEVMScriptExecutor.sol";
 
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
@@ -126,8 +127,8 @@ contract EasyTrack is
         return balance > 0 && !objections[_motionId][_objector];
     }
 
-    function setEvmScriptExecutor(address _evmScriptExecutor) external onlyOwner {
-        evmScriptExecutor = EVMScriptExecutor(_evmScriptExecutor);
+    function setEVMScriptExecutor(address _evmScriptExecutor) external onlyOwner {
+        evmScriptExecutor = IEVMScriptExecutor(_evmScriptExecutor);
     }
 
     function getMotions() external view returns (Motion[] memory) {

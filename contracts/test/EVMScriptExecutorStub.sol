@@ -3,11 +3,15 @@
 
 pragma solidity 0.8.4;
 
-contract EVMScriptExecutorStub {
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "../OwnableUpgradeable.sol";
+
+contract EVMScriptExecutorStub is UUPSUpgradeable, OwnableUpgradeable {
     bytes public evmScript;
 
     function executeEVMScript(bytes memory _evmScript) external returns (bytes memory) {
         evmScript = _evmScript;
-        return hex"112233";
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 }

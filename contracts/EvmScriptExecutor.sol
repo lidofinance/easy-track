@@ -6,7 +6,7 @@ pragma solidity 0.8.4;
 import "./TrustedCaller.sol";
 
 import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
-import "./OwnableUpgradable.sol";
+import "./OwnableUpgradeable.sol";
 
 interface ICallsScript {
     function execScript(

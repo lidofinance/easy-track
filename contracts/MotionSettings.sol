@@ -3,7 +3,7 @@
 
 pragma solidity 0.8.4;
 
-import "./OwnableUpgradable.sol";
+import "./OwnableUpgradeable.sol";
 import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./EasyTrackStorage.sol";
 

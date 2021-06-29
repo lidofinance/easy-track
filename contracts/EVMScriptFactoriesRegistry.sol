@@ -6,7 +6,7 @@ pragma solidity 0.8.4;
 import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 import "./EasyTrackStorage.sol";
-import "./OwnableUpgradable.sol";
+import "./OwnableUpgradeable.sol";
 
 contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
     using EVMScriptPermissions for bytes;
@@ -27,7 +27,7 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
     }
 
     function removeEVMScriptFactory(address _evmScriptFactory) external onlyOwner {
-        uint256 index = _getEvmScriptFactoryIndex(_evmScriptFactory);
+        uint256 index = _getEVMScriptFactoryIndex(_evmScriptFactory);
         uint256 lastIndex = evmScriptFactories.length - 1;
 
         if (index != lastIndex) {
@@ -69,7 +69,7 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
         require(permissions.canExecuteEVMScript(_evmScript), "HAS_NO_PERMISSIONS");
     }
 
-    function _getEvmScriptFactoryIndex(address _evmScriptFactory)
+    function _getEVMScriptFactoryIndex(address _evmScriptFactory)
         private
         view
         returns (uint256 _index)
@@ -79,7 +79,7 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
         _index -= 1;
     }
 
-    function _isEVMScriptFactory(address _maybeEvmScriptFactory) internal view returns (bool) {
-        return evmScriptFactoryIndices[_maybeEvmScriptFactory] > 0;
+    function _isEVMScriptFactory(address _maybeEVMScriptFactory) internal view returns (bool) {
+        return evmScriptFactoryIndices[_maybeEVMScriptFactory] > 0;
     }
 }
