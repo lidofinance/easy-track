@@ -226,7 +226,7 @@ def finance(interface):
 
 @pytest.fixture(scope="function", autouse=True)
 def init(owner, easy_track, evm_script_executor_stub):
-    easy_track.setEvmScriptExecutor(evm_script_executor_stub, {"from": owner})
+    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": owner})
 
 
 def reset_balance(ldo_token, account):

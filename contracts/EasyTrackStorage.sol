@@ -23,7 +23,6 @@ struct Motion {
     uint256 objectionsAmount;
     uint256 objectionsAmountPct;
     bytes32 evmScriptHash;
-    bytes evmScriptCallData;
 }
 
 contract MotionSettingsStorage is Initializable {

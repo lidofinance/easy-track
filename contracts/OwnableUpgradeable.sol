@@ -1,3 +1,8 @@
+/**
+    Copied from:
+    https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/2af7375b7b2f82224272d823c1151d4d5d0633c4/contracts/access/OwnableUpgradeable.sol
+*/
+
 // SPDX-License-Identifier: MIT
 
 pragma solidity ^0.8.0;
