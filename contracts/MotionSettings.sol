@@ -3,9 +3,11 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./OwnableUpgradable.sol";
+import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
+import "./EasyTrackStorage.sol";
 
-contract MotionSettings is Ownable {
+contract MotionSettings is EasyTrackStorage, OwnableUpgradeable {
     event MotionDurationChanged(uint256 _motionDuration);
     event MotionsCountLimitChanged(uint256 _newMotionsCountLimit);
     event ObjectionsThresholdChanged(uint256 _newThreshold);
@@ -13,21 +15,10 @@ contract MotionSettings is Ownable {
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
 
-    uint256 public constant MAX_MOTIONS_LIMIT = 100;
-    /**
-     @dev upper bound for objectionsThreshold value.
-     Stored in basis points (1% = 100)
-     */
-    uint64 public constant MAX_OBJECTIONS_THRESHOLD = 500;
-
-    /**
-     @dev lower bound for motionDuration value
-     */
-    uint64 public constant MIN_MOTION_DURATION = 48 hours;
-
-    uint256 public objectionsThreshold = 50;
-    uint256 public motionsCountLimit = MAX_MOTIONS_LIMIT;
-    uint256 public motionDuration = MIN_MOTION_DURATION;
+    function __MotionSettings_init() public virtual initializer {
+        __Ownable_init();
+        EasyTrackStorage.__EasyTrackStorage_init();
+    }
 
     /**
      @notice Set duration of new created motions.

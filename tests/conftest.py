@@ -1,6 +1,8 @@
 import pytest
 
 from brownie import (
+    Contract,
+    ContractProxy,
     MotionSettings,
     IncreaseNodeOperatorStakingLimit,
     EVMScriptFactoriesRegistry,
@@ -66,22 +68,38 @@ def lego_program(accounts):
 
 @pytest.fixture(scope="function")
 def motion_settings(owner):
-    return owner.deploy(MotionSettings)
+    contract = owner.deploy(MotionSettings)
+    contract.__MotionSettings_init({"from": owner})
+    return contract
 
 
 @pytest.fixture(scope="function")
 def evm_script_factories_registry(owner):
-    return owner.deploy(EVMScriptFactoriesRegistry)
+    contract = owner.deploy(EVMScriptFactoriesRegistry)
+    contract.__EVMScriptFactoriesRegistry_init({"from": owner})
+    return contract
 
 
 @pytest.fixture(scope="function")
 def easy_track(owner, ldo_token):
-    return owner.deploy(EasyTrack, ldo_token)
+    logic = owner.deploy(EasyTrack)
+    proxy = owner.deploy(
+        ContractProxy,
+        logic,
+        logic.__EasyTrack_init.encode_input(ldo_token),
+    )
+    return Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
 
 @pytest.fixture(scope="function")
 def evm_script_executor(owner, easy_track):
-    return owner.deploy(EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track)
+    logic = owner.deploy(EVMScriptExecutor)
+    proxy = owner.deploy(
+        ContractProxy,
+        logic,
+        logic.__EVMScriptExecutor_init.encode_input(constants.CALLS_SCRIPT, easy_track),
+    )
+    return Contract.from_abi("EVMScriptExecutorProxied", proxy, EVMScriptExecutor.abi)
 
 
 @pytest.fixture(scope="function")
@@ -124,6 +142,8 @@ def top_up_lego_program(owner, finance, lego_program):
 ###############
 # LIBRARIES
 ###############
+
+
 @pytest.fixture(scope="module", autouse=True)
 def evm_script_creator(accounts):
     return accounts[0].deploy(EVMScriptCreator)

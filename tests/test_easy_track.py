@@ -3,7 +3,15 @@ import pytest
 import hashlib
 
 from brownie.network.state import Chain
-from brownie import EasyTrack, accounts, reverts, ZERO_ADDRESS, web3
+from brownie import (
+    Contract,
+    ContractProxy,
+    EasyTrack,
+    accounts,
+    reverts,
+    ZERO_ADDRESS,
+    web3,
+)
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
@@ -11,23 +19,42 @@ import constants
 
 
 def test_deploy(owner, ldo_token):
-    contract = owner.deploy(EasyTrack, ldo_token)
+    logic = owner.deploy(EasyTrack)
+    proxy = owner.deploy(
+        ContractProxy, logic, logic.__EasyTrack_init.encode_input(ldo_token)
+    )
+    assert proxy.implementation() == logic
+    easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
-    assert contract.owner() == owner
-    assert contract.governanceToken() == ldo_token
-    assert contract.evmScriptExecutor() == ZERO_ADDRESS
+    assert easy_track.owner() == owner
+    assert easy_track.governanceToken() == ldo_token
+    assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
 
 
-def test_create_motion_evm_script_factory_not_found(stranger, easy_track):
+def test_upgrade_to_called_by_stranger(stranger, easy_track):
+    with reverts("Ownable: caller is not the owner"):
+        easy_track.upgradeToAndCall(ZERO_ADDRESS, "", {"from": stranger})
+
+
+def test_upgrade_to(owner, easy_track):
+    new_logic = owner.deploy(EasyTrack)
+    easy_track.upgradeTo(new_logic, {"from": owner})
+    proxy = Contract.from_abi("Proxy", easy_track, ContractProxy.abi)
+    assert proxy.implementation() == new_logic
+
+
+def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track):
     with reverts("EVM_SCRIPT_FACTORY_NOT_FOUND"):
-        easy_track.createMotion(stranger, b"")
+        easy_track.createMotion(stranger, b"", {"from": owner})
 
 
 def test_create_motion_has_no_permissions(
-    stranger, easy_track, evm_script_factory_stub
+    owner, stranger, easy_track, evm_script_factory_stub
 ):
     permissions = stranger.address + "aabbccdd"
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -40,7 +67,7 @@ def test_create_motion_has_no_permissions(
     )
 
     with reverts("HAS_NO_PERMISSIONS"):
-        easy_track.createMotion(evm_script_factory_stub, b"")
+        easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
 
 def test_create_motion_motions_limit_reached(
@@ -53,7 +80,9 @@ def test_create_motion_motions_limit_reached(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -65,10 +94,10 @@ def test_create_motion_motions_limit_reached(
         )
     )
     assert len(easy_track.getMotions()) == 0
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     assert len(easy_track.getMotions()) == 1
     with reverts("MOTIONS_LIMIT_REACHED"):
-        easy_track.createMotion(evm_script_factory_stub, b"")
+        easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
 
 def test_create_motion(
@@ -103,7 +132,9 @@ def test_create_motion(
             node_operators_registry_stub.setRewardAddress.encode_input(accounts[1]),
         ),
     ]
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     assert len(easy_track.getMotions()) == 0
@@ -158,9 +189,9 @@ def test_create_motion(
     assert new_motion[10] == call_data  # evmScriptCallData
 
 
-def test_cancel_motion_not_found(easy_track):
+def test_cancel_motion_not_found(owner, easy_track):
     with reverts("MOTION_NOT_FOUND"):
-        easy_track.cancelMotion(1)
+        easy_track.cancelMotion(1, {"from": owner})
 
 
 def test_cancel_motion_not_owner(owner, stranger, easy_track, evm_script_factory_stub):
@@ -168,7 +199,9 @@ def test_cancel_motion_not_owner(owner, stranger, easy_track, evm_script_factory
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -194,7 +227,9 @@ def test_cancel_motion(owner, easy_track, evm_script_factory_stub):
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -216,9 +251,9 @@ def test_cancel_motion(owner, easy_track, evm_script_factory_stub):
     assert tx.events["MotionCanceled"]["_motionId"] == motions[0][0]
 
 
-def test_enact_motion_motion_not_found(easy_track):
+def test_enact_motion_motion_not_found(owner, easy_track):
     with reverts("MOTION_NOT_FOUND"):
-        easy_track.enactMotion(1)
+        easy_track.enactMotion(1, {"from": owner})
 
 
 def test_enact_motion_motion_not_passed(owner, easy_track, evm_script_factory_stub):
@@ -229,7 +264,9 @@ def test_enact_motion_motion_not_passed(owner, easy_track, evm_script_factory_st
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -246,7 +283,7 @@ def test_enact_motion_motion_not_passed(owner, easy_track, evm_script_factory_st
     assert len(motions) == 1
 
     with reverts("MOTION_NOT_PASSED"):
-        easy_track.enactMotion(motions[0][0])
+        easy_track.enactMotion(motions[0][0], {"from": owner})
 
 
 def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factory_stub):
@@ -257,7 +294,9 @@ def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factor
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -290,7 +329,7 @@ def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factor
     )
 
     with reverts("UNEXPECTED_EVM_SCRIPT"):
-        easy_track.enactMotion(motions[0][0])
+        easy_track.enactMotion(motions[0][0], {"from": owner})
 
 
 def test_enact_motion(
@@ -300,7 +339,9 @@ def test_enact_motion(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -319,7 +360,7 @@ def test_enact_motion(
     chain.sleep(constants.MIN_MOTION_DURATION + 1)
 
     assert evm_script_executor_stub.evmScript() == "0x"
-    tx = easy_track.enactMotion(motions[0][0])
+    tx = easy_track.enactMotion(motions[0][0], {"from": owner})
     assert len(easy_track.getMotions()) == 0
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
@@ -328,9 +369,9 @@ def test_enact_motion(
     assert evm_script_executor_stub.evmScript() == evm_script
 
 
-def test_object_to_motion_motion_not_found(easy_track):
+def test_object_to_motion_motion_not_found(owner, easy_track):
     with reverts("MOTION_NOT_FOUND"):
-        easy_track.objectToMotion(1)
+        easy_track.objectToMotion(1, {"from": owner})
 
 
 def test_object_to_motion_multiple_times(
@@ -343,7 +384,9 @@ def test_object_to_motion_multiple_times(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -357,7 +400,7 @@ def test_object_to_motion_multiple_times(
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     # send objection multiple times
     easy_track.objectToMotion(1, {"from": ldo_holders[0]})
@@ -375,7 +418,9 @@ def test_object_to_motion_not_ldo_holder(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -389,7 +434,7 @@ def test_object_to_motion_not_ldo_holder(
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     # send objection from user without ldo
     assert ldo_token.balanceOf(stranger) == 0
@@ -407,7 +452,9 @@ def test_send_objection_by_tokens_holder(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -421,7 +468,7 @@ def test_send_objection_by_tokens_holder(
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     # send objection from ldo holder
     tx = easy_track.objectToMotion(1, {"from": ldo_holders[0]})
@@ -453,7 +500,9 @@ def test_send_objection_rejected(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -467,7 +516,7 @@ def test_send_objection_rejected(
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     # send objections to pass threshold
     easy_track.objectToMotion(1, {"from": ldo_holders[0]})  # 0.2 % objections
@@ -496,7 +545,9 @@ def test_can_object_to_motion(
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -510,7 +561,7 @@ def test_can_object_to_motion(
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     assert not easy_track.canObjectToMotion(1, stranger)
     assert easy_track.canObjectToMotion(1, ldo_holders[0])
@@ -518,13 +569,15 @@ def test_can_object_to_motion(
     assert not easy_track.canObjectToMotion(1, ldo_holders[0])
 
 
-def test_cancel_motions_in_random_order(easy_track, evm_script_factory_stub):
+def test_cancel_motions_in_random_order(owner, easy_track, evm_script_factory_stub):
     # add evm script factory to easy track
     permissions = (
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
     )
-    easy_track.addEVMScriptFactory(evm_script_factory_stub, permissions)
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": owner}
+    )
     evm_script = encode_call_script(
         [
             (
@@ -538,9 +591,9 @@ def test_cancel_motions_in_random_order(easy_track, evm_script_factory_stub):
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motions
-    easy_track.createMotion(evm_script_factory_stub, b"")
-    easy_track.createMotion(evm_script_factory_stub, b"")
-    easy_track.createMotion(evm_script_factory_stub, b"")
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     motions = easy_track.getMotions()
     assert len(motions) == 3
@@ -548,18 +601,18 @@ def test_cancel_motions_in_random_order(easy_track, evm_script_factory_stub):
     assert motions[1][0] == 2
     assert motions[2][0] == 3
 
-    easy_track.cancelMotion(2)
+    easy_track.cancelMotion(2, {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 2
     assert motions[0][0] == 1
     assert motions[1][0] == 3
 
-    easy_track.cancelMotion(1)
+    easy_track.cancelMotion(1, {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
     assert motions[0][0] == 3
 
-    easy_track.cancelMotion(3)
+    easy_track.cancelMotion(3, {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 0
 
@@ -570,7 +623,13 @@ def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
 
 
 def test_set_evm_script_executor_called_by_owner(owner, ldo_token, evm_script_executor):
-    easy_track = owner.deploy(EasyTrack, ldo_token)
+    logic = owner.deploy(EasyTrack)
+    proxy = owner.deploy(
+        ContractProxy, logic, logic.__EasyTrack_init.encode_input(ldo_token)
+    )
+    assert proxy.implementation() == logic
+    easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
+
     assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
     easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
     assert easy_track.evmScriptExecutor() == evm_script_executor

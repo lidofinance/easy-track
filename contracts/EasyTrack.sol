@@ -7,16 +7,19 @@ import "./MotionSettings.sol";
 import "./EvmScriptExecutor.sol";
 import "./EVMScriptFactoriesRegistry.sol";
 import "./interfaces/IEVMScriptFactory.sol";
+import "./OwnableUpgradable.sol";
+import "./EasyTrackStorage.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-interface IMiniMeToken {
-    function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);
-
-    function totalSupplyAt(uint256 _blockNumber) external view returns (uint256);
-}
-
-contract EasyTrack is Ownable, MotionSettings, EVMScriptFactoriesRegistry {
+contract EasyTrack is
+    Initializable,
+    EasyTrackStorage,
+    UUPSUpgradeable,
+    OwnableUpgradeable,
+    MotionSettings,
+    EVMScriptFactoriesRegistry
+{
     event MotionCreated(
         uint256 indexed _motionId,
         address _creator,
@@ -35,20 +38,6 @@ contract EasyTrack is Ownable, MotionSettings, EVMScriptFactoriesRegistry {
     event MotionEnacted(uint256 indexed _motionId);
     event EVMScriptExecutorChanged(address indexed _evmScriptExecutor);
 
-    struct Motion {
-        uint256 id;
-        address evmScriptFactory;
-        address creator;
-        uint256 duration;
-        uint256 startDate;
-        uint256 snapshotBlock;
-        uint256 objectionsThreshold;
-        uint256 objectionsAmount;
-        uint256 objectionsAmountPct;
-        bytes32 evmScriptHash;
-        bytes evmScriptCallData;
-    }
-
     string private constant ERROR_ALREADY_OBJECTED = "ALREADY_OBJECTED";
     string private constant ERROR_NOT_ENOUGH_BALANCE = "NOT_ENOUGH_BALANCE";
     string private constant ERROR_NOT_CREATOR = "NOT_CREATOR";
@@ -57,15 +46,9 @@ contract EasyTrack is Ownable, MotionSettings, EVMScriptFactoriesRegistry {
     string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
     string private constant ERROR_MOTIONS_LIMIT_REACHED = "MOTIONS_LIMIT_REACHED";
 
-    IMiniMeToken public governanceToken;
-    EVMScriptExecutor public evmScriptExecutor;
-
-    Motion[] public motions;
-    uint256 private lastMotionId;
-    mapping(uint256 => uint256) private motionIndicesByMotionId;
-    mapping(uint256 => mapping(address => bool)) objections;
-
-    constructor(address _governanceToken) {
+    function __EasyTrack_init(address _governanceToken) public initializer {
+        __Ownable_init();
+        EasyTrackStorage.__EasyTrackStorage_init();
         governanceToken = IMiniMeToken(_governanceToken);
     }
 
@@ -173,6 +156,8 @@ contract EasyTrack is Ownable, MotionSettings, EVMScriptFactoriesRegistry {
     {
         return motions[motionIndicesByMotionId[_motionId] - 1];
     }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
 
     modifier motionExists(uint256 _motionId) {
         require(motionIndicesByMotionId[_motionId] > 0, ERROR_MOTION_NOT_FOUND);

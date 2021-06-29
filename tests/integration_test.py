@@ -1,5 +1,7 @@
 from brownie.network import Chain
 from brownie import (
+    Contract,
+    ContractProxy,
     TopUpLegoProgram,
     EasyTrack,
     EVMScriptExecutor,
@@ -20,6 +22,7 @@ import constants
 
 def test_node_operators_easy_track(
     owner,
+    stranger,
     voting,
     agent,
     token_manager,
@@ -30,11 +33,26 @@ def test_node_operators_easy_track(
     chain = Chain()
 
     # deploy easy track
-    easy_track = owner.deploy(EasyTrack, ldo_token)
+    easy_track_logic = owner.deploy(EasyTrack)
+    easy_track_proxy = owner.deploy(
+        ContractProxy,
+        easy_track_logic,
+        easy_track_logic.__EasyTrack_init.encode_input(ldo_token),
+    )
+    easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-    evm_script_executor = owner.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track
+
+    evm_script_executor_logic = owner.deploy(EVMScriptExecutor)
+    evm_script_executor_proxy = owner.deploy(
+        ContractProxy,
+        evm_script_executor_logic,
+        evm_script_executor_logic.__EVMScriptExecutor_init.encode_input(
+            constants.CALLS_SCRIPT, easy_track
+        ),
+    )
+    evm_script_executor = Contract.from_abi(
+        "EVMScriptExecutorProxied", evm_script_executor_proxy, EVMScriptExecutor.abi
     )
 
     easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
@@ -187,7 +205,7 @@ def test_node_operators_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0], {"from": stranger})
 
     # validate that motion was executed correctly
     motions = easy_track.getMotions()
@@ -200,6 +218,7 @@ def test_node_operators_easy_track(
 
 def test_reward_programs_easy_track(
     owner,
+    stranger,
     agent,
     voting,
     finance,
@@ -210,11 +229,26 @@ def test_reward_programs_easy_track(
     chain = Chain()
 
     # deploy easy track
-    easy_track = owner.deploy(EasyTrack, ldo_token)
+    easy_track_logic = owner.deploy(EasyTrack)
+    easy_track_proxy = owner.deploy(
+        ContractProxy,
+        easy_track_logic,
+        easy_track_logic.__EasyTrack_init.encode_input(ldo_token),
+    )
+    easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-    evm_script_executor = owner.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track
+
+    evm_script_executor_logic = owner.deploy(EVMScriptExecutor)
+    evm_script_executor_proxy = owner.deploy(
+        ContractProxy,
+        evm_script_executor_logic,
+        evm_script_executor_logic.__EVMScriptExecutor_init.encode_input(
+            constants.CALLS_SCRIPT, easy_track
+        ),
+    )
+    evm_script_executor = Contract.from_abi(
+        "EVMScriptExecutorProxied", evm_script_executor_proxy, EVMScriptExecutor.abi
     )
 
     easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
@@ -345,7 +379,7 @@ def test_reward_programs_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0], {"from": stranger})
     assert len(easy_track.getMotions()) == 0
 
     reward_programs = reward_programs_registry.getRewardPrograms()
@@ -365,7 +399,7 @@ def test_reward_programs_easy_track(
 
     assert ldo_token.balanceOf(reward_program) == 0
 
-    easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0], {"from": stranger})
 
     assert len(easy_track.getMotions()) == 0
     assert ldo_token.balanceOf(reward_program) == 5e18
@@ -382,13 +416,14 @@ def test_reward_programs_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0], {"from": stranger})
     assert len(easy_track.getMotions()) == 0
     assert len(reward_programs_registry.getRewardPrograms()) == 0
 
 
 def test_lego_easy_track(
     owner,
+    stranger,
     agent,
     finance,
     ldo_token,
@@ -401,11 +436,26 @@ def test_lego_easy_track(
     chain = Chain()
 
     # deploy easy track
-    easy_track = owner.deploy(EasyTrack, ldo_token)
+    easy_track_logic = owner.deploy(EasyTrack)
+    easy_track_proxy = owner.deploy(
+        ContractProxy,
+        easy_track_logic,
+        easy_track_logic.__EasyTrack_init.encode_input(ldo_token),
+    )
+    easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-    evm_script_executor = owner.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track
+
+    evm_script_executor_logic = owner.deploy(EVMScriptExecutor)
+    evm_script_executor_proxy = owner.deploy(
+        ContractProxy,
+        evm_script_executor_logic,
+        evm_script_executor_logic.__EVMScriptExecutor_init.encode_input(
+            constants.CALLS_SCRIPT, easy_track
+        ),
+    )
+    evm_script_executor = Contract.from_abi(
+        "EVMScriptExecutorProxied", evm_script_executor_proxy, EVMScriptExecutor.abi
     )
 
     easy_track.setEvmScriptExecutor(evm_script_executor, {"from": owner})
@@ -508,7 +558,7 @@ def test_lego_easy_track(
     assert steth_token.balanceOf(lego_program) == 0
     assert lego_program.balance() == 100 * 10 ** 18
 
-    easy_track.enactMotion(motions[0][0])
+    easy_track.enactMotion(motions[0][0], {"from": stranger})
 
     assert len(easy_track.getMotions()) == 0
     assert ldo_token.balanceOf(lego_program) == ldo_amount

@@ -5,6 +5,9 @@ pragma solidity 0.8.4;
 
 import "./TrustedCaller.sol";
 
+import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "./OwnableUpgradable.sol";
+
 interface ICallsScript {
     function execScript(
         bytes memory _script,
@@ -21,20 +24,28 @@ library UnstructuredStorageSlim {
     }
 }
 
-contract EVMScriptExecutor is TrustedCaller {
+contract EVMScriptExecutor is UUPSUpgradeable, OwnableUpgradeable {
     using UnstructuredStorageSlim for bytes32;
 
     event ScriptExecuted(address indexed _caller, bytes _evmScript);
+    event Initialized(address _callsScript, address _allowedCaller);
 
     // keccak256("aragonOS.initializable.initializationBlock")
     bytes32 internal constant INITIALIZATION_BLOCK_POSITION =
         0xebb05b386a8d34882b8711d156f463690983dc47815980fb82aeeff1aa43579e;
 
     address public callsScript;
+    address public trustedCaller;
 
-    constructor(address _callsScript, address _allowedCaller) TrustedCaller(_allowedCaller) {
+    function __EVMScriptExecutor_init(address _callsScript, address _allowedCaller)
+        public
+        initializer
+    {
+        __Ownable_init();
         INITIALIZATION_BLOCK_POSITION.setStorageUint256(block.number);
         callsScript = _callsScript;
+        trustedCaller = _allowedCaller;
+        emit Initialized(_callsScript, _allowedCaller);
     }
 
     function executeEVMScript(bytes memory _evmScript)
@@ -60,5 +71,12 @@ contract EVMScriptExecutor is TrustedCaller {
         }
         emit ScriptExecuted(msg.sender, _evmScript);
         return output;
+    }
+
+    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+
+    modifier onlyTrustedCaller(address _caller) {
+        require(_caller == trustedCaller, "CALLER_IS_FORBIDDEN");
+        _;
     }
 }

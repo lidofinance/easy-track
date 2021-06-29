@@ -5,18 +5,14 @@ pragma solidity 0.8.4;
 
 import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
+import "./EasyTrackStorage.sol";
+import "./OwnableUpgradable.sol";
 
-import "@openzeppelin/contracts/access/Ownable.sol";
-
-contract EVMScriptFactoriesRegistry is Ownable {
+contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
     using EVMScriptPermissions for bytes;
 
     event EVMScriptFactoryAdded(address indexed _evmScriptFactory, bytes _permissions);
     event EVMScriptFactoryRemoved(address indexed _evmScriptFactory);
-
-    address[] public evmScriptFactories;
-    mapping(address => uint256) private evmScriptFactoryIndices;
-    mapping(address => bytes) public evmScriptFactoryPermissions;
 
     function addEVMScriptFactory(address _evmScriptFactory, bytes memory _permissions)
         external
@@ -44,6 +40,11 @@ contract EVMScriptFactoriesRegistry is Ownable {
         delete evmScriptFactoryIndices[_evmScriptFactory];
         delete evmScriptFactoryPermissions[_evmScriptFactory];
         emit EVMScriptFactoryRemoved(_evmScriptFactory);
+    }
+
+    function __EVMScriptFactoriesRegistry_init() public virtual initializer {
+        __Ownable_init();
+        EasyTrackStorage.__EasyTrackStorage_init();
     }
 
     function getEVMScriptFactories() external view returns (address[] memory) {

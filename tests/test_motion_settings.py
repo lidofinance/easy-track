@@ -6,6 +6,7 @@ import constants
 def test_deploy(owner):
     "Must deploy MotionsRegistry contract with correct params"
     contract = owner.deploy(MotionSettings)
+    contract.__MotionSettings_init({"from": owner})
 
     # constants
     assert contract.MAX_MOTIONS_LIMIT() == constants.MAX_MOTIONS_LIMIT
