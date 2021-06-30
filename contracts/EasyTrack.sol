@@ -4,23 +4,16 @@
 pragma solidity 0.8.4;
 
 import "./MotionSettings.sol";
-import "./EasyTrackStorage.sol";
-import "./OwnableUpgradeable.sol";
 import "./EVMScriptFactoriesRegistry.sol";
 
-import "./interfaces/IEVMScriptFactory.sol";
 import "./interfaces/IEVMScriptExecutor.sol";
 
-import "@openzeppelin/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.1.0/contracts/proxy/utils/UUPSUpgradeable.sol";
 
-contract EasyTrack is
-    Initializable,
-    EasyTrackStorage,
-    UUPSUpgradeable,
-    OwnableUpgradeable,
-    MotionSettings,
-    EVMScriptFactoriesRegistry
-{
+contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistry {
+    // -------------
+    // EVENTS
+    // -------------
     event MotionCreated(
         uint256 indexed _motionId,
         address _creator,
@@ -39,6 +32,9 @@ contract EasyTrack is
     event MotionEnacted(uint256 indexed _motionId);
     event EVMScriptExecutorChanged(address indexed _evmScriptExecutor);
 
+    // -------------
+    // ERRORS
+    // -------------
     string private constant ERROR_ALREADY_OBJECTED = "ALREADY_OBJECTED";
     string private constant ERROR_NOT_ENOUGH_BALANCE = "NOT_ENOUGH_BALANCE";
     string private constant ERROR_NOT_CREATOR = "NOT_CREATOR";
@@ -47,14 +43,19 @@ contract EasyTrack is
     string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
     string private constant ERROR_MOTIONS_LIMIT_REACHED = "MOTIONS_LIMIT_REACHED";
 
-    function __EasyTrack_init(address _governanceToken) public initializer {
-        __Ownable_init();
-        EasyTrackStorage.__EasyTrackStorage_init();
-        governanceToken = IMiniMeToken(_governanceToken);
+    // -------------
+    // INITIALIZER
+    // -------------
+    function __EasyTrack_init(address _governanceToken, address _admin) public initializer {
+        __EasyTrackStorage_init(_governanceToken, _admin);
     }
 
+    // ------------------
+    // EXTERNAL METHODS
+    // ------------------
     function createMotion(address _evmScriptFactory, bytes memory _evmScriptCallData)
         external
+        whenNotPaused
         returns (uint256 _newMotionId)
     {
         bytes memory evmScript =
@@ -93,7 +94,10 @@ contract EasyTrack is
         emit MotionCanceled(_motionId);
     }
 
-    function enactMotion(uint256 _motionId, bytes memory _evmScriptCallData) external {
+    function enactMotion(uint256 _motionId, bytes memory _evmScriptCallData)
+        external
+        whenNotPaused
+    {
         Motion storage motion = _getMotion(_motionId);
         require(motion.startDate + motion.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
 
@@ -127,13 +131,24 @@ contract EasyTrack is
         }
     }
 
+    function pause() external whenNotPaused onlyRole(PAUSE_ROLE) {
+        _pause();
+    }
+
+    function unpause() external whenPaused onlyRole(UNPAUSE_ROLE) {
+        _unpause();
+    }
+
     function canObjectToMotion(uint256 _motionId, address _objector) external view returns (bool) {
         Motion storage motion = _getMotion(_motionId);
         uint256 balance = governanceToken.balanceOfAt(_objector, motion.snapshotBlock);
         return balance > 0 && !objections[_motionId][_objector];
     }
 
-    function setEVMScriptExecutor(address _evmScriptExecutor) external onlyOwner {
+    function setEVMScriptExecutor(address _evmScriptExecutor)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         evmScriptExecutor = IEVMScriptExecutor(_evmScriptExecutor);
     }
 
@@ -164,7 +179,11 @@ contract EasyTrack is
         return motions[motionIndicesByMotionId[_motionId] - 1];
     }
 
-    function _authorizeUpgrade(address newImplementation) internal override onlyOwner {}
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {}
 
     modifier motionExists(uint256 _motionId) {
         require(motionIndicesByMotionId[_motionId] > 0, ERROR_MOTION_NOT_FOUND);

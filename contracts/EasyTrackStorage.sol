@@ -3,8 +3,10 @@
 
 pragma solidity 0.8.4;
 
-import "@openzeppelin/contracts/proxy/utils/Initializable.sol";
 import "./interfaces/IEVMScriptExecutor.sol";
+
+import "OpenZeppelin/openzeppelin-contracts-upgradeable@4.1.0/contracts/access/AccessControlUpgradeable.sol";
+import "OpenZeppelin/openzeppelin-contracts-upgradeable@4.1.0/contracts/security/PausableUpgradeable.sol";
 
 interface IMiniMeToken {
     function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);
@@ -63,7 +65,20 @@ contract EVMScriptFactoriesStorage {
     mapping(address => bytes) public evmScriptFactoryPermissions;
 }
 
-contract EasyTrackStorage is Initializable, MotionSettingsStorage, EVMScriptFactoriesStorage {
+contract EasyTrackStorage is
+    Initializable,
+    PausableUpgradeable,
+    AccessControlUpgradeable,
+    MotionSettingsStorage,
+    EVMScriptFactoriesStorage
+{
+    // -------------
+    // ROLES
+    // -------------
+    bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
+    bytes32 public constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
+    bytes32 public constant CANCEL_ROLE = keccak256("CANCEL_ROLE");
+
     Motion[] public motions;
     uint256 internal lastMotionId;
 
@@ -73,7 +88,18 @@ contract EasyTrackStorage is Initializable, MotionSettingsStorage, EVMScriptFact
     mapping(uint256 => uint256) internal motionIndicesByMotionId;
     mapping(uint256 => mapping(address => bool)) objections;
 
-    function __EasyTrackStorage_init() public virtual initializer {
-        MotionSettingsStorage.__MotionsStorage_init();
+    function __EasyTrackStorage_init(address _governanceToken, address _admin)
+        public
+        virtual
+        initializer
+    {
+        __Pausable_init();
+        __AccessControl_init();
+        __MotionsStorage_init();
+        _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+        _setupRole(PAUSE_ROLE, _admin);
+        _setupRole(UNPAUSE_ROLE, _admin);
+        _setupRole(CANCEL_ROLE, _admin);
+        governanceToken = IMiniMeToken(_governanceToken);
     }
 }

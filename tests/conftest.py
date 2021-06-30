@@ -66,26 +66,26 @@ def lego_program(accounts):
 
 
 @pytest.fixture(scope="function")
-def motion_settings(owner):
+def motion_settings(owner, voting, ldo_token):
     contract = owner.deploy(MotionSettings)
-    contract.__MotionSettings_init({"from": owner})
+    contract.__EasyTrackStorage_init(ldo_token, voting, {"from": owner})
     return contract
 
 
 @pytest.fixture(scope="function")
-def evm_script_factories_registry(owner):
+def evm_script_factories_registry(owner, voting, ldo_token):
     contract = owner.deploy(EVMScriptFactoriesRegistry)
-    contract.__EVMScriptFactoriesRegistry_init({"from": owner})
+    contract.__EasyTrackStorage_init(ldo_token, voting, {"from": owner})
     return contract
 
 
 @pytest.fixture(scope="function")
-def easy_track(owner, ldo_token):
+def easy_track(owner, ldo_token, voting):
     logic = owner.deploy(EasyTrack)
     proxy = owner.deploy(
         ContractProxy,
         logic,
-        logic.__EasyTrack_init.encode_input(ldo_token),
+        logic.__EasyTrack_init.encode_input(ldo_token, voting),
     )
     return Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
@@ -210,8 +210,8 @@ def finance(interface):
 
 
 @pytest.fixture(scope="function", autouse=True)
-def init(owner, easy_track, evm_script_executor_stub):
-    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": owner})
+def init(voting, easy_track, evm_script_executor_stub):
+    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
 
 
 def reset_balance(ldo_token, account):

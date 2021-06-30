@@ -6,6 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.1.0",
+    "@openzeppelin/contracts-upgradeable": "^4.1.0",
     "ethlint": "^1.2.5",
     "husky": "^6.0.0",
     "prettier": "^2.3.0",
@@ -15,11 +16,15 @@
   "scripts": {
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
     "lint:check": "prettier --check **/*.sol **/*.json",
-    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose"
+    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",
+    "postinstall": "node postinstall.js"
   },
   "husky": {
     "hooks": {
       "pre-commit": "yarn lint:fix"
     }
+  },
+  "devDependencies": {
+    "recursive-copy": "^2.0.13"
   }
 }

@@ -6,9 +6,8 @@ pragma solidity 0.8.4;
 import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 import "./EasyTrackStorage.sol";
-import "./OwnableUpgradeable.sol";
 
-contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
+contract EVMScriptFactoriesRegistry is EasyTrackStorage {
     using EVMScriptPermissions for bytes;
 
     event EVMScriptFactoryAdded(address indexed _evmScriptFactory, bytes _permissions);
@@ -16,7 +15,7 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
 
     function addEVMScriptFactory(address _evmScriptFactory, bytes memory _permissions)
         external
-        onlyOwner
+        onlyRole(DEFAULT_ADMIN_ROLE)
     {
         require(_permissions.isValidPermissions(), "INVALID_PERMISSIONS");
         require(!_isEVMScriptFactory(_evmScriptFactory), "EVM_SCRIPT_FACTORY_ALREADY_ADDED");
@@ -26,7 +25,10 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
         emit EVMScriptFactoryAdded(_evmScriptFactory, _permissions);
     }
 
-    function removeEVMScriptFactory(address _evmScriptFactory) external onlyOwner {
+    function removeEVMScriptFactory(address _evmScriptFactory)
+        external
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {
         uint256 index = _getEVMScriptFactoryIndex(_evmScriptFactory);
         uint256 lastIndex = evmScriptFactories.length - 1;
 
@@ -40,11 +42,6 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage, OwnableUpgradeable {
         delete evmScriptFactoryIndices[_evmScriptFactory];
         delete evmScriptFactoryPermissions[_evmScriptFactory];
         emit EVMScriptFactoryRemoved(_evmScriptFactory);
-    }
-
-    function __EVMScriptFactoriesRegistry_init() public virtual initializer {
-        __Ownable_init();
-        EasyTrackStorage.__EasyTrackStorage_init();
     }
 
     function getEVMScriptFactories() external view returns (address[] memory) {
