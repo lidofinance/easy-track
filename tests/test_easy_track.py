@@ -283,7 +283,9 @@ def test_enact_motion_motion_not_passed(owner, easy_track, evm_script_factory_st
 
     with reverts("MOTION_NOT_PASSED"):
         easy_track.enactMotion(
-            motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": owner}
+            motions[0][0],
+            tx.events["MotionCreated"]["_evmScriptCallData"],
+            {"from": owner},
         )
 
 
@@ -309,7 +311,7 @@ def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factor
         )
     )
     assert len(easy_track.getMotions()) == 0
-    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
@@ -318,17 +320,23 @@ def test_enact_motion_unexpected_evm_script(owner, easy_track, evm_script_factor
 
     # replace evm script with different params
     # to change evm script hash
-    wrong_evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input("0x001122"),
-            )
-        ]
+    evm_script_factory_stub.setEVMScript(
+        encode_call_script(
+            [
+                (
+                    evm_script_factory_stub.address,
+                    evm_script_factory_stub.setEVMScript.encode_input("0x001122"),
+                )
+            ]
+        )
     )
 
     with reverts("UNEXPECTED_EVM_SCRIPT"):
-        easy_track.enactMotion(motions[0][0], wrong_evm_script, {"from": owner})
+        easy_track.enactMotion(
+            motions[0][0],
+            tx.events["MotionCreated"]["_evmScriptCallData"],
+            {"from": owner},
+        )
 
 
 def test_enact_motion(
@@ -360,7 +368,7 @@ def test_enact_motion(
 
     assert evm_script_executor_stub.evmScript() == "0x"
     tx = easy_track.enactMotion(
-        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": owner}
+        motions[0][0], tx.events["MotionCreated"]["_evmScriptCallData"], {"from": owner}
     )
     assert len(easy_track.getMotions()) == 0
     assert len(tx.events) == 1

@@ -55,72 +55,81 @@ contract EasyTrack is
 
     function createMotion(address _evmScriptFactory, bytes memory _evmScriptCallData)
         external
-        returns (uint256 _motionId)
+        returns (uint256 _newMotionId)
     {
         bytes memory evmScript =
             _createEVMScript(_evmScriptFactory, msg.sender, _evmScriptCallData);
         require(motions.length < motionsCountLimit, ERROR_MOTIONS_LIMIT_REACHED);
 
-        Motion storage m = motions.push();
-        _motionId = ++lastMotionId;
+        Motion storage newMotion = motions.push();
+        _newMotionId = ++lastMotionId;
 
-        m.id = _motionId;
-        m.creator = msg.sender;
-        m.startDate = block.timestamp;
-        m.snapshotBlock = block.number;
+        newMotion.id = _newMotionId;
+        newMotion.creator = msg.sender;
+        newMotion.startDate = block.timestamp;
+        newMotion.snapshotBlock = block.number;
 
-        m.duration = motionDuration;
-        m.objectionsThreshold = objectionsThreshold;
+        newMotion.duration = motionDuration;
+        newMotion.objectionsThreshold = objectionsThreshold;
 
-        m.evmScriptFactory = _evmScriptFactory;
-        m.evmScriptHash = keccak256(evmScript);
+        newMotion.evmScriptFactory = _evmScriptFactory;
+        newMotion.evmScriptHash = keccak256(evmScript);
 
-        motionIndicesByMotionId[_motionId] = motions.length;
+        motionIndicesByMotionId[_newMotionId] = motions.length;
 
-        emit MotionCreated(_motionId, msg.sender, _evmScriptFactory, _evmScriptCallData, evmScript);
+        emit MotionCreated(
+            _newMotionId,
+            msg.sender,
+            _evmScriptFactory,
+            _evmScriptCallData,
+            evmScript
+        );
     }
 
     function cancelMotion(uint256 _motionId) external {
-        Motion storage m = _getMotion(_motionId);
-        require(m.creator == msg.sender, ERROR_NOT_CREATOR);
+        Motion storage motion = _getMotion(_motionId);
+        require(motion.creator == msg.sender, ERROR_NOT_CREATOR);
         _deleteMotion(_motionId);
         emit MotionCanceled(_motionId);
     }
 
-    function enactMotion(uint256 _motionId, bytes memory _evmScript) external {
-        Motion storage m = _getMotion(_motionId);
-        require(m.startDate + m.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
+    function enactMotion(uint256 _motionId, bytes memory _evmScriptCallData) external {
+        Motion storage motion = _getMotion(_motionId);
+        require(motion.startDate + motion.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
 
-        require(m.evmScriptHash == keccak256(_evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
+        bytes memory evmScript =
+            _createEVMScript(motion.evmScriptFactory, motion.creator, _evmScriptCallData);
 
-        evmScriptExecutor.executeEVMScript(_evmScript);
+        require(motion.evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
+
+        evmScriptExecutor.executeEVMScript(evmScript);
         _deleteMotion(_motionId);
         emit MotionEnacted(_motionId);
     }
 
     function objectToMotion(uint256 _motionId) external {
-        Motion storage m = _getMotion(_motionId);
+        Motion storage motion = _getMotion(_motionId);
         require(!objections[_motionId][msg.sender], ERROR_ALREADY_OBJECTED);
         objections[_motionId][msg.sender] = true;
 
-        uint256 balance = governanceToken.balanceOfAt(msg.sender, m.snapshotBlock);
+        uint256 balance = governanceToken.balanceOfAt(msg.sender, motion.snapshotBlock);
         require(balance > 0, ERROR_NOT_ENOUGH_BALANCE);
 
-        m.objectionsAmount += balance;
-        uint256 totalSupply = governanceToken.totalSupplyAt(m.snapshotBlock);
-        m.objectionsAmountPct = (10000 * m.objectionsAmount) / totalSupply;
+        motion.objectionsAmount += balance;
+        uint256 totalSupply = governanceToken.totalSupplyAt(motion.snapshotBlock);
+        motion.objectionsAmountPct = (10000 * motion.objectionsAmount) / totalSupply;
 
         emit MotionObjected(_motionId, msg.sender, balance, totalSupply);
 
-        if (m.objectionsAmountPct > m.objectionsThreshold) {
+        if (motion.objectionsAmountPct > motion.objectionsThreshold) {
             _deleteMotion(_motionId);
             emit MotionRejected(_motionId);
         }
     }
 
     function canObjectToMotion(uint256 _motionId, address _objector) external view returns (bool) {
-        Motion storage m = _getMotion(_motionId);
-        uint256 balance = governanceToken.balanceOfAt(_objector, m.snapshotBlock);
+        Motion storage motion = _getMotion(_motionId);
+        uint256 balance = governanceToken.balanceOfAt(_objector, motion.snapshotBlock);
         return balance > 0 && !objections[_motionId][_objector];
     }
 

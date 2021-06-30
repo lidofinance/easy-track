@@ -197,7 +197,9 @@ def test_node_operators_easy_track(
     chain.sleep(48 * 60 * 60 + 100)
 
     easy_track.enactMotion(
-        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+        motions[0][0],
+        tx.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
     )
 
     # validate that motion was executed correctly
@@ -364,7 +366,9 @@ def test_reward_programs_easy_track(
     chain.sleep(48 * 60 * 60 + 100)
 
     easy_track.enactMotion(
-        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+        motions[0][0],
+        tx.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
 
@@ -386,7 +390,9 @@ def test_reward_programs_easy_track(
     assert ldo_token.balanceOf(reward_program) == 0
 
     easy_track.enactMotion(
-        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+        motions[0][0],
+        tx.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
     )
 
     assert len(easy_track.getMotions()) == 0
@@ -405,7 +411,9 @@ def test_reward_programs_easy_track(
     chain.sleep(48 * 60 * 60 + 100)
 
     easy_track.enactMotion(
-        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+        motions[0][0],
+        tx.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
     assert len(reward_programs_registry.getRewardPrograms()) == 0
@@ -540,7 +548,9 @@ def test_lego_easy_track(
     assert lego_program.balance() == 100 * 10 ** 18
 
     easy_track.enactMotion(
-        motions[0][0], tx.events["MotionCreated"]["_evmScript"], {"from": stranger}
+        motions[0][0],
+        tx.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
     )
 
     assert len(easy_track.getMotions()) == 0
