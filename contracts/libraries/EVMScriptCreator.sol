@@ -9,15 +9,15 @@ library EVMScriptCreator {
     function createEVMScript(
         address _to,
         bytes4 _methodId,
-        bytes memory _methodCallData
-    ) external pure returns (bytes memory _commands) {
+        bytes memory _evmScriptCallData
+    ) internal pure returns (bytes memory _commands) {
         return
             abi.encodePacked(
                 SPEC_ID,
                 _to,
-                uint32(_methodCallData.length) + 4,
+                uint32(_evmScriptCallData.length) + 4,
                 _methodId,
-                _methodCallData
+                _evmScriptCallData
             );
     }
 
@@ -25,7 +25,7 @@ library EVMScriptCreator {
         address _to,
         bytes4 _methodId,
         bytes[] memory _evmScriptCallData
-    ) external pure returns (bytes memory _evmScript) {
+    ) internal pure returns (bytes memory _evmScript) {
         for (uint256 i = 0; i < _evmScriptCallData.length; ++i) {
             _evmScript = bytes.concat(
                 _evmScript,

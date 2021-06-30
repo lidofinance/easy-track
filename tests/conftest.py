@@ -8,10 +8,9 @@ from brownie import (
     EVMScriptFactoriesRegistry,
     EasyTrack,
     EVMScriptExecutor,
-    EVMScriptCreator,
-    EVMScriptPermissions,
+    EVMScriptCreatorWrapper,
     NodeOperatorsRegistryStub,
-    BytesUtils,
+    BytesUtilsWrapper,
     EVMScriptFactoryStub,
     EVMScriptExecutorStub,
     RewardProgramsRegistry,
@@ -135,29 +134,19 @@ def top_up_lego_program(owner, finance, lego_program):
     return owner.deploy(TopUpLegoProgram, owner, finance, lego_program)
 
 
-###############
-# LIBRARIES
-###############
-
-
-@pytest.fixture(scope="module", autouse=True)
-def evm_script_creator(accounts):
-    return accounts[0].deploy(EVMScriptCreator)
-
-
-@pytest.fixture(scope="module", autouse=True)
-def evm_script_permissions(accounts):
-    return accounts[0].deploy(EVMScriptPermissions)
-
-
-@pytest.fixture(scope="module", autouse=True)
-def bytes_utils(accounts):
-    return accounts[0].deploy(BytesUtils)
-
-
 ############
-# MOCKS
+# MOCKS AND TEST WRAPPERS
 ############
+
+
+@pytest.fixture(scope="module")
+def evm_script_creator_wrapper(accounts):
+    return accounts[0].deploy(EVMScriptCreatorWrapper)
+
+
+@pytest.fixture(scope="module")
+def bytes_utils_wrapper(accounts):
+    return accounts[0].deploy(BytesUtilsWrapper)
 
 
 @pytest.fixture(scope="function")

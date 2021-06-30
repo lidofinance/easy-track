@@ -4,14 +4,14 @@
 pragma solidity 0.8.4;
 
 library BytesUtils {
-    function bytes24At(bytes memory data, uint256 location) external pure returns (bytes24 result) {
+    function bytes24At(bytes memory data, uint256 location) internal pure returns (bytes24 result) {
         uint256 word = uint256At(data, location);
         assembly {
             result := word
         }
     }
 
-    function addressAt(bytes memory data, uint256 location) external pure returns (address result) {
+    function addressAt(bytes memory data, uint256 location) internal pure returns (address result) {
         uint256 word = uint256At(data, location);
         assembly {
             result := div(
@@ -21,7 +21,7 @@ library BytesUtils {
         }
     }
 
-    function uint32At(bytes memory _data, uint256 _location) external pure returns (uint32 result) {
+    function uint32At(bytes memory _data, uint256 _location) internal pure returns (uint32 result) {
         uint256 word = uint256At(_data, _location);
 
         assembly {
@@ -32,7 +32,7 @@ library BytesUtils {
         }
     }
 
-    function uint256At(bytes memory data, uint256 location) private pure returns (uint256 result) {
+    function uint256At(bytes memory data, uint256 location) internal pure returns (uint256 result) {
         assembly {
             result := mload(add(data, add(0x20, location)))
         }

@@ -3,7 +3,7 @@ from utils.evm_script import encode_call_script
 
 
 def test_create_evm_script_single_call(
-    evm_script_creator, node_operators_registry_stub
+    evm_script_creator_wrapper, node_operators_registry_stub
 ):
     to = node_operators_registry_stub.address
     method_id = node_operators_registry_stub.setNodeOperatorStakingLimit.signature
@@ -18,7 +18,7 @@ def test_create_evm_script_single_call(
             )
         ]
     )
-    evm_script = evm_script_creator.createEVMScript["address,bytes4,bytes"](
+    evm_script = evm_script_creator_wrapper.createEVMScript["address,bytes4,bytes"](
         to, method_id, method_call_data
     )
 
@@ -26,7 +26,7 @@ def test_create_evm_script_single_call(
 
 
 def test_create_evm_script_multiple_calls(
-    node_operator, evm_script_creator, node_operators_registry_stub
+    node_operator, evm_script_creator_wrapper, node_operators_registry_stub
 ):
     to = node_operators_registry_stub.address
     method_id = node_operators_registry_stub.setNodeOperatorStakingLimit.signature
@@ -57,7 +57,7 @@ def test_create_evm_script_multiple_calls(
             ),
         ]
     )
-    evm_script = evm_script_creator.createEVMScript["address,bytes4,bytes[]"](
+    evm_script = evm_script_creator_wrapper.createEVMScript["address,bytes4,bytes[]"](
         to, method_id, method_call_data
     )
 
