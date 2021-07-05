@@ -708,6 +708,7 @@ def test_set_evm_script_executor_called_by_owner(
 
 
 def test_pause_called_without_permissions(stranger, easy_track):
+    "Must fail with correct Access Control revert message"
     assert not easy_track.paused()
     with reverts(access_controll_revert_message(stranger, PAUSE_ROLE)):
         easy_track.pause({"from": stranger})
@@ -715,9 +716,47 @@ def test_pause_called_without_permissions(stranger, easy_track):
 
 
 def test_pause_called_with_permissions(voting, easy_track):
+    "Must pause easy track and emit Paused(account) event"
+    assert not easy_track.paused()
+    tx = easy_track.pause({"from": voting})
+    assert easy_track.paused()
+    assert len(tx.events) == 1
+    assert tx.events["Paused"]["account"] == voting
+
+
+def test_pause_called_when_paused(voting, easy_track):
+    "Must fail with error 'Pausable: paused'"
     assert not easy_track.paused()
     easy_track.pause({"from": voting})
     assert easy_track.paused()
+    with reverts("Pausable: paused"):
+        easy_track.pause({"from": voting})
+
+
+def test_unpause_called_without_permissions(voting, stranger, easy_track):
+    "Must fail with correct Access control revert message"
+    easy_track.pause({"from": voting})
+    assert easy_track.paused()
+    with reverts(access_controll_revert_message(stranger, UNPAUSE_ROLE)):
+        easy_track.unpause({"from": stranger})
+    assert easy_track.paused()
+
+
+def test_unpause_called_when_not_paused(voting, easy_track):
+    "Must fail with error 'Pausable: not paused'"
+    assert not easy_track.paused()
+    with reverts("Pausable: not paused"):
+        easy_track.unpause({"from": voting})
+
+
+def test_unpause_called_with_permissions(voting, easy_track):
+    "Must unpause easy track and emit Unpaused(account) event"
+    easy_track.pause({"from": voting})
+    assert easy_track.paused()
+    tx = easy_track.unpause({"from": voting})
+    assert not easy_track.paused()
+    assert len(tx.events) == 1
+    assert tx.events["Unpaused"]["account"] == voting
 
 
 def test_can_object_to_motion(
