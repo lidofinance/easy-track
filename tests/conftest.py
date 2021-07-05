@@ -18,6 +18,7 @@ from brownie import (
     RemoveRewardProgram,
     TopUpRewardPrograms,
     TopUpLegoProgram,
+    EVMScriptPermissionsWrapper,
 )
 import constants
 
@@ -142,6 +143,11 @@ def top_up_lego_program(owner, finance, lego_program):
 @pytest.fixture(scope="module")
 def evm_script_creator_wrapper(accounts):
     return accounts[0].deploy(EVMScriptCreatorWrapper)
+
+
+@pytest.fixture(scope="module")
+def evm_script_permissions_wrapper(accounts):
+    return accounts[0].deploy(EVMScriptPermissionsWrapper)
 
 
 @pytest.fixture(scope="module")
