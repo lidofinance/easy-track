@@ -19,4 +19,4 @@ dependencies:
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:
   solc:
-    version: 0.8.4
+    version: 0.8.6
