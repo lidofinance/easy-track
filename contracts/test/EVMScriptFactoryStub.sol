@@ -6,10 +6,14 @@ pragma solidity 0.8.4;
 import "../interfaces/IEVMScriptFactory.sol";
 
 contract EVMScriptFactoryStub is IEVMScriptFactory {
-    bool public isCalled;
+    bytes public constant DEFAULT_EVM_SCRIPT =
+        hex"00000001420b1099b9ef5baba6d92029594ef45e19a04a4a00000044ae962acf000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000001f4";
+    bytes public constant DEFAULT_PERMISSIONS =
+        hex"420b1099B9eF5baba6D92029594eF45E19A04A4Aae962acf";
+
     address public creator;
     bytes public evmScriptCallData;
-    bytes public evmScript;
+    bytes public evmScript = DEFAULT_EVM_SCRIPT;
 
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external

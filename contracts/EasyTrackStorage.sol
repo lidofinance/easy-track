@@ -27,79 +27,75 @@ struct Motion {
     bytes32 evmScriptHash;
 }
 
-contract MotionSettingsStorage is Initializable {
+contract EasyTrackStorage is Initializable, PausableUpgradeable, AccessControlUpgradeable {
+    // -------------
+    // EVENTS
+    // -------------
     event MotionDurationChanged(uint256 _motionDuration);
     event MotionsCountLimitChanged(uint256 _newMotionsCountLimit);
     event ObjectionsThresholdChanged(uint256 _newThreshold);
 
-    uint256 public constant MAX_MOTIONS_LIMIT = 24;
-    /**
-     @dev upper bound for objectionsThreshold value.
-     Stored in basis points (1% = 100)
-     */
-    uint64 public constant MAX_OBJECTIONS_THRESHOLD = 500;
-
-    /**
-     @dev lower bound for motionDuration value
-     */
-    uint64 public constant MIN_MOTION_DURATION = 48 hours;
-
-    uint256 public objectionsThreshold;
-    uint256 public motionsCountLimit;
-    uint256 public motionDuration;
-
-    function __MotionsStorage_init() internal virtual initializer {
-        objectionsThreshold = 50;
-        motionsCountLimit = MAX_MOTIONS_LIMIT;
-        motionDuration = MIN_MOTION_DURATION;
-
-        emit MotionDurationChanged(MIN_MOTION_DURATION);
-        emit MotionsCountLimitChanged(MAX_MOTIONS_LIMIT);
-        emit ObjectionsThresholdChanged(50);
-    }
-}
-
-contract EVMScriptFactoriesStorage {
-    address[] public evmScriptFactories;
-    mapping(address => uint256) internal evmScriptFactoryIndices;
-    mapping(address => bytes) public evmScriptFactoryPermissions;
-}
-
-contract EasyTrackStorage is
-    Initializable,
-    PausableUpgradeable,
-    AccessControlUpgradeable,
-    MotionSettingsStorage,
-    EVMScriptFactoriesStorage
-{
     // -------------
     // ROLES
     // -------------
+
     bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
     bytes32 public constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
     bytes32 public constant CANCEL_ROLE = keccak256("CANCEL_ROLE");
 
+    // ------------
+    // CONSTANTS
+    // ------------
+
+    /// @dev upper bound for motionsCountLimit value.
+    uint256 public constant MAX_MOTIONS_LIMIT = 24;
+
+    /// @dev upper bound for objectionsThreshold value.
+    /// Stored in basis points (1% = 100)
+    uint256 public constant MAX_OBJECTIONS_THRESHOLD = 500;
+
+    /// @dev lower bound for motionDuration value
+    uint256 public constant MIN_MOTION_DURATION = 48 hours;
+
+    // ------------
+    // MOTION SETTING VARIABLES
+    // ------------
+    uint256 public objectionsThreshold;
+    uint256 public motionsCountLimit;
+    uint256 public motionDuration;
+
+    // ------------
+    // EVM SCRIPT FACTORIES VARIABLES
+    // ------------
+    address[] public evmScriptFactories;
+    mapping(address => uint256) internal evmScriptFactoryIndices;
+    mapping(address => bytes) public evmScriptFactoryPermissions;
+
+    // ------------
+    // EASY TRACK VARIABLES
+    // ------------
     Motion[] public motions;
     uint256 internal lastMotionId;
-
     IMiniMeToken public governanceToken;
     IEVMScriptExecutor public evmScriptExecutor;
-
     mapping(uint256 => uint256) internal motionIndicesByMotionId;
-    mapping(uint256 => mapping(address => bool)) objections;
+    mapping(uint256 => mapping(address => bool)) public objections;
 
-    function __EasyTrackStorage_init(address _governanceToken, address _admin)
-        public
-        virtual
-        initializer
-    {
+    function __EasyTrackStorage_init(address _governanceToken, address _admin) public initializer {
         __Pausable_init();
         __AccessControl_init();
-        __MotionsStorage_init();
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(PAUSE_ROLE, _admin);
         _setupRole(UNPAUSE_ROLE, _admin);
         _setupRole(CANCEL_ROLE, _admin);
+
+        objectionsThreshold = 50;
+        motionsCountLimit = MAX_MOTIONS_LIMIT;
+        motionDuration = MIN_MOTION_DURATION;
         governanceToken = IMiniMeToken(_governanceToken);
+
+        emit MotionDurationChanged(MIN_MOTION_DURATION);
+        emit MotionsCountLimitChanged(MAX_MOTIONS_LIMIT);
+        emit ObjectionsThresholdChanged(50);
     }
 }

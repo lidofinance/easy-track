@@ -43,15 +43,8 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
     string private constant ERROR_MOTIONS_LIMIT_REACHED = "MOTIONS_LIMIT_REACHED";
 
-    // -------------
-    // INITIALIZER
-    // -------------
-    function __EasyTrack_init(address _governanceToken, address _admin) public initializer {
-        __EasyTrackStorage_init(_governanceToken, _admin);
-    }
-
     // ------------------
-    // EXTERNAL METHODS
+    // PUBLIC METHODS
     // ------------------
     function createMotion(address _evmScriptFactory, bytes memory _evmScriptCallData)
         external
@@ -85,13 +78,6 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
             _evmScriptCallData,
             evmScript
         );
-    }
-
-    function cancelMotion(uint256 _motionId) external {
-        Motion storage motion = _getMotion(_motionId);
-        require(motion.creator == msg.sender, ERROR_NOT_CREATOR);
-        _deleteMotion(_motionId);
-        emit MotionCanceled(_motionId);
     }
 
     function enactMotion(uint256 _motionId, bytes memory _evmScriptCallData)
@@ -131,18 +117,30 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         }
     }
 
-    function pause() external whenNotPaused onlyRole(PAUSE_ROLE) {
-        _pause();
-    }
-
-    function unpause() external whenPaused onlyRole(UNPAUSE_ROLE) {
-        _unpause();
-    }
-
-    function canObjectToMotion(uint256 _motionId, address _objector) external view returns (bool) {
+    function cancelMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
-        uint256 balance = governanceToken.balanceOfAt(_objector, motion.snapshotBlock);
-        return balance > 0 && !objections[_motionId][_objector];
+        require(motion.creator == msg.sender, ERROR_NOT_CREATOR);
+        _deleteMotion(_motionId);
+        emit MotionCanceled(_motionId);
+    }
+
+    function cancelMotions(uint256[] memory _motionIds) external onlyRole(CANCEL_ROLE) {
+        for (uint256 i = 0; i < _motionIds.length; ++i) {
+            if (motionIndicesByMotionId[_motionIds[i]] > 0) {
+                _deleteMotion(_motionIds[i]);
+                emit MotionCanceled(_motionIds[i]);
+            }
+        }
+    }
+
+    function cancelAllMotions() external onlyRole(CANCEL_ROLE) {
+        uint256 motionsCount = motions.length;
+        while (motionsCount > 0) {
+            motionsCount -= 1;
+            uint256 motionId = motions[motionsCount].id;
+            _deleteMotion(motionId);
+            emit MotionCanceled(motionId);
+        }
     }
 
     function setEVMScriptExecutor(address _evmScriptExecutor)
@@ -152,11 +150,36 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         evmScriptExecutor = IEVMScriptExecutor(_evmScriptExecutor);
     }
 
+    function pause() external whenNotPaused onlyRole(PAUSE_ROLE) {
+        _pause();
+    }
+
+    function unpause() external whenPaused onlyRole(UNPAUSE_ROLE) {
+        _unpause();
+    }
+
+    // ----------
+    // VIEWS
+    // ----------
+    function canObjectToMotion(uint256 _motionId, address _objector) external view returns (bool) {
+        Motion storage motion = _getMotion(_motionId);
+        uint256 balance = governanceToken.balanceOfAt(_objector, motion.snapshotBlock);
+        return balance > 0 && !objections[_motionId][_objector];
+    }
+
     function getMotions() external view returns (Motion[] memory) {
         return motions;
     }
 
-    function _deleteMotion(uint256 _motionId) internal {
+    function getMotion(uint256 _motionId) external view returns (Motion memory) {
+        return _getMotion(_motionId);
+    }
+
+    // -------
+    // PRIVATE METHODS
+    // -------
+
+    function _deleteMotion(uint256 _motionId) private {
         uint256 index = motionIndicesByMotionId[_motionId] - 1;
         uint256 lastIndex = motions.length - 1;
 
@@ -171,7 +194,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     function _getMotion(uint256 _motionId)
-        internal
+        private
         view
         motionExists(_motionId)
         returns (Motion storage)

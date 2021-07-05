@@ -10,17 +10,17 @@ contract MotionSettings is EasyTrackStorage {
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
 
     /**
-     @notice Set duration of new created motions.
+     @notice Sets duration of new created motions.
      Can be called only by the owner of contract.
      */
     function setMotionDuration(uint256 _motionDuration) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_motionDuration >= MIN_MOTION_DURATION, ERROR_VALUE_TOO_SMALL);
-        motionDuration = uint64(_motionDuration);
+        motionDuration = _motionDuration;
         emit MotionDurationChanged(_motionDuration);
     }
 
     /**
-     @notice Set percent of governance tokens required to reject a proposal.
+     @notice Sets percent of governance tokens required to reject a proposal.
      Can be callend only by owner of contract.
      */
     function setObjectionsThreshold(uint256 _objectionsThreshold)

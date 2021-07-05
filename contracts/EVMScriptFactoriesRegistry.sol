@@ -76,7 +76,7 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage {
         _index -= 1;
     }
 
-    function _isEVMScriptFactory(address _maybeEVMScriptFactory) internal view returns (bool) {
+    function _isEVMScriptFactory(address _maybeEVMScriptFactory) private view returns (bool) {
         return evmScriptFactoryIndices[_maybeEVMScriptFactory] > 0;
     }
 }

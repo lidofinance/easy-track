@@ -85,7 +85,7 @@ def easy_track(owner, ldo_token, voting):
     proxy = owner.deploy(
         ContractProxy,
         logic,
-        logic.__EasyTrack_init.encode_input(ldo_token, voting),
+        logic.__EasyTrackStorage_init.encode_input(ldo_token, voting),
     )
     return Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 

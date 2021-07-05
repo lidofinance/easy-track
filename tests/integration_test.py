@@ -40,7 +40,7 @@ def test_node_operators_easy_track(
     easy_track_proxy = deployer.deploy(
         ContractProxy,
         easy_track_logic,
-        easy_track_logic.__EasyTrack_init.encode_input(ldo_token, deployer),
+        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo_token, deployer),
     )
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
@@ -190,7 +190,7 @@ def test_reward_programs_easy_track(
     easy_track_proxy = deployer.deploy(
         ContractProxy,
         easy_track_logic,
-        easy_track_logic.__EasyTrack_init.encode_input(ldo_token, deployer),
+        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo_token, deployer),
     )
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
@@ -358,7 +358,7 @@ def test_lego_easy_track(
     easy_track_proxy = deployer.deploy(
         ContractProxy,
         easy_track_logic,
-        easy_track_logic.__EasyTrack_init.encode_input(ldo_token, deployer),
+        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo_token, deployer),
     )
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
