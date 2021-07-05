@@ -64,6 +64,14 @@ def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track)
         easy_track.createMotion(stranger, b"", {"from": owner})
 
 
+def test_create_motion_when_paused(voting, stranger, easy_track):
+    "Must fail with error 'Pausable: paused'"
+    easy_track.pause({"from": voting})
+    assert easy_track.paused()
+    with reverts("Pausable: paused"):
+        easy_track.createMotion(ZERO_ADDRESS, b"", {"from": stranger})
+
+
 def test_create_motion_has_no_permissions(
     voting, stranger, easy_track, evm_script_factory_stub
 ):
@@ -268,6 +276,14 @@ def test_cancel_motion(voting, stranger, easy_track, evm_script_factory_stub):
 def test_enact_motion_motion_not_found(owner, easy_track):
     with reverts("MOTION_NOT_FOUND"):
         easy_track.enactMotion(1, b"", {"from": owner})
+
+
+def test_enact_motion_when_paused(stranger, voting, easy_track):
+    "Must fail with error 'Pausable: paused'"
+    easy_track.pause({"from": voting})
+    assert easy_track.paused()
+    with reverts("Pausable: paused"):
+        easy_track.enactMotion(1, b"", {"from": stranger})
 
 
 def test_enact_motion_motion_not_passed(
