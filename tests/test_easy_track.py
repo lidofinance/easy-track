@@ -1,18 +1,5 @@
-import random
-import pytest
-import hashlib
-
 from brownie.network.state import Chain
-from brownie import (
-    Contract,
-    ContractProxy,
-    EasyTrack,
-    accounts,
-    reverts,
-    ZERO_ADDRESS,
-    web3,
-)
-from eth_abi import encode_single
+from brownie import Contract, ContractProxy, EasyTrack, reverts, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
 
 import constants
@@ -45,18 +32,30 @@ def test_deploy(owner, ldo_token, voting):
     assert easy_track.hasRole(easy_track.CANCEL_ROLE(), voting)
 
 
-def test_upgrade_to_called_by_stranger(stranger, easy_track):
-    with reverts(
-        "AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
-    ):
-        easy_track.upgradeToAndCall(ZERO_ADDRESS, "", {"from": stranger})
+def test_upgrade_to_called_without_permissions(stranger, easy_track):
+    with reverts(access_controll_revert_message(stranger)):
+        easy_track.upgradeTo(ZERO_ADDRESS, {"from": stranger})
 
 
 def test_upgrade_to(owner, voting, easy_track):
+    "Must set new implementation"
     new_logic = owner.deploy(EasyTrack)
     easy_track.upgradeTo(new_logic, {"from": voting})
     proxy = Contract.from_abi("Proxy", easy_track, ContractProxy.abi)
     assert proxy.implementation() == new_logic
+
+
+########
+# Create Motion
+########
+
+
+def test_create_motion_when_paused(voting, stranger, easy_track):
+    "Must revert with message 'Pausable: paused'"
+    easy_track.pause({"from": voting})
+    assert easy_track.paused()
+    with reverts("Pausable: paused"):
+        easy_track.createMotion(ZERO_ADDRESS, b"", {"from": stranger})
 
 
 def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track):
@@ -64,31 +63,17 @@ def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track)
         easy_track.createMotion(stranger, b"", {"from": owner})
 
 
-def test_create_motion_when_paused(voting, stranger, easy_track):
-    "Must fail with error 'Pausable: paused'"
-    easy_track.pause({"from": voting})
-    assert easy_track.paused()
-    with reverts("Pausable: paused"):
-        easy_track.createMotion(ZERO_ADDRESS, b"", {"from": stranger})
-
-
 def test_create_motion_has_no_permissions(
     voting, stranger, easy_track, evm_script_factory_stub
 ):
-    permissions = stranger.address + "aabbccdd"
+    "Must revert with message 'HAS_NO_PERMISSIONS' when evm script"
+    "tries to call method not listed in permissions"
+
+    wrong_permissions = ZERO_ADDRESS + "11111111"
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub, wrong_permissions, {"from": voting}
     )
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [
-                (
-                    evm_script_factory_stub.address,
-                    evm_script_factory_stub.setEVMScript.encode_input(b""),
-                )
-            ]
-        )
-    )
+    assert evm_script_factory_stub.DEFAULT_PERMISSIONS() != wrong_permissions
 
     with reverts("HAS_NO_PERMISSIONS"):
         easy_track.createMotion(evm_script_factory_stub, b"", {"from": stranger})
@@ -97,25 +82,14 @@ def test_create_motion_has_no_permissions(
 def test_create_motion_motions_limit_reached(
     voting, stranger, easy_track, evm_script_factory_stub
 ):
+    "Must revert with message 'MOTIONS_LIMIT_REACHED'"
     easy_track.setMotionsCountLimit(1, {"from": voting})
     assert easy_track.motionsCountLimit() == 1
 
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
-    )
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [
-                (
-                    evm_script_factory_stub.address,
-                    evm_script_factory_stub.setEVMScript.encode_input(b""),
-                )
-            ]
-        )
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
     assert len(easy_track.getMotions()) == 0
     easy_track.createMotion(evm_script_factory_stub, b"", {"from": stranger})
@@ -132,73 +106,35 @@ def test_create_motion(
 
     chain = Chain()
 
-    # add easy track factory to create motions
-    permissions = (
-        node_operators_registry_stub.address
-        + node_operators_registry_stub.setNodeOperatorStakingLimit.signature[2:]
-        + node_operators_registry_stub.address[2:]
-        + node_operators_registry_stub.getNodeOperator.signature[2:]
-    )
-
-    evm_script_calls = [
-        (
-            node_operators_registry_stub.address,
-            node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(
-                1, 200
-            ),
-        ),
-        (
-            node_operators_registry_stub.address,
-            node_operators_registry_stub.getNodeOperator.encode_input(1, False),
-        ),
-        (
-            node_operators_registry_stub.address,
-            node_operators_registry_stub.setRewardAddress.encode_input(accounts[1]),
-        ),
-    ]
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
-    assert len(easy_track.getMotions()) == 0
+    # create motion
     call_data = "0xaabbccddeeff"
-
-    # test different combinations of permissions check
-    # 1. Take first permission from list
-    evm_script_factory_stub.setEVMScript(encode_call_script([evm_script_calls[0]]))
-    easy_track.createMotion(evm_script_factory_stub, call_data, {"from": owner})
-
-    # 2. Take second permission from list
-    evm_script_factory_stub.setEVMScript(encode_call_script([evm_script_calls[1]]))
-    easy_track.createMotion(evm_script_factory_stub, call_data, {"from": owner})
-
-    # 3. has no permissions to run one of evm scripts
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [evm_script_calls[1], evm_script_calls[0], evm_script_calls[2]]
-        )
-    )
-    with reverts("HAS_NO_PERMISSIONS"):
-        easy_track.createMotion(evm_script_factory_stub, call_data, {"from": owner})
-
-    # 4. Take both permissions from the list in reverse order
-    evm_script = encode_call_script([evm_script_calls[1], evm_script_calls[0]])
-    evm_script_factory_stub.setEVMScript(evm_script)
     tx = easy_track.createMotion(evm_script_factory_stub, call_data, {"from": owner})
 
+    # validate events
     assert len(tx.events) == 1
-    assert tx.events["MotionCreated"]["_motionId"] == 3
+    assert tx.events["MotionCreated"]["_motionId"] == 1
     assert tx.events["MotionCreated"]["_creator"] == owner
     assert tx.events["MotionCreated"]["_evmScriptFactory"] == evm_script_factory_stub
     assert tx.events["MotionCreated"]["_evmScriptCallData"] == call_data
-    assert tx.events["MotionCreated"]["_evmScript"] == evm_script
+    assert (
+        tx.events["MotionCreated"]["_evmScript"]
+        == evm_script_factory_stub.DEFAULT_EVM_SCRIPT()
+    )
 
+    # validate motion data
     motions = easy_track.getMotions()
-    assert len(motions) == 3
-    new_motion = motions[-1]
+    assert len(motions) == 1
+    new_motion = motions[0]
 
-    assert new_motion[0] == 3  # id
+    assert new_motion[0] == 1  # id
     assert new_motion[1] == evm_script_factory_stub  # evmScriptFactory
     assert new_motion[2] == owner  # creator
     assert new_motion[3] == constants.MIN_MOTION_DURATION  # duration
@@ -209,7 +145,14 @@ def test_create_motion(
     )  # objectionsThreshold
     assert new_motion[7] == 0  # objectionsAmount
     assert new_motion[8] == 0  # objectionsAmountPct
-    assert new_motion[9] == web3.keccak(hexstr=evm_script).hex()  # evmScriptHash
+    assert (
+        new_motion[9] == evm_script_factory_stub.DEFAULT_EVM_SCRIPT_HASH()
+    )  # evmScriptHash
+
+
+########
+# CANCEL MOTION
+########
 
 
 def test_cancel_motion_not_found(owner, easy_track):
@@ -217,60 +160,56 @@ def test_cancel_motion_not_found(owner, easy_track):
         easy_track.cancelMotion(1, {"from": owner})
 
 
-def test_cancel_motion_not_owner(
+def test_cancel_motion_not_creator(
     owner, voting, stranger, easy_track, evm_script_factory_stub
 ):
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [
-                (
-                    evm_script_factory_stub.address,
-                    evm_script_factory_stub.setEVMScript.encode_input(b""),
-                )
-            ]
-        )
-    )
-    assert len(easy_track.getMotions()) == 0
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motion by owner
     easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     assert len(easy_track.getMotions()) == 1
+
+    # try to cancel by stranger
     with reverts("NOT_CREATOR"):
         easy_track.cancelMotion(1, {"from": stranger})
 
 
 def test_cancel_motion(voting, stranger, easy_track, evm_script_factory_stub):
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    "Must remove motion from list of active motions and emit MotionCanceled(_motionId)"
+
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [
-                (
-                    evm_script_factory_stub.address,
-                    evm_script_factory_stub.setEVMScript.encode_input(b""),
-                )
-            ]
-        )
-    )
-    assert len(easy_track.getMotions()) == 0
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motion
     easy_track.createMotion(evm_script_factory_stub, b"", {"from": stranger})
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
+    # cancel motion by same user
     tx = easy_track.cancelMotion(motions[0][0], {"from": stranger})
+
+    # validate motion was canceled
     assert len(easy_track.getMotions()) == 0
+
+    # validate event
     assert len(tx.events) == 1
     assert tx.events["MotionCanceled"]["_motionId"] == motions[0][0]
+
+
+########
+# ENACT MOTION
+########
 
 
 def test_enact_motion_motion_not_found(owner, easy_track):
@@ -286,27 +225,18 @@ def test_enact_motion_when_paused(stranger, voting, easy_track):
         easy_track.enactMotion(1, b"", {"from": stranger})
 
 
-def test_enact_motion_motion_not_passed(
+def test_enact_motion_when_motion_not_passed(
     owner, voting, easy_track, evm_script_factory_stub
 ):
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script_factory_stub.setEVMScript(
-        encode_call_script(
-            [
-                (
-                    evm_script_factory_stub.address,
-                    evm_script_factory_stub.setEVMScript.encode_input(b""),
-                )
-            ]
-        )
-    )
-    assert len(easy_track.getMotions()) == 0
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motion
     tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
@@ -322,6 +252,7 @@ def test_enact_motion_motion_not_passed(
 def test_enact_motion_unexpected_evm_script(
     owner, voting, easy_track, evm_script_factory_stub
 ):
+    # add evm script factory to create motions
     permissions = (
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
@@ -339,7 +270,9 @@ def test_enact_motion_unexpected_evm_script(
             ]
         )
     )
-    assert len(easy_track.getMotions()) == 0
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motion
     tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
@@ -347,8 +280,7 @@ def test_enact_motion_unexpected_evm_script(
     chain = Chain()
     chain.sleep(constants.MIN_MOTION_DURATION + 1)
 
-    # replace evm script with different params
-    # to change evm script hash
+    # replace evm script with different params to change evm script hash
     evm_script_factory_stub.setEVMScript(
         encode_call_script(
             [
@@ -371,40 +303,50 @@ def test_enact_motion_unexpected_evm_script(
 def test_enact_motion(
     owner, voting, easy_track, evm_script_factory_stub, evm_script_executor_stub
 ):
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    "Must remove motion from list of active motions, execute EVM script created by EVMScriptFactory"
+    "contained in created motion and emits event MotionEnacted(_moitonId)"
+
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input(b""),
-            )
-        ]
-    )
-    evm_script_factory_stub.setEVMScript(evm_script)
-    assert len(easy_track.getMotions()) == 0
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motion
     tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
+    # wait to make motion enactable
     chain = Chain()
     chain.sleep(constants.MIN_MOTION_DURATION + 1)
 
+    # validate that evm_script_executor_stub wasn't called earlier
     assert evm_script_executor_stub.evmScript() == "0x"
+
+    # enact motion
     tx = easy_track.enactMotion(
         motions[0][0], tx.events["MotionCreated"]["_evmScriptCallData"], {"from": owner}
     )
+    # validate that motion was removed from list of active motions
     assert len(easy_track.getMotions()) == 0
+
+    # validate events
     assert len(tx.events) == 1
     assert tx.events["MotionEnacted"]["_motionId"] == motions[0][0]
 
-    # validate that was passed correct evm script
-    assert evm_script_executor_stub.evmScript() == evm_script
+    # validate that was passed correct evm script to evm_script_executor_stub
+    assert (
+        evm_script_executor_stub.evmScript()
+        == evm_script_factory_stub.DEFAULT_EVM_SCRIPT()
+    )
+
+
+########
+# OBJECT TO MOTION
+########
 
 
 def test_object_to_motion_motion_not_found(owner, easy_track):
@@ -417,24 +359,12 @@ def test_object_to_motion_multiple_times(
 ):
     "Must fail with error: 'ALREADY_OBJECTED'"
 
-    # add evm script factory to easy track
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input(b""),
-            )
-        ]
-    )
-    evm_script_factory_stub.setEVMScript(evm_script)
-
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
@@ -442,6 +372,8 @@ def test_object_to_motion_multiple_times(
 
     # send objection multiple times
     easy_track.objectToMotion(1, {"from": ldo_holders[0]})
+    assert easy_track.objections(1, ldo_holders[0])
+
     with reverts("ALREADY_OBJECTED"):
         easy_track.objectToMotion(1, {"from": ldo_holders[0]})
 
@@ -451,24 +383,12 @@ def test_object_to_motion_not_ldo_holder(
 ):
     "Must fail with error: 'NOT_ENOUGH_BALANCE'"
 
-    # add evm script factory to easy track
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input(b""),
-            )
-        ]
-    )
-    evm_script_factory_stub.setEVMScript(evm_script)
-
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
@@ -485,24 +405,12 @@ def test_object_to_motion_by_tokens_holder(
 ):
     "Must increase motion objections on correct amount and emit ObjectionSent event"
 
-    # add evm script factory to easy track
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input(b""),
-            )
-        ]
-    )
-    evm_script_factory_stub.setEVMScript(evm_script)
-
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
@@ -515,7 +423,7 @@ def test_object_to_motion_by_tokens_holder(
     holder_balance = ldo_token.balanceOf(ldo_holders[0])
     holder_part = 10000 * holder_balance / total_supply
 
-    motion = easy_track.motions(0)
+    motion = easy_track.getMotion(1)
 
     assert motion[7] == ldo_token.balanceOf(ldo_holders[0])  # objectionsAmount
     assert motion[8] == holder_part  # objectionsAmountPct
@@ -531,26 +439,15 @@ def test_object_to_motion_by_tokens_holder(
 def test_object_to_motion_rejected(
     owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
 ):
-    "Must delete motion and emit ObjectionSent and MotionRejected events"
+    "Must remove motion from list of active motions"
+    "and emit ObjectionSent and MotionRejected events"
 
-    # add evm script factory to easy track
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input(b""),
-            )
-        ]
-    )
-    evm_script_factory_stub.setEVMScript(evm_script)
-
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motion
@@ -572,27 +469,20 @@ def test_object_to_motion_rejected(
     assert tx.events["MotionRejected"]["_motionId"] == 1
 
 
+########
+# CANCEL MOTIONS
+########
+
+
 def test_cancel_motions_in_random_order(
     owner, voting, easy_track, evm_script_factory_stub
 ):
-    # add evm script factory to easy track
-    permissions = (
-        evm_script_factory_stub.address
-        + evm_script_factory_stub.setEVMScript.signature[2:]
-    )
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
-        evm_script_factory_stub, permissions, {"from": voting}
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
     )
-    evm_script = encode_call_script(
-        [
-            (
-                evm_script_factory_stub.address,
-                evm_script_factory_stub.setEVMScript.encode_input(b""),
-            )
-        ]
-    )
-    evm_script_factory_stub.setEVMScript(evm_script)
-
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
     # create new motions
@@ -639,7 +529,7 @@ def test_cancel_motions(
     "Must cancel all motions in the list. Emits MotionCanceled(_motionId) event for each canceled motion."
     "If motion with passed id doesn't exists skip it and doesn't emit event"
 
-    # add evm script factory to easy track
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
         evm_script_factory_stub.DEFAULT_PERMISSIONS(),
@@ -669,6 +559,11 @@ def test_cancel_motions(
         assert tx.events["MotionCanceled"][idx]["_motionId"] == motion_id
 
 
+########
+# CANCEL ALL MOTIONS
+########
+
+
 def test_cancel_all_motions_called_by_stranger(stranger, easy_track):
     "Must fail with correct error message"
     with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
@@ -678,7 +573,7 @@ def test_cancel_all_motions_called_by_stranger(stranger, easy_track):
 def test_cancel_all_motions(owner, voting, easy_track, evm_script_factory_stub):
     "Must cancel all active motions. Emits MotionCanceled(_motionId) event for each canceled motion"
 
-    # add evm script factory to easy track
+    # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
         evm_script_factory_stub.DEFAULT_PERMISSIONS(),
@@ -701,6 +596,11 @@ def test_cancel_all_motions(owner, voting, easy_track, evm_script_factory_stub):
         assert tx.events["MotionCanceled"][idx]["_motionId"] == motion_id
 
 
+########
+# SET EVM SCRIPT EXECUTOR
+########
+
+
 def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
     with reverts(access_controll_revert_message(stranger)):
         easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
@@ -721,6 +621,11 @@ def test_set_evm_script_executor_called_by_owner(
     assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": voting})
     assert easy_track.evmScriptExecutor() == evm_script_executor
+
+
+########
+# PAUSE
+########
 
 
 def test_pause_called_without_permissions(stranger, easy_track):
@@ -749,6 +654,11 @@ def test_pause_called_when_paused(voting, easy_track):
         easy_track.pause({"from": voting})
 
 
+########
+# UNPAUSE
+########
+
+
 def test_unpause_called_without_permissions(voting, stranger, easy_track):
     "Must fail with correct Access control revert message"
     easy_track.pause({"from": voting})
@@ -775,13 +685,18 @@ def test_unpause_called_with_permissions(voting, easy_track):
     assert tx.events["Unpaused"]["account"] == voting
 
 
+########
+# CAN OBJECT TO MOTION
+########
+
+
 def test_can_object_to_motion(
     owner, voting, stranger, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
 ):
     "Must return False if caller has no governance tokens or if he has already voted."
     "Returns True in other cases"
 
-    # add evm script factory to easy track
+    # add evm script factory to create motions§
     permissions = (
         evm_script_factory_stub.address
         + evm_script_factory_stub.setEVMScript.signature[2:]
