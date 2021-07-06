@@ -609,6 +609,7 @@ def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
 def test_set_evm_script_executor_called_by_owner(
     owner, voting, ldo_token, evm_script_executor
 ):
+    "Must set new EVMScriptExecutor and emit EVMScriptExecutorChanged(_evmScriptExecutor) event"
     logic = owner.deploy(EasyTrack)
     proxy = owner.deploy(
         ContractProxy,
@@ -619,7 +620,11 @@ def test_set_evm_script_executor_called_by_owner(
     easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
     assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
-    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": voting})
+    tx = easy_track.setEVMScriptExecutor(evm_script_executor, {"from": voting})
+    assert (
+        tx.events["EVMScriptExecutorChanged"]["_evmScriptExecutor"]
+        == evm_script_executor
+    )
     assert easy_track.evmScriptExecutor() == evm_script_executor
 
 

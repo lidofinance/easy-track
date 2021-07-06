@@ -148,6 +148,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
         evmScriptExecutor = IEVMScriptExecutor(_evmScriptExecutor);
+        emit EVMScriptExecutorChanged(_evmScriptExecutor);
     }
 
     function pause() external whenNotPaused onlyRole(PAUSE_ROLE) {
