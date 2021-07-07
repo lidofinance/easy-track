@@ -8,7 +8,7 @@ contract RewardProgramsRegistry {
     address[] public rewardPrograms;
     mapping(address => uint256) private rewardProgramIndices;
 
-    address public evmScriptExecutor;
+    address public immutable evmScriptExecutor;
 
     constructor(address _evmScriptExecutor) {
         evmScriptExecutor = _evmScriptExecutor;

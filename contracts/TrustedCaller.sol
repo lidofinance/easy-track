@@ -4,7 +4,7 @@
 pragma solidity 0.8.6;
 
 contract TrustedCaller {
-    address public trustedCaller;
+    address public immutable trustedCaller;
 
     constructor(address _trustedCaller) {
         trustedCaller = _trustedCaller;

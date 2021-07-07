@@ -20,9 +20,9 @@ contract EVMScriptExecutor {
     bytes32 internal constant INITIALIZATION_BLOCK_POSITION =
         0xebb05b386a8d34882b8711d156f463690983dc47815980fb82aeeff1aa43579e;
 
-    address public callsScript;
-    address public easyTrack;
-    address public voting;
+    address public immutable callsScript;
+    address public immutable easyTrack;
+    address public immutable voting;
 
     constructor(
         address _callsScript,

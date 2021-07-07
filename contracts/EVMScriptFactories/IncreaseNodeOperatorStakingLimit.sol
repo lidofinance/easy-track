@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
-interface NodeOperatorsRegistry {
+interface INodeOperatorsRegistry {
     function getNodeOperator(uint256 _id, bool _fullInfo)
         external
         view
@@ -37,10 +37,10 @@ contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
     string private constant ERROR_STAKING_LIMIT_TOO_LOW = "STAKING_LIMIT_TOO_LOW";
     string private constant ERROR_NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
 
-    NodeOperatorsRegistry public nodeOperatorsRegistry;
+    INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
 
     constructor(address _nodeOperatorsRegistry) {
-        nodeOperatorsRegistry = NodeOperatorsRegistry(_nodeOperatorsRegistry);
+        nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
     }
 
     function createEVMScript(address _creator, bytes memory _motionData)

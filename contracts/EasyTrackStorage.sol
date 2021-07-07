@@ -94,8 +94,8 @@ contract EasyTrackStorage is Initializable, PausableUpgradeable, AccessControlUp
         motionDuration = MIN_MOTION_DURATION;
         governanceToken = IMiniMeToken(_governanceToken);
 
-        emit MotionDurationChanged(MIN_MOTION_DURATION);
-        emit MotionsCountLimitChanged(MAX_MOTIONS_LIMIT);
         emit ObjectionsThresholdChanged(50);
+        emit MotionsCountLimitChanged(MAX_MOTIONS_LIMIT);
+        emit MotionDurationChanged(MIN_MOTION_DURATION);
     }
 }

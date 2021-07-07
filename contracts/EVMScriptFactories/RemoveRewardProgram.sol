@@ -9,7 +9,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
-    RewardProgramsRegistry public rewardProgramsRegistry;
+    RewardProgramsRegistry public immutable rewardProgramsRegistry;
 
     constructor(address _trustedCaller, address _rewardProgramsRegistry)
         TrustedCaller(_trustedCaller)

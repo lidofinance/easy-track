@@ -10,6 +10,10 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 contract TopUpRewardPrograms is TrustedCaller, IEVMScriptFactory {
+    IFinance public immutable finance;
+    address public immutable rewardToken;
+    RewardProgramsRegistry public immutable rewardProgramsRegistry;
+
     constructor(
         address _trustedCaller,
         address _rewardProgramsRegistry,
@@ -20,11 +24,6 @@ contract TopUpRewardPrograms is TrustedCaller, IEVMScriptFactory {
         rewardToken = _rewardToken;
         rewardProgramsRegistry = RewardProgramsRegistry(_rewardProgramsRegistry);
     }
-
-    RewardProgramsRegistry public rewardProgramsRegistry;
-
-    IFinance public finance;
-    address public rewardToken;
 
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external

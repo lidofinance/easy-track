@@ -10,8 +10,8 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
-    IFinance public finance;
-    address public legoProgram;
+    IFinance public immutable finance;
+    address public immutable legoProgram;
 
     constructor(
         address _trustedCaller,
