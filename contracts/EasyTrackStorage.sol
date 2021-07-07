@@ -5,8 +5,8 @@ pragma solidity ^0.8.4;
 
 import "./interfaces/IEVMScriptExecutor.sol";
 
-import "OpenZeppelin/openzeppelin-contracts-upgradeable@4.1.0/contracts/access/AccessControlUpgradeable.sol";
-import "OpenZeppelin/openzeppelin-contracts-upgradeable@4.1.0/contracts/security/PausableUpgradeable.sol";
+import "OpenZeppelin/openzeppelin-contracts-upgradeable@4.2.0/contracts/access/AccessControlUpgradeable.sol";
+import "OpenZeppelin/openzeppelin-contracts-upgradeable@4.2.0/contracts/security/PausableUpgradeable.sol";
 
 interface IMiniMeToken {
     function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);

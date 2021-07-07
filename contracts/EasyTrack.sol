@@ -8,7 +8,7 @@ import "./EVMScriptFactoriesRegistry.sol";
 
 import "./interfaces/IEVMScriptExecutor.sol";
 
-import "OpenZeppelin/openzeppelin-contracts@4.1.0/contracts/proxy/utils/UUPSUpgradeable.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistry {
     // -------------

@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.4;
 
-import "OpenZeppelin/openzeppelin-contracts@4.1.0/contracts/utils/StorageSlot.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/StorageSlot.sol";
 
 interface ICallsScript {
     function execScript(
