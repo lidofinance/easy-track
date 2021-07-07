@@ -25,7 +25,6 @@ CALL_DATA = call_data = encode_single(
 
 def test_deploy(owner, node_operators_registry):
     contract = owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry)
-
     assert contract.nodeOperatorsRegistry() == node_operators_registry
 
 

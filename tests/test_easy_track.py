@@ -14,14 +14,8 @@ PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
 
 
 def test_deploy(owner, ldo_token, voting):
-    logic = owner.deploy(EasyTrack)
-    proxy = owner.deploy(
-        ContractProxy,
-        logic,
-        logic.__EasyTrackStorage_init.encode_input(ldo_token, voting),
-    )
-    assert proxy.implementation() == logic
-    easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
+    easy_track = owner.deploy(EasyTrack)
+    easy_track.__EasyTrackStorage_init(ldo_token, voting)
 
     assert not easy_track.paused()
     assert easy_track.governanceToken() == ldo_token
@@ -32,16 +26,29 @@ def test_deploy(owner, ldo_token, voting):
     assert easy_track.hasRole(easy_track.CANCEL_ROLE(), voting)
 
 
-def test_upgrade_to_called_without_permissions(stranger, easy_track):
+def test_upgrade_to_called_without_permissions(owner, stranger, ldo_token, voting):
+    easy_track = owner.deploy(EasyTrack)
+    proxy = owner.deploy(
+        ContractProxy,
+        easy_track,
+        easy_track.__EasyTrackStorage_init.encode_input(ldo_token, voting),
+    )
+    proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
     with reverts(access_controll_revert_message(stranger)):
-        easy_track.upgradeTo(ZERO_ADDRESS, {"from": stranger})
+        proxied_easy_track.upgradeTo(ZERO_ADDRESS, {"from": stranger})
 
 
-def test_upgrade_to(owner, voting, easy_track):
+def test_upgrade_to(owner, voting, ldo_token):
     "Must set new implementation"
+    easy_track = owner.deploy(EasyTrack)
+    proxy = owner.deploy(
+        ContractProxy,
+        easy_track,
+        easy_track.__EasyTrackStorage_init.encode_input(ldo_token, voting),
+    )
+    proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
     new_logic = owner.deploy(EasyTrack)
-    easy_track.upgradeTo(new_logic, {"from": voting})
-    proxy = Contract.from_abi("Proxy", easy_track, ContractProxy.abi)
+    proxied_easy_track.upgradeTo(new_logic, {"from": voting})
     assert proxy.implementation() == new_logic
 
 

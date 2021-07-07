@@ -82,13 +82,9 @@ def evm_script_factories_registry(owner, voting, ldo_token):
 
 @pytest.fixture(scope="function")
 def easy_track(owner, ldo_token, voting):
-    logic = owner.deploy(EasyTrack)
-    proxy = owner.deploy(
-        ContractProxy,
-        logic,
-        logic.__EasyTrackStorage_init.encode_input(ldo_token, voting),
-    )
-    return Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
+    contract = owner.deploy(EasyTrack)
+    contract.__EasyTrackStorage_init(ldo_token, voting)
+    return contract
 
 
 @pytest.fixture(scope="function")
