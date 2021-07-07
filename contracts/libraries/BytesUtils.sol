@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity 0.8.6;
+pragma solidity ^0.8.4;
 
 library BytesUtils {
     function bytes24At(bytes memory data, uint256 location) internal pure returns (bytes24 result) {
