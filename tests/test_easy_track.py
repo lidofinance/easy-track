@@ -49,7 +49,7 @@ def test_upgrade_to(owner, voting, ldo_token):
     proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
     new_logic = owner.deploy(EasyTrack)
     proxied_easy_track.upgradeTo(new_logic, {"from": voting})
-    assert proxy.implementation() == new_logic
+    assert proxy.__Proxy_implementation() == new_logic
 
 
 ########
@@ -623,7 +623,7 @@ def test_set_evm_script_executor_called_by_owner(
         logic,
         logic.__EasyTrackStorage_init.encode_input(ldo_token, voting),
     )
-    assert proxy.implementation() == logic
+    assert proxy.__Proxy_implementation() == logic
     easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
     assert easy_track.evmScriptExecutor() == ZERO_ADDRESS

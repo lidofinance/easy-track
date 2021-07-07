@@ -8,7 +8,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/proxy/ERC1967/ERC196
 contract ContractProxy is ERC1967Proxy {
     constructor(address _logic, bytes memory _data) ERC1967Proxy(_logic, _data) {}
 
-    function implementation() external view returns (address) {
+    function __Proxy_implementation() external view returns (address) {
         return _implementation();
     }
 }
