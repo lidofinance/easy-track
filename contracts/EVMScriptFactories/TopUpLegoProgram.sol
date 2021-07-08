@@ -65,7 +65,7 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address[] memory rewardPrograms, uint256[] memory amounts)
+        returns (address[] memory rewardTokens, uint256[] memory amounts)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -73,7 +73,7 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         internal
         pure
-        returns (address[] memory rewardPrograms, uint256[] memory amounts)
+        returns (address[] memory rewardTokens, uint256[] memory amounts)
     {
         return abi.decode(_evmScriptCallData, (address[], uint256[]));
     }
