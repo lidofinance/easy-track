@@ -18,9 +18,7 @@ import constants
 MOTION_ID = 2
 NODE_OPERATOR_ID = 1
 STAKING_LIMIT = 350
-CALL_DATA = call_data = encode_single(
-    "(uint256,uint256)", [NODE_OPERATOR_ID, STAKING_LIMIT]
-)
+CALL_DATA = encode_single("(uint256,uint256)", [NODE_OPERATOR_ID, STAKING_LIMIT])
 
 
 def test_deploy(owner, node_operators_registry):
@@ -89,3 +87,10 @@ def test_create_evm_script(
     )
 
     assert evm_script == expected_evm_script
+
+
+def test_decode_evm_script_call_data(increase_node_operator_staking_limit):
+    assert increase_node_operator_staking_limit.decodeEVMScriptCallData(CALL_DATA) == [
+        NODE_OPERATOR_ID,
+        STAKING_LIMIT,
+    ]

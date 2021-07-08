@@ -59,7 +59,7 @@ contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
     }
 
     function _validateMotionData(address _creator, bytes memory _motionData) private view {
-        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeMotionData(_motionData);
+        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeEVMScriptCallData(_motionData);
         NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
         require(nodeOperatorData.rewardAddress == _creator, ERROR_CALLER_IS_NOT_NODE_OPERATOR);
         require(nodeOperatorData.active, ERROR_NODE_OPERATOR_DISABLED);
@@ -82,8 +82,16 @@ contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
         _nodeOperatorData.totalSigningKeys = totalSigningKeys;
     }
 
-    function _decodeMotionData(bytes memory _motionData)
-        public
+    function decodeEVMScriptCallData(bytes memory _motionData)
+        external
+        pure
+        returns (uint256 _nodeOperatorId, uint256 _stakingLimit)
+    {
+        return _decodeEVMScriptCallData(_motionData);
+    }
+
+    function _decodeEVMScriptCallData(bytes memory _motionData)
+        internal
         pure
         returns (uint256 _nodeOperatorId, uint256 _stakingLimit)
     {
