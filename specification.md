@@ -59,7 +59,7 @@ As it was mentioned above, EasyTrack is the main contract in the implementation 
 To increase the readability and simplicity of the EasyTrack contract, groups of methods are moved to standalone contracts:
 
 - [MotionSettings](#motionsettings) - keeps logic to set objections threshold, max amount of active motions, and time required to allow motion to be enacted.
-- [EVMScriptFactoriesRegistry](#evmscriptfactoriesregistry) - keeps logic to add/remove EVMScriptFactories and create evm scripts.
+- [EVMScriptFactoriesRegistry](#evmscriptfactoriesregistry) - keeps logic to add/remove EVMScriptFactories and create EVMScripts.
 
 Such separation helps to keep in EasyTrack contract only the methods related to Easy Track logic directly. The whole inheritance graph can be seen in the picture below.
 
@@ -83,11 +83,11 @@ Variables used to control motion duration, max count of active motions, and thre
 - **`uint256 motionsCountLimit`** - max count of active motions. Max allowed value is 24. Default value is 12.
 - **`uint256 motionDuration`** - minimal time required to pass before enacting of motion. Min allowed value is 48 hours. The default value is 48 hours.
 
-#### EVM Script Factories Variables
+#### EVMScript Factories Variables
 
-Variables used to control the list of allowed EVM Script factories of Easy Track.
+Variables used to control the list of allowed EVMScript factories of Easy Track.
 
-- **`address[] evmScriptFactories`** - current list of allowed EVM Script factories.
+- **`address[] evmScriptFactories`** - current list of allowed EVMScript factories.
 - **`mapping(address => bytes)`** - evmScriptFactoriesPermissions - permissions of current list of allowed EVMScript factories.
 
 #### Easy Track Variables
@@ -150,13 +150,13 @@ event MotionsCountLimitChanged(uint256 _newMotionsCountLimit)
 
 ## EVMScriptFactoriesRegistry
 
-Provides methods to add/remove EVMScript factories and contains an internal method for the convenient creation of EVM Scripts. Inherits from `EasyTrackStorage`.
+Provides methods to add/remove EVMScript factories and contains an internal method for the convenient creation of EVMScripts. Inherits from `EasyTrackStorage`.
 
 ### Methods
 
 #### addEVMScriptFactory(address \_evmScriptFactory, bytes \_permissions) external onlyRole(DEFAULT_ADMIN_ROLE)
 
-Adds new EVM Script Factory to the list of allowed EVMScript factories with given permissions. Can be called only by the Admin of Easy Track.
+Adds new EVMScript Factory to the list of allowed EVMScript factories with given permissions. Can be called only by the Admin of Easy Track.
 
 Events:
 
@@ -322,9 +322,9 @@ Interface which every EVMScript factory used in EasyTrack contract has to implem
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external returns (bytes)
 
-Creates new EVM Script using passed arguments. The method might apply validations or checks before creation and reverts with an error if some requirements haven't been fulfilled. EasyTrack contract uses `msg.sender` as value for `_creator` argument when called in create method, and `motion.creator` value when called in enact method.
+Creates new EVMScript using passed arguments. The method might apply validations or checks before creation and reverts with an error if some requirements haven't been fulfilled. EasyTrack contract uses `msg.sender` as value for `_creator` argument when called in create method, and `motion.creator` value when called in enact method.
 
-# EVM Script Factories
+# EVMScript Factories
 
 At this moment Easy Track has following EVMScript factories:
 
@@ -336,13 +336,13 @@ At this moment Easy Track has following EVMScript factories:
 
 ## IncreaseNodeOperatorStakingLimit
 
-Creates EVM Script to increase staking limit for node operator with the given id. Only node operators registered in NodeOperatorsRegistry can create motions with this EVMScript factory.
+Creates EVMScript to increase staking limit for node operator with the given id. Only node operators registered in NodeOperatorsRegistry can create motions with this EVMScript factory.
 
 ### Methods
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
 
-Creates EVM Script to increase node operators staking limit. `_evmScriptCallData` has to contain encoded tuple: `(uint256 _nodeOperatorId, uint256 _stakingLimit)`, where `_nodeOperatorId` - id of node operator in [NodeOperatorsRegistry](https://github.com/lidofinance/lido-dao/blob/553a4afb9c7c13d1aac03713f24e95d1d07591d7/contracts/0.4.24/nos/NodeOperatorsRegistry.sol), `_stakingLimit` - new staking limit
+Creates EVMScript to increase node operators staking limit. `_evmScriptCallData` has to contain encoded tuple: `(uint256 _nodeOperatorId, uint256 _stakingLimit)`, where `_nodeOperatorId` - id of node operator in [NodeOperatorsRegistry](https://github.com/lidofinance/lido-dao/blob/553a4afb9c7c13d1aac03713f24e95d1d07591d7/contracts/0.4.24/nos/NodeOperatorsRegistry.sol), `_stakingLimit` - new staking limit
 To successfully create EVMScript next requirements must be met:
 
 - Reward address of the node operator must be equal to the address of the `_creator`
@@ -381,7 +381,7 @@ Creates EVMScript to top up balances of reward programs. Transfers allowed only 
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
 
-Creates EVM Script to make new immediate payments to list of reward programs. `_evmScriptCallData` contains encoded tuple: `(address[] _rewardPrograms, uint256[] _amounts[])`, where `_rewardPrograms` - addresses of reward programs to top up, `_amounts` - corresponding amount to transfer. To successfully create EVMScript next requirements must be met:
+Creates EVMScript to make new immediate payments to list of reward programs. `_evmScriptCallData` contains encoded tuple: `(address[] _rewardPrograms, uint256[] _amounts[])`, where `_rewardPrograms` - addresses of reward programs to top up, `_amounts` - corresponding amount to transfer. To successfully create EVMScript next requirements must be met:
 
 - `_creator` must be equal to `trustedCaller` address
 - `_rewardPrograms` and `_amounts` have same length
@@ -395,13 +395,13 @@ Decodes `_evmScriptCallData` into tuple `(address[] rewardPrograms, uint256[] am
 
 ## AddRewardProgram
 
-Creates EVM Script to add new reward program address to `RewardProgramsRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
+Creates EVMScript to add new reward program address to `RewardProgramsRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
 
 ### Methods
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
 
-Creates EVM Script to add new reward address to `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - new reward address to add. To successfully create EVMScript next requirements must be met:
+Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - new reward address to add. To successfully create EVMScript next requirements must be met:
 
 - `_creator` must be equal to `trustedCaller` address
 - `_rewardProgram` address hasn't been added in `RewardProgramsRegistry` earlier.
@@ -412,13 +412,13 @@ Decodes `_evmScriptCallData` into tuple `(address _rewardProgram)`.
 
 ## RemoveRewardProgram
 
-Creates EVM Script to remove reward program from `RewardPrgoramsRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
+Creates EVMScript to remove reward program from `RewardPrgoramsRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
 
 ### Methods
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
 
-Creates EVM Script to remove reward program from `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - reward address to remove. To successfully create EVMScript next requirements must be met:
+Creates EVMScript to remove reward program from `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - reward address to remove. To successfully create EVMScript next requirements must be met:
 
 - `_creator` must be equal to `trustedCaller` address
 - `_rewardProgram` address must be listed in `RewardProgramsRegistry`.
