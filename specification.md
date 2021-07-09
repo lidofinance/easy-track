@@ -95,7 +95,7 @@ Variables used to control the list of allowed EVM Script factories of Easy Track
 Variables used in primary Easy Track actions:
 
 - **`Motion[] motions`** - list of active motions.
-- **`IMiniMeToken governanceToken`** - address of governance token. Token has to implement [MiniMeToken](https://github.com/Giveth/minime#balance-history-is-registered-and-available-to-be-queried) interface. Only holders of this token can submit objections.
+- **`IMiniMeToken governanceToken`** - address of governance token. Token has to implement balance history interface of [MiniMeToken](https://github.com/Giveth/minime#balance-history-is-registered-and-available-to-be-queried). Only holders of this token can send objections.Only holders of this token can submit objections.
 - **`IEVMScriptExecutor evmScriptExecutor`** - address of EVMScriptExecutor
 - **`mapping(uint256 => mapping(address => bool)) objections`** - stores if motion with given id has been objected from given address.
 
