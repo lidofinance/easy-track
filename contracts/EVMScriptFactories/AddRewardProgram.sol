@@ -9,8 +9,23 @@ import "../RewardProgramsRegistry.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @notice Creates EVMScript to add new reward program address to RewardProgramsRegistry
 contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
+    // -------------
+    // ERRORS
+    // -------------
+    string private constant ERROR_REWARD_PROGRAM_ALREADY_ADDED = "REWARD_PROGRAM_ALREADY_ADDED";
+
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Address of RewardsProgramsRegistry
     RewardProgramsRegistry public immutable rewardProgramsRegistry;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
 
     constructor(address _trustedCaller, address _rewardProgramsRegistry)
         TrustedCaller(_trustedCaller)
@@ -18,6 +33,13 @@ contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
         rewardProgramsRegistry = RewardProgramsRegistry(_rewardProgramsRegistry);
     }
 
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Creates EVMScript to add new reward program address to RewardProgramsRegistry
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -27,7 +49,7 @@ contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
     {
         require(
             !rewardProgramsRegistry.isRewardProgram(_decodeEVMScriptCallData(_evmScriptCallData)),
-            "REWARD_PROGRAM_ALREADY_ADDED"
+            ERROR_REWARD_PROGRAM_ALREADY_ADDED
         );
 
         return
@@ -38,6 +60,9 @@ contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
             );
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram)
+    /// @return _rewardProgram Address of new reward program
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
@@ -46,8 +71,12 @@ contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
+
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
-        internal
+        private
         pure
         returns (address)
     {
