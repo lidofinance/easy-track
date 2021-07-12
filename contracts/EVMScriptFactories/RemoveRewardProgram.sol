@@ -8,8 +8,23 @@ import "../RewardProgramsRegistry.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @notice Creates EVMScript to remove reward program from RewardProgramsRegistry
 contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
+    // -------------
+    // ERRORS
+    // -------------
+    string private constant ERROR_REWARD_PROGRAM_NOT_FOUND = "REWARD_PROGRAM_NOT_FOUND";
+
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Address of RewardsProgramsRegistry
     RewardProgramsRegistry public immutable rewardProgramsRegistry;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
 
     constructor(address _trustedCaller, address _rewardProgramsRegistry)
         TrustedCaller(_trustedCaller)
@@ -17,6 +32,13 @@ contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
         rewardProgramsRegistry = RewardProgramsRegistry(_rewardProgramsRegistry);
     }
 
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Creates EVMScript to remove reward program from RewardProgramsRegistry
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -26,7 +48,7 @@ contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
     {
         require(
             rewardProgramsRegistry.isRewardProgram(_decodeEVMScriptCallData(_evmScriptCallData)),
-            "REWARD_PROGRAM_NOT_FOUND"
+            ERROR_REWARD_PROGRAM_NOT_FOUND
         );
         return
             EVMScriptCreator.createEVMScript(
@@ -36,16 +58,23 @@ contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
             );
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram)
+    /// @return _rewardProgram Address of new reward program
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address)
+        returns (address _rewardProgram)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
+
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
-        internal
+        private
         pure
         returns (address)
     {

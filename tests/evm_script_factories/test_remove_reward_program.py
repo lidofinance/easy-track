@@ -10,16 +10,14 @@ EVM_SCRIPT_CALL_DATA = "0x" + encode_single("(address)", [REWARD_PROGRAM_ADDRESS
 
 
 def test_deploy(owner, reward_programs_registry):
-    "Must deploy contract with correct params"
-
+    "Must deploy contract with correct data"
     contract = owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
-
     assert contract.trustedCaller() == owner
     assert contract.rewardProgramsRegistry() == reward_programs_registry
 
 
 def test_create_evm_script_called_by_stranger(stranger, remove_reward_program):
-    "Must fail with error 'CALLER_IS_FORBIDDEN'"
+    "Must fail with error 'CALLER_IS_FORBIDDEN' when creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         remove_reward_program.createEVMScript(stranger, EVM_SCRIPT_CALL_DATA)
 
@@ -28,7 +26,6 @@ def test_create_evm_script_reward_program_already_added(
     owner, remove_reward_program, reward_programs_registry, evm_script_executor_stub
 ):
     "Must fail with error 'REWARD_PROGRAM_NOT_FOUND'"
-
     with reverts("REWARD_PROGRAM_NOT_FOUND"):
         remove_reward_program.createEVMScript(
             owner,
@@ -39,7 +36,7 @@ def test_create_evm_script_reward_program_already_added(
 def test_create_evm_script(
     owner, remove_reward_program, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must create correct evm script"
+    "Must create correct EVMScript if all requirements are met"
     reward_programs_registry.addRewardProgram(
         REWARD_PROGRAM_ADDRESS, {"from": evm_script_executor_stub}
     )
@@ -59,6 +56,7 @@ def test_create_evm_script(
 
 
 def test_decode_evm_script_call_data(remove_reward_program):
+    "Must decode EVMScript call data correctly"
     assert (
         remove_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALL_DATA)
         == REWARD_PROGRAM_ADDRESS
