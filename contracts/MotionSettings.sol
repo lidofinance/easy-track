@@ -5,24 +5,27 @@ pragma solidity ^0.8.4;
 
 import "./EasyTrackStorage.sol";
 
+/// @notice Provides methods to update motion duration, objections threshold, and limit of active motions of Easy Track
 contract MotionSettings is EasyTrackStorage {
+    // -------------
+    // ERRORS
+    // -------------
+
     string private constant ERROR_VALUE_TOO_SMALL = "VALUE_TOO_SMALL";
     string private constant ERROR_VALUE_TOO_LARGE = "VALUE_TOO_LARGE";
 
-    /**
-     @notice Sets duration of new created motions.
-     Can be called only by the owner of contract.
-     */
+    // ------------------
+    // EXTERNAL METHODS
+    // ------------------
+
+    /// @notice Sets the minimal time required to pass before enacting of motion
     function setMotionDuration(uint256 _motionDuration) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_motionDuration >= MIN_MOTION_DURATION, ERROR_VALUE_TOO_SMALL);
         motionDuration = _motionDuration;
         emit MotionDurationChanged(_motionDuration);
     }
 
-    /**
-     @notice Sets percent of governance tokens required to reject a proposal.
-     Can be callend only by owner of contract.
-     */
+    /// @notice Sets percent from total supply of governance tokens required to reject motion
     function setObjectionsThreshold(uint256 _objectionsThreshold)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -32,6 +35,7 @@ contract MotionSettings is EasyTrackStorage {
         emit ObjectionsThresholdChanged(_objectionsThreshold);
     }
 
+    /// @notice Sets max count of active motions.
     function setMotionsCountLimit(uint256 _motionsCountLimit)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)

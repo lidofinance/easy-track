@@ -1,6 +1,6 @@
-from brownie import MotionSettings, reverts
-
 import constants
+from brownie import MotionSettings, reverts
+from utils.test_helpers import access_controll_revert_message
 
 
 def test_deploy(owner, ldo_token, voting):
@@ -21,7 +21,7 @@ def test_deploy(owner, ldo_token, voting):
 
 def test_set_motion_duration_called_by_owner(voting, motion_settings):
     "Must update motion duration when value is greater or equal than"
-    "MIN_MOTION_DURATION and emits MotionDurationChanged event"
+    "MIN_MOTION_DURATION and emits MotionDurationChanged(_motionDuration) event"
     min_motion_duration = motion_settings.MIN_MOTION_DURATION()
     new_motion_duration = 2 * min_motion_duration
     assert motion_settings.motionDuration() == min_motion_duration
@@ -32,17 +32,16 @@ def test_set_motion_duration_called_by_owner(voting, motion_settings):
     assert tx.events["MotionDurationChanged"]["_motionDuration"] == new_motion_duration
 
 
-def test_set_motion_duration_called_by_stranger(voting, stranger, motion_settings):
-    "Must fail with error 'AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b"
-    "is missing role 0x0000000000000000000000000000000000000000000000000000000000000000'"
-    with reverts(
-        "AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
-    ):
+def test_set_motion_duration_called_without_permissions(
+    voting, stranger, motion_settings
+):
+    "Must revert with correct Access Control message"
+    with reverts(access_controll_revert_message(stranger)):
         motion_settings.setMotionDuration(0, {"from": stranger})
 
 
 def test_set_motion_duration_called_with_too_small_value(voting, motion_settings):
-    "Must fail with error 'VALUE_TOO_SMALL' when new duration is less than MIN_MOTION_DURATION"
+    "Must revert with 'VALUE_TOO_SMALL' message"
     motion_duration = motion_settings.MIN_MOTION_DURATION() - 1
     with reverts("VALUE_TOO_SMALL"):
         motion_settings.setMotionDuration(motion_duration, {"from": voting})
@@ -50,7 +49,7 @@ def test_set_motion_duration_called_with_too_small_value(voting, motion_settings
 
 def test_set_objections_threshold_called_by_owner(voting, motion_settings):
     "Must update objections threshold when value is less or equal"
-    "than MAX_OBJECTIONS_THRESHOLD and emits ObjectionsThresholdChanged event"
+    "than MAX_OBJECTIONS_THRESHOLD and emits ObjectionsThresholdChanged(_newThreshold) event"
     new_objections_threshold = 2 * constants.DEFAULT_OBJECTIONS_THRESHOLD
     assert (
         motion_settings.objectionsThreshold() == constants.DEFAULT_OBJECTIONS_THRESHOLD
@@ -68,16 +67,13 @@ def test_set_objections_threshold_called_by_owner(voting, motion_settings):
 
 
 def test_set_objections_threshold_called_by_stranger(stranger, motion_settings):
-    "Must fail with error 'AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b"
-    "is missing role 0x0000000000000000000000000000000000000000000000000000000000000000'"
-    with reverts(
-        "AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
-    ):
+    "Must revert with correct Access Control revert message"
+    with reverts(access_controll_revert_message(stranger)):
         motion_settings.setObjectionsThreshold(0, {"from": stranger})
 
 
 def test_set_objections_threshold_called_with_too_large_value(voting, motion_settings):
-    "Must fail with error 'VALUE_TOO_LARGE' when new"
+    "Must revert with message 'VALUE_TOO_LARGE' when new"
     "threshold is greater than MAX_OBJECTIONS_THRESHOLD"
     new_objections_threshold = 2 * motion_settings.MAX_OBJECTIONS_THRESHOLD()
     with reverts("VALUE_TOO_LARGE"):
@@ -87,7 +83,8 @@ def test_set_objections_threshold_called_with_too_large_value(voting, motion_set
 
 
 def test_set_motions_limit_called_by_owner(voting, motion_settings):
-    "Must set new value for motionsCountLimit and emit MotionsCountLimitChanged event"
+    "Must set new value for motionsCountLimit and emit"
+    "MotionsCountLimitChanged(_newMotionsCountLimit) event"
     max_motions_limit = motion_settings.MAX_MOTIONS_LIMIT()
     new_motions_limit = int(motion_settings.MAX_MOTIONS_LIMIT() / 2)
 
@@ -103,16 +100,13 @@ def test_set_motions_limit_called_by_owner(voting, motion_settings):
 
 
 def test_set_motions_limit_called_by_stranger(stranger, motion_settings):
-    "Must fail with error 'AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b"
-    "is missing role 0x0000000000000000000000000000000000000000000000000000000000000000'"
-    with reverts(
-        "AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
-    ):
+    "Must revert with correct Access Control message"
+    with reverts(access_controll_revert_message(stranger)):
         motion_settings.setMotionsCountLimit(0, {"from": stranger})
 
 
 def test_set_motions_limit_too_large(voting, motion_settings):
-    "Must fail with error: 'VALUE_TOO_LARGE'"
+    "Must revert with message: 'VALUE_TOO_LARGE'"
     new_motions_limit = 2 * motion_settings.MAX_MOTIONS_LIMIT()
     with reverts("VALUE_TOO_LARGE"):
         motion_settings.setMotionsCountLimit(new_motions_limit, {"from": voting})
