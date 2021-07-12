@@ -9,9 +9,28 @@ import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @notice Creates EVMScript to top up the address of the LEGO program
 contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
+    // -------------
+    // ERRORS
+    // -------------
+    string private constant ERROR_LENGTH_MISMATCH = "LENGTH_MISMATCH";
+    string private constant ERROR_EMPTY_DATA = "EMPTY_DATA";
+    string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
+
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Address of Aragon's Finance contract
     IFinance public immutable finance;
+
+    /// @notice Address of LEGO program
     address public immutable legoProgram;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
 
     constructor(
         address _trustedCaller,
@@ -22,6 +41,15 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
         legoProgram = _legoProgram;
     }
 
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Creates EVMScript to top up the address of the LEGO program
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded tuple: (address[] _rewardTokens, uint256[] _amounts) where
+    /// _rewardTokens - addresses of ERC20 tokens (zero address for ETH) to transfer
+    /// _amounts - corresponding amount of tokens to transfer
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -31,7 +59,7 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
     {
         (address[] memory rewardTokens, uint256[] memory amounts) =
             _decodeEVMScriptCallData(_evmScriptCallData);
-        _validateMotionData(rewardTokens, amounts);
+        _validateEVMScriptCallDAta(rewardTokens, amounts);
 
         bytes[] memory paymentsCallData = new bytes[](rewardTokens.length);
         for (uint256 i = 0; i < rewardTokens.length; ++i) {
@@ -51,29 +79,39 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
             );
     }
 
-    function _validateMotionData(address[] memory _rewardTokens, uint256[] memory _amounts)
-        private
-        pure
-    {
-        require(_rewardTokens.length == _amounts.length, "LENGTH_MISMATCH");
-        require(_rewardTokens.length > 0, "EMPTY_DATA");
-        for (uint256 i = 0; i < _rewardTokens.length; ++i) {
-            require(_amounts[i] > 0, "ZERO_AMOUNT");
-        }
-    }
-
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded tuple: (address[] _rewardTokens, uint256[] _amounts) where
+    /// _rewardTokens - addresses of ERC20 tokens (zero address for ETH) to transfer
+    /// _amounts - corresponding amount of tokens to transfer
+    /// @return _rewardTokens Addresses of ERC20 tokens (zero address for ETH) to transfer
+    /// @return _amounts Amounts of tokens to transfer
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address[] memory rewardTokens, uint256[] memory amounts)
+        returns (address[] memory _rewardTokens, uint256[] memory _amounts)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
-    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
-        internal
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
+
+    function _validateEVMScriptCallDAta(address[] memory _rewardTokens, uint256[] memory _amounts)
+        private
         pure
-        returns (address[] memory rewardTokens, uint256[] memory amounts)
+    {
+        require(_rewardTokens.length == _amounts.length, ERROR_LENGTH_MISMATCH);
+        require(_rewardTokens.length > 0, ERROR_EMPTY_DATA);
+        for (uint256 i = 0; i < _rewardTokens.length; ++i) {
+            require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
+        }
+    }
+
+    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        private
+        pure
+        returns (address[] memory _rewardTokens, uint256[] memory _amounts)
     {
         return abi.decode(_evmScriptCallData, (address[], uint256[]));
     }
