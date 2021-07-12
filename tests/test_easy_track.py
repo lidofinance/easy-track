@@ -1,16 +1,13 @@
+import constants
 from brownie.network.state import Chain
 from brownie import Contract, ContractProxy, EasyTrack, reverts, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
-
-import constants
-
-CANCEL_ROLE = "0x9f959e00d95122f5cbd677010436cf273ef535b86b056afc172852144b9491d7"
-PAUSE_ROLE = "0x139c2898040ef16910dc9f44dc697df79363da767d8bc92f2e310312b816e46d"
-UNPAUSE_ROLE = "0x265b220c5a8891efdd9e1b1b7fa72f257bd5169f8d87e319cf3dad6ff52b94ae"
-DEFAULT_ADMIN_ROLE = (
-    "0x0000000000000000000000000000000000000000000000000000000000000000"
+from utils.test_helpers import (
+    access_controll_revert_message,
+    CANCEL_ROLE,
+    PAUSE_ROLE,
+    UNPAUSE_ROLE,
 )
-PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
 
 
 def test_deploy(owner, ldo_token, voting):
@@ -66,6 +63,7 @@ def test_create_motion_when_paused(voting, stranger, easy_track):
 
 
 def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track):
+    "Must revert with message 'EVM_SCRIPT_FACTORY_NOT_FOUND'"
     with reverts("EVM_SCRIPT_FACTORY_NOT_FOUND"):
         easy_track.createMotion(stranger, b"", {"from": owner})
 
@@ -75,13 +73,11 @@ def test_create_motion_has_no_permissions(
 ):
     "Must revert with message 'HAS_NO_PERMISSIONS' when evm script"
     "tries to call method not listed in permissions"
-
     wrong_permissions = ZERO_ADDRESS + "11111111"
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub, wrong_permissions, {"from": voting}
     )
     assert evm_script_factory_stub.DEFAULT_PERMISSIONS() != wrong_permissions
-
     with reverts("HAS_NO_PERMISSIONS"):
         easy_track.createMotion(evm_script_factory_stub, b"", {"from": stranger})
 
@@ -110,7 +106,6 @@ def test_create_motion(
 ):
     "Must create new motion with correct data and emit"
     "MotionCreated event when called by easy track"
-
     chain = Chain()
 
     # add evm script factory to create motions
@@ -163,6 +158,7 @@ def test_create_motion(
 
 
 def test_cancel_motion_not_found(owner, easy_track):
+    "Must revert with message 'MOTION_NOT_FOUND'"
     with reverts("MOTION_NOT_FOUND"):
         easy_track.cancelMotion(1, {"from": owner})
 
@@ -170,6 +166,7 @@ def test_cancel_motion_not_found(owner, easy_track):
 def test_cancel_motion_not_creator(
     owner, voting, stranger, easy_track, evm_script_factory_stub
 ):
+    "Must revert with message 'NOT_CREATOR' when canceled not by owner"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -189,7 +186,6 @@ def test_cancel_motion_not_creator(
 
 def test_cancel_motion(voting, stranger, easy_track, evm_script_factory_stub):
     "Must remove motion from list of active motions and emit MotionCanceled(_motionId)"
-
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -214,12 +210,53 @@ def test_cancel_motion(voting, stranger, easy_track, evm_script_factory_stub):
     assert tx.events["MotionCanceled"]["_motionId"] == motions[0][0]
 
 
+def test_cancel_motion_in_random_order(
+    owner, voting, easy_track, evm_script_factory_stub
+):
+    "Must remove correct motions from list of active motions"
+    "whe cancelMotion called with motion id in random order"
+    # add evm script factory to create motions
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
+    )
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motions
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+
+    motions = easy_track.getMotions()
+    assert len(motions) == 3
+    assert motions[0][0] == 1
+    assert motions[1][0] == 2
+    assert motions[2][0] == 3
+
+    easy_track.cancelMotion(2, {"from": owner})
+    motions = easy_track.getMotions()
+    assert len(motions) == 2
+    assert motions[0][0] == 1
+    assert motions[1][0] == 3
+
+    easy_track.cancelMotion(1, {"from": owner})
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+    assert motions[0][0] == 3
+
+    easy_track.cancelMotion(3, {"from": owner})
+    motions = easy_track.getMotions()
+    assert len(motions) == 0
+
+
 ########
 # ENACT MOTION
 ########
 
 
 def test_enact_motion_motion_not_found(owner, easy_track):
+    "Must revert with message 'MOTION_NOT_FOUND'"
     with reverts("MOTION_NOT_FOUND"):
         easy_track.enactMotion(1, b"", {"from": owner})
 
@@ -235,6 +272,7 @@ def test_enact_motion_when_paused(stranger, voting, easy_track):
 def test_enact_motion_when_motion_not_passed(
     owner, voting, easy_track, evm_script_factory_stub
 ):
+    "Must revert with message 'MOTION_NOT_PASSED'"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -259,6 +297,8 @@ def test_enact_motion_when_motion_not_passed(
 def test_enact_motion_unexpected_evm_script(
     owner, voting, easy_track, evm_script_factory_stub
 ):
+    "Must revert with message 'UNEXPECTED_EVM_SCRIPT' when hash of enact script"
+    "not equal to script created on motion creation step"
     # add evm script factory to create motions
     permissions = (
         evm_script_factory_stub.address
@@ -312,7 +352,6 @@ def test_enact_motion(
 ):
     "Must remove motion from list of active motions, execute EVM script created by EVMScriptFactory"
     "contained in created motion and emits event MotionEnacted(_moitonId)"
-
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -357,6 +396,7 @@ def test_enact_motion(
 
 
 def test_object_to_motion_motion_not_found(owner, easy_track):
+    "Must revert with message 'MOTION_NOT_FOUND'"
     with reverts("MOTION_NOT_FOUND"):
         easy_track.objectToMotion(1, {"from": owner})
 
@@ -365,7 +405,6 @@ def test_object_to_motion_multiple_times(
     owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
 ):
     "Must fail with error: 'ALREADY_OBJECTED'"
-
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -389,7 +428,6 @@ def test_object_to_motion_not_ldo_holder(
     owner, voting, stranger, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
 ):
     "Must fail with error: 'NOT_ENOUGH_BALANCE'"
-
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -410,8 +448,8 @@ def test_object_to_motion_not_ldo_holder(
 def test_object_to_motion_by_tokens_holder(
     owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
 ):
-    "Must increase motion objections on correct amount and emit ObjectionSent event"
-
+    "Must increase motion objections on correct amount and"
+    "emit ObjectionSent(_motionId,_objector,_weight,_votingPower) event"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -447,8 +485,8 @@ def test_object_to_motion_rejected(
     owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
 ):
     "Must remove motion from list of active motions"
-    "and emit ObjectionSent and MotionRejected events"
-
+    "and emit ObjectionSent(_motionId,_objector,_weight,_votingPower)"
+    "and MotionRejected(_motionId) events"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -481,45 +519,9 @@ def test_object_to_motion_rejected(
 ########
 
 
-def test_cancel_motions_in_random_order(
-    owner, voting, easy_track, evm_script_factory_stub
-):
-    # add evm script factory to create motions
-    easy_track.addEVMScriptFactory(
-        evm_script_factory_stub,
-        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
-        {"from": voting},
-    )
-    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
-
-    # create new motions
-    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
-    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
-    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
-
-    motions = easy_track.getMotions()
-    assert len(motions) == 3
-    assert motions[0][0] == 1
-    assert motions[1][0] == 2
-    assert motions[2][0] == 3
-
-    easy_track.cancelMotion(2, {"from": owner})
-    motions = easy_track.getMotions()
-    assert len(motions) == 2
-    assert motions[0][0] == 1
-    assert motions[1][0] == 3
-
-    easy_track.cancelMotion(1, {"from": owner})
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
-    assert motions[0][0] == 3
-
-    easy_track.cancelMotion(3, {"from": owner})
-    motions = easy_track.getMotions()
-    assert len(motions) == 0
-
-
-def test_cancel_motions_called_by_stranger(stranger, easy_track):
+def test_cancel_motions_called_without_permissions(stranger, easy_track):
+    "Must revert with correct Access Control message when called"
+    "by address without role 'CANCEL_ROLE'"
     with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
         easy_track.cancelMotions([], {"from": stranger})
 
@@ -553,8 +555,8 @@ def test_cancel_motions(
     for motionId in range(1, 6):
         easy_track.getMotion(motionId)  # must not fail then motion exists
 
-    # cancel motions
-    tx = easy_track.cancelMotions(motion_ids_to_cancel, {"from": voting})
+    # cancel motions including not existed ids
+    tx = easy_track.cancelMotions([6, 7] + motion_ids_to_cancel, {"from": voting})
 
     motions = easy_track.getMotions()
     assert len(motions) == 2
@@ -572,14 +574,14 @@ def test_cancel_motions(
 
 
 def test_cancel_all_motions_called_by_stranger(stranger, easy_track):
-    "Must fail with correct error message"
+    "Must revert with correct Access Control message when called"
+    "by address without role 'CANCEL_ROLE'"
     with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
         easy_track.cancelAllMotions({"from": stranger})
 
 
 def test_cancel_all_motions(owner, voting, easy_track, evm_script_factory_stub):
     "Must cancel all active motions. Emits MotionCanceled(_motionId) event for each canceled motion"
-
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -609,6 +611,8 @@ def test_cancel_all_motions(owner, voting, easy_track, evm_script_factory_stub):
 
 
 def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
+    "Must revert with correct Access Control message when called"
+    "by address without role 'DEFAULT_ADMIN_ROLE'"
     with reverts(access_controll_revert_message(stranger)):
         easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
 
@@ -641,7 +645,8 @@ def test_set_evm_script_executor_called_by_owner(
 
 
 def test_pause_called_without_permissions(stranger, easy_track):
-    "Must fail with correct Access Control revert message"
+    "Must revert with correct Access Control message when called"
+    "by address without role 'PAUSE_ROLE'"
     assert not easy_track.paused()
     with reverts(access_controll_revert_message(stranger, PAUSE_ROLE)):
         easy_track.pause({"from": stranger})
@@ -672,7 +677,8 @@ def test_pause_called_when_paused(voting, easy_track):
 
 
 def test_unpause_called_without_permissions(voting, stranger, easy_track):
-    "Must fail with correct Access control revert message"
+    "Must revert with correct Access Control message when called"
+    "by address without role 'UNPAUSE_ROLE'"
     easy_track.pause({"from": voting})
     assert easy_track.paused()
     with reverts(access_controll_revert_message(stranger, UNPAUSE_ROLE)):
@@ -735,8 +741,3 @@ def test_can_object_to_motion(
     assert easy_track.canObjectToMotion(1, ldo_holders[0])
     easy_track.objectToMotion(1, {"from": ldo_holders[0]})
     assert not easy_track.canObjectToMotion(1, ldo_holders[0])
-
-
-def access_controll_revert_message(sender, role=DEFAULT_ADMIN_ROLE):
-    PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
-    return PERMISSION_ERROR_TEMPLATE % (sender.address.lower(), role)

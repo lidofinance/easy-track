@@ -43,9 +43,19 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     string private constant ERROR_MOTION_NOT_FOUND = "MOTION_NOT_FOUND";
     string private constant ERROR_MOTIONS_LIMIT_REACHED = "MOTIONS_LIMIT_REACHED";
 
+    // -------------
+    // CONSTANTS
+    // -------------
+
+    // Stores 100% in basis points
+    uint256 internal constant HUNDRED_PERCENT = 10000;
+
     // ------------------
-    // PUBLIC METHODS
+    // EXTERNAL METHODS
     // ------------------
+
+    /// @notice Creates new motion
+    /// @return _newMotionId Id of created motion
     function createMotion(address _evmScriptFactory, bytes memory _evmScriptCallData)
         external
         whenNotPaused
@@ -80,6 +90,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         );
     }
 
+    /// @notice Enacts motion with given id
     function enactMotion(uint256 _motionId, bytes memory _evmScriptCallData)
         external
         whenNotPaused
@@ -97,6 +108,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         emit MotionEnacted(_motionId);
     }
 
+    /// @notice Submits an objection from `governanceToken` holder.
     function objectToMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
         require(!objections[_motionId][msg.sender], ERROR_ALREADY_OBJECTED);
@@ -107,7 +119,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
 
         motion.objectionsAmount += balance;
         uint256 totalSupply = governanceToken.totalSupplyAt(motion.snapshotBlock);
-        motion.objectionsAmountPct = (10000 * motion.objectionsAmount) / totalSupply;
+        motion.objectionsAmountPct = (HUNDRED_PERCENT * motion.objectionsAmount) / totalSupply;
 
         emit MotionObjected(_motionId, msg.sender, balance, totalSupply);
 
@@ -117,6 +129,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         }
     }
 
+    /// @notice Cancels motion with given id
     function cancelMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
         require(motion.creator == msg.sender, ERROR_NOT_CREATOR);
@@ -124,6 +137,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         emit MotionCanceled(_motionId);
     }
 
+    /// @notice Cancels all motions with given ids
     function cancelMotions(uint256[] memory _motionIds) external onlyRole(CANCEL_ROLE) {
         for (uint256 i = 0; i < _motionIds.length; ++i) {
             if (motionIndicesByMotionId[_motionIds[i]] > 0) {
@@ -133,6 +147,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         }
     }
 
+    /// @notice Cancels all active motions
     function cancelAllMotions() external onlyRole(CANCEL_ROLE) {
         uint256 motionsCount = motions.length;
         while (motionsCount > 0) {
@@ -143,6 +158,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         }
     }
 
+    /// @notice Sets new EVMScriptExecutor
     function setEVMScriptExecutor(address _evmScriptExecutor)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -151,35 +167,53 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         emit EVMScriptExecutorChanged(_evmScriptExecutor);
     }
 
+    /// @notice Pauses Easy Track if it isn't paused.
+    /// Paused Easy Track can't create and enact motions
     function pause() external whenNotPaused onlyRole(PAUSE_ROLE) {
         _pause();
     }
 
+    /// @notice Unpauses Easy Track if it is paused
     function unpause() external whenPaused onlyRole(UNPAUSE_ROLE) {
         _unpause();
     }
 
-    // ----------
-    // VIEWS
-    // ----------
+    /// @notice Returns if an `_objector` can submit an objection to motion with id equals to `_motionId` or not
     function canObjectToMotion(uint256 _motionId, address _objector) external view returns (bool) {
         Motion storage motion = _getMotion(_motionId);
         uint256 balance = governanceToken.balanceOfAt(_objector, motion.snapshotBlock);
         return balance > 0 && !objections[_motionId][_objector];
     }
 
+    /// @notice Returns list of active motions
     function getMotions() external view returns (Motion[] memory) {
         return motions;
     }
 
+    /// @notice Returns motion with the given id
     function getMotion(uint256 _motionId) external view returns (Motion memory) {
         return _getMotion(_motionId);
     }
 
     // -------
+    // INTERNAL METHODS
+    // -------
+
+    // Override for UUPSUpgradable method. Allows update of contract only to
+    // the address with role 'DEFAULT_ADMIN_ROLE'
+    function _authorizeUpgrade(address newImplementation)
+        internal
+        override
+        onlyRole(DEFAULT_ADMIN_ROLE)
+    {}
+
+    // -------
     // PRIVATE METHODS
     // -------
 
+    // Removes motion from list of active moitons
+    // To delete a motion from the moitons array in O(1), we swap the element to delete with the last one in
+    // the array, and then remove the last element (sometimes called as 'swap and pop').
     function _deleteMotion(uint256 _motionId) private {
         uint256 index = motionIndicesByMotionId[_motionId] - 1;
         uint256 lastIndex = motions.length - 1;
@@ -194,23 +228,10 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         delete motionIndicesByMotionId[_motionId];
     }
 
-    function _getMotion(uint256 _motionId)
-        private
-        view
-        motionExists(_motionId)
-        returns (Motion storage)
-    {
-        return motions[motionIndicesByMotionId[_motionId] - 1];
-    }
-
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {}
-
-    modifier motionExists(uint256 _motionId) {
-        require(motionIndicesByMotionId[_motionId] > 0, ERROR_MOTION_NOT_FOUND);
-        _;
+    // Returns motion with given id if it exists
+    function _getMotion(uint256 _motionId) private view returns (Motion storage) {
+        uint256 _motionIndex = motionIndicesByMotionId[_motionId];
+        require(_motionIndex > 0, ERROR_MOTION_NOT_FOUND);
+        return motions[_motionIndex - 1];
     }
 }
