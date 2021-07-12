@@ -27,6 +27,11 @@ struct Motion {
     bytes32 evmScriptHash;
 }
 
+/// @notice Keeps all variables of the EasyTrack
+/// @dev All variables stored in this contract to simplify
+/// future upgrades of Easy Track and and minimize the risk of storage collisions.
+/// New variables can be added ONLY after already declared variables.
+/// Existed variables CAN'T be deleted or reordered
 contract EasyTrackStorage is Initializable, PausableUpgradeable, AccessControlUpgradeable {
     // -------------
     // EVENTS
@@ -38,7 +43,6 @@ contract EasyTrackStorage is Initializable, PausableUpgradeable, AccessControlUp
     // -------------
     // ROLES
     // -------------
-
     bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
     bytes32 public constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
     bytes32 public constant CANCEL_ROLE = keccak256("CANCEL_ROLE");
@@ -47,40 +51,69 @@ contract EasyTrackStorage is Initializable, PausableUpgradeable, AccessControlUp
     // CONSTANTS
     // ------------
 
-    /// @dev upper bound for motionsCountLimit value.
+    /// @notice Upper bound for motionsCountLimit variable.
     uint256 public constant MAX_MOTIONS_LIMIT = 24;
 
-    /// @dev upper bound for objectionsThreshold value.
-    /// Stored in basis points (1% = 100)
+    /// @notice Upper bound for objectionsThreshold variable.
+    /// @dev Stored in basis points (1% = 100)
     uint256 public constant MAX_OBJECTIONS_THRESHOLD = 500;
 
-    /// @dev lower bound for motionDuration value
+    /// @notice Lower bound for motionDuration variable
     uint256 public constant MIN_MOTION_DURATION = 48 hours;
 
     // ------------
     // MOTION SETTING VARIABLES
     // ------------
+
+    /// @notice Percent from total supply of governance tokens required to reject motion.
+    /// @dev Value stored in basis points: 1% == 100.
     uint256 public objectionsThreshold;
+
+    /// @notice Max count of active motions
     uint256 public motionsCountLimit;
+
+    /// @notice Minimal time required to pass before enacting of motion
     uint256 public motionDuration;
 
     // ------------
     // EVM SCRIPT FACTORIES VARIABLES
     // ------------
+
+    /// @notice List of allowed EVMScript factories
     address[] public evmScriptFactories;
+
+    // Position of the EVMScript factory in the `evmScriptFactories` array,
+    // plus 1 because index 0 means a value is not in the set.
     mapping(address => uint256) internal evmScriptFactoryIndices;
+
+    /// @notice Permissions of current list of allowed EVMScript factories.
     mapping(address => bytes) public evmScriptFactoryPermissions;
 
     // ------------
     // EASY TRACK VARIABLES
     // ------------
+
+    /// @notice List of active motions
     Motion[] public motions;
+
+    // Id of the lastly created motion
     uint256 internal lastMotionId;
+
+    /// @notice Address of governanceToken which implements IMiniMeToken interface
     IMiniMeToken public governanceToken;
+
+    /// @notice Address of current EVMScriptExecutor
     IEVMScriptExecutor public evmScriptExecutor;
+
+    // Position of the motion in the `motions` array, plus 1
+    // because index 0 means a value is not in the set.
     mapping(uint256 => uint256) internal motionIndicesByMotionId;
+
+    /// @notice Stores if motion with given id has been objected from given address.
     mapping(uint256 => mapping(address => bool)) public objections;
 
+    /// @notice Initializes EasyTrackStorage variables with default values and calls initialize methods on base contracts.
+    /// @dev This method can be called only once
     function __EasyTrackStorage_init(address _governanceToken, address _admin) public initializer {
         __Pausable_init();
         __AccessControl_init();
