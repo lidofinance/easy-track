@@ -21,7 +21,6 @@ def test_add_reward_program(
 ):
     "Must add new reward program to rewardPrograms array and emit RewardProgramAdded(_rewardProgram) event."
     "When called with already added reward program fails with error 'REWARD_PROGRAM_ALREADY_ADDED' error"
-
     new_reward_program = stranger
     tx = reward_programs_registry.addRewardProgram(
         new_reward_program, {"from": evm_script_executor_stub}
