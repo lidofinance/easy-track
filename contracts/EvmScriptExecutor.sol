@@ -13,16 +13,40 @@ interface ICallsScript {
     ) external returns (bytes memory);
 }
 
+/// @notice Contains method to execute EVMScripts
+/// @dev EVMScripts use format of Aragon's https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol executor
 contract EVMScriptExecutor {
+    // -------------
+    // EVENTS
+    // -------------
     event ScriptExecuted(address indexed _caller, bytes _evmScript);
 
-    // keccak256("aragonOS.initializable.initializationBlock")
+    // ------------
+    // CONSTANTS
+    // ------------
+
+    // This variable required to use deployed CallsScript.sol contract because
+    // CalssScript.sol makes check that caller contract is not petrified (https://hack.aragon.org/docs/common_Petrifiable)
+    // Contains value: keccak256("aragonOS.initializable.initializationBlock")
     bytes32 internal constant INITIALIZATION_BLOCK_POSITION =
         0xebb05b386a8d34882b8711d156f463690983dc47815980fb82aeeff1aa43579e;
 
+    // ------------
+    // VARIABLES
+    // ------------
+
+    /// @notice Address of deployed CallsScript.sol contract
     address public immutable callsScript;
+
+    /// @notice Address of depoyed easyTrack.sol contract
     address public immutable easyTrack;
+
+    /// @notice Address of Aragon's Voting contract
     address public immutable voting;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
 
     constructor(
         address _callsScript,
@@ -35,8 +59,16 @@ contract EVMScriptExecutor {
         StorageSlot.getUint256Slot(INITIALIZATION_BLOCK_POSITION).value = block.number;
     }
 
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Executes EVMScript
+    /// @dev Uses deployed Aragon's CallsScript.sol contract to execute EVMScript.
+    /// @return Empty bytes
     function executeEVMScript(bytes memory _evmScript) external returns (bytes memory) {
         require(msg.sender == voting || msg.sender == easyTrack, "CALLER_IS_FORBIDDEN");
+
         bytes memory execScriptCallData =
             abi.encodeWithSelector(
                 ICallsScript.execScript.selector,
@@ -54,6 +86,6 @@ contract EVMScriptExecutor {
             }
         }
         emit ScriptExecuted(msg.sender, _evmScript);
-        return output;
+        return abi.decode(output, (bytes));
     }
 }
