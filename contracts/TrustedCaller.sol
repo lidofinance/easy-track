@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.4;
 
+/// @notice A helper contract contains logic to validate that only a trusted caller has access to certain methods.
+/// @dev Trusted caller set once on deployment and can't be changed.
 contract TrustedCaller {
     address public immutable trustedCaller;
 

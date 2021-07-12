@@ -1,44 +1,44 @@
 import random
-
-from eth_abi import encode_single
-from brownie import RewardProgramsRegistry, accounts, ZERO_ADDRESS, reverts
-
-import constants
-from utils.evm_script import encode_call_script
+from brownie import RewardProgramsRegistry, accounts, reverts
 
 
 def test_deploy(owner, evm_script_executor_stub):
-    "Must deploy contract with correct params"
-
+    "Must deploy contract with correct trustedCaller address"
     contract = owner.deploy(RewardProgramsRegistry, evm_script_executor_stub)
-
-    assert contract.evmScriptExecutor() == evm_script_executor_stub
+    assert contract.trustedCaller() == evm_script_executor_stub
 
 
 def test_add_reward_program_called_by_stranger(
     owner, stranger, reward_programs_registry
 ):
     "Must fail with error 'FORBIDDEN' error"
-    with reverts("FORBIDDEN"):
+    with reverts("CALLER_IS_FORBIDDEN"):
         reward_programs_registry.addRewardProgram(stranger, {"from": stranger})
 
 
 def test_add_reward_program(
     evm_script_executor_stub, stranger, reward_programs_registry
 ):
-    "Must add new reward program to rewardPrograms array and fail with"
-    "error 'REWARD_PROGRAM_ALREADY_ADDED' error on call with same reward program"
-    reward_programs_registry.addRewardProgram(
-        stranger, {"from": evm_script_executor_stub}
-    )
+    "Must add new reward program to rewardPrograms array and emit RewardProgramAdded(_rewardProgram) event."
+    "When called with already added reward program fails with error 'REWARD_PROGRAM_ALREADY_ADDED' error"
 
+    new_reward_program = stranger
+    tx = reward_programs_registry.addRewardProgram(
+        new_reward_program, {"from": evm_script_executor_stub}
+    )
+    # validate events
+    assert len(tx.events) == 1
+    assert tx.events["RewardProgramAdded"]["_rewardProgram"] == new_reward_program
+
+    # validate that reward program was added
     reward_programs = reward_programs_registry.getRewardPrograms()
     assert len(reward_programs) == 1
-    assert reward_programs[0] == stranger
+    assert reward_programs[0] == new_reward_program
 
+    # fails when reward program adds second time
     with reverts("REWARD_PROGRAM_ALREADY_ADDED"):
         reward_programs_registry.addRewardProgram(
-            stranger, {"from": evm_script_executor_stub}
+            new_reward_program, {"from": evm_script_executor_stub}
         )
 
 
@@ -46,7 +46,7 @@ def test_remove_reward_program_called_by_stranger(
     owner, stranger, reward_programs_registry
 ):
     "Must fail with error 'FORBIDDEN' error"
-    with reverts("FORBIDDEN"):
+    with reverts("CALLER_IS_FORBIDDEN"):
         reward_programs_registry.removeRewardProgram(stranger, {"from": stranger})
 
 
@@ -61,7 +61,7 @@ def test_remove_reward_program_with_not_existed_reward_program(
 
 
 def test_remove_reward_program(reward_programs_registry, evm_script_executor_stub):
-    "Must remove reward program from the list of allowed programs"
+    "Must remove reward program from the list of allowed programs and emit RewardProgramRemoved(_rewardProgram) event"
     reward_programs = accounts[4:9]
 
     for reward_program in reward_programs:
@@ -74,9 +74,12 @@ def test_remove_reward_program(reward_programs_registry, evm_script_executor_stu
         reward_program = reward_programs.pop(index_to_delete)
 
         assert reward_programs_registry.isRewardProgram(reward_program)
-        reward_programs_registry.removeRewardProgram(
+        tx = reward_programs_registry.removeRewardProgram(
             reward_program, {"from": evm_script_executor_stub}
         )
+        # validate events
+        assert len(tx.events) == 1
+        assert tx.events["RewardProgramRemoved"]["_rewardProgram"] == reward_program
         assert not reward_programs_registry.isRewardProgram(reward_program)
 
         contract_reward_programs = reward_programs_registry.getRewardPrograms()
