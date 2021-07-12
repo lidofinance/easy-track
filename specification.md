@@ -330,7 +330,7 @@ At this moment Easy Track has following EVMScript factories:
 
 - [IncreaseNodeOperatorStakingLimit](#increasenodeoperatorstakinglimit)
 - [TopUpLegoProgram](#topuplegoprogram)
-- [TopUpRewarProgram](#topuprewardprograms)
+- [TopUpRewardPrograms](#topuprewardprograms)
 - [AddRewardProgram](#addrewardprogram)
 - [RemoveRewardProgram](#removerewardprogram)
 
@@ -401,7 +401,7 @@ Creates EVMScript to add new reward program address to `RewardProgramsRegistry`.
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
 
-Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - new reward address to add. To successfully create EVMScript next requirements must be met:
+Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - new reward program address to add. To successfully create EVMScript next requirements must be met:
 
 - `_creator` must be equal to `trustedCaller` address
 - `_rewardProgram` address hasn't been added in `RewardProgramsRegistry` earlier.
