@@ -62,7 +62,7 @@ def test_create_evm_script_new_staking_limit_less_than_total_signing_keys(
 def test_create_evm_script(
     node_operator, node_operators_registry_stub, increase_node_operator_staking_limit
 ):
-    "Must create correct EVMScript when all requirements are met"
+    "Must create correct EVMScript if all requirements are met"
     evm_script = increase_node_operator_staking_limit.createEVMScript(
         node_operator, CALL_DATA
     )

@@ -59,7 +59,7 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
     {
         (address[] memory rewardTokens, uint256[] memory amounts) =
             _decodeEVMScriptCallData(_evmScriptCallData);
-        _validateEVMScriptCallDAta(rewardTokens, amounts);
+        _validateEVMScriptCallData(rewardTokens, amounts);
 
         bytes[] memory paymentsCallData = new bytes[](rewardTokens.length);
         for (uint256 i = 0; i < rewardTokens.length; ++i) {
@@ -97,7 +97,7 @@ contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _validateEVMScriptCallDAta(address[] memory _rewardTokens, uint256[] memory _amounts)
+    function _validateEVMScriptCallData(address[] memory _rewardTokens, uint256[] memory _amounts)
         private
         pure
     {
