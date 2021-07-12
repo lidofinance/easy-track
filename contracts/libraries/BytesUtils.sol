@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.4;
 
+/// @notice Contains methods to extract primitive types from bytes
 library BytesUtils {
     function bytes24At(bytes memory data, uint256 location) internal pure returns (bytes24 result) {
         uint256 word = uint256At(data, location);

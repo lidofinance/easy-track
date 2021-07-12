@@ -5,10 +5,17 @@ pragma solidity ^0.8.4;
 
 import "./BytesUtils.sol";
 
+/// @notice Provides methods to convinient work with permissions bytes
+/// @dev is a list of tuples (address, bytes4) encoded into a bytes representation.
+/// Each tuple (address, bytes4) describes a method allowed to be called by EVMScript
 library EVMScriptPermissions {
     using BytesUtils for bytes;
-    uint256 public constant PERMISSION_LENGTH = 24;
 
+    /// Stores length of one item in permissions.
+    uint256 private constant PERMISSION_LENGTH = 24;
+
+    /// @notice Validates that passed EVMScript calls only methods allowed in permissions.
+    /// @dev Returns false if provided permissions are invalid (has a wrong length or empty)
     function canExecuteEVMScript(bytes memory _permissions, bytes memory _evmScript)
         internal
         pure
@@ -29,10 +36,13 @@ library EVMScriptPermissions {
         return true;
     }
 
+    /// @notice Validates that bytes with permissions not empty and has correct length
     function isValidPermissions(bytes memory _permissions) internal pure returns (bool) {
         return _permissions.length > 0 && _permissions.length % PERMISSION_LENGTH == 0;
     }
 
+    // Retrieves bytes24 which describes tuple (address, bytes4)
+    // from EVMScript starting from _location position
     function _getNextMethodId(bytes memory _evmScript, uint256 _location)
         private
         pure
@@ -44,6 +54,7 @@ library EVMScriptPermissions {
         return (bytes24(uint192(methodId)) | bytes20(recipient), callDataLength);
     }
 
+    // Validates that passed _methodToCall contained in permissions
     function _hasPermission(bytes memory _permissions, bytes24 _methodToCall)
         private
         pure

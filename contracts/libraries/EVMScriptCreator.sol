@@ -3,9 +3,13 @@
 
 pragma solidity ^0.8.4;
 
+/// @notice Contains methods for convenient creation
+/// of EVMScripts in EVMScript factories contracts
 library EVMScriptCreator {
+    // Id of default CallsScript Aragon's executor.
     bytes4 private constant SPEC_ID = hex"00000001";
 
+    /// @notice Encodes one method call as EVMScript
     function createEVMScript(
         address _to,
         bytes4 _methodId,
@@ -21,6 +25,7 @@ library EVMScriptCreator {
             );
     }
 
+    /// @notice Encodes multiple calls of the same method on one contract as EVMScript
     function createEVMScript(
         address _to,
         bytes4 _methodId,
