@@ -14,12 +14,10 @@ REWARD_PROGRAM_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
 
 def test_deploy(owner, reward_programs_registry, finance, ldo_token):
-    "Must deploy contract with correct params"
-
+    "Must deploy contract with correct data"
     contract = owner.deploy(
         TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo_token
     )
-
     assert contract.trustedCaller() == owner
     assert contract.finance() == finance
     assert contract.rewardToken() == ldo_token
@@ -27,8 +25,7 @@ def test_deploy(owner, reward_programs_registry, finance, ldo_token):
 
 
 def test_create_evm_script_called_by_stranger(stranger, top_up_reward_programs):
-    "Must fail with error 'CALLER_IS_FORBIDDEN'"
-
+    "Must fail with error 'CALLER_IS_FORBIDDEN'  when creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         top_up_reward_programs.createEVMScript(
             stranger, encode_call_data([], []), {"from": stranger}
@@ -36,8 +33,7 @@ def test_create_evm_script_called_by_stranger(stranger, top_up_reward_programs):
 
 
 def test_create_evm_script_data_length_mismatch(owner, top_up_reward_programs):
-    "Must fail with error 'LENGTH_MISMATCH'"
-
+    "Must fail with error 'LENGTH_MISMATCH' when rewardPrograms and amounts has different lengths"
     with reverts("LENGTH_MISMATCH"):
         top_up_reward_programs.createEVMScript(
             owner,
@@ -46,8 +42,7 @@ def test_create_evm_script_data_length_mismatch(owner, top_up_reward_programs):
 
 
 def test_create_evm_script_empty_data(owner, top_up_reward_programs):
-    "Must fail with error 'EMPTY_DATA'"
-
+    "Must fail with error 'EMPTY_DATA' when called with empty lists"
     with reverts("EMPTY_DATA"):
         top_up_reward_programs.createEVMScript(owner, encode_call_data([], []))
 
@@ -55,16 +50,14 @@ def test_create_evm_script_empty_data(owner, top_up_reward_programs):
 def test_create_evm_script_zero_amount(
     owner, top_up_reward_programs, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must fail with error 'ZERO_AMOUNT'"
+    "Must fail with error 'ZERO_AMOUNT' if some value in amounts has zero value"
     amounts = [1 ** 18, 0]
-
     reward_programs_registry.addRewardProgram(
         REWARD_PROGRAM_ADDRESSES[0], {"from": evm_script_executor_stub}
     )
     reward_programs_registry.addRewardProgram(
         REWARD_PROGRAM_ADDRESSES[1], {"from": evm_script_executor_stub}
     )
-
     with reverts("ZERO_AMOUNT"):
         top_up_reward_programs.createEVMScript(
             owner, encode_call_data(REWARD_PROGRAM_ADDRESSES, amounts)
@@ -74,7 +67,8 @@ def test_create_evm_script_zero_amount(
 def test_create_evm_script_reward_program_not_allowed(
     owner, top_up_reward_programs, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must fail with error 'REWARD_PROGRAM_NOT_ALLOWED'"
+    "Must fail with error 'REWARD_PROGRAM_NOT_ALLOWED' when passed reward"
+    "program isn't listed in RewardProgramsRegistry"
 
     not_allowed_reward_program = accounts[3].address
 
@@ -114,8 +108,7 @@ def test_create_evm_script(
     finance,
     ldo_token,
 ):
-    "Must create correct evm script"
-
+    "Must create correct EVMScript if all requirements are met"
     # add reward programs
     reward_programs_registry.addRewardProgram(
         REWARD_PROGRAM_ADDRESSES[0], {"from": evm_script_executor_stub}
@@ -155,6 +148,7 @@ def test_create_evm_script(
 
 
 def test_decode_evm_script_call_data(top_up_reward_programs):
+    "Must decode EVMScript call data correctly"
     assert top_up_reward_programs.decodeEVMScriptCallData(
         encode_call_data(REWARD_PROGRAM_ADDRESSES, REWARD_PROGRAM_AMOUNTS)
     ) == (REWARD_PROGRAM_ADDRESSES, REWARD_PROGRAM_AMOUNTS)
