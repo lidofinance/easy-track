@@ -1,20 +1,14 @@
 import random
-import pytest
-
-from brownie.network.state import Chain
-from brownie import EasyTrack, accounts, reverts, ZERO_ADDRESS
-from eth_abi import encode_single
-from utils.evm_script import encode_call_script
-
 import constants
+from brownie import accounts, reverts
+from utils.test_helpers import access_controll_revert_message
 
 
-def test_add_evm_script_factory_called_by_stranger(
+def test_add_evm_script_factory_called_without_permissions(
     stranger, evm_script_factories_registry
 ):
-    with reverts(
-        "AccessControl: account 0x807c47a89f720fe4ee9b8343c286fc886f43191b is missing role 0x0000000000000000000000000000000000000000000000000000000000000000"
-    ):
+    "Must revert with correct Access Control message when called by address without 'DEFAULT_ADMIN_ROLE'"
+    with reverts(access_controll_revert_message(stranger)):
         evm_script_factories_registry.addEVMScriptFactory(
             stranger, b"", {"from": stranger}
         )
@@ -23,6 +17,7 @@ def test_add_evm_script_factory_called_by_stranger(
 def test_add_evm_script_factory_empty_permissions(
     voting, stranger, evm_script_factories_registry
 ):
+    "Must revert with message 'INVALID_PERMISSIONS' when called with empty permissions"
     with reverts("INVALID_PERMISSIONS"):
         evm_script_factories_registry.addEVMScriptFactory(
             stranger, b"", {"from": voting}
@@ -32,6 +27,7 @@ def test_add_evm_script_factory_empty_permissions(
 def test_add_evm_script_factory_invalid_length(
     voting, stranger, evm_script_factories_registry
 ):
+    "Must revert with message 'INVALID_PERMISSIONS' when called with permissions which have incorrect length"
     with reverts("INVALID_PERMISSIONS"):
         evm_script_factories_registry.addEVMScriptFactory(
             stranger, "0x0011223344", {"from": voting}
@@ -39,6 +35,7 @@ def test_add_evm_script_factory_invalid_length(
 
 
 def test_add_evm_script(voting, stranger, evm_script_factories_registry):
+    "Must add new EVMScript factory and emit EVMScriptFactoryAdded(_evmScriptFactory, _permissions) event"
     permissions = stranger.address + "ffccddee"
     tx = evm_script_factories_registry.addEVMScriptFactory(
         stranger, permissions, {"from": voting}
@@ -48,6 +45,7 @@ def test_add_evm_script(voting, stranger, evm_script_factories_registry):
 
 
 def test_add_evm_script_twice(voting, stranger, evm_script_factories_registry):
+    "Must revert with message 'EVM_SCRIPT_FACTORY_ALREADY_ADDED'"
     permissions = stranger.address + "ffccddee"
     evm_script_factories_registry.addEVMScriptFactory(
         stranger, permissions, {"from": voting}
@@ -61,11 +59,13 @@ def test_add_evm_script_twice(voting, stranger, evm_script_factories_registry):
 def test_remove_evm_script_factory_not_found(
     voting, stranger, evm_script_factories_registry
 ):
+    "Must revert with message 'EVM_SCRIPT_FACTORY_NOT_FOUND'"
     with reverts("EVM_SCRIPT_FACTORY_NOT_FOUND"):
         evm_script_factories_registry.removeEVMScriptFactory(stranger, {"from": voting})
 
 
 def test_remove_evm_script_factory(voting, stranger, evm_script_factories_registry):
+    "Must remove EVMScript factory from the list of allowed EVMScript factories and emit EVMScriptFactoryRemoved(_evmScriptFactory) event"
     # add many evm script factories
     evm_script_factories = accounts[3:8]
     permissions = stranger.address + "ffccddee"
@@ -79,10 +79,26 @@ def test_remove_evm_script_factory(voting, stranger, evm_script_factories_regist
     while len(evm_script_factories) > 0:
         index = random.randint(0, len(evm_script_factories) - 1)
         evm_script_factory_to_remove = evm_script_factories.pop(index)
-        evm_script_factories_registry.removeEVMScriptFactory(
+
+        assert evm_script_factories_registry.isEVMScriptFactory(
+            evm_script_factory_to_remove
+        )
+        tx = evm_script_factories_registry.removeEVMScriptFactory(
             evm_script_factory_to_remove, {"from": voting}
         )
+        assert not evm_script_factories_registry.isEVMScriptFactory(
+            evm_script_factory_to_remove
+        )
 
+        # validate events
+        assert len(tx.events) == 1
+        assert (
+            tx.events["EVMScriptFactoryRemoved"]["_evmScriptFactory"]
+            == evm_script_factory_to_remove
+        )
+
+        # validate that was deleted correct address by join
+        # test set with resulting set their size must be same
         evm_script_factories_after_remove = (
             evm_script_factories_registry.getEVMScriptFactories()
         )

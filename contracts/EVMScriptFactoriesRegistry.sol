@@ -7,12 +7,23 @@ import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 import "./EasyTrackStorage.sol";
 
+/// @notice Provides methods to add/remove EVMScript factories
+/// and contains an internal method for the convenient creation of EVMScripts
 contract EVMScriptFactoriesRegistry is EasyTrackStorage {
     using EVMScriptPermissions for bytes;
+
+    // -------------
+    // EVENTS
+    // -------------
 
     event EVMScriptFactoryAdded(address indexed _evmScriptFactory, bytes _permissions);
     event EVMScriptFactoryRemoved(address indexed _evmScriptFactory);
 
+    // ------------------
+    // EXTERNAL METHODS
+    // ------------------
+
+    /// @notice Adds new EVMScript Factory to the list of allowed EVMScript factories with given permissions
     function addEVMScriptFactory(address _evmScriptFactory, bytes memory _permissions)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -25,6 +36,10 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage {
         emit EVMScriptFactoryAdded(_evmScriptFactory, _permissions);
     }
 
+    /// @notice Removes EVMScript factory from the list of allowed EVMScript factories
+    /// @dev To delete a EVMScript factory from the rewardPrograms array in O(1),
+    /// we swap the element to delete with the last one in the array, and then remove
+    /// the last element (sometimes called as 'swap and pop').
     function removeEVMScriptFactory(address _evmScriptFactory)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -44,14 +59,23 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage {
         emit EVMScriptFactoryRemoved(_evmScriptFactory);
     }
 
+    /// @notice Returns current list of EVMScript factories
     function getEVMScriptFactories() external view returns (address[] memory) {
         return evmScriptFactories;
     }
 
+    /// @notice Returns if passed address are listed as EVMScript factory in the registry
     function isEVMScriptFactory(address _maybeEVMScriptFactory) external view returns (bool) {
         return _isEVMScriptFactory(_maybeEVMScriptFactory);
     }
 
+    // ------------------
+    // INTERNAL METHODS
+    // ------------------
+
+    /// @notice Creates EVMScript using given EVMScript factory
+    /// @dev Checks permissions of resulting EVMScript and reverts with error
+    /// if script tries to call methods not listed in permissions
     function _createEVMScript(
         address _evmScriptFactory,
         address _creator,
@@ -65,6 +89,10 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage {
         bytes memory permissions = evmScriptFactoryPermissions[_evmScriptFactory];
         require(permissions.canExecuteEVMScript(_evmScript), "HAS_NO_PERMISSIONS");
     }
+
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
 
     function _getEVMScriptFactoryIndex(address _evmScriptFactory)
         private
