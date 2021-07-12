@@ -23,6 +23,7 @@ interface INodeOperatorsRegistry {
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
 }
 
+/// @notice Creates EVMScript to increase staking limit for node operator
 contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
     struct NodeOperatorData {
         uint256 id;
@@ -32,34 +33,86 @@ contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
         uint256 totalSigningKeys;
     }
 
+    // -------------
+    // ERRORS
+    // -------------
+
     string private constant ERROR_NODE_OPERATOR_DISABLED = "NODE_OPERATOR_DISABLED";
     string private constant ERROR_CALLER_IS_NOT_NODE_OPERATOR = "CALLER_IS_NOT_NODE_OPERATOR";
     string private constant ERROR_STAKING_LIMIT_TOO_LOW = "STAKING_LIMIT_TOO_LOW";
     string private constant ERROR_NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
 
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
 
     constructor(address _nodeOperatorsRegistry) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
     }
 
-    function createEVMScript(address _creator, bytes memory _motionData)
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Creates EVMScript to increase staking limit for node operator
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where
+    /// _nodeOperatorId - id of node operator in NodeOperatorsRegistry
+    /// _stakingLimit - new staking limit
+    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
         override
         returns (bytes memory)
     {
-        _validateMotionData(_creator, _motionData);
+        _validateCreatorAndEVMScriptCallData(_creator, _evmScriptCallData);
         return
             EVMScriptCreator.createEVMScript(
                 address(nodeOperatorsRegistry),
                 nodeOperatorsRegistry.setNodeOperatorStakingLimit.selector,
-                _motionData
+                _evmScriptCallData
             );
     }
 
-    function _validateMotionData(address _creator, bytes memory _motionData) private view {
-        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeEVMScriptCallData(_motionData);
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where
+    /// _nodeOperatorId - id of node operator in NodeOperatorsRegistry
+    /// _stakingLimit - new staking limit
+    /// @return _nodeOperatorId Id of node operator in NodeOperatorsRegistry
+    /// @return _stakingLimit New staking limit
+    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        external
+        pure
+        returns (uint256 _nodeOperatorId, uint256 _stakingLimit)
+    {
+        return _decodeEVMScriptCallData(_evmScriptCallData);
+    }
+
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
+
+    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        private
+        pure
+        returns (uint256 _nodeOperatorId, uint256 _stakingLimit)
+    {
+        (_nodeOperatorId, _stakingLimit) = abi.decode(_evmScriptCallData, (uint256, uint256));
+    }
+
+    function _validateCreatorAndEVMScriptCallData(address _creator, bytes memory _evmScriptCallData)
+        private
+        view
+    {
+        (uint256 _nodeOperatorId, uint256 _stakingLimit) =
+            _decodeEVMScriptCallData(_evmScriptCallData);
         NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
         require(nodeOperatorData.rewardAddress == _creator, ERROR_CALLER_IS_NOT_NODE_OPERATOR);
         require(nodeOperatorData.active, ERROR_NODE_OPERATOR_DISABLED);
@@ -80,21 +133,5 @@ contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
         _nodeOperatorData.rewardAddress = rewardAddress;
         _nodeOperatorData.stakingLimit = stakingLimit;
         _nodeOperatorData.totalSigningKeys = totalSigningKeys;
-    }
-
-    function decodeEVMScriptCallData(bytes memory _motionData)
-        external
-        pure
-        returns (uint256 _nodeOperatorId, uint256 _stakingLimit)
-    {
-        return _decodeEVMScriptCallData(_motionData);
-    }
-
-    function _decodeEVMScriptCallData(bytes memory _motionData)
-        internal
-        pure
-        returns (uint256 _nodeOperatorId, uint256 _stakingLimit)
-    {
-        (_nodeOperatorId, _stakingLimit) = abi.decode(_motionData, (uint256, uint256));
     }
 }
