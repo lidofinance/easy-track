@@ -85,9 +85,9 @@ def test_create_evm_script(
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(top_up_reward_programs):
+def test_decode_evm_script_call_data(top_up_lego_program):
     "Must decode EVMScript call data correctly"
-    assert top_up_reward_programs.decodeEVMScriptCallData(
+    assert top_up_lego_program.decodeEVMScriptCallData(
         encode_call_data(REWARD_TOKENS, REWARD_AMOUNTS)
     ) == (REWARD_TOKENS, REWARD_AMOUNTS)
 

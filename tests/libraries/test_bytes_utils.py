@@ -17,14 +17,14 @@ def test_bytes24_at(bytes_utils_wrapper):
 
     # long word zero position
     assert (
-        bytes_utils_wrapper.bytes24At(word, 0),
-        "0x00112233445566778899aabbccddeeff0102030405060708",
+        bytes_utils_wrapper.bytes24At(word, 0)
+        == "0x00112233445566778899aabbccddeeff0102030405060708",
     )
 
     # long word non zero position
     assert (
-        bytes_utils_wrapper.bytes24At(word, 6),
-        "0x66778899aabbccddeeff0102030405060708090a0b0c0d0f",
+        bytes_utils_wrapper.bytes24At(word, 6)
+        == "0x66778899aabbccddeeff0102030405060708090a0b0c0d0f",
     )
 
 

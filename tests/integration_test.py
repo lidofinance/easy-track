@@ -1,3 +1,5 @@
+import sys
+import pytest
 from brownie.network import Chain
 from brownie import (
     Contract,
@@ -20,6 +22,7 @@ from utils.evm_script import encode_call_script
 import constants
 
 
+@pytest.mark.skip_coverage
 def test_node_operators_easy_track(
     stranger,
     voting,
@@ -168,6 +171,7 @@ def test_node_operators_easy_track(
     assert new_node_operator[3] == 3  # stakingLimit
 
 
+@pytest.mark.skip_coverage
 def test_reward_programs_easy_track(
     stranger,
     agent,
@@ -335,6 +339,7 @@ def test_reward_programs_easy_track(
     assert len(reward_programs_registry.getRewardPrograms()) == 0
 
 
+@pytest.mark.skip_coverage
 def test_lego_easy_track(
     stranger,
     agent,

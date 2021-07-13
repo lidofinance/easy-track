@@ -1,3 +1,4 @@
+import pytest
 import constants
 from brownie.network.state import Chain
 from brownie import Contract, ContractProxy, EasyTrack, reverts, ZERO_ADDRESS
@@ -23,6 +24,7 @@ def test_deploy(owner, ldo_token, voting):
     assert easy_track.hasRole(easy_track.CANCEL_ROLE(), voting)
 
 
+@pytest.mark.skip_coverage
 def test_upgrade_to_called_without_permissions(owner, stranger, ldo_token, voting):
     easy_track = owner.deploy(EasyTrack)
     proxy = owner.deploy(
@@ -35,6 +37,7 @@ def test_upgrade_to_called_without_permissions(owner, stranger, ldo_token, votin
         proxied_easy_track.upgradeTo(ZERO_ADDRESS, {"from": stranger})
 
 
+@pytest.mark.skip_coverage
 def test_upgrade_to(owner, voting, ldo_token):
     "Must set new implementation"
     easy_track = owner.deploy(EasyTrack)
@@ -617,6 +620,7 @@ def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
         easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
 
 
+@pytest.mark.skip_coverage
 def test_set_evm_script_executor_called_by_owner(
     owner, voting, ldo_token, evm_script_executor
 ):
