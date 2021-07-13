@@ -55,6 +55,8 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     // ------------------
 
     /// @notice Creates new motion
+    /// @param _evmScriptFactory Address of EVMScript factory registered in Easy Track
+    /// @param _evmScriptCallData Encoded call data of EVMScript factory
     /// @return _newMotionId Id of created motion
     function createMotion(address _evmScriptFactory, bytes memory _evmScriptCallData)
         external
@@ -91,6 +93,9 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     /// @notice Enacts motion with given id
+    /// @param _motionId Id of motion to enact
+    /// @param _evmScriptCallData Encoded call data of EVMScript factory. Same as passed on the creation
+    /// of motion with the given motion id. Transaction reverts if EVMScript factory call data differs
     function enactMotion(uint256 _motionId, bytes memory _evmScriptCallData)
         external
         whenNotPaused
@@ -109,6 +114,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     /// @notice Submits an objection from `governanceToken` holder.
+    /// @param _motionId Id of motion to object
     function objectToMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
         require(!objections[_motionId][msg.sender], ERROR_ALREADY_OBJECTED);
@@ -130,6 +136,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     /// @notice Cancels motion with given id
+    /// @param _motionId Id of motion to cancel
     function cancelMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
         require(motion.creator == msg.sender, ERROR_NOT_CREATOR);
@@ -138,6 +145,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     /// @notice Cancels all motions with given ids
+    /// @param _motionIds Ids of motions to cancel
     function cancelMotions(uint256[] memory _motionIds) external onlyRole(CANCEL_ROLE) {
         for (uint256 i = 0; i < _motionIds.length; ++i) {
             if (motionIndicesByMotionId[_motionIds[i]] > 0) {
@@ -159,6 +167,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     /// @notice Sets new EVMScriptExecutor
+    /// @param _evmScriptExecutor Address of new EVMScriptExecutor
     function setEVMScriptExecutor(address _evmScriptExecutor)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
@@ -178,7 +187,9 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         _unpause();
     }
 
-    /// @notice Returns if an `_objector` can submit an objection to motion with id equals to `_motionId` or not
+    /// @notice Returns if an _objector can submit an objection to motion with id equals to _motionId or not
+    /// @param _motionId Id of motion to check opportunity to object
+    /// @param _objector Address of objector
     function canObjectToMotion(uint256 _motionId, address _objector) external view returns (bool) {
         Motion storage motion = _getMotion(_motionId);
         uint256 balance = governanceToken.balanceOfAt(_objector, motion.snapshotBlock);
@@ -191,6 +202,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     }
 
     /// @notice Returns motion with the given id
+    /// @param _motionId Id of motion to retrieve
     function getMotion(uint256 _motionId) external view returns (Motion memory) {
         return _getMotion(_motionId);
     }
