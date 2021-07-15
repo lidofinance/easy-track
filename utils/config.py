@@ -1,6 +1,7 @@
 import os
 import sys
 from brownie import network, accounts
+from utils.lido import contracts
 
 
 def get_is_live():
@@ -8,12 +9,18 @@ def get_is_live():
 
 
 def get_deployer_account(is_live):
-    if is_live and "DEPLOYER" not in os.environ:
+    if not is_live:
+        ldo = contracts()["dao"]["ldo"]
+        agent = contracts()["dao"]["agent"]
+        deployer = accounts[0]
+        ldo.transfer(deployer, 10 ** 18, {"from": agent})
+        return deployer
+    if "DEPLOYER" not in os.environ:
         raise EnvironmentError(
             "Please set DEPLOYER env variable to the deployer account name"
         )
 
-    return accounts.load(os.environ["DEPLOYER"]) if is_live else accounts[0]
+    return accounts.load(os.environ["DEPLOYER"])
 
 
 def prompt_bool():
