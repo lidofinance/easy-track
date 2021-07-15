@@ -3,7 +3,6 @@ import random
 from eth_abi import encode_single
 from brownie import TopUpRewardPrograms, accounts, ZERO_ADDRESS, reverts
 
-import constants
 from utils.evm_script import encode_call_script
 
 REWARD_PROGRAM_ADDRESSES = [
@@ -13,14 +12,14 @@ REWARD_PROGRAM_ADDRESSES = [
 REWARD_PROGRAM_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
 
-def test_deploy(owner, reward_programs_registry, finance, ldo_token):
+def test_deploy(owner, reward_programs_registry, finance, ldo):
     "Must deploy contract with correct data"
     contract = owner.deploy(
-        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo_token
+        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
     )
     assert contract.trustedCaller() == owner
     assert contract.finance() == finance
-    assert contract.rewardToken() == ldo_token
+    assert contract.rewardToken() == ldo
     assert contract.rewardProgramsRegistry() == reward_programs_registry
 
 
@@ -106,7 +105,7 @@ def test_create_evm_script(
     reward_programs_registry,
     evm_script_executor_stub,
     finance,
-    ldo_token,
+    ldo,
 ):
     "Must create correct EVMScript if all requirements are met"
     # add reward programs
@@ -126,7 +125,7 @@ def test_create_evm_script(
             (
                 finance.address,
                 finance.newImmediatePayment.encode_input(
-                    ldo_token,
+                    ldo,
                     REWARD_PROGRAM_ADDRESSES[0],
                     REWARD_PROGRAM_AMOUNTS[0],
                     "Reward program top up",
@@ -135,7 +134,7 @@ def test_create_evm_script(
             (
                 finance.address,
                 finance.newImmediatePayment.encode_input(
-                    ldo_token,
+                    ldo,
                     REWARD_PROGRAM_ADDRESSES[1],
                     REWARD_PROGRAM_AMOUNTS[1],
                     "Reward program top up",

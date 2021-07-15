@@ -1,5 +1,4 @@
 import random
-import constants
 from brownie import accounts, reverts
 from utils.test_helpers import access_controll_revert_message
 

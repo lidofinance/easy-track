@@ -1,23 +1,24 @@
-import constants
 from eth_abi import encode_single
 from brownie import EVMScriptExecutor, reverts
 from utils.evm_script import encode_call_script
 
 
-def test_deploy(owner, easy_track):
+def test_deploy(owner, easy_track, calls_script, voting):
     "Must deploy contract with correct data"
-    contract = owner.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
-    )
+    contract = owner.deploy(EVMScriptExecutor, calls_script, easy_track, voting)
 
     # validate that contract was initialized correctly
-    assert contract.callsScript() == constants.CALLS_SCRIPT
+    assert contract.callsScript() == calls_script
     assert contract.easyTrack() == easy_track
-    assert contract.voting() == constants.VOTING
+    assert contract.voting() == voting
 
 
 def test_execute_evm_script_revert_msg(
-    easy_track, node_operator, evm_script_executor, increase_node_operator_staking_limit
+    voting,
+    easy_track,
+    node_operator,
+    evm_script_executor,
+    increase_node_operator_staking_limit,
 ):
     "Must forward revert message if transaction contained in EVMScript will fail"
     with reverts("NOT_ENOUGH_SIGNING_KEYS"):
@@ -33,7 +34,7 @@ def test_execute_evm_script_revert_msg(
                     )
                 ]
             ),
-            {"from": constants.VOTING},
+            {"from": voting},
         )
 
 
@@ -68,7 +69,7 @@ def test_execute_evm_script_output(
 
 
 def test_execute_evm_script_caller_validation(
-    stranger, easy_track, evm_script_executor, node_operators_registry_stub
+    stranger, voting, easy_track, evm_script_executor, node_operators_registry_stub
 ):
     "Must accept calls to executeEVMScript only from Voting and EasyTrack contracts"
     with reverts("CALLER_IS_FORBIDDEN"):
@@ -87,4 +88,4 @@ def test_execute_evm_script_caller_validation(
 
     # must execute scripts when called by Voting or EasyTrack
     evm_script_executor.executeEVMScript(evm_script, {"from": easy_track})
-    evm_script_executor.executeEVMScript(evm_script, {"from": constants.VOTING})
+    evm_script_executor.executeEVMScript(evm_script, {"from": voting})

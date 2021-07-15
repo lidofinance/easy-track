@@ -20,7 +20,7 @@ from brownie import (
     TopUpLegoProgram,
     EVMScriptPermissionsWrapper,
 )
-import constants
+from utils.lido import contracts
 
 ##############
 # ACCOUNTS
@@ -33,26 +33,23 @@ def owner(accounts):
 
 
 @pytest.fixture(scope="function")
-def stranger(accounts, ldo_token):
-    return reset_balance(ldo_token, accounts[5])
+def stranger(accounts, ldo, agent):
+    return reset_balance(ldo, agent, accounts[5])
 
 
 @pytest.fixture(scope="function")
-def node_operator(accounts, ldo_token):
+def node_operator(accounts, ldo):
     return accounts[4]
 
 
 @pytest.fixture(scope="function")
-def ldo_holders(accounts, ldo_token):
+def ldo_holders(accounts, ldo, agent):
     holders = accounts[6:9]
-    total_supply = ldo_token.totalSupply()
+    total_supply = ldo.totalSupply()
     holder_balance = total_supply / 500  # 0.2 %
     for holder in holders:
-        balance = ldo_token.balanceOf(holder)
-        # to make sure that holder will have exact 0.2 % of total supply of tokens
-        if balance > 0:
-            ldo_token.transfer(constants.LDO_WHALE_HOLDER, balance, {"from": holder})
-        ldo_token.transfer(holder, holder_balance, {"from": constants.LDO_WHALE_HOLDER})
+        reset_balance(ldo, agent, holder)
+        ldo.transfer(holder, holder_balance, {"from": agent})
     return holders
 
 
@@ -67,31 +64,29 @@ def lego_program(accounts):
 
 
 @pytest.fixture(scope="function")
-def motion_settings(owner, voting, ldo_token):
+def motion_settings(owner, voting, ldo):
     contract = owner.deploy(MotionSettings)
-    contract.__EasyTrackStorage_init(ldo_token, voting, {"from": owner})
+    contract.__EasyTrackStorage_init(ldo, voting, {"from": owner})
     return contract
 
 
 @pytest.fixture(scope="function")
-def evm_script_factories_registry(owner, voting, ldo_token):
+def evm_script_factories_registry(owner, voting, ldo):
     contract = owner.deploy(EVMScriptFactoriesRegistry)
-    contract.__EasyTrackStorage_init(ldo_token, voting, {"from": owner})
+    contract.__EasyTrackStorage_init(ldo, voting, {"from": owner})
     return contract
 
 
 @pytest.fixture(scope="function")
-def easy_track(owner, ldo_token, voting):
+def easy_track(owner, ldo, voting):
     contract = owner.deploy(EasyTrack)
-    contract.__EasyTrackStorage_init(ldo_token, voting)
+    contract.__EasyTrackStorage_init(ldo, voting)
     return contract
 
 
 @pytest.fixture(scope="function")
-def evm_script_executor(owner, easy_track):
-    return owner.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
-    )
+def evm_script_executor(owner, easy_track, calls_script, voting):
+    return owner.deploy(EVMScriptExecutor, calls_script, easy_track, voting)
 
 
 @pytest.fixture(scope="function")
@@ -120,9 +115,9 @@ def remove_reward_program(owner, reward_programs_registry):
 
 
 @pytest.fixture(scope="function")
-def top_up_reward_programs(owner, finance, ldo_token, reward_programs_registry):
+def top_up_reward_programs(owner, finance, ldo, reward_programs_registry):
     return owner.deploy(
-        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo_token
+        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
     )
 
 
@@ -171,39 +166,49 @@ def evm_script_executor_stub(owner):
 ##########
 
 
-@pytest.fixture(scope="function")
-def ldo_token(interface):
-    return interface.ERC20(constants.LDO_TOKEN)
+@pytest.fixture()
+def ldo():
+    return contracts()["dao"]["ldo"]
 
 
-@pytest.fixture(scope="function")
-def steth_token(interface):
-    return interface.Lido(constants.STETH_TOKEN)
+@pytest.fixture()
+def steth():
+    return contracts()["steth"]
 
 
-@pytest.fixture(scope="function")
-def node_operators_registry(interface):
-    return interface.NodeOperatorsRegistry(constants.NODE_OPERATORS_REGISTRY)
+@pytest.fixture()
+def node_operators_registry():
+    return contracts()["node_operators_registry"]
 
 
-@pytest.fixture(scope="function")
-def voting(interface):
-    return interface.Voting(constants.VOTING)
+@pytest.fixture()
+def voting():
+    return contracts()["dao"]["voting"]
 
 
-@pytest.fixture(scope="function")
-def token_manager(interface):
-    return interface.TokenManager(constants.TOKENS)
+@pytest.fixture()
+def tokens():
+    return contracts()["dao"]["tokens"]
 
 
-@pytest.fixture(scope="function")
-def agent(interface):
-    return interface.Agent(constants.ARAGON_AGENT)
+@pytest.fixture()
+def agent():
+    return contracts()["dao"]["agent"]
 
 
-@pytest.fixture(scope="function")
-def finance(interface):
-    return interface.Finance(constants.FINANCE)
+@pytest.fixture()
+def finance():
+    return contracts()["dao"]["finance"]
+
+
+@pytest.fixture()
+def acl():
+    return contracts()["dao"]["acl"]
+
+
+@pytest.fixture()
+def calls_script():
+    return contracts()["dao"]["calls_script"]
 
 
 #############
@@ -216,8 +221,8 @@ def init(voting, easy_track, evm_script_executor_stub):
     easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
 
 
-def reset_balance(ldo_token, account):
-    balance = ldo_token.balanceOf(account)
+def reset_balance(ldo, agent, account):
+    balance = ldo.balanceOf(account)
     if balance > 0:
-        ldo_token.transfer(constants.LDO_WHALE_HOLDER, balance, {"from": account})
+        ldo.transfer(agent, balance, {"from": account})
     return account

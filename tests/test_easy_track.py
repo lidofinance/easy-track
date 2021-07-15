@@ -11,12 +11,12 @@ from utils.test_helpers import (
 )
 
 
-def test_deploy(owner, ldo_token, voting):
+def test_deploy(owner, ldo, voting):
     easy_track = owner.deploy(EasyTrack)
-    easy_track.__EasyTrackStorage_init(ldo_token, voting)
+    easy_track.__EasyTrackStorage_init(ldo, voting)
 
     assert not easy_track.paused()
-    assert easy_track.governanceToken() == ldo_token
+    assert easy_track.governanceToken() == ldo
     assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
     assert easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), voting)
     assert easy_track.hasRole(easy_track.PAUSE_ROLE(), voting)
@@ -25,12 +25,12 @@ def test_deploy(owner, ldo_token, voting):
 
 
 @pytest.mark.skip_coverage
-def test_upgrade_to_called_without_permissions(owner, stranger, ldo_token, voting):
+def test_upgrade_to_called_without_permissions(owner, stranger, ldo, voting):
     easy_track = owner.deploy(EasyTrack)
     proxy = owner.deploy(
         ContractProxy,
         easy_track,
-        easy_track.__EasyTrackStorage_init.encode_input(ldo_token, voting),
+        easy_track.__EasyTrackStorage_init.encode_input(ldo, voting),
     )
     proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
     with reverts(access_controll_revert_message(stranger)):
@@ -38,13 +38,13 @@ def test_upgrade_to_called_without_permissions(owner, stranger, ldo_token, votin
 
 
 @pytest.mark.skip_coverage
-def test_upgrade_to(owner, voting, ldo_token):
+def test_upgrade_to(owner, voting, ldo):
     "Must set new implementation"
     easy_track = owner.deploy(EasyTrack)
     proxy = owner.deploy(
         ContractProxy,
         easy_track,
-        easy_track.__EasyTrackStorage_init.encode_input(ldo_token, voting),
+        easy_track.__EasyTrackStorage_init.encode_input(ldo, voting),
     )
     proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
     new_logic = owner.deploy(EasyTrack)
@@ -405,7 +405,7 @@ def test_object_to_motion_motion_not_found(owner, easy_track):
 
 
 def test_object_to_motion_multiple_times(
-    owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
+    owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must fail with error: 'ALREADY_OBJECTED'"
     # add evm script factory to create motions
@@ -428,7 +428,7 @@ def test_object_to_motion_multiple_times(
 
 
 def test_object_to_motion_not_ldo_holder(
-    owner, voting, stranger, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
+    owner, voting, stranger, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must fail with error: 'NOT_ENOUGH_BALANCE'"
     # add evm script factory to create motions
@@ -443,13 +443,13 @@ def test_object_to_motion_not_ldo_holder(
     easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
 
     # send objection from user without ldo
-    assert ldo_token.balanceOf(stranger) == 0
+    assert ldo.balanceOf(stranger) == 0
     with reverts("NOT_ENOUGH_BALANCE"):
         easy_track.objectToMotion(1, {"from": stranger})
 
 
 def test_object_to_motion_by_tokens_holder(
-    owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
+    owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must increase motion objections on correct amount and"
     "emit ObjectionSent(_motionId,_objector,_weight,_votingPower) event"
@@ -467,13 +467,13 @@ def test_object_to_motion_by_tokens_holder(
     # send objection from ldo holder
     tx = easy_track.objectToMotion(1, {"from": ldo_holders[0]})
 
-    total_supply = ldo_token.totalSupply()
-    holder_balance = ldo_token.balanceOf(ldo_holders[0])
+    total_supply = ldo.totalSupply()
+    holder_balance = ldo.balanceOf(ldo_holders[0])
     holder_part = 10000 * holder_balance / total_supply
 
     motion = easy_track.getMotion(1)
 
-    assert motion[7] == ldo_token.balanceOf(ldo_holders[0])  # objectionsAmount
+    assert motion[7] == ldo.balanceOf(ldo_holders[0])  # objectionsAmount
     assert motion[8] == holder_part  # objectionsAmountPct
 
     # validate events
@@ -485,7 +485,7 @@ def test_object_to_motion_by_tokens_holder(
 
 
 def test_object_to_motion_rejected(
-    owner, voting, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
+    owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must remove motion from list of active motions"
     "and emit ObjectionSent(_motionId,_objector,_weight,_votingPower)"
@@ -512,8 +512,8 @@ def test_object_to_motion_rejected(
     assert len(tx.events) == 2
     assert tx.events["MotionObjected"]["_motionId"] == 1
     assert tx.events["MotionObjected"]["_objector"] == ldo_holders[2]
-    assert tx.events["MotionObjected"]["_weight"] == ldo_token.balanceOf(ldo_holders[2])
-    assert tx.events["MotionObjected"]["_votingPower"] == ldo_token.totalSupply()
+    assert tx.events["MotionObjected"]["_weight"] == ldo.balanceOf(ldo_holders[2])
+    assert tx.events["MotionObjected"]["_votingPower"] == ldo.totalSupply()
     assert tx.events["MotionRejected"]["_motionId"] == 1
 
 
@@ -622,14 +622,14 @@ def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
 
 @pytest.mark.skip_coverage
 def test_set_evm_script_executor_called_by_owner(
-    owner, voting, ldo_token, evm_script_executor
+    owner, voting, ldo, evm_script_executor
 ):
     "Must set new EVMScriptExecutor and emit EVMScriptExecutorChanged(_evmScriptExecutor) event"
     logic = owner.deploy(EasyTrack)
     proxy = owner.deploy(
         ContractProxy,
         logic,
-        logic.__EasyTrackStorage_init.encode_input(ldo_token, voting),
+        logic.__EasyTrackStorage_init.encode_input(ldo, voting),
     )
     assert proxy.__Proxy_implementation() == logic
     easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
@@ -713,7 +713,7 @@ def test_unpause_called_with_permissions(voting, easy_track):
 
 
 def test_can_object_to_motion(
-    owner, voting, stranger, ldo_holders, ldo_token, easy_track, evm_script_factory_stub
+    owner, voting, stranger, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must return False if caller has no governance tokens or if he has already voted."
     "Returns True in other cases"

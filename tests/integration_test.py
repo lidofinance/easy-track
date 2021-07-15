@@ -1,6 +1,6 @@
 import sys
 import pytest
-from brownie.network import Chain
+from brownie.network import chain
 from brownie import (
     Contract,
     ContractProxy,
@@ -19,7 +19,8 @@ from brownie import (
 )
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
-import constants
+
+from utils.lido import contracts, create_voting, execute_voting, Permission
 
 
 @pytest.mark.skip_coverage
@@ -27,14 +28,13 @@ def test_node_operators_easy_track(
     stranger,
     voting,
     agent,
-    token_manager,
     ldo_holders,
     node_operators_registry,
-    ldo_token,
+    ldo,
+    calls_script,
+    acl,
 ):
-    chain = Chain()
     deployer = accounts[0]
-    voting_helper = VotingHelper(chain, token_manager, voting)
 
     # deploy easy track
     easy_track_logic = deployer.deploy(EasyTrack)
@@ -43,13 +43,13 @@ def test_node_operators_easy_track(
     easy_track_proxy = deployer.deploy(
         ContractProxy,
         easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo_token, deployer),
+        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo, deployer),
     )
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
+        EVMScriptExecutor, calls_script, easy_track, voting
     )
 
     # set EVM script executor in easy track
@@ -73,22 +73,31 @@ def test_node_operators_easy_track(
     assert evm_script_factories[0] == increase_node_operator_staking_limit
 
     # transfer admin role to voting
-    easy_track.grantRole(
-        easy_track.DEFAULT_ADMIN_ROLE(), constants.VOTING, {"from": deployer}
-    )
-    assert easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), constants.VOTING)
+    easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), voting, {"from": deployer})
+    assert easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), voting)
     easy_track.revokeRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer, {"from": deployer})
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
     # create voting to grant permissions to EVM script executor to set staking limit
 
-    add_set_staking_limit_permissions_voting_id = voting_helper.create_voting(
-        add_permission_set_node_operators_stakin_limit_call_script(evm_script_executor),
+    add_set_staking_limit_permissions_voting_id, _ = create_voting(
+        encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        evm_script_executor,
+                        node_operators_registry,
+                        node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE(),
+                    ),
+                ),
+            ]
+        ),
         "Grant permissions to EVMScriptExecutor to set staking limits",
+        {"from": agent},
     )
 
-    # execute voting to add permissions to easy track to set staking limit
-    voting_helper.execute_voting(add_set_staking_limit_permissions_voting_id)
+    execute_voting(add_set_staking_limit_permissions_voting_id)
 
     # create vote to add test node operator
     node_operator = {"name": "test_node_operator", "address": accounts[3]}
@@ -99,12 +108,11 @@ def test_node_operators_easy_track(
         [(node_operators_registry.address, add_node_operator_calldata)]
     )
 
-    add_node_operators_voting_id = voting_helper.create_voting(
-        add_node_operator_evm_script, "Add node operator to registry"
+    add_node_operators_voting_id, _ = create_voting(
+        add_node_operator_evm_script, "Add node operator to registry", {"from": agent}
     )
-
     # execute vote to add test node operator
-    voting_helper.execute_voting(add_node_operators_voting_id)
+    execute_voting(add_node_operators_voting_id)
 
     # validate new node operator id
     new_node_operator_id = node_operators_registry.getActiveNodeOperatorsCount() - 1
@@ -173,19 +181,11 @@ def test_node_operators_easy_track(
 
 @pytest.mark.skip_coverage
 def test_reward_programs_easy_track(
-    stranger,
-    agent,
-    voting,
-    finance,
-    ldo_token,
-    ldo_holders,
-    token_manager,
+    stranger, agent, voting, finance, ldo, ldo_holders, calls_script, acl
 ):
-    chain = Chain()
     deployer = accounts[0]
     reward_program = accounts[5]
     trusted_address = accounts[7]
-    voting_helper = VotingHelper(chain, token_manager, voting)
 
     # deploy easy track
     easy_track_logic = deployer.deploy(EasyTrack)
@@ -194,13 +194,13 @@ def test_reward_programs_easy_track(
     easy_track_proxy = deployer.deploy(
         ContractProxy,
         easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo_token, deployer),
+        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo, deployer),
     )
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
+        EVMScriptExecutor, calls_script, easy_track, voting
     )
 
     # set EVM script executor in easy track
@@ -217,7 +217,7 @@ def test_reward_programs_easy_track(
         trusted_address,
         reward_programs_registry,
         finance,
-        ldo_token,
+        ldo,
     )
 
     # add TopUpRewardProgram EVM script factory to easy track
@@ -257,21 +257,32 @@ def test_reward_programs_easy_track(
     )
 
     # transfer admin role to voting
-    easy_track.grantRole(
-        easy_track.DEFAULT_ADMIN_ROLE(), constants.VOTING, {"from": deployer}
-    )
-    assert easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), constants.VOTING)
+    easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), voting, {"from": deployer})
+    assert easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), voting)
     easy_track.revokeRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer, {"from": deployer})
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
     # create voting to grant permissions to EVM script executor to create new payments
-    add_create_payments_permissions_voting_id = voting_helper.create_voting(
-        add_permission_create_new_payments_call_script(evm_script_executor),
+
+    add_create_payments_permissions_voting_id, _ = create_voting(
+        encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        evm_script_executor,
+                        finance,
+                        finance.CREATE_PAYMENTS_ROLE(),
+                    ),
+                ),
+            ]
+        ),
         "Grant permissions to EVMScriptExecutor to make payments",
+        {"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    voting_helper.execute_voting(add_create_payments_permissions_voting_id)
+    execute_voting(add_create_payments_permissions_voting_id)
 
     # create new motion to add reward program
     tx = easy_track.createMotion(
@@ -307,7 +318,7 @@ def test_reward_programs_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    assert ldo_token.balanceOf(reward_program) == 0
+    assert ldo.balanceOf(reward_program) == 0
 
     easy_track.enactMotion(
         motions[0][0],
@@ -316,7 +327,7 @@ def test_reward_programs_easy_track(
     )
 
     assert len(easy_track.getMotions()) == 0
-    assert ldo_token.balanceOf(reward_program) == 5e18
+    assert ldo.balanceOf(reward_program) == 5e18
 
     # create new motion to remove reward program
     tx = easy_track.createMotion(
@@ -344,17 +355,16 @@ def test_lego_easy_track(
     stranger,
     agent,
     finance,
-    ldo_token,
-    steth_token,
+    ldo,
+    steth,
     lego_program,
-    token_manager,
     voting,
     ldo_holders,
+    calls_script,
+    acl,
 ):
-    chain = Chain()
     deployer = accounts[0]
     trusted_address = accounts[7]
-    voting_helper = VotingHelper(chain, token_manager, voting)
 
     # deploy easy track
     easy_track_logic = deployer.deploy(EasyTrack)
@@ -363,13 +373,13 @@ def test_lego_easy_track(
     easy_track_proxy = deployer.deploy(
         ContractProxy,
         easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo_token, deployer),
+        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo, deployer),
     )
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, constants.CALLS_SCRIPT, easy_track, constants.VOTING
+        EVMScriptExecutor, calls_script, easy_track, voting
     )
 
     # set EVM script executor in easy track
@@ -392,13 +402,25 @@ def test_lego_easy_track(
     assert evm_script_factories[0] == top_up_lego_program
 
     # create voting to grant permissions to EVM script executor to create new payments
-    add_create_payments_permissions_voting_id = voting_helper.create_voting(
-        add_permission_create_new_payments_call_script(evm_script_executor),
+    add_create_payments_permissions_voting_id, _ = create_voting(
+        encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        evm_script_executor,
+                        finance,
+                        finance.CREATE_PAYMENTS_ROLE(),
+                    ),
+                ),
+            ]
+        ),
         "Grant permissions to EVMScriptExecutor to make payments",
+        {"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    voting_helper.execute_voting(add_create_payments_permissions_voting_id)
+    execute_voting(add_create_payments_permissions_voting_id)
 
     # create new motion to make transfers to lego programs
     ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
@@ -408,7 +430,7 @@ def test_lego_easy_track(
         encode_single(
             "(address[],uint256[])",
             [
-                [ldo_token.address, steth_token.address, ZERO_ADDRESS],
+                [ldo.address, steth.address, ZERO_ADDRESS],
                 [ldo_amount, steth_amount, eth_amount],
             ],
         ),
@@ -421,22 +443,22 @@ def test_lego_easy_track(
     chain.sleep(48 * 60 * 60 + 100)
 
     # top up agent balances
-    ldo_token.approve(agent, ldo_amount, {"from": constants.LDO_WHALE_HOLDER})
-    agent.deposit(ldo_token, ldo_amount, {"from": constants.LDO_WHALE_HOLDER})
+    ldo.approve(agent, ldo_amount, {"from": agent})
+    agent.deposit(ldo, ldo_amount, {"from": agent})
 
-    steth_token.submit(ZERO_ADDRESS, {"from": deployer, "value": "2.1 ether"})
-    steth_token.approve(agent, "2.1 ether", {"from": deployer})
-    agent.deposit(steth_token, steth_amount, {"from": deployer})
+    steth.submit(ZERO_ADDRESS, {"from": deployer, "value": "2.1 ether"})
+    steth.approve(agent, "2.1 ether", {"from": deployer})
+    agent.deposit(steth, steth_amount, {"from": deployer})
 
     agent.deposit(ZERO_ADDRESS, eth_amount, {"from": deployer, "value": eth_amount})
 
     # validate agent app has enough tokens
-    assert agent.balance(ldo_token) >= ldo_amount
-    assert agent.balance(steth_token) >= steth_amount
+    assert agent.balance(ldo) >= ldo_amount
+    assert agent.balance(steth) >= steth_amount
     assert agent.balance(ZERO_ADDRESS) >= eth_amount
 
-    assert ldo_token.balanceOf(lego_program) == 0
-    assert steth_token.balanceOf(lego_program) == 0
+    assert ldo.balanceOf(lego_program) == 0
+    assert steth.balanceOf(lego_program) == 0
     assert lego_program.balance() == 100 * 10 ** 18
 
     easy_track.enactMotion(
@@ -446,73 +468,6 @@ def test_lego_easy_track(
     )
 
     assert len(easy_track.getMotions()) == 0
-    assert ldo_token.balanceOf(lego_program) == ldo_amount
-    assert abs(steth_token.balanceOf(lego_program) - steth_amount) <= 10
+    assert ldo.balanceOf(lego_program) == ldo_amount
+    assert abs(steth.balanceOf(lego_program) - steth_amount) <= 10
     assert lego_program.balance() == 103 * 10 ** 18
-
-
-class VotingHelper:
-    def __init__(self, chain, token_manager, voting):
-        self.chain = chain
-        self.token_manager = token_manager
-        self.voting = voting
-
-    def create_voting(self, evm_script, description):
-        add_node_operators_voting_tx = self.token_manager.forward(
-            encode_call_script(
-                [
-                    (
-                        self.voting.address,
-                        self.voting.newVote.encode_input(evm_script, description),
-                    )
-                ]
-            ),
-            {"from": constants.LDO_WHALE_HOLDER},
-        )
-        return add_node_operators_voting_tx.events["StartVote"]["voteId"]
-
-    def execute_voting(self, voting_id):
-        self.voting.vote(voting_id, True, False, {"from": constants.LDO_WHALE_HOLDER})
-        self.chain.sleep(3 * 60 * 60 * 24)
-        self.chain.mine()
-        assert self.voting.canExecute(voting_id)
-        self.voting.executeVote(voting_id, {"from": accounts[0]})
-
-
-def add_permission_create_new_payments_call_script(entity):
-    spec_id = "00000001"
-    to_address = constants.ACL[2:]
-    app = constants.FINANCE[2:].zfill(64)
-    role = "5de467a460382d13defdc02aacddc9c7d6605d6d4e0b8bd2f70732cae8ea17bc"  # create new payments role
-    calldata_length = "00000064"
-    method_id = "0a8ed3db"
-    return (
-        spec_id
-        + to_address
-        + calldata_length
-        + method_id
-        + entity.address[2:].zfill(64)
-        + app
-        + role
-    )
-
-
-def add_permission_set_node_operators_stakin_limit_call_script(
-    entity,
-):
-    spec_id = "00000001"
-    to_address = constants.ACL[2:]
-
-    app = constants.NODE_OPERATORS_REGISTRY[2:].zfill(64)
-    role = "07b39e0faf2521001ae4e58cb9ffd3840a63e205d288dc9c93c3774f0d794754"  # set staking limit role
-    calldata_length = "00000064"
-    method_id = "0a8ed3db"
-    return (
-        spec_id
-        + to_address
-        + calldata_length
-        + method_id
-        + entity.address[2:].zfill(64)
-        + app
-        + role
-    )

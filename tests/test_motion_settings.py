@@ -3,10 +3,10 @@ from brownie import MotionSettings, reverts
 from utils.test_helpers import access_controll_revert_message
 
 
-def test_deploy(owner, ldo_token, voting):
+def test_deploy(owner, ldo, voting):
     "Must deploy MotionsRegistry contract with correct params"
     contract = owner.deploy(MotionSettings)
-    contract.__EasyTrackStorage_init(ldo_token, voting, {"from": owner})
+    contract.__EasyTrackStorage_init(ldo, voting, {"from": owner})
 
     # constants
     assert contract.MAX_MOTIONS_LIMIT() == constants.MAX_MOTIONS_LIMIT

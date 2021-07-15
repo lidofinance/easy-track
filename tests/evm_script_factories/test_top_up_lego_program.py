@@ -3,10 +3,14 @@ import random
 from eth_abi import encode_single
 from brownie import TopUpLegoProgram, accounts, ZERO_ADDRESS, reverts
 
-import constants
 from utils.evm_script import encode_call_script
+from utils.lido import CONTRACT_ADDRESSES
 
-REWARD_TOKENS = [constants.LDO_TOKEN, constants.STETH_TOKEN]
+
+REWARD_TOKENS = [
+    CONTRACT_ADDRESSES["mainnet"]["dao"]["ldo"],
+    CONTRACT_ADDRESSES["mainnet"]["steth"],
+]
 REWARD_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
 
@@ -51,9 +55,7 @@ def test_create_evm_script_zero_amount(owner, top_up_lego_program):
         )
 
 
-def test_create_evm_script(
-    owner, lego_program, top_up_lego_program, finance, ldo_token
-):
+def test_create_evm_script(owner, lego_program, top_up_lego_program, finance, ldo):
     "Must create correct EVMScript if all requirements are met"
     evm_script = top_up_lego_program.createEVMScript(
         owner, encode_call_data(REWARD_TOKENS, REWARD_AMOUNTS)
