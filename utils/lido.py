@@ -1,6 +1,60 @@
 from brownie import chain, network, accounts, interface
 from utils.evm_script import encode_call_script
 
+
+PERMISSIONS = {
+    "agent": [
+        "ADD_PROTECTED_TOKEN_ROLE",
+        "TRANSFER_ROLE",
+        "RUN_SCRIPT_ROLE",
+        "SAFE_EXECUTE_ROLE",
+        "REMOVE_PROTECTED_TOKEN_ROLE",
+        "DESIGNATE_SIGNER_ROLE",
+        "EXECUTE_ROLE",
+        "ADD_PRESIGNED_HASH_ROLE",
+    ],
+    "finance": [
+        "CREATE_PAYMENTS_ROLE",
+        "CHANGE_PERIOD_ROLE",
+        "CHANGE_BUDGETS_ROLE",
+        "EXECUTE_PAYMENTS_ROLE",
+        "MANAGE_PAYMENTS_ROLE",
+    ],
+    "lido": [
+        "PAUSE_ROLE",
+        "SET_ORACLE",
+        "MANAGE_WITHDRAWAL_KEY",
+        "MANAGE_FEE",
+        "SET_TREASURY",
+        "BURN_ROLE",
+        "SET_INSURANCE_FUND",
+    ],
+    "node_operators_registry": [
+        "SET_NODE_OPERATOR_ADDRESS_ROLE",
+        "SET_NODE_OPERATOR_NAME_ROLE",
+        "ADD_NODE_OPERATOR_ROLE",
+        "REPORT_STOPPED_VALIDATORS_ROLE",
+        "SET_NODE_OPERATOR_ACTIVE_ROLE",
+        "SET_NODE_OPERATOR_LIMIT_ROLE",
+        "MANAGE_SIGNING_KEYS",
+    ],
+    "oracle": [
+        "MANAGE_QUORUM",
+        "SET_BEACON_REPORT_RECEIVER",
+        "MANAGE_MEMBERS",
+        "SET_BEACON_SPEC",
+        "SET_REPORT_BOUNDARIES",
+    ],
+    "tokens": [
+        "ISSUE_ROLE",
+        "ASSIGN_ROLE",
+        "BURN_ROLE",
+        "MINT_ROLE",
+        "REVOKE_VESTINGS_ROLE",
+    ],
+    "voting": ["MODIFY_QUORUM_ROLE", "MODIFY_SUPPORT_ROLE", "CREATE_VOTES_ROLE"],
+}
+
 CONTRACT_ADDRESSES = {
     "mainnet": {
         "dao": {
@@ -12,8 +66,9 @@ CONTRACT_ADDRESSES = {
             "finance": "0xb9e5cbb9ca5b0d659238807e84d0176930753d86",
             "calls_script": "0x5cEb19e1890f677c3676d5ecDF7c501eBA01A054",
         },
+        "lido": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
+        "oracle": "0x442af784A788A5bd6F42A01Ebe9F287a871243fb",
         "node_operators_registry": "0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
-        "steth": "0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
     },
     "goerli": {
         "dao": {
@@ -25,10 +80,25 @@ CONTRACT_ADDRESSES = {
             "finance": "0x75c7b1d23f1cad7fb4d60281d7069e46440bc179",
             "calls_script": "0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
         },
-        "node_operators_registry": "0x9D4AF1Ee19Dad8857db3a45B0374c81c8A1C6320",
-        "steth": "0x1643E812aE58766192Cf7D2Cf9567dF2C37e9B7F",
+        "lido": "0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
+        "oracle": "0x24d8451bc07e7af4ba94f69acdd9ad3c6579d9fb",
+        "node_operators_registry": "0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
     },
 }
+
+
+def permissions():
+    return Permissions()
+
+
+def all_permissions():
+    res = []
+    permissions = Permissions()
+    for app_name in PERMISSIONS.keys():
+        app = getattr(permissions, app_name)
+        for role_name in PERMISSIONS[app_name]:
+            res.append(getattr(app, role_name))
+    return res
 
 
 def create_contracts(interface, addresses):
@@ -41,11 +111,12 @@ def create_contracts(interface, addresses):
             "acl": interface.ACL(addresses["dao"]["acl"]),
             "finance": interface.Finance(addresses["dao"]["finance"]),
             "calls_script": interface.CallsScript(addresses["dao"]["calls_script"]),
+            "oracle": interface.Oracle(addresses["oracle"]),
         },
+        "lido": interface.Lido(addresses["lido"]),
         "node_operators_registry": interface.NodeOperatorsRegistry(
             addresses["node_operators_registry"]
         ),
-        "steth": interface.Lido(addresses["steth"]),
     }
 
 
@@ -95,6 +166,31 @@ def execute_voting(voting_id):
     assert voting.canExecute(voting_id)
     voting.executeVote(voting_id, {"from": accounts[0]})
 
+class AppPermissions:
+    def __init__(self, app, permission_names):
+        self.app = app
+        self.permission_names = permission_names
+
+    def __getattr__(self, name):
+        if name not in self.permission_names:
+            raise NameError(f"Permission {name} not found in app {self.app._name}")
+        return Permission(self.app, name)
+
+
+class Permissions:
+    def __init__(self):
+        self.contracts = contracts()
+
+    def __getattr__(self, name):
+        app = (
+            self.contracts[name]
+            if name in self.contracts
+            else self.contracts["dao"][name]
+        )
+        if name not in PERMISSIONS or app is None:
+            raise AttributeError(f"Application {name} not found in Lido")
+        return AppPermissions(app, PERMISSIONS[name])
+
 
 class Permission:
     def __init__(self, app, role_name):
@@ -102,5 +198,14 @@ class Permission:
         self.role_name = role_name
         self.role = getattr(app, role_name)()
 
+    def __hash__(self):
+        return hash((self.app, self.role_name))
+
+    def __eq__(self, o):
+        if isinstance(o, Permission):
+            return self.app == o.app and self.role_name == o.role_name
+        return False
+
     def __str__(self):
         return f"{self.app._name}.{self.role_name}"
+

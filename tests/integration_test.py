@@ -20,7 +20,7 @@ from brownie import (
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
-from utils.lido import contracts, create_voting, execute_voting, Permission
+from utils.lido import contracts, create_voting, execute_voting
 
 
 @pytest.mark.skip_coverage

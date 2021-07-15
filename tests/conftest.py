@@ -173,7 +173,7 @@ def ldo():
 
 @pytest.fixture()
 def steth():
-    return contracts()["steth"]
+    return contracts()["lido"]
 
 
 @pytest.fixture()

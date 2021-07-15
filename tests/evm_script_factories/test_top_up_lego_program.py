@@ -9,7 +9,7 @@ from utils.lido import CONTRACT_ADDRESSES
 
 REWARD_TOKENS = [
     CONTRACT_ADDRESSES["mainnet"]["dao"]["ldo"],
-    CONTRACT_ADDRESSES["mainnet"]["steth"],
+    CONTRACT_ADDRESSES["mainnet"]["lido"],
 ]
 REWARD_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
