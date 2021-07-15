@@ -1,5 +1,7 @@
 from brownie import (
     ZERO_ADDRESS,
+    chain,
+    network,
     accounts,
     interface,
     Contract,
@@ -13,24 +15,35 @@ from brownie import (
     RewardProgramsRegistry,
     IncreaseNodeOperatorStakingLimit,
 )
-from utils.config import get_env, get_is_live, get_deployer_account, prompt_bool
+from utils.config import (
+    get_env,
+    get_is_live,
+    get_deployer_account,
+    prompt_bool,
+)
+
+from utils.lido import contracts
 
 
 def main():
+    lido_contracts = contracts()
     deployer = get_deployer_account(get_is_live())
-    governance_token = get_env("GOVERNANCE_TOKEN")
-    aragon_voting = get_env("ARAGON_VOTING")
-    aragon_finance = get_env("ARAGON_FINANCE")
-    aragon_calls_script = get_env("ARAGON_CALLS_SCRIPT")
-    node_operators_registry = get_env("NODE_OPERATORS_REGISTRY")
+
+    governance_token = lido_contracts["dao"]["ldo"]
+    aragon_voting = lido_contracts["dao"]["voting"]
+    aragon_finance = lido_contracts["dao"]["finance"]
+    aragon_calls_script = lido_contracts["dao"]["calls_script"]
+    node_operators_registry = lido_contracts["node_operators_registry"]
+
     lego_program_vault = get_env("LEGO_PROGRAM_VAULT")
     lego_committee_multisig = get_env("LEGO_COMMITTEE_MULTISIG")
     reward_programs_multisig = get_env("REWARD_PROGRAMS_MULTISIG")
 
+    print(f"Current network: {network.show_active()} (chain id: {chain.id})")
     print(f"Deployer: {deployer}")
     print(f"Governance Token: {governance_token}")
-    print(f"Aragon Voting: {aragon_finance}")
-    print(f"Aragon Finance: {aragon_voting}")
+    print(f"Aragon Voting: {aragon_voting}")
+    print(f"Aragon Finance: {aragon_finance}")
     print(f"Aragon CallsScript: {aragon_calls_script}")
     print(f"LEGO Program Vault: {lego_program_vault}")
     print(f"LEGO Committee Multisig: {lego_committee_multisig}")
