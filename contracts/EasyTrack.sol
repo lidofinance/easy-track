@@ -27,7 +27,8 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         uint256 indexed _motionId,
         address indexed _objector,
         uint256 _weight,
-        uint256 _votingPower
+        uint256 _newObjectionsAmount,
+        uint256 _newObjectionsAmountPct
     );
     event MotionRejected(uint256 indexed _motionId);
     event MotionCanceled(uint256 indexed _motionId);
@@ -122,16 +123,20 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         require(!objections[_motionId][msg.sender], ERROR_ALREADY_OBJECTED);
         objections[_motionId][msg.sender] = true;
 
-        uint256 balance = governanceToken.balanceOfAt(msg.sender, motion.snapshotBlock);
-        require(balance > 0, ERROR_NOT_ENOUGH_BALANCE);
+        uint256 snapshotBlock = motion.snapshotBlock;
+        uint256 objectorBalance = governanceToken.balanceOfAt(msg.sender, snapshotBlock);
+        require(objectorBalance > 0, ERROR_NOT_ENOUGH_BALANCE);
 
-        motion.objectionsAmount += balance;
-        uint256 totalSupply = governanceToken.totalSupplyAt(motion.snapshotBlock);
-        motion.objectionsAmountPct = (HUNDRED_PERCENT * motion.objectionsAmount) / totalSupply;
+        uint256 totalSupply = governanceToken.totalSupplyAt(snapshotBlock);
+        uint256 newObjectionsAmount = motion.objectionsAmount + objectorBalance;
+        uint256 newObjectionsAmountPct = (HUNDRED_PERCENT * newObjectionsAmount) / totalSupply;
 
-        emit MotionObjected(_motionId, msg.sender, balance, totalSupply);
+        emit MotionObjected(_motionId, msg.sender, objectorBalance, newObjectionsAmount, newObjectionsAmountPct);
 
-        if (motion.objectionsAmountPct > motion.objectionsThreshold) {
+        if (newObjectionsAmountPct <= motion.objectionsThreshold) {
+            motion.objectionsAmount = newObjectionsAmount;
+            motion.objectionsAmountPct = newObjectionsAmountPct;
+        } else {
             _deleteMotion(_motionId);
             emit MotionRejected(_motionId);
         }

@@ -452,7 +452,7 @@ def test_object_to_motion_by_tokens_holder(
     owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must increase motion objections on correct amount and"
-    "emit ObjectionSent(_motionId,_objector,_weight,_votingPower) event"
+    "emit ObjectionSent(_motionId,_objector,_weight,_newObjectionsAmount,_newObjectionsAmountPct) event"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -473,7 +473,7 @@ def test_object_to_motion_by_tokens_holder(
 
     motion = easy_track.getMotion(1)
 
-    assert motion[7] == ldo.balanceOf(ldo_holders[0])  # objectionsAmount
+    assert motion[7] == holder_balance  # objectionsAmount
     assert motion[8] == holder_part  # objectionsAmountPct
 
     # validate events
@@ -481,14 +481,15 @@ def test_object_to_motion_by_tokens_holder(
     assert tx.events["MotionObjected"]["_motionId"] == motion[0]
     assert tx.events["MotionObjected"]["_objector"] == ldo_holders[0]
     assert tx.events["MotionObjected"]["_weight"] == holder_balance
-    assert tx.events["MotionObjected"]["_votingPower"] == total_supply
+    assert tx.events["MotionObjected"]["_newObjectionsAmount"] == motion[7] # objectionsAmount
+    assert tx.events["MotionObjected"]["_newObjectionsAmountPct"] == motion[8] # objectionsAmountPct
 
 
 def test_object_to_motion_rejected(
     owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
     "Must remove motion from list of active motions"
-    "and emit ObjectionSent(_motionId,_objector,_weight,_votingPower)"
+    "and emit ObjectionSent(_motionId,_objector,_weight,_newObjectionsAmount,_newObjectionsAmountPct)"
     "and MotionRejected(_motionId) events"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
@@ -508,12 +509,17 @@ def test_object_to_motion_rejected(
     tx = easy_track.objectToMotion(1, {"from": ldo_holders[2]})  # 0.6 % objections
     assert len(easy_track.getMotions()) == 0
 
+    objections_amount = ldo.balanceOf(ldo_holders[0]) + ldo.balanceOf(ldo_holders[1]) + ldo.balanceOf(ldo_holders[2])
+    objections_amount_pct = 10000 * objections_amount / ldo.totalSupply()
+    
     # validate that events was emitted
     assert len(tx.events) == 2
     assert tx.events["MotionObjected"]["_motionId"] == 1
     assert tx.events["MotionObjected"]["_objector"] == ldo_holders[2]
     assert tx.events["MotionObjected"]["_weight"] == ldo.balanceOf(ldo_holders[2])
-    assert tx.events["MotionObjected"]["_votingPower"] == ldo.totalSupply()
+    assert tx.events["MotionObjected"]["_newObjectionsAmount"] == objections_amount
+    assert tx.events["MotionObjected"]["_newObjectionsAmountPct"] == objections_amount_pct
+    
     assert tx.events["MotionRejected"]["_motionId"] == 1
 
 
