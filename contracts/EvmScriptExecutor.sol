@@ -13,6 +13,7 @@ interface ICallsScript {
     ) external returns (bytes memory);
 }
 
+/// @author psirex
 /// @notice Contains method to execute EVMScripts
 /// @dev EVMScripts use format of Aragon's https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol executor
 contract EVMScriptExecutor {

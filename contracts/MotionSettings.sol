@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 
 import "./EasyTrackStorage.sol";
 
+/// @author psirex
 /// @notice Provides methods to update motion duration, objections threshold, and limit of active motions of Easy Track
 contract MotionSettings is EasyTrackStorage {
     // -------------

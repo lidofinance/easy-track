@@ -7,6 +7,7 @@ import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 import "./EasyTrackStorage.sol";
 
+/// @author psirex
 /// @notice Provides methods to add/remove EVMScript factories
 /// and contains an internal method for the convenient creation of EVMScripts
 contract EVMScriptFactoriesRegistry is EasyTrackStorage {

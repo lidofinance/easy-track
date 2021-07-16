@@ -27,6 +27,7 @@ struct Motion {
     bytes32 evmScriptHash;
 }
 
+/// @author psirex
 /// @notice Keeps all variables of the EasyTrack
 /// @dev All variables stored in this contract to simplify
 /// future upgrades of Easy Track and and minimize the risk of storage collisions.

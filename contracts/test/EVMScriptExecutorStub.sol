@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.4;
 
+/// @author psirex
+/// @notice Helper contract to stub EVMScriptExecutor
 contract EVMScriptExecutorStub {
     bytes public evmScript;
 

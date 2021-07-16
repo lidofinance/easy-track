@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.4;
 
+/// @author psirex
+/// @notice Helper contract with stub implementation of NodeOperatorsRegistry
 contract NodeOperatorsRegistryStub {
     uint256 public id = 1;
     bool public active = true;

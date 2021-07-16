@@ -23,6 +23,7 @@ interface INodeOperatorsRegistry {
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
 }
 
+/// @author psirex
 /// @notice Creates EVMScript to increase staking limit for node operator
 contract IncreaseNodeOperatorStakingLimit is IEVMScriptFactory {
     struct NodeOperatorData {

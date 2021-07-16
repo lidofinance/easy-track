@@ -5,9 +5,8 @@ pragma solidity ^0.8.4;
 
 import "../libraries/BytesUtils.sol";
 
-/**
-Helper contract to test internal methods of BytesUtils library
- */
+/// @author psirex
+/// @notice Helper contract to test internal methods of BytesUtils library
 library BytesUtilsWrapper {
     function bytes24At(bytes memory data, uint256 location) external pure returns (bytes24 result) {
         return BytesUtils.bytes24At(data, location);

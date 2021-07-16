@@ -8,6 +8,7 @@ import "../RewardProgramsRegistry.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @author psirex
 /// @notice Creates EVMScript to remove reward program from RewardProgramsRegistry
 contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
     // -------------

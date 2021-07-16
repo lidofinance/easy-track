@@ -10,6 +10,8 @@ import "./interfaces/IEVMScriptExecutor.sol";
 
 import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/proxy/utils/UUPSUpgradeable.sol";
 
+/// @author psirex
+/// @notice Contains main logic of Easy Track
 contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistry {
     // -------------
     // EVENTS

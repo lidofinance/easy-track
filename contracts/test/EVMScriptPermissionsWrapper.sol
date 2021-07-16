@@ -5,9 +5,8 @@ pragma solidity ^0.8.4;
 
 import "../libraries/EVMScriptPermissions.sol";
 
-/**
-Helper contract to test internal methods of EVMScriptPermissions library
- */
+/// @author psirex
+/// @notice Helper contract to test internal methods of EVMScriptPermissions library
 contract EVMScriptPermissionsWrapper {
     function canExecuteEVMScript(bytes memory _permissions, bytes memory _evmScript)
         external

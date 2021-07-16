@@ -5,6 +5,8 @@ pragma solidity ^0.8.4;
 
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @author psirex
+/// @notice Helper contract with stub implementation of EVMScriptFactory
 contract EVMScriptFactoryStub is IEVMScriptFactory {
     bytes public constant DEFAULT_EVM_SCRIPT =
         hex"00000001420b1099b9ef5baba6d92029594ef45e19a04a4a00000044ae962acf000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000001f4";

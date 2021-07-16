@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 
 import "./TrustedCaller.sol";
 
+/// @author psirex
 /// @title Registry of allowed reward programs
 /// @notice Stores list of addresses with reward programs
 contract RewardProgramsRegistry is TrustedCaller {

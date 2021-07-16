@@ -9,6 +9,7 @@ import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @author psirex
 /// @notice Creates EVMScript to top up the address of the LEGO program
 contract TopUpLegoProgram is TrustedCaller, IEVMScriptFactory {
     // -------------

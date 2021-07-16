@@ -5,6 +5,8 @@ pragma solidity ^0.8.4;
 
 import "../libraries/EVMScriptCreator.sol";
 
+/// @author psirex
+/// @notice Helper contract to test internal methods of EVMScriptCreator library
 library EVMScriptCreatorWrapper {
     bytes4 private constant SPEC_ID = hex"00000001";
 

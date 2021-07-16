@@ -3,6 +3,7 @@
 
 pragma solidity ^0.8.4;
 
+/// @author psirex
 /// @notice Contains methods for convenient creation
 /// of EVMScripts in EVMScript factories contracts
 library EVMScriptCreator {

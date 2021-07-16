@@ -1,5 +1,4 @@
 // SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
-
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.4;
@@ -9,6 +8,7 @@ import "../RewardProgramsRegistry.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
+/// @author psirex
 /// @notice Creates EVMScript to add new reward program address to RewardProgramsRegistry
 contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
     // -------------
