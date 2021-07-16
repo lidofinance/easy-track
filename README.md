@@ -61,3 +61,28 @@ Creates Aragon's Voting to revoke all granted permissions from EVMScriptExecutor
 Script requires next ENV variables to be set:
 - `DEPLOYER` - id of brownie's account which will deploy contracts. To create a voting account must have LDO Tokens. Might be skipped if run on a `development` network.
 - `EVM_SCRIPT_EXECUTOR` - address to grant permissions.
+
+## Tests
+
+The fastest way to run the tests is:
+```bash
+brownie test 
+```
+Run tests with coverage and gas profiling:
+
+```bash
+brownie test --coverage --gas
+```
+
+#### Coverage notes
+
+Current brownie version has problems with coverage reports for some contracts. Contracts which use `immutable` variables don't get on the resulting report. Details can be found in this [issue](https://github.com/eth-brownie/brownie/issues/1087). Easy Track uses `immutable` modifier in next contracts:
+- [TrustedCaller.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/TrustedCaller.sol#L9)
+- [EVMScriptExecutor.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EvmScriptExecutor.sol#L39)
+- [AddRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/AddRewardProgram.sol#L24)
+- [IncreaseNodeOperatorStakingLimit.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol#L50)
+- [RemoveRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/RemoveRewardProgram.sol#L23)
+- [TopUpLegoProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpLegoProgram.sol#L26)
+- [TopUpRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpRewardPrograms.sol#L27)
+
+The workaround for the coverage problem is removing the `immutable` modifier from the above contracts. Without modifier above contracts will be listed in the coverage report
