@@ -523,6 +523,33 @@ def test_object_to_motion_rejected(
     assert tx.events["MotionRejected"]["_motionId"] == 1
 
 
+def test_object_to_motion_edge_case(owner, stranger, agent, ldo, voting, easy_track, evm_script_factory_stub):
+    "Must reject motion only if objections threshold was reached"
+    objections_threshold_amount = int(easy_track.objectionsThreshold() * ldo.totalSupply() // 10000) - 1
+    ldo.transfer(owner, objections_threshold_amount, {"from": agent})
+    ldo.transfer(stranger, 1, {"from": agent})
+
+    # add evm script factory to create motions
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub,
+        evm_script_factory_stub.DEFAULT_PERMISSIONS(),
+        {"from": voting},
+    )
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    # create new motion
+    easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
+
+    # motion must stay while objections threshold wasn't reached
+    easy_track.objectToMotion(1, {"from": owner})
+    assert len(easy_track.getMotions()) == 1
+
+    # motion must become rejected after objections threshold reached
+    easy_track.objectToMotion(1, {"from": stranger})
+    assert len(easy_track.getMotions()) == 0
+
+
+
 ########
 # CANCEL MOTIONS
 ########

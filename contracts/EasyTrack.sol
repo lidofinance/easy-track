@@ -133,7 +133,7 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
 
         emit MotionObjected(_motionId, msg.sender, objectorBalance, newObjectionsAmount, newObjectionsAmountPct);
 
-        if (newObjectionsAmountPct <= motion.objectionsThreshold) {
+        if (newObjectionsAmountPct < motion.objectionsThreshold) {
             motion.objectionsAmount = newObjectionsAmount;
             motion.objectionsAmountPct = newObjectionsAmountPct;
         } else {
