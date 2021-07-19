@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.4;
 
+/// @author psirex
+/// @notice Interface which every EVMScript factory used in EasyTrack contract has to implement
 interface IEVMScriptFactory {
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external

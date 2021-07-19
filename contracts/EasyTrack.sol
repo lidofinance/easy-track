@@ -5,9 +5,7 @@ pragma solidity ^0.8.4;
 
 import "./MotionSettings.sol";
 import "./EVMScriptFactoriesRegistry.sol";
-
 import "./interfaces/IEVMScriptExecutor.sol";
-
 import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/proxy/utils/UUPSUpgradeable.sol";
 
 /// @author psirex
@@ -66,9 +64,10 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         whenNotPaused
         returns (uint256 _newMotionId)
     {
+        require(motions.length < motionsCountLimit, ERROR_MOTIONS_LIMIT_REACHED);
+        
         bytes memory evmScript =
             _createEVMScript(_evmScriptFactory, msg.sender, _evmScriptCallData);
-        require(motions.length < motionsCountLimit, ERROR_MOTIONS_LIMIT_REACHED);
 
         Motion storage newMotion = motions.push();
         _newMotionId = ++lastMotionId;
@@ -77,10 +76,8 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         newMotion.creator = msg.sender;
         newMotion.startDate = block.timestamp;
         newMotion.snapshotBlock = block.number;
-
         newMotion.duration = motionDuration;
         newMotion.objectionsThreshold = objectionsThreshold;
-
         newMotion.evmScriptFactory = _evmScriptFactory;
         newMotion.evmScriptHash = keccak256(evmScript);
 
@@ -108,11 +105,11 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
 
         bytes memory evmScript =
             _createEVMScript(motion.evmScriptFactory, motion.creator, _evmScriptCallData);
-
         require(motion.evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
 
         evmScriptExecutor.executeEVMScript(evmScript);
         _deleteMotion(_motionId);
+
         emit MotionEnacted(_motionId);
     }
 

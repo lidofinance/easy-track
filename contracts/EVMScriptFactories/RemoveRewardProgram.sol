@@ -61,7 +61,7 @@ contract RemoveRewardProgram is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram)
-    /// @return _rewardProgram Address of new reward program
+    /// @return _rewardProgram Address of reward program to remove
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

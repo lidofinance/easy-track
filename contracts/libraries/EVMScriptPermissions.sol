@@ -7,7 +7,7 @@ import "./BytesUtils.sol";
 
 /// @author psirex
 /// @notice Provides methods to convinient work with permissions bytes
-/// @dev is a list of tuples (address, bytes4) encoded into a bytes representation.
+/// @dev Permissions - is a list of tuples (address, bytes4) encoded into a bytes representation.
 /// Each tuple (address, bytes4) describes a method allowed to be called by EVMScript
 library EVMScriptPermissions {
     using BytesUtils for bytes;

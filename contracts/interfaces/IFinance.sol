@@ -3,6 +3,8 @@
 
 pragma solidity ^0.8.4;
 
+/// @author psirex
+/// @notice Interface of method from Aragon's Finance contract to create a new payment
 interface IFinance {
     function newImmediatePayment(
         address _token,
