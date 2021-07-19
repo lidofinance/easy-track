@@ -1,6 +1,6 @@
 # Abstract
 
-**Easy Track** is a type of voting where a motion is considered to have passed if the minimum objections threshold hasn’t been exceeded.
+**Easy Track** is a type of voting where a motion is considered to have passed if the minimum objections threshold hasn’t been reached.
 
 **EasyTrack contract** is the main contract, which implements the Easy Track voting mechanism. EasyTrack contract inherits from several OpenZeppelin contracts:
 
@@ -230,7 +230,7 @@ event MotionCanceled(uint256 indexed _motionId);
 
 #### function objectToMotion(uint256 \_motionId) external
 
-Submits an objection from `governanceToken` holder. The objection power equals the number of tokens held. Since `governanceToken` is MiniMeToken, it utilizes `balanceOfAt` and `totalSupplyAt` methods to prevent multiple objections submitted with the same tokens. If `objectionsThreshold` has been exceeded, the motion will be deleted and `MotionRejected` event will be emitted.
+Submits an objection from `governanceToken` holder. The objection power equals the number of tokens held. Since `governanceToken` is MiniMeToken, it utilizes `balanceOfAt` and `totalSupplyAt` methods to prevent multiple objections submitted with the same tokens. If `objectionsThreshold` has been reached, the motion will be deleted and `MotionRejected` event will be emitted.
 
 Events:
 
