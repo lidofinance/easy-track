@@ -12,6 +12,7 @@ from utils.test_helpers import (
 
 
 def test_deploy(owner, ldo, voting):
+    "Must deploy contract with correct data"
     easy_track = owner.deploy(EasyTrack)
     easy_track.__EasyTrackStorage_init(ldo, voting)
 
@@ -26,6 +27,8 @@ def test_deploy(owner, ldo, voting):
 
 @pytest.mark.skip_coverage
 def test_upgrade_to_called_without_permissions(owner, stranger, ldo, voting):
+    "Must revert with correct Access Control message if"
+    "called by address without role 'DEFAULT_ADMIN_ROLE'"
     easy_track = owner.deploy(EasyTrack)
     proxy = owner.deploy(
         ContractProxy,
@@ -58,7 +61,7 @@ def test_upgrade_to(owner, voting, ldo):
 
 
 def test_create_motion_when_paused(voting, stranger, easy_track):
-    "Must revert with message 'Pausable: paused'"
+    "Must revert with message 'Pausable: paused' if called on paused EasyTrack"
     easy_track.pause({"from": voting})
     assert easy_track.paused()
     with reverts("Pausable: paused"):
@@ -67,6 +70,7 @@ def test_create_motion_when_paused(voting, stranger, easy_track):
 
 def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track):
     "Must revert with message 'EVM_SCRIPT_FACTORY_NOT_FOUND'"
+    "if called with not registered EVM Script factory"
     with reverts("EVM_SCRIPT_FACTORY_NOT_FOUND"):
         easy_track.createMotion(stranger, b"", {"from": owner})
 
@@ -74,7 +78,7 @@ def test_create_motion_evm_script_factory_not_found(owner, stranger, easy_track)
 def test_create_motion_has_no_permissions(
     voting, stranger, easy_track, evm_script_factory_stub
 ):
-    "Must revert with message 'HAS_NO_PERMISSIONS' when evm script"
+    "Must revert with message 'HAS_NO_PERMISSIONS' if evm script"
     "tries to call method not listed in permissions"
     wrong_permissions = ZERO_ADDRESS + "11111111"
     easy_track.addEVMScriptFactory(
@@ -88,7 +92,7 @@ def test_create_motion_has_no_permissions(
 def test_create_motion_motions_limit_reached(
     voting, stranger, easy_track, evm_script_factory_stub
 ):
-    "Must revert with message 'MOTIONS_LIMIT_REACHED'"
+    "Must revert with message 'MOTIONS_LIMIT_REACHED' when motionsCountLimit reached"
     easy_track.setMotionsCountLimit(1, {"from": voting})
     assert easy_track.motionsCountLimit() == 1
 
@@ -108,7 +112,7 @@ def test_create_motion(
     owner, voting, easy_track, evm_script_factory_stub, node_operators_registry_stub
 ):
     "Must create new motion with correct data and emit"
-    "MotionCreated event when called by easy track"
+    "MotionCreated event if called by easy track"
     chain = Chain()
 
     # add evm script factory to create motions
@@ -161,7 +165,7 @@ def test_create_motion(
 
 
 def test_cancel_motion_not_found(owner, easy_track):
-    "Must revert with message 'MOTION_NOT_FOUND'"
+    "Must revert with message 'MOTION_NOT_FOUND' if called with not existed motion id"
     with reverts("MOTION_NOT_FOUND"):
         easy_track.cancelMotion(1, {"from": owner})
 
@@ -169,7 +173,7 @@ def test_cancel_motion_not_found(owner, easy_track):
 def test_cancel_motion_not_creator(
     owner, voting, stranger, easy_track, evm_script_factory_stub
 ):
-    "Must revert with message 'NOT_CREATOR' when canceled not by owner"
+    "Must revert with message 'NOT_CREATOR' if canceled not by owner"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -259,13 +263,13 @@ def test_cancel_motion_in_random_order(
 
 
 def test_enact_motion_motion_not_found(owner, easy_track):
-    "Must revert with message 'MOTION_NOT_FOUND'"
+    "Must revert with message 'MOTION_NOT_FOUND' if called with not existed motion id"
     with reverts("MOTION_NOT_FOUND"):
         easy_track.enactMotion(1, b"", {"from": owner})
 
 
 def test_enact_motion_when_paused(stranger, voting, easy_track):
-    "Must fail with error 'Pausable: paused'"
+    "Must revert with message 'Pausable: paused' if called on paused EasyTrack"
     easy_track.pause({"from": voting})
     assert easy_track.paused()
     with reverts("Pausable: paused"):
@@ -275,7 +279,8 @@ def test_enact_motion_when_paused(stranger, voting, easy_track):
 def test_enact_motion_when_motion_not_passed(
     owner, voting, easy_track, evm_script_factory_stub
 ):
-    "Must revert with message 'MOTION_NOT_PASSED'"
+    "Must revert with message 'MOTION_NOT_PASSED' if called with motion id"
+    "created less than motionDuration time ago"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -399,7 +404,7 @@ def test_enact_motion(
 
 
 def test_object_to_motion_motion_not_found(owner, easy_track):
-    "Must revert with message 'MOTION_NOT_FOUND'"
+    "Must revert with message 'MOTION_NOT_FOUND' if called with not existed motion id"
     with reverts("MOTION_NOT_FOUND"):
         easy_track.objectToMotion(1, {"from": owner})
 
@@ -407,7 +412,7 @@ def test_object_to_motion_motion_not_found(owner, easy_track):
 def test_object_to_motion_multiple_times(
     owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
-    "Must fail with error: 'ALREADY_OBJECTED'"
+    "Must revert with message: 'ALREADY_OBJECTED' if sender already objected the motion with the given id"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -430,7 +435,8 @@ def test_object_to_motion_multiple_times(
 def test_object_to_motion_not_ldo_holder(
     owner, voting, stranger, ldo_holders, ldo, easy_track, evm_script_factory_stub
 ):
-    "Must fail with error: 'NOT_ENOUGH_BALANCE'"
+    "Must revert with message: 'NOT_ENOUGH_BALANCE' when the sender"
+    "had no governance token at the block where motion was created"
     # add evm script factory to create motions
     easy_track.addEVMScriptFactory(
         evm_script_factory_stub,
@@ -556,7 +562,7 @@ def test_object_to_motion_edge_case(owner, stranger, agent, ldo, voting, easy_tr
 
 
 def test_cancel_motions_called_without_permissions(stranger, easy_track):
-    "Must revert with correct Access Control message when called"
+    "Must revert with correct Access Control message if called"
     "by address without role 'CANCEL_ROLE'"
     with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
         easy_track.cancelMotions([], {"from": stranger})
@@ -610,7 +616,7 @@ def test_cancel_motions(
 
 
 def test_cancel_all_motions_called_by_stranger(stranger, easy_track):
-    "Must revert with correct Access Control message when called"
+    "Must revert with correct Access Control message if called"
     "by address without role 'CANCEL_ROLE'"
     with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
         easy_track.cancelAllMotions({"from": stranger})
@@ -647,7 +653,7 @@ def test_cancel_all_motions(owner, voting, easy_track, evm_script_factory_stub):
 
 
 def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
-    "Must revert with correct Access Control message when called"
+    "Must revert with correct Access Control message if called"
     "by address without role 'DEFAULT_ADMIN_ROLE'"
     with reverts(access_controll_revert_message(stranger)):
         easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
@@ -682,7 +688,7 @@ def test_set_evm_script_executor_called_by_owner(
 
 
 def test_pause_called_without_permissions(stranger, easy_track):
-    "Must revert with correct Access Control message when called"
+    "Must revert with correct Access Control message if called"
     "by address without role 'PAUSE_ROLE'"
     assert not easy_track.paused()
     with reverts(access_controll_revert_message(stranger, PAUSE_ROLE)):
@@ -700,7 +706,7 @@ def test_pause_called_with_permissions(voting, easy_track):
 
 
 def test_pause_called_when_paused(voting, easy_track):
-    "Must fail with error 'Pausable: paused'"
+    "Must revert with message 'Pausable: paused'"
     assert not easy_track.paused()
     easy_track.pause({"from": voting})
     assert easy_track.paused()
@@ -714,7 +720,7 @@ def test_pause_called_when_paused(voting, easy_track):
 
 
 def test_unpause_called_without_permissions(voting, stranger, easy_track):
-    "Must revert with correct Access Control message when called"
+    "Must revert with correct Access Control message if called"
     "by address without role 'UNPAUSE_ROLE'"
     easy_track.pause({"from": voting})
     assert easy_track.paused()
@@ -724,7 +730,7 @@ def test_unpause_called_without_permissions(voting, stranger, easy_track):
 
 
 def test_unpause_called_when_not_paused(voting, easy_track):
-    "Must fail with error 'Pausable: not paused'"
+    "Must revert with message 'Pausable: not paused'"
     assert not easy_track.paused()
     with reverts("Pausable: not paused"):
         easy_track.unpause({"from": voting})

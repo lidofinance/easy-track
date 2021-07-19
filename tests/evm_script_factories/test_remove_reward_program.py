@@ -17,7 +17,7 @@ def test_deploy(owner, reward_programs_registry):
 
 
 def test_create_evm_script_called_by_stranger(stranger, remove_reward_program):
-    "Must fail with error 'CALLER_IS_FORBIDDEN' when creator isn't trustedCaller"
+    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         remove_reward_program.createEVMScript(stranger, EVM_SCRIPT_CALL_DATA)
 
@@ -25,7 +25,7 @@ def test_create_evm_script_called_by_stranger(stranger, remove_reward_program):
 def test_create_evm_script_reward_program_already_added(
     owner, remove_reward_program, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must fail with error 'REWARD_PROGRAM_NOT_FOUND'"
+    "Must revert with message 'REWARD_PROGRAM_NOT_FOUND'"
     with reverts("REWARD_PROGRAM_NOT_FOUND"):
         remove_reward_program.createEVMScript(
             owner,

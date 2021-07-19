@@ -23,7 +23,7 @@ def test_deploy(owner, finance, lego_program):
 
 
 def test_create_evm_script_called_by_stranger(stranger, top_up_lego_program):
-    "Must fail with error 'CALLER_IS_FORBIDDEN'  when creator isn't trustedCaller"
+    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         top_up_lego_program.createEVMScript(
             stranger, encode_call_data([], []), {"from": stranger}
@@ -31,7 +31,7 @@ def test_create_evm_script_called_by_stranger(stranger, top_up_lego_program):
 
 
 def test_create_evm_script_data_length_mismatch(owner, top_up_lego_program):
-    "Must fail with error 'LENGTH_MISMATCH' when rewardTokens and amounts has different lengths"
+    "Must revert with message 'LENGTH_MISMATCH' if rewardTokens and amounts has different lengths"
     with reverts("LENGTH_MISMATCH"):
         top_up_lego_program.createEVMScript(
             owner,
@@ -40,13 +40,13 @@ def test_create_evm_script_data_length_mismatch(owner, top_up_lego_program):
 
 
 def test_create_evm_script_empty_data(owner, top_up_lego_program):
-    "Must fail with error 'EMPTY_DATA' when called with empty lists"
+    "Must revert with message 'EMPTY_DATA' if called with empty lists"
     with reverts("EMPTY_DATA"):
         top_up_lego_program.createEVMScript(owner, encode_call_data([], []))
 
 
 def test_create_evm_script_zero_amount(owner, top_up_lego_program):
-    "Must fail with error 'ZERO_AMOUNT' if some value in amounts has zero value"
+    "Must revert with message 'ZERO_AMOUNT' if some value in amounts has zero value"
     amounts = [1 ** 18, 0]
 
     with reverts("ZERO_AMOUNT"):

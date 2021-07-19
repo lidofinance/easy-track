@@ -6,7 +6,7 @@ from utils.test_helpers import access_controll_revert_message
 def test_add_evm_script_factory_called_without_permissions(
     stranger, evm_script_factories_registry
 ):
-    "Must revert with correct Access Control message when called by address without 'DEFAULT_ADMIN_ROLE'"
+    "Must revert with correct Access Control message if called by address without 'DEFAULT_ADMIN_ROLE'"
     with reverts(access_controll_revert_message(stranger)):
         evm_script_factories_registry.addEVMScriptFactory(
             stranger, b"", {"from": stranger}
@@ -16,7 +16,7 @@ def test_add_evm_script_factory_called_without_permissions(
 def test_add_evm_script_factory_empty_permissions(
     voting, stranger, evm_script_factories_registry
 ):
-    "Must revert with message 'INVALID_PERMISSIONS' when called with empty permissions"
+    "Must revert with message 'INVALID_PERMISSIONS' if called with empty permissions"
     with reverts("INVALID_PERMISSIONS"):
         evm_script_factories_registry.addEVMScriptFactory(
             stranger, b"", {"from": voting}
@@ -26,7 +26,7 @@ def test_add_evm_script_factory_empty_permissions(
 def test_add_evm_script_factory_invalid_length(
     voting, stranger, evm_script_factories_registry
 ):
-    "Must revert with message 'INVALID_PERMISSIONS' when called with permissions which have incorrect length"
+    "Must revert with message 'INVALID_PERMISSIONS' if called with permissions which have incorrect length"
     with reverts("INVALID_PERMISSIONS"):
         evm_script_factories_registry.addEVMScriptFactory(
             stranger, "0x0011223344", {"from": voting}
@@ -45,6 +45,7 @@ def test_add_evm_script(voting, stranger, evm_script_factories_registry):
 
 def test_add_evm_script_twice(voting, stranger, evm_script_factories_registry):
     "Must revert with message 'EVM_SCRIPT_FACTORY_ALREADY_ADDED'"
+    "if called with already listed EVMScript factory address"
     permissions = stranger.address + "ffccddee"
     evm_script_factories_registry.addEVMScriptFactory(
         stranger, permissions, {"from": voting}
@@ -64,7 +65,8 @@ def test_remove_evm_script_factory_not_found(
 
 
 def test_remove_evm_script_factory(voting, stranger, evm_script_factories_registry):
-    "Must remove EVMScript factory from the list of allowed EVMScript factories and emit EVMScriptFactoryRemoved(_evmScriptFactory) event"
+    "Must remove EVMScript factory from the list of allowed EVMScript factories"
+    "and emit EVMScriptFactoryRemoved(_evmScriptFactory) event"
     # add many evm script factories
     evm_script_factories = accounts[3:8]
     permissions = stranger.address + "ffccddee"

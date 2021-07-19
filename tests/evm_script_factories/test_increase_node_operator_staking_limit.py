@@ -19,7 +19,7 @@ def test_create_evm_script_different_reward_address(
     owner, stranger, increase_node_operator_staking_limit
 ):
     "Must revert with message 'CALLER_IS_NOT_NODE_OPERATOR'"
-    "when creator address is not equal to rewardAddress of node operator"
+    "if creator address is not equal to rewardAddress of node operator"
     with reverts("CALLER_IS_NOT_NODE_OPERATOR"):
         increase_node_operator_staking_limit.createEVMScript(stranger, CALL_DATA)
 
@@ -28,7 +28,7 @@ def test_create_evm_script_node_operator_disabled(
     node_operator, node_operators_registry_stub, increase_node_operator_staking_limit
 ):
     "Must revert with message: 'NODE_OPERATOR_DISABLED'"
-    "when node operator with rewardAddress equals to the creator is disabled"
+    "if node operator with rewardAddress equals to the creator is disabled"
     node_operators_registry_stub.setActive(False)
     with reverts("NODE_OPERATOR_DISABLED"):
         increase_node_operator_staking_limit.createEVMScript(node_operator, CALL_DATA)
@@ -37,7 +37,7 @@ def test_create_evm_script_node_operator_disabled(
 def test_create_evm_script_new_staking_limit_too_low(
     node_operator, node_operators_registry_stub, increase_node_operator_staking_limit
 ):
-    "Must fail with error: 'STAKING_LIMIT_TOO_LOW' when new staking limit"
+    "Must revert with message: 'STAKING_LIMIT_TOO_LOW' if new staking limit"
     "is less or equal than current stakin limit of node operator"
     node_operators_registry_stub.setStakingLimit(370)
     assert node_operators_registry_stub.stakingLimit() == 370
@@ -49,8 +49,8 @@ def test_create_evm_script_new_staking_limit_too_low(
 def test_create_evm_script_new_staking_limit_less_than_total_signing_keys(
     node_operator, node_operators_registry_stub, increase_node_operator_staking_limit
 ):
-    "Must fail with error: 'NOT_ENOUGH_SIGNING_KEYS' when total amount"
-    " of signing keys of node operator less than new staking limit"
+    "Must revert with message: 'NOT_ENOUGH_SIGNING_KEYS' if total amount"
+    "of signing keys of node operator less than new staking limit"
 
     node_operators_registry_stub.setTotalSigningKeys(300)
     assert node_operators_registry_stub.totalSigningKeys() == 300

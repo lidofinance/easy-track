@@ -24,7 +24,7 @@ def test_deploy(owner, reward_programs_registry, finance, ldo):
 
 
 def test_create_evm_script_called_by_stranger(stranger, top_up_reward_programs):
-    "Must fail with error 'CALLER_IS_FORBIDDEN'  when creator isn't trustedCaller"
+    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         top_up_reward_programs.createEVMScript(
             stranger, encode_call_data([], []), {"from": stranger}
@@ -32,7 +32,7 @@ def test_create_evm_script_called_by_stranger(stranger, top_up_reward_programs):
 
 
 def test_create_evm_script_data_length_mismatch(owner, top_up_reward_programs):
-    "Must fail with error 'LENGTH_MISMATCH' when rewardPrograms and amounts has different lengths"
+    "Must revert with message 'LENGTH_MISMATCH' if rewardPrograms and amounts has different lengths"
     with reverts("LENGTH_MISMATCH"):
         top_up_reward_programs.createEVMScript(
             owner,
@@ -41,7 +41,7 @@ def test_create_evm_script_data_length_mismatch(owner, top_up_reward_programs):
 
 
 def test_create_evm_script_empty_data(owner, top_up_reward_programs):
-    "Must fail with error 'EMPTY_DATA' when called with empty lists"
+    "Must revert with message 'EMPTY_DATA' if called with empty lists"
     with reverts("EMPTY_DATA"):
         top_up_reward_programs.createEVMScript(owner, encode_call_data([], []))
 
@@ -49,7 +49,7 @@ def test_create_evm_script_empty_data(owner, top_up_reward_programs):
 def test_create_evm_script_zero_amount(
     owner, top_up_reward_programs, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must fail with error 'ZERO_AMOUNT' if some value in amounts has zero value"
+    "Must revert with message 'ZERO_AMOUNT' if some value in amounts has zero value"
     amounts = [1 ** 18, 0]
     reward_programs_registry.addRewardProgram(
         REWARD_PROGRAM_ADDRESSES[0], {"from": evm_script_executor_stub}
@@ -66,8 +66,8 @@ def test_create_evm_script_zero_amount(
 def test_create_evm_script_reward_program_not_allowed(
     owner, top_up_reward_programs, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must fail with error 'REWARD_PROGRAM_NOT_ALLOWED' when passed reward"
-    "program isn't listed in RewardProgramsRegistry"
+    "Must revert with message 'REWARD_PROGRAM_NOT_ALLOWED' if passed"
+    "reward program isn't listed in RewardProgramsRegistry"
 
     not_allowed_reward_program = accounts[3].address
 

@@ -20,7 +20,7 @@ def test_deploy(owner, ldo, voting):
 
 
 def test_set_motion_duration_called_by_owner(voting, motion_settings):
-    "Must update motion duration when value is greater or equal than"
+    "Must update motion duration if value is greater or equal than"
     "MIN_MOTION_DURATION and emits MotionDurationChanged(_motionDuration) event"
     min_motion_duration = motion_settings.MIN_MOTION_DURATION()
     new_motion_duration = 2 * min_motion_duration
@@ -36,6 +36,7 @@ def test_set_motion_duration_called_without_permissions(
     voting, stranger, motion_settings
 ):
     "Must revert with correct Access Control message"
+    "if called by address without 'DEFAULT_ADMIN_ROLE'"
     with reverts(access_controll_revert_message(stranger)):
         motion_settings.setMotionDuration(0, {"from": stranger})
 
@@ -67,7 +68,8 @@ def test_set_objections_threshold_called_by_owner(voting, motion_settings):
 
 
 def test_set_objections_threshold_called_by_stranger(stranger, motion_settings):
-    "Must revert with correct Access Control revert message"
+    "Must revert with correct Access Control message"
+    "if called by address without 'DEFAULT_ADMIN_ROLE'"
     with reverts(access_controll_revert_message(stranger)):
         motion_settings.setObjectionsThreshold(0, {"from": stranger})
 
@@ -101,12 +103,13 @@ def test_set_motions_limit_called_by_owner(voting, motion_settings):
 
 def test_set_motions_limit_called_by_stranger(stranger, motion_settings):
     "Must revert with correct Access Control message"
+    "if called by address without 'DEFAULT_ADMIN_ROLE'"
     with reverts(access_controll_revert_message(stranger)):
         motion_settings.setMotionsCountLimit(0, {"from": stranger})
 
 
 def test_set_motions_limit_too_large(voting, motion_settings):
-    "Must revert with message: 'VALUE_TOO_LARGE'"
+    "Must revert with message: 'VALUE_TOO_LARGE' when new value greater than MAX_MOTIONS_LIMIT"
     new_motions_limit = 2 * motion_settings.MAX_MOTIONS_LIMIT()
     with reverts("VALUE_TOO_LARGE"):
         motion_settings.setMotionsCountLimit(new_motions_limit, {"from": voting})

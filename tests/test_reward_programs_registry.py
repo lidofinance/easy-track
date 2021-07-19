@@ -11,7 +11,7 @@ def test_deploy(owner, evm_script_executor_stub):
 def test_add_reward_program_called_by_stranger(
     owner, stranger, reward_programs_registry
 ):
-    "Must fail with error 'FORBIDDEN' error"
+    "Must revert with message 'CALLER_IS_FORBIDDEN' error if called not by trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         reward_programs_registry.addRewardProgram(stranger, {"from": stranger})
 
@@ -44,7 +44,7 @@ def test_add_reward_program(
 def test_remove_reward_program_called_by_stranger(
     owner, stranger, reward_programs_registry
 ):
-    "Must fail with error 'FORBIDDEN' error"
+    "Must revert with message 'CALLER_IS_FORBIDDEN' error if called not by trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         reward_programs_registry.removeRewardProgram(stranger, {"from": stranger})
 
@@ -52,7 +52,7 @@ def test_remove_reward_program_called_by_stranger(
 def test_remove_reward_program_with_not_existed_reward_program(
     stranger, reward_programs_registry, evm_script_executor_stub
 ):
-    "Must fail with error 'REWARD_PROGRAM_NOT_FOUND' error"
+    "Must revert with message 'REWARD_PROGRAM_NOT_FOUND' error"
     with reverts("REWARD_PROGRAM_NOT_FOUND"):
         reward_programs_registry.removeRewardProgram(
             stranger, {"from": evm_script_executor_stub}
