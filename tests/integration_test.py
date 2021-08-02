@@ -185,6 +185,7 @@ def test_reward_programs_easy_track(
 ):
     deployer = accounts[0]
     reward_program = accounts[5]
+    reward_program_title = "New Reward Program"
     trusted_address = accounts[7]
 
     # deploy easy track
@@ -287,7 +288,7 @@ def test_reward_programs_easy_track(
     # create new motion to add reward program
     tx = easy_track.createMotion(
         add_reward_program,
-        encode_single("(address)", [reward_program.address]),
+        encode_single("(address,string)", [reward_program.address, reward_program_title]),
         {"from": trusted_address},
     )
 

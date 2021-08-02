@@ -52,10 +52,10 @@ def test_create_evm_script_zero_amount(
     "Must revert with message 'ZERO_AMOUNT' if some value in amounts has zero value"
     amounts = [1 ** 18, 0]
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESSES[0], {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESSES[0], "", {"from": evm_script_executor_stub}
     )
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESSES[1], {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESSES[1], "", {"from": evm_script_executor_stub}
     )
     with reverts("ZERO_AMOUNT"):
         top_up_reward_programs.createEVMScript(
@@ -78,10 +78,10 @@ def test_create_evm_script_reward_program_not_allowed(
         )
 
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESSES[0], {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESSES[0], "", {"from": evm_script_executor_stub}
     )
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESSES[1], {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESSES[1], "", {"from": evm_script_executor_stub}
     )
 
     # case with added reward programs
@@ -110,10 +110,10 @@ def test_create_evm_script(
     "Must create correct EVMScript if all requirements are met"
     # add reward programs
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESSES[0], {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESSES[0], "", {"from": evm_script_executor_stub}
     )
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESSES[1], {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESSES[1], "", {"from": evm_script_executor_stub}
     )
 
     evm_script = top_up_reward_programs.createEVMScript(

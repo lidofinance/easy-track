@@ -13,21 +13,22 @@ def test_add_reward_program_called_by_stranger(
 ):
     "Must revert with message 'CALLER_IS_FORBIDDEN' error if called not by trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
-        reward_programs_registry.addRewardProgram(stranger, {"from": stranger})
+        reward_programs_registry.addRewardProgram(stranger, "", {"from": stranger})
 
 
 def test_add_reward_program(
     evm_script_executor_stub, stranger, reward_programs_registry
 ):
-    "Must add new reward program to rewardPrograms array and emit RewardProgramAdded(_rewardProgram) event."
+    "Must add new reward program to rewardPrograms array and emit RewardProgramAdded(_rewardProgram, _title) event."
     "When called with already added reward program fails with error 'REWARD_PROGRAM_ALREADY_ADDED' error"
     new_reward_program = stranger
     tx = reward_programs_registry.addRewardProgram(
-        new_reward_program, {"from": evm_script_executor_stub}
+        new_reward_program, "Reward Program", {"from": evm_script_executor_stub}
     )
     # validate events
     assert len(tx.events) == 1
     assert tx.events["RewardProgramAdded"]["_rewardProgram"] == new_reward_program
+    assert tx.events["RewardProgramAdded"]["_title"] == "Reward Program"
 
     # validate that reward program was added
     reward_programs = reward_programs_registry.getRewardPrograms()
@@ -37,7 +38,7 @@ def test_add_reward_program(
     # fails when reward program adds second time
     with reverts("REWARD_PROGRAM_ALREADY_ADDED"):
         reward_programs_registry.addRewardProgram(
-            new_reward_program, {"from": evm_script_executor_stub}
+            new_reward_program, "Reward Program", {"from": evm_script_executor_stub}
         )
 
 
@@ -65,7 +66,7 @@ def test_remove_reward_program(reward_programs_registry, evm_script_executor_stu
 
     for reward_program in reward_programs:
         reward_programs_registry.addRewardProgram(
-            reward_program, {"from": evm_script_executor_stub}
+            reward_program, "", {"from": evm_script_executor_stub}
         )
 
     while len(reward_programs) > 0:
