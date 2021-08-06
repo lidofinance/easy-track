@@ -38,7 +38,7 @@ def test_create_evm_script(
 ):
     "Must create correct EVMScript if all requirements are met"
     reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESS, {"from": evm_script_executor_stub}
+        REWARD_PROGRAM_ADDRESS, "", {"from": evm_script_executor_stub}
     )
     evm_script = remove_reward_program.createEVMScript(owner, EVM_SCRIPT_CALL_DATA)
     expected_evm_script = encode_call_script(

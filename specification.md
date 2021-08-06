@@ -401,14 +401,14 @@ Creates EVMScript to add new reward program address to `RewardProgramsRegistry`.
 
 #### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
 
-Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram)`, where `_rewardProgram` - new reward program address to add. To successfully create EVMScript next requirements must be met:
+Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _rewardProgram, string _title)`, where `_rewardProgram` - new reward program address to add, `_title` - title of new reward program. To successfully create EVMScript next requirements must be met:
 
 - `_creator` must be equal to `trustedCaller` address
 - `_rewardProgram` address hasn't been added in `RewardProgramsRegistry` earlier.
 
-#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_rewardProgram)
+#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_rewardProgram, string memory _title)
 
-Decodes `_evmScriptCallData` into tuple `(address _rewardProgram)`.
+Decodes `_evmScriptCallData` into tuple `(address _rewardProgram, string _title)`.
 
 ## RemoveRewardProgram
 
@@ -435,13 +435,25 @@ Stores list of addresses with reward programs. TopUpRewardsProgram EVMScript fac
 
 ### Methods
 
-#### addRewardProgram(address \_rewardProgram) external
+#### addRewardProgram(address \_rewardProgram, string memory _title) external
 
 Adds reward program address to RewardProgramsRegistry, if it hasn't been added yet, throws `"REWARD_PROGRAM_ALREADY_ADDED"` in other cases. Might be called only by EVMScriptExecutor contract.
+
+Events:
+
+```solidity=
+event RewardProgramAdded(address indexed _rewardProgram, string _title)
+```
 
 #### removeRewardProgram(address \_rewardProgram) external
 
 Removes reward program address from RewardProgramsRegistry. Throws `"REWARD_PROGRAM_NOT_FOUND"` if program address misses from the array. Might be called only by EVMScriptExecutor contract.
+
+Events:
+
+```solidity=
+event RewardProgramRemoved(address indexed _rewardProgram)
+```
 
 #### isRewardProgram(address \_rewardProgram) external view (returns bool)
 

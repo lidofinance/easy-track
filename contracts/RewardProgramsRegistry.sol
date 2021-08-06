@@ -12,7 +12,7 @@ contract RewardProgramsRegistry is TrustedCaller {
     // -------------
     // EVENTS
     // -------------
-    event RewardProgramAdded(address indexed _rewardProgram);
+    event RewardProgramAdded(address indexed _rewardProgram, string _title);
     event RewardProgramRemoved(address indexed _rewardProgram);
 
     // -------------
@@ -43,12 +43,12 @@ contract RewardProgramsRegistry is TrustedCaller {
     // -------------
 
     /// @notice Adds address to list of allowed reward programs
-    function addRewardProgram(address _rewardProgram) external onlyTrustedCaller(msg.sender) {
+    function addRewardProgram(address _rewardProgram, string memory _title) external onlyTrustedCaller(msg.sender) {
         require(rewardProgramIndices[_rewardProgram] == 0, ERROR_REWARD_PROGRAM_ALREADY_ADDED);
 
         rewardPrograms.push(_rewardProgram);
         rewardProgramIndices[_rewardProgram] = rewardPrograms.length;
-        emit RewardProgramAdded(_rewardProgram);
+        emit RewardProgramAdded(_rewardProgram, _title);
     }
 
     /// @notice Removes address from list of allowed reward programs
