@@ -348,7 +348,7 @@ To successfully create EVMScript next requirements must be met:
 - Reward address of the node operator must be equal to the address of the `_creator`
 - Node Operator must be not disabled.
 - New staking limit must be greater than the current staking limit
-- Total amount of signing keys must be less than or equal to the new staking limit
+- Total amount of signing keys must be greater than or equal to the new staking limit
 
 #### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (uint256 \_nodeOperatorId, uint256 \_stakingLimit)
 
