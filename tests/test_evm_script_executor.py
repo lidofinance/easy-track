@@ -13,6 +13,13 @@ def test_deploy(owner, easy_track, calls_script, voting):
     assert contract.voting() == voting
 
 
+def test_deploy_calls_script_not_contract(owner, accounts, easy_track, voting):
+    "Must revert with message 'NOT_CONTRACT'"
+    not_contract = accounts[6]
+    with reverts("NOT_CONTRACT"):
+        owner.deploy(EVMScriptExecutor, not_contract, easy_track, voting)
+
+
 def test_execute_evm_script_revert_msg(
     voting,
     easy_track,

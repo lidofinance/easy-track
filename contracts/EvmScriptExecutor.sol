@@ -4,6 +4,7 @@
 pragma solidity ^0.8.4;
 
 import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/StorageSlot.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/Address.sol";
 
 interface ICallsScript {
     function execScript(
@@ -21,6 +22,11 @@ contract EVMScriptExecutor {
     // EVENTS
     // -------------
     event ScriptExecuted(address indexed _caller, bytes _evmScript);
+
+    // -------------
+    // ERRORS
+    // -------------
+    string private constant ERROR_NOT_CONTRACT = "NOT_CONTRACT";
 
     // ------------
     // CONSTANTS
@@ -54,6 +60,7 @@ contract EVMScriptExecutor {
         address _easyTrack,
         address _voting
     ) {
+        require(Address.isContract(_callsScript), ERROR_NOT_CONTRACT);
         voting = _voting;
         easyTrack = _easyTrack;
         callsScript = _callsScript;
