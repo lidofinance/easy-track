@@ -1,18 +1,42 @@
 import random
 from brownie import RewardProgramsRegistry, accounts, reverts
+from utils.test_helpers import access_controll_revert_message
 
 
-def test_deploy(owner, evm_script_executor_stub):
+def test_deploy(owner, voting, evm_script_executor_stub):
     "Must deploy contract with correct trustedCaller address"
-    contract = owner.deploy(RewardProgramsRegistry, evm_script_executor_stub)
-    assert contract.trustedCaller() == evm_script_executor_stub
+    contract = owner.deploy(
+        RewardProgramsRegistry,
+        voting,
+        [voting, evm_script_executor_stub],
+        [voting, evm_script_executor_stub],
+    )
+    # Voting must be admin of the RewardProgramsRegistry
+    assert contract.hasRole(contract.DEFAULT_ADMIN_ROLE(), voting)
+
+    # Voting must have rights to add/remove reward programs
+    assert contract.hasRole(contract.ADD_REWARD_PROGRAM_ROLE(), voting)
+    assert contract.hasRole(contract.REMOVE_REWARD_PROGRAM_ROLE(), voting)
+
+    # EVMScriptExecutor must have rights to add/remove reward programs
+    assert contract.hasRole(
+        contract.ADD_REWARD_PROGRAM_ROLE(), evm_script_executor_stub
+    )
+    assert contract.hasRole(
+        contract.REMOVE_REWARD_PROGRAM_ROLE(), evm_script_executor_stub
+    )
 
 
-def test_add_reward_program_called_by_stranger(
-    owner, stranger, reward_programs_registry
-):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' error if called not by trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
+def test_add_reward_program_called_by_stranger(stranger, reward_programs_registry):
+    "Must revert with correct Access Control message if called by address without role 'ADD_REWARD_PROGRAM_ROLE'"
+    assert not reward_programs_registry.hasRole(
+        reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), stranger
+    )
+    with reverts(
+        access_controll_revert_message(
+            stranger, reward_programs_registry.ADD_REWARD_PROGRAM_ROLE()
+        )
+    ):
         reward_programs_registry.addRewardProgram(stranger, "", {"from": stranger})
 
 
@@ -45,8 +69,15 @@ def test_add_reward_program(
 def test_remove_reward_program_called_by_stranger(
     owner, stranger, reward_programs_registry
 ):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' error if called not by trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
+    "Must revert with correct Access Control message if called by address without role 'REMOVE_REWARD_PROGRAM_ROLE'"
+    assert not reward_programs_registry.hasRole(
+        reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), stranger
+    )
+    with reverts(
+        access_controll_revert_message(
+            stranger, reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE()
+        )
+    ):
         reward_programs_registry.removeRewardProgram(stranger, {"from": stranger})
 
 

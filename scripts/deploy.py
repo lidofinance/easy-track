@@ -43,11 +43,11 @@ def main():
     # address allowed to create motions to add, remove or top up reward program
     reward_programs_multisig = get_env("REWARD_PROGRAMS_MULTISIG")
     # address to grant PAUSE_ROLE (optional)
-    pause_address = os.environ.get('PAUSE_ADDRESS')
+    pause_address = os.environ.get("PAUSE_ADDRESS")
     # address to grant UNPAUSE_ROLE (optional)
-    unpause_address = os.environ.get('UNPAUSE_ADDRESS')
+    unpause_address = os.environ.get("UNPAUSE_ADDRESS")
     # address to grant CANCEL_ROLE (optional)
-    cancel_address = os.environ.get('CANCEL_ADDRESS')
+    cancel_address = os.environ.get("CANCEL_ADDRESS")
 
     print(f"Current network: {network.show_active()} (chain id: {chain.id})")
     print(f"Deployer: {deployer}")
@@ -73,7 +73,7 @@ def main():
 
     easy_track = deploy_easy_track_with_proxy(deployer, governance_token)
     evm_script_executor = deploy_evm_script_executor(
-        deployer, easy_track, aragon_calls_script, aragon_voting
+        deployer, easy_track, aragon_calls_script
     )
 
     deploy_increase_node_operator_staking_limit(
@@ -94,13 +94,20 @@ def main():
 
     deploy_reward_programs_evm_script_factories(
         deployer=deployer,
+        voting=aragon_voting,
         easy_track=easy_track,
         evm_script_executor=evm_script_executor,
         finance=interface.IFinance(aragon_finance),
         governance_token=governance_token,
         reward_programs_multisig=reward_programs_multisig,
     )
-    grant_roles(easy_track=easy_track, deployer=deployer, pause_address=pause_address, unpause_address=unpause_address, cancel_address=cancel_address)
+    grant_roles(
+        easy_track=easy_track,
+        deployer=deployer,
+        pause_address=pause_address,
+        unpause_address=unpause_address,
+        cancel_address=cancel_address,
+    )
     transfer_admin_role(deployer, easy_track, aragon_voting)
 
 
@@ -119,18 +126,21 @@ def deploy_easy_track_with_proxy(
     return Contract.from_abi("EasyTrack", proxy.address, EasyTrack.abi)
 
 
-def deploy_evm_script_executor(
-    deployer, easy_track, aragon_calls_script, aragon_voting
-):
+def deploy_evm_script_executor(deployer, easy_track, aragon_calls_script):
     evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, aragon_calls_script, easy_track, aragon_voting
+        EVMScriptExecutor, aragon_calls_script, easy_track
     )
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
     return evm_script_executor
 
 
-def deploy_reward_programs_registry(deployer, evm_script_executor):
-    return deployer.deploy(RewardProgramsRegistry, evm_script_executor)
+def deploy_reward_programs_registry(deployer, voting, evm_script_executor):
+    return deployer.deploy(
+        RewardProgramsRegistry,
+        voting,
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+    )
 
 
 def deploy_increase_node_operator_staking_limit(
@@ -168,14 +178,15 @@ def create_permission(contract, method):
 
 def deploy_reward_programs_evm_script_factories(
     deployer,
+    voting,
     easy_track,
     evm_script_executor,
     finance,
     governance_token,
     reward_programs_multisig,
 ):
-    reward_programs_registry = deployer.deploy(
-        RewardProgramsRegistry, evm_script_executor
+    reward_programs_registry = deploy_reward_programs_registry(
+        deployer=deployer, voting=voting, evm_script_executor=evm_script_executor
     )
 
     add_reward_program = deployer.deploy(
@@ -209,18 +220,23 @@ def deploy_reward_programs_evm_script_factories(
         {"from": deployer},
     )
 
+
 def grant_roles(easy_track, deployer, pause_address, unpause_address, cancel_address):
     if pause_address:
         print(f"Grant 'PAUSE_ROLE' to address {pause_address}")
         easy_track.grantRole(easy_track.PAUSE_ROLE(), pause_address, {"from": deployer})
-    
+
     if unpause_address:
         print(f"Grant 'UNPAUSE_ROLE' to address {unpause_address}")
-        easy_track.grantRole(easy_track.UNPAUSE_ROLE(), unpause_address, {"from": deployer})
+        easy_track.grantRole(
+            easy_track.UNPAUSE_ROLE(), unpause_address, {"from": deployer}
+        )
 
     if cancel_address:
         print(f"Grant 'CANCEL_ROLE' to address {cancel_address}")
-        easy_track.grantRole(easy_track.CANCEL_ROLE(), cancel_address, {"from": deployer})
+        easy_track.grantRole(
+            easy_track.CANCEL_ROLE(), cancel_address, {"from": deployer}
+        )
 
 
 def transfer_admin_role(deployer, easy_track, new_admin):

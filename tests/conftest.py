@@ -85,13 +85,18 @@ def easy_track(owner, ldo, voting):
 
 
 @pytest.fixture(scope="function")
-def evm_script_executor(owner, easy_track, calls_script, voting):
-    return owner.deploy(EVMScriptExecutor, calls_script, easy_track, voting)
+def evm_script_executor(owner, easy_track, calls_script):
+    return owner.deploy(EVMScriptExecutor, calls_script, easy_track)
 
 
 @pytest.fixture(scope="function")
-def reward_programs_registry(owner, evm_script_executor_stub):
-    return owner.deploy(RewardProgramsRegistry, evm_script_executor_stub)
+def reward_programs_registry(owner, voting, evm_script_executor_stub):
+    return owner.deploy(
+        RewardProgramsRegistry,
+        voting,
+        [voting, evm_script_executor_stub],
+        [voting, evm_script_executor_stub],
+    )
 
 
 ############
