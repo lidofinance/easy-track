@@ -22,6 +22,7 @@ compiler:
     version: 0.8.6
 reports:
   exclude_contracts:
+    - AccessControl
     - EVMScriptFactoryStub
     - EVMScriptExecutorStub
     - NodeOperatorsRegistryStub
