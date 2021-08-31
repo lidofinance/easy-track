@@ -312,7 +312,7 @@ CALL_DATA        -> bytes of length CALL_DATA_LENGTH
 
 #### function executeEVMScript(bytes memory \_evmScript) external returns (bytes memory)
 
-Executes passed EVMScripts and returns empty bytes as a result. Current realization uses deployed contract of Aragon's default [CallsScript.sol](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol) executor. `EVMScriptExecutor.executeEVMScript` makes delegate call to `CallsScript.execScript` and returns the result of its execution(`CallsScript` always returns empty byte array on success) if the call was successful or reverts with error forwarded from `CallsScript.execScript` in other cases.
+Executes passed EVMScripts and returns empty bytes as a result. This method might be called only by the EasyTrack contract. Current realization uses deployed contract of Aragon's default [CallsScript.sol](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol) executor. `EVMScriptExecutor.executeEVMScript` makes delegate call to `CallsScript.execScript` and returns the result of its execution(`CallsScript` always returns empty byte array on success) if the call was successful or reverts with error forwarded from `CallsScript.execScript` in other cases.
 
 ## IEVMScriptFactory
 
@@ -406,7 +406,7 @@ Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmSc
 - `_creator` must be equal to `trustedCaller` address
 - `_rewardProgram` address hasn't been added in `RewardProgramsRegistry` earlier.
 
-#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_rewardProgram, string memory _title)
+#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_rewardProgram, string memory \_title)
 
 Decodes `_evmScriptCallData` into tuple `(address _rewardProgram, string _title)`.
 
@@ -431,13 +431,13 @@ Decodes `_evmScriptCallData` into tuple `(address _rewardProgram)`.
 
 ## RewardProgramsRegistry
 
-Stores list of addresses with reward programs. TopUpRewardsProgram EVMScript factory allows transfers only to addresses listed in RewardProgramsRegistry.
+Stores list of addresses with reward programs. Inherits from OpenZeppelin's `AccessControl` contract. TopUpRewardsProgram EVMScript factory allows transfers only to addresses listed in RewardProgramsRegistry.
 
 ### Methods
 
-#### addRewardProgram(address \_rewardProgram, string memory _title) external
+#### addRewardProgram(address \_rewardProgram, string memory \_title) external
 
-Adds reward program address to RewardProgramsRegistry, if it hasn't been added yet, throws `"REWARD_PROGRAM_ALREADY_ADDED"` in other cases. Might be called only by EVMScriptExecutor contract.
+Adds reward program address to RewardProgramsRegistry, if it hasn't been added yet, throws `"REWARD_PROGRAM_ALREADY_ADDED"` in other cases. Can be called only by address granted with `ADD_REWARD_PROGRAM_ROLE`.
 
 Events:
 
@@ -447,7 +447,7 @@ event RewardProgramAdded(address indexed _rewardProgram, string _title)
 
 #### removeRewardProgram(address \_rewardProgram) external
 
-Removes reward program address from RewardProgramsRegistry. Throws `"REWARD_PROGRAM_NOT_FOUND"` if program address misses from the array. Might be called only by EVMScriptExecutor contract.
+Removes reward program address from RewardProgramsRegistry. Throws `"REWARD_PROGRAM_NOT_FOUND"` if program address misses from the array. Might be called only by EVMScriptExecutor contract. Can be called only by address granted with `REMOVE_REWARD_PROGRAM_ROLE`.
 
 Events:
 

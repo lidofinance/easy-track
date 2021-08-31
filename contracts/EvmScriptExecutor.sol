@@ -48,20 +48,12 @@ contract EVMScriptExecutor {
     /// @notice Address of depoyed easyTrack.sol contract
     address public immutable easyTrack;
 
-    /// @notice Address of Aragon's Voting contract
-    address public immutable voting;
-
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(
-        address _callsScript,
-        address _easyTrack,
-        address _voting
-    ) {
+    constructor(address _callsScript, address _easyTrack) {
         require(Address.isContract(_callsScript), ERROR_NOT_CONTRACT);
-        voting = _voting;
         easyTrack = _easyTrack;
         callsScript = _callsScript;
         StorageSlot.getUint256Slot(INITIALIZATION_BLOCK_POSITION).value = block.number;
@@ -75,7 +67,7 @@ contract EVMScriptExecutor {
     /// @dev Uses deployed Aragon's CallsScript.sol contract to execute EVMScript.
     /// @return Empty bytes
     function executeEVMScript(bytes memory _evmScript) external returns (bytes memory) {
-        require(msg.sender == voting || msg.sender == easyTrack, "CALLER_IS_FORBIDDEN");
+        require(msg.sender == easyTrack, "CALLER_IS_FORBIDDEN");
 
         bytes memory execScriptCallData =
             abi.encodeWithSelector(

@@ -3,25 +3,23 @@ from brownie import EVMScriptExecutor, reverts
 from utils.evm_script import encode_call_script
 
 
-def test_deploy(owner, easy_track, calls_script, voting):
+def test_deploy(owner, easy_track, calls_script):
     "Must deploy contract with correct data"
-    contract = owner.deploy(EVMScriptExecutor, calls_script, easy_track, voting)
+    contract = owner.deploy(EVMScriptExecutor, calls_script, easy_track)
 
     # validate that contract was initialized correctly
     assert contract.callsScript() == calls_script
     assert contract.easyTrack() == easy_track
-    assert contract.voting() == voting
 
 
-def test_deploy_calls_script_not_contract(owner, accounts, easy_track, voting):
+def test_deploy_calls_script_not_contract(owner, accounts, easy_track):
     "Must revert with message 'NOT_CONTRACT'"
     not_contract = accounts[6]
     with reverts("NOT_CONTRACT"):
-        owner.deploy(EVMScriptExecutor, not_contract, easy_track, voting)
+        owner.deploy(EVMScriptExecutor, not_contract, easy_track)
 
 
 def test_execute_evm_script_revert_msg(
-    voting,
     easy_track,
     node_operator,
     evm_script_executor,
@@ -41,7 +39,7 @@ def test_execute_evm_script_revert_msg(
                     )
                 ]
             ),
-            {"from": voting},
+            {"from": easy_track},
         )
 
 
@@ -76,9 +74,9 @@ def test_execute_evm_script_output(
 
 
 def test_execute_evm_script_caller_validation(
-    stranger, voting, easy_track, evm_script_executor, node_operators_registry_stub
+    stranger, easy_track, evm_script_executor, node_operators_registry_stub
 ):
-    "Must accept calls to executeEVMScript only from Voting and EasyTrack contracts"
+    "Must accept calls to executeEVMScript only from EasyTrack contracts"
     with reverts("CALLER_IS_FORBIDDEN"):
         evm_script_executor.executeEVMScript("0x", {"from": stranger})
 
@@ -95,4 +93,3 @@ def test_execute_evm_script_caller_validation(
 
     # must execute scripts when called by Voting or EasyTrack
     evm_script_executor.executeEVMScript(evm_script, {"from": easy_track})
-    evm_script_executor.executeEVMScript(evm_script, {"from": voting})

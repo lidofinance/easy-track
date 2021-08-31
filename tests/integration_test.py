@@ -48,9 +48,7 @@ def test_node_operators_easy_track(
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-    evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, calls_script, easy_track, voting
-    )
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
 
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
@@ -200,16 +198,17 @@ def test_reward_programs_easy_track(
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-    evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, calls_script, easy_track, voting
-    )
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
 
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
 
     # deploy RewardProgramsRegistry
     reward_programs_registry = deployer.deploy(
-        RewardProgramsRegistry, evm_script_executor
+        RewardProgramsRegistry,
+        voting,
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
     )
 
     # deploy TopUpRewardProgram EVM script factory
@@ -288,7 +287,9 @@ def test_reward_programs_easy_track(
     # create new motion to add reward program
     tx = easy_track.createMotion(
         add_reward_program,
-        encode_single("(address,string)", [reward_program.address, reward_program_title]),
+        encode_single(
+            "(address,string)", [reward_program.address, reward_program_title]
+        ),
         {"from": trusted_address},
     )
 
@@ -379,9 +380,7 @@ def test_lego_easy_track(
     easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
-    evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, calls_script, easy_track, voting
-    )
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
 
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})

@@ -3,17 +3,23 @@
 
 pragma solidity ^0.8.4;
 
-import "./TrustedCaller.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
 
 /// @author psirex
 /// @title Registry of allowed reward programs
 /// @notice Stores list of addresses with reward programs
-contract RewardProgramsRegistry is TrustedCaller {
+contract RewardProgramsRegistry is AccessControl {
     // -------------
     // EVENTS
     // -------------
     event RewardProgramAdded(address indexed _rewardProgram, string _title);
     event RewardProgramRemoved(address indexed _rewardProgram);
+
+    // -------------
+    // ROLES
+    // -------------
+    bytes32 public constant ADD_REWARD_PROGRAM_ROLE = keccak256("ADD_REWARD_PROGRAM_ROLE");
+    bytes32 public constant REMOVE_REWARD_PROGRAM_ROLE = keccak256("REMOVE_REWARD_PROGRAM_ROLE");
 
     // -------------
     // ERRORS
@@ -36,14 +42,34 @@ contract RewardProgramsRegistry is TrustedCaller {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller) TrustedCaller(_trustedCaller) {}
+    /// @param _admin Address which will be granted with role DEFAULT_ADMIN_ROLE
+    /// @param _addRewardProgramRoleHolders List of addresses which will be
+    ///     granted with role ADD_REWARD_PROGRAM_ROLE
+    /// @param _removeRewardProgramRoleHolders List of addresses which will
+    ///     be granted with role REMOVE_REWARD_PROGRAM_ROLE
+    constructor(
+        address _admin,
+        address[] memory _addRewardProgramRoleHolders,
+        address[] memory _removeRewardProgramRoleHolders
+    ) {
+        _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+        for (uint256 i = 0; i < _addRewardProgramRoleHolders.length; i++) {
+            _setupRole(ADD_REWARD_PROGRAM_ROLE, _addRewardProgramRoleHolders[i]);
+        }
+        for (uint256 i = 0; i < _removeRewardProgramRoleHolders.length; i++) {
+            _setupRole(REMOVE_REWARD_PROGRAM_ROLE, _removeRewardProgramRoleHolders[i]);
+        }
+    }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
     /// @notice Adds address to list of allowed reward programs
-    function addRewardProgram(address _rewardProgram, string memory _title) external onlyTrustedCaller(msg.sender) {
+    function addRewardProgram(address _rewardProgram, string memory _title)
+        external
+        onlyRole(ADD_REWARD_PROGRAM_ROLE)
+    {
         require(rewardProgramIndices[_rewardProgram] == 0, ERROR_REWARD_PROGRAM_ALREADY_ADDED);
 
         rewardPrograms.push(_rewardProgram);
@@ -54,7 +80,10 @@ contract RewardProgramsRegistry is TrustedCaller {
     /// @notice Removes address from list of allowed reward programs
     /// @dev To delete a reward program from the rewardPrograms array in O(1), we swap the element to delete with the last one in
     /// the array, and then remove the last element (sometimes called as 'swap and pop').
-    function removeRewardProgram(address _rewardProgram) external onlyTrustedCaller(msg.sender) {
+    function removeRewardProgram(address _rewardProgram)
+        external
+        onlyRole(REMOVE_REWARD_PROGRAM_ROLE)
+    {
         uint256 index = _gerRewardProgramIndex(_rewardProgram);
         uint256 lastIndex = rewardPrograms.length - 1;
 
