@@ -93,3 +93,26 @@ def test_execute_evm_script_caller_validation(
 
     # must execute scripts when called by Voting or EasyTrack
     evm_script_executor.executeEVMScript(evm_script, {"from": easy_track})
+
+
+def test_set_easy_track_called_by_stranger(accounts, stranger, evm_script_executor):
+    "Must revert with message 'Ownable: caller is not the owner'"
+    new_easy_track = accounts[4]
+    with reverts("Ownable: caller is not the owner"):
+        evm_script_executor.setEasyTrack(new_easy_track, {"from": stranger})
+
+
+def test_set_easy_track_called_by_owner(
+    accounts, owner, evm_script_executor, easy_track
+):
+    "Must set new easyTrack value and emit EasyTrackChanged(address _previousEasyTrack, address _newEasyTrack) event"
+    assert evm_script_executor.easyTrack() == easy_track
+
+    new_easy_track = accounts[4]
+    tx = evm_script_executor.setEasyTrack(new_easy_track, {"from": owner})
+    assert evm_script_executor.easyTrack() == new_easy_track
+
+    # validate events
+    assert len(tx.events) == 1
+    assert tx.events["EasyTrackChanged"]["_previousEasyTrack"] == easy_track
+    assert tx.events["EasyTrackChanged"]["_newEasyTrack"] == new_easy_track

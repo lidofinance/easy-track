@@ -85,7 +85,10 @@ def main():
         objections_threshold=objections_threshold,
     )
     evm_script_executor = deploy_evm_script_executor(
-        deployer, easy_track, aragon_calls_script
+        deployer=deployer,
+        aragon_voting=aragon_voting,
+        easy_track=easy_track,
+        aragon_calls_script=aragon_calls_script,
     )
 
     deploy_increase_node_operator_staking_limit(
@@ -140,10 +143,13 @@ def deploy_easy_track(
     )
 
 
-def deploy_evm_script_executor(deployer, easy_track, aragon_calls_script):
+def deploy_evm_script_executor(
+    deployer, aragon_voting, easy_track, aragon_calls_script
+):
     evm_script_executor = deployer.deploy(
         EVMScriptExecutor, aragon_calls_script, easy_track
     )
+    evm_script_executor.transferOwnership(aragon_voting, {"from": deployer})
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
     return evm_script_executor
 

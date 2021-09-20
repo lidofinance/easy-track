@@ -26,4 +26,5 @@ reports:
     - EVMScriptFactoryStub
     - EVMScriptExecutorStub
     - NodeOperatorsRegistryStub
+    - Ownable
   only_include_project: false

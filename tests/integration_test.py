@@ -48,6 +48,8 @@ def test_node_operators_easy_track(
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
+    evm_script_executor.transferOwnership(voting, {"from": deployer})
+    assert evm_script_executor.owner() == voting
 
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
@@ -197,6 +199,8 @@ def test_reward_programs_easy_track(
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
+    evm_script_executor.transferOwnership(voting, {"from": deployer})
+    assert evm_script_executor.owner() == voting
 
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
@@ -378,6 +382,8 @@ def test_lego_easy_track(
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
+    evm_script_executor.transferOwnership(voting, {"from": deployer})
+    assert evm_script_executor.owner() == voting
 
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
