@@ -7,7 +7,6 @@ from brownie import (
     interface,
     Contract,
     EasyTrack,
-    ContractProxy,
     TopUpLegoProgram,
     EVMScriptExecutor,
     AddRewardProgram,
@@ -29,6 +28,10 @@ from utils.lido import contracts
 def main():
     lido_contracts = contracts()
     deployer = get_deployer_account(get_is_live())
+
+    motion_duration = 48 * 60 * 60  # 48 hours
+    motions_count_limit = 12
+    objections_threshold = 50  # 0.5%
 
     governance_token = lido_contracts["dao"]["ldo"]
     aragon_voting = lido_contracts["dao"]["voting"]
@@ -52,6 +55,9 @@ def main():
     print(f"Current network: {network.show_active()} (chain id: {chain.id})")
     print(f"Deployer: {deployer}")
     print(f"Governance Token: {governance_token}")
+    print(f"Motion Duration: {motion_duration} seconds")
+    print(f"Motions Count Limit: {motions_count_limit}")
+    print(f"Objections Threshold: {objections_threshold}")
     print(f"Aragon Voting: {aragon_voting}")
     print(f"Aragon Finance: {aragon_finance}")
     print(f"Aragon CallsScript: {aragon_calls_script}")
@@ -71,7 +77,13 @@ def main():
         print("Aborting")
         return
 
-    easy_track = deploy_easy_track_with_proxy(deployer, governance_token)
+    easy_track = deploy_easy_track(
+        deployer,
+        governance_token,
+        motion_duration=motion_duration,
+        motions_count_limit=motions_count_limit,
+        objections_threshold=objections_threshold,
+    )
     evm_script_executor = deploy_evm_script_executor(
         deployer, easy_track, aragon_calls_script
     )
@@ -111,19 +123,21 @@ def main():
     transfer_admin_role(deployer, easy_track, aragon_voting)
 
 
-def deploy_easy_track_with_proxy(
+def deploy_easy_track(
     deployer,
     governance_token,
+    motion_duration,
+    motions_count_limit,
+    objections_threshold,
 ):
-    easy_track_logic = deployer.deploy(EasyTrack)
-    proxy = deployer.deploy(
-        ContractProxy,
-        easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(
-            governance_token, deployer
-        ),
+    return deployer.deploy(
+        EasyTrack,
+        governance_token,
+        deployer,
+        motion_duration,
+        motions_count_limit,
+        objections_threshold,
     )
-    return Contract.from_abi("EasyTrack", proxy.address, EasyTrack.abi)
 
 
 def deploy_evm_script_executor(deployer, easy_track, aragon_calls_script):

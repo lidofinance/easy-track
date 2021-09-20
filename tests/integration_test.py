@@ -1,9 +1,9 @@
 import sys
 import pytest
+import constants
 from brownie.network import chain
 from brownie import (
     Contract,
-    ContractProxy,
     TopUpLegoProgram,
     EasyTrack,
     EVMScriptExecutor,
@@ -37,15 +37,14 @@ def test_node_operators_easy_track(
     deployer = accounts[0]
 
     # deploy easy track
-    easy_track_logic = deployer.deploy(EasyTrack)
-
-    # init easy track and grant admin permissions to deployer
-    easy_track_proxy = deployer.deploy(
-        ContractProxy,
-        easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo, deployer),
+    easy_track = deployer.deploy(
+        EasyTrack,
+        ldo,
+        deployer,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
-    easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
@@ -187,15 +186,14 @@ def test_reward_programs_easy_track(
     trusted_address = accounts[7]
 
     # deploy easy track
-    easy_track_logic = deployer.deploy(EasyTrack)
-
-    # init easy track and grant admin permissions to deployer
-    easy_track_proxy = deployer.deploy(
-        ContractProxy,
-        easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo, deployer),
+    easy_track = deployer.deploy(
+        EasyTrack,
+        ldo,
+        deployer,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
-    easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
@@ -369,15 +367,14 @@ def test_lego_easy_track(
     trusted_address = accounts[7]
 
     # deploy easy track
-    easy_track_logic = deployer.deploy(EasyTrack)
-
-    # init easy track and grant admin permissions to deployer
-    easy_track_proxy = deployer.deploy(
-        ContractProxy,
-        easy_track_logic,
-        easy_track_logic.__EasyTrackStorage_init.encode_input(ldo, deployer),
+    easy_track = deployer.deploy(
+        EasyTrack,
+        ldo,
+        deployer,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
-    easy_track = Contract.from_abi("EasyTrackProxied", easy_track_proxy, EasyTrack.abi)
 
     # deploy evm script executor
     evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
