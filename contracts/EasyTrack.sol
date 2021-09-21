@@ -178,7 +178,7 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
             _createEVMScript(motion.evmScriptFactory, motion.creator, _evmScriptCallData);
         require(motion.evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
 
-        _deleteMotion(_motionId); // critical vulnerability
+        _deleteMotion(_motionId);
         evmScriptExecutor.executeEVMScript(evmScript);
 
         emit MotionEnacted(_motionId);
