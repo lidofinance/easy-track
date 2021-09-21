@@ -6,7 +6,6 @@
   "license": "MIT",
   "dependencies": {
     "@openzeppelin/contracts": "^4.2.0",
-    "@openzeppelin/contracts-upgradeable": "^4.2.0",
     "ethlint": "^1.2.5",
     "husky": "^6.0.0",
     "prettier": "^2.3.0",
