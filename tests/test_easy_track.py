@@ -386,7 +386,13 @@ def test_object_to_motion_motion_not_found(owner, easy_track):
 
 
 def test_object_to_motion_multiple_times(
-    owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
+    owner,
+    voting,
+    ldo_holders,
+    ldo,
+    easy_track,
+    evm_script_factory_stub,
+    distribute_holder_balance,
 ):
     "Must revert with message: 'ALREADY_OBJECTED' if sender already objected the motion with the given id"
     # add evm script factory to create motions
@@ -431,7 +437,13 @@ def test_object_to_motion_not_ldo_holder(
 
 
 def test_object_to_motion_by_tokens_holder(
-    owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
+    owner,
+    voting,
+    ldo_holders,
+    ldo,
+    easy_track,
+    evm_script_factory_stub,
+    distribute_holder_balance,
 ):
     "Must increase motion objections on correct amount and"
     "emit ObjectionSent(_motionId,_objector,_weight,_newObjectionsAmount,_newObjectionsAmountPct) event"
@@ -472,7 +484,13 @@ def test_object_to_motion_by_tokens_holder(
 
 
 def test_object_to_motion_rejected(
-    owner, voting, ldo_holders, ldo, easy_track, evm_script_factory_stub
+    owner,
+    voting,
+    ldo_holders,
+    ldo,
+    easy_track,
+    evm_script_factory_stub,
+    distribute_holder_balance,
 ):
     "Must remove motion from list of active motions"
     "and emit ObjectionSent(_motionId,_objector,_weight,_newObjectionsAmount,_newObjectionsAmountPct)"
@@ -732,7 +750,14 @@ def test_unpause_called_with_permissions(voting, easy_track):
 
 
 def test_can_object_to_motion(
-    owner, voting, stranger, ldo_holders, ldo, easy_track, evm_script_factory_stub
+    owner,
+    voting,
+    stranger,
+    ldo_holders,
+    ldo,
+    easy_track,
+    evm_script_factory_stub,
+    distribute_holder_balance,
 ):
     "Must return False if caller has no governance tokens or if he has already voted."
     "Returns True in other cases"
