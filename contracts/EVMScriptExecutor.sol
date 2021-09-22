@@ -28,7 +28,9 @@ contract EVMScriptExecutor is Ownable {
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_NOT_CONTRACT = "NOT_CONTRACT";
+    string private constant ERROR_CALLER_IS_FORBIDDEN = "CALLER_IS_FORBIDDEN";
+    string private constant ERROR_EASY_TRACK_IS_NOT_CONTRACT = "EASY_TRACK_IS_NOT_CONTRACT";
+    string private constant ERROR_CALLS_SCRIPT_IS_NOT_CONTRACT = "CALLS_SCRIPT_IS_NOT_CONTRACT";
 
     // ------------
     // CONSTANTS
@@ -53,9 +55,8 @@ contract EVMScriptExecutor is Ownable {
     // -------------
     // CONSTRUCTOR
     // -------------
-
     constructor(address _callsScript, address _easyTrack) {
-        require(Address.isContract(_callsScript), ERROR_NOT_CONTRACT);
+        require(Address.isContract(_callsScript), ERROR_CALLS_SCRIPT_IS_NOT_CONTRACT);
         callsScript = _callsScript;
         _setEasyTrack(_easyTrack);
         StorageSlot.getUint256Slot(INITIALIZATION_BLOCK_POSITION).value = block.number;
@@ -69,7 +70,7 @@ contract EVMScriptExecutor is Ownable {
     /// @dev Uses deployed Aragon's CallsScript.sol contract to execute EVMScript.
     /// @return Empty bytes
     function executeEVMScript(bytes memory _evmScript) external returns (bytes memory) {
-        require(msg.sender == easyTrack, "CALLER_IS_FORBIDDEN");
+        require(msg.sender == easyTrack, ERROR_CALLER_IS_FORBIDDEN);
 
         bytes memory execScriptCallData =
             abi.encodeWithSelector(
@@ -96,6 +97,7 @@ contract EVMScriptExecutor is Ownable {
     }
 
     function _setEasyTrack(address _easyTrack) internal {
+        require(Address.isContract(_easyTrack), ERROR_EASY_TRACK_IS_NOT_CONTRACT);
         address oldEasyTrack = easyTrack;
         easyTrack = _easyTrack;
         emit EasyTrackChanged(oldEasyTrack, _easyTrack);

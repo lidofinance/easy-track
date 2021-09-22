@@ -1,6 +1,7 @@
 from eth_abi import encode_single
 from brownie import EVMScriptExecutor, reverts
 from utils.evm_script import encode_call_script
+import constants
 
 
 def test_deploy(owner, easy_track, calls_script):
@@ -13,10 +14,17 @@ def test_deploy(owner, easy_track, calls_script):
 
 
 def test_deploy_calls_script_not_contract(owner, accounts, easy_track):
-    "Must revert with message 'NOT_CONTRACT'"
+    "Must revert with message 'CALLS_SCRIPT_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
-    with reverts("NOT_CONTRACT"):
+    with reverts("CALLS_SCRIPT_IS_NOT_CONTRACT"):
         owner.deploy(EVMScriptExecutor, not_contract, easy_track)
+
+
+def test_deploy_easy_track_not_contract(owner, accounts, calls_script):
+    "Must revert with message 'EASY_TRACK_IS_NOT_CONTRACT'"
+    not_contract = accounts[6]
+    with reverts("EASY_TRACK_IS_NOT_CONTRACT"):
+        owner.deploy(EVMScriptExecutor, calls_script, not_contract)
 
 
 def test_execute_evm_script_revert_msg(
@@ -103,12 +111,19 @@ def test_set_easy_track_called_by_stranger(accounts, stranger, evm_script_execut
 
 
 def test_set_easy_track_called_by_owner(
-    accounts, owner, evm_script_executor, easy_track
+    accounts, owner, ldo, voting, evm_script_executor, easy_track, EasyTrack
 ):
     "Must set new easyTrack value and emit EasyTrackChanged(address _previousEasyTrack, address _newEasyTrack) event"
     assert evm_script_executor.easyTrack() == easy_track
 
-    new_easy_track = accounts[4]
+    new_easy_track = owner.deploy(
+        EasyTrack,
+        ldo,
+        voting,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
     tx = evm_script_executor.setEasyTrack(new_easy_track, {"from": owner})
     assert evm_script_executor.easyTrack() == new_easy_track
 
