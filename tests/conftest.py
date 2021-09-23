@@ -1,7 +1,7 @@
 import pytest
+import brownie
 
 import constants
-import brownie
 from utils.lido import contracts
 from utils import test_helpers
 
