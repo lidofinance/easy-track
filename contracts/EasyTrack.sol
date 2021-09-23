@@ -28,7 +28,6 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
         uint256 snapshotBlock;
         uint256 objectionsThreshold;
         uint256 objectionsAmount;
-        uint256 objectionsAmountPct;
         bytes32 evmScriptHash;
     }
 
@@ -212,7 +211,6 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
 
         if (newObjectionsAmountPct < motion.objectionsThreshold) {
             motion.objectionsAmount = newObjectionsAmount;
-            motion.objectionsAmountPct = newObjectionsAmountPct;
         } else {
             _deleteMotion(_motionId);
             emit MotionRejected(_motionId);
