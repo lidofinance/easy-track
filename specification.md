@@ -4,11 +4,10 @@
 
 **EasyTrack contract** is the main contract, which implements the Easy Track voting mechanism. EasyTrack contract inherits from several OpenZeppelin contracts:
 
-- [AccessControlUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/2af7375b7b2f82224272d823c1151d4d5d0633c4/contracts/access/AccessControlUpgradeable.sol) - to restrict access to some methods only to a set of admin addresses. **Admin of Easy Track** - is an address granted with `DEFAULT_ADMIN_ROLE`. By default, Admin of Easy Track will be Aragon's Voting address.
-- [PausableUpgradeable](https://github.com/OpenZeppelin/openzeppelin-contracts-upgradeable/blob/2af7375b7b2f82224272d823c1151d4d5d0633c4/contracts/security/PausableUpgradeable.sol) - to implement the ability to freeze enactment and creation of motions. Pausing allowed for addresses with role `PAUSE_ROLE` and unpausing – for addresses with role `UNPAUSE_ROLE`. By default, both roles are assigned to the Admin of Easy Track.
-- [UUPSUpgradable](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/9fbc1d71c0ed4c68a0bc160c69df1f85e94d2d8e/contracts/proxy/utils/UUPSUpgradeable.sol) - to implement upgradability. Make upgrades only allowed to the Admin of Easy Track.
+- [AccessControl](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/0c4de6721d9668d7b5b2c5a9400fd0b2a5e8de90/contracts/access/AccessControl.sol) - to restrict access to some methods only to a set of admin addresses. **Admin of Easy Track** - is an address granted with `DEFAULT_ADMIN_ROLE`. By default, Admin of Easy Track will be Aragon's Voting address.
+- [Pausable](https://github.com/OpenZeppelin/openzeppelin-contracts/blob/0c4de6721d9668d7b5b2c5a9400fd0b2a5e8de90/contracts/security/Pausable.sol) - to implement the ability to freeze enactment and creation of motions. Pausing allowed for addresses with role `PAUSE_ROLE` and unpausing – for addresses with role `UNPAUSE_ROLE`. By default, both roles are assigned to the Admin of Easy Track.
 
-Easy Track is strongly inspired by Aragon's Voting and based on Aragon's [EVMScripts](https://hack.aragon.org/docs/aragonos-ref#evmscripts-1) concept. Execution of EVMScripts is performed by standalone EVMScriptExecutor contract, which can be called only by EasyTrack and Aragon's Voting contracts. Implementation of EVMScriptExecutor used in EasyTrack contract delegates execution of EVMScripts to Aragon's [CallsScript](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol#L25) executor.
+Easy Track is strongly inspired by Aragon's Voting and based on Aragon's [EVMScripts](https://hack.aragon.org/docs/aragonos-ref#evmscripts-1) concept. Execution of EVMScripts is performed by standalone EVMScriptExecutor contract, which can be called only by EasyTrack contract. Implementation of EVMScriptExecutor used in EasyTrack contract delegates execution of EVMScripts to Aragon's [CallsScript](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol#L25) executor.
 
 As opposed to Aragon's Voting, EasyTrack contract doesn't allow to pass EVMScripts directly, and uses standalone **EVMScript factory** contracts to create EVMScripts. **EVMScript factory** - is a special contract, which implements [IEVMScriptFactory](#ievmscriptfactory) interface. Each EVMScript factory has to be registered in the EasyTrack contract before it can be used for motion creation. Registration of EVMScript factory contracts is allowed only to Admins of Easy Track.
 
@@ -26,7 +25,6 @@ struct Motion {
     uint256 snapshotBlock;
     uint256 objectionsThreshold;
     uint256 objectionsAmount;
-    uint256 objectionsAmountPct;
     bytes32 evmScriptHash;
 }
 ```
@@ -54,66 +52,35 @@ Default objections threshold equals 0.5%. It might be changed by the Admin of Ea
 
 # Core Contracts
 
-As it was mentioned above, EasyTrack is the main contract in the implementation of the Easy Track voting model. EasyTrack contract is upgradable, which allows upgrade functionality in the future without state losing and without the necessity to redeploy all contracts. To simplify future updates and minimize the risk of storage collisions all variables of EasyTrack contract are stored in a standalone EasyTrackStorage contract. EasyTracksStorage is a base contract for EasyTrack contract.
+As it was mentioned above, EasyTrack is the main contract in the implementation of the Easy Track voting model.
+To improve the readability and simplicity of the EasyTrack contract, groups of methods and associated variables are moved to standalone contracts:
 
-To increase the readability and simplicity of the EasyTrack contract, groups of methods are moved to standalone contracts:
+- [MotionSettings](#motionsettings) - keeps functionality to set objections threshold, max amount of active motions, and time required to allow motion to be enacted.
+- [EVMScriptFactoriesRegistry](#evmscriptfactoriesregistry) - keeps functionality to add/remove EVMScriptFactories and create EVMScripts.
 
-- [MotionSettings](#motionsettings) - keeps logic to set objections threshold, max amount of active motions, and time required to allow motion to be enacted.
-- [EVMScriptFactoriesRegistry](#evmscriptfactoriesregistry) - keeps logic to add/remove EVMScriptFactories and create EVMScripts.
-
-Such separation helps to keep in EasyTrack contract only the methods related to Easy Track logic directly. The whole inheritance graph can be seen in the picture below.
+Such separation helps to keep in EasyTrack contract only the data and methods related to Easy Track logic directly. The whole inheritance graph can be seen in the picture below.
 
 <p align="center">
-    <img src="https://i.imgur.com/cybYVS2.png" width="480px">
+    <img src="./inheritance_diagram.png" width="480px">
 </p>
 
-## EasyTrackStorage
+## MotionSettings
 
-Keeps all variables of the EasyTrack. contract Inherits from OpenZeppelin's `Initializable`, `PausableUpgradeable` and `AccessControlUpgradeable` contracts.
+Provides functionality to update motion settings of Easy Track: motion duration, objections threshold, and limit of active motions. Inherits from `AccessControl`.
 
-### Storage
+### Storage Variables
 
-Contract stores all variables used in Easy Track. Variables can be split into three groups:
-
-#### Motion Settings Variables
-
-Variables used to control motion duration, max count of active motions, and threshold of objections, required to reject the motion.
+Below variables used to control motion duration, max count of active motions, and threshold of objections, required to reject the motion.
 
 - **`uint256 objectionThreshold`** - percent from total supply of governance tokens required to reject motion. Value stored in basis points: 1% == 100. Max allowed value is 5%. Default value is 0.5%.
 - **`uint256 motionsCountLimit`** - max count of active motions. Max allowed value is 24. Default value is 12.
 - **`uint256 motionDuration`** - minimal time required to pass before enacting of motion. Min allowed value is 48 hours. The default value is 48 hours.
 
-#### EVMScript Factories Variables
+### Constructor
 
-Variables used to control the list of allowed EVMScript factories of Easy Track.
+### constructor(address \_admin, uint256 \_motionDuration, uint256 \_motionsCountLimit,uint256 \_objectionsThreshold)
 
-- **`address[] evmScriptFactories`** - current list of allowed EVMScript factories.
-- **`mapping(address => bytes)`** - evmScriptFactoriesPermissions - permissions of current list of allowed EVMScript factories.
-
-#### Easy Track Variables
-
-Variables used in primary Easy Track actions:
-
-- **`Motion[] motions`** - list of active motions.
-- **`IMiniMeToken governanceToken`** - address of governance token. Token has to implement balance history interface of [MiniMeToken](https://github.com/Giveth/minime#balance-history-is-registered-and-available-to-be-queried). Only holders of this token can send objections.Only holders of this token can submit objections.
-- **`IEVMScriptExecutor evmScriptExecutor`** - address of EVMScriptExecutor
-- **`mapping(uint256 => mapping(address => bool)) objections`** - stores if motion with given id has been objected from given address.
-
-### Methods
-
-#### function \_\_EasyTrackStorage_init(address \_governanceToken, address \_admin) public initializer
-
-Initializes EasyTrackStorage. This method can be called only once. Performs actions as follows:
-
-- initializes `PausableUpgradable` and `AccessControlUpgradable` contracts
-- grants `DEFAULT_ADMIN_ROLE`, `PAUSE_ROLE`, `UNPAUSE_ROLE` and `CANCEL_ROLE` to `_admin` address
-- sets default values for variables: `objectionsThreshold`, `motionsCountLimit`, `motionDuration`
-- sets value for `governanceToken`.
-- emits events `ObjectionsThresholdChanged`, `MotionDurationChanged` and `MotionDurationChanged`
-
-## MotionSettings
-
-Provides methods to update motion settings of Easy Track: motion duration, objections threshold, and limit of active motions. Inherits from `EasyTrackStorage`.
+Grants `DEFAULT_ADMIN_ROLE` to `_admin` address, validates values of passed variables `_motionDuration`, `_motionsCountLimit`, `motionDuration`, sets corresponding values if all conditions met and emits `ObjectionsThresholdChanged`, `MotionDurationChanged` and `MotionDurationChanged` events.
 
 ### Methods
 
@@ -140,7 +107,7 @@ event ObjectionsThresholdChanged(uint256 _newThreshold)
 
 #### function setMotionsCountLimit(uint256 \_motionsCountLimit) external onlyRole(DEFAULT_ADMIN_ROLE)
 
-Sets new value for `motionsCountLimit`. Max value is 48. Can be called only by the Admin of Easy Track.
+Sets new value for `motionsCountLimit`. Max value is 24. Can be called only by the Admin of Easy Track.
 
 Events:
 
@@ -150,7 +117,20 @@ event MotionsCountLimitChanged(uint256 _newMotionsCountLimit)
 
 ## EVMScriptFactoriesRegistry
 
-Provides methods to add/remove EVMScript factories and contains an internal method for the convenient creation of EVMScripts. Inherits from `EasyTrackStorage`.
+Provides methods to add/remove EVMScript factories and contains an internal method for the convenient creation of EVMScripts. Inherits from `AccessControl`.
+
+### Variables
+
+Below variables used to control the list of allowed EVMScript factories of Easy Track.
+
+- **`address[] evmScriptFactories`** - current list of allowed EVMScript factories.
+- **`mapping(address => bytes)`** - evmScriptFactoriesPermissions - permissions of current list of allowed EVMScript factories.
+
+### Constructor
+
+#### constructor(address \_admin)
+
+Grants `DEFAULT_ADMIN_ROLE` to `_admin` address.
 
 ### Methods
 
@@ -188,7 +168,22 @@ Creates EVMScript using `_evmScriptFactory` EVMScript factory with `_evmScriptCa
 
 ## EasyTrack
 
-Contains main logic of Easy Track. Inherits from `UUPSUpgradeable`, `MotionSettings` and `EVMScriptFactoriesRegistry`.
+Contains main logic of Easy Track. Inherits from `Pausable`, `AccessControl`, `MotionSettings` and `EVMScriptFactoriesRegistry`.
+
+### Variables
+
+Below variables used in primary Easy Track actions:
+
+- **`Motion[] motions`** - list of active motions.
+- **`IMiniMeToken governanceToken`** - address of governance token. Token has to implement balance history interface of [MiniMeToken](https://github.com/Giveth/minime#balance-history-is-registered-and-available-to-be-queried). Only holders of this token can send objections.Only holders of this token can submit objections.
+- **`IEVMScriptExecutor evmScriptExecutor`** - address of EVMScriptExecutor
+- **`mapping(uint256 => mapping(address => bool)) objections`** - stores if motion with given id has been objected from given address.
+
+### Constructor
+
+#### constructor(address \_governanceToken, address \_admin, uint256 \_motionDuration, uint256 \_motionsCountLimit, uint256 \_objectionsThreshold)
+
+Calls parent constructors: `EVMScriptFactoriesRegistry(_admin)` and `MotionSettings(_admin, _motionDuration, _motionsCountLimit, _objectionsThreshold)`, sets value for `governanceToken` variable, grants roles `DEFAULT_ADMIN_VALUE`, `PAUSE_ROLE`, `UNPAUSE_ROLE`, `CANCEL_ROLE` to `_admin` address.
 
 ### Methods
 
@@ -296,7 +291,7 @@ Returns if an `_objector` can submit an objection to motion with id equals to `_
 
 ## EVMScriptExecutor
 
-Contains method to execute EVMScripts. EVMScript uses format of Aragon's [CallsScript](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol) executor. The next grammar describes EVMScript:
+Contains method to execute EVMScripts. Inherits from OpenZeppelin's `Ownable` contract. EVMScript uses format of Aragon's [CallsScript](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol) executor. The next grammar describes EVMScript:
 
 ```
 EVM_SCRIPT       -> SPEC_ID | SPEC_ID EVM_SCRIPTS_LIST
@@ -313,6 +308,22 @@ CALL_DATA        -> bytes of length CALL_DATA_LENGTH
 #### function executeEVMScript(bytes memory \_evmScript) external returns (bytes memory)
 
 Executes passed EVMScripts and returns empty bytes as a result. This method might be called only by the EasyTrack contract. Current realization uses deployed contract of Aragon's default [CallsScript.sol](https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol) executor. `EVMScriptExecutor.executeEVMScript` makes delegate call to `CallsScript.execScript` and returns the result of its execution(`CallsScript` always returns empty byte array on success) if the call was successful or reverts with error forwarded from `CallsScript.execScript` in other cases.
+
+Events:
+
+```solidity=
+event ScriptExecuted(address indexed _caller, bytes _evmScript)
+```
+
+#### function setEasyTrack(address \_easyTrack) external onlyOwner
+
+Sets address of easyTrack. Validates that `_easyTrack` is a contract. Can be called only by the owner of the contract.
+
+Events:
+
+```solidity=
+event EasyTrackChanged(address indexed _previousEasyTrack, address indexed _newEasyTrack)
+```
 
 ## IEVMScriptFactory
 
