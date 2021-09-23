@@ -1,7 +1,6 @@
-import pytest
 import constants
 from brownie.network.state import Chain
-from brownie import EasyTrack, reverts, ZERO_ADDRESS
+from brownie import reverts, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
 from utils.test_helpers import (
     access_controll_revert_message,
@@ -11,7 +10,7 @@ from utils.test_helpers import (
 )
 
 
-def test_deploy(owner, ldo, voting):
+def test_deploy(owner, ldo, voting, EasyTrack):
     "Must deploy contract with correct data"
     easy_track = owner.deploy(
         EasyTrack,

@@ -1,10 +1,10 @@
+from brownie import reverts
 from eth_abi import encode_single
-from brownie import EVMScriptExecutor, reverts
 from utils.evm_script import encode_call_script
 import constants
 
 
-def test_deploy(owner, easy_track, calls_script):
+def test_deploy(owner, easy_track, calls_script, EVMScriptExecutor):
     "Must deploy contract with correct data"
     contract = owner.deploy(EVMScriptExecutor, calls_script, easy_track)
 
@@ -13,14 +13,18 @@ def test_deploy(owner, easy_track, calls_script):
     assert contract.easyTrack() == easy_track
 
 
-def test_deploy_calls_script_not_contract(owner, accounts, easy_track):
+def test_deploy_calls_script_not_contract(
+    owner, accounts, easy_track, EVMScriptExecutor
+):
     "Must revert with message 'CALLS_SCRIPT_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
     with reverts("CALLS_SCRIPT_IS_NOT_CONTRACT"):
         owner.deploy(EVMScriptExecutor, not_contract, easy_track)
 
 
-def test_deploy_easy_track_not_contract(owner, accounts, calls_script):
+def test_deploy_easy_track_not_contract(
+    owner, accounts, calls_script, EVMScriptExecutor
+):
     "Must revert with message 'EASY_TRACK_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
     with reverts("EASY_TRACK_IS_NOT_CONTRACT"):

@@ -1,9 +1,9 @@
-import constants
-from brownie import MotionSettings, reverts
+from brownie import reverts
 from utils.test_helpers import access_controll_revert_message
+import constants
 
 
-def test_deploy(owner):
+def test_deploy(owner, MotionSettings):
     "Must deploy MotionsRegistry contract with correct params"
     contract = owner.deploy(
         MotionSettings,

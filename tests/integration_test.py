@@ -3,15 +3,8 @@ import pytest
 import constants
 from brownie.network import chain
 from brownie import (
-    Contract,
-    TopUpLegoProgram,
     EasyTrack,
     EVMScriptExecutor,
-    TopUpRewardPrograms,
-    AddRewardProgram,
-    RemoveRewardProgram,
-    RewardProgramsRegistry,
-    IncreaseNodeOperatorStakingLimit,
     accounts,
     ZERO_ADDRESS,
     reverts,
@@ -20,7 +13,7 @@ from brownie import (
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
-from utils.lido import contracts, create_voting, execute_voting
+from utils.lido import create_voting, execute_voting
 
 
 @pytest.mark.skip_coverage
@@ -33,6 +26,7 @@ def test_node_operators_easy_track(
     ldo,
     calls_script,
     acl,
+    IncreaseNodeOperatorStakingLimit,
 ):
     deployer = accounts[0]
 
@@ -180,7 +174,18 @@ def test_node_operators_easy_track(
 
 @pytest.mark.skip_coverage
 def test_reward_programs_easy_track(
-    stranger, agent, voting, finance, ldo, ldo_holders, calls_script, acl
+    stranger,
+    agent,
+    voting,
+    finance,
+    ldo,
+    ldo_holders,
+    calls_script,
+    acl,
+    RewardProgramsRegistry,
+    TopUpRewardPrograms,
+    AddRewardProgram,
+    RemoveRewardProgram,
 ):
     deployer = accounts[0]
     reward_program = accounts[5]
@@ -366,6 +371,7 @@ def test_lego_easy_track(
     ldo_holders,
     calls_script,
     acl,
+    TopUpLegoProgram,
 ):
     deployer = accounts[0]
     trusted_address = accounts[7]

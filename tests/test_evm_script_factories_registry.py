@@ -1,6 +1,6 @@
 import pytest
-import random
 from brownie import reverts
+from utils.test_helpers import access_controll_revert_message
 
 
 @pytest.fixture(scope="module")
@@ -15,7 +15,8 @@ def test_deploy(owner, EVMScriptFactoriesRegistry):
 
 
 def test_add_evm_script_factory_called_without_permissions(
-    stranger, evm_script_factories_registry, access_controll_revert_message
+    stranger,
+    evm_script_factories_registry,
 ):
     "Must revert with correct Access Control message if called by address without 'DEFAULT_ADMIN_ROLE'"
     permissions = stranger.address + "ffccddee"

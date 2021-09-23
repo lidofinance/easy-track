@@ -1,15 +1,14 @@
-from brownie import IncreaseNodeOperatorStakingLimit, reverts
+from brownie import reverts
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
 
-MOTION_ID = 2
 NODE_OPERATOR_ID = 1
 STAKING_LIMIT = 350
 CALL_DATA = encode_single("(uint256,uint256)", [NODE_OPERATOR_ID, STAKING_LIMIT])
 
 
-def test_deploy(owner, node_operators_registry):
+def test_deploy(owner, node_operators_registry, IncreaseNodeOperatorStakingLimit):
     "Must deploy contract with correct data"
     contract = owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry)
     assert contract.nodeOperatorsRegistry() == node_operators_registry

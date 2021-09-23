@@ -1,9 +1,8 @@
-import random
-from brownie import RewardProgramsRegistry, accounts, reverts
+from brownie import reverts
 from utils.test_helpers import access_controll_revert_message
 
 
-def test_deploy(owner, voting, evm_script_executor_stub):
+def test_deploy(owner, voting, evm_script_executor_stub, RewardProgramsRegistry):
     "Must deploy contract with correct trustedCaller address"
     contract = owner.deploy(
         RewardProgramsRegistry,
@@ -91,7 +90,9 @@ def test_remove_reward_program_with_not_existed_reward_program(
         )
 
 
-def test_remove_reward_program(reward_programs_registry, evm_script_executor_stub):
+def test_remove_reward_program(
+    accounts, reward_programs_registry, evm_script_executor_stub
+):
     "Must remove reward program from the list of allowed programs and emit RewardProgramRemoved(_rewardProgram) event"
     reward_programs = accounts[4:9]
 
@@ -100,9 +101,12 @@ def test_remove_reward_program(reward_programs_registry, evm_script_executor_stu
             reward_program, "", {"from": evm_script_executor_stub}
         )
 
-    while len(reward_programs) > 0:
-        index_to_delete = random.randint(0, len(reward_programs) - 1)
-        reward_program = reward_programs.pop(index_to_delete)
+    # sets the order in which reward_programs will be removed
+    removing_order = [2, 3, 1, 0, 0]
+
+    # while len(reward_programs) > 0:
+    for index in removing_order:
+        reward_program = reward_programs.pop(index)
 
         assert reward_programs_registry.isRewardProgram(reward_program)
         tx = reward_programs_registry.removeRewardProgram(
