@@ -84,7 +84,7 @@ contract RewardProgramsRegistry is AccessControl {
         external
         onlyRole(REMOVE_REWARD_PROGRAM_ROLE)
     {
-        uint256 index = _gerRewardProgramIndex(_rewardProgram);
+        uint256 index = _getRewardProgramIndex(_rewardProgram);
         uint256 lastIndex = rewardPrograms.length - 1;
 
         if (index != lastIndex) {
@@ -112,7 +112,7 @@ contract RewardProgramsRegistry is AccessControl {
     // PRIVATE METHODS
     // ------------------
 
-    function _gerRewardProgramIndex(address _evmScriptFactory)
+    function _getRewardProgramIndex(address _evmScriptFactory)
         private
         view
         returns (uint256 _index)
