@@ -12,8 +12,28 @@ import "./BytesUtils.sol";
 library EVMScriptPermissions {
     using BytesUtils for bytes;
 
-    /// Stores length of one item in permissions.
-    uint256 private constant PERMISSION_LENGTH = 24;
+    // -------------
+    // CONSTANTS
+    // -------------
+
+    /// Bytes size of SPEC_ID in EVMScript
+    uint256 private constant SPEC_ID_SIZE = 4;
+
+    /// Size of the address type in bytes
+    uint256 private constant ADDRESS_SIZE = 20;
+
+    /// Bytes size of calldata length in EVMScript
+    uint256 private constant CALLDATA_LENGTH_SIZE = 4;
+
+    /// Bytes size of method selector
+    uint256 private constant METHOD_SELECTOR_SIZE = 4;
+
+    /// Bytes size of one item in permissions
+    uint256 private constant PERMISSION_SIZE = ADDRESS_SIZE + METHOD_SELECTOR_SIZE;
+
+    // ------------------
+    // INTERNAL METHODS
+    // ------------------
 
     /// @notice Validates that passed EVMScript calls only methods allowed in permissions.
     /// @dev Returns false if provided permissions are invalid (has a wrong length or empty)
@@ -22,7 +42,7 @@ library EVMScriptPermissions {
         pure
         returns (bool)
     {
-        uint256 location = 4; // first 4 bytes reserved for SPEC_ID
+        uint256 location = SPEC_ID_SIZE; // first 4 bytes reserved for SPEC_ID
         if (!isValidPermissions(_permissions) || _evmScript.length <= location) {
             return false;
         }
@@ -32,14 +52,14 @@ library EVMScriptPermissions {
             if (!_hasPermission(_permissions, methodToCall)) {
                 return false;
             }
-            location += PERMISSION_LENGTH + callDataLength;
+            location += ADDRESS_SIZE + CALLDATA_LENGTH_SIZE + callDataLength;
         }
         return true;
     }
 
     /// @notice Validates that bytes with permissions not empty and has correct length
     function isValidPermissions(bytes memory _permissions) internal pure returns (bool) {
-        return _permissions.length > 0 && _permissions.length % PERMISSION_LENGTH == 0;
+        return _permissions.length > 0 && _permissions.length % PERMISSION_SIZE == 0;
     }
 
     // Retrieves bytes24 which describes tuple (address, bytes4)
@@ -50,9 +70,10 @@ library EVMScriptPermissions {
         returns (bytes24, uint32)
     {
         address recipient = _evmScript.addressAt(_location);
-        uint32 methodId = _evmScript.uint32At(_location + 24);
-        uint32 callDataLength = _evmScript.uint32At(_location + 20);
-        return (bytes24(uint192(methodId)) | bytes20(recipient), callDataLength);
+        uint32 callDataLength = _evmScript.uint32At(_location + ADDRESS_SIZE);
+        uint32 functionSelector =
+            _evmScript.uint32At(_location + ADDRESS_SIZE + CALLDATA_LENGTH_SIZE);
+        return (bytes24(uint192(functionSelector)) | bytes20(recipient), callDataLength);
     }
 
     // Validates that passed _methodToCall contained in permissions
@@ -67,7 +88,7 @@ library EVMScriptPermissions {
             if (permission == _methodToCall) {
                 return true;
             }
-            location += PERMISSION_LENGTH;
+            location += PERMISSION_SIZE;
         }
         return false;
     }
