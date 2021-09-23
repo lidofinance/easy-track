@@ -46,7 +46,9 @@ contract EVMScriptFactoriesRegistry is AccessControl {
     // EXTERNAL METHODS
     // ------------------
 
-    /// @notice Adds new EVMScript Factory to the list of allowed EVMScript factories with given permissions
+    /// @notice Adds new EVMScript Factory to the list of allowed EVMScript factories with given permissions.
+    /// Be careful about factories and their permissions added via this method. Only reviewed and tested
+    /// factories must be added via this method.
     function addEVMScriptFactory(address _evmScriptFactory, bytes memory _permissions)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
