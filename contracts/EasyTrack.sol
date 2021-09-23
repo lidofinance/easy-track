@@ -7,8 +7,8 @@ import "./MotionSettings.sol";
 import "./EVMScriptFactoriesRegistry.sol";
 import "./interfaces/IEVMScriptExecutor.sol";
 
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/security/Pausable.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 interface IMiniMeToken {
     function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);

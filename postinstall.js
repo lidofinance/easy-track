@@ -4,7 +4,7 @@ const copy = require("recursive-copy");
 async function renameOpenzeppelinDependencies() {
   const nodeModulesPath = path.join(__dirname, "node_modules");
   const remapping = {
-    "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts",
+    "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts",
   };
 
   for (const localPath of Object.keys(remapping)) {

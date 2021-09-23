@@ -3,9 +3,9 @@
 
 pragma solidity ^0.8.4;
 
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/StorageSlot.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/Address.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/Ownable.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/StorageSlot.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Address.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/Ownable.sol";
 
 interface ICallsScript {
     function execScript(

@@ -6,7 +6,7 @@ pragma solidity ^0.8.4;
 import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author psirex
 /// @notice Provides methods to add/remove EVMScript factories

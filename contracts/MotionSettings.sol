@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.4;
 
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author psirex
 /// @notice Provides methods to update motion duration, objections threshold, and limit of active motions of Easy Track
