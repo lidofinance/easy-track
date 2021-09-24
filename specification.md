@@ -78,7 +78,7 @@ Below variables used to control motion duration, max count of active motions, an
 
 ### Constructor
 
-### constructor(address \_admin, uint256 \_motionDuration, uint256 \_motionsCountLimit,uint256 \_objectionsThreshold)
+### constructor(address \_admin, uint256 \_motionDuration, uint256 \_motionsCountLimit, uint256 \_objectionsThreshold)
 
 Grants `DEFAULT_ADMIN_ROLE` to `_admin` address, validates values of passed variables `_motionDuration`, `_motionsCountLimit`, `motionDuration`, sets corresponding values if all conditions met and emits `ObjectionsThresholdChanged`, `MotionDurationChanged` and `MotionDurationChanged` events.
 
@@ -119,12 +119,12 @@ event MotionsCountLimitChanged(uint256 _newMotionsCountLimit)
 
 Provides methods to add/remove EVMScript factories and contains an internal method for the convenient creation of EVMScripts. Inherits from `AccessControl`.
 
-### Variables
+### Storage Variables
 
 Below variables used to control the list of allowed EVMScript factories of Easy Track.
 
 - **`address[] evmScriptFactories`** - current list of allowed EVMScript factories.
-- **`mapping(address => bytes)`** - evmScriptFactoriesPermissions - permissions of current list of allowed EVMScript factories.
+- **`mapping(address => bytes) evmScriptFactoriesPermissions`** - permissions of current list of allowed EVMScript factories.
 
 ### Constructor
 
@@ -170,7 +170,7 @@ Creates EVMScript using `_evmScriptFactory` EVMScript factory with `_evmScriptCa
 
 Contains main logic of Easy Track. Inherits from `Pausable`, `AccessControl`, `MotionSettings` and `EVMScriptFactoriesRegistry`.
 
-### Variables
+### Storage Variables
 
 Below variables used in primary Easy Track actions:
 
@@ -317,7 +317,7 @@ event ScriptExecuted(address indexed _caller, bytes _evmScript)
 
 #### function setEasyTrack(address \_easyTrack) external onlyOwner
 
-Sets address of easyTrack. Validates that `_easyTrack` is a contract. Can be called only by the owner of the contract.
+Sets new address of EasyTrack. Validates that `_easyTrack` is a contract. Can be called only by the owner of the contract.
 
 Events:
 
