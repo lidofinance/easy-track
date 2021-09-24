@@ -219,6 +219,7 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
 
     /// @notice Cancels motion with given id
     /// @param _motionId Id of motion to cancel
+    /// @dev Method reverts if it is called with not existed _motionId
     function cancelMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
         require(motion.creator == msg.sender, ERROR_NOT_CREATOR);
