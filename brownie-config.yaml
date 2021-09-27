@@ -14,7 +14,6 @@ networks:
 
 dependencies:
   - OpenZeppelin/openzeppelin-contracts@4.2.0
-  - OpenZeppelin/openzeppelin-contracts-upgradeable@4.2.0
 
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:
@@ -26,4 +25,5 @@ reports:
     - EVMScriptFactoryStub
     - EVMScriptExecutorStub
     - NodeOperatorsRegistryStub
+    - Ownable
   only_include_project: false

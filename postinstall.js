@@ -5,8 +5,6 @@ async function renameOpenzeppelinDependencies() {
   const nodeModulesPath = path.join(__dirname, "node_modules");
   const remapping = {
     "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts",
-    "@openzeppelin/contracts-upgradeable":
-      "OpenZeppelin/openzeppelin-contracts-upgradeable@4.2.0/contracts",
   };
 
   for (const localPath of Object.keys(remapping)) {

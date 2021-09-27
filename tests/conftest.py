@@ -1,8 +1,8 @@
 import pytest
 
+import constants
 from brownie import (
     Contract,
-    ContractProxy,
     MotionSettings,
     IncreaseNodeOperatorStakingLimit,
     EVMScriptFactoriesRegistry,
@@ -64,24 +64,33 @@ def lego_program(accounts):
 
 
 @pytest.fixture(scope="function")
-def motion_settings(owner, voting, ldo):
-    contract = owner.deploy(MotionSettings)
-    contract.__EasyTrackStorage_init(ldo, voting, {"from": owner})
-    return contract
+def motion_settings(owner):
+    return owner.deploy(
+        MotionSettings,
+        owner,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
 
 
 @pytest.fixture(scope="function")
-def evm_script_factories_registry(owner, voting, ldo):
-    contract = owner.deploy(EVMScriptFactoriesRegistry)
-    contract.__EasyTrackStorage_init(ldo, voting, {"from": owner})
-    return contract
+def evm_script_factories_registry(owner):
+    return owner.deploy(EVMScriptFactoriesRegistry, owner)
 
 
 @pytest.fixture(scope="function")
-def easy_track(owner, ldo, voting):
-    contract = owner.deploy(EasyTrack)
-    contract.__EasyTrackStorage_init(ldo, voting)
-    return contract
+def easy_track(owner, ldo, voting, evm_script_executor_stub):
+    easy_track = owner.deploy(
+        EasyTrack,
+        ldo,
+        voting,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
+    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
+    return easy_track
 
 
 @pytest.fixture(scope="function")
@@ -219,11 +228,6 @@ def calls_script():
 #############
 # INIT
 #############
-
-
-@pytest.fixture(scope="function", autouse=True)
-def init(voting, easy_track, evm_script_executor_stub):
-    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
 
 
 def reset_balance(ldo, agent, account):

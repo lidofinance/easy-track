@@ -5,6 +5,7 @@ pragma solidity ^0.8.4;
 
 import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/StorageSlot.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/utils/Address.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/Ownable.sol";
 
 interface ICallsScript {
     function execScript(
@@ -17,11 +18,12 @@ interface ICallsScript {
 /// @author psirex
 /// @notice Contains method to execute EVMScripts
 /// @dev EVMScripts use format of Aragon's https://github.com/aragon/aragonOS/blob/v4.0.0/contracts/evmscript/executors/CallsScript.sol executor
-contract EVMScriptExecutor {
+contract EVMScriptExecutor is Ownable {
     // -------------
     // EVENTS
     // -------------
     event ScriptExecuted(address indexed _caller, bytes _evmScript);
+    event EasyTrackChanged(address indexed _previousEasyTrack, address indexed _newEasyTrack);
 
     // -------------
     // ERRORS
@@ -46,7 +48,7 @@ contract EVMScriptExecutor {
     address public immutable callsScript;
 
     /// @notice Address of depoyed easyTrack.sol contract
-    address public immutable easyTrack;
+    address public easyTrack;
 
     // -------------
     // CONSTRUCTOR
@@ -54,8 +56,8 @@ contract EVMScriptExecutor {
 
     constructor(address _callsScript, address _easyTrack) {
         require(Address.isContract(_callsScript), ERROR_NOT_CONTRACT);
-        easyTrack = _easyTrack;
         callsScript = _callsScript;
+        _setEasyTrack(_easyTrack);
         StorageSlot.getUint256Slot(INITIALIZATION_BLOCK_POSITION).value = block.number;
     }
 
@@ -87,5 +89,15 @@ contract EVMScriptExecutor {
         }
         emit ScriptExecuted(msg.sender, _evmScript);
         return abi.decode(output, (bytes));
+    }
+
+    function setEasyTrack(address _easyTrack) external onlyOwner {
+        _setEasyTrack(_easyTrack);
+    }
+
+    function _setEasyTrack(address _easyTrack) internal {
+        address oldEasyTrack = easyTrack;
+        easyTrack = _easyTrack;
+        emit EasyTrackChanged(oldEasyTrack, _easyTrack);
     }
 }

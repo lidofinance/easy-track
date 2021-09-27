@@ -1,7 +1,7 @@
 import pytest
 import constants
 from brownie.network.state import Chain
-from brownie import Contract, ContractProxy, EasyTrack, reverts, ZERO_ADDRESS
+from brownie import EasyTrack, reverts, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
 from utils.test_helpers import (
     access_controll_revert_message,
@@ -13,8 +13,14 @@ from utils.test_helpers import (
 
 def test_deploy(owner, ldo, voting):
     "Must deploy contract with correct data"
-    easy_track = owner.deploy(EasyTrack)
-    easy_track.__EasyTrackStorage_init(ldo, voting)
+    easy_track = owner.deploy(
+        EasyTrack,
+        ldo,
+        voting,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
 
     assert not easy_track.paused()
     assert easy_track.governanceToken() == ldo
@@ -23,36 +29,6 @@ def test_deploy(owner, ldo, voting):
     assert easy_track.hasRole(easy_track.PAUSE_ROLE(), voting)
     assert easy_track.hasRole(easy_track.UNPAUSE_ROLE(), voting)
     assert easy_track.hasRole(easy_track.CANCEL_ROLE(), voting)
-
-
-@pytest.mark.skip_coverage
-def test_upgrade_to_called_without_permissions(owner, stranger, ldo, voting):
-    "Must revert with correct Access Control message if"
-    "called by address without role 'DEFAULT_ADMIN_ROLE'"
-    easy_track = owner.deploy(EasyTrack)
-    proxy = owner.deploy(
-        ContractProxy,
-        easy_track,
-        easy_track.__EasyTrackStorage_init.encode_input(ldo, voting),
-    )
-    proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
-    with reverts(access_controll_revert_message(stranger)):
-        proxied_easy_track.upgradeTo(ZERO_ADDRESS, {"from": stranger})
-
-
-@pytest.mark.skip_coverage
-def test_upgrade_to(owner, voting, ldo):
-    "Must set new implementation"
-    easy_track = owner.deploy(EasyTrack)
-    proxy = owner.deploy(
-        ContractProxy,
-        easy_track,
-        easy_track.__EasyTrackStorage_init.encode_input(ldo, voting),
-    )
-    proxied_easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
-    new_logic = owner.deploy(EasyTrack)
-    proxied_easy_track.upgradeTo(new_logic, {"from": voting})
-    assert proxy.__Proxy_implementation() == new_logic
 
 
 ########
@@ -487,8 +463,12 @@ def test_object_to_motion_by_tokens_holder(
     assert tx.events["MotionObjected"]["_motionId"] == motion[0]
     assert tx.events["MotionObjected"]["_objector"] == ldo_holders[0]
     assert tx.events["MotionObjected"]["_weight"] == holder_balance
-    assert tx.events["MotionObjected"]["_newObjectionsAmount"] == motion[7] # objectionsAmount
-    assert tx.events["MotionObjected"]["_newObjectionsAmountPct"] == motion[8] # objectionsAmountPct
+    assert (
+        tx.events["MotionObjected"]["_newObjectionsAmount"] == motion[7]
+    )  # objectionsAmount
+    assert (
+        tx.events["MotionObjected"]["_newObjectionsAmountPct"] == motion[8]
+    )  # objectionsAmountPct
 
 
 def test_object_to_motion_rejected(
@@ -515,23 +495,33 @@ def test_object_to_motion_rejected(
     tx = easy_track.objectToMotion(1, {"from": ldo_holders[2]})  # 0.6 % objections
     assert len(easy_track.getMotions()) == 0
 
-    objections_amount = ldo.balanceOf(ldo_holders[0]) + ldo.balanceOf(ldo_holders[1]) + ldo.balanceOf(ldo_holders[2])
+    objections_amount = (
+        ldo.balanceOf(ldo_holders[0])
+        + ldo.balanceOf(ldo_holders[1])
+        + ldo.balanceOf(ldo_holders[2])
+    )
     objections_amount_pct = 10000 * objections_amount / ldo.totalSupply()
-    
+
     # validate that events was emitted
     assert len(tx.events) == 2
     assert tx.events["MotionObjected"]["_motionId"] == 1
     assert tx.events["MotionObjected"]["_objector"] == ldo_holders[2]
     assert tx.events["MotionObjected"]["_weight"] == ldo.balanceOf(ldo_holders[2])
     assert tx.events["MotionObjected"]["_newObjectionsAmount"] == objections_amount
-    assert tx.events["MotionObjected"]["_newObjectionsAmountPct"] == objections_amount_pct
-    
+    assert (
+        tx.events["MotionObjected"]["_newObjectionsAmountPct"] == objections_amount_pct
+    )
+
     assert tx.events["MotionRejected"]["_motionId"] == 1
 
 
-def test_object_to_motion_edge_case(owner, stranger, agent, ldo, voting, easy_track, evm_script_factory_stub):
+def test_object_to_motion_edge_case(
+    owner, stranger, agent, ldo, voting, easy_track, evm_script_factory_stub
+):
     "Must reject motion only if objections threshold was reached"
-    objections_threshold_amount = int(easy_track.objectionsThreshold() * ldo.totalSupply() // 10000) - 1
+    objections_threshold_amount = (
+        int(easy_track.objectionsThreshold() * ldo.totalSupply() // 10000) - 1
+    )
     ldo.transfer(owner, objections_threshold_amount, {"from": agent})
     ldo.transfer(stranger, 1, {"from": agent})
 
@@ -553,7 +543,6 @@ def test_object_to_motion_edge_case(owner, stranger, agent, ldo, voting, easy_tr
     # motion must become rejected after objections threshold reached
     easy_track.objectToMotion(1, {"from": stranger})
     assert len(easy_track.getMotions()) == 0
-
 
 
 ########
@@ -659,21 +648,12 @@ def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
         easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
 
 
-@pytest.mark.skip_coverage
 def test_set_evm_script_executor_called_by_owner(
-    owner, voting, ldo, evm_script_executor
+    accounts, voting, easy_track, evm_script_executor, evm_script_executor_stub
 ):
     "Must set new EVMScriptExecutor and emit EVMScriptExecutorChanged(_evmScriptExecutor) event"
-    logic = owner.deploy(EasyTrack)
-    proxy = owner.deploy(
-        ContractProxy,
-        logic,
-        logic.__EasyTrackStorage_init.encode_input(ldo, voting),
-    )
-    assert proxy.__Proxy_implementation() == logic
-    easy_track = Contract.from_abi("EasyTrackProxied", proxy, EasyTrack.abi)
 
-    assert easy_track.evmScriptExecutor() == ZERO_ADDRESS
+    assert easy_track.evmScriptExecutor() == evm_script_executor_stub
     tx = easy_track.setEVMScriptExecutor(evm_script_executor, {"from": voting})
     assert (
         tx.events["EVMScriptExecutorChanged"]["_evmScriptExecutor"]

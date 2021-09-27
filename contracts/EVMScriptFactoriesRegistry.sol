@@ -5,12 +5,13 @@ pragma solidity ^0.8.4;
 
 import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
-import "./EasyTrackStorage.sol";
+
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
 
 /// @author psirex
 /// @notice Provides methods to add/remove EVMScript factories
 /// and contains an internal method for the convenient creation of EVMScripts
-contract EVMScriptFactoriesRegistry is EasyTrackStorage {
+contract EVMScriptFactoriesRegistry is AccessControl {
     using EVMScriptPermissions for bytes;
 
     // -------------
@@ -19,6 +20,27 @@ contract EVMScriptFactoriesRegistry is EasyTrackStorage {
 
     event EVMScriptFactoryAdded(address indexed _evmScriptFactory, bytes _permissions);
     event EVMScriptFactoryRemoved(address indexed _evmScriptFactory);
+
+    // ------------
+    // STORAGE VARIABLES
+    // ------------
+
+    /// @notice List of allowed EVMScript factories
+    address[] public evmScriptFactories;
+
+    // Position of the EVMScript factory in the `evmScriptFactories` array,
+    // plus 1 because index 0 means a value is not in the set.
+    mapping(address => uint256) internal evmScriptFactoryIndices;
+
+    /// @notice Permissions of current list of allowed EVMScript factories.
+    mapping(address => bytes) public evmScriptFactoryPermissions;
+
+    // ------------
+    // CONSTRUCTOR
+    // ------------
+    constructor(address _admin) {
+        _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+    }
 
     // ------------------
     // EXTERNAL METHODS

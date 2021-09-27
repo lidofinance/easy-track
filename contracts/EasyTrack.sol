@@ -6,11 +6,32 @@ pragma solidity ^0.8.4;
 import "./MotionSettings.sol";
 import "./EVMScriptFactoriesRegistry.sol";
 import "./interfaces/IEVMScriptExecutor.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/proxy/utils/UUPSUpgradeable.sol";
+
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/security/Pausable.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
+
+interface IMiniMeToken {
+    function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);
+
+    function totalSupplyAt(uint256 _blockNumber) external view returns (uint256);
+}
 
 /// @author psirex
 /// @notice Contains main logic of Easy Track
-contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistry {
+contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactoriesRegistry {
+    struct Motion {
+        uint256 id;
+        address evmScriptFactory;
+        address creator;
+        uint256 duration;
+        uint256 startDate;
+        uint256 snapshotBlock;
+        uint256 objectionsThreshold;
+        uint256 objectionsAmount;
+        uint256 objectionsAmountPct;
+        bytes32 evmScriptHash;
+    }
+
     // -------------
     // EVENTS
     // -------------
@@ -45,11 +66,62 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     string private constant ERROR_MOTIONS_LIMIT_REACHED = "MOTIONS_LIMIT_REACHED";
 
     // -------------
+    // ROLES
+    // -------------
+    bytes32 public constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
+    bytes32 public constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
+    bytes32 public constant CANCEL_ROLE = keccak256("CANCEL_ROLE");
+
+    // -------------
     // CONSTANTS
     // -------------
 
     // Stores 100% in basis points
     uint256 internal constant HUNDRED_PERCENT = 10000;
+
+    // ------------
+    // STORAGE VARIABLES
+    // ------------
+
+    /// @notice List of active motions
+    Motion[] public motions;
+
+    // Id of the lastly created motion
+    uint256 internal lastMotionId;
+
+    /// @notice Address of governanceToken which implements IMiniMeToken interface
+    IMiniMeToken public governanceToken;
+
+    /// @notice Address of current EVMScriptExecutor
+    IEVMScriptExecutor public evmScriptExecutor;
+
+    // Position of the motion in the `motions` array, plus 1
+    // because index 0 means a value is not in the set.
+    mapping(uint256 => uint256) internal motionIndicesByMotionId;
+
+    /// @notice Stores if motion with given id has been objected from given address.
+    mapping(uint256 => mapping(address => bool)) public objections;
+
+    // ------------
+    // CONSTRUCTOR
+    // ------------
+    constructor(
+        address _governanceToken,
+        address _admin,
+        uint256 _motionDuration,
+        uint256 _motionsCountLimit,
+        uint256 _objectionsThreshold
+    )
+        EVMScriptFactoriesRegistry(_admin)
+        MotionSettings(_admin, _motionDuration, _motionsCountLimit, _objectionsThreshold)
+    {
+        _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+        _setupRole(PAUSE_ROLE, _admin);
+        _setupRole(UNPAUSE_ROLE, _admin);
+        _setupRole(CANCEL_ROLE, _admin);
+
+        governanceToken = IMiniMeToken(_governanceToken);
+    }
 
     // ------------------
     // EXTERNAL METHODS
@@ -65,9 +137,6 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         returns (uint256 _newMotionId)
     {
         require(motions.length < motionsCountLimit, ERROR_MOTIONS_LIMIT_REACHED);
-        
-        bytes memory evmScript =
-            _createEVMScript(_evmScriptFactory, msg.sender, _evmScriptCallData);
 
         Motion storage newMotion = motions.push();
         _newMotionId = ++lastMotionId;
@@ -79,6 +148,8 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         newMotion.duration = motionDuration;
         newMotion.objectionsThreshold = objectionsThreshold;
         newMotion.evmScriptFactory = _evmScriptFactory;
+        bytes memory evmScript =
+            _createEVMScript(_evmScriptFactory, msg.sender, _evmScriptCallData);
         newMotion.evmScriptHash = keccak256(evmScript);
 
         motionIndicesByMotionId[_newMotionId] = motions.length;
@@ -107,8 +178,8 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
             _createEVMScript(motion.evmScriptFactory, motion.creator, _evmScriptCallData);
         require(motion.evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
 
-        evmScriptExecutor.executeEVMScript(evmScript);
         _deleteMotion(_motionId);
+        evmScriptExecutor.executeEVMScript(evmScript);
 
         emit MotionEnacted(_motionId);
     }
@@ -128,7 +199,13 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
         uint256 newObjectionsAmount = motion.objectionsAmount + objectorBalance;
         uint256 newObjectionsAmountPct = (HUNDRED_PERCENT * newObjectionsAmount) / totalSupply;
 
-        emit MotionObjected(_motionId, msg.sender, objectorBalance, newObjectionsAmount, newObjectionsAmountPct);
+        emit MotionObjected(
+            _motionId,
+            msg.sender,
+            objectorBalance,
+            newObjectionsAmount,
+            newObjectionsAmountPct
+        );
 
         if (newObjectionsAmountPct < motion.objectionsThreshold) {
             motion.objectionsAmount = newObjectionsAmount;
@@ -210,18 +287,6 @@ contract EasyTrack is UUPSUpgradeable, MotionSettings, EVMScriptFactoriesRegistr
     function getMotion(uint256 _motionId) external view returns (Motion memory) {
         return _getMotion(_motionId);
     }
-
-    // -------
-    // INTERNAL METHODS
-    // -------
-
-    // Override for UUPSUpgradable method. Allows update of contract only to
-    // the address with role 'DEFAULT_ADMIN_ROLE'
-    function _authorizeUpgrade(address newImplementation)
-        internal
-        override
-        onlyRole(DEFAULT_ADMIN_ROLE)
-    {}
 
     // -------
     // PRIVATE METHODS
