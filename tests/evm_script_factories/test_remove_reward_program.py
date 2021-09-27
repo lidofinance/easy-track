@@ -1,7 +1,5 @@
-import random
-
 from eth_abi import encode_single
-from brownie import RemoveRewardProgram, reverts
+from brownie import reverts
 
 from utils.evm_script import encode_call_script
 
@@ -9,7 +7,7 @@ REWARD_PROGRAM_ADDRESS = "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF"
 EVM_SCRIPT_CALL_DATA = "0x" + encode_single("(address)", [REWARD_PROGRAM_ADDRESS]).hex()
 
 
-def test_deploy(owner, reward_programs_registry):
+def test_deploy(owner, reward_programs_registry, RemoveRewardProgram):
     "Must deploy contract with correct data"
     contract = owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
     assert contract.trustedCaller() == owner

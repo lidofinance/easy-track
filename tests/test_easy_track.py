@@ -1,7 +1,6 @@
-import pytest
 import constants
 from brownie.network.state import Chain
-from brownie import EasyTrack, reverts, ZERO_ADDRESS
+from brownie import reverts, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
 from utils.test_helpers import (
     access_controll_revert_message,
@@ -11,7 +10,7 @@ from utils.test_helpers import (
 )
 
 
-def test_deploy(owner, ldo, voting):
+def test_deploy(owner, ldo, voting, EasyTrack):
     "Must deploy contract with correct data"
     easy_track = owner.deploy(
         EasyTrack,
@@ -129,9 +128,8 @@ def test_create_motion(
         new_motion[6] == constants.DEFAULT_OBJECTIONS_THRESHOLD
     )  # objectionsThreshold
     assert new_motion[7] == 0  # objectionsAmount
-    assert new_motion[8] == 0  # objectionsAmountPct
     assert (
-        new_motion[9] == evm_script_factory_stub.DEFAULT_EVM_SCRIPT_HASH()
+        new_motion[8] == evm_script_factory_stub.DEFAULT_EVM_SCRIPT_HASH()
     )  # evmScriptHash
 
 
@@ -468,7 +466,6 @@ def test_object_to_motion_by_tokens_holder(
     motion = easy_track.getMotion(1)
 
     assert motion[7] == holder_balance  # objectionsAmount
-    assert motion[8] == holder_part  # objectionsAmountPct
 
     # validate events
     assert len(tx.events) == 1
@@ -479,7 +476,7 @@ def test_object_to_motion_by_tokens_holder(
         tx.events["MotionObjected"]["_newObjectionsAmount"] == motion[7]
     )  # objectionsAmount
     assert (
-        tx.events["MotionObjected"]["_newObjectionsAmountPct"] == motion[8]
+        tx.events["MotionObjected"]["_newObjectionsAmountPct"] == holder_part
     )  # objectionsAmountPct
 
 

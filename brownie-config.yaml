@@ -13,7 +13,7 @@ networks:
       fork: mainnet
 
 dependencies:
-  - OpenZeppelin/openzeppelin-contracts@4.2.0
+  - OpenZeppelin/openzeppelin-contracts@4.3.2
 
 # path remapping to support OpenZepplin imports with NPM-style path
 compiler:

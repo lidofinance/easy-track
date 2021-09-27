@@ -1,7 +1,6 @@
 import pytest
-from brownie import accounts, ZERO_ADDRESS
+from brownie import ZERO_ADDRESS
 from brownie.convert import to_bytes
-from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
 
@@ -72,7 +71,7 @@ def node_operators_registry_stub_permissions(
 
 
 @pytest.fixture(scope="module")
-def node_operators_registry_stub_calldata(node_operators_registry_stub):
+def node_operators_registry_stub_calldata(accounts, node_operators_registry_stub):
     def method(method_names):
         calldata = {
             "setNodeOperatorStakingLimit": (

@@ -47,7 +47,7 @@ contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address rewardProgramAddress,) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address rewardProgramAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
         require(
             !rewardProgramsRegistry.isRewardProgram(rewardProgramAddress),
             ERROR_REWARD_PROGRAM_ALREADY_ADDED
@@ -62,7 +62,7 @@ contract AddRewardProgram is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram)
+    /// @param _evmScriptCallData Encoded tuple: (address _rewardProgram, string _title)
     /// @return _rewardProgram Address of new reward program
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external

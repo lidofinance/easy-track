@@ -45,4 +45,49 @@ library EVMScriptCreator {
         }
         _evmScript = bytes.concat(SPEC_ID, _evmScript);
     }
+
+    /// @notice Encodes multiple calls to different methods within the same contract as EVMScript
+    function createEVMScript(
+        address _to,
+        bytes4[] memory _methodIds,
+        bytes[] memory _evmScriptCallData
+    ) internal pure returns (bytes memory _evmScript) {
+        require(_methodIds.length == _evmScriptCallData.length, "LENGTH_MISMATCH");
+
+        for (uint256 i = 0; i < _methodIds.length; ++i) {
+            _evmScript = bytes.concat(
+                _evmScript,
+                abi.encodePacked(
+                    _to,
+                    uint32(_evmScriptCallData[i].length) + 4,
+                    _methodIds[i],
+                    _evmScriptCallData[i]
+                )
+            );
+        }
+        _evmScript = bytes.concat(SPEC_ID, _evmScript);
+    }
+
+    /// @notice Encodes multiple calls to different contracts as EVMScript
+    function createEVMScript(
+        address[] memory _to,
+        bytes4[] memory _methodIds,
+        bytes[] memory _evmScriptCallData
+    ) internal pure returns (bytes memory _evmScript) {
+        require(_to.length == _methodIds.length, "LENGTH_MISMATCH");
+        require(_to.length == _evmScriptCallData.length, "LENGTH_MISMATCH");
+
+        for (uint256 i = 0; i < _to.length; ++i) {
+            _evmScript = bytes.concat(
+                _evmScript,
+                abi.encodePacked(
+                    _to[i],
+                    uint32(_evmScriptCallData[i].length) + 4,
+                    _methodIds[i],
+                    _evmScriptCallData[i]
+                )
+            );
+        }
+        _evmScript = bytes.concat(SPEC_ID, _evmScript);
+    }
 }

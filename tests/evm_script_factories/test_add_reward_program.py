@@ -1,13 +1,18 @@
 from eth_abi import encode_single
-from brownie import AddRewardProgram, reverts
+from brownie import reverts
 from utils.evm_script import encode_call_script
 
 REWARD_PROGRAM_ADDRESS = "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF"
 REWARD_PROGRAM_TITLE = "New Reward Program"
-EVM_SCRIPT_CALL_DATA = "0x" + encode_single("(address,string)", [REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE]).hex()
+EVM_SCRIPT_CALL_DATA = (
+    "0x"
+    + encode_single(
+        "(address,string)", [REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE]
+    ).hex()
+)
 
 
-def test_deploy(owner, reward_programs_registry):
+def test_deploy(owner, reward_programs_registry, AddRewardProgram):
     "Must deploy contract with correct data"
     contract = owner.deploy(AddRewardProgram, owner, reward_programs_registry)
     assert contract.trustedCaller() == owner
@@ -45,8 +50,7 @@ def test_create_evm_script(owner, add_reward_program, reward_programs_registry):
             (
                 reward_programs_registry.address,
                 reward_programs_registry.addRewardProgram.encode_input(
-                    REWARD_PROGRAM_ADDRESS,
-                    REWARD_PROGRAM_TITLE
+                    REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE
                 ),
             )
         ]
@@ -57,7 +61,7 @@ def test_create_evm_script(owner, add_reward_program, reward_programs_registry):
 
 def test_decode_evm_script_call_data(add_reward_program):
     "Must decode EVMScript call data correctly"
-    assert (
-        add_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALL_DATA)
-        == (REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE)
+    assert add_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALL_DATA) == (
+        REWARD_PROGRAM_ADDRESS,
+        REWARD_PROGRAM_TITLE,
     )

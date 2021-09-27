@@ -16,9 +16,9 @@ library BytesUtils {
     function addressAt(bytes memory data, uint256 location) internal pure returns (address result) {
         uint256 word = uint256At(data, location);
         assembly {
-            result := div(
-                and(word, 0xffffffffffffffffffffffffffffffffffffffff000000000000000000000000),
-                0x1000000000000000000000000
+            result := shr(
+                96,
+                and(word, 0xffffffffffffffffffffffffffffffffffffffff000000000000000000000000)
             )
         }
     }
@@ -27,9 +27,9 @@ library BytesUtils {
         uint256 word = uint256At(_data, _location);
 
         assembly {
-            result := div(
-                and(word, 0xffffffff00000000000000000000000000000000000000000000000000000000),
-                0x100000000000000000000000000000000000000000000000000000000
+            result := shr(
+                224,
+                and(word, 0xffffffff00000000000000000000000000000000000000000000000000000000)
             )
         }
     }

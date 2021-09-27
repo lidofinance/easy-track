@@ -6,7 +6,7 @@ pragma solidity ^0.8.4;
 import "./interfaces/IEVMScriptFactory.sol";
 import "./libraries/EVMScriptPermissions.sol";
 
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author psirex
 /// @notice Provides methods to add/remove EVMScript factories
@@ -46,7 +46,9 @@ contract EVMScriptFactoriesRegistry is AccessControl {
     // EXTERNAL METHODS
     // ------------------
 
-    /// @notice Adds new EVMScript Factory to the list of allowed EVMScript factories with given permissions
+    /// @notice Adds new EVMScript Factory to the list of allowed EVMScript factories with given permissions.
+    /// Be careful about factories and their permissions added via this method. Only reviewed and tested
+    /// factories must be added via this method.
     function addEVMScriptFactory(address _evmScriptFactory, bytes memory _permissions)
         external
         onlyRole(DEFAULT_ADMIN_ROLE)

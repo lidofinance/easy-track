@@ -7,8 +7,8 @@ import "./MotionSettings.sol";
 import "./EVMScriptFactoriesRegistry.sol";
 import "./interfaces/IEVMScriptExecutor.sol";
 
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/security/Pausable.sol";
-import "OpenZeppelin/openzeppelin-contracts@4.2.0/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 interface IMiniMeToken {
     function balanceOfAt(address _owner, uint256 _blockNumber) external pure returns (uint256);
@@ -28,7 +28,6 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
         uint256 snapshotBlock;
         uint256 objectionsThreshold;
         uint256 objectionsAmount;
-        uint256 objectionsAmountPct;
         bytes32 evmScriptHash;
     }
 
@@ -212,7 +211,6 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
 
         if (newObjectionsAmountPct < motion.objectionsThreshold) {
             motion.objectionsAmount = newObjectionsAmount;
-            motion.objectionsAmountPct = newObjectionsAmountPct;
         } else {
             _deleteMotion(_motionId);
             emit MotionRejected(_motionId);
@@ -221,6 +219,7 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
 
     /// @notice Cancels motion with given id
     /// @param _motionId Id of motion to cancel
+    /// @dev Method reverts if it is called with not existed _motionId
     function cancelMotion(uint256 _motionId) external {
         Motion storage motion = _getMotion(_motionId);
         require(motion.creator == msg.sender, ERROR_NOT_CREATOR);

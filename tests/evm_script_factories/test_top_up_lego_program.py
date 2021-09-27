@@ -1,7 +1,5 @@
-import random
-
+from brownie import reverts
 from eth_abi import encode_single
-from brownie import TopUpLegoProgram, accounts, ZERO_ADDRESS, reverts
 
 from utils.evm_script import encode_call_script
 from utils.lido import CONTRACT_ADDRESSES
@@ -14,7 +12,7 @@ REWARD_TOKENS = [
 REWARD_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
 
-def test_deploy(owner, finance, lego_program):
+def test_deploy(owner, finance, lego_program, TopUpLegoProgram):
     "Must deploy contract with correct data"
     contract = owner.deploy(TopUpLegoProgram, owner, finance, lego_program)
     assert contract.trustedCaller() == owner

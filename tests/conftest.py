@@ -1,7 +1,7 @@
 import pytest
+import brownie
 
 import constants
-import brownie
 from utils.lido import contracts
 from utils import test_helpers
 
@@ -252,92 +252,6 @@ def calls_script(lido_contracts):
     return lido_contracts["dao"]["calls_script"]
 
 
-###################
-# Grouping Fixtures
-###################
-
-# Can be useful if you want to do some test over "all lido contracts"
-# And makes it easier to depend on a group of related fixtures
-
-
-@pytest.fixture(scope="module")
-def all_interfaces(
-    ldo,
-    steth,
-    node_operators_registry,
-    voting,
-    tokens,
-    agent,
-    finance,
-    acl,
-    calls_script,
-):
-    return (
-        ldo,
-        steth,
-        node_operators_registry,
-        voting,
-        tokens,
-        agent,
-        finance,
-        acl,
-        calls_script,
-    )
-
-
-@pytest.fixture(scope="module")
-def all_mocks_and_wrappers(
-    evm_script_creator_wrapper,
-    evm_script_permissions_wrapper,
-    bytes_utils_wrapper,
-    node_operators_registry_stub,
-    evm_script_factory_stub,
-    evm_script_executor_stub,
-):
-    return (
-        evm_script_creator_wrapper,
-        evm_script_permissions_wrapper,
-        bytes_utils_wrapper,
-        node_operators_registry_stub,
-        evm_script_factory_stub,
-        evm_script_executor_stub,
-    )
-
-
-@pytest.fixture(scope="module")
-def all_evm_script_factories(
-    increase_node_operator_staking_limit,
-    add_reward_program,
-    remove_reward_program,
-    top_up_reward_programs,
-    top_up_lego_program,
-):
-    return (
-        increase_node_operator_staking_limit,
-        add_reward_program,
-        remove_reward_program,
-        top_up_reward_programs,
-        top_up_lego_program,
-    )
-
-
-@pytest.fixture(scope="module")
-def all_easy_track_contracts(
-    motion_settings,
-    evm_script_factories_registry,
-    easy_track,
-    evm_script_executor,
-    reward_programs_registry,
-):
-    return (
-        motion_settings,
-        evm_script_factories_registry,
-        easy_track,
-        evm_script_executor,
-        reward_programs_registry,
-    )
-
-
 #########################
 # State Changing Fixtures
 #########################
@@ -353,37 +267,11 @@ def distribute_holder_balance(ldo_holders, holder_balance_amount, fund_with_ldo)
         fund_with_ldo(holder, holder_balance_amount)
 
 
-@pytest.fixture(scope="module")
-def set_easy_track_executor(voting, easy_track, evm_script_executor_stub):
-    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
-
-
-# TODO probably want a register factories one here, so the "standard_init"
-# has the factories added to easy_track
-
 ############################
 # Helper/Functional Fixtures
 ############################
 
 # NOTE: the function returned can modify state, but the factory fixture itself shouldn't
-
-# Use as wide a scoping as possible (e.g. session) as the fixtures should be "pure" where possible,
-# not relying on any module or function-scoped state
-# Saves from re-running the fixture more than once
-
-
-@pytest.fixture(scope="session")
-def reset_balance():
-    # Or named "zero_ldo_balance"
-
-    # More an example, because this no longer needs to be done to undo changes after test execution
-    def method(ldo, agent, account):
-        balance = ldo.balanceOf(account)
-        if balance > 0:
-            ldo.transfer(agent, balance, {"from": account})
-        return account
-
-    return method
 
 
 @pytest.fixture(scope="module")
@@ -395,69 +283,3 @@ def fund_with_ldo(ldo, agent):
         ldo.transfer(account, amount, {"from": agent})
 
     return method
-
-
-@pytest.fixture(scope="session")
-def access_controll_revert_message():
-    # Personal(?) preference to have test helpers as fixtures, so it's clear when looking at a test
-    # whether a helper was used in there or not
-    # Also allows overriding
-    return test_helpers.access_controll_revert_message
-
-
-#############
-# INIT
-#############
-
-
-@pytest.fixture(scope="module")
-def standard_init(
-    all_easy_track_contracts,
-    set_easy_track_executor,
-    distribute_holder_balance,
-    lido_contracts,
-):
-    """Depend on this to have a "standard" initial state that mimics the real-world deployment."""
-    # NOTE: I still prefer to avoid a "global" "conftest-level" autouse here,
-    # and to instead have a autouse in the relevant test modules
-    # So test modules that want an alternative setup or don't need the full setup can
-    # choose to not have it
-    pass
-
-
-@pytest.fixture()
-def init():
-    # Just to override/remove the autouse fixture for tests in this directory
-    pass
-
-
-####################
-# Pytest Adjustments
-####################
-
-# Allows you to mark tests as slow, and only run them if `--runslow` is provided
-# Copied from https://docs.pytest.org/en/latest/example/simple.html?highlight=skip#control-skipping-of-tests-according-to-command-line-option
-
-# @pytest.mark.slow
-# def test_slow_example():
-#    pass
-
-
-def pytest_addoption(parser):
-    parser.addoption(
-        "--runslow", action="store_true", default=False, help="run slow tests"
-    )
-
-
-def pytest_configure(config):
-    config.addinivalue_line("markers", "slow: mark test as slow to run")
-
-
-def pytest_collection_modifyitems(config, items):
-    if config.getoption("--runslow"):
-        # --runslow given in cli: do not skip slow tests
-        return
-    skip_slow = pytest.mark.skip(reason="need --runslow option to run")
-    for item in items:
-        if "slow" in item.keywords:
-            item.add_marker(skip_slow)

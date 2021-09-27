@@ -1,7 +1,5 @@
-import random
-
 from eth_abi import encode_single
-from brownie import TopUpRewardPrograms, accounts, ZERO_ADDRESS, reverts
+from brownie import reverts
 
 from utils.evm_script import encode_call_script
 
@@ -12,7 +10,7 @@ REWARD_PROGRAM_ADDRESSES = [
 REWARD_PROGRAM_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
 
-def test_deploy(owner, reward_programs_registry, finance, ldo):
+def test_deploy(owner, reward_programs_registry, finance, ldo, TopUpRewardPrograms):
     "Must deploy contract with correct data"
     contract = owner.deploy(
         TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
@@ -64,7 +62,11 @@ def test_create_evm_script_zero_amount(
 
 
 def test_create_evm_script_reward_program_not_allowed(
-    owner, top_up_reward_programs, reward_programs_registry, evm_script_executor_stub
+    accounts,
+    owner,
+    top_up_reward_programs,
+    reward_programs_registry,
+    evm_script_executor_stub,
 ):
     "Must revert with message 'REWARD_PROGRAM_NOT_ALLOWED' if passed"
     "reward program isn't listed in RewardProgramsRegistry"
