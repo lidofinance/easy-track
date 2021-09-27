@@ -20,10 +20,8 @@ compiler:
   solc:
     version: 0.8.6
 reports:
+  exclude_paths:
+    - contracts/test/**/*
   exclude_contracts:
     - AccessControl
-    - EVMScriptFactoryStub
-    - EVMScriptExecutorStub
-    - NodeOperatorsRegistryStub
     - Ownable
-  only_include_project: false

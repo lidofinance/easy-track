@@ -18,6 +18,6 @@ def encode_call_script(actions, spec_id=1):
     for to, calldata in actions:
         addr_bytes = Web3.toBytes(hexstr=HexAddress(to)).hex()
         calldata_bytes = strip_byte_prefix(calldata)
-        length = eth_abi.encode_single("int256", len(calldata_bytes) // 2).hex()
+        length = eth_abi.encode_single("uint32", len(calldata_bytes) // 2).hex()
         result += addr_bytes + length[56:] + calldata_bytes
     return result
