@@ -148,11 +148,11 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
         newMotion.duration = motionDuration;
         newMotion.objectionsThreshold = objectionsThreshold;
         newMotion.evmScriptFactory = _evmScriptFactory;
+        motionIndicesByMotionId[_newMotionId] = motions.length;
+
         bytes memory evmScript =
             _createEVMScript(_evmScriptFactory, msg.sender, _evmScriptCallData);
         newMotion.evmScriptHash = keccak256(evmScript);
-
-        motionIndicesByMotionId[_newMotionId] = motions.length;
 
         emit MotionCreated(
             _newMotionId,
@@ -174,14 +174,17 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
         Motion storage motion = _getMotion(_motionId);
         require(motion.startDate + motion.duration <= block.timestamp, ERROR_MOTION_NOT_PASSED);
 
-        bytes memory evmScript =
-            _createEVMScript(motion.evmScriptFactory, motion.creator, _evmScriptCallData);
-        require(motion.evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
+        address creator = motion.creator;
+        bytes32 evmScriptHash = motion.evmScriptHash;
+        address evmScriptFactory = motion.evmScriptFactory;
 
         _deleteMotion(_motionId);
-        evmScriptExecutor.executeEVMScript(evmScript);
-
         emit MotionEnacted(_motionId);
+
+        bytes memory evmScript = _createEVMScript(evmScriptFactory, creator, _evmScriptCallData);
+        require(evmScriptHash == keccak256(evmScript), ERROR_UNEXPECTED_EVM_SCRIPT);
+
+        evmScriptExecutor.executeEVMScript(evmScript);
     }
 
     /// @notice Submits an objection from `governanceToken` holder.
