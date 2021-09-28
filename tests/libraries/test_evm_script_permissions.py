@@ -30,7 +30,7 @@ def invalid_permissions(request):
     base_val = to_bytes(ZERO_ADDRESS + "aabbccdd", "bytes")  # valid
     permissions_list = [
         b"",  # Empty permissions
-        b"11223344556677889911",  # Permissions length too short
+        "0x11223344556677889911",  # Permissions length too short
         base_val[:-1],  # Permissions length 1 byte too short
         base_val + b"\xee",  # Permissions length too long for 1 permission
         (base_val * 3)[:-1],  # Permissions length too short 3 permissions
