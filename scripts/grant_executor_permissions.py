@@ -1,40 +1,30 @@
-import os
-from brownie import interface, ZERO_ADDRESS, network
-
-from utils.lido import contracts, create_voting, execute_voting, permissions
-from utils.config import (
-    get_env,
-    get_is_live,
-    get_deployer_account,
-    prompt_bool,
-)
+from utils import lido
 from utils.evm_script import encode_call_script
-
-acl = contracts()["dao"]["acl"]
-lido_permissions = permissions()
-required_permissions = [
-    lido_permissions.finance.CREATE_PAYMENTS_ROLE,
-    lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
-]
+from utils.config import get_env, get_is_live, get_deployer_account, prompt_bool
 
 
 def main():
-    vote_id = grant_executor_permissions()
-    os.environ["VOTING_ID"] = str(vote_id)
-    check_permissions_granted()
-
-
-def grant_executor_permissions():
     deployer = get_deployer_account(get_is_live())
     evm_script_executor = get_env("EVM_SCRIPT_EXECUTOR")
 
-    granted_permissions = [
-        permission
-        for permission in required_permissions
-        if acl.hasPermission(evm_script_executor, permission.app, permission.role)
+    lido_contracts = lido.contracts(network="mainnet")
+    lido_permissions = lido.permissions(contracts=lido_contracts)
+
+    required_permissions = [
+        lido_permissions.finance.CREATE_PAYMENTS_ROLE,
+        lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
     ]
 
+    acl = lido_contracts.aragon.acl
+
+    granted_permissions = lido_permissions.filter_granted(
+        permissions=required_permissions, address=evm_script_executor
+    )
+
     permissions_to_grant = list(set(required_permissions) - set(granted_permissions))
+
+    print(f"Deployer: {deployer}")
+    print(f"EVMScriptExecutor address: {evm_script_executor}")
 
     if len(granted_permissions) > 0:
         print(f"{evm_script_executor} already granted next roles:")
@@ -54,6 +44,27 @@ def grant_executor_permissions():
         print("Aborting")
         return
 
+    tx_params = {
+        "from": deployer,
+        "gas_price": "100 gwei"
+        # "priority_fee": "4 gwei",
+    }
+    vote_id = grant_executor_permissions(
+        acl=acl,
+        evm_script_executor=evm_script_executor,
+        permissions_to_grant=permissions_to_grant,
+        tx_params=tx_params,
+    )
+    print(f"Vote successfully started! Vote id: {vote_id}")
+
+
+def get_permissions_to_grant(permissions, granted_permissions):
+    return list(set(permissions) - set(granted_permissions))
+
+
+def grant_executor_permissions(
+    acl, evm_script_executor, permissions_to_grant, tx_params
+):
     grant_permissions_evmscript = encode_call_script(
         [
             (
@@ -66,28 +77,9 @@ def grant_executor_permissions():
         ]
     )
 
-    vote_id, _ = create_voting(
+    vote_id, _ = lido.create_voting(
         evm_script=grant_permissions_evmscript,
         description="Grant permissions to {evm_script_executor}",
-        tx_params={"from": deployer},
+        tx_params=tx_params,
     )
-
-    print(f"Vote successfully started! Vote id: {vote_id}")
     return vote_id
-
-
-def check_permissions_granted():
-    voting_id = get_env("VOTING_ID")
-    evm_script_executor = get_env("EVM_SCRIPT_EXECUTOR")
-
-    execute_voting(voting_id)
-
-    print(
-        f"Validate that {evm_script_executor} has next permissions after voting is passed:"
-    )
-    for permission in required_permissions:
-        print(f"- {permission}")
-
-    for permission in required_permissions:
-        assert acl.hasPermission(evm_script_executor, permission.app, permission.role)
-    print("Validation Passed!")

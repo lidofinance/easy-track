@@ -1,19 +1,19 @@
 import os
 import sys
 from brownie import network, accounts
-from utils.lido import contracts
+from utils import lido
 
 
 def get_is_live():
-    return network.show_active() != "development"
+    dev_networks = ["development", "hardhat", "hardhat-fork"]
+    return network.show_active() not in dev_networks
 
 
-def get_deployer_account(is_live):
+def get_deployer_account(is_live, network="mainnet"):
+    contracts = lido.contracts(network=network)
     if not is_live:
-        ldo = contracts()["dao"]["ldo"]
-        agent = contracts()["dao"]["agent"]
         deployer = accounts[0]
-        ldo.transfer(deployer, 10 ** 18, {"from": agent})
+        contracts.ldo.transfer(deployer, 10 ** 18, {"from": contracts.aragon.agent})
         return deployer
     if "DEPLOYER" not in os.environ:
         raise EnvironmentError(

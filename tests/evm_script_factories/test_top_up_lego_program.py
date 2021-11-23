@@ -1,14 +1,12 @@
+import pytest
 from brownie import reverts
 from eth_abi import encode_single
 
 from utils.evm_script import encode_call_script
-from utils.lido import CONTRACT_ADDRESSES
+from utils.lido import addresses
 
 
-REWARD_TOKENS = [
-    CONTRACT_ADDRESSES["mainnet"]["dao"]["ldo"],
-    CONTRACT_ADDRESSES["mainnet"]["lido"],
-]
+REWARD_TOKENS = [addresses().ldo, addresses().steth]
 REWARD_AMOUNTS = [10 ** 18, 2 * 10 ** 18]
 
 

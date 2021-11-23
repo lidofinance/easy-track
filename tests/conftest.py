@@ -209,47 +209,47 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 @pytest.fixture(scope="module")
 def ldo(lido_contracts):
-    return lido_contracts["dao"]["ldo"]
+    return lido_contracts.ldo
 
 
 @pytest.fixture(scope="module")
 def steth(lido_contracts):
-    return lido_contracts["lido"]
+    return lido_contracts.steth
 
 
 @pytest.fixture(scope="module")
 def node_operators_registry(lido_contracts):
-    return lido_contracts["node_operators_registry"]
+    return lido_contracts.node_operators_registry
 
 
 @pytest.fixture(scope="module")
 def voting(lido_contracts):
-    return lido_contracts["dao"]["voting"]
+    return lido_contracts.aragon.voting
 
 
 @pytest.fixture(scope="module")
 def tokens(lido_contracts):
-    return lido_contracts["dao"]["tokens"]
+    return lido_contracts.aragon.token_manager
 
 
 @pytest.fixture(scope="module")
 def agent(lido_contracts):
-    return lido_contracts["dao"]["agent"]
+    return lido_contracts.aragon.agent
 
 
 @pytest.fixture(scope="module")
 def finance(lido_contracts):
-    return lido_contracts["dao"]["finance"]
+    return lido_contracts.aragon.finance
 
 
 @pytest.fixture(scope="module")
 def acl(lido_contracts):
-    return lido_contracts["dao"]["acl"]
+    return lido_contracts.aragon.acl
 
 
 @pytest.fixture(scope="module")
 def calls_script(lido_contracts):
-    return lido_contracts["dao"]["calls_script"]
+    return lido_contracts.aragon.calls_script
 
 
 #########################

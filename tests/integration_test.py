@@ -95,7 +95,7 @@ def test_node_operators_easy_track(
     # create vote to add test node operator
     node_operator = {"name": "test_node_operator", "address": accounts[3]}
     add_node_operator_calldata = node_operators_registry.addNodeOperator.encode_input(
-        node_operator["name"], node_operator["address"], 0
+        node_operator["name"], node_operator["address"]
     )
     add_node_operator_evm_script = encode_call_script(
         [(node_operators_registry.address, add_node_operator_calldata)]

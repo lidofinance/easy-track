@@ -9,3 +9,4 @@ reports/
 .vscode
 .pytest_cache
 node_modules
+/contracts_flattened
