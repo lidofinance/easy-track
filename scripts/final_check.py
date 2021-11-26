@@ -153,6 +153,12 @@ def main():
             increase_node_operator_staking_limit=increase_node_operators_staking_limit,
             expected_motion_id=5,
         )
+        simulate_pause_by_multisig(easy_track=easy_track, pause_multisig=pause_address)
+        simulate_unpause_by_voting(
+            easy_track=easy_track,
+            pause_multisig=pause_address,
+            lido_contracts=lido_contracts,
+        )
 
 
 def validate_easy_track_setup(
@@ -721,6 +727,37 @@ def simulate_node_operator_increases_staking_limit(
         node_operator_id, True
     )
     assert_equals("  New node operator staking limit after", node_operator[3], 3)
+    print()
+
+
+def simulate_pause_by_multisig(easy_track, pause_multisig):
+    log.nb("")
+    log.nb("Simulate pausing via easy track pause multisig")
+    log.nb("")
+    assert_equals("  EasyTrack is paused", easy_track.paused(), False)
+    easy_track.pause({"from": pause_multisig})
+    assert_equals("  EasyTrack is paused", easy_track.paused(), True)
+    print()
+
+
+def simulate_unpause_by_voting(easy_track, pause_multisig, lido_contracts):
+    log.nb("")
+    log.nb("Simulate unpausing via Aragon voting")
+    log.nb("")
+    assert_equals("  EasyTrack is still paused", easy_track.paused(), True)
+    unpause_evm_scirpt = evm_script.encode_call_script(
+        [(easy_track.address, easy_track.unpause.encode_input())]
+    )
+    voting_id, _ = lido.create_voting(
+        unpause_evm_scirpt,
+        "Unpause EasyTracks",
+        {"from": lido_contracts.aragon.agent},
+    )
+    log.ok("  Voting was started. Voting id", voting_id)
+    lido.execute_voting(voting_id)
+    log.ok("  Voting was executed")
+    assert_equals("  EasyTrack is paused", easy_track.paused(), False)
+    print()
 
 
 def add_new_node_operator(lido_contracts):
@@ -864,7 +901,6 @@ def assert_equals(desc, actual, expected):
 
 
 def create_motion(easy_track, evm_script_factory, calldata, creator):
-    print()
     count_of_motions_before = len(easy_track.getMotions())
     log.ok("  Sending createMotion transaction...")
     tx = easy_track.createMotion(evm_script_factory, calldata, {"from": creator})
@@ -877,7 +913,6 @@ def create_motion(easy_track, evm_script_factory, calldata, creator):
 
 def enact_motion(easy_track, motion_id, motion_calldata):
     log.ok("  Sending enactMotion transaction...")
-    print()
     easy_track.enactMotion(motion_id, motion_calldata, {"from": accounts[2]})
     assert_equals("  Motion was enacted", len(easy_track.getMotions()) == 0, True)
 
