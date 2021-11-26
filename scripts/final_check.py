@@ -762,7 +762,7 @@ def simulate_unpause_by_voting(easy_track, pause_multisig, lido_contracts):
 
 def add_new_node_operator(lido_contracts):
     log.nb("")
-    log.nb("Start voting to add new node operator to node operators registry")
+    log.nb("Start voting to add new node operator to node operators registry to test staking limit increasing via EasyTrack")
     log.nb("")
     node_operators_registry = lido_contracts.node_operators_registry
     # create vote to add test node operator
