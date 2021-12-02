@@ -214,9 +214,9 @@ def validate_easy_track_setup(
         True,
     )
     assert_equals(
-        "  deployer has DEFAULT_ADMIN role",
-        easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer),
-        False,
+        "  deployer has no DEFAULT_ADMIN role",
+        not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer),
+        True,
     )
     print()
 
@@ -268,21 +268,21 @@ def validate_reward_programs_registry_setup(
 ):
     log.nb("RewardProgramsRegistry", reward_programs_registry)
     assert_equals(
-        "  Voting has DEFAULT_ADMIN_ROLE",
+        "  voting has DEFAULT_ADMIN_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.DEFAULT_ADMIN_ROLE(), lido_contracts.aragon.voting
         ),
         True,
     )
     assert_equals(
-        "  Deployer has DEFAULT_ADMIN_ROLE",
-        reward_programs_registry.hasRole(
+        "  deployer has no DEFAULT_ADMIN role",
+        not reward_programs_registry.hasRole(
             reward_programs_registry.DEFAULT_ADMIN_ROLE(), deployer
         ),
-        False,
+        True,
     )
     assert_equals(
-        "  Voting has ADD_REWARD_PROGRAM_ROLE",
+        "  voting has ADD_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(),
             lido_contracts.aragon.voting,
@@ -290,7 +290,7 @@ def validate_reward_programs_registry_setup(
         True,
     )
     assert_equals(
-        "  Voting has REMOVE_REWARD_PROGRAM_ROLE",
+        "  voting has REMOVE_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(),
             lido_contracts.aragon.voting,
@@ -762,7 +762,9 @@ def simulate_unpause_by_voting(easy_track, pause_multisig, lido_contracts):
 
 def add_new_node_operator(lido_contracts):
     log.nb("")
-    log.nb("Start voting to add new node operator to node operators registry to test staking limit increasing via EasyTrack")
+    log.nb(
+        "Start voting to add new node operator to node operators registry to test staking limit increasing via EasyTrack"
+    )
     log.nb("")
     node_operators_registry = lido_contracts.node_operators_registry
     # create vote to add test node operator
