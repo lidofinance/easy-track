@@ -82,15 +82,20 @@ Script requires next ENV variables to be set:
 - `LEGO_PROGRAM_VAULT` - address of Lido's LEGO program
 - `LEGO_COMMITTEE_MULTISIG` - address allowed to create motions to top up LEGO program
 - `REWARD_PROGRAMS_MULTISIG` - address allowed to create motions to add, remove or top up reward program
+- `PAUSE_ADDRESS` - address to grant PAUSE_ROLE
 
 Next optional variables can be set:
 
-- `PAUSE_ADDRESS` - address to grant PAUSE_ROLE
 - `UNPAUSE_ADDRESS` - address to grant UNPAUSE_ROLE
 - `CANCEL_ADDRESS` - address to grant CANCEL_ROLE
 
 ### `final_check.py`
+
 Contains script to validate deployed setup of EasyTrack in mainnet network.
+
+Script accepts next optional ENV variables:
+
+- `GRANT_PERMISSIONS_VOTING_ID` - id of voting where permissions `CREATE_PAYMENTS_ROLE` and `SET_NODE_OPERATOR_LIMIT_ROLE` granted to `EVMScriptExecutor`. If this variable is passed, the simulation will not create new voting to add permissions to `EVMScriptExecutor`.
 
 ### `grant_executor_permissions.py`
 

@@ -84,11 +84,23 @@ def create_voting(evm_script, description, network="mainnet", tx_params=None):
 
 def execute_voting(voting_id, network="mainnet"):
     lido_contracts = contracts(network=network)
-    agent = lido_contracts.aragon.agent
     voting = lido_contracts.aragon.voting
     if voting.getVote(voting_id)["executed"]:
         return
-    voting.vote(voting_id, True, False, {"from": agent})
+    ldo_holders = [
+        "0x3e40d73eb977dc6a537af587d48316fee66e9c8c",
+        "0xb8d83908aab38a159f3da47a59d84db8e1838712",
+        "0xa2dfc431297aee387c05beef507e5335e684fbcd",
+    ]
+    for holder_addr in ldo_holders:
+        if not voting.canVote(voting_id, holder_addr):
+            print(f"{holder_addr} can't vote in voting {voting_id}")
+            continue
+        accounts[0].transfer(holder_addr, "0.1 ether")
+        account = accounts.at(holder_addr, force=True)
+        voting.vote(voting_id, True, False, {"from": account})
+
+    # voting.vote(voting_id, True, False, {"from": agent})
     chain.sleep(3 * 60 * 60 * 24)
     chain.mine()
     assert voting.canExecute(voting_id)

@@ -1,3 +1,4 @@
+import os
 from brownie import (
     Wei,
     chain,
@@ -21,6 +22,11 @@ from brownie.network.account import PublicKeyAccount
 
 
 def main():
+    grant_permissions_voting_id = (
+        os.environ["GRANT_PERMISSIONS_VOTING_ID"]
+        if "GRANT_PERMISSIONS_VOTING_ID" in os.environ
+        else None
+    )
     deployer = "0x2a61d3ba5030Ef471C74f612962c7367ECa3a62d"
     lego_committee_multisig = "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
     reward_programs_multisig = "0x87D93d9B2C672bf9c9642d853a8682546a5012B5"
@@ -122,7 +128,9 @@ def main():
         # grant permissions to evm script executor roles to make payments
         # and increase node operators staking limit
         grant_aragon_permissions(
-            lido_contracts=lido_contracts, evm_script_executor=evm_script_executor
+            lido_contracts=lido_contracts,
+            evm_script_executor=evm_script_executor,
+            voting_id=grant_permissions_voting_id,
         )
         simulate_reward_program_top_up(
             easy_track=easy_track,
@@ -375,7 +383,7 @@ def validate_top_up_reward_programs(
     )
 
 
-def grant_aragon_permissions(lido_contracts, evm_script_executor):
+def grant_aragon_permissions(lido_contracts, evm_script_executor, voting_id=None):
     lido_permissions = lido.permissions(contracts=lido_contracts)
     permissions_to_grant = [
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
@@ -383,16 +391,19 @@ def grant_aragon_permissions(lido_contracts, evm_script_executor):
     ]
     log.nb("")
     log.nb(
-        "Start voting to grant CREATE_PAYMENTS_ROLE and SET_NODE_OPERATOR_LIMIT_ROLE to EVMScriptExecutor",
+        "Start and execute voting to grant CREATE_PAYMENTS_ROLE and SET_NODE_OPERATOR_LIMIT_ROLE to EVMScriptExecutor",
     )
     log.nb("")
-    voting_id = grant_executor_permissions(
-        acl=lido_contracts.aragon.acl,
-        evm_script_executor=evm_script_executor,
-        permissions_to_grant=permissions_to_grant,
-        tx_params={"from": lido_contracts.aragon.agent},
-    )
-    log.ok("  Voting was started. Voting id", voting_id)
+    if voting_id is None:
+        voting_id = grant_executor_permissions(
+            acl=lido_contracts.aragon.acl,
+            evm_script_executor=evm_script_executor,
+            permissions_to_grant=permissions_to_grant,
+            tx_params={"from": lido_contracts.aragon.agent},
+        )
+        log.ok("  Voting was started. Voting id", voting_id)
+    else:
+        log.ok(f"  Voting {voting_id} was started separately.")
     lido.execute_voting(voting_id=voting_id)
     log.ok(f"  Voting {voting_id} successfully passed")
     assert_equals(
