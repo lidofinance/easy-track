@@ -115,6 +115,14 @@ Script requires next ENV variables to be set:
 - `DEPLOYER` - id of brownie's account which will deploy contracts. To create a voting account must have LDO Tokens. Might be skipped if run on a `development` network.
 - `EVM_SCRIPT_EXECUTOR` - address to grant permissions.
 
+### `renounce_roles.py`
+
+Sends transactions to renounce roles from EasyTrack contract deployed in mainnet [`0xF0211b7660680B49De1A7E9f25C65660F0a13Fea`](https://etherscan.io/address/0xf0211b7660680b49de1a7e9f25c65660f0a13fea).
+
+Script requires next ENV variables to be set:
+
+- `DEPLOYER` - address of the account that renounces roles
+
 ## Tests
 
 The fastest way to run the tests is:
