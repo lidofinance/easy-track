@@ -172,6 +172,7 @@ def main():
 def validate_easy_track_setup(
     easy_track, evm_script_executor, lido_contracts, pause_address, deployer
 ):
+    voting = lido_contracts.aragon.voting
     log.nb("EasyTrack", easy_track)
     assert_equals(
         "  governanceToken:", easy_track.governanceToken(), lido_contracts.ldo
@@ -195,35 +196,53 @@ def validate_easy_track_setup(
         constants.INITIAL_OBJECTIONS_THRESHOLD,
     )
     assert_equals(
-        "  voting has DEFAULT_ADMIN role",
-        easy_track.hasRole(
-            easy_track.DEFAULT_ADMIN_ROLE(), lido_contracts.aragon.voting
-        ),
+        f"  voting ({voting}) has DEFAULT_ADMIN role",
+        easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), voting),
         True,
     )
     assert_equals(
-        "  voting has PAUSE role",
-        easy_track.hasRole(easy_track.PAUSE_ROLE(), lido_contracts.aragon.voting),
+        f"  voting ({voting}) has PAUSE role",
+        easy_track.hasRole(easy_track.PAUSE_ROLE(), voting),
         True,
     )
     assert_equals(
-        "  voting has UNPAUSE role",
-        easy_track.hasRole(easy_track.UNPAUSE_ROLE(), lido_contracts.aragon.voting),
+        f"  voting ({voting}) has UNPAUSE role",
+        easy_track.hasRole(easy_track.UNPAUSE_ROLE(), voting),
         True,
     )
     assert_equals(
-        "  voting has CANCEL role",
-        easy_track.hasRole(easy_track.CANCEL_ROLE(), lido_contracts.aragon.voting),
+        f"  voting ({voting}) has CANCEL role",
+        easy_track.hasRole(easy_track.CANCEL_ROLE(), voting),
         True,
     )
     assert_equals(
-        "  pause multisig has PAUSE role",
+        f"  pause multisig ({pause_address}) has PAUSE role",
         easy_track.hasRole(easy_track.PAUSE_ROLE(), pause_address),
         True,
     )
     assert_equals(
         "  deployer has no DEFAULT_ADMIN role",
         not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer),
+        True,
+    )
+    assert_equals(
+        f"  deployer ({deployer}) has no DEFAULT_ADMIN role",
+        not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer),
+        True,
+    )
+    assert_equals(
+        f"  deployer ({deployer}) has no PAUSE role",
+        not easy_track.hasRole(easy_track.PAUSE_ROLE(), deployer),
+        True,
+    )
+    assert_equals(
+        f"  deployer ({deployer}) has no CANCEL role",
+        not easy_track.hasRole(easy_track.UNPAUSE_ROLE(), deployer),
+        True,
+    )
+    assert_equals(
+        f"  deployer ({deployer}) has no UNPAUSE role",
+        not easy_track.hasRole(easy_track.CANCEL_ROLE(), deployer),
         True,
     )
     print()
@@ -274,39 +293,52 @@ def validate_top_up_lego_program_setup(
 def validate_reward_programs_registry_setup(
     reward_programs_registry, deployer, evm_script_executor, lido_contracts
 ):
+    voting = lido_contracts.aragon.voting
     log.nb("RewardProgramsRegistry", reward_programs_registry)
     assert_equals(
-        "  voting has DEFAULT_ADMIN_ROLE",
+        "  voting ({voting}) has DEFAULT_ADMIN_ROLE",
         reward_programs_registry.hasRole(
-            reward_programs_registry.DEFAULT_ADMIN_ROLE(), lido_contracts.aragon.voting
+            reward_programs_registry.DEFAULT_ADMIN_ROLE(), voting
         ),
         True,
     )
     assert_equals(
-        "  deployer has no DEFAULT_ADMIN role",
+        "  deployer ({deployer}) has no DEFAULT_ADMIN role",
         not reward_programs_registry.hasRole(
             reward_programs_registry.DEFAULT_ADMIN_ROLE(), deployer
         ),
         True,
     )
     assert_equals(
-        "  voting has ADD_REWARD_PROGRAM_ROLE",
-        reward_programs_registry.hasRole(
-            reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(),
-            lido_contracts.aragon.voting,
+        "  deployer ({deployer}) has no ADD_REWARD_PROGRAM_ROLE role",
+        not reward_programs_registry.hasRole(
+            reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), deployer
         ),
         True,
     )
     assert_equals(
-        "  voting has REMOVE_REWARD_PROGRAM_ROLE",
-        reward_programs_registry.hasRole(
-            reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(),
-            lido_contracts.aragon.voting,
+        "  deployer ({deployer}) has no REMOVE_REWARD_PROGRAM_ROLE role",
+        not reward_programs_registry.hasRole(
+            reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), deployer
         ),
         True,
     )
     assert_equals(
-        "  EVMScriptExecutor has ADD_REWARD_PROGRAM_ROLE",
+        "  voting ({voting}) has ADD_REWARD_PROGRAM_ROLE",
+        reward_programs_registry.hasRole(
+            reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), voting
+        ),
+        True,
+    )
+    assert_equals(
+        "  voting ({voting}) has REMOVE_REWARD_PROGRAM_ROLE",
+        reward_programs_registry.hasRole(
+            reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), voting
+        ),
+        True,
+    )
+    assert_equals(
+        "  EVMScriptExecutor ({evm_script_executor}) has ADD_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(),
             evm_script_executor,
@@ -314,7 +346,7 @@ def validate_reward_programs_registry_setup(
         True,
     )
     assert_equals(
-        "  EVMScriptExecutor has REMOVE_REWARD_PROGRAM_ROLE",
+        "  EVMScriptExecutor ({evm_script_executor}) has REMOVE_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(),
             evm_script_executor,
