@@ -9,7 +9,7 @@ def main():
     deployer = get_deployer_account(get_is_live())
     print("DEPLOYER:", deployer)
     print(
-        f"Renounce PAUSE_ROLE, UNPAUSE_ROLE, CANCEL_ROL from {deployer} on EasyTrack ({EASY_TRACK_ADDRESS})"
+        f"Renounce PAUSE_ROLE, UNPAUSE_ROLE, CANCEL_ROLE from {deployer} on EasyTrack ({EASY_TRACK_ADDRESS})"
     )
     print("Proceed? [y/n]: ")
     if not prompt_bool():
