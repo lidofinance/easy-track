@@ -296,49 +296,49 @@ def validate_reward_programs_registry_setup(
     voting = lido_contracts.aragon.voting
     log.nb("RewardProgramsRegistry", reward_programs_registry)
     assert_equals(
-        "  voting ({voting}) has DEFAULT_ADMIN_ROLE",
+        f"  voting ({voting}) has DEFAULT_ADMIN_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.DEFAULT_ADMIN_ROLE(), voting
         ),
         True,
     )
     assert_equals(
-        "  deployer ({deployer}) has no DEFAULT_ADMIN role",
+        f"  deployer ({deployer}) has no DEFAULT_ADMIN role",
         not reward_programs_registry.hasRole(
             reward_programs_registry.DEFAULT_ADMIN_ROLE(), deployer
         ),
         True,
     )
     assert_equals(
-        "  deployer ({deployer}) has no ADD_REWARD_PROGRAM_ROLE role",
+        f"  deployer ({deployer}) has no ADD_REWARD_PROGRAM_ROLE role",
         not reward_programs_registry.hasRole(
             reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), deployer
         ),
         True,
     )
     assert_equals(
-        "  deployer ({deployer}) has no REMOVE_REWARD_PROGRAM_ROLE role",
+        f"  deployer ({deployer}) has no REMOVE_REWARD_PROGRAM_ROLE role",
         not reward_programs_registry.hasRole(
             reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), deployer
         ),
         True,
     )
     assert_equals(
-        "  voting ({voting}) has ADD_REWARD_PROGRAM_ROLE",
+        f"  voting ({voting}) has ADD_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), voting
         ),
         True,
     )
     assert_equals(
-        "  voting ({voting}) has REMOVE_REWARD_PROGRAM_ROLE",
+        f"  voting ({voting}) has REMOVE_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), voting
         ),
         True,
     )
     assert_equals(
-        "  EVMScriptExecutor ({evm_script_executor}) has ADD_REWARD_PROGRAM_ROLE",
+        f"  EVMScriptExecutor ({evm_script_executor}) has ADD_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(),
             evm_script_executor,
@@ -346,7 +346,7 @@ def validate_reward_programs_registry_setup(
         True,
     )
     assert_equals(
-        "  EVMScriptExecutor ({evm_script_executor}) has REMOVE_REWARD_PROGRAM_ROLE",
+        f"  EVMScriptExecutor ({evm_script_executor}) has REMOVE_REWARD_PROGRAM_ROLE",
         reward_programs_registry.hasRole(
             reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(),
             evm_script_executor,
