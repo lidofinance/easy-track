@@ -17,6 +17,7 @@ There are three types of votings run periodically by the Lido DAO that are propo
 - Node Operators increasing staking limits
 - Funds being allocated into reward programs
 - Funds being allocated to LEGO program
+- Funds being allocated to the whitelisted referral partners
 
 See [specification.md](https://github.com/lidofinance/easy-track/blob/master/specification.md) for full specification.
 
