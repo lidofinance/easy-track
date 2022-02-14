@@ -55,7 +55,7 @@ contract AddReferralPartner is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                address(referralPartnerAddress),
+                address(referralPartnersRegistry),
                 referralPartnersRegistry.addReferralPartner.selector,
                 _evmScriptCallData
             );
