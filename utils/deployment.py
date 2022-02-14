@@ -182,19 +182,19 @@ def add_evm_script_referral_partners_factories(
     easy_track.addEVMScriptFactory(
         add_referral_partner,
         create_permission(referral_partners_registry, "addReferralPartner"),
-        {'from': lido_contracts.aragon.voting }
+        tx_params
     )
 
     easy_track.addEVMScriptFactory(
         top_up_referral_partners,
         create_permission(lido_contracts.aragon.finance, "newImmediatePayment"),
-        {'from': lido_contracts.aragon.voting }
+        tx_params
     )
 
     easy_track.addEVMScriptFactory(
         remove_referral_partner,
         create_permission(referral_partners_registry, "removeReferralPartner"),
-        {'from': lido_contracts.aragon.voting }
+        tx_params
     )
 
 def transfer_admin_role(deployer, easy_track, new_admin, tx_params):
