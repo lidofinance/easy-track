@@ -65,7 +65,7 @@ def permissions(contracts):
 
 
 def create_voting(evm_script, description, network="mainnet", tx_params=None):
-    lido_contracts = contracts()
+    lido_contracts = contracts(network)
     voting = lido_contracts.aragon.voting
 
     voting_tx = lido_contracts.aragon.token_manager.forward(
