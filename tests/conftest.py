@@ -130,6 +130,17 @@ def reward_programs_registry(
         [voting, evm_script_executor_stub],
     )
 
+@pytest.fixture(scope="module")
+def referral_partners_registry(
+    owner, voting, evm_script_executor_stub, ReferralPartnersRegistry
+):
+    return owner.deploy(
+        ReferralPartnersRegistry,
+        voting,
+        [voting, evm_script_executor_stub],
+        [voting, evm_script_executor_stub],
+    )
+
 
 ############
 # EVM SCRIPT FACTORIES
@@ -147,11 +158,17 @@ def increase_node_operator_staking_limit(
 def add_reward_program(owner, reward_programs_registry, AddRewardProgram):
     return owner.deploy(AddRewardProgram, owner, reward_programs_registry)
 
+@pytest.fixture(scope="module")
+def add_referral_partner(owner, referral_partners_registry, AddReferralPartner):
+    return owner.deploy(AddReferralPartner, owner, referral_partners_registry)
 
 @pytest.fixture(scope="module")
 def remove_reward_program(owner, reward_programs_registry, RemoveRewardProgram):
     return owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
 
+@pytest.fixture(scope="module")
+def remove_referral_partner(owner, referral_partners_registry, RemoveReferralPartner):
+    return owner.deploy(RemoveReferralPartner, owner, referral_partners_registry)
 
 @pytest.fixture(scope="module")
 def top_up_reward_programs(
@@ -161,6 +178,13 @@ def top_up_reward_programs(
         TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
     )
 
+@pytest.fixture(scope="module")
+def top_up_referral_partners(
+    owner, finance, ldo, referral_partners_registry, TopUpReferralPartners
+):
+    return owner.deploy(
+        TopUpReferralPartners, owner, referral_partners_registry, finance, ldo
+    )
 
 @pytest.fixture(scope="module")
 def top_up_lego_program(owner, finance, lego_program, TopUpLegoProgram):
