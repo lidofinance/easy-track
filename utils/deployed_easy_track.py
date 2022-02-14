@@ -1,10 +1,12 @@
+from typing import Optional
 from brownie import (
     EasyTrack,
     EVMScriptExecutor,
     AddReferralPartner,
     RemoveReferralPartner,
     TopUpReferralPartners,
-    ReferralPartnersRegistry
+    ReferralPartnersRegistry,
+    Contract
 )
 
 def addresses(network="mainnet"):
@@ -30,15 +32,24 @@ def addresses(network="mainnet"):
         f"""Unknown network "{network}". Supported networks: mainnet, goerli."""
     )
 
+def contract_or_none(
+    contract: Contract,
+    addr: Optional[str]
+) -> Optional[Contract]:
+    if not addr:
+        return None
+    return contract.at(addr)
+
+
 def contracts(network="mainnet"):
     network_addresses = addresses(network)
     return EasyTrackSetup(
-        easy_track=EasyTrack.at(network_addresses.easy_track),
-        evm_script_executor=EVMScriptExecutor.at(network_addresses.evm_script_executor),
-        referral_partners_registry=ReferralPartnersRegistry.at(network_addresses.referral_partners_registry),
-        add_referral_partner=AddReferralPartner.at(network_addresses.add_referral_partner),
-        remove_referral_partner=RemoveReferralPartner.at(network_addresses.remove_referral_partner),
-        top_up_referral_partners=TopUpReferralPartners.at(network_addresses.top_up_referral_partners)
+        easy_track=contract_or_none(EasyTrack, network_addresses.easy_track),
+        evm_script_executor=contract_or_none(EVMScriptExecutor, network_addresses.evm_script_executor),
+        referral_partners_registry=contract_or_none(ReferralPartnersRegistry, network_addresses.referral_partners_registry),
+        add_referral_partner=contract_or_none(AddReferralPartner, network_addresses.add_referral_partner),
+        remove_referral_partner=contract_or_none(RemoveReferralPartner, network_addresses.remove_referral_partner),
+        top_up_referral_partners=contract_or_none(TopUpReferralPartners, network_addresses.top_up_referral_partners)
     )
 
 class EasyTrackSetup:
