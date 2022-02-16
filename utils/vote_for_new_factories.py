@@ -8,13 +8,26 @@ class FactoryToAdd(NamedTuple):
     factory: Contract
     permissions: str
 
-def create_voting_on_ref_partners_factories(
+class FactoryToRemove(NamedTuple):
+    factory: Contract
+
+def create_voting_on_new_factories(
     easy_track: EasyTrack,
-    factories: List[FactoryToAdd],
+    factories_to_add: List[FactoryToAdd],
+    factories_to_remove: List[FactoryToRemove],
     network: str,
     tx_params: Dict[str, str]
 ) -> int:
-    add_factories_evm_script: str = encode_call_script(
+    factories_evm_script: str = encode_call_script(
+        [
+            (
+                easy_track.address,
+                easy_track.removeEVMScriptFactory.encode_input(
+                    elem.factory
+                )
+            )
+            for elem in factories_to_remove
+        ] +
         [
             (
                 easy_track.address,
@@ -23,18 +36,25 @@ def create_voting_on_ref_partners_factories(
                     elem.permissions
                 )
             )
-            for elem in factories
+            for elem in factories_to_add
         ]
     )
 
     description: str = 'Omnibus vote:'
     item_id: int = 1
-    for elem in factories:
-        description += f'{item_id} Add {elem.factory} factory'
+    for elem in factories_to_remove:
+        description += f'{item_id}) Remove {elem.factory} factory;'
         item_id = item_id + 1
 
+    for elem in factories_to_add:
+        description += f'{item_id}) Add {elem.factory} factory;'
+        item_id = item_id + 1
+    description = description[:-1] + '.'
+
+    print(description.replace(';', '\n'))
+
     vote_id, _ = lido.create_voting(
-        evm_script=add_factories_evm_script,
+        evm_script=factories_evm_script,
         description=description,
         network=network,
         tx_params=tx_params,

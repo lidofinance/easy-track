@@ -1,7 +1,7 @@
 from brownie import chain, network
 
 from utils.vote_for_new_factories import (
-    FactoryToAdd, create_voting_on_ref_partners_factories
+    FactoryToAdd, FactoryToRemove, create_voting_on_new_factories
 )
 
 from utils.config import (
@@ -62,7 +62,9 @@ def main():
 
     log.br()
 
-    factories = [
+    factories_to_remove = []
+
+    factories_to_add = [
         FactoryToAdd(
             factory=et_contracts.add_referral_partner,
             permissions=create_permission(
@@ -85,9 +87,10 @@ def main():
         )
     ]
 
-    vote_id = create_voting_on_ref_partners_factories(
+    vote_id = create_voting_on_new_factories(
         easy_track=easy_track,
-        factories=factories,
+        factories_to_remove=factories_to_remove,
+        factories_to_add=factories_to_add,
         network=netname,
         tx_params=tx_params
     )
