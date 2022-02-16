@@ -23,10 +23,10 @@ def addresses(network="mainnet"):
         return EasyTrackSetup(
             easy_track="0xAf072C8D368E4DD4A9d4fF6A76693887d6ae92Af",
             evm_script_executor="0x3c9aca237b838c59612d79198685e7f20c7fe783",
-            referral_partners_registry="0xE7E684d11b30BC0B160a3936B85Ce6E3Df370aF0",
-            add_referral_partner="0xafE3b4AaCF9ee277F2c1275c275Ad2c7dFF7522f",
-            remove_referral_partner="0x714553f3D285903b1f66fa3B0EACE9F8564DADfB",
-            top_up_referral_partners="0x87c327855E55c9486aE6869Abf1109baE8170425"
+            referral_partners_registry="0xBB4C830275F121F7ecaCE8C5526cc8102752eED0",
+            add_referral_partner="0x1fDEdCd6fcFD009b0B1B751aceEAF16dDb228384",
+            remove_referral_partner="0x42b608642C6AD8f3b210093ded7dc53fc1001492",
+            top_up_referral_partners="0xDEbAf563F737Ee0EE7A31DFea478c5034DB3804B"
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, goerli."""
