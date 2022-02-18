@@ -6,11 +6,7 @@ from brownie import (
     RemoveRewardProgram,
     TopUpRewardPrograms,
     RewardProgramsRegistry,
-    IncreaseNodeOperatorStakingLimit,
-    AddReferralPartner,
-    RemoveReferralPartner,
-    TopUpReferralPartners,
-    ReferralPartnersRegistry
+    IncreaseNodeOperatorStakingLimit
 )
 
 
@@ -48,11 +44,6 @@ def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
         voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
     )
 
-def deploy_referral_partners_registry(voting, evm_script_executor, tx_params):
-    return ReferralPartnersRegistry.deploy(
-        voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
-    )
-
 def deploy_increase_node_operator_staking_limit(node_operators_registry, tx_params):
     return IncreaseNodeOperatorStakingLimit.deploy(node_operators_registry, tx_params)
 
@@ -72,25 +63,11 @@ def deploy_add_reward_program(
         reward_programs_multisig, reward_programs_registry, tx_params
     )
 
-def deploy_add_referral_partner(
-    referral_partners_registry, referral_partners_multisig, tx_params
-):
-    return AddReferralPartner.deploy(
-        referral_partners_multisig, referral_partners_registry, tx_params
-    )
-
 def deploy_remove_reward_program(
     reward_programs_registry, reward_programs_multisig, tx_params
 ):
     return RemoveRewardProgram.deploy(
         reward_programs_multisig, reward_programs_registry, tx_params
-    )
-
-def deploy_remove_referral_partner(
-    referral_partners_registry, referral_partners_multisig, tx_params
-):
-    return RemoveReferralPartner.deploy(
-        referral_partners_multisig, referral_partners_registry, tx_params
     )
 
 def deploy_top_up_reward_programs(
@@ -106,21 +83,6 @@ def deploy_top_up_reward_programs(
         finance,
         governance_token,
         tx_params,
-    )
-
-def deploy_top_up_referral_partners(
-    finance,
-    governance_token,
-    referral_partners_registry,
-    referral_partners_multisig,
-    tx_params
-):
-    return TopUpReferralPartners.deploy(
-        referral_partners_multisig,
-        referral_partners_registry,
-        finance,
-        governance_token,
-        tx_params
     )
 
 
@@ -154,6 +116,25 @@ def add_evm_script_factories(
         create_permission(lido_contracts.aragon.finance, "newImmediatePayment"),
         tx_params,
     )
+    add_evm_script_reward_program_factories(
+        easy_track,
+        add_reward_program,
+        remove_reward_program,
+        top_up_reward_programs,
+        reward_programs_registry,
+        lido_contracts,
+        tx_params
+    )
+
+def add_evm_script_reward_program_factories(
+    easy_track,
+    add_reward_program,
+    remove_reward_program,
+    top_up_reward_programs,
+    reward_programs_registry,
+    lido_contracts,
+    tx_params
+):
     easy_track.addEVMScriptFactory(
         top_up_reward_programs,
         create_permission(lido_contracts.aragon.finance, "newImmediatePayment"),
@@ -168,33 +149,6 @@ def add_evm_script_factories(
         remove_reward_program,
         create_permission(reward_programs_registry, "removeRewardProgram"),
         tx_params,
-    )
-
-def add_evm_script_referral_partners_factories(
-    easy_track,
-    add_referral_partner,
-    remove_referral_partner,
-    top_up_referral_partners,
-    referral_partners_registry,
-    lido_contracts,
-    tx_params
-):
-    easy_track.addEVMScriptFactory(
-        add_referral_partner,
-        create_permission(referral_partners_registry, "addReferralPartner"),
-        tx_params
-    )
-
-    easy_track.addEVMScriptFactory(
-        top_up_referral_partners,
-        create_permission(lido_contracts.aragon.finance, "newImmediatePayment"),
-        tx_params
-    )
-
-    easy_track.addEVMScriptFactory(
-        remove_referral_partner,
-        create_permission(referral_partners_registry, "removeReferralPartner"),
-        tx_params
     )
 
 def transfer_admin_role(deployer, easy_track, new_admin, tx_params):

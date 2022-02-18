@@ -1,5 +1,6 @@
 from typing import NamedTuple, List, Dict
-from utils import lido
+from utils import lido, log
+from utils.config import prompt_bool
 from utils.evm_script import encode_call_script
 
 from brownie import (Contract, EasyTrack)
@@ -52,6 +53,12 @@ def create_voting_on_new_factories(
     description = description[:-1] + '.'
 
     print(description.replace(';', '\n'))
+
+    print("Proceed to create vote? [yes/no]: ")
+
+    if not prompt_bool():
+        log.nb("Aborting")
+        return -1
 
     vote_id, _ = lido.create_voting(
         evm_script=factories_evm_script,

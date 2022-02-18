@@ -8,7 +8,6 @@ from utils.config import (
     get_env,
     get_is_live,
     get_deployer_account,
-    prompt_bool,
     network_name
 )
 
@@ -30,30 +29,34 @@ def main():
 
     easy_track = et_contracts.easy_track
 
+    prog_type = get_env("REWARD_PROGRAMS_TYPE")
+    reward_programs = None
+    if prog_type == "reward_programs":
+        reward_programs = et_contracts.reward_programs
+    elif prog_type == "referral_partners":
+        reward_programs = et_contracts.referral_partners
+    else:
+        raise Exception(f"Unknown REWARD_PROGRAMS_TYPE: {prog_type}")
+
     log.br()
 
     log.nb("Current network", network.show_active(), color_hl=log.color_magenta)
     log.nb("Using deployed addresses for", netname, color_hl=log.color_yellow)
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
+    log.ok("Reward programs type", prog_type)
     log.ok("Aragon Voting", contracts.aragon.voting)
     log.ok("Aragon Finance", contracts.aragon.finance)
 
     log.br()
 
     log.nb("Deployed EasyTrack", easy_track)
-    log.nb("Deployed ReferralPartnersRegistry", et_contracts.referral_partners_registry)
-    log.nb("Deployed AddReferralPartner", et_contracts.add_referral_partner)
-    log.nb("Deployed RemoveReferralPartner", et_contracts.remove_referral_partner)
-    log.nb("Deployed TopUpReferralPartners", et_contracts.top_up_referral_partners)
+    log.nb("Deployed RewardProgramsRegistry", reward_programs.reward_programs_registry)
+    log.nb("Deployed AddRewardProgram", reward_programs.add_reward_program)
+    log.nb("Deployed RemoveRewardProgram", reward_programs.remove_reward_program)
+    log.nb("Deployed TopUpRewardPrograms", reward_programs.top_up_reward_programs)
 
     log.br()
-
-    print("Proceed to create vote? [yes/no]: ")
-
-    if not prompt_bool():
-        log.nb("Aborting")
-        return
 
     tx_params = { "from": deployer }
     if (get_is_live()):
@@ -62,27 +65,37 @@ def main():
 
     log.br()
 
-    factories_to_remove = []
+    factories_to_remove = [
+        FactoryToRemove(
+            factory='0x1fDEdCd6fcFD009b0B1B751aceEAF16dDb228384'
+        ),
+        FactoryToRemove(
+            factory='0x42b608642C6AD8f3b210093ded7dc53fc1001492'
+        ),
+        FactoryToRemove(
+            factory='0xDEbAf563F737Ee0EE7A31DFea478c5034DB3804B'
+        )
+    ]
 
     factories_to_add = [
         FactoryToAdd(
-            factory=et_contracts.add_referral_partner,
+            factory=reward_programs.add_reward_program,
             permissions=create_permission(
-                et_contracts.referral_partners_registry,
-                "addReferralPartner"
+                reward_programs.reward_programs_registry,
+                "addRewardProgram"
             )
         ),
         FactoryToAdd(
-            factory=et_contracts.top_up_referral_partners,
+            factory=reward_programs.top_up_reward_programs,
             permissions=create_permission(
                 contracts.aragon.finance,
                 "newImmediatePayment")
             ),
         FactoryToAdd(
-            factory=et_contracts.remove_referral_partner,
+            factory=reward_programs.remove_reward_program,
             permissions=create_permission(
-                et_contracts.referral_partners_registry,
-                "removeReferralPartner"
+                reward_programs.reward_programs_registry,
+                "removeRewardProgram"
             )
         )
     ]
@@ -95,7 +108,8 @@ def main():
         tx_params=tx_params
     )
 
-    print(f"Vote successfully started! Vote id: {vote_id}")
+    if vote_id >= 0:
+        print(f"Vote successfully started! Vote id: {vote_id}")
 
-    print("Hit <Enter> to quit script")
-    input()
+        print("Hit <Enter> to quit script")
+        input()
