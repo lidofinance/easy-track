@@ -342,11 +342,8 @@ At this moment Easy Track has following EVMScript factories:
 - [IncreaseNodeOperatorStakingLimit](#increasenodeoperatorstakinglimit)
 - [TopUpLegoProgram](#topuplegoprogram)
 - [TopUpRewardPrograms](#topuprewardprograms)
-- [TopUpReferralPartners](#topupreferralpartners)
 - [AddRewardProgram](#addrewardprogram)
-- [AddReferralPartner](#addreferralpartner)
 - [RemoveRewardProgram](#removerewardprogram)
-- [RemoveReferralPartner](#removereferralpartner)
 
 ## IncreaseNodeOperatorStakingLimit
 
@@ -407,26 +404,6 @@ Creates EVMScript to make new immediate payments to list of reward programs. `_e
 
 Decodes `_evmScriptCallData` into tuple `(address[] rewardPrograms, uint256[] amounts)`.
 
-## TopUpReferralPartners
-
-Creates EVMScript to top up balances of referral partners. Transfers allowed only to the restricted list of addresses. To control the whitelist of allowed addresses of referral partners, `TopUpReferralPartners` uses the contract `ReferralPartnersRegistry`, which stores addresses of referral partners. Only `trustedCaller` address can create motions with this EVMScript factory.
-
-### Methods
-
-#### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
-
-Creates EVMScript to make new immediate payments to list of referral partners. `_evmScriptCallData` contains encoded tuple: `(address[] _referralPartners, uint256[] _amounts[])`, where `_referralPartners` - addresses of referral partners to top up, `_amounts` - corresponding amount to transfer. To successfully create EVMScript next requirements must be met:
-
-- `_creator` must be equal to `trustedCaller` address
-- `_referralPartners` and `_amounts` have same length
-- `_referralPartners` and `_amounts` are not empty
-- `_amounts` has no zero values
-- each address in `_referralPartners` listed in `ReferralPartnersRegistry` as valid referral partner
-
-#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address[] rewardPrograms, uint256[] amounts)
-
-Decodes `_evmScriptCallData` into tuple `(address[] referralPartners, uint256[] amounts)`.
-
 ## AddRewardProgram
 
 Creates EVMScript to add new reward program address to `RewardProgramsRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
@@ -444,23 +421,6 @@ Creates EVMScript to add new reward address to `RewardProgramsRegistry`. `_evmSc
 
 Decodes `_evmScriptCallData` into tuple `(address _rewardProgram, string _title)`.
 
-## AddReferralPartner
-
-Creates EVMScript to add new referral partner address to `ReferralPartnersRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
-
-### Methods
-
-#### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
-
-Creates EVMScript to add new referral partner address to `ReferralPartnerRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _referralPartner, string _title)`, where `_referralPartner` - new referral partner address to add, `_title` - title of new referral partner. To successfully create EVMScript next requirements must be met:
-
-- `_creator` must be equal to `trustedCaller` address
-- `_referralPartner` address hasn't been added in `ReferralPartnersRegistry` earlier.
-
-#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_referralPartner, string memory \_title)
-
-Decodes `_evmScriptCallData` into tuple `(address _referralPartner, string _title)`.
-
 ## RemoveRewardProgram
 
 Creates EVMScript to remove reward program from `RewardPrgoramsRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
@@ -477,25 +437,6 @@ Creates EVMScript to remove reward program from `RewardProgramsRegistry`. `_evmS
 #### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_rewardProgram)
 
 Decodes `_evmScriptCallData` into tuple `(address _rewardProgram)`.
-
-## RemoveReferralPartner
-
-Creates EVMScript to remove referral partner from `ReferralPartnersRegistry`. Only `trustedCaller` address can create motions with this EVMScript factory.
-
-### Methods
-
-#### function createEVMScript(address \_creator, bytes \_evmScriptCallData) external view returns (bytes)
-
-Creates EVMScript to remove referral partner from `ReferralPartnersRegistry`. `_evmScriptCallData` contains encoded tuple: `(address _referralPartner)`, where `_referralPartner` - referral partner to remove. To successfully create EVMScript next requirements must be met:
-
-- `_creator` must be equal to `trustedCaller` address
-- `_referralPartner` address must be listed in `ReferralPartnersRegistry`.
-
-#### function decodeEVMScriptCallData(bytes \_evmScriptCallData) external returns (address \_referralPartner)
-
-Decodes `_evmScriptCallData` into tuple `(address _referralPartner)`.
-
-# Additional Contracts
 
 ## RewardProgramsRegistry
 
@@ -530,40 +471,6 @@ Shows if address is whitelisted in RewardProgramsRegistry.
 #### getRewardPrograms() external view returns (address[])
 
 Returns list of whitelisted reward programs
-
-## ReferralPartnersRegistry
-
-Stores list of referral partners' addresses. Inherits from OpenZeppelin's `AccessControl` contract. TopUpReferralPartners EVMScript factory allows transfers only to addresses listed in ReferralPartnersRegistry.
-
-### Methods
-
-#### addReferralPartner(address \_referralPartner, string memory \_title) external
-
-Adds referral partner's address to ReferralPartnersRegistry, if it hasn't been added yet, throws `"REFERRAL_PARTNER_ALREADY_ADDED"` in other cases. Can be called only by address granted with `ADD_REFERRAL_PARTNER_ROLE`.
-
-Events:
-
-```solidity=
-event ReferralPartnerAdded(address indexed _referralPartner, string _title)
-```
-
-#### removeReferralPartner(address \_referralPartner) external
-
-Removes referral partner's address from ReferralPartnersRegistry. Throws `"REFERRAL_PARTNER_NOT_FOUND"` if referral partner misses from the array. Might be called only by EVMScriptExecutor contract. Can be called only by address granted with `REMOVE_REFERRAL_PARTNER_ROLE`.
-
-Events:
-
-```solidity=
-event ReferralPartnerRemoved(address indexed _referralPartner)
-```
-
-#### isReferralPartner(address \_referralPartner) external view (returns bool)
-
-Shows if address is whitelisted in ReferralPartnersRegistry.
-
-#### getReferralPartners() external view returns (address[])
-
-Returns list of whitelisted referral partners
 
 ## TrustedCaller
 

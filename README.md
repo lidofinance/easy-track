@@ -12,7 +12,7 @@ Easy Track motion is a lightweight voting considered to have passed if the minim
 
 ## Use cases for Easy Track motions
 
-There are three types of votings run periodically by the Lido DAO that are proposed to be wrapped into the new Easy Track motions.
+There are four types of votings run periodically by the Lido DAO that are proposed to be wrapped into the new Easy Track motions.
 
 - Node Operators increasing staking limits
 - Funds being allocated into reward programs
