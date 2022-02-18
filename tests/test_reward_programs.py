@@ -5,10 +5,7 @@ from brownie.network import chain
 from brownie import (
     EasyTrack,
     EVMScriptExecutor,
-    accounts,
-    ZERO_ADDRESS,
-    reverts,
-    history,
+    accounts
 )
 
 from eth_abi import encode_single
@@ -26,8 +23,7 @@ def encode_calldata(signature, values):
 def create_permission(contract, method):
     return contract.address + getattr(contract, method).signature[2:]
 
-@pytest.mark.skip_coverage
-def test_referral_partners_easy_track(
+def test_reward_programs_easy_track(
     stranger,
     agent,
     voting,
@@ -35,14 +31,14 @@ def test_referral_partners_easy_track(
     ldo,
     calls_script,
     acl,
-    ReferralPartnersRegistry,
-    TopUpReferralPartners,
-    AddReferralPartner,
-    RemoveReferralPartner,
+    RewardProgramsRegistry,
+    TopUpRewardPrograms,
+    AddRewardProgram,
+    RemoveRewardProgram,
 ):
     deployer = accounts[0]
-    referral_partner = accounts[5]
-    referral_partner_title = "Our Referral Partner"
+    reward_program = accounts[5]
+    reward_program_title = "Our Reward Program"
     trusted_address = accounts[7]
 
     # deploy easy track
@@ -63,62 +59,60 @@ def test_referral_partners_easy_track(
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
 
-    # deploy ReferralPartnersRegistry
-    referral_partners_registry = deployer.deploy(
-        ReferralPartnersRegistry,
+    # deploy RewardProgramsRegistry
+    reward_programs_registry = deployer.deploy(
+        RewardProgramsRegistry,
         voting,
         [voting, evm_script_executor],
         [voting, evm_script_executor],
     )
 
-    # deploy TopUpReferralPartners EVM script factory
-    top_up_referral_partners = deployer.deploy(
-        TopUpReferralPartners,
+    # deploy TopUpRewardPrograms EVM script factory
+    top_up_reward_programs = deployer.deploy(
+        TopUpRewardPrograms,
         trusted_address,
-        referral_partners_registry,
+        reward_programs_registry,
         finance,
         ldo,
     )
 
-    # add TopUpReferralPartner EVM script factory to easy track
+    # add TopUpRewardPrograms EVM script factory to easy track
     new_immediate_payment_permission = create_permission(
         finance,
         "newImmediatePayment"
     )
 
     easy_track.addEVMScriptFactory(
-        top_up_referral_partners, new_immediate_payment_permission, {"from": deployer}
+        top_up_reward_programs, new_immediate_payment_permission, {"from": deployer}
     )
 
-    # deploy AddReferralPartner EVM script factory
-    add_referral_partner = deployer.deploy(
-        AddReferralPartner, trusted_address, referral_partners_registry
+    # deploy AddRewardProgram EVM script factory
+    add_reward_program = deployer.deploy(
+        AddRewardProgram, trusted_address, reward_programs_registry
     )
 
-    # add AddReferralPartner EVM script factory to easy track
-    add_referral_partner_permission = create_permission(
-        referral_partners_registry,
-        "addReferralPartner"
+    # add AddRewardProgram EVM script factory to easy track
+    add_reward_program_permission = create_permission(
+        reward_programs_registry,
+        "addRewardProgram"
     )
-
-    print(add_referral_partner_permission)
 
     easy_track.addEVMScriptFactory(
-        add_referral_partner, add_referral_partner_permission, {"from": deployer}
+        add_reward_program, add_reward_program_permission, {"from": deployer}
     )
 
-    # deploy RemoveReferralPartner EVM script factory
-    remove_referral_partner = deployer.deploy(
-        RemoveReferralPartner, trusted_address, referral_partners_registry
+    # deploy RemoveRewardProgram EVM script factory
+    remove_reward_program = deployer.deploy(
+        RemoveRewardProgram, trusted_address, reward_programs_registry
     )
 
-    # add RemoveReferralPartner EVM script factory to easy track
-    remove_referral_partner_permission = create_permission(
-        referral_partners_registry,
-        "removeReferralPartner"
+    # add RemoveRewardProgram EVM script factory to easy track
+    remove_reward_program_permission = create_permission(
+        reward_programs_registry,
+        "removeRewardProgram"
     )
     easy_track.addEVMScriptFactory(
-        remove_referral_partner, remove_referral_partner_permission, {"from": deployer}
+        remove_reward_program, remove_reward_program_permission, {"from": deployer}
     )
 
     # transfer admin role to voting
@@ -152,21 +146,21 @@ def test_referral_partners_easy_track(
     # execute voting to add permissions to EVM script executor to create payments
     execute_voting(add_create_payments_permissions_voting_id, netname)
 
-    add_ref_partner_calldata = encode_calldata(
+    add_reward_program_calldata = encode_calldata(
             "(address,string)", [
-                referral_partner.address,
-                referral_partner_title
+                reward_program.address,
+                reward_program_title
             ]
     )
-    # create new motion to add referral partner
-    expected_evm_script = add_referral_partner.createEVMScript(
+    # create new motion to add a reward program
+    expected_evm_script = add_reward_program.createEVMScript(
         trusted_address,
-        add_ref_partner_calldata
+        add_reward_program_calldata
     )
 
     tx = easy_track.createMotion(
-        add_referral_partner,
-        add_ref_partner_calldata,
+        add_reward_program,
+        add_reward_program_calldata,
         {"from": trusted_address}
     )
 
@@ -182,14 +176,14 @@ def test_referral_partners_easy_track(
     )
     assert len(easy_track.getMotions()) == 0
 
-    referral_partners = referral_partners_registry.getReferralPartners()
-    assert len(referral_partners) == 1
-    assert referral_partners[0] == referral_partner
+    reward_programs = reward_programs_registry.getRewardPrograms()
+    assert len(reward_programs) == 1
+    assert reward_programs[0] == reward_program
 
     # create new motion to top up reward program
     tx = easy_track.createMotion(
-        top_up_referral_partners,
-        encode_single("(address[],uint256[])", [[referral_partner.address], [int(5e18)]]),
+        top_up_reward_programs,
+        encode_single("(address[],uint256[])", [[reward_program.address], [int(5e18)]]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -197,7 +191,7 @@ def test_referral_partners_easy_track(
 
     chain.sleep(48 * 60 * 60 + 100)
 
-    assert ldo.balanceOf(referral_partner) == 0
+    assert ldo.balanceOf(reward_program) == 0
 
     easy_track.enactMotion(
         motions[0][0],
@@ -206,12 +200,12 @@ def test_referral_partners_easy_track(
     )
 
     assert len(easy_track.getMotions()) == 0
-    assert ldo.balanceOf(referral_partner) == 5e18
+    assert ldo.balanceOf(reward_program) == 5e18
 
-    # create new motion to remove referral partner
+    # create new motion to remove a reward program
     tx = easy_track.createMotion(
-        remove_referral_partner,
-        encode_single("(address)", [referral_partner.address]),
+        remove_reward_program,
+        encode_single("(address)", [reward_program.address]),
         {"from": trusted_address},
     )
 
@@ -226,4 +220,4 @@ def test_referral_partners_easy_track(
         {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
-    assert len(referral_partners_registry.getReferralPartners()) == 0
+    assert len(reward_programs_registry.getRewardPrograms()) == 0
