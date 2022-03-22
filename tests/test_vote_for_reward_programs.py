@@ -15,7 +15,7 @@ factories_to_remove_with_vote = [
     # Intentionally left empty
 ]
 factories_to_add_with_vote = [
-    #TODO: fill the needed addresses here
+    # TODO: fill the needed addresses here
 ]
 
 ldo_vote_executors_for_tests = {
@@ -45,8 +45,8 @@ def test_vote_for_reward_programs(
     for f in factories_to_remove_with_vote:
         assert f in factories_before
 
-    #for f in factories_to_add_with_vote:
-    #    assert f not in factories_before
+    for f in factories_to_add_with_vote:
+        assert f not in factories_before
 
     ##
     ## START VOTE
@@ -63,8 +63,8 @@ def test_vote_for_reward_programs(
 
     factories_after = easy_track.getEVMScriptFactories()
 
-    #for f in factories_to_remove_with_vote:
-    #    assert f not in factories_after
+    for f in factories_to_remove_with_vote:
+        assert f not in factories_after
 
     for f in factories_to_add_with_vote:
         assert f in factories_after

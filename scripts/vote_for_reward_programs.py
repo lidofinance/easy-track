@@ -1,9 +1,6 @@
-import time
-
-from typing import (Dict, Tuple, Optional)
+from typing import Optional
 
 from brownie import chain, network
-from brownie.network.transaction import TransactionReceipt
 
 from utils.vote_for_new_factories import (
     FactoryToAdd,
@@ -71,6 +68,7 @@ def start_vote(
     log.br()
 
     factories_to_remove = [
+        # Intentionally left empty
         # Use if need to replace some factories
         # FactoryToRemove(factory=...)
     ]
