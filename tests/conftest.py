@@ -1,5 +1,9 @@
+import os
+from typing import Optional
+
 import pytest
 import brownie
+from brownie import chain
 
 import constants
 from utils.lido import contracts
@@ -280,3 +284,42 @@ def fund_with_ldo(ldo, agent):
         ldo.transfer(account, amount, {"from": agent})
 
     return method
+
+class Helpers:
+    @staticmethod
+    def execute_vote(accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup='0.1 ether'):
+        if dao_voting.getVote(vote_id)[0]:
+            for holder_addr in ldo_vote_executors_for_tests:
+                print('voting from acct:', holder_addr)
+                accounts[0].transfer(holder_addr, topup)
+                account = accounts.at(holder_addr, force=True)
+                dao_voting.vote(vote_id, True, False, {'from': account})
+
+        # wait for the vote to end
+        chain.sleep(3 * 60 * 60 * 24)
+        chain.mine()
+
+        assert dao_voting.canExecute(vote_id)
+        tx = dao_voting.executeVote(vote_id, {'from': accounts[0]})
+
+        print(f'vote #{vote_id} executed')
+        return tx
+
+
+@pytest.fixture(scope='module')
+def helpers():
+    return Helpers
+
+
+@pytest.fixture(scope='module')
+def vote_id_from_env() -> Optional[int]:
+    _env_name = "OMNIBUS_VOTE_ID"
+    if os.getenv(_env_name):
+        try:
+            vote_id = int(os.getenv(_env_name))
+            print(f'OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}')
+            return vote_id
+        except:
+            pass
+
+    return None
