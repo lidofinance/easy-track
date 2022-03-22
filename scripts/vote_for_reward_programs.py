@@ -1,7 +1,14 @@
+import time
+
+from typing import (Dict, Tuple, Optional)
+
 from brownie import chain, network
+from brownie.network.transaction import TransactionReceipt
 
 from utils.vote_for_new_factories import (
-    FactoryToAdd, FactoryToRemove, create_voting_on_new_factories
+    FactoryToAdd,
+    FactoryToRemove,
+    create_voting_on_new_factories
 )
 
 from utils.config import (
@@ -20,12 +27,17 @@ from utils import (
 def create_permission(contract, method):
     return contract.address + getattr(contract, method).signature[2:]
 
-def main():
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
-
+def start_vote(
+    netname: str,
+    deployer: Optional[str]
+) -> int:
     contracts = lido.contracts(network=netname)
     et_contracts = deployed_easy_track.contracts(network=netname)
-    deployer = get_deployer_account(get_is_live(), network=netname)
+
+    tx_params = { "from": deployer }
+    if (get_is_live()):
+        tx_params["priority_fee"] = "2 gwei"
+        tx_params["max_fee"] = "300 gwei"
 
     easy_track = et_contracts.easy_track
 
@@ -58,23 +70,9 @@ def main():
 
     log.br()
 
-    tx_params = { "from": deployer }
-    if (get_is_live()):
-        tx_params["priority_fee"] = "2 gwei"
-        tx_params["max_fee"] = "300 gwei"
-
-    log.br()
-
     factories_to_remove = [
-        FactoryToRemove(
-            factory='0x1fDEdCd6fcFD009b0B1B751aceEAF16dDb228384'
-        ),
-        FactoryToRemove(
-            factory='0x42b608642C6AD8f3b210093ded7dc53fc1001492'
-        ),
-        FactoryToRemove(
-            factory='0xDEbAf563F737Ee0EE7A31DFea478c5034DB3804B'
-        )
+        # Use if need to replace some factories
+        # FactoryToRemove(factory=...)
     ]
 
     factories_to_add = [
@@ -108,8 +106,15 @@ def main():
         tx_params=tx_params
     )
 
-    if vote_id >= 0:
-        print(f"Vote successfully started! Vote id: {vote_id}")
+    return vote_id
 
-        print("Hit <Enter> to quit script")
-        input()
+def main():
+    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
+    deployer = get_deployer_account(get_is_live(), network=netname)
+
+    vote_id = start_vote(netname, deployer)
+
+    vote_id >= 0 and print(f'Vote successfully started! Vote id: {vote_id}.')
+
+    print("Hit <Enter> to quit script")
+    input()
