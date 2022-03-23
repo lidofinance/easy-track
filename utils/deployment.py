@@ -6,7 +6,7 @@ from brownie import (
     RemoveRewardProgram,
     TopUpRewardPrograms,
     RewardProgramsRegistry,
-    IncreaseNodeOperatorStakingLimit,
+    IncreaseNodeOperatorStakingLimit
 )
 
 
@@ -44,7 +44,6 @@ def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
         voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
     )
 
-
 def deploy_increase_node_operator_staking_limit(node_operators_registry, tx_params):
     return IncreaseNodeOperatorStakingLimit.deploy(node_operators_registry, tx_params)
 
@@ -64,14 +63,12 @@ def deploy_add_reward_program(
         reward_programs_multisig, reward_programs_registry, tx_params
     )
 
-
 def deploy_remove_reward_program(
     reward_programs_registry, reward_programs_multisig, tx_params
 ):
     return RemoveRewardProgram.deploy(
         reward_programs_multisig, reward_programs_registry, tx_params
     )
-
 
 def deploy_top_up_reward_programs(
     finance,
@@ -86,12 +83,6 @@ def deploy_top_up_reward_programs(
         finance,
         governance_token,
         tx_params,
-    )
-
-
-def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
-    return RewardProgramsRegistry.deploy(
-        voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
     )
 
 
@@ -125,6 +116,25 @@ def add_evm_script_factories(
         create_permission(lido_contracts.aragon.finance, "newImmediatePayment"),
         tx_params,
     )
+    add_evm_script_reward_program_factories(
+        easy_track,
+        add_reward_program,
+        remove_reward_program,
+        top_up_reward_programs,
+        reward_programs_registry,
+        lido_contracts,
+        tx_params
+    )
+
+def add_evm_script_reward_program_factories(
+    easy_track,
+    add_reward_program,
+    remove_reward_program,
+    top_up_reward_programs,
+    reward_programs_registry,
+    lido_contracts,
+    tx_params
+):
     easy_track.addEVMScriptFactory(
         top_up_reward_programs,
         create_permission(lido_contracts.aragon.finance, "newImmediatePayment"),
@@ -140,7 +150,6 @@ def add_evm_script_factories(
         create_permission(reward_programs_registry, "removeRewardProgram"),
         tx_params,
     )
-
 
 def transfer_admin_role(deployer, easy_track, new_admin, tx_params):
     easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), new_admin, tx_params)

@@ -438,8 +438,6 @@ Creates EVMScript to remove reward program from `RewardProgramsRegistry`. `_evmS
 
 Decodes `_evmScriptCallData` into tuple `(address _rewardProgram)`.
 
-# Additional Contracts
-
 ## RewardProgramsRegistry
 
 Stores list of addresses with reward programs. Inherits from OpenZeppelin's `AccessControl` contract. TopUpRewardsProgram EVMScript factory allows transfers only to addresses listed in RewardProgramsRegistry.
