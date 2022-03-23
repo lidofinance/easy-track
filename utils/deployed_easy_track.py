@@ -25,10 +25,10 @@ def addresses(network="mainnet"):
                 reward_programs_registry="0x3129c041b372ee93a5a8756dc4ec6f154d85bc9a"
             ),
             referral_partners=RewardPrograms(
-                add_reward_program=None,
-                remove_reward_program=None,
-                top_up_reward_programs=None,
-                reward_programs_registry=None
+                add_reward_program="0x929547490Ceb6AeEdD7d72F1Ab8957c0210b6E51",
+                remove_reward_program="0xE9eb838fb3A288bF59E9275Ccd7e124fDff88a9C",
+                top_up_reward_programs="0x54058ee0E0c87Ad813C002262cD75B98A7F59218",
+                reward_programs_registry="0xfCaD241D9D2A2766979A2de208E8210eDf7b7D4F"
             )
         )
     if network == "goerli":

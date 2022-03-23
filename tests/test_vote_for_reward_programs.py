@@ -14,8 +14,11 @@ from utils.config import (
 factories_to_remove_with_vote = [
     # Intentionally left empty
 ]
+
 factories_to_add_with_vote = [
-    # TODO: fill the needed addresses here
+    '0x929547490Ceb6AeEdD7d72F1Ab8957c0210b6E51',
+    '0xE9eb838fb3A288bF59E9275Ccd7e124fDff88a9C',
+    '0x54058ee0E0c87Ad813C002262cD75B98A7F59218'
 ]
 
 ldo_vote_executors_for_tests = {
