@@ -85,7 +85,7 @@ def main():
 
     log.br()
 
-    if (get_is_live()):
+    if (get_is_live() and get_env("FORCE_VERIFY", False)):
         log.ok("Trying to verify contracts...")
         RewardProgramsRegistry.publish_source(reward_programs_registry)
         AddRewardProgram.publish_source(add_reward_program)
