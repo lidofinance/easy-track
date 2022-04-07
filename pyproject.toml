@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "easy-track"
+version = "1.0.0"
+description = ""
+authors = ["Bogdan Kovtun <psirex48@gmail.com>"]
+license = "GPL-3.0"
+readme = "README.md"
+packages = []
+
+[tool.poetry.dependencies]
+python = "3.9.10"
+eth-abi = "^2.1.1"
+eth-brownie = "^1.18.1"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

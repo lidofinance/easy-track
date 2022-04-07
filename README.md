@@ -61,9 +61,8 @@ To use the tools that this project provides, please pull the repository from Git
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
 npm install
-python3 -m venv venv
-source venv/bin/activate
-pip3 install -r requirements-dev.txt
+poetry install
+poetry shell
 ```
 
 Compile the Smart Contracts:

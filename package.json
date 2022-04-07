@@ -1,9 +1,9 @@
 {
-  "name": "easytrack",
+  "name": "easy-track",
   "version": "1.0.0",
-  "repository": "git@github.com:lidofinance/easytrack.git",
+  "repository": "git@github.com:lidofinance/easy-track.git",
   "author": "Bogdan Kovtun <psirex48@gmail.com>",
-  "license": "MIT",
+  "license": "GPL-3.0",
   "dependencies": {
     "@openzeppelin/contracts": "^4.3.2",
     "ethlint": "^1.2.5",
