@@ -19,6 +19,7 @@ from utils import lido, constants, log, mainnet_fork, evm_script
 from eth_abi import encode_single
 from scripts.grant_executor_permissions import grant_executor_permissions
 from brownie.network.account import PublicKeyAccount
+from utils.test_helpers import is_almost_equal
 
 
 def main():
@@ -792,9 +793,9 @@ def simulate_unpause_by_voting(easy_track, pause_multisig, lido_contracts):
         [(easy_track.address, easy_track.unpause.encode_input())]
     )
     voting_id, _ = lido.create_voting(
-        unpause_evm_scirpt,
-        "Unpause EasyTracks",
-        {"from": lido_contracts.aragon.agent},
+        evm_script=unpause_evm_scirpt,
+        description="Unpause EasyTracks",
+        tx_params={"from": lido_contracts.aragon.agent},
     )
     log.ok("  Voting was started. Voting id", voting_id)
     lido.execute_voting(voting_id)
@@ -819,9 +820,9 @@ def add_new_node_operator(lido_contracts):
         [(node_operators_registry.address, add_node_operator_calldata)]
     )
     voting_id, _ = lido.create_voting(
-        add_node_operator_evm_script,
-        "Add node operator to registry",
-        {"from": lido_contracts.aragon.agent},
+        evm_script=add_node_operator_evm_script,
+        description="Add node operator to registry",
+        tx_params={"from": lido_contracts.aragon.agent},
     )
     log.ok("  Voting was started. Voting id", voting_id)
     # execute vote to add test node operator
@@ -934,10 +935,6 @@ def assert_motion(
         motion[8],
         web3.keccak(hexstr=str(evm_script)).hex(),
     )
-
-
-def is_almost_equal(actual, expected, epsilon=1):
-    return abs(actual - expected) <= epsilon
 
 
 def assert_equals(desc, actual, expected):

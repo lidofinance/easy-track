@@ -17,3 +17,7 @@ def access_controll_revert_message(sender, role=DEFAULT_ADMIN_ROLE):
 def assert_equals(desc, actual, expected):
     assert actual == expected
     log.ok(desc, actual)
+
+
+def is_almost_equal(actual, expected, epsilon=1):
+    return abs(actual - expected) <= epsilon
