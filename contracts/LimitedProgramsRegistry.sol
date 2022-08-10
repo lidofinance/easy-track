@@ -51,8 +51,9 @@ contract LimitedProgramsRegistry is AccessControl, LimitsChecker {
     constructor(
         address _admin,
         address[] memory _addRewardProgramRoleHolders,
-        address[] memory _removeRewardProgramRoleHolders
-    ) {
+        address[] memory _removeRewardProgramRoleHolders,
+        EasyTrack _easy_track
+    ) LimitsChecker(_easy_track) {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         for (uint256 i = 0; i < _addRewardProgramRoleHolders.length; i++) {
             _setupRole(ADD_REWARD_PROGRAM_ROLE, _addRewardProgramRoleHolders[i]);
