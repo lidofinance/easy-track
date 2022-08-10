@@ -151,9 +151,11 @@ def increase_node_operator_staking_limit(
 def add_reward_program(owner, reward_programs_registry, AddRewardProgram):
     return owner.deploy(AddRewardProgram, owner, reward_programs_registry)
 
+
 @pytest.fixture(scope="module")
 def remove_reward_program(owner, reward_programs_registry, RemoveRewardProgram):
     return owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
+
 
 @pytest.fixture(scope="module")
 def top_up_reward_programs(
@@ -162,6 +164,7 @@ def top_up_reward_programs(
     return owner.deploy(
         TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
     )
+
 
 @pytest.fixture(scope="module")
 def top_up_lego_program(owner, finance, lego_program, TopUpLegoProgram):
@@ -201,6 +204,11 @@ def evm_script_factory_stub(owner, EVMScriptFactoryStub):
 @pytest.fixture(scope="module")
 def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     return owner.deploy(EVMScriptExecutorStub)
+
+
+@pytest.fixture(scope="module")
+def limits_checker_wrapper(owner, easy_track, LimitsCheckerWrapper):
+    return owner.deploy(LimitsCheckerWrapper, easy_track)
 
 
 ##########
@@ -285,39 +293,42 @@ def fund_with_ldo(ldo, agent):
 
     return method
 
+
 class Helpers:
     @staticmethod
-    def execute_vote(accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup='0.1 ether'):
+    def execute_vote(
+        accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup="0.1 ether"
+    ):
         if dao_voting.getVote(vote_id)[0]:
             for holder_addr in ldo_vote_executors_for_tests:
-                print('voting from acct:', holder_addr)
+                print("voting from acct:", holder_addr)
                 accounts[0].transfer(holder_addr, topup)
                 account = accounts.at(holder_addr, force=True)
-                dao_voting.vote(vote_id, True, False, {'from': account})
+                dao_voting.vote(vote_id, True, False, {"from": account})
 
         # wait for the vote to end
         chain.sleep(3 * 60 * 60 * 24)
         chain.mine()
 
         assert dao_voting.canExecute(vote_id)
-        tx = dao_voting.executeVote(vote_id, {'from': accounts[0]})
+        tx = dao_voting.executeVote(vote_id, {"from": accounts[0]})
 
-        print(f'vote #{vote_id} executed')
+        print(f"vote #{vote_id} executed")
         return tx
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def helpers():
     return Helpers
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def vote_id_from_env() -> Optional[int]:
     _env_name = "OMNIBUS_VOTE_ID"
     if os.getenv(_env_name):
         try:
             vote_id = int(os.getenv(_env_name))
-            print(f'OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}')
+            print(f"OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}")
             return vote_id
         except:
             pass
