@@ -8,7 +8,6 @@ import "../LimitedProgramsRegistry.sol";
 import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../EasyTrack.sol";
 
 /// @notice Creates EVMScript to check limits and top up balances
 contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
@@ -31,9 +30,6 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     /// @notice Address of RewardProgramsRegistry
     LimitedProgramsRegistry public immutable limitedProgramsRegistry;
 
-    /// @notice Address of EasyTrack
-    EasyTrack public immutable easyTrack;
-
     // -------------
     // CONSTRUCTOR
     // -------------
@@ -41,12 +37,10 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     constructor(
         address _trustedCaller,
         address _limitedProgramsRegistry,
-        address _finance,
-        address _easyTrack
+        address _finance
     ) TrustedCaller(_trustedCaller) {
         finance = IFinance(_finance);
         limitedProgramsRegistry = LimitedProgramsRegistry(_limitedProgramsRegistry);
-        easyTrack = EasyTrack(_easyTrack);
     }
 
     // -------------
@@ -67,8 +61,12 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (uint256 startDate, address[] memory rewardTokens, address[] memory rewardPrograms, uint256[] memory amounts) =
-            _decodeEVMScriptCallData(_evmScriptCallData);
+        (
+            uint256 startDate,
+            address[] memory rewardTokens,
+            address[] memory rewardPrograms,
+            uint256[] memory amounts
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
         _validateEVMScriptCallData(rewardTokens, rewardPrograms, amounts);
 
         bytes[] memory evmScriptsCalldata = new bytes[](rewardPrograms.length);
@@ -97,7 +95,8 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
             evmScriptsCalldata
         );
 
-        return EVMScriptCreator.concatScripts(_evmScript_updateLimit, _evmScript_newImmediatePayment);
+        return
+            EVMScriptCreator.concatScripts(_evmScript_updateLimit, _evmScript_newImmediatePayment);
     }
 
     /// @notice Decodes call data used by createEVMScript method
@@ -112,7 +111,12 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (uint256 _startDate, address[] memory _rewardTokens, address[] memory _rewardPrograms, uint256[] memory _amounts)
+        returns (
+            uint256 _startDate,
+            address[] memory _rewardTokens,
+            address[] memory _rewardPrograms,
+            uint256[] memory _amounts
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -121,10 +125,11 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _validateEVMScriptCallData(address[] memory _rewardTokens, address[] memory _rewardPrograms, uint256[] memory _amounts)
-        private
-        view
-    {
+    function _validateEVMScriptCallData(
+        address[] memory _rewardTokens,
+        address[] memory _rewardPrograms,
+        uint256[] memory _amounts
+    ) private view {
         require(_rewardPrograms.length == _rewardTokens.length, ERROR_LENGTH_MISMATCH);
         require(_rewardTokens.length == _amounts.length, ERROR_LENGTH_MISMATCH);
         require(_amounts.length == _rewardPrograms.length, ERROR_LENGTH_MISMATCH);
@@ -141,28 +146,24 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (uint256 _startDate, address[] memory _rewardTokens, address[] memory _rewardPrograms, uint256[] memory _amounts)
+        returns (
+            uint256 _startDate,
+            address[] memory _rewardTokens,
+            address[] memory _rewardPrograms,
+            uint256[] memory _amounts
+        )
     {
         return abi.decode(_evmScriptCallData, (uint256, address[], address[], uint256[]));
     }
 
-    function _checkLimits(uint256 _sum, uint256 _startDate)
-        private
-        view
-    {
+    function _checkLimits(uint256 _sum, uint256 _startDate) private view {
         require(
-                limitedProgramsRegistry.isUnderLimitInPeriod(_sum, _startDate),
-                ERROR_SUM_EXCEEDS_LIMIT
+            limitedProgramsRegistry.isUnderLimitInPeriod(_sum, _startDate),
+            ERROR_SUM_EXCEEDS_LIMIT
         );
     }
 
-    function _updateSpentInPeriod(uint256 _paymentSum, uint256 _startDate)
-        external
-    {
-        uint256 motionDuration = easyTrack.motionDuration();
-        limitedProgramsRegistry.updateSpentInPeriod(_paymentSum, _startDate, motionDuration);
+    function _updateSpentInPeriod(uint256 _paymentSum, uint256 _startDate) external {
+        limitedProgramsRegistry.updateSpentInPeriod(_paymentSum, _startDate);
     }
-
-
-
 }

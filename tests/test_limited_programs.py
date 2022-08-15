@@ -65,6 +65,7 @@ def test_limited_programs_easy_track(
         voting,
         [voting, evm_script_executor],
         [voting, evm_script_executor],
+        easy_track
     )
 
     # deploy TopUpLimitedPrograms EVM script factory
@@ -72,8 +73,8 @@ def test_limited_programs_easy_track(
         TopUpLimitedPrograms,
         trusted_address,
         limited_programs_registry,
-        finance,
-        easy_track
+        finance#,
+        #easy_track
     )
 
 
