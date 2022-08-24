@@ -73,8 +73,7 @@ def test_limited_programs_easy_track(
         TopUpLimitedPrograms,
         trusted_address,
         limited_programs_registry,
-        finance#,
-        #easy_track
+        finance
     )
 
 
@@ -86,7 +85,7 @@ def test_limited_programs_easy_track(
 
     update_limit_permission = create_permission(
         top_up_limited_programs,
-        "_updateSpentInPeriod"
+        "_checkAndUpdateLimits"
     )
 
     permissions = new_immediate_payment_permission  + update_limit_permission[2:]
@@ -208,19 +207,21 @@ def test_limited_programs_easy_track(
     #set limit parameters
     limit = 20e18
     limited_programs_registry.setLimit(limit)
-    period1Month = 12 #month
-    beginningOfThePeriod = Jan1
-    assert limited_programs_registry.currentBudgetBalance(beginningOfThePeriod) == limit
+    period1Month = 1 #month
+    assert limited_programs_registry.currentBudgetBalance() == limit
 
     limited_programs_registry.setPeriodDurationMonth(period1Month)
     assert limited_programs_registry.getPeriodDurationMonth() == period1Month
 
+    periodEnd = Aug1
+    limited_programs_registry.setPeriodEnd(periodEnd)
+    assert limited_programs_registry.getPeriodEnd() == Aug1
+
     spent =  5e18 + 7e18
 
     # create new motion to top up reward program
-    _evmScriptCallData1 = encode_single("(uint256,address[],address[],uint256[])",
-            [Now,
-            [addresses().ldo, addresses().ldo],
+    _evmScriptCallData1 = encode_single("(address[],address[],uint256[])",
+            [[addresses().ldo, addresses().ldo],
             [reward_program.address,reward_program.address],
             [int(5e18), int(7e18)]])
 
@@ -234,9 +235,8 @@ def test_limited_programs_easy_track(
 
     chain.sleep(60)
 
-    _evmScriptCallData2 = encode_single("(uint256,address[],address[],uint256[])",
-            [Now+60,
-            [addresses().ldo, addresses().ldo],
+    _evmScriptCallData2 = encode_single("(address[],address[],uint256[])",
+            [[addresses().ldo, addresses().ldo],
             [reward_program.address,reward_program.address],
             [int(5e18), int(7e18)]])
 
@@ -250,7 +250,7 @@ def test_limited_programs_easy_track(
 
     chain.sleep(48 * 60 * 60 + 1)
 
-    assert limited_programs_registry.currentBudgetBalance(beginningOfThePeriod) == limit
+    assert limited_programs_registry.currentBudgetBalance() == limit
 
     assert ldo.balanceOf(reward_program) == 0
 
@@ -260,7 +260,7 @@ def test_limited_programs_easy_track(
         {"from": stranger},
     )
 
-    assert limited_programs_registry.currentBudgetBalance(beginningOfThePeriod) == limit - spent
+    assert limited_programs_registry.currentBudgetBalance() == limit - spent
 
     assert len(easy_track.getMotions()) == 1
     assert ldo.balanceOf(reward_program) == spent
@@ -276,7 +276,7 @@ def test_limited_programs_easy_track(
             {"from": stranger},
         )
 
-    assert limited_programs_registry.currentBudgetBalance(beginningOfThePeriod) == limit - spent
+    assert limited_programs_registry.currentBudgetBalance() == limit - spent
     assert len(easy_track.getMotions()) == 1
     assert ldo.balanceOf(reward_program) == spent
 
@@ -286,11 +286,15 @@ def test_limited_programs_easy_track(
         {"from": trusted_address}
     )
 
-    assert limited_programs_registry.currentBudgetBalance(beginningOfThePeriod) == limit - spent
+    assert limited_programs_registry.currentBudgetBalance() == limit - spent
     assert len(easy_track.getMotions()) == 0
     assert ldo.balanceOf(reward_program) == spent
 
+    assert limited_programs_registry.getPeriodEnd() == Sep1 - 1
+
+
 '''
+
     # create new motion to remove a reward program
     tx = easy_track.createMotion(
         remove_reward_program,

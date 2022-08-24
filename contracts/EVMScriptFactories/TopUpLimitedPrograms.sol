@@ -49,8 +49,7 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to top up balances of reward programs
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (uint256 _startDate, address[] _rewardTokens, address[] _rewardPrograms, uint256[] _amounts) where
-    /// _startDate - motion start date
+    /// @param _evmScriptCallData Encoded tuple: (address[] _rewardTokens, address[] _rewardPrograms, uint256[] _amounts) where
     /// _rewardTokens - addresses of ERC20 tokens (zero address for ETH) to transfer
     /// _rewardPrograms - addresses of reward programs to top up
     /// _amounts - corresponding amount of tokens to transfer
@@ -62,7 +61,6 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (
-            uint256 startDate,
             address[] memory rewardTokens,
             address[] memory rewardPrograms,
             uint256[] memory amounts
@@ -81,12 +79,12 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
             sum += amounts[i];
         }
 
-        _checkLimits(sum, startDate);
+        _checkLimits(sum);
 
-        bytes memory _evmScript_updateLimit = EVMScriptCreator.createEVMScript(
+        bytes memory _evmScript_checkAndUpdateLimits = EVMScriptCreator.createEVMScript(
             address(this),
-            this._updateSpentInPeriod.selector,
-            abi.encode(sum, startDate)
+            this._checkAndUpdateLimits.selector,
+            abi.encode(sum)
         );
 
         bytes memory _evmScript_newImmediatePayment = EVMScriptCreator.createEVMScript(
@@ -96,7 +94,10 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         );
 
         return
-            EVMScriptCreator.concatScripts(_evmScript_updateLimit, _evmScript_newImmediatePayment);
+            EVMScriptCreator.concatScripts(
+                _evmScript_checkAndUpdateLimits,
+                _evmScript_newImmediatePayment
+            );
     }
 
     /// @notice Decodes call data used by createEVMScript method
@@ -104,7 +105,6 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     /// _rewardTokens - addresses of ERC20 tokens (zero address for ETH) to transfer
     /// _rewardPrograms - addresses of reward programs to top up
     /// _amounts - corresponding amount of tokens to transfer
-    /// @return _startDate Motion start date
     /// @return _rewardTokens Addresses of ERC20 tokens (zero address for ETH) to transfer
     /// @return _rewardPrograms Addresses of reward programs to top up
     /// @return _amounts Amounts of tokens to transfer
@@ -112,7 +112,6 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         external
         pure
         returns (
-            uint256 _startDate,
             address[] memory _rewardTokens,
             address[] memory _rewardPrograms,
             uint256[] memory _amounts
@@ -147,23 +146,19 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         private
         pure
         returns (
-            uint256 _startDate,
             address[] memory _rewardTokens,
             address[] memory _rewardPrograms,
             uint256[] memory _amounts
         )
     {
-        return abi.decode(_evmScriptCallData, (uint256, address[], address[], uint256[]));
+        return abi.decode(_evmScriptCallData, (address[], address[], uint256[]));
     }
 
-    function _checkLimits(uint256 _sum, uint256 _startDate) private view {
-        require(
-            limitedProgramsRegistry.isUnderLimitInPeriod(_sum, _startDate),
-            ERROR_SUM_EXCEEDS_LIMIT
-        );
+    function _checkLimits(uint256 _sum) private view {
+        require(limitedProgramsRegistry.isUnderLimit(_sum), ERROR_SUM_EXCEEDS_LIMIT);
     }
 
-    function _updateSpentInPeriod(uint256 _paymentSum, uint256 _startDate) external {
-        limitedProgramsRegistry.updateSpentInPeriod(_paymentSum, _startDate);
+    function _checkAndUpdateLimits(uint256 _paymentSum) external {
+        limitedProgramsRegistry.checkAndUpdateLimits(_paymentSum);
     }
 }
