@@ -4,7 +4,7 @@
 pragma solidity ^0.8.4;
 
 import "../TrustedCaller.sol";
-import "../LimitedProgramsRegistry.sol";
+import "../WhitelistedRecipientsRegistry.sol";
 import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
@@ -31,7 +31,7 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     address public immutable token;
 
     /// @notice Address of RewardProgramsRegistry
-    LimitedProgramsRegistry public immutable limitedProgramsRegistry;
+    WhitelistedRecipientsRegistry public immutable whitelistedRecipientsRegistry;
 
     // -------------
     // CONSTRUCTOR
@@ -39,13 +39,15 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
 
     constructor(
         address _trustedCaller,
-        address _limitedProgramsRegistry,
+        address _whitelistedRecipientsRegistry,
         address _finance,
         address _token
     ) TrustedCaller(_trustedCaller) {
         finance = IFinance(_finance);
         token = _token;
-        limitedProgramsRegistry = LimitedProgramsRegistry(_limitedProgramsRegistry);
+        whitelistedRecipientsRegistry = WhitelistedRecipientsRegistry(
+            _whitelistedRecipientsRegistry
+        );
     }
 
     // -------------
@@ -81,11 +83,11 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
             sum += amounts[i];
         }
 
-        _checkLimits(sum);
+        _checkLimit(sum);
 
         bytes memory _evmScript_checkAndUpdateLimits = EVMScriptCreator.createEVMScript(
-            address(this),
-            this._checkAndUpdateLimits.selector,
+            address(whitelistedRecipientsRegistry),
+            whitelistedRecipientsRegistry.checkAndUpdateLimits.selector,
             abi.encode(sum)
         );
 
@@ -129,7 +131,7 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _programs.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
-                limitedProgramsRegistry.isRewardProgram(_programs[i]),
+                whitelistedRecipientsRegistry.isWhitelistedRecipient(_programs[i]),
                 ERROR_PAYOUT_PROGRAM_NOT_ALLOWED
             );
         }
@@ -143,11 +145,7 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         return abi.decode(_evmScriptCallData, (address[], uint256[]));
     }
 
-    function _checkLimits(uint256 _sum) private view {
-        require(limitedProgramsRegistry.isUnderLimit(_sum), ERROR_SUM_EXCEEDS_LIMIT);
-    }
-
-    function _checkAndUpdateLimits(uint256 _payoutSum) external {
-        limitedProgramsRegistry.checkAndUpdateLimits(_payoutSum);
+    function _checkLimit(uint256 _sum) private view {
+        require(whitelistedRecipientsRegistry.isUnderLimit(_sum), ERROR_SUM_EXCEEDS_LIMIT);
     }
 }

@@ -5,6 +5,6 @@ pragma solidity =0.8.6;
 
 import "../LimitsChecker.sol";
 
-contract LimitsCheckerWrapper is LimitsChecker {
-    constructor(EasyTrack _easy_track) LimitsChecker(_easy_track) {}
-}
+//contract LimitsCheckerWrapper is LimitsChecker {
+//    constructor(EasyTrack _easy_track) LimitsChecker(_easy_track, ) {}
+//}

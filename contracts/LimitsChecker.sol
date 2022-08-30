@@ -6,10 +6,11 @@ pragma solidity ^0.8.4;
 import "./libraries/EVMScriptCreator.sol";
 import "./libraries/BokkyPooBahsDateTimeLibrary.sol";
 import "./EasyTrack.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author zuzueeka
 /// @notice Stores limits params and checks limits
-abstract contract LimitsChecker {
+abstract contract LimitsChecker is AccessControl {
     // -------------
     // EVENTS
     // -------------
@@ -23,7 +24,7 @@ abstract contract LimitsChecker {
     // -------------
     // ROLES
     // -------------
-
+    bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
     // -------------
     // CONSTANTS
     // -------------
@@ -50,8 +51,11 @@ abstract contract LimitsChecker {
     // ------------
     // CONSTRUCTOR
     // ------------
-    constructor(EasyTrack _easy_track) {
+    constructor(EasyTrack _easy_track, address[] memory _setLimitParametersRoleHolders) {
         easyTrack = _easy_track;
+        for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
+            _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
+        }
     }
 
     // -------------
@@ -70,7 +74,7 @@ abstract contract LimitsChecker {
         }
     }
 
-    function checkAndUpdateLimits(uint256 _payoutSum) external {
+    function checkAndUpdateLimits(uint256 _payoutSum) external onlyRole(SET_LIMIT_PARAMETERS_ROLE) {
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
         _increaseSpent(_payoutSum);
@@ -85,7 +89,10 @@ abstract contract LimitsChecker {
     /// @notice Sets PeriodDurationMonth and limit
     /// @param _limit Limit to set
     /// @param _periodDurationMonth Period in months to set
-    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonth) external {
+    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonth)
+        external
+        onlyRole(SET_LIMIT_PARAMETERS_ROLE)
+    {
         _checkPeriodDurationMonth(_periodDurationMonth);
         periodDurationMonth = _periodDurationMonth;
         currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
