@@ -39,7 +39,7 @@ abstract contract LimitsChecker {
     uint256 internal periodDurationMonth;
 
     /// @notice End of the current period
-    uint256 internal periodEnd;
+    uint256 internal currentPeriodEnd;
 
     /// @notice The maximum that can be spent in a period
     uint256 internal limit;
@@ -58,34 +58,22 @@ abstract contract LimitsChecker {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Checks if _paymentSum is less than may be spent in the period
-    /// @param _paymentSum Motion sum
-    /// @return True if _paymentSum is less than may be spent in the period
-    function isUnderLimit(uint256 _paymentSum) external view returns (bool) {
+    /// @notice Checks if _payoutSum is less than may be spent in the period
+    /// @param _payoutSum Motion sum
+    /// @return True if _payoutSum is less than may be spent in the period
+    function isUnderLimit(uint256 _payoutSum) external view returns (bool) {
         uint256 _motionDuration = easyTrack.motionDuration();
-        if (block.timestamp + _motionDuration > periodEnd) {
-            return _paymentSum <= limit;
+        if (block.timestamp + _motionDuration >= currentPeriodEnd) {
+            return _payoutSum <= limit;
         } else {
-            return _paymentSum <= limit - spent;
+            return _payoutSum <= limit - spent;
         }
     }
 
-    function checkAndUpdateLimits(uint256 _paymentSum) external {
+    function checkAndUpdateLimits(uint256 _payoutSum) external {
         _checkAndUpdateLimitParameters();
-        _checkLimit(_paymentSum);
-        _writeOffBudget(_paymentSum);
-    }
-
-    /// @notice Sets limit as _limit
-    /// @param _limit Limit to set
-    function setLimit(uint256 _limit) external {
-        limit = _limit;
-    }
-
-    /// @notice Returns current limit
-    /// @return The maximum that can be spent in a period
-    function getLimit() external view returns (uint256) {
-        return limit;
+        _checkLimit(_payoutSum);
+        _increaseSpent(_payoutSum);
     }
 
     /// @notice Returns current balance
@@ -94,29 +82,45 @@ abstract contract LimitsChecker {
         return limit - spent;
     }
 
-    /// @notice Sets PeriodDurationMonth
-    /// @param _period Period in months to set
-    function setPeriodDurationMonth(uint256 _period) external {
-        _checkPeriodDurationMonth(_period);
-        periodDurationMonth = _period;
+    /// @notice Sets PeriodDurationMonth and limit
+    /// @param _limit Limit to set
+    /// @param _periodDurationMonth Period in months to set
+    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonth) external {
+        _checkPeriodDurationMonth(_periodDurationMonth);
+        periodDurationMonth = _periodDurationMonth;
+        currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
+        limit = _limit;
     }
 
-    /// @notice Returns PeriodDurationMonth
-    /// @return Length of period in months
-    function getPeriodDurationMonth() external view returns (uint256) {
-        return periodDurationMonth;
+    /// @notice Returns limit and periodDurationMonth
+    /// @return limit - the maximum that can be spent in a period
+    /// @return periodDurationMonth - length of period in months
+    function getLimitParameters() external view returns (uint256, uint256) {
+        return (limit, periodDurationMonth);
     }
 
-    /// @notice Sets periodEnd
-    /// @param _period timestamp to set as end of the period
-    function setPeriodEnd(uint256 _period) public {
-        periodEnd = _period;
-    }
-
-    /// @notice Returns periodEnd
-    /// @return End of the current budget period
-    function getPeriodEnd() public view returns (uint256) {
-        return periodEnd;
+    /// @notice Returns amount spent in the current period, balance available for spending,
+    /// @notice start date of the current period and end date of the current period
+    /// @return amount spent in the current period
+    /// @return balance available for spending in the current period
+    /// @return start date of the current period
+    /// @return end date of the current period
+    function getCurrentPeriodState()
+        external
+        view
+        returns (
+            uint256,
+            uint256,
+            uint256,
+            uint256
+        )
+    {
+        return (
+            spent,
+            limit - spent,
+            _getPeriodStartFromTimestamp(currentPeriodEnd - 1),
+            currentPeriodEnd
+        );
     }
 
     // ------------------
@@ -124,9 +128,8 @@ abstract contract LimitsChecker {
     // ------------------
 
     function _checkAndUpdateLimitParameters() internal {
-        _checkPeriodDurationMonth(periodDurationMonth);
-        while (block.timestamp > periodEnd) {
-            periodEnd = BokkyPooBahsDateTimeLibrary.addMonths(periodEnd - 1, periodDurationMonth);
+        if (block.timestamp >= currentPeriodEnd) {
+            currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
             spent = 0;
         }
     }
@@ -141,11 +144,26 @@ abstract contract LimitsChecker {
         );
     }
 
-    function _checkLimit(uint256 _paymentSum) internal view {
-        require(_paymentSum <= limit - spent, ERROR_SUM_EXCEEDS_LIMIT);
+    function _checkLimit(uint256 _payoutSum) internal view {
+        require(_payoutSum <= limit - spent, ERROR_SUM_EXCEEDS_LIMIT);
     }
 
-    function _writeOffBudget(uint256 _paymentSum) internal {
-        spent += _paymentSum;
+    function _increaseSpent(uint256 _payoutSum) internal {
+        spent += _payoutSum;
+    }
+
+    function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
+        (uint256 _year, uint256 _month, ) = BokkyPooBahsDateTimeLibrary.timestampToDate(_timestamp);
+        return
+            BokkyPooBahsDateTimeLibrary.timestampFromDate(
+                _year,
+                _month - ((_month - 1) % periodDurationMonth),
+                1
+            );
+    }
+
+    function _getPeriodEndFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
+        uint256 _periodStart = _getPeriodStartFromTimestamp(_timestamp);
+        return BokkyPooBahsDateTimeLibrary.addMonths(_periodStart, periodDurationMonth);
     }
 }

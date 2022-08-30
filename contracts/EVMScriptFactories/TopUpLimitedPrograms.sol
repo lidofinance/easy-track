@@ -17,7 +17,7 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_LENGTH_MISMATCH = "LENGTH_MISMATCH";
     string private constant ERROR_EMPTY_DATA = "EMPTY_DATA";
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
-    string private constant ERROR_REWARD_PROGRAM_NOT_ALLOWED = "REWARD_PROGRAM_NOT_ALLOWED";
+    string private constant ERROR_PAYOUT_PROGRAM_NOT_ALLOWED = "PAYOUT_PROGRAM_NOT_ALLOWED";
     string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
 
     // -------------
@@ -26,6 +26,9 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of Aragon's Finance contract
     IFinance public immutable finance;
+
+    /// @notice Address of payout token
+    address public immutable token;
 
     /// @notice Address of RewardProgramsRegistry
     LimitedProgramsRegistry public immutable limitedProgramsRegistry;
@@ -37,9 +40,11 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     constructor(
         address _trustedCaller,
         address _limitedProgramsRegistry,
-        address _finance
+        address _finance,
+        address _token
     ) TrustedCaller(_trustedCaller) {
         finance = IFinance(_finance);
+        token = _token;
         limitedProgramsRegistry = LimitedProgramsRegistry(_limitedProgramsRegistry);
     }
 
@@ -49,9 +54,8 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to top up balances of reward programs
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address[] _rewardTokens, address[] _rewardPrograms, uint256[] _amounts) where
-    /// _rewardTokens - addresses of ERC20 tokens (zero address for ETH) to transfer
-    /// _rewardPrograms - addresses of reward programs to top up
+    /// @param _evmScriptCallData Encoded tuple: (address[] _programs, uint256[] _amounts) where
+    /// _programs - addresses of reward programs to top up
     /// _amounts - corresponding amount of tokens to transfer
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
@@ -60,21 +64,19 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (
-            address[] memory rewardTokens,
-            address[] memory rewardPrograms,
-            uint256[] memory amounts
-        ) = _decodeEVMScriptCallData(_evmScriptCallData);
-        _validateEVMScriptCallData(rewardTokens, rewardPrograms, amounts);
+        (address[] memory programs, uint256[] memory amounts) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
+        _validateEVMScriptCallData(programs, amounts);
 
-        bytes[] memory evmScriptsCalldata = new bytes[](rewardPrograms.length);
+        bytes[] memory evmScriptsCalldata = new bytes[](programs.length);
         uint256 sum = 0;
-        for (uint256 i = 0; i < rewardPrograms.length; ++i) {
+        for (uint256 i = 0; i < programs.length; ++i) {
             evmScriptsCalldata[i] = abi.encode(
-                rewardTokens[i],
-                rewardPrograms[i],
+                token,
+                programs[i],
                 amounts[i],
-                "Reward program top up"
+                "Payout program top up"
             );
             sum += amounts[i];
         }
@@ -101,21 +103,15 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address[] memory _rewardTokens, address[] _rewardPrograms, uint256[] _amounts) where
-    /// _rewardTokens - addresses of ERC20 tokens (zero address for ETH) to transfer
-    /// _rewardPrograms - addresses of reward programs to top up
+    /// @param _evmScriptCallData Encoded tuple: (address[] _programs, uint256[] _amounts) where
+    /// _programs - addresses of reward programs to top up
     /// _amounts - corresponding amount of tokens to transfer
-    /// @return _rewardTokens Addresses of ERC20 tokens (zero address for ETH) to transfer
-    /// @return _rewardPrograms Addresses of reward programs to top up
+    /// @return _programs Addresses of reward programs to top up
     /// @return _amounts Amounts of tokens to transfer
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (
-            address[] memory _rewardTokens,
-            address[] memory _rewardPrograms,
-            uint256[] memory _amounts
-        )
+        returns (address[] memory _programs, uint256[] memory _amounts)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -124,20 +120,17 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _validateEVMScriptCallData(
-        address[] memory _rewardTokens,
-        address[] memory _rewardPrograms,
-        uint256[] memory _amounts
-    ) private view {
-        require(_rewardPrograms.length == _rewardTokens.length, ERROR_LENGTH_MISMATCH);
-        require(_rewardTokens.length == _amounts.length, ERROR_LENGTH_MISMATCH);
-        require(_amounts.length == _rewardPrograms.length, ERROR_LENGTH_MISMATCH);
-        require(_rewardPrograms.length > 0, ERROR_EMPTY_DATA);
-        for (uint256 i = 0; i < _rewardPrograms.length; ++i) {
+    function _validateEVMScriptCallData(address[] memory _programs, uint256[] memory _amounts)
+        private
+        view
+    {
+        require(_amounts.length == _programs.length, ERROR_LENGTH_MISMATCH);
+        require(_programs.length > 0, ERROR_EMPTY_DATA);
+        for (uint256 i = 0; i < _programs.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
-                limitedProgramsRegistry.isRewardProgram(_rewardPrograms[i]),
-                ERROR_REWARD_PROGRAM_NOT_ALLOWED
+                limitedProgramsRegistry.isRewardProgram(_programs[i]),
+                ERROR_PAYOUT_PROGRAM_NOT_ALLOWED
             );
         }
     }
@@ -145,20 +138,16 @@ contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (
-            address[] memory _rewardTokens,
-            address[] memory _rewardPrograms,
-            uint256[] memory _amounts
-        )
+        returns (address[] memory _programs, uint256[] memory _amounts)
     {
-        return abi.decode(_evmScriptCallData, (address[], address[], uint256[]));
+        return abi.decode(_evmScriptCallData, (address[], uint256[]));
     }
 
     function _checkLimits(uint256 _sum) private view {
         require(limitedProgramsRegistry.isUnderLimit(_sum), ERROR_SUM_EXCEEDS_LIMIT);
     }
 
-    function _checkAndUpdateLimits(uint256 _paymentSum) external {
-        limitedProgramsRegistry.checkAndUpdateLimits(_paymentSum);
+    function _checkAndUpdateLimits(uint256 _payoutSum) external {
+        limitedProgramsRegistry.checkAndUpdateLimits(_payoutSum);
     }
 }

@@ -149,8 +149,11 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
         newMotion.evmScriptFactory = _evmScriptFactory;
         motionIndicesByMotionId[_newMotionId] = motions.length;
 
-        bytes memory evmScript =
-            _createEVMScript(_evmScriptFactory, msg.sender, _evmScriptCallData);
+        bytes memory evmScript = _createEVMScript(
+            _evmScriptFactory,
+            msg.sender,
+            _evmScriptCallData
+        );
         newMotion.evmScriptHash = keccak256(evmScript);
 
         emit MotionCreated(
