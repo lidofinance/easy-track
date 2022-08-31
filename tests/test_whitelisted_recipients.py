@@ -32,7 +32,7 @@ def test_limited_programs_easy_track(
     calls_script,
     acl,
     WhitelistedRecipientsRegistry,
-    TopUpLimitedPrograms,
+    TopUpWhitelistedRecipients,
     AddWhitelistedRecipient,
     RemoveWhitelistedRecipient,
 ):
@@ -69,16 +69,16 @@ def test_limited_programs_easy_track(
         easy_track
     )
 
-    # deploy TopUpLimitedPrograms EVM script factory
-    top_up_limited_programs = deployer.deploy(
-        TopUpLimitedPrograms,
+    # deploy TopUpWhitelistedRecipients EVM script factory
+    top_up_whitelisted_recipients = deployer.deploy(
+        TopUpWhitelistedRecipients,
         trusted_address,
         whitelisted_recipients_registry,
         finance,
         ldo
     )
 
-    # add TopUpRewardPrograms EVM script factory to easy track
+    # add TopUpWhitelistedRecipients EVM script factory to easy track
     new_immediate_payment_permission = create_permission(
         finance,
         "newImmediatePayment"
@@ -92,7 +92,7 @@ def test_limited_programs_easy_track(
     permissions = new_immediate_payment_permission  + update_limit_permission[2:]
 
     easy_track.addEVMScriptFactory(
-        top_up_limited_programs, permissions, {"from": deployer}
+        top_up_whitelisted_recipients, permissions, {"from": deployer}
     )
 
     # deploy AddWhitelistedRecipient EVM script factory
@@ -232,7 +232,7 @@ def test_limited_programs_easy_track(
             [[whitelisted_recipient.address,whitelisted_recipient.address],
             [int(5e18), int(7e18)]])
     tx1 = easy_track.createMotion(
-        top_up_limited_programs,
+        top_up_whitelisted_recipients,
         _evmScriptCallData1,
         {"from": trusted_address},
     )
@@ -244,7 +244,7 @@ def test_limited_programs_easy_track(
             [[whitelisted_recipient.address,whitelisted_recipient.address],
             [int(5e18), int(7e18)]])
     tx2 = easy_track.createMotion(
-        top_up_limited_programs,
+        top_up_whitelisted_recipients,
         _evmScriptCallData2,
         {"from": trusted_address},
     )

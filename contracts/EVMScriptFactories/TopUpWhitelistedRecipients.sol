@@ -10,7 +10,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 /// @notice Creates EVMScript to check limits and top up balances
-contract TopUpLimitedPrograms is TrustedCaller, IEVMScriptFactory {
+contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
