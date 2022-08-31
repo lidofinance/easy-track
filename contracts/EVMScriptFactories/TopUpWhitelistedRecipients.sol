@@ -9,7 +9,7 @@ import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
-/// @notice Creates EVMScript to check limits and top up balances
+/// @notice Creates EVMScript to check limits and top up whitelisted recipients addresses
 contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -17,7 +17,8 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_LENGTH_MISMATCH = "LENGTH_MISMATCH";
     string private constant ERROR_EMPTY_DATA = "EMPTY_DATA";
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
-    string private constant ERROR_PAYOUT_PROGRAM_NOT_ALLOWED = "PAYOUT_PROGRAM_NOT_ALLOWED";
+    string private constant ERROR_WHITELISTED_RECEPIENT_NOT_FOUND =
+        "ERROR_WHITELISTED_RECEPIENT_NOT_FOUND";
     string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
 
     // -------------
@@ -30,7 +31,7 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     /// @notice Address of payout token
     address public immutable token;
 
-    /// @notice Address of RewardProgramsRegistry
+    /// @notice Address of WhitelistedRecipientsRegistry
     WhitelistedRecipientsRegistry public immutable whitelistedRecipientsRegistry;
 
     // -------------
@@ -54,10 +55,10 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to top up balances of reward programs
+    /// @notice Creates EVMScript to top up whitelisted recipients addressees
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address[] _programs, uint256[] _amounts) where
-    /// _programs - addresses of reward programs to top up
+    /// @param _evmScriptCallData Encoded tuple: (address[] _whitelistedRecipients, uint256[] _amounts) where
+    /// _whitelistedRecipients - addresses of whitelisted recipients to top up
     /// _amounts - corresponding amount of tokens to transfer
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
@@ -66,19 +67,20 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address[] memory programs, uint256[] memory amounts) = _decodeEVMScriptCallData(
-            _evmScriptCallData
-        );
-        _validateEVMScriptCallData(programs, amounts);
+        (
+            address[] memory whitelistedRecipients,
+            uint256[] memory amounts
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
+        _validateEVMScriptCallData(whitelistedRecipients, amounts);
 
-        bytes[] memory evmScriptsCalldata = new bytes[](programs.length);
+        bytes[] memory evmScriptsCalldata = new bytes[](whitelistedRecipients.length);
         uint256 sum = 0;
-        for (uint256 i = 0; i < programs.length; ++i) {
+        for (uint256 i = 0; i < whitelistedRecipients.length; ++i) {
             evmScriptsCalldata[i] = abi.encode(
                 token,
-                programs[i],
+                whitelistedRecipients[i],
                 amounts[i],
-                "Payout program top up"
+                "Top up whitelisted recipients"
             );
             sum += amounts[i];
         }
@@ -105,15 +107,15 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address[] _programs, uint256[] _amounts) where
-    /// _programs - addresses of reward programs to top up
+    /// @param _evmScriptCallData Encoded tuple: (address[] _whitelistedRecipients, uint256[] _amounts) where
+    /// _whitelistedRecipients - addresses of whitelisted recipients to top up
     /// _amounts - corresponding amount of tokens to transfer
-    /// @return _programs Addresses of reward programs to top up
+    /// @return _whitelistedRecipients Addresses of whitelisted recipients to top up
     /// @return _amounts Amounts of tokens to transfer
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address[] memory _programs, uint256[] memory _amounts)
+        returns (address[] memory _whitelistedRecipients, uint256[] memory _amounts)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -122,17 +124,17 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _validateEVMScriptCallData(address[] memory _programs, uint256[] memory _amounts)
-        private
-        view
-    {
-        require(_amounts.length == _programs.length, ERROR_LENGTH_MISMATCH);
-        require(_programs.length > 0, ERROR_EMPTY_DATA);
-        for (uint256 i = 0; i < _programs.length; ++i) {
+    function _validateEVMScriptCallData(
+        address[] memory _whitelistedRecipients,
+        uint256[] memory _amounts
+    ) private view {
+        require(_amounts.length == _whitelistedRecipients.length, ERROR_LENGTH_MISMATCH);
+        require(_whitelistedRecipients.length > 0, ERROR_EMPTY_DATA);
+        for (uint256 i = 0; i < _whitelistedRecipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
-                whitelistedRecipientsRegistry.isWhitelistedRecipient(_programs[i]),
-                ERROR_PAYOUT_PROGRAM_NOT_ALLOWED
+                whitelistedRecipientsRegistry.isWhitelistedRecipient(_whitelistedRecipients[i]),
+                ERROR_WHITELISTED_RECEPIENT_NOT_FOUND
             );
         }
     }
@@ -140,7 +142,7 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address[] memory _programs, uint256[] memory _amounts)
+        returns (address[] memory _whitelistedRecipients, uint256[] memory _amounts)
     {
         return abi.decode(_evmScriptCallData, (address[], uint256[]));
     }

@@ -45,7 +45,7 @@ abstract contract LimitsChecker is AccessControl {
     /// @notice The maximum that can be spent in a period
     uint256 internal limit;
 
-    /// @notice Amount already spent in the period. Key - start date of the period, value - amount.
+    /// @notice Amount already spent in the period
     uint256 internal spent;
 
     // ------------
@@ -74,21 +74,22 @@ abstract contract LimitsChecker is AccessControl {
         }
     }
 
+    /// @notice Checks if _payoutSum is less than may be spent, updates period if needed and increases the amount spent in the current period
     function checkAndUpdateLimits(uint256 _payoutSum) external onlyRole(SET_LIMIT_PARAMETERS_ROLE) {
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
         _increaseSpent(_payoutSum);
     }
 
-    /// @notice Returns current balance
-    /// @return Balance of the budget
-    function currentBudgetBalance() external view returns (uint256) {
+    /// @notice Returns balance that can be spent in the current period
+    /// @return Balance that can be spent in the current period
+    function currentBalance() external view returns (uint256) {
         return limit - spent;
     }
 
-    /// @notice Sets PeriodDurationMonth and limit
+    /// @notice Sets periodDurationMonth and limit
     /// @param _limit Limit to set
-    /// @param _periodDurationMonth Period in months to set
+    /// @param _periodDurationMonth  Length of period in months to set
     function setLimitParameters(uint256 _limit, uint256 _periodDurationMonth)
         external
         onlyRole(SET_LIMIT_PARAMETERS_ROLE)

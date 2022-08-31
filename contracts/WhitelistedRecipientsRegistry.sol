@@ -91,8 +91,9 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     }
 
     /// @notice Removes address from list of allowed addresses for payouts
-    /// @dev To delete an allowed address from the whitelistedRecipients array in O(1), we swap the element to delete with the last one in
-    /// the array, and then remove the last element (sometimes called as 'swap and pop').
+    /// @dev To delete an allowed address from the whitelistedRecipients array in O(1),
+    /// we swap the element to delete with the last one in the array,
+    /// and then remove the last element (sometimes called as 'swap and pop').
     function removeWhitelistedRecipient(address _whitelistedRecipient)
         external
         onlyRole(REMOVE_WHITELISTED_RECEPIENT_ROLE)
