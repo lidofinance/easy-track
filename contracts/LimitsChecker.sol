@@ -14,6 +14,13 @@ abstract contract LimitsChecker is AccessControl {
     // -------------
     // EVENTS
     // -------------
+    event LimitsParametersChanged(uint256 _limit, uint256 _periodDurationMonth);
+    event FundsSpent(
+        uint256 _alreadySpentAmount,
+        uint256 _spendableAmount,
+        uint256 _periodStartTimestamp,
+        uint256 _periodEndTimestamp
+    );
 
     // -------------
     // ERRORS
@@ -25,6 +32,7 @@ abstract contract LimitsChecker is AccessControl {
     // ROLES
     // -------------
     bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
+
     // -------------
     // CONSTANTS
     // -------------
@@ -79,6 +87,20 @@ abstract contract LimitsChecker is AccessControl {
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
         _increaseSpent(_payoutSum);
+
+        (
+            uint256 _alreadySpentAmount,
+            uint256 _spendableAmount,
+            uint256 _periodStartTimestamp,
+            uint256 _periodEndTimestamp
+        ) = this.getCurrentPeriodState();
+
+        emit FundsSpent(
+            _alreadySpentAmount,
+            _spendableAmount,
+            _periodStartTimestamp,
+            _periodEndTimestamp
+        );
     }
 
     /// @notice Returns balance that can be spent in the current period
@@ -98,6 +120,8 @@ abstract contract LimitsChecker is AccessControl {
         periodDurationMonth = _periodDurationMonth;
         currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
         limit = _limit;
+
+        emit LimitsParametersChanged(_limit, _periodDurationMonth);
     }
 
     /// @notice Returns limit and periodDurationMonth
@@ -109,18 +133,18 @@ abstract contract LimitsChecker is AccessControl {
 
     /// @notice Returns amount spent in the current period, balance available for spending,
     /// @notice start date of the current period and end date of the current period
-    /// @return amount spent in the current period
-    /// @return balance available for spending in the current period
-    /// @return start date of the current period
-    /// @return end date of the current period
+    /// @return _alreadySpentAmount - amount spent in the current period
+    /// @return _spendableAmount - balance available for spending in the current period
+    /// @return _periodStartTimestamp - start date of the current period
+    /// @return _periodEndTimestamp - end date of the current period
     function getCurrentPeriodState()
         external
         view
         returns (
-            uint256,
-            uint256,
-            uint256,
-            uint256
+            uint256 _alreadySpentAmount,
+            uint256 _spendableAmount,
+            uint256 _periodStartTimestamp,
+            uint256 _periodEndTimestamp
         )
     {
         return (
@@ -145,6 +169,7 @@ abstract contract LimitsChecker is AccessControl {
     function _checkPeriodDurationMonth(uint256 _periodDurationMonth) internal view {
         require(
             _periodDurationMonth == 1 ||
+                _periodDurationMonth == 2 ||
                 _periodDurationMonth == 3 ||
                 _periodDurationMonth == 6 ||
                 _periodDurationMonth == 12,
