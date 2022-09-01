@@ -86,7 +86,7 @@ def test_limited_programs_easy_track(
 
     update_limit_permission = create_permission(
         whitelisted_recipients_registry,
-        "checkAndUpdateLimits"
+        "updateSpendableBalance"
     )
 
     permissions = new_immediate_payment_permission  + update_limit_permission[2:]

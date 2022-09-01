@@ -23,6 +23,5 @@ async function renameDependencies(remapping) {
 }
 
 renameDependencies({
-  "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts",
-  "solidity-bytes-utils/contracts": "GNSPS/solidity-bytes-utils@0.8.0/contracts"
+  "@openzeppelin/contracts": "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts"
 });

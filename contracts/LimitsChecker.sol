@@ -73,7 +73,7 @@ abstract contract LimitsChecker is AccessControl {
     /// @notice Checks if _payoutSum is less than may be spent in the period
     /// @param _payoutSum Motion sum
     /// @return True if _payoutSum is less than may be spent in the period
-    function isUnderLimit(uint256 _payoutSum) external view returns (bool) {
+    function isUnderSpendableBalance(uint256 _payoutSum) external view returns (bool) {
         uint256 _motionDuration = easyTrack.motionDuration();
         if (block.timestamp + _motionDuration >= currentPeriodEnd) {
             return _payoutSum <= limit;
@@ -82,8 +82,10 @@ abstract contract LimitsChecker is AccessControl {
         }
     }
 
-    /// @notice Checks if _payoutSum is less than may be spent, updates period if needed and increases the amount spent in the current period
-    function checkAndUpdateLimits(uint256 _payoutSum) external onlyRole(SET_LIMIT_PARAMETERS_ROLE) {
+    /// @notice Checks if _payoutSum is less than may be spent,
+    /// @notice updates period if needed and increases the amount spent in the current period
+    function updateSpendableBalance(uint256 _payoutSum) external {
+        require(msg.sender == address(easyTrack.evmScriptExecutor()), "");
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
         _increaseSpent(_payoutSum);
@@ -105,7 +107,7 @@ abstract contract LimitsChecker is AccessControl {
 
     /// @notice Returns balance that can be spent in the current period
     /// @return Balance that can be spent in the current period
-    function currentBalance() external view returns (uint256) {
+    function currentSpendableBalance() external view returns (uint256) {
         return limit - spent;
     }
 

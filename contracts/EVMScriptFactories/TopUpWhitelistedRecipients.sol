@@ -90,7 +90,7 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
         }
 
         _to[0] = address(whitelistedRecipientsRegistry);
-        _methodIds[0] = whitelistedRecipientsRegistry.checkAndUpdateLimits.selector;
+        _methodIds[0] = whitelistedRecipientsRegistry.updateSpendableBalance.selector;
         evmScriptsCalldata[0] = abi.encode(sum);
 
         _checkLimit(sum);
@@ -140,6 +140,9 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     }
 
     function _checkLimit(uint256 _sum) private view {
-        require(whitelistedRecipientsRegistry.isUnderLimit(_sum), ERROR_SUM_EXCEEDS_LIMIT);
+        require(
+            whitelistedRecipientsRegistry.isUnderSpendableBalance(_sum),
+            ERROR_SUM_EXCEEDS_LIMIT
+        );
     }
 }

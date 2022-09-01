@@ -3177,13 +3177,6 @@ sol-explore@1.6.1:
   resolved "https://registry.yarnpkg.com/sol-explore/-/sol-explore-1.6.1.tgz#b59f073c69fe332560d5a10c32ba8ca7f2986cfb"
   integrity sha512-cmwg7l+QLj2LE3Qvwrdo4aPYcNYY425+bN5VPkgCjkO0CiSz33G5vM5BmMZNrfd/6yNGwcm0KtwDJmh5lUElEQ==
 
-solidity-bytes-utils@^0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/solidity-bytes-utils/-/solidity-bytes-utils-0.8.0.tgz#9d985a3c4aee68fbd532a9a065edade1c132442f"
-  integrity sha512-r109ZHEf7zTMm1ENW6/IJFDWilFR/v0BZnGuFgDHJUV80ByobnV2k3txvwQaJ9ApL+6XAfwqsw5VFzjALbQPCw==
-  dependencies:
-    "@truffle/hdwallet-provider" latest
-
 solidity-comments-extractor@^0.0.7:
   version "0.0.7"
   resolved "https://registry.yarnpkg.com/solidity-comments-extractor/-/solidity-comments-extractor-0.0.7.tgz#99d8f1361438f84019795d928b931f4e5c39ca19"
