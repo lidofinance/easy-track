@@ -3,8 +3,6 @@
 
 pragma solidity ^0.8.4;
 
-import "GNSPS/solidity-bytes-utils@0.8.0/contracts/BytesLib.sol";
-
 /// @author psirex
 /// @notice Contains methods for convenient creation
 /// of EVMScripts in EVMScript factories contracts
@@ -91,17 +89,5 @@ library EVMScriptCreator {
             );
         }
         _evmScript = bytes.concat(SPEC_ID, _evmScript);
-    }
-
-    function concatScripts(bytes memory _evmScript1, bytes memory _evmScript2)
-        internal
-        pure
-        returns (bytes memory)
-    {
-        return
-            bytes.concat(
-                _evmScript1,
-                BytesLib.slice(_evmScript2, SPEC_ID.length, _evmScript2.length - SPEC_ID.length)
-            );
     }
 }

@@ -73,10 +73,14 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
         _validateEVMScriptCallData(whitelistedRecipients, amounts);
 
-        bytes[] memory evmScriptsCalldata = new bytes[](whitelistedRecipients.length);
+        address[] memory _to = new address[](whitelistedRecipients.length + 1);
+        bytes4[] memory _methodIds = new bytes4[](whitelistedRecipients.length + 1);
+        bytes[] memory evmScriptsCalldata = new bytes[](whitelistedRecipients.length + 1);
         uint256 sum = 0;
         for (uint256 i = 0; i < whitelistedRecipients.length; ++i) {
-            evmScriptsCalldata[i] = abi.encode(
+            _to[i + 1] = address(finance);
+            _methodIds[i + 1] = finance.newImmediatePayment.selector;
+            evmScriptsCalldata[i + 1] = abi.encode(
                 token,
                 whitelistedRecipients[i],
                 amounts[i],
@@ -85,25 +89,13 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
             sum += amounts[i];
         }
 
+        _to[0] = address(whitelistedRecipientsRegistry);
+        _methodIds[0] = whitelistedRecipientsRegistry.checkAndUpdateLimits.selector;
+        evmScriptsCalldata[0] = abi.encode(sum);
+
         _checkLimit(sum);
 
-        bytes memory _evmScript_checkAndUpdateLimits = EVMScriptCreator.createEVMScript(
-            address(whitelistedRecipientsRegistry),
-            whitelistedRecipientsRegistry.checkAndUpdateLimits.selector,
-            abi.encode(sum)
-        );
-
-        bytes memory _evmScript_newImmediatePayment = EVMScriptCreator.createEVMScript(
-            address(finance),
-            finance.newImmediatePayment.selector,
-            evmScriptsCalldata
-        );
-
-        return
-            EVMScriptCreator.concatScripts(
-                _evmScript_checkAndUpdateLimits,
-                _evmScript_newImmediatePayment
-            );
+        return EVMScriptCreator.createEVMScript(_to, _methodIds, evmScriptsCalldata);
     }
 
     /// @notice Decodes call data used by createEVMScript method
