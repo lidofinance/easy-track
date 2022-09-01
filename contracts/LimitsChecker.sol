@@ -27,7 +27,7 @@ abstract contract LimitsChecker is AccessControl {
     // -------------
     string private constant ERROR_WRONG_PERIOD_DURATION = "WRONG_PERIOD_DURATION";
     string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
-
+    string private constant ERROR_CALLER_IS_FORBIDDEN = "CALLER_IS_FORBIDDEN";
     // -------------
     // ROLES
     // -------------
@@ -85,7 +85,8 @@ abstract contract LimitsChecker is AccessControl {
     /// @notice Checks if _payoutSum is less than may be spent,
     /// @notice updates period if needed and increases the amount spent in the current period
     function updateSpendableBalance(uint256 _payoutSum) external {
-        require(msg.sender == address(easyTrack.evmScriptExecutor()), "");
+        require(msg.sender == address(easyTrack.evmScriptExecutor()), ERROR_CALLER_IS_FORBIDDEN);
+
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
         _increaseSpent(_payoutSum);
