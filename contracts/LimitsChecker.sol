@@ -10,6 +10,17 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 
 /// @author zuzueeka
 /// @notice Stores limits params and checks limits
+///
+///
+/// ▲ limit-spent
+/// │.....         |..........    |.......     limit-spent = limit
+/// │     ....     |              |
+/// │         ..   |          ... |
+/// │           ...|             .|
+/// │─────────────────────────────────────────> Time
+/// │     ^   ^ ^  |periodEnd ^  ^|periodEnd    ^ - Motion enaction
+/// |              |spent=0       |spent=0
+///
 abstract contract LimitsChecker is AccessControl {
     // -------------
     // EVENTS
@@ -113,8 +124,11 @@ abstract contract LimitsChecker is AccessControl {
     }
 
     /// @notice Sets periodDurationMonth and limit
+    /// currentPeriodEnd will be calculated as a calendar date of the beginning of next month,
+    /// bi-months, quarter, half year, or year period.
     /// @param _limit Limit to set
-    /// @param _periodDurationMonth  Length of period in months to set
+    /// @param _periodDurationMonth  Length of period in months to set.
+    /// Duration of the period can be 1, 2, 3, 6 or 12 months.
     function setLimitParameters(uint256 _limit, uint256 _periodDurationMonth)
         external
         onlyRole(SET_LIMIT_PARAMETERS_ROLE)
@@ -162,6 +176,11 @@ abstract contract LimitsChecker is AccessControl {
     // PRIVATE METHODS
     // ------------------
 
+    /// currentPeriodEnd is calculated as a calendar date of the beginning of a next month, bi-months, quarter, half year, or year period.
+    /// If, for example, periodDurationMonth = 3, then it is considered that the date changes once a quarter.
+    /// And can take values 01.01, 01.04, 01.07, 01.10.
+    /// Then at the moment when it is necessary to shift the currentPeriodEnd (the condition is fulfilled: block.timestamp >= currentPeriodEnd),
+    /// currentPeriodEnd takes on a new value and spent is set to zero. Thus begins a new period.
     function _checkAndUpdateLimitParameters() internal {
         if (block.timestamp >= currentPeriodEnd) {
             currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
