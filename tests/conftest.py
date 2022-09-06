@@ -124,9 +124,7 @@ def evm_script_executor(owner, easy_track, calls_script, EVMScriptExecutor):
 
 
 @pytest.fixture(scope="module")
-def reward_programs_registry(
-    owner, voting, evm_script_executor_stub, RewardProgramsRegistry
-):
+def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProgramsRegistry):
     return owner.deploy(
         RewardProgramsRegistry,
         voting,
@@ -158,12 +156,8 @@ def remove_reward_program(owner, reward_programs_registry, RemoveRewardProgram):
 
 
 @pytest.fixture(scope="module")
-def top_up_reward_programs(
-    owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms
-):
-    return owner.deploy(
-        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
-    )
+def top_up_reward_programs(owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms):
+    return owner.deploy(TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo)
 
 
 @pytest.fixture(scope="module")
