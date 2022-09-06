@@ -1,27 +1,23 @@
 import constants
 
 from brownie.network import chain
-from brownie import (
-    EasyTrack,
-    EVMScriptExecutor,
-    accounts,
-    reverts
-)
+from brownie import EasyTrack, EVMScriptExecutor, accounts, reverts
 
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
-from utils.config import (
-    network_name
-)
+from utils.config import network_name
 
 from utils.lido import create_voting, execute_voting, addresses
+
 
 def encode_calldata(signature, values):
     return "0x" + encode_single(signature, values).hex()
 
+
 def create_permission(contract, method):
     return contract.address + getattr(contract, method).signature[2:]
+
 
 def test_limited_programs_easy_track(
     stranger,
@@ -66,34 +62,24 @@ def test_limited_programs_easy_track(
         [voting, evm_script_executor],
         [voting, evm_script_executor],
         [voting, evm_script_executor],
-        easy_track
+        easy_track,
     )
 
     # deploy TopUpWhitelistedRecipients EVM script factory
     top_up_whitelisted_recipients = deployer.deploy(
-        TopUpWhitelistedRecipients,
-        trusted_address,
-        whitelisted_recipients_registry,
-        finance,
-        ldo
+        TopUpWhitelistedRecipients, trusted_address, whitelisted_recipients_registry, finance, ldo
     )
 
     # add TopUpWhitelistedRecipients EVM script factory to easy track
-    new_immediate_payment_permission = create_permission(
-        finance,
-        "newImmediatePayment"
-    )
+    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
     update_limit_permission = create_permission(
-        whitelisted_recipients_registry,
-        "updateSpendableBalance"
+        whitelisted_recipients_registry, "updateSpendableBalance"
     )
 
-    permissions = new_immediate_payment_permission  + update_limit_permission[2:]
+    permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
-    easy_track.addEVMScriptFactory(
-        top_up_whitelisted_recipients, permissions, {"from": deployer}
-    )
+    easy_track.addEVMScriptFactory(top_up_whitelisted_recipients, permissions, {"from": deployer})
 
     # deploy AddWhitelistedRecipient EVM script factory
     add_whitelisted_recipient = deployer.deploy(
@@ -102,8 +88,7 @@ def test_limited_programs_easy_track(
 
     # add AddWhitelistedRecipient EVM script factory to easy track
     add_whitelisted_recipient_permission = create_permission(
-        whitelisted_recipients_registry,
-        "addWhitelistedRecipient"
+        whitelisted_recipients_registry, "addWhitelistedRecipient"
     )
 
     easy_track.addEVMScriptFactory(
@@ -117,15 +102,14 @@ def test_limited_programs_easy_track(
 
     # add RemoveWhitelistedRecipient EVM script factory to easy track
     remove_whitelisted_recipient_permission = create_permission(
-        whitelisted_recipients_registry,
-        "removeWhitelistedRecipient"
+        whitelisted_recipients_registry, "removeWhitelistedRecipient"
     )
     easy_track.addEVMScriptFactory(
         remove_whitelisted_recipient, remove_whitelisted_recipient_permission, {"from": deployer}
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
+    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
 
     add_create_payments_permissions_voting_id, _ = create_voting(
         evm_script=encode_call_script(
@@ -149,22 +133,16 @@ def test_limited_programs_easy_track(
     execute_voting(add_create_payments_permissions_voting_id, netname)
 
     add_whitelisted_recipient_calldata = encode_calldata(
-            "(address,string)", [
-                whitelisted_recipient.address,
-                whitelisted_recipient_title
-            ]
+        "(address,string)", [whitelisted_recipient.address, whitelisted_recipient_title]
     )
 
     # create new motion to add a whitelisted recipient
     expected_evm_script = add_whitelisted_recipient.createEVMScript(
-        trusted_address,
-        add_whitelisted_recipient_calldata
+        trusted_address, add_whitelisted_recipient_calldata
     )
 
     tx = easy_track.createMotion(
-        add_whitelisted_recipient,
-        add_whitelisted_recipient_calldata,
-        {"from": trusted_address}
+        add_whitelisted_recipient, add_whitelisted_recipient_calldata, {"from": trusted_address}
     )
 
     motions = easy_track.getMotions()
@@ -183,20 +161,20 @@ def test_limited_programs_easy_track(
     assert len(whitelisted_recipients) == 1
     assert whitelisted_recipients[0] == whitelisted_recipient
 
-    Jul1 = 1656633600 # Fri Jul 01 2022 00:00:00 GMT+0000
-    Aug1 = 1659312000 # Mon Aug 01 2022 00:00:00 GMT+0000
-    Sep1 = 1661990400 # Thu Sep 01 2022 00:00:00 GMT+0000
-    Okt1 = 1664582400 # Sat Oct 01 2022 00:00:00 GMT+0000
+    Jul1 = 1656633600  # Fri Jul 01 2022 00:00:00 GMT+0000
+    Aug1 = 1659312000  # Mon Aug 01 2022 00:00:00 GMT+0000
+    Sep1 = 1661990400  # Thu Sep 01 2022 00:00:00 GMT+0000
+    Okt1 = 1664582400  # Sat Oct 01 2022 00:00:00 GMT+0000
 
-    #set limit parameters
+    # set limit parameters
     limit = 20e18
     spent = 0
-    periodDurationMonth = 3 #month
+    periodDurationMonth = 3  # month
     periodStart = Jul1
     periodEnd = Okt1
 
     # create voting to set limit parameters
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
+    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
 
     set_limit_parameters_voting_id, _ = create_voting(
         evm_script=encode_call_script(
@@ -210,9 +188,9 @@ def test_limited_programs_easy_track(
                 ),
             ]
         ),
-        description = "Set limit parameters",
-        network = netname,
-        tx_params = {"from": agent},
+        description="Set limit parameters",
+        network=netname,
+        tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
@@ -228,9 +206,10 @@ def test_limited_programs_easy_track(
     assert currentPeriodState[3] == periodEnd
 
     # create new motion to top up whitelisted address
-    _evmScriptCallData1 = encode_single("(address[],uint256[])",
-            [[whitelisted_recipient.address,whitelisted_recipient.address],
-            [int(5e18), int(7e18)]])
+    _evmScriptCallData1 = encode_single(
+        "(address[],uint256[])",
+        [[whitelisted_recipient.address, whitelisted_recipient.address], [int(5e18), int(7e18)]],
+    )
     tx1 = easy_track.createMotion(
         top_up_whitelisted_recipients,
         _evmScriptCallData1,
@@ -240,9 +219,10 @@ def test_limited_programs_easy_track(
 
     chain.sleep(60)
 
-    _evmScriptCallData2 = encode_single("(address[],uint256[])",
-            [[whitelisted_recipient.address,whitelisted_recipient.address],
-            [int(5e18), int(7e18)]])
+    _evmScriptCallData2 = encode_single(
+        "(address[],uint256[])",
+        [[whitelisted_recipient.address, whitelisted_recipient.address], [int(5e18), int(7e18)]],
+    )
     tx2 = easy_track.createMotion(
         top_up_whitelisted_recipients,
         _evmScriptCallData2,
@@ -295,10 +275,7 @@ def test_limited_programs_easy_track(
     assert len(easy_track.getMotions()) == 1
     assert ldo.balanceOf(whitelisted_recipient) == spent
 
-    easy_track.cancelMotion(
-        motions[0][0],
-        {"from": trusted_address}
-    )
+    easy_track.cancelMotion(motions[0][0], {"from": trusted_address})
 
     currentPeriodState = whitelisted_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
@@ -307,7 +284,6 @@ def test_limited_programs_easy_track(
     assert currentPeriodState[3] == periodEnd
     assert len(easy_track.getMotions()) == 0
     assert ldo.balanceOf(whitelisted_recipient) == spent
-
 
     # create new motion to remove a whitelisted recipient
     tx = easy_track.createMotion(
