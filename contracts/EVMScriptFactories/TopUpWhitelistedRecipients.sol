@@ -17,8 +17,8 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_LENGTH_MISMATCH = "LENGTH_MISMATCH";
     string private constant ERROR_EMPTY_DATA = "EMPTY_DATA";
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
-    string private constant ERROR_WHITELISTED_RECEPIENT_NOT_FOUND =
-        "ERROR_WHITELISTED_RECEPIENT_NOT_FOUND";
+    string private constant ERROR_WHITELISTED_RECIPIENT_NOT_FOUND =
+        "ERROR_WHITELISTED_RECIPIENT_NOT_FOUND";
     string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
 
     // -------------
@@ -126,7 +126,7 @@ contract TopUpWhitelistedRecipients is TrustedCaller, IEVMScriptFactory {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
                 whitelistedRecipientsRegistry.isWhitelistedRecipient(_whitelistedRecipients[i]),
-                ERROR_WHITELISTED_RECEPIENT_NOT_FOUND
+                ERROR_WHITELISTED_RECIPIENT_NOT_FOUND
             );
         }
     }

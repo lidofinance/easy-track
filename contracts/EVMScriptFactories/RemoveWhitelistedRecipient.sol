@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2022 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.4;
@@ -14,8 +14,8 @@ contract RemoveWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_WHITELISTED_RECEPIENT_NOT_FOUND =
-        "WHITELISTED_RECEPIENT_NOT_FOUND";
+    string private constant ERROR_WHITELISTED_RECIPIENT_NOT_FOUND =
+        "WHITELISTED_RECIPIENT_NOT_FOUND";
 
     // -------------
     // VARIABLES
@@ -54,7 +54,7 @@ contract RemoveWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
             whitelistedRecipientsRegistry.isWhitelistedRecipient(
                 _decodeEVMScriptCallData(_evmScriptCallData)
             ),
-            ERROR_WHITELISTED_RECEPIENT_NOT_FOUND
+            ERROR_WHITELISTED_RECIPIENT_NOT_FOUND
         );
         return
             EVMScriptCreator.createEVMScript(

@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2022 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.4;
@@ -14,8 +14,8 @@ contract AddWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_WHITELISTED_RECEPIENT_ALREADY_ADDED =
-        "WHITELISTED_RECEPIENT_ALREADY_ADDED";
+    string private constant ERROR_WHITELISTED_RECIPIENT_ALREADY_ADDED =
+        "WHITELISTED_RECIPIENT_ALREADY_ADDED";
 
     // -------------
     // VARIABLES
@@ -53,7 +53,7 @@ contract AddWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
         (address _recipientAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
         require(
             !whitelistedRecipientsRegistry.isWhitelistedRecipient(_recipientAddress),
-            ERROR_WHITELISTED_RECEPIENT_ALREADY_ADDED
+            ERROR_WHITELISTED_RECIPIENT_ALREADY_ADDED
         );
 
         return

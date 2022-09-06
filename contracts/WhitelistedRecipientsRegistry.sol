@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2022 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.4;
@@ -19,18 +19,18 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     // -------------
     // ROLES
     // -------------
-    bytes32 public constant ADD_WHITELISTED_RECEPIENT_ROLE =
-        keccak256("ADD_WHITELISTED_RECEPIENT_ROLE");
-    bytes32 public constant REMOVE_WHITELISTED_RECEPIENT_ROLE =
-        keccak256("REMOVE_WHITELISTED_RECEPIENT_ROLE");
+    bytes32 public constant ADD_WHITELISTED_RECIPIENT_ROLE =
+        keccak256("ADD_WHITELISTED_RECIPIENT_ROLE");
+    bytes32 public constant REMOVE_WHITELISTED_RECIPIENT_ROLE =
+        keccak256("REMOVE_WHITELISTED_RECIPIENT_ROLE");
 
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_WHITELISTED_RECEPIENT_ALREADY_ADDED =
-        "WHITELISTED_RECEPIENT_ALREADY_ADDED";
-    string private constant ERROR_WHITELISTED_RECEPIENT_NOT_FOUND =
-        "WHITELISTED_RECEPIENT_NOT_FOUND";
+    string private constant ERROR_WHITELISTED_RECIPIENT_ALREADY_ADDED =
+        "WHITELISTED_RECIPIENT_ALREADY_ADDED";
+    string private constant ERROR_WHITELISTED_RECIPIENT_NOT_FOUND =
+        "WHITELISTED_RECIPIENT_NOT_FOUND";
 
     // -------------
     // VARIABLES
@@ -49,9 +49,9 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
 
     /// @param _admin Address which will be granted with role DEFAULT_ADMIN_ROLE
     /// @param _addWhitelistedRecipientRoleHolders List of addresses which will be
-    ///     granted with role ADD_WHITELISTED_RECEPIENT_ROLE
+    ///     granted with role ADD_WHITELISTED_RECIPIENT_ROLE
     /// @param _removeWhitelistedRecipientRoleHolders List of addresses which will
-    ///     be granted with role REMOVE_WHITELISTED_RECEPIENT_ROLE
+    ///     be granted with role REMOVE_WHITELISTED_RECIPIENT_ROLE
     constructor(
         address _admin,
         address[] memory _addWhitelistedRecipientRoleHolders,
@@ -61,11 +61,11 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     ) LimitsChecker(_easy_track, _setLimitParametersRoleHolders) {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         for (uint256 i = 0; i < _addWhitelistedRecipientRoleHolders.length; i++) {
-            _setupRole(ADD_WHITELISTED_RECEPIENT_ROLE, _addWhitelistedRecipientRoleHolders[i]);
+            _setupRole(ADD_WHITELISTED_RECIPIENT_ROLE, _addWhitelistedRecipientRoleHolders[i]);
         }
         for (uint256 i = 0; i < _removeWhitelistedRecipientRoleHolders.length; i++) {
             _setupRole(
-                REMOVE_WHITELISTED_RECEPIENT_ROLE,
+                REMOVE_WHITELISTED_RECIPIENT_ROLE,
                 _removeWhitelistedRecipientRoleHolders[i]
             );
         }
@@ -78,11 +78,11 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     /// @notice Adds address to list of allowed addresses for payouts
     function addWhitelistedRecipient(address _whitelistedRecipient, string memory _title)
         external
-        onlyRole(ADD_WHITELISTED_RECEPIENT_ROLE)
+        onlyRole(ADD_WHITELISTED_RECIPIENT_ROLE)
     {
         require(
             whitelistedRecipientIndices[_whitelistedRecipient] == 0,
-            ERROR_WHITELISTED_RECEPIENT_ALREADY_ADDED
+            ERROR_WHITELISTED_RECIPIENT_ALREADY_ADDED
         );
 
         whitelistedRecipients.push(_whitelistedRecipient);
@@ -96,7 +96,7 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     /// and then remove the last element (sometimes called as 'swap and pop').
     function removeWhitelistedRecipient(address _whitelistedRecipient)
         external
-        onlyRole(REMOVE_WHITELISTED_RECEPIENT_ROLE)
+        onlyRole(REMOVE_WHITELISTED_RECIPIENT_ROLE)
     {
         uint256 index = _getWhitelistedRecipientIndex(_whitelistedRecipient);
         uint256 lastIndex = whitelistedRecipients.length - 1;
@@ -113,12 +113,8 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     }
 
     /// @notice Returns if passed address are listed as whitelisted recipient in the registry
-    function isWhitelistedRecipient(address _maybeWhitelistedRecipient)
-        external
-        view
-        returns (bool)
-    {
-        return whitelistedRecipientIndices[_maybeWhitelistedRecipient] > 0;
+    function isWhitelistedRecipient(address _address) external view returns (bool) {
+        return whitelistedRecipientIndices[_address] > 0;
     }
 
     /// @notice Returns current list of whitelisted recipients
@@ -136,7 +132,7 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
         returns (uint256 _index)
     {
         _index = whitelistedRecipientIndices[_evmScriptFactory];
-        require(_index > 0, ERROR_WHITELISTED_RECEPIENT_NOT_FOUND);
+        require(_index > 0, ERROR_WHITELISTED_RECIPIENT_NOT_FOUND);
         _index -= 1;
     }
 }
