@@ -31,6 +31,7 @@ def test_limited_programs_easy_track(
     TopUpWhitelistedRecipients,
     AddWhitelistedRecipient,
     RemoveWhitelistedRecipient,
+    bokkyPooBahsDateTimeContract,
 ):
     deployer = accounts[0]
     whitelisted_recipient = accounts[5]
@@ -63,6 +64,7 @@ def test_limited_programs_easy_track(
         [voting, evm_script_executor],
         [voting, evm_script_executor],
         easy_track,
+        bokkyPooBahsDateTimeContract,
     )
 
     # deploy TopUpWhitelistedRecipients EVM script factory

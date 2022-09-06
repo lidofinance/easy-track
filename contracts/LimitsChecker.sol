@@ -4,7 +4,7 @@
 pragma solidity ^0.8.4;
 
 import "./libraries/EVMScriptCreator.sol";
-import "./libraries/BokkyPooBahsDateTimeLibrary.sol";
+import "./interfaces/IBokkyPooBahsDateTimeContract.sol";
 import "./EasyTrack.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
@@ -52,6 +52,9 @@ abstract contract LimitsChecker is AccessControl {
     // STORAGE VARIABLES
     // ------------
 
+    /// @notice Address of BokkyPooBahsDateTimeContract
+    IBokkyPooBahsDateTimeContract public immutable bokkyPooBahsDateTimeContract;
+
     /// @notice Address of EasyTrack
     EasyTrack public immutable easyTrack;
 
@@ -70,11 +73,16 @@ abstract contract LimitsChecker is AccessControl {
     // ------------
     // CONSTRUCTOR
     // ------------
-    constructor(EasyTrack _easy_track, address[] memory _setLimitParametersRoleHolders) {
+    constructor(
+        EasyTrack _easy_track,
+        address[] memory _setLimitParametersRoleHolders,
+        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
+    ) {
         easyTrack = _easy_track;
         for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
             _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
         }
+        bokkyPooBahsDateTimeContract = _bokkyPooBahsDateTimeContract;
     }
 
     // -------------
@@ -208,9 +216,11 @@ abstract contract LimitsChecker is AccessControl {
     }
 
     function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
-        (uint256 _year, uint256 _month, ) = BokkyPooBahsDateTimeLibrary.timestampToDate(_timestamp);
+        (uint256 _year, uint256 _month, ) = bokkyPooBahsDateTimeContract.timestampToDate(
+            _timestamp
+        );
         return
-            BokkyPooBahsDateTimeLibrary.timestampFromDate(
+            bokkyPooBahsDateTimeContract.timestampFromDate(
                 _year,
                 _month - ((_month - 1) % periodDurationMonth),
                 1
@@ -219,6 +229,6 @@ abstract contract LimitsChecker is AccessControl {
 
     function _getPeriodEndFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
         uint256 _periodStart = _getPeriodStartFromTimestamp(_timestamp);
-        return BokkyPooBahsDateTimeLibrary.addMonths(_periodStart, periodDurationMonth);
+        return bokkyPooBahsDateTimeContract.addMonths(_periodStart, periodDurationMonth);
     }
 }

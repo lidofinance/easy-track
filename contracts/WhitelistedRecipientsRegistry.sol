@@ -57,8 +57,9 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
         address[] memory _addWhitelistedRecipientRoleHolders,
         address[] memory _removeWhitelistedRecipientRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
-        EasyTrack _easy_track
-    ) LimitsChecker(_easy_track, _setLimitParametersRoleHolders) {
+        EasyTrack _easy_track,
+        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
+    ) LimitsChecker(_easy_track, _setLimitParametersRoleHolders, _bokkyPooBahsDateTimeContract) {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         for (uint256 i = 0; i < _addWhitelistedRecipientRoleHolders.length; i++) {
             _setupRole(ADD_WHITELISTED_RECIPIENT_ROLE, _addWhitelistedRecipientRoleHolders[i]);
