@@ -15,6 +15,7 @@ from utils.evm_script import encode_call_script
 
 from utils.lido import create_voting, execute_voting
 
+from utils.config import network_name
 
 @pytest.mark.skip_coverage
 def test_node_operators_easy_track(
@@ -72,7 +73,7 @@ def test_node_operators_easy_track(
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
     # create voting to grant permissions to EVM script executor to set staking limit
-
+    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
     add_set_staking_limit_permissions_voting_id, _ = create_voting(
         encode_call_script(
             [
@@ -87,6 +88,7 @@ def test_node_operators_easy_track(
             ]
         ),
         "Grant permissions to EVMScriptExecutor to set staking limits",
+        netname,
         {"from": agent},
     )
 
@@ -102,7 +104,7 @@ def test_node_operators_easy_track(
     )
 
     add_node_operators_voting_id, _ = create_voting(
-        add_node_operator_evm_script, "Add node operator to registry", {"from": agent}
+        add_node_operator_evm_script, "Add node operator to registry", netname, {"from": agent}
     )
     # execute vote to add test node operator
     execute_voting(add_node_operators_voting_id)
@@ -270,7 +272,7 @@ def test_reward_programs_easy_track(
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
     # create voting to grant permissions to EVM script executor to create new payments
-
+    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
     add_create_payments_permissions_voting_id, _ = create_voting(
         encode_call_script(
             [
@@ -285,6 +287,7 @@ def test_reward_programs_easy_track(
             ]
         ),
         "Grant permissions to EVMScriptExecutor to make payments",
+        netname,
         {"from": agent},
     )
 
@@ -411,6 +414,7 @@ def test_lego_easy_track(
     assert evm_script_factories[0] == top_up_lego_program
 
     # create voting to grant permissions to EVM script executor to create new payments
+    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
     add_create_payments_permissions_voting_id, _ = create_voting(
         encode_call_script(
             [
@@ -425,6 +429,7 @@ def test_lego_easy_track(
             ]
         ),
         "Grant permissions to EVMScriptExecutor to make payments",
+        netname,
         {"from": agent},
     )
 

@@ -1,3 +1,5 @@
+import pytest
+
 from scripts.vote_for_reward_programs import start_vote
 
 from utils import (
@@ -34,6 +36,7 @@ ldo_vote_executors_for_tests = {
     ]
 }
 
+@pytest.mark.skip(reason="already deployed om mainnet")
 def test_vote_for_reward_programs(
     helpers, accounts, vote_id_from_env
 ):
