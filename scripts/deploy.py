@@ -18,6 +18,8 @@ def main():
     lego_committee_multisig = get_env("LEGO_COMMITTEE_MULTISIG")
     # address allowed to create motions to add, remove or top up reward program
     reward_programs_multisig = get_env("REWARD_PROGRAMS_MULTISIG")
+    # address allowed to create motions to add, remove or top up whitelisted recipients
+    reward_programs_multisig = get_env("WHITELISTED_RECIPIENTS_MULTISIG")
     # address to grant PAUSE_ROLE (optional)
     pause_address = get_env("PAUSE_ADDRESS")
 

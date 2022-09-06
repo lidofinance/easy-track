@@ -6,7 +6,11 @@ from brownie import (
     RemoveRewardProgram,
     TopUpRewardPrograms,
     RewardProgramsRegistry,
-    IncreaseNodeOperatorStakingLimit
+    IncreaseNodeOperatorStakingLimit,
+    AddWhitelistedRecipient,
+    RemoveWhitelistedRecipient,
+    TopUpWhitelistedRecipients,
+    WhitelistedRecipientsRegistry,
 )
 
 
@@ -42,6 +46,11 @@ def deploy_evm_script_executor(
 def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
     return RewardProgramsRegistry.deploy(
         voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
+    )
+
+def deploy_whitelisted_recipients_registry(voting, evm_script_executor, easy_track, tx_params):
+    return WhitelistedRecipientsRegistry.deploy(
+        voting, [voting, evm_script_executor], [voting, evm_script_executor], [voting, evm_script_executor], easy_track, tx_params
     )
 
 def deploy_increase_node_operator_staking_limit(node_operators_registry, tx_params):
@@ -85,6 +94,34 @@ def deploy_top_up_reward_programs(
         tx_params,
     )
 
+def deploy_add_whitelisted_recipient(
+    whitelisted_recipients_registry, whitelisted_recipients_multisig, tx_params
+):
+    return AddWhitelistedRecipient.deploy(
+        whitelisted_recipients_multisig, whitelisted_recipients_registry, tx_params
+    )
+
+def deploy_remove_whitelisted_recipient(
+    whitelisted_recipients_registry, whitelisted_recipients_multisig, tx_params
+):
+    return RemoveWhitelistedRecipient.deploy(
+        whitelisted_recipients_multisig, whitelisted_recipients_registry, tx_params
+    )
+
+def deploy_top_up_whitelisted_recipients(
+    finance,
+    governance_token,
+    whitelisted_recipients_registry,
+    whitelisted_recipients_multisig,
+    tx_params,
+):
+    return TopUpRewardPrograms.deploy(
+        whitelisted_recipients_multisig,
+        whitelisted_recipients_registry,
+        finance,
+        governance_token,
+        tx_params,
+    )
 
 def grant_roles(easy_track, admin, pause_address, tx_params):
     easy_track.grantRole(easy_track.PAUSE_ROLE(), admin, tx_params)
