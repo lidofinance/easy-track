@@ -48,9 +48,9 @@ def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
         voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
     )
 
-def deploy_whitelisted_recipients_registry(voting, evm_script_executor, easy_track, tx_params):
+def deploy_whitelisted_recipients_registry(voting, evm_script_executor, easy_track, bokkyPooBahsDateTimeContract, tx_params):
     return WhitelistedRecipientsRegistry.deploy(
-        voting, [voting, evm_script_executor], [voting, evm_script_executor], [voting, evm_script_executor], easy_track, tx_params
+        voting, [voting, evm_script_executor], [voting, evm_script_executor], [voting, evm_script_executor], easy_track, bokkyPooBahsDateTimeContract, tx_params
     )
 
 def deploy_increase_node_operator_staking_limit(node_operators_registry, tx_params):

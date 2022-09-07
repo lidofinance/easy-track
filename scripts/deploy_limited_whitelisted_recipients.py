@@ -34,6 +34,7 @@ def main():
     # address allowed to create motions to add, remove or top up whitelisted recipients
     whitelisted_recipients_multisig = get_env("WHITELISTED_RECIPIENTS_MULTISIG")
 
+    bokkyPooBahsDateTimeContract = get_env("BOOKYPOOBAH_DATETIME_CONTRACT")
     log.br()
 
     log.nb("Current network", network.show_active(), color_hl=log.color_magenta)
@@ -73,6 +74,7 @@ def main():
         lido_contracts=contracts,
         whitelisted_recipients_multisig=whitelisted_recipients_multisig,
         easy_track=easy_track,
+        bokkyPooBahsDateTimeContract=bokkyPooBahsDateTimeContract,
         tx_params=tx_params,
     )
 
@@ -127,12 +129,14 @@ def deploy_whitelisted_recipients_contracts(
     lido_contracts,
     whitelisted_recipients_multisig,
     easy_track,
+    bokkyPooBahsDateTimeContract,
     tx_params,
 ):
     whitelisted_recipients_registry = deployment.deploy_whitelisted_recipients_registry(
         voting=lido_contracts.aragon.voting,
         evm_script_executor=evm_script_executor,
         easy_track=easy_track,
+        bokkyPooBahsDateTimeContract=bokkyPooBahsDateTimeContract,
         tx_params=tx_params,
     )
     add_whitelisted_recipient = deployment.deploy_add_whitelisted_recipient(
