@@ -19,7 +19,42 @@ def create_permission(contract, method):
     return contract.address + getattr(contract, method).signature[2:]
 
 
-def test_limited_programs_easy_track(
+# #######################################
+#   The following TODOs are test plan   #
+# #######################################
+
+# TODO: test motion ended and enacted in the same period
+
+# TODO: test motion ended in the same and enacted in the next period
+
+# TODO: test motion ended and enacted in the next period
+
+# TODO: test motion enacted in after-the-next period
+
+# TODO: test attempt to exceed the limit for a specific recipient
+#       test attempt to exceed the period limit
+#       test the limit is cumulative for all whitelisted recipients
+
+# TODO: test max number of the whitelisted recipients
+
+# TODO: test attempt to remove not whitelisted recipient
+
+# TODO: test attempt to add an already whitelisted recipient
+
+# TODO: ?? the limits are checked at the time of enactment
+
+# TODO: ?? the limits are checked at the time of motion creation
+
+# TODO: test LimitsChecker functions
+#       - incorrect period durations (e. g. 7 months)
+#       - cover all functions
+
+# TODO: changing limit and/or period duration while motion is on the go
+
+# TODO: checking that createMotion also reverts if limit exceeds
+
+
+def test_whitelisted_recipients_happy_path(
     stranger,
     agent,
     voting,
