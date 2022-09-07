@@ -4,15 +4,18 @@ from brownie.network import chain
 from brownie import EasyTrack, EVMScriptExecutor, accounts, reverts
 
 from eth_abi import encode_single
-from utils.evm_script import encode_call_script
+from utils.evm_script import encode_call_script, encode_calldata
 
 from utils.config import network_name
 
 from utils.lido import create_voting, execute_voting, addresses
 
-
-def encode_calldata(signature, values):
-    return "0x" + encode_single(signature, values).hex()
+from utils.test_helpers import (
+    assert_single_event,
+    assert_event_exists,
+    access_control_revert_message,
+    SET_LIMIT_PARAMETERS_ROLE,
+)
 
 
 def create_permission(contract, method):
@@ -22,6 +25,8 @@ def create_permission(contract, method):
 # #######################################
 #   The following TODOs are test plan   #
 # #######################################
+
+# TODO: just motion creation for the new factory
 
 # TODO: test motion ended and enacted in the same period
 
@@ -52,6 +57,185 @@ def create_permission(contract, method):
 # TODO: changing limit and/or period duration while motion is on the go
 
 # TODO: checking that createMotion also reverts if limit exceeds
+
+# TODO: cover all the events
+#       - WhitelistedRecipientAdded
+#       - WhitelistedRecipientRemoved
+#       - LimitsParametersChanged
+#       - FundsSpent
+
+# TODO: cover all error messages
+
+# TODO: add test_xxx for each factory like tests in tests/evm_script_factories
+
+
+MOTION_DURATION_SECS: int = 48 * 60 * 60
+
+
+def test_add_remove_recipient(entire_whitelisted_recipients_setup, accounts, stranger):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        whitelisted_recipients_registry,
+        _,  # top_up_whitelisted_recipients,
+        add_whitelisted_recipient,
+        remove_whitelisted_recipient,
+    ) = entire_whitelisted_recipients_setup
+
+    recipient = accounts[8]
+    recipient_title = "New Whitelisted Recipient"
+
+    trusted_address = accounts[7]
+
+    add_whitelisted_recipient_calldata = encode_calldata(
+        "(address,string)", [recipient.address, recipient_title]
+    )
+
+    tx = easy_track.createMotion(
+        add_whitelisted_recipient, add_whitelisted_recipient_calldata, {"from": trusted_address}
+    )
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    tx = easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        tx.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
+    )
+    assert_event_exists(
+        tx,
+        "WhitelistedRecipientAdded",
+        {"_whitelistedRecipient": recipient, "_title": recipient_title},
+    )
+
+    assert len(easy_track.getMotions()) == 0
+    assert whitelisted_recipients_registry.getWhitelistedRecipients() == [recipient]
+
+    assert whitelisted_recipients_registry.isWhitelistedRecipient(recipient)
+    assert not whitelisted_recipients_registry.isWhitelistedRecipient(stranger)
+
+    # create new motion to remove a whitelisted recipient
+    tx = easy_track.createMotion(
+        remove_whitelisted_recipient,
+        encode_single("(address)", [recipient.address]),
+        {"from": trusted_address},
+    )
+    motion_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    tx = easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion_calldata,
+        {"from": stranger},
+    )
+    assert len(whitelisted_recipients_registry.getWhitelistedRecipients()) == 0
+    assert_event_exists(
+        tx,
+        "WhitelistedRecipientRemoved",
+        {"_whitelistedRecipient": recipient},
+    )
+    assert not whitelisted_recipients_registry.isWhitelistedRecipient(recipient)
+
+
+def test_motion_created_and_enacted_in_same_period(
+    entire_whitelisted_recipients_setup_with_two_recipients,
+):
+    (
+        easy_track,
+        evm_script_executor,
+        whitelisted_recipients_registry,
+        top_up_whitelisted_recipients,
+        add_whitelisted_recipient,
+        remove_whitelisted_recipient,
+        recipient1,
+        recipient2,
+    ) = entire_whitelisted_recipients_setup_with_two_recipients
+    assert False, "TODO"
+
+
+def test_limits_checker_access_restriction(
+    owner, lego_program, stranger, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    manager = lego_program
+
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
+    )
+
+    with reverts(access_control_revert_message(stranger, SET_LIMIT_PARAMETERS_ROLE)):
+        limits_checker.setLimitParameters(123, 1, {"from": stranger})
+
+    with reverts(access_control_revert_message(owner, SET_LIMIT_PARAMETERS_ROLE)):
+        limits_checker.setLimitParameters(123, 1, {"from": owner})
+
+    with reverts("CALLER_IS_FORBIDDEN"):
+        limits_checker.updateSpendableBalance(123, {"from": stranger})
+
+    with reverts("CALLER_IS_FORBIDDEN"):
+        limits_checker.updateSpendableBalance(123, {"from": manager})
+
+
+def test_limits_checker_incorrect_period_duration(
+    owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    pass
+    manager = lego_program
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
+    )
+
+    period_limit = 10**18
+    for duration in [0, 4, 5, 7, 8, 9, 10, 11, 13, 14, 100500]:
+        with reverts("WRONG_PERIOD_DURATION"):
+            limits_checker.setLimitParameters(period_limit, duration, {"from": manager})
+
+
+def test_limits_checker(
+    owner, lego_program, stranger, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    # TODO: don't fix specific months, otherwise the test won't work next month
+    SEPTEMBER_1 = 1661990400  # Sep 01 2022 00:00:00 GMT+0000
+    OCTOBER_1 = 1664582400  # Oct 01 2022 00:00:00 GMT+0000
+
+    manager = lego_program
+    script_executor = easy_track.evmScriptExecutor()
+
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
+    )
+    assert limits_checker.getLimitParameters() == (0, 0)
+
+    # TODO fix: call reverts due to call of _getPeriodStartFromTimestamp when period duration is zero
+    # assert limits_checker.getCurrentPeriodState() == (0, 0, 0, 0)
+
+    assert limits_checker.currentSpendableBalance() == 0
+    assert limits_checker.isUnderSpendableBalance(0)
+
+    period_limit, period_duration = 3 * 10**18, 1
+
+    tx = limits_checker.setLimitParameters(period_limit, period_duration, {"from": manager})
+    assert_single_event(
+        tx,
+        "LimitsParametersChanged",
+        {"_limit": period_limit, "_periodDurationMonth": period_duration},
+    )
+    assert limits_checker.getLimitParameters() == (period_limit, period_duration)
+
+    spending = 1 * 10**18
+    spendable = period_limit - spending
+    tx = limits_checker.updateSpendableBalance(spending, {"from": script_executor})
+    assert limits_checker.getCurrentPeriodState() == (spending, spendable, SEPTEMBER_1, OCTOBER_1)
+    assert_single_event(
+        tx,
+        "FundsSpent",
+        {
+            "_alreadySpentAmount": spending,
+            "_spendableAmount": spendable,
+            "_periodStartTimestamp": SEPTEMBER_1,
+            "_periodEndTimestamp": OCTOBER_1,
+        },
+    )
 
 
 def test_whitelisted_recipients_happy_path(
@@ -211,7 +395,6 @@ def test_whitelisted_recipients_happy_path(
     periodEnd = Okt1
 
     # create voting to set limit parameters
-    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
 
     set_limit_parameters_voting_id, _ = create_voting(
         evm_script=encode_call_script(
@@ -329,13 +512,10 @@ def test_whitelisted_recipients_happy_path(
         {"from": trusted_address},
     )
 
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
-
-    chain.sleep(48 * 60 * 60 + 100)
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     easy_track.enactMotion(
-        motions[0][0],
+        easy_track.getMotions()[0][0],
         tx.events["MotionCreated"]["_evmScriptCallData"],
         {"from": stranger},
     )

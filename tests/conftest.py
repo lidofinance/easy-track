@@ -3,10 +3,12 @@ from typing import Optional
 
 import pytest
 import brownie
-from brownie import chain
+from brownie import chain, EasyTrack, EVMScriptExecutor
 
 import constants
-from utils.lido import contracts
+from utils.evm_script import encode_call_script, encode_calldata
+from utils.lido import contracts, create_voting, execute_voting
+from utils.config import network_name
 from utils import test_helpers
 
 brownie.web3.enable_strict_bytes_type_checking()
@@ -132,6 +134,10 @@ def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProg
         [voting, evm_script_executor_stub],
     )
 
+@pytest.fixture(scope="module")
+def limits_checker_wrapper(owner, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract):
+    return owner.deploy(LimitsCheckerWrapper, easy_track, [owner], bokkyPooBahsDateTimeContract)
+
 
 ############
 # EVM SCRIPT FACTORIES
@@ -201,8 +207,193 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 
 @pytest.fixture(scope="module")
-def limits_checker_wrapper(owner, easy_track, LimitsCheckerWrapper):
-    return owner.deploy(LimitsCheckerWrapper, easy_track)
+def entire_whitelisted_recipients_setup(
+    accounts,
+    owner,
+    ldo,
+    voting,
+    calls_script,
+    finance,
+    agent,
+    acl,
+    bokkyPooBahsDateTimeContract,
+    WhitelistedRecipientsRegistry,
+    TopUpWhitelistedRecipients,
+    AddWhitelistedRecipient,
+    RemoveWhitelistedRecipient,
+):
+    deployer = owner
+    trusted_address = accounts[7]
+
+    def create_permission(contract, method):
+        return contract.address + getattr(contract, method).signature[2:]
+
+    # deploy easy track
+    easy_track = deployer.deploy(
+        EasyTrack,
+        ldo,
+        deployer,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
+
+    # deploy evm script executor
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
+    evm_script_executor.transferOwnership(voting, {"from": deployer})
+    assert evm_script_executor.owner() == voting
+
+    # set EVM script executor in easy track
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
+
+    # deploy WhitelistedRecipientsRegistry
+    whitelisted_recipients_registry = deployer.deploy(
+        WhitelistedRecipientsRegistry,
+        voting,
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        easy_track,
+        bokkyPooBahsDateTimeContract,
+    )
+
+    # deploy TopUpWhitelistedRecipients EVM script factory
+    top_up_whitelisted_recipients = deployer.deploy(
+        TopUpWhitelistedRecipients, trusted_address, whitelisted_recipients_registry, finance, ldo
+    )
+
+    # add TopUpWhitelistedRecipients EVM script factory to easy track
+    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
+
+    update_limit_permission = create_permission(
+        whitelisted_recipients_registry, "updateSpendableBalance"
+    )
+
+    permissions = new_immediate_payment_permission + update_limit_permission[2:]
+
+    easy_track.addEVMScriptFactory(top_up_whitelisted_recipients, permissions, {"from": deployer})
+
+    # deploy AddWhitelistedRecipient EVM script factory
+    add_whitelisted_recipient = deployer.deploy(
+        AddWhitelistedRecipient, trusted_address, whitelisted_recipients_registry
+    )
+
+    # add AddWhitelistedRecipient EVM script factory to easy track
+    add_whitelisted_recipient_permission = create_permission(
+        whitelisted_recipients_registry, "addWhitelistedRecipient"
+    )
+
+    easy_track.addEVMScriptFactory(
+        add_whitelisted_recipient, add_whitelisted_recipient_permission, {"from": deployer}
+    )
+
+    # deploy RemoveWhitelistedRecipient EVM script factory
+    remove_whitelisted_recipient = deployer.deploy(
+        RemoveWhitelistedRecipient, trusted_address, whitelisted_recipients_registry
+    )
+
+    # add RemoveWhitelistedRecipient EVM script factory to easy track
+    remove_whitelisted_recipient_permission = create_permission(
+        whitelisted_recipients_registry, "removeWhitelistedRecipient"
+    )
+    easy_track.addEVMScriptFactory(
+        remove_whitelisted_recipient, remove_whitelisted_recipient_permission, {"from": deployer}
+    )
+
+    # create voting to grant permissions to EVM script executor to create new payments
+    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
+
+    add_create_payments_permissions_voting_id, _ = create_voting(
+        evm_script=encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        evm_script_executor,
+                        finance,
+                        finance.CREATE_PAYMENTS_ROLE(),
+                    ),
+                ),
+            ]
+        ),
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        network=netname,
+        tx_params={"from": agent},
+    )
+
+    # execute voting to add permissions to EVM script executor to create payments
+    execute_voting(add_create_payments_permissions_voting_id, netname)
+
+    return (
+        easy_track,
+        evm_script_executor,
+        whitelisted_recipients_registry,
+        top_up_whitelisted_recipients,
+        add_whitelisted_recipient,
+        remove_whitelisted_recipient,
+    )
+
+
+@pytest.fixture(scope="module")
+def entire_whitelisted_recipients_setup_with_two_recipients(
+    entire_whitelisted_recipients_setup,
+    accounts,
+    stranger
+):
+    (
+        easy_track,
+        evm_script_executor,
+        whitelisted_recipients_registry,
+        top_up_whitelisted_recipients,
+        add_whitelisted_recipient,
+        remove_whitelisted_recipient,
+    ) = entire_whitelisted_recipients_setup
+
+    recipient1 = accounts[8]
+    recipient1_title = "Recipient 1"
+    recipient2 = accounts[9]
+    recipient2_title = "Recipient 2"
+
+    trusted_address = accounts[7]
+
+    tx = easy_track.createMotion(
+        add_whitelisted_recipient,
+        encode_calldata("(address,string)", [recipient1.address, recipient1_title]),
+        {"from": trusted_address},
+    )
+    motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    tx = easy_track.createMotion(
+        add_whitelisted_recipient,
+        encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
+        {"from": trusted_address}
+    )
+    motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion1_calldata,
+        {"from": stranger},
+    )
+    easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion2_calldata,
+        {"from": stranger},
+    )
+    assert whitelisted_recipients_registry.getWhitelistedRecipients() == [recipient1, recipient2]
+
+    return (
+        easy_track,
+        evm_script_executor,
+        whitelisted_recipients_registry,
+        top_up_whitelisted_recipients,
+        add_whitelisted_recipient,
+        remove_whitelisted_recipient,
+        recipient1,
+        recipient2,
+    )
 
 
 ##########
@@ -332,4 +523,4 @@ def vote_id_from_env() -> Optional[int]:
 
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
-    return '0x23d23d8f243e57d0b924bff3a3191078af325101'
+    return "0x23d23d8f243e57d0b924bff3a3191078af325101"
