@@ -18,7 +18,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 /// │         ..   |          ... |
 /// │           ...|             .|
 /// │─────────────────────────────────────────> Time
-/// │     ^   ^ ^  |periodEnd ^  ^|periodEnd    ^ - Motion enaction
+/// │     ^   ^ ^  |periodEnd ^  ^|periodEnd    ^ - Motion enactment
 /// |              |spent=0       |spent=0
 ///
 abstract contract LimitsChecker is AccessControl {

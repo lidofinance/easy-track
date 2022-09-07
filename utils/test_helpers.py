@@ -9,7 +9,7 @@ DEFAULT_ADMIN_ROLE = (
 PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
 
 
-def access_controll_revert_message(sender, role=DEFAULT_ADMIN_ROLE):
+def access_control_revert_message(sender, role=DEFAULT_ADMIN_ROLE):
     PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
     return PERMISSION_ERROR_TEMPLATE % (sender.address.lower(), role)
 

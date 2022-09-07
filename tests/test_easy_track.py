@@ -3,7 +3,7 @@ from brownie.network.state import Chain
 from brownie import reverts, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
 from utils.test_helpers import (
-    access_controll_revert_message,
+    access_control_revert_message,
     CANCEL_ROLE,
     PAUSE_ROLE,
     UNPAUSE_ROLE,
@@ -568,7 +568,7 @@ def test_object_to_motion_edge_case(
 def test_cancel_motions_called_without_permissions(stranger, easy_track):
     "Must revert with correct Access Control message if called"
     "by address without role 'CANCEL_ROLE'"
-    with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
+    with reverts(access_control_revert_message(stranger, CANCEL_ROLE)):
         easy_track.cancelMotions([], {"from": stranger})
 
 
@@ -622,7 +622,7 @@ def test_cancel_motions(
 def test_cancel_all_motions_called_by_stranger(stranger, easy_track):
     "Must revert with correct Access Control message if called"
     "by address without role 'CANCEL_ROLE'"
-    with reverts(access_controll_revert_message(stranger, CANCEL_ROLE)):
+    with reverts(access_control_revert_message(stranger, CANCEL_ROLE)):
         easy_track.cancelAllMotions({"from": stranger})
 
 
@@ -659,7 +659,7 @@ def test_cancel_all_motions(owner, voting, easy_track, evm_script_factory_stub):
 def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
     "Must revert with correct Access Control message if called"
     "by address without role 'DEFAULT_ADMIN_ROLE'"
-    with reverts(access_controll_revert_message(stranger)):
+    with reverts(access_control_revert_message(stranger)):
         easy_track.setEVMScriptExecutor(ZERO_ADDRESS, {"from": stranger})
 
 
@@ -686,7 +686,7 @@ def test_pause_called_without_permissions(stranger, easy_track):
     "Must revert with correct Access Control message if called"
     "by address without role 'PAUSE_ROLE'"
     assert not easy_track.paused()
-    with reverts(access_controll_revert_message(stranger, PAUSE_ROLE)):
+    with reverts(access_control_revert_message(stranger, PAUSE_ROLE)):
         easy_track.pause({"from": stranger})
     assert not easy_track.paused()
 
@@ -719,7 +719,7 @@ def test_unpause_called_without_permissions(voting, stranger, easy_track):
     "by address without role 'UNPAUSE_ROLE'"
     easy_track.pause({"from": voting})
     assert easy_track.paused()
-    with reverts(access_controll_revert_message(stranger, UNPAUSE_ROLE)):
+    with reverts(access_control_revert_message(stranger, UNPAUSE_ROLE)):
         easy_track.unpause({"from": stranger})
     assert easy_track.paused()
 

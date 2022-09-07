@@ -39,7 +39,7 @@ contract WhitelistedRecipientsRegistry is AccessControl, LimitsChecker {
     /// @dev List of allowed addresses for payouts
     address[] public whitelistedRecipients;
 
-    // Position of the addredd in the `whitelistedRecipients` array,
+    // Position of the address in the `whitelistedRecipients` array,
     // plus 1 because index 0 means a value is not in the set.
     mapping(address => uint256) private whitelistedRecipientIndices;
 

@@ -1,5 +1,5 @@
 from brownie import reverts
-from utils.test_helpers import access_controll_revert_message
+from utils.test_helpers import access_control_revert_message
 
 
 def test_deploy(owner, voting, evm_script_executor_stub, RewardProgramsRegistry):
@@ -32,7 +32,7 @@ def test_add_reward_program_called_by_stranger(stranger, reward_programs_registr
         reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), stranger
     )
     with reverts(
-        access_controll_revert_message(
+        access_control_revert_message(
             stranger, reward_programs_registry.ADD_REWARD_PROGRAM_ROLE()
         )
     ):
@@ -73,7 +73,7 @@ def test_remove_reward_program_called_by_stranger(
         reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), stranger
     )
     with reverts(
-        access_controll_revert_message(
+        access_control_revert_message(
             stranger, reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE()
         )
     ):
