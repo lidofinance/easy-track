@@ -26,7 +26,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 /// If, for example, periodDurationMonth = 3, then it is considered that the date changes once a quarter. And can take values 01.01, 01.04, 01.07, 01.10.
 /// If periodDurationMonth = 1, then shift of currentPeriodEnd occures once a month and currentPeriodEnd can take values 01.01, 01.02, 01.03 etc
 ///
-abstract contract LimitsChecker is AccessControl {
+contract LimitsChecker is AccessControl {
     // -------------
     // EVENTS
     // -------------

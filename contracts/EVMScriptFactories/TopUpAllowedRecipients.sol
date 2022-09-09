@@ -17,7 +17,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_LENGTH_MISMATCH = "LENGTH_MISMATCH";
     string private constant ERROR_EMPTY_DATA = "EMPTY_DATA";
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
-    string private constant ERROR_ALLOWED_RECIPIENT_NOT_FOUND = "ERROR_ALLOWED_RECIPIENT_NOT_FOUND";
+    string private constant ERROR_RECIPIENT_NOT_ALLOWED = "RECIPIENT_NOT_ALLOWED";
     string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
 
     // -------------
@@ -122,7 +122,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
                 allowedRecipientsRegistry.isAllowedRecipient(_allowedRecipients[i]),
-                ERROR_ALLOWED_RECIPIENT_NOT_FOUND
+                ERROR_RECIPIENT_NOT_ALLOWED
             );
         }
     }
