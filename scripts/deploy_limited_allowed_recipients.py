@@ -5,7 +5,7 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    network_name
+    get_network_name,
 )
 from utils import (
     deployment,
@@ -22,11 +22,11 @@ from brownie import (
 )
 
 def main():
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
+    network_name = get_network_name()
 
-    contracts = lido.contracts(network=netname)
-    et_contracts = deployed_easy_track.contracts(network=netname)
-    deployer = get_deployer_account(get_is_live(), network=netname)
+    contracts = lido.contracts(network=network_name)
+    et_contracts = deployed_easy_track.contracts(network=network_name)
+    deployer = get_deployer_account(get_is_live(), network=network_name)
 
     easy_track = et_contracts.easy_track
     evm_script_executor = et_contracts.evm_script_executor
@@ -38,7 +38,7 @@ def main():
     log.br()
 
     log.nb("Current network", network.show_active(), color_hl=log.color_magenta)
-    log.nb("Using deployed addresses for", netname, color_hl=log.color_yellow)
+    log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
     log.ok("Governance Token", contracts.ldo)

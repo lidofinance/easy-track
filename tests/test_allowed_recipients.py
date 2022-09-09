@@ -6,7 +6,7 @@ from brownie import EasyTrack, EVMScriptExecutor, accounts, reverts
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script, encode_calldata
 
-from utils.config import network_name
+from utils.config import get_network_name
 
 from utils.lido import create_voting, execute_voting, addresses
 
@@ -313,8 +313,6 @@ def test_allowed_recipients_happy_path(
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
-    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
-
     add_create_payments_permissions_voting_id, _ = create_voting(
         evm_script=encode_call_script(
             [
@@ -329,12 +327,12 @@ def test_allowed_recipients_happy_path(
             ]
         ),
         description="Grant permissions to EVMScriptExecutor to make payments",
-        network=netname,
+        network=get_network_name(),
         tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(add_create_payments_permissions_voting_id, netname)
+    execute_voting(add_create_payments_permissions_voting_id, get_network_name())
 
     add_allowed_recipient_calldata = encode_calldata(
         "(address,string)", [allowed_recipient.address, allowed_recipient_title]
@@ -372,7 +370,6 @@ def test_allowed_recipients_happy_path(
     Jan12022 = 1640995200
     Jan12023 = 1672531200
 
-
     # set limit parameters
     limit = 20e18
     spent = 0
@@ -395,12 +392,12 @@ def test_allowed_recipients_happy_path(
             ]
         ),
         description="Set limit parameters",
-        network=netname,
+        network=get_network_name(),
         tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(set_limit_parameters_voting_id, netname)
+    execute_voting(set_limit_parameters_voting_id, get_network_name())
 
     assert allowed_recipients_registry.getLimitParameters()[0] == limit
     assert allowed_recipients_registry.getLimitParameters()[1] == periodDurationMonth

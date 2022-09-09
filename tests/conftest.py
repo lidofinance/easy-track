@@ -8,7 +8,7 @@ from brownie import chain, EasyTrack, EVMScriptExecutor
 import constants
 from utils.evm_script import encode_call_script, encode_calldata
 from utils.lido import contracts, create_voting, execute_voting
-from utils.config import network_name
+from utils.config import get_network_name
 from utils import test_helpers
 
 brownie.web3.enable_strict_bytes_type_checking()
@@ -301,7 +301,7 @@ def entire_allowed_recipients_setup(
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
-    netname = "goerli" if network_name().split("-")[0] == "goerli" else "mainnet"
+    network_name = get_network_name()
 
     add_create_payments_permissions_voting_id, _ = create_voting(
         evm_script=encode_call_script(
@@ -317,12 +317,12 @@ def entire_allowed_recipients_setup(
             ]
         ),
         description="Grant permissions to EVMScriptExecutor to make payments",
-        network=netname,
+        network=network_name,
         tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(add_create_payments_permissions_voting_id, netname)
+    execute_voting(add_create_payments_permissions_voting_id, network_name)
 
     return (
         easy_track,

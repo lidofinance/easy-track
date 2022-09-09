@@ -12,7 +12,7 @@ from utils.config import (
     get_env,
     get_is_live,
     get_deployer_account,
-    network_name
+    get_network_name,
 )
 
 from utils import (
@@ -25,11 +25,11 @@ def create_permission(contract, method):
     return contract.address + getattr(contract, method).signature[2:]
 
 def start_vote(
-    netname: str,
+    network_name: str,
     deployer: Optional[str]
 ) -> int:
-    contracts = lido.contracts(network=netname)
-    et_contracts = deployed_easy_track.contracts(network=netname)
+    contracts = lido.contracts(network=network_name)
+    et_contracts = deployed_easy_track.contracts(network=network_name)
 
     tx_params = { "from": deployer }
     if (get_is_live()):
@@ -50,7 +50,7 @@ def start_vote(
     log.br()
 
     log.nb("Current network", network.show_active(), color_hl=log.color_magenta)
-    log.nb("Using deployed addresses for", netname, color_hl=log.color_yellow)
+    log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
     log.ok("Reward programs type", prog_type)
@@ -100,17 +100,18 @@ def start_vote(
         easy_track=easy_track,
         factories_to_remove=factories_to_remove,
         factories_to_add=factories_to_add,
-        network=netname,
+        network=network_name,
         tx_params=tx_params
     )
 
     return vote_id
 
 def main():
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
-    deployer = get_deployer_account(get_is_live(), network=netname)
+    network_name = get_network_name()
 
-    vote_id = start_vote(netname, deployer)
+    deployer = get_deployer_account(get_is_live(), network=network_name)
+
+    vote_id = start_vote(network_name, deployer)
 
     vote_id >= 0 and print(f'Vote successfully started! Vote id: {vote_id}.')
 

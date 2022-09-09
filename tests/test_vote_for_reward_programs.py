@@ -8,7 +8,7 @@ from utils import (
 )
 
 from utils.config import (
-    network_name,
+    get_network_name,
     get_deployer_account,
     get_is_live
 )
@@ -40,10 +40,10 @@ ldo_vote_executors_for_tests = {
 def test_vote_for_reward_programs(
     helpers, accounts, vote_id_from_env
 ):
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
+    network_name = get_network_name()
 
-    contracts = lido.contracts(network=netname)
-    et_contracts = deployed_easy_track.contracts(network=netname)
+    contracts = lido.contracts(network=network_name)
+    et_contracts = deployed_easy_track.contracts(network=network_name)
 
     easy_track = et_contracts.easy_track
     factories_before = easy_track.getEVMScriptFactories()
@@ -57,14 +57,14 @@ def test_vote_for_reward_programs(
     ##
     ## START VOTE
     ##
-    deployer = get_deployer_account(get_is_live(), network=netname)
-    vote_id = vote_id_from_env or start_vote(netname, deployer)
+    deployer = get_deployer_account(get_is_live(), network=network_name)
+    vote_id = vote_id_from_env or start_vote(network_name, deployer)
 
     _ = helpers.execute_vote(
         vote_id=vote_id,
         accounts=accounts,
         dao_voting=contracts.aragon.voting,
-        ldo_vote_executors_for_tests=ldo_vote_executors_for_tests[netname]
+        ldo_vote_executors_for_tests=ldo_vote_executors_for_tests[network_name]
     )
 
     factories_after = easy_track.getEVMScriptFactories()
