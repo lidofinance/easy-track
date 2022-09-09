@@ -115,7 +115,7 @@ def deploy_top_up_allowed_recipients(
     allowed_recipients_multisig,
     tx_params,
 ):
-    return TopUpRewardPrograms.deploy(
+    return TopUpAllowedRecipients.deploy(
         allowed_recipients_multisig,
         allowed_recipients_registry,
         finance,
@@ -185,6 +185,38 @@ def add_evm_script_reward_program_factories(
     easy_track.addEVMScriptFactory(
         remove_reward_program,
         create_permission(reward_programs_registry, "removeRewardProgram"),
+        tx_params,
+    )
+
+def add_evm_script_allowed_recipients_factories(
+    easy_track,
+    add_allowed_recipient,
+    remove_allowed_recipient,
+    top_up_allowed_recipients,
+    allowed_recipients_registry,
+    finance,
+    tx_params
+):
+    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
+
+    update_limit_permission = create_permission(
+        allowed_recipients_registry, "updateSpendableBalance"
+    )
+    permissions = new_immediate_payment_permission + update_limit_permission[2:]
+
+    easy_track.addEVMScriptFactory(
+        top_up_allowed_recipients,
+        permissions,
+        tx_params,
+    )
+    easy_track.addEVMScriptFactory(
+        add_allowed_recipient,
+        create_permission(allowed_recipients_registry, "addAllowedRecipient"),
+        tx_params,
+    )
+    easy_track.addEVMScriptFactory(
+        remove_allowed_recipient,
+        create_permission(allowed_recipients_registry, "removeAllowedRecipient"),
         tx_params,
     )
 

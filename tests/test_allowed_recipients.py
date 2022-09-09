@@ -17,9 +17,13 @@ from utils.test_helpers import (
     SET_LIMIT_PARAMETERS_ROLE,
 )
 
+from utils.deployment import (
+    add_evm_script_allowed_recipients_factories
+)
 
-def create_permission(contract, method):
-    return contract.address + getattr(contract, method).signature[2:]
+
+#def create_permission(contract, method):
+#    return contract.address + getattr(contract, method).signature[2:]
 
 
 # #######################################
@@ -285,48 +289,27 @@ def test_allowed_recipients_happy_path(
         easy_track,
         bokkyPooBahsDateTimeContract,
     )
-
     # deploy TopUpAllowedRecipients EVM script factory
     top_up_allowed_recipients = deployer.deploy(
         TopUpAllowedRecipients, trusted_address, allowed_recipients_registry, finance, ldo
     )
-
-    # add TopUpAllowedRecipients EVM script factory to easy track
-    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
-
-    update_limit_permission = create_permission(
-        allowed_recipients_registry, "updateSpendableBalance"
-    )
-
-    permissions = new_immediate_payment_permission + update_limit_permission[2:]
-
-    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
-
     # deploy AddAllowedRecipient EVM script factory
     add_allowed_recipient = deployer.deploy(
         AddAllowedRecipient, trusted_address, allowed_recipients_registry
     )
-
-    # add AddAllowedRecipient EVM script factory to easy track
-    add_allowed_recipient_permission = create_permission(
-        allowed_recipients_registry, "addAllowedRecipient"
-    )
-
-    easy_track.addEVMScriptFactory(
-        add_allowed_recipient, add_allowed_recipient_permission, {"from": deployer}
-    )
-
     # deploy RemoveAllowedRecipient EVM script factory
     remove_allowed_recipient = deployer.deploy(
         RemoveAllowedRecipient, trusted_address, allowed_recipients_registry
     )
 
-    # add RemoveAllowedRecipient EVM script factory to easy track
-    remove_allowed_recipient_permission = create_permission(
-        allowed_recipients_registry, "removeAllowedRecipient"
-    )
-    easy_track.addEVMScriptFactory(
-        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
+    add_evm_script_allowed_recipients_factories(
+        easy_track,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+        top_up_allowed_recipients,
+        allowed_recipients_registry,
+        finance,
+        {"from": deployer}
     )
 
     # create voting to grant permissions to EVM script executor to create new payments

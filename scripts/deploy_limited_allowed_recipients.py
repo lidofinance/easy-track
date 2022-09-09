@@ -47,7 +47,7 @@ def main():
 
     log.br()
 
-    log.nb("Allowed Recipients Multisig", committee_multisig)
+    log.nb("Committee Multisig", committee_multisig)
     log.nb("Deployed EasyTrack", easy_track)
     log.nb("Deployed EVMScript Executor", evm_script_executor)
 
@@ -97,23 +97,7 @@ def main():
 
     log.br()
 
-    if easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer):
-        log.ok("Easy Track is under deployer control")
-        log.ok("Finalize deploy by adding factories to Easy Track?")
-
-        if not prompt_bool():
-            log.nb("Aborting")
-            return
-
-        deployment.add_evm_script_allowed_recipients_factories(
-            easy_track=easy_track,
-            add_allowed_recipient=add_allowed_recipient,
-            remove_allowed_recipient=remove_allowed_recipient,
-            top_up_allowed_recipients=top_up_allowed_recipients,
-            allowed_recipients_registry=allowed_recipients_registry,
-            lido_contracts=contracts
-        )
-    elif easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), contracts.aragon.voting):
+    if easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), contracts.aragon.voting):
         log.ok("Easy Track is under DAO Voting control")
         log.ok("To finalize deploy, please create voting that adds factories to Easy Track")
     else:
