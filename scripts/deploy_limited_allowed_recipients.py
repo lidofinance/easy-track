@@ -32,7 +32,7 @@ def main():
     evm_script_executor = et_contracts.evm_script_executor
 
     # address allowed to create motions to add, remove or top up allowed recipients
-    allowed_recipients_multisig = get_env("ALLOWED_RECIPIENTS_MULTISIG")
+    committee_multisig = get_env("COMMITTEE_MULTISIG")
 
     bokkyPooBahsDateTimeContract = get_env("BOOKYPOOBAH_DATETIME_CONTRACT")
     log.br()
@@ -47,7 +47,7 @@ def main():
 
     log.br()
 
-    log.nb("Allowed Recipients Multisig", allowed_recipients_multisig)
+    log.nb("Allowed Recipients Multisig", committee_multisig)
     log.nb("Deployed EasyTrack", easy_track)
     log.nb("Deployed EVMScript Executor", evm_script_executor)
 
@@ -72,7 +72,7 @@ def main():
     ) = deploy_allowed_recipients_contracts(
         evm_script_executor=evm_script_executor,
         lido_contracts=contracts,
-        allowed_recipients_multisig=allowed_recipients_multisig,
+        allowed_recipients_multisig=committee_multisig,
         easy_track=easy_track,
         bokkyPooBahsDateTimeContract=bokkyPooBahsDateTimeContract,
         tx_params=tx_params,

@@ -386,13 +386,16 @@ def test_allowed_recipients_happy_path(
     Aug1 = 1659312000  # Mon Aug 01 2022 00:00:00 GMT+0000
     Sep1 = 1661990400  # Thu Sep 01 2022 00:00:00 GMT+0000
     Okt1 = 1664582400  # Sat Oct 01 2022 00:00:00 GMT+0000
+    Jan12022 = 1640995200
+    Jan12023 = 1672531200
+
 
     # set limit parameters
     limit = 20e18
     spent = 0
-    periodDurationMonth = 3  # month
-    periodStart = Jul1
-    periodEnd = Okt1
+    periodDurationMonth = 12  # month
+    periodStart = Jan12022
+    periodEnd = Jan12023
 
     # create voting to set limit parameters
 

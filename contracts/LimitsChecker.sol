@@ -11,15 +11,20 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 /// @author zuzueeka
 /// @notice Stores limits params and checks limits
 ///
-///
 /// ▲ limit-spent
-/// │.....         |..........    |.......     limit-spent = limit
-/// │     ....     |              |
-/// │         ..   |          ... |
-/// │           ...|             .|
-/// │─────────────────────────────────────────> Time
-/// │     ^   ^ ^  |periodEnd ^  ^|periodEnd    ^ - Motion enactment
-/// |              |spent=0       |spent=0
+/// |
+/// │......               |.............       |..............     limit-spent = limit
+/// │      .......        |                    |
+/// │             ....    |             ....   |
+/// │                 ....|                 ...|
+/// │─────────────────────────────────────────────────────────────> Time
+/// |      ^      ^   ^   |             ^   ^  |                 ^ - Motion enactment
+/// │                     |currentPeriodEnd    |currentPeriodEnd
+/// |                     |spent=0             |spent=0
+///
+/// currentPeriodEnd is calculated as a calendar date of the beginning of a next month, bi-months, quarter, half year, or year period.
+/// If, for example, periodDurationMonth = 3, then it is considered that the date changes once a quarter. And can take values 01.01, 01.04, 01.07, 01.10.
+/// If periodDurationMonth = 1, then shift of currentPeriodEnd occures once a month and currentPeriodEnd can take values 01.01, 01.02, 01.03 etc
 ///
 abstract contract LimitsChecker is AccessControl {
     // -------------
