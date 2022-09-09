@@ -223,7 +223,7 @@ def entire_allowed_recipients_setup(
     RemoveAllowedRecipient,
 ):
     deployer = owner
-    trusted_address = accounts[7]
+    trusted_factories_caller = accounts[7]
 
     def create_permission(contract, method):
         return contract.address + getattr(contract, method).signature[2:]
@@ -259,7 +259,7 @@ def entire_allowed_recipients_setup(
 
     # deploy TopUpAllowedRecipients EVM script factory
     top_up_allowed_recipients = deployer.deploy(
-        TopUpAllowedRecipients, trusted_address, allowed_recipients_registry, finance, ldo
+        TopUpAllowedRecipients, trusted_factories_caller, allowed_recipients_registry, finance, ldo
     )
 
     # add TopUpAllowedRecipients EVM script factory to easy track
@@ -275,7 +275,7 @@ def entire_allowed_recipients_setup(
 
     # deploy AddAllowedRecipient EVM script factory
     add_allowed_recipient = deployer.deploy(
-        AddAllowedRecipient, trusted_address, allowed_recipients_registry
+        AddAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
     )
 
     # add AddAllowedRecipient EVM script factory to easy track
@@ -289,7 +289,7 @@ def entire_allowed_recipients_setup(
 
     # deploy RemoveAllowedRecipient EVM script factory
     remove_allowed_recipient = deployer.deploy(
-        RemoveAllowedRecipient, trusted_address, allowed_recipients_registry
+        RemoveAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
     )
 
     # add RemoveAllowedRecipient EVM script factory to easy track
@@ -354,19 +354,17 @@ def entire_allowed_recipients_setup_with_two_recipients(
     recipient2 = accounts[9]
     recipient2_title = "Recipient 2"
 
-    trusted_address = accounts[7]
-
     tx = easy_track.createMotion(
         add_allowed_recipient,
         encode_calldata("(address,string)", [recipient1.address, recipient1_title]),
-        {"from": trusted_address},
+        {"from": add_allowed_recipient.trustedCaller()},
     )
     motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 
     tx = easy_track.createMotion(
         add_allowed_recipient,
         encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
-        {"from": trusted_address}
+        {"from": add_allowed_recipient.trustedCaller()}
     )
     motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 

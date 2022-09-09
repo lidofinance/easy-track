@@ -1,7 +1,8 @@
-import constants
+import datetime
 
 from brownie.network import chain
 from brownie import EasyTrack, EVMScriptExecutor, accounts, reverts
+from typing import List
 
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script, encode_calldata
@@ -17,13 +18,12 @@ from utils.test_helpers import (
     SET_LIMIT_PARAMETERS_ROLE,
 )
 
-from utils.deployment import (
-    add_evm_script_allowed_recipients_factories
-)
+from utils.deployment import attach_evm_script_allowed_recipients_factories
+
+import constants
 
 
-#def create_permission(contract, method):
-#    return contract.address + getattr(contract, method).signature[2:]
+MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
 
 # #######################################
@@ -72,8 +72,62 @@ from utils.deployment import (
 
 # TODO: add test_xxx for each factory like tests in tests/evm_script_factories
 
+# TODO: make the tests not dependent on the current date and proximity of now to period boundaries
 
-MOTION_DURATION_SECS: int = 48 * 60 * 60
+# TODO: limits start, end calculation
+
+
+def set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent):
+    """Do Aragon voting to set limit parameters to the allowed recipients registry"""
+    set_limit_parameters_voting_id, _ = create_voting(
+        evm_script=encode_call_script(
+            [
+                (
+                    allowed_recipients_registry.address,
+                    allowed_recipients_registry.setLimitParameters.encode_input(
+                        period_limit,
+                        period_duration,
+                    ),
+                ),
+            ]
+        ),
+        description="Set limit parameters",
+        network=get_network_name(),
+        tx_params={"from": agent},
+    )
+
+    # execute voting to add permissions to EVM script executor to create payments
+    execute_voting(set_limit_parameters_voting_id, get_network_name())
+
+    allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
+
+
+def create_top_up_motion(recipients: List[str], amounts: List[int], easy_track, top_up_factory):
+    script_call_data = encode_single(
+        "(address[],uint256[])",
+        [recipients, amounts],
+    )
+    tx = easy_track.createMotion(
+        top_up_factory,
+        script_call_data,
+        {"from": top_up_factory.trustedCaller()},
+    )
+    motion_id = tx.events["MotionCreated"]["_motionId"]
+    return motion_id, script_call_data
+
+
+def do_payout_to_allowed_recipients(recipients, amounts, easy_track, top_up_factory):
+    motion_id, script_call_data = create_top_up_motion(
+        recipients, amounts, easy_track, top_up_factory
+    )
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    easy_track.enactMotion(
+        motion_id,
+        script_call_data,
+        {"from": recipients[0]},
+    )
 
 
 def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, stranger):
@@ -89,14 +143,14 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     recipient = accounts[8]
     recipient_title = "New Allowed Recipient"
 
-    trusted_address = accounts[7]
-
     add_allowed_recipient_calldata = encode_calldata(
         "(address,string)", [recipient.address, recipient_title]
     )
 
     tx = easy_track.createMotion(
-        add_allowed_recipient, add_allowed_recipient_calldata, {"from": trusted_address}
+        add_allowed_recipient,
+        add_allowed_recipient_calldata,
+        {"from": add_allowed_recipient.trustedCaller()},
     )
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
@@ -122,7 +176,7 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     tx = easy_track.createMotion(
         remove_allowed_recipient,
         encode_single("(address)", [recipient.address]),
-        {"from": trusted_address},
+        {"from": remove_allowed_recipient.trustedCaller()},
     )
     motion_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 
@@ -144,18 +198,111 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
 
 def test_motion_created_and_enacted_in_same_period(
     entire_allowed_recipients_setup_with_two_recipients,
+    agent,
 ):
+    """Revert 2nd payout which together with 1st payout exceed limits in the same period"""
     (
         easy_track,
-        evm_script_executor,
+        _,  # evm_script_executor,
         allowed_recipients_registry,
         top_up_allowed_recipients,
-        add_allowed_recipient,
-        remove_allowed_recipient,
+        _,  # add_allowed_recipient,
+        _,  # remove_allowed_recipient,
         recipient1,
         recipient2,
     ) = entire_allowed_recipients_setup_with_two_recipients
-    assert False, "TODO"
+
+    period_limit, period_duration = 100 * 10**18, 1
+    set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
+
+    recipients = list(map(lambda x: x.address, [recipient1, recipient2]))
+    do_payout_to_allowed_recipients(
+        recipients, [int(3e18), int(90e18)], easy_track, top_up_allowed_recipients
+    )
+
+    with reverts("SUM_EXCEEDS_LIMIT"):
+        do_payout_to_allowed_recipients(
+            recipients, [int(5e18), int(4e18)], easy_track, top_up_allowed_recipients
+        )
+
+    # assert False, "TODO"
+
+    # > create and enact motion to top up
+
+    # >
+
+    # > check recipients balances
+
+
+def test_limit_is_renewed_in_next_period(
+    entire_allowed_recipients_setup_with_two_recipients, agent
+):
+    """Check limit is renewed in the next period"""
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        _,  # add_allowed_recipient,
+        _,  # remove_allowed_recipient,
+        recipient1,
+        recipient2,
+    ) = entire_allowed_recipients_setup_with_two_recipients
+
+    period_limit, period_duration = 100 * 10**18, 1
+    set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
+
+    recipients = list(map(lambda x: x.address, [recipient1, recipient2]))
+    do_payout_to_allowed_recipients(
+        recipients, [int(3e18), int(90e18)], easy_track, top_up_allowed_recipients
+    )
+
+    chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
+
+    second_payout = [int(5e18), int(4e18)]
+    do_payout_to_allowed_recipients(
+        recipients, second_payout, easy_track, top_up_allowed_recipients
+    )
+    assert allowed_recipients_registry.getCurrentPeriodState()[0] == sum(second_payout)
+
+
+def test_both_motions_enacted_next_period_second_exceeds_limit(
+    entire_allowed_recipients_setup_with_two_recipients, agent
+):
+    """
+    Two motion created this period, the first enacted next period, the second
+    is reverted due to the limit in the second period
+    """
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        top_up_factory,
+        _,  # add_allowed_recipient,
+        _,  # remove_allowed_recipient,
+        recipient1,
+        recipient2,
+    ) = entire_allowed_recipients_setup_with_two_recipients
+    recipients = [recipient1.address, recipient2.address]
+
+    period_limit, period_duration = 100 * 10**18, 1
+    set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
+
+    payout1 = [int(40e18), int(30e18)]
+    payout2 = [int(30e18), int(20e18)]
+    motion1_id, motion1_calldata = create_top_up_motion(
+        recipients, payout1, easy_track, top_up_factory
+    )
+    motion2_id, motion2_calldata = create_top_up_motion(
+        recipients, payout2, easy_track, top_up_factory
+    )
+
+    chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
+
+    easy_track.enactMotion(motion1_id, motion1_calldata, {"from": recipient1})
+
+    with reverts("SUM_EXCEEDS_LIMIT"):
+        easy_track.enactMotion(motion2_id, motion2_calldata, {"from": recipient1})
 
 
 def test_limits_checker_access_restriction(
@@ -183,7 +330,6 @@ def test_limits_checker_access_restriction(
 def test_limits_checker_incorrect_period_duration(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
-    pass
     manager = lego_program
     limits_checker = owner.deploy(
         LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
@@ -195,12 +341,35 @@ def test_limits_checker_incorrect_period_duration(
             limits_checker.setLimitParameters(period_limit, duration, {"from": manager})
 
 
-def test_limits_checker(
-    owner, lego_program, stranger, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+def calc_period_range_timestamps(now_timestamp, period_duration_months):
+    now = datetime.datetime.fromtimestamp(now_timestamp)
+    now.date()
+    pass
+
+
+def test_limits_checker_period_ranges(
+    owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, easy_track, [owner], bokkyPooBahsDateTimeContract
+    )
+
+    period_limit, period_duration = 0, 3
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    (_, _, start, end) = limits_checker.getCurrentPeriodState()
+    print(
+        f"start={start}, {datetime.datetime.fromtimestamp(start).isoformat()},\nend={end}, {datetime.datetime.fromtimestamp(end).isoformat()}"
+    )
+
+
+def test_limits_checker_general(
+    owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
     # TODO: don't fix specific months, otherwise the test won't work next month
     SEPTEMBER_1 = 1661990400  # Sep 01 2022 00:00:00 GMT+0000
     OCTOBER_1 = 1664582400  # Oct 01 2022 00:00:00 GMT+0000
+    period_start = SEPTEMBER_1
+    period_end = OCTOBER_1
 
     manager = lego_program
     script_executor = easy_track.evmScriptExecutor()
@@ -229,17 +398,36 @@ def test_limits_checker(
     spending = 1 * 10**18
     spendable = period_limit - spending
     tx = limits_checker.updateSpendableBalance(spending, {"from": script_executor})
-    assert limits_checker.getCurrentPeriodState() == (spending, spendable, SEPTEMBER_1, OCTOBER_1)
+    assert limits_checker.getCurrentPeriodState() == (spending, spendable, period_start, period_end)
     assert_single_event(
         tx,
         "FundsSpent",
         {
             "_alreadySpentAmount": spending,
             "_spendableAmount": spendable,
-            "_periodStartTimestamp": SEPTEMBER_1,
-            "_periodEndTimestamp": OCTOBER_1,
+            "_periodStartTimestamp": period_start,
+            "_periodEndTimestamp": period_end,
         },
     )
+
+    limits_checker.updateSpendableBalance(spending, {"from": script_executor})
+    assert limits_checker.getCurrentPeriodState() == (
+        2 * spending,
+        period_limit - 2 * spending,
+        period_start,
+        period_end,
+    )
+
+    limits_checker.updateSpendableBalance(spending, {"from": script_executor})
+    assert limits_checker.getCurrentPeriodState() == (
+        period_limit,
+        0,
+        period_start,
+        period_end,
+    )
+
+    with reverts("SUM_EXCEEDS_LIMIT"):
+        limits_checker.updateSpendableBalance(1, {"from": script_executor})
 
 
 def test_allowed_recipients_happy_path(
@@ -259,7 +447,7 @@ def test_allowed_recipients_happy_path(
     deployer = accounts[0]
     allowed_recipient = accounts[5]
     allowed_recipient_title = "New Allowed Recipient"
-    trusted_address = accounts[7]
+    trusted_factories_caller = accounts[7]
 
     # deploy easy track
     easy_track = deployer.deploy(
@@ -291,25 +479,31 @@ def test_allowed_recipients_happy_path(
     )
     # deploy TopUpAllowedRecipients EVM script factory
     top_up_allowed_recipients = deployer.deploy(
-        TopUpAllowedRecipients, trusted_address, allowed_recipients_registry, finance, ldo
+        TopUpAllowedRecipients,
+        trusted_factories_caller,
+        allowed_recipients_registry,
+        finance,
+        ldo,
     )
     # deploy AddAllowedRecipient EVM script factory
     add_allowed_recipient = deployer.deploy(
-        AddAllowedRecipient, trusted_address, allowed_recipients_registry
+        AddAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
     )
     # deploy RemoveAllowedRecipient EVM script factory
     remove_allowed_recipient = deployer.deploy(
-        RemoveAllowedRecipient, trusted_address, allowed_recipients_registry
+        RemoveAllowedRecipient,
+        trusted_factories_caller,
+        allowed_recipients_registry,
     )
 
-    add_evm_script_allowed_recipients_factories(
+    attach_evm_script_allowed_recipients_factories(
         easy_track,
         add_allowed_recipient,
         remove_allowed_recipient,
         top_up_allowed_recipients,
         allowed_recipients_registry,
         finance,
-        {"from": deployer}
+        {"from": deployer},
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
@@ -340,11 +534,13 @@ def test_allowed_recipients_happy_path(
 
     # create new motion to add a allowed recipient
     expected_evm_script = add_allowed_recipient.createEVMScript(
-        trusted_address, add_allowed_recipient_calldata
+        add_allowed_recipient.trustedCaller(), add_allowed_recipient_calldata
     )
 
     tx = easy_track.createMotion(
-        add_allowed_recipient, add_allowed_recipient_calldata, {"from": trusted_address}
+        add_allowed_recipient,
+        add_allowed_recipient_calldata,
+        {"from": add_allowed_recipient.trustedCaller()},
     )
 
     motions = easy_track.getMotions()
@@ -416,7 +612,7 @@ def test_allowed_recipients_happy_path(
     tx1 = easy_track.createMotion(
         top_up_allowed_recipients,
         _evmScriptCallData1,
-        {"from": trusted_address},
+        {"from": top_up_allowed_recipients.trustedCaller()},
     )
     assert len(easy_track.getMotions()) == 1
 
@@ -429,7 +625,7 @@ def test_allowed_recipients_happy_path(
     tx2 = easy_track.createMotion(
         top_up_allowed_recipients,
         _evmScriptCallData2,
-        {"from": trusted_address},
+        {"from": top_up_allowed_recipients.trustedCaller()},
     )
     assert len(easy_track.getMotions()) == 2
 
@@ -478,7 +674,7 @@ def test_allowed_recipients_happy_path(
     assert len(easy_track.getMotions()) == 1
     assert ldo.balanceOf(allowed_recipient) == spent
 
-    easy_track.cancelMotion(motions[0][0], {"from": trusted_address})
+    easy_track.cancelMotion(motions[0][0], {"from": top_up_allowed_recipients.trustedCaller()})
 
     currentPeriodState = allowed_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
@@ -492,7 +688,7 @@ def test_allowed_recipients_happy_path(
     tx = easy_track.createMotion(
         remove_allowed_recipient,
         encode_single("(address)", [allowed_recipient.address]),
-        {"from": trusted_address},
+        {"from": remove_allowed_recipient.trustedCaller()},
     )
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
