@@ -38,13 +38,13 @@ def create_permission(contract, method):
 
 # TODO: test attempt to exceed the limit for a specific recipient
 #       test attempt to exceed the period limit
-#       test the limit is cumulative for all whitelisted recipients
+#       test the limit is cumulative for all allowed recipients
 
-# TODO: test max number of the whitelisted recipients
+# TODO: test max number of the allowed recipients
 
-# TODO: test attempt to remove not whitelisted recipient
+# TODO: test attempt to remove not allowed recipient
 
-# TODO: test attempt to add an already whitelisted recipient
+# TODO: test attempt to add an already allowed recipient
 
 # TODO: ?? the limits are checked at the time of enactment
 
@@ -59,8 +59,8 @@ def create_permission(contract, method):
 # TODO: checking that createMotion also reverts if limit exceeds
 
 # TODO: cover all the events
-#       - WhitelistedRecipientAdded
-#       - WhitelistedRecipientRemoved
+#       - AllowedRecipientAdded
+#       - AllowedRecipientRemoved
 #       - LimitsParametersChanged
 #       - FundsSpent
 
@@ -72,27 +72,27 @@ def create_permission(contract, method):
 MOTION_DURATION_SECS: int = 48 * 60 * 60
 
 
-def test_add_remove_recipient(entire_whitelisted_recipients_setup, accounts, stranger):
+def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, stranger):
     (
         easy_track,
         _,  # evm_script_executor,
-        whitelisted_recipients_registry,
-        _,  # top_up_whitelisted_recipients,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
-    ) = entire_whitelisted_recipients_setup
+        allowed_recipients_registry,
+        _,  # top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+    ) = entire_allowed_recipients_setup
 
     recipient = accounts[8]
-    recipient_title = "New Whitelisted Recipient"
+    recipient_title = "New Allowed Recipient"
 
     trusted_address = accounts[7]
 
-    add_whitelisted_recipient_calldata = encode_calldata(
+    add_allowed_recipient_calldata = encode_calldata(
         "(address,string)", [recipient.address, recipient_title]
     )
 
     tx = easy_track.createMotion(
-        add_whitelisted_recipient, add_whitelisted_recipient_calldata, {"from": trusted_address}
+        add_allowed_recipient, add_allowed_recipient_calldata, {"from": trusted_address}
     )
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
@@ -104,19 +104,19 @@ def test_add_remove_recipient(entire_whitelisted_recipients_setup, accounts, str
     )
     assert_event_exists(
         tx,
-        "WhitelistedRecipientAdded",
-        {"_whitelistedRecipient": recipient, "_title": recipient_title},
+        "AllowedRecipientAdded",
+        {"_allowedRecipient": recipient, "_title": recipient_title},
     )
 
     assert len(easy_track.getMotions()) == 0
-    assert whitelisted_recipients_registry.getWhitelistedRecipients() == [recipient]
+    assert allowed_recipients_registry.getAllowedRecipients() == [recipient]
 
-    assert whitelisted_recipients_registry.isWhitelistedRecipient(recipient)
-    assert not whitelisted_recipients_registry.isWhitelistedRecipient(stranger)
+    assert allowed_recipients_registry.isAllowedRecipient(recipient)
+    assert not allowed_recipients_registry.isAllowedRecipient(stranger)
 
-    # create new motion to remove a whitelisted recipient
+    # create new motion to remove a allowed recipient
     tx = easy_track.createMotion(
-        remove_whitelisted_recipient,
+        remove_allowed_recipient,
         encode_single("(address)", [recipient.address]),
         {"from": trusted_address},
     )
@@ -129,28 +129,28 @@ def test_add_remove_recipient(entire_whitelisted_recipients_setup, accounts, str
         motion_calldata,
         {"from": stranger},
     )
-    assert len(whitelisted_recipients_registry.getWhitelistedRecipients()) == 0
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
     assert_event_exists(
         tx,
-        "WhitelistedRecipientRemoved",
-        {"_whitelistedRecipient": recipient},
+        "AllowedRecipientRemoved",
+        {"_allowedRecipient": recipient},
     )
-    assert not whitelisted_recipients_registry.isWhitelistedRecipient(recipient)
+    assert not allowed_recipients_registry.isAllowedRecipient(recipient)
 
 
 def test_motion_created_and_enacted_in_same_period(
-    entire_whitelisted_recipients_setup_with_two_recipients,
+    entire_allowed_recipients_setup_with_two_recipients,
 ):
     (
         easy_track,
         evm_script_executor,
-        whitelisted_recipients_registry,
-        top_up_whitelisted_recipients,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
         recipient1,
         recipient2,
-    ) = entire_whitelisted_recipients_setup_with_two_recipients
+    ) = entire_allowed_recipients_setup_with_two_recipients
     assert False, "TODO"
 
 
@@ -238,7 +238,7 @@ def test_limits_checker(
     )
 
 
-def test_whitelisted_recipients_happy_path(
+def test_allowed_recipients_happy_path(
     stranger,
     agent,
     voting,
@@ -246,15 +246,15 @@ def test_whitelisted_recipients_happy_path(
     ldo,
     calls_script,
     acl,
-    WhitelistedRecipientsRegistry,
-    TopUpWhitelistedRecipients,
-    AddWhitelistedRecipient,
-    RemoveWhitelistedRecipient,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
     bokkyPooBahsDateTimeContract,
 ):
     deployer = accounts[0]
-    whitelisted_recipient = accounts[5]
-    whitelisted_recipient_title = "New Whitelisted Recipient"
+    allowed_recipient = accounts[5]
+    allowed_recipient_title = "New Allowed Recipient"
     trusted_address = accounts[7]
 
     # deploy easy track
@@ -275,9 +275,9 @@ def test_whitelisted_recipients_happy_path(
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
 
-    # deploy WhitelistedRecipientsRegistry
-    whitelisted_recipients_registry = deployer.deploy(
-        WhitelistedRecipientsRegistry,
+    # deploy AllowedRecipientsRegistry
+    allowed_recipients_registry = deployer.deploy(
+        AllowedRecipientsRegistry,
         voting,
         [voting, evm_script_executor],
         [voting, evm_script_executor],
@@ -286,47 +286,47 @@ def test_whitelisted_recipients_happy_path(
         bokkyPooBahsDateTimeContract,
     )
 
-    # deploy TopUpWhitelistedRecipients EVM script factory
-    top_up_whitelisted_recipients = deployer.deploy(
-        TopUpWhitelistedRecipients, trusted_address, whitelisted_recipients_registry, finance, ldo
+    # deploy TopUpAllowedRecipients EVM script factory
+    top_up_allowed_recipients = deployer.deploy(
+        TopUpAllowedRecipients, trusted_address, allowed_recipients_registry, finance, ldo
     )
 
-    # add TopUpWhitelistedRecipients EVM script factory to easy track
+    # add TopUpAllowedRecipients EVM script factory to easy track
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
     update_limit_permission = create_permission(
-        whitelisted_recipients_registry, "updateSpendableBalance"
+        allowed_recipients_registry, "updateSpendableBalance"
     )
 
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
-    easy_track.addEVMScriptFactory(top_up_whitelisted_recipients, permissions, {"from": deployer})
+    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
 
-    # deploy AddWhitelistedRecipient EVM script factory
-    add_whitelisted_recipient = deployer.deploy(
-        AddWhitelistedRecipient, trusted_address, whitelisted_recipients_registry
+    # deploy AddAllowedRecipient EVM script factory
+    add_allowed_recipient = deployer.deploy(
+        AddAllowedRecipient, trusted_address, allowed_recipients_registry
     )
 
-    # add AddWhitelistedRecipient EVM script factory to easy track
-    add_whitelisted_recipient_permission = create_permission(
-        whitelisted_recipients_registry, "addWhitelistedRecipient"
+    # add AddAllowedRecipient EVM script factory to easy track
+    add_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "addAllowedRecipient"
     )
 
     easy_track.addEVMScriptFactory(
-        add_whitelisted_recipient, add_whitelisted_recipient_permission, {"from": deployer}
+        add_allowed_recipient, add_allowed_recipient_permission, {"from": deployer}
     )
 
-    # deploy RemoveWhitelistedRecipient EVM script factory
-    remove_whitelisted_recipient = deployer.deploy(
-        RemoveWhitelistedRecipient, trusted_address, whitelisted_recipients_registry
+    # deploy RemoveAllowedRecipient EVM script factory
+    remove_allowed_recipient = deployer.deploy(
+        RemoveAllowedRecipient, trusted_address, allowed_recipients_registry
     )
 
-    # add RemoveWhitelistedRecipient EVM script factory to easy track
-    remove_whitelisted_recipient_permission = create_permission(
-        whitelisted_recipients_registry, "removeWhitelistedRecipient"
+    # add RemoveAllowedRecipient EVM script factory to easy track
+    remove_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "removeAllowedRecipient"
     )
     easy_track.addEVMScriptFactory(
-        remove_whitelisted_recipient, remove_whitelisted_recipient_permission, {"from": deployer}
+        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
@@ -353,17 +353,17 @@ def test_whitelisted_recipients_happy_path(
     # execute voting to add permissions to EVM script executor to create payments
     execute_voting(add_create_payments_permissions_voting_id, netname)
 
-    add_whitelisted_recipient_calldata = encode_calldata(
-        "(address,string)", [whitelisted_recipient.address, whitelisted_recipient_title]
+    add_allowed_recipient_calldata = encode_calldata(
+        "(address,string)", [allowed_recipient.address, allowed_recipient_title]
     )
 
-    # create new motion to add a whitelisted recipient
-    expected_evm_script = add_whitelisted_recipient.createEVMScript(
-        trusted_address, add_whitelisted_recipient_calldata
+    # create new motion to add a allowed recipient
+    expected_evm_script = add_allowed_recipient.createEVMScript(
+        trusted_address, add_allowed_recipient_calldata
     )
 
     tx = easy_track.createMotion(
-        add_whitelisted_recipient, add_whitelisted_recipient_calldata, {"from": trusted_address}
+        add_allowed_recipient, add_allowed_recipient_calldata, {"from": trusted_address}
     )
 
     motions = easy_track.getMotions()
@@ -378,9 +378,9 @@ def test_whitelisted_recipients_happy_path(
     )
     assert len(easy_track.getMotions()) == 0
 
-    whitelisted_recipients = whitelisted_recipients_registry.getWhitelistedRecipients()
-    assert len(whitelisted_recipients) == 1
-    assert whitelisted_recipients[0] == whitelisted_recipient
+    allowed_recipients = allowed_recipients_registry.getAllowedRecipients()
+    assert len(allowed_recipients) == 1
+    assert allowed_recipients[0] == allowed_recipient
 
     Jul1 = 1656633600  # Fri Jul 01 2022 00:00:00 GMT+0000
     Aug1 = 1659312000  # Mon Aug 01 2022 00:00:00 GMT+0000
@@ -400,8 +400,8 @@ def test_whitelisted_recipients_happy_path(
         evm_script=encode_call_script(
             [
                 (
-                    whitelisted_recipients_registry.address,
-                    whitelisted_recipients_registry.setLimitParameters.encode_input(
+                    allowed_recipients_registry.address,
+                    allowed_recipients_registry.setLimitParameters.encode_input(
                         limit,
                         periodDurationMonth,
                     ),
@@ -416,22 +416,22 @@ def test_whitelisted_recipients_happy_path(
     # execute voting to add permissions to EVM script executor to create payments
     execute_voting(set_limit_parameters_voting_id, netname)
 
-    assert whitelisted_recipients_registry.getLimitParameters()[0] == limit
-    assert whitelisted_recipients_registry.getLimitParameters()[1] == periodDurationMonth
+    assert allowed_recipients_registry.getLimitParameters()[0] == limit
+    assert allowed_recipients_registry.getLimitParameters()[1] == periodDurationMonth
 
-    currentPeriodState = whitelisted_recipients_registry.getCurrentPeriodState()
+    currentPeriodState = allowed_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
     assert currentPeriodState[1] == limit - spent
     assert currentPeriodState[2] == periodStart
     assert currentPeriodState[3] == periodEnd
 
-    # create new motion to top up whitelisted address
+    # create new motion to top up allowed address
     _evmScriptCallData1 = encode_single(
         "(address[],uint256[])",
-        [[whitelisted_recipient.address, whitelisted_recipient.address], [int(5e18), int(7e18)]],
+        [[allowed_recipient.address, allowed_recipient.address], [int(5e18), int(7e18)]],
     )
     tx1 = easy_track.createMotion(
-        top_up_whitelisted_recipients,
+        top_up_allowed_recipients,
         _evmScriptCallData1,
         {"from": trusted_address},
     )
@@ -441,10 +441,10 @@ def test_whitelisted_recipients_happy_path(
 
     _evmScriptCallData2 = encode_single(
         "(address[],uint256[])",
-        [[whitelisted_recipient.address, whitelisted_recipient.address], [int(5e18), int(7e18)]],
+        [[allowed_recipient.address, allowed_recipient.address], [int(5e18), int(7e18)]],
     )
     tx2 = easy_track.createMotion(
-        top_up_whitelisted_recipients,
+        top_up_allowed_recipients,
         _evmScriptCallData2,
         {"from": trusted_address},
     )
@@ -452,13 +452,13 @@ def test_whitelisted_recipients_happy_path(
 
     chain.sleep(48 * 60 * 60 + 1)
 
-    currentPeriodState = whitelisted_recipients_registry.getCurrentPeriodState()
+    currentPeriodState = allowed_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
     assert currentPeriodState[1] == limit - spent
     assert currentPeriodState[2] == periodStart
     assert currentPeriodState[3] == periodEnd
 
-    assert ldo.balanceOf(whitelisted_recipient) == 0
+    assert ldo.balanceOf(allowed_recipient) == 0
     motions = easy_track.getMotions()
     easy_track.enactMotion(
         motions[0][0],
@@ -467,14 +467,14 @@ def test_whitelisted_recipients_happy_path(
     )
     spent += 5e18 + 7e18
 
-    currentPeriodState = whitelisted_recipients_registry.getCurrentPeriodState()
+    currentPeriodState = allowed_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
     assert currentPeriodState[1] == limit - spent
     assert currentPeriodState[2] == periodStart
     assert currentPeriodState[3] == periodEnd
 
     assert len(easy_track.getMotions()) == 1
-    assert ldo.balanceOf(whitelisted_recipient) == spent
+    assert ldo.balanceOf(allowed_recipient) == spent
 
     chain.sleep(60)
 
@@ -487,28 +487,28 @@ def test_whitelisted_recipients_happy_path(
             {"from": stranger},
         )
 
-    currentPeriodState = whitelisted_recipients_registry.getCurrentPeriodState()
+    currentPeriodState = allowed_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
     assert currentPeriodState[1] == limit - spent
     assert currentPeriodState[2] == periodStart
     assert currentPeriodState[3] == periodEnd
     assert len(easy_track.getMotions()) == 1
-    assert ldo.balanceOf(whitelisted_recipient) == spent
+    assert ldo.balanceOf(allowed_recipient) == spent
 
     easy_track.cancelMotion(motions[0][0], {"from": trusted_address})
 
-    currentPeriodState = whitelisted_recipients_registry.getCurrentPeriodState()
+    currentPeriodState = allowed_recipients_registry.getCurrentPeriodState()
     assert currentPeriodState[0] == spent
     assert currentPeriodState[1] == limit - spent
     assert currentPeriodState[2] == periodStart
     assert currentPeriodState[3] == periodEnd
     assert len(easy_track.getMotions()) == 0
-    assert ldo.balanceOf(whitelisted_recipient) == spent
+    assert ldo.balanceOf(allowed_recipient) == spent
 
-    # create new motion to remove a whitelisted recipient
+    # create new motion to remove a allowed recipient
     tx = easy_track.createMotion(
-        remove_whitelisted_recipient,
-        encode_single("(address)", [whitelisted_recipient.address]),
+        remove_allowed_recipient,
+        encode_single("(address)", [allowed_recipient.address]),
         {"from": trusted_address},
     )
 
@@ -520,4 +520,4 @@ def test_whitelisted_recipients_happy_path(
         {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
-    assert len(whitelisted_recipients_registry.getWhitelistedRecipients()) == 0
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == 0

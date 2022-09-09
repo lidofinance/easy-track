@@ -7,10 +7,10 @@ from brownie import (
     TopUpRewardPrograms,
     RewardProgramsRegistry,
     IncreaseNodeOperatorStakingLimit,
-    AddWhitelistedRecipient,
-    RemoveWhitelistedRecipient,
-    TopUpWhitelistedRecipients,
-    WhitelistedRecipientsRegistry,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
+    TopUpAllowedRecipients,
+    AllowedRecipientsRegistry,
 )
 
 
@@ -48,8 +48,8 @@ def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
         voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
     )
 
-def deploy_whitelisted_recipients_registry(voting, evm_script_executor, easy_track, bokkyPooBahsDateTimeContract, tx_params):
-    return WhitelistedRecipientsRegistry.deploy(
+def deploy_allowed_recipients_registry(voting, evm_script_executor, easy_track, bokkyPooBahsDateTimeContract, tx_params):
+    return AllowedRecipientsRegistry.deploy(
         voting, [voting, evm_script_executor], [voting, evm_script_executor], [voting, evm_script_executor], easy_track, bokkyPooBahsDateTimeContract, tx_params
     )
 
@@ -94,30 +94,30 @@ def deploy_top_up_reward_programs(
         tx_params,
     )
 
-def deploy_add_whitelisted_recipient(
-    whitelisted_recipients_registry, whitelisted_recipients_multisig, tx_params
+def deploy_add_allowed_recipient(
+    allowed_recipients_registry, allowed_recipients_multisig, tx_params
 ):
-    return AddWhitelistedRecipient.deploy(
-        whitelisted_recipients_multisig, whitelisted_recipients_registry, tx_params
+    return AddAllowedRecipient.deploy(
+        allowed_recipients_multisig, allowed_recipients_registry, tx_params
     )
 
-def deploy_remove_whitelisted_recipient(
-    whitelisted_recipients_registry, whitelisted_recipients_multisig, tx_params
+def deploy_remove_allowed_recipient(
+    allowed_recipients_registry, allowed_recipients_multisig, tx_params
 ):
-    return RemoveWhitelistedRecipient.deploy(
-        whitelisted_recipients_multisig, whitelisted_recipients_registry, tx_params
+    return RemoveAllowedRecipient.deploy(
+        allowed_recipients_multisig, allowed_recipients_registry, tx_params
     )
 
-def deploy_top_up_whitelisted_recipients(
+def deploy_top_up_allowed_recipients(
     finance,
     governance_token,
-    whitelisted_recipients_registry,
-    whitelisted_recipients_multisig,
+    allowed_recipients_registry,
+    allowed_recipients_multisig,
     tx_params,
 ):
     return TopUpRewardPrograms.deploy(
-        whitelisted_recipients_multisig,
-        whitelisted_recipients_registry,
+        allowed_recipients_multisig,
+        allowed_recipients_registry,
         finance,
         governance_token,
         tx_params,

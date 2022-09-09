@@ -207,7 +207,7 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 
 @pytest.fixture(scope="module")
-def entire_whitelisted_recipients_setup(
+def entire_allowed_recipients_setup(
     accounts,
     owner,
     ldo,
@@ -217,10 +217,10 @@ def entire_whitelisted_recipients_setup(
     agent,
     acl,
     bokkyPooBahsDateTimeContract,
-    WhitelistedRecipientsRegistry,
-    TopUpWhitelistedRecipients,
-    AddWhitelistedRecipient,
-    RemoveWhitelistedRecipient,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
 ):
     deployer = owner
     trusted_address = accounts[7]
@@ -246,9 +246,9 @@ def entire_whitelisted_recipients_setup(
     # set EVM script executor in easy track
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
 
-    # deploy WhitelistedRecipientsRegistry
-    whitelisted_recipients_registry = deployer.deploy(
-        WhitelistedRecipientsRegistry,
+    # deploy AllowedRecipientsRegistry
+    allowed_recipients_registry = deployer.deploy(
+        AllowedRecipientsRegistry,
         voting,
         [voting, evm_script_executor],
         [voting, evm_script_executor],
@@ -257,47 +257,47 @@ def entire_whitelisted_recipients_setup(
         bokkyPooBahsDateTimeContract,
     )
 
-    # deploy TopUpWhitelistedRecipients EVM script factory
-    top_up_whitelisted_recipients = deployer.deploy(
-        TopUpWhitelistedRecipients, trusted_address, whitelisted_recipients_registry, finance, ldo
+    # deploy TopUpAllowedRecipients EVM script factory
+    top_up_allowed_recipients = deployer.deploy(
+        TopUpAllowedRecipients, trusted_address, allowed_recipients_registry, finance, ldo
     )
 
-    # add TopUpWhitelistedRecipients EVM script factory to easy track
+    # add TopUpAllowedRecipients EVM script factory to easy track
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
     update_limit_permission = create_permission(
-        whitelisted_recipients_registry, "updateSpendableBalance"
+        allowed_recipients_registry, "updateSpendableBalance"
     )
 
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
-    easy_track.addEVMScriptFactory(top_up_whitelisted_recipients, permissions, {"from": deployer})
+    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
 
-    # deploy AddWhitelistedRecipient EVM script factory
-    add_whitelisted_recipient = deployer.deploy(
-        AddWhitelistedRecipient, trusted_address, whitelisted_recipients_registry
+    # deploy AddAllowedRecipient EVM script factory
+    add_allowed_recipient = deployer.deploy(
+        AddAllowedRecipient, trusted_address, allowed_recipients_registry
     )
 
-    # add AddWhitelistedRecipient EVM script factory to easy track
-    add_whitelisted_recipient_permission = create_permission(
-        whitelisted_recipients_registry, "addWhitelistedRecipient"
+    # add AddAllowedRecipient EVM script factory to easy track
+    add_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "addAllowedRecipient"
     )
 
     easy_track.addEVMScriptFactory(
-        add_whitelisted_recipient, add_whitelisted_recipient_permission, {"from": deployer}
+        add_allowed_recipient, add_allowed_recipient_permission, {"from": deployer}
     )
 
-    # deploy RemoveWhitelistedRecipient EVM script factory
-    remove_whitelisted_recipient = deployer.deploy(
-        RemoveWhitelistedRecipient, trusted_address, whitelisted_recipients_registry
+    # deploy RemoveAllowedRecipient EVM script factory
+    remove_allowed_recipient = deployer.deploy(
+        RemoveAllowedRecipient, trusted_address, allowed_recipients_registry
     )
 
-    # add RemoveWhitelistedRecipient EVM script factory to easy track
-    remove_whitelisted_recipient_permission = create_permission(
-        whitelisted_recipients_registry, "removeWhitelistedRecipient"
+    # add RemoveAllowedRecipient EVM script factory to easy track
+    remove_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "removeAllowedRecipient"
     )
     easy_track.addEVMScriptFactory(
-        remove_whitelisted_recipient, remove_whitelisted_recipient_permission, {"from": deployer}
+        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
@@ -327,27 +327,27 @@ def entire_whitelisted_recipients_setup(
     return (
         easy_track,
         evm_script_executor,
-        whitelisted_recipients_registry,
-        top_up_whitelisted_recipients,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
     )
 
 
 @pytest.fixture(scope="module")
-def entire_whitelisted_recipients_setup_with_two_recipients(
-    entire_whitelisted_recipients_setup,
+def entire_allowed_recipients_setup_with_two_recipients(
+    entire_allowed_recipients_setup,
     accounts,
     stranger
 ):
     (
         easy_track,
         evm_script_executor,
-        whitelisted_recipients_registry,
-        top_up_whitelisted_recipients,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
-    ) = entire_whitelisted_recipients_setup
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+    ) = entire_allowed_recipients_setup
 
     recipient1 = accounts[8]
     recipient1_title = "Recipient 1"
@@ -357,14 +357,14 @@ def entire_whitelisted_recipients_setup_with_two_recipients(
     trusted_address = accounts[7]
 
     tx = easy_track.createMotion(
-        add_whitelisted_recipient,
+        add_allowed_recipient,
         encode_calldata("(address,string)", [recipient1.address, recipient1_title]),
         {"from": trusted_address},
     )
     motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 
     tx = easy_track.createMotion(
-        add_whitelisted_recipient,
+        add_allowed_recipient,
         encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
         {"from": trusted_address}
     )
@@ -382,15 +382,15 @@ def entire_whitelisted_recipients_setup_with_two_recipients(
         motion2_calldata,
         {"from": stranger},
     )
-    assert whitelisted_recipients_registry.getWhitelistedRecipients() == [recipient1, recipient2]
+    assert allowed_recipients_registry.getAllowedRecipients() == [recipient1, recipient2]
 
     return (
         easy_track,
         evm_script_executor,
-        whitelisted_recipients_registry,
-        top_up_whitelisted_recipients,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
         recipient1,
         recipient2,
     )

@@ -4,43 +4,41 @@
 pragma solidity ^0.8.4;
 
 import "../TrustedCaller.sol";
-import "../WhitelistedRecipientsRegistry.sol";
+import "../AllowedRecipientsRegistry.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 /// @author psirex, zuzueeka
-/// @notice Creates EVMScript to remove whitelisted recipient address from whitelistedRecipientsRegistry
-contract RemoveWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to add new allowed recipient address to AllowedRecipientsRegistry
+contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_WHITELISTED_RECIPIENT_NOT_FOUND =
-        "WHITELISTED_RECIPIENT_NOT_FOUND";
+    string private constant ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED =
+        "ALLOWED_RECIPIENT_ALREADY_ADDED";
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of WhitelistedRecipientsRegistry
-    WhitelistedRecipientsRegistry public immutable whitelistedRecipientsRegistry;
+    /// @notice Address of AllowedRecipientsRegistry
+    AllowedRecipientsRegistry public immutable allowedRecipientsRegistry;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _whitelistedRecipientsRegistry)
+    constructor(address _trustedCaller, address _allowedRecipientsRegistry)
         TrustedCaller(_trustedCaller)
     {
-        whitelistedRecipientsRegistry = WhitelistedRecipientsRegistry(
-            _whitelistedRecipientsRegistry
-        );
+        allowedRecipientsRegistry = AllowedRecipientsRegistry(_allowedRecipientsRegistry);
     }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to remove whitelisted recipient address from whitelistedRecipientsRegistry
+    /// @notice Creates EVMScript to add new allowed recipient address to allowedRecipientsRegistry
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
@@ -50,27 +48,27 @@ contract RemoveWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
+        (address _recipientAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
         require(
-            whitelistedRecipientsRegistry.isWhitelistedRecipient(
-                _decodeEVMScriptCallData(_evmScriptCallData)
-            ),
-            ERROR_WHITELISTED_RECIPIENT_NOT_FOUND
+            !allowedRecipientsRegistry.isAllowedRecipient(_recipientAddress),
+            ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED
         );
+
         return
             EVMScriptCreator.createEVMScript(
-                address(whitelistedRecipientsRegistry),
-                whitelistedRecipientsRegistry.removeWhitelistedRecipient.selector,
+                address(allowedRecipientsRegistry),
+                allowedRecipientsRegistry.addAllowedRecipient.selector,
                 _evmScriptCallData
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress)
-    /// @return _recipientAddress Address to remove
+    /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress, string _title)
+    /// @return _rewardProgram Address of new recipient address
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address _recipientAddress)
+        returns (address, string memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -82,8 +80,8 @@ contract RemoveWhitelistedRecipient is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address)
+        returns (address, string memory)
     {
-        return abi.decode(_evmScriptCallData, (address));
+        return abi.decode(_evmScriptCallData, (address, string));
     }
 }

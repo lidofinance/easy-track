@@ -15,10 +15,10 @@ from utils import (
 )
 
 from brownie import (
-    WhitelistedRecipientsRegistry,
-    AddWhitelistedRecipient,
-    RemoveWhitelistedRecipient,
-    TopUpWhitelistedRecipients
+    AllowedRecipientsRegistry,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
+    TopUpAllowedRecipients
 )
 
 def main():
@@ -31,8 +31,8 @@ def main():
     easy_track = et_contracts.easy_track
     evm_script_executor = et_contracts.evm_script_executor
 
-    # address allowed to create motions to add, remove or top up whitelisted recipients
-    whitelisted_recipients_multisig = get_env("WHITELISTED_RECIPIENTS_MULTISIG")
+    # address allowed to create motions to add, remove or top up allowed recipients
+    allowed_recipients_multisig = get_env("ALLOWED_RECIPIENTS_MULTISIG")
 
     bokkyPooBahsDateTimeContract = get_env("BOOKYPOOBAH_DATETIME_CONTRACT")
     log.br()
@@ -47,7 +47,7 @@ def main():
 
     log.br()
 
-    log.nb("Whitelisted Recipients Multisig", whitelisted_recipients_multisig)
+    log.nb("Allowed Recipients Multisig", allowed_recipients_multisig)
     log.nb("Deployed EasyTrack", easy_track)
     log.nb("Deployed EVMScript Executor", evm_script_executor)
 
@@ -65,14 +65,14 @@ def main():
         tx_params["max_fee"] = "300 gwei"
 
     (
-        whitelisted_recipients_registry,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
-        top_up_whitelisted_recipients
-    ) = deploy_whitelisted_recipients_contracts(
+        allowed_recipients_registry,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+        top_up_allowed_recipients
+    ) = deploy_allowed_recipients_contracts(
         evm_script_executor=evm_script_executor,
         lido_contracts=contracts,
-        whitelisted_recipients_multisig=whitelisted_recipients_multisig,
+        allowed_recipients_multisig=allowed_recipients_multisig,
         easy_track=easy_track,
         bokkyPooBahsDateTimeContract=bokkyPooBahsDateTimeContract,
         tx_params=tx_params,
@@ -80,20 +80,20 @@ def main():
 
     log.br()
 
-    log.ok("Whitelisted recipients factories have been deployed...")
-    log.nb("Deployed WhitelistedRecipientsRegistry", whitelisted_recipients_registry)
-    log.nb("Deployed AddWhitelistedRecipient", add_whitelisted_recipient)
-    log.nb("Deployed RemoveWhitelistedRecipient", remove_whitelisted_recipient)
-    log.nb("Deployed TopUpWhitelistedRecipients", top_up_whitelisted_recipients)
+    log.ok("Allowed recipients factories have been deployed...")
+    log.nb("Deployed AllowedRecipientsRegistry", allowed_recipients_registry)
+    log.nb("Deployed AddAllowedRecipient", add_allowed_recipient)
+    log.nb("Deployed RemoveAllowedRecipient", remove_allowed_recipient)
+    log.nb("Deployed TopUpAllowedRecipients", top_up_allowed_recipients)
 
     log.br()
 
     if (get_is_live() and get_env("FORCE_VERIFY", False)):
         log.ok("Trying to verify contracts...")
-        WhitelistedRecipientsRegistry.publish_source(whitelisted_recipients_registry)
-        AddWhitelistedRecipient.publish_source(add_whitelisted_recipient)
-        RemoveWhitelistedRecipient.publish_source(remove_whitelisted_recipient)
-        TopUpWhitelistedRecipients.publish_source(top_up_whitelisted_recipients)
+        AllowedRecipientsRegistry.publish_source(allowed_recipients_registry)
+        AddAllowedRecipient.publish_source(add_allowed_recipient)
+        RemoveAllowedRecipient.publish_source(remove_allowed_recipient)
+        TopUpAllowedRecipients.publish_source(top_up_allowed_recipients)
 
     log.br()
 
@@ -105,12 +105,12 @@ def main():
             log.nb("Aborting")
             return
 
-        deployment.add_evm_script_whitelisted_recipients_factories(
+        deployment.add_evm_script_allowed_recipients_factories(
             easy_track=easy_track,
-            add_whitelisted_recipient=add_whitelisted_recipient,
-            remove_whitelisted_recipient=remove_whitelisted_recipient,
-            top_up_whitelisted_recipients=top_up_whitelisted_recipients,
-            whitelisted_recipients_registry=whitelisted_recipients_registry,
+            add_allowed_recipient=add_allowed_recipient,
+            remove_allowed_recipient=remove_allowed_recipient,
+            top_up_allowed_recipients=top_up_allowed_recipients,
+            allowed_recipients_registry=allowed_recipients_registry,
             lido_contracts=contracts
         )
     elif easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), contracts.aragon.voting):
@@ -124,42 +124,42 @@ def main():
     input()
 
 
-def deploy_whitelisted_recipients_contracts(
+def deploy_allowed_recipients_contracts(
     evm_script_executor,
     lido_contracts,
-    whitelisted_recipients_multisig,
+    allowed_recipients_multisig,
     easy_track,
     bokkyPooBahsDateTimeContract,
     tx_params,
 ):
-    whitelisted_recipients_registry = deployment.deploy_whitelisted_recipients_registry(
+    allowed_recipients_registry = deployment.deploy_allowed_recipients_registry(
         voting=lido_contracts.aragon.voting,
         evm_script_executor=evm_script_executor,
         easy_track=easy_track,
         bokkyPooBahsDateTimeContract=bokkyPooBahsDateTimeContract,
         tx_params=tx_params,
     )
-    add_whitelisted_recipient = deployment.deploy_add_whitelisted_recipient(
-        whitelisted_recipients_registry=whitelisted_recipients_registry,
-        whitelisted_recipients_multisig=whitelisted_recipients_multisig,
+    add_allowed_recipient = deployment.deploy_add_allowed_recipient(
+        allowed_recipients_registry=allowed_recipients_registry,
+        allowed_recipients_multisig=allowed_recipients_multisig,
         tx_params=tx_params,
     )
-    remove_whitelisted_recipient = deployment.deploy_remove_whitelisted_recipient(
-        whitelisted_recipients_registry=whitelisted_recipients_registry,
-        whitelisted_recipients_multisig=whitelisted_recipients_multisig,
+    remove_allowed_recipient = deployment.deploy_remove_allowed_recipient(
+        allowed_recipients_registry=allowed_recipients_registry,
+        allowed_recipients_multisig=allowed_recipients_multisig,
         tx_params=tx_params,
     )
-    top_up_whitelisted_recipients = deployment.deploy_top_up_whitelisted_recipients(
+    top_up_allowed_recipients = deployment.deploy_top_up_allowed_recipients(
         finance=lido_contracts.aragon.finance,
         governance_token=lido_contracts.ldo,
-        whitelisted_recipients_registry=whitelisted_recipients_registry,
-        whitelisted_recipients_multisig=whitelisted_recipients_multisig,
+        allowed_recipients_registry=allowed_recipients_registry,
+        allowed_recipients_multisig=allowed_recipients_multisig,
         tx_params=tx_params,
     )
 
     return (
-        whitelisted_recipients_registry,
-        add_whitelisted_recipient,
-        remove_whitelisted_recipient,
-        top_up_whitelisted_recipients
+        allowed_recipients_registry,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+        top_up_allowed_recipients
     )
