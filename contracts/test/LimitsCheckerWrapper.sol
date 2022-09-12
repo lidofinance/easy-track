@@ -8,13 +8,17 @@ import "../interfaces/IBokkyPooBahsDateTimeContract.sol";
 import "../EasyTrack.sol";
 
 contract LimitsCheckerWrapper is LimitsChecker {
-
     constructor(
         EasyTrack _easyTrack,
         address[] memory _setLimitParametersRoleHolders,
+        address[] memory _updateLimitSpendingsRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
-    ) LimitsChecker(_easyTrack, _setLimitParametersRoleHolders, _bokkyPooBahsDateTimeContract)
-    {
-    }
-
+    )
+        LimitsChecker(
+            _easyTrack,
+            _setLimitParametersRoleHolders,
+            _updateLimitSpendingsRoleHolders,
+            _bokkyPooBahsDateTimeContract
+        )
+    {}
 }

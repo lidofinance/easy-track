@@ -48,6 +48,7 @@ contract LimitsChecker is AccessControl {
     // ROLES
     // -------------
     bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
+    bytes32 public constant UPDATE_LIMIT_SPENDINGS_ROLE = keccak256("UPDATE_LIMIT_SPENDINGS_ROLE");
 
     // -------------
     // CONSTANTS
@@ -81,11 +82,15 @@ contract LimitsChecker is AccessControl {
     constructor(
         EasyTrack _easy_track,
         address[] memory _setLimitParametersRoleHolders,
+        address[] memory _updateLimitSpendingsRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) {
         easyTrack = _easy_track;
         for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
             _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
+        }
+        for (uint256 i = 0; i < _updateLimitSpendingsRoleHolders.length; i++) {
+            _setupRole(UPDATE_LIMIT_SPENDINGS_ROLE, _updateLimitSpendingsRoleHolders[i]);
         }
         bokkyPooBahsDateTimeContract = _bokkyPooBahsDateTimeContract;
     }
@@ -96,9 +101,13 @@ contract LimitsChecker is AccessControl {
 
     /// @notice Checks if _payoutSum is less than may be spent in the period
     /// @param _payoutSum Motion sum
+    /// @param _motionDuration Motion duration - minimal time required to pass before enacting of motion
     /// @return True if _payoutSum is less than may be spent in the period
-    function isUnderSpendableBalance(uint256 _payoutSum) external view returns (bool) {
-        uint256 _motionDuration = easyTrack.motionDuration();
+    function isUnderSpendableBalance(uint256 _payoutSum, uint256 _motionDuration)
+        external
+        view
+        returns (bool)
+    {
         if (block.timestamp + _motionDuration >= currentPeriodEnd) {
             return _payoutSum <= limit;
         } else {
@@ -108,9 +117,10 @@ contract LimitsChecker is AccessControl {
 
     /// @notice Checks if _payoutSum is less than may be spent,
     /// @notice updates period if needed and increases the amount spent in the current period
-    function updateSpendableBalance(uint256 _payoutSum) external {
-        require(msg.sender == address(easyTrack.evmScriptExecutor()), ERROR_CALLER_IS_FORBIDDEN);
-
+    function updateSpendableBalance(uint256 _payoutSum)
+        external
+        onlyRole(UPDATE_LIMIT_SPENDINGS_ROLE)
+    {
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
         _increaseSpent(_payoutSum);

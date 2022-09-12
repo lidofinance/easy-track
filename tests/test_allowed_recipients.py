@@ -286,6 +286,7 @@ def test_allowed_recipients_happy_path(
         [voting, evm_script_executor],
         [voting, evm_script_executor],
         [voting, evm_script_executor],
+        [voting, evm_script_executor],
         easy_track,
         bokkyPooBahsDateTimeContract,
     )

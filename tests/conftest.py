@@ -253,6 +253,7 @@ def entire_allowed_recipients_setup(
         [voting, evm_script_executor],
         [voting, evm_script_executor],
         [voting, evm_script_executor],
+        [voting, evm_script_executor],
         easy_track,
         bokkyPooBahsDateTimeContract,
     )

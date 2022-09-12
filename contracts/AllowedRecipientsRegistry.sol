@@ -55,9 +55,17 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
         address[] memory _addAllowedRecipientRoleHolders,
         address[] memory _removeAllowedRecipientRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
+        address[] memory _updateLimitSpendingsRoleHolders,
         EasyTrack _easy_track,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
-    ) LimitsChecker(_easy_track, _setLimitParametersRoleHolders, _bokkyPooBahsDateTimeContract) {
+    )
+        LimitsChecker(
+            _easy_track,
+            _setLimitParametersRoleHolders,
+            _updateLimitSpendingsRoleHolders,
+            _bokkyPooBahsDateTimeContract
+        )
+    {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         for (uint256 i = 0; i < _addAllowedRecipientRoleHolders.length; i++) {
             _setupRole(ADD_ALLOWED_RECIPIENT_ROLE, _addAllowedRecipientRoleHolders[i]);
