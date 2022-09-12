@@ -188,6 +188,14 @@ contract LimitsChecker is AccessControl {
         );
     }
 
+    function getFirstMonthInPeriodFromCurrentMonth(uint256 _month)
+        public
+        view
+        returns (uint256 _firstMonthInPeriod)
+    {
+        _firstMonthInPeriod = _getFirstMonthInPeriodFromCurrentMonth(_month);
+    }
+
     // ------------------
     // PRIVATE METHODS
     // ------------------
@@ -225,15 +233,36 @@ contract LimitsChecker is AccessControl {
     }
 
     function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
+        // Get year and number of month of the timestamp:
         (uint256 _year, uint256 _month, ) = bokkyPooBahsDateTimeContract.timestampToDate(
             _timestamp
         );
+        // We assume that the year will remain the same,
+        // because the beginning of the current calendar period will necessarily be in the same year.
+        uint256 _periodStartYear = _year;
+        // Get the number of the start date month:
+        uint256 _periodStartMonth = _getFirstMonthInPeriodFromCurrentMonth(_month);
+        //The beginning of the period always matches the calendar date of the beginning of the month.
+        uint256 _periodStartDay = 1;
         return
             bokkyPooBahsDateTimeContract.timestampFromDate(
-                _year,
-                _month - ((_month - 1) % periodDurationMonth),
-                1
+                _periodStartYear,
+                _periodStartMonth,
+                _periodStartDay
             );
+    }
+
+    function _getFirstMonthInPeriodFromCurrentMonth(uint256 _month)
+        internal
+        view
+        returns (uint256 _firstMonthInPeriod)
+    {
+        // To get the number of the first month in the period:
+        //   1. get the number of the period:
+        uint256 _periodNumber = (_month - 1) / periodDurationMonth;
+        //   2. and then the number of the first month in this period:
+        _firstMonthInPeriod = _periodNumber * periodDurationMonth + 1;
+        //The shift by - 1 and then by + 1 happens because the months in the calendar start from 1 and not from 0.
     }
 
     function _getPeriodEndFromTimestamp(uint256 _timestamp) internal view returns (uint256) {

@@ -381,6 +381,79 @@ def test_limits_checker_period_ranges(
         f"start={start}, {datetime.datetime.fromtimestamp(start).isoformat()},\nend={end}, {datetime.datetime.fromtimestamp(end).isoformat()}"
     )
 
+def test_limits_checker_get_first_month_in_period(
+    owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    script_executor = easy_track.evmScriptExecutor()
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, [owner], [script_executor], bokkyPooBahsDateTimeContract
+    )
+
+    period_limit, period_duration = 0, 1
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    for i in range(1, 13):
+        assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(i) == i
+
+    period_duration = 2
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 3
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 3
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 5
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 5
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 9
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 9
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 11
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 11
+
+    period_duration = 3
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 4
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 4
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 4
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 10
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 10
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 10
+
+    period_duration = 6
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 7
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 7
+
+    period_duration = 12
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 1
+
 
 def test_limits_checker_general(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
