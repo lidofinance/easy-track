@@ -73,12 +73,16 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         (address[] memory allowedRecipients, uint256[] memory amounts) = _decodeEVMScriptCallData(
             _evmScriptCallData
         );
-        _validateEVMScriptCallData(allowedRecipients, amounts);
+        uint256 _totalAmount = _validateEVMScriptCallData(allowedRecipients, amounts);
 
         address[] memory _to = new address[](allowedRecipients.length + 1);
         bytes4[] memory _methodIds = new bytes4[](allowedRecipients.length + 1);
         bytes[] memory evmScriptsCalldata = new bytes[](allowedRecipients.length + 1);
-        uint256 sum = 0;
+
+        _to[0] = address(allowedRecipientsRegistry);
+        _methodIds[0] = allowedRecipientsRegistry.updateSpendableBalance.selector;
+        evmScriptsCalldata[0] = abi.encode(_totalAmount);
+
         for (uint256 i = 0; i < allowedRecipients.length; ++i) {
             _to[i + 1] = address(finance);
             _methodIds[i + 1] = finance.newImmediatePayment.selector;
@@ -88,14 +92,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
                 amounts[i],
                 "Top up allowed recipients"
             );
-            sum += amounts[i];
         }
-
-        _to[0] = address(allowedRecipientsRegistry);
-        _methodIds[0] = allowedRecipientsRegistry.updateSpendableBalance.selector;
-        evmScriptsCalldata[0] = abi.encode(sum);
-
-        _checkLimit(sum);
 
         return EVMScriptCreator.createEVMScript(_to, _methodIds, evmScriptsCalldata);
     }
@@ -121,16 +118,20 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     function _validateEVMScriptCallData(
         address[] memory _allowedRecipients,
         uint256[] memory _amounts
-    ) private view {
+    ) private view returns (uint256 _totalAmount) {
         require(_amounts.length == _allowedRecipients.length, ERROR_LENGTH_MISMATCH);
         require(_allowedRecipients.length > 0, ERROR_EMPTY_DATA);
+
         for (uint256 i = 0; i < _allowedRecipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
                 allowedRecipientsRegistry.isAllowedRecipient(_allowedRecipients[i]),
                 ERROR_RECIPIENT_NOT_ALLOWED
             );
+            _totalAmount += _amounts[i];
         }
+
+        _checkLimit(_totalAmount);
     }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
