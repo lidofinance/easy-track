@@ -538,11 +538,7 @@ def test_allowed_recipients_happy_path(
         "(address,string)", [allowed_recipient.address, allowed_recipient_title]
     )
 
-    # create new motion to add a allowed recipient
-    expected_evm_script = add_allowed_recipient.createEVMScript(
-        add_allowed_recipient.trustedCaller(), add_allowed_recipient_calldata
-    )
-
+    # create new motion to add an allowed recipient
     tx = easy_track.createMotion(
         add_allowed_recipient,
         add_allowed_recipient_calldata,
