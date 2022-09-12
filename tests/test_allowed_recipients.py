@@ -329,6 +329,21 @@ def test_limits_checker_access_restriction(
         limits_checker.updateSpendableBalance(123, {"from": manager})
 
 
+def test_limits_checker_update_balance_with_zero_periodDuration(
+    owner, lego_program, stranger, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    manager = lego_program
+    script_executor = easy_track.evmScriptExecutor()
+
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
+    )
+
+    with reverts("WRONG_PERIOD_DURATION"):
+        limits_checker.updateSpendableBalance(123, {"from": script_executor})
+
+
+
 def test_limits_checker_incorrect_period_duration(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):

@@ -198,6 +198,7 @@ contract LimitsChecker is AccessControl {
     /// Then at the moment when it is necessary to shift the currentPeriodEnd (the condition is fulfilled: block.timestamp >= currentPeriodEnd),
     /// currentPeriodEnd takes on a new value and spent is set to zero. Thus begins a new period.
     function _checkAndUpdateLimitParameters() internal {
+        _checkPeriodDurationMonth(periodDurationMonth);
         if (block.timestamp >= currentPeriodEnd) {
             currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
             spent = 0;
