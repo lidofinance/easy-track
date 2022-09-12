@@ -188,7 +188,7 @@ def add_evm_script_reward_program_factories(
         tx_params,
     )
 
-def add_evm_script_allowed_recipients_factories(
+def attach_evm_script_allowed_recipients_factories(
     easy_track,
     add_allowed_recipient,
     remove_allowed_recipient,
