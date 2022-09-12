@@ -211,12 +211,12 @@ def attach_evm_script_allowed_recipients_factories(
     )
     easy_track.addEVMScriptFactory(
         add_allowed_recipient,
-        create_permission(allowed_recipients_registry, "addAllowedRecipient"),
+        create_permission(allowed_recipients_registry, "addRecipientToAllowedList"),
         tx_params,
     )
     easy_track.addEVMScriptFactory(
         remove_allowed_recipient,
-        create_permission(allowed_recipients_registry, "removeAllowedRecipient"),
+        create_permission(allowed_recipients_registry, "removeRecipientFromAllowedList"),
         tx_params,
     )
 

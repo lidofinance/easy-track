@@ -280,7 +280,7 @@ def entire_allowed_recipients_setup(
 
     # add AddAllowedRecipient EVM script factory to easy track
     add_allowed_recipient_permission = create_permission(
-        allowed_recipients_registry, "addAllowedRecipient"
+        allowed_recipients_registry, "addRecipientToAllowedList"
     )
 
     easy_track.addEVMScriptFactory(
@@ -294,7 +294,7 @@ def entire_allowed_recipients_setup(
 
     # add RemoveAllowedRecipient EVM script factory to easy track
     remove_allowed_recipient_permission = create_permission(
-        allowed_recipients_registry, "removeAllowedRecipient"
+        allowed_recipients_registry, "removeRecipientFromAllowedList"
     )
     easy_track.addEVMScriptFactory(
         remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}

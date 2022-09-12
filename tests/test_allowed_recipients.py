@@ -163,8 +163,8 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     )
     assert_event_exists(
         tx,
-        "AllowedRecipientAdded",
-        {"_allowedRecipient": recipient, "_title": recipient_title},
+        "RecipientAddedToAllowedList",
+        {"_recipient": recipient, "_title": recipient_title},
     )
 
     assert len(easy_track.getMotions()) == 0
@@ -191,8 +191,8 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
     assert_event_exists(
         tx,
-        "AllowedRecipientRemoved",
-        {"_allowedRecipient": recipient},
+        "RecipientRemovedFromAllowedList",
+        {"_recipient": recipient},
     )
     assert not allowed_recipients_registry.isAllowedRecipient(recipient)
 

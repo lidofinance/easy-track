@@ -57,7 +57,7 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(allowedRecipientsRegistry),
-                allowedRecipientsRegistry.addAllowedRecipient.selector,
+                allowedRecipientsRegistry.addRecipientToAllowedList.selector,
                 _evmScriptCallData
             );
     }

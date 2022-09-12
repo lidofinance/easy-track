@@ -13,22 +13,24 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
     // -------------
     // EVENTS
     // -------------
-    event AllowedRecipientAdded(address indexed _allowedRecipient, string _title);
-    event AllowedRecipientRemoved(address indexed _allowedRecipient);
+    event RecipientAddedToAllowedList(address indexed _recipient, string _title);
+    event RecipientRemovedFromAllowedList(address indexed _recipient);
 
     // -------------
     // ROLES
     // -------------
-    bytes32 public constant ADD_ALLOWED_RECIPIENT_ROLE = keccak256("ADD_ALLOWED_RECIPIENT_ROLE");
-    bytes32 public constant REMOVE_ALLOWED_RECIPIENT_ROLE =
-        keccak256("REMOVE_ALLOWED_RECIPIENT_ROLE");
+    bytes32 public constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
+        keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
+    bytes32 public constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
+        keccak256("REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE");
 
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED =
-        "ALLOWED_RECIPIENT_ALREADY_ADDED";
-    string private constant ERROR_ALLOWED_RECIPIENT_NOT_FOUND = "ALLOWED_RECIPIENT_NOT_FOUND";
+    string private constant ERROR_RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST =
+        "RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST";
+    string private constant ERROR_RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST =
+        "RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST";
 
     // -------------
     // VARIABLES
@@ -46,14 +48,19 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
     // -------------
 
     /// @param _admin Address which will be granted with role DEFAULT_ADMIN_ROLE
-    /// @param _addAllowedRecipientRoleHolders List of addresses which will be
-    ///     granted with role ADD_ALLOWED_RECIPIENT_ROLE
-    /// @param _removeAllowedRecipientRoleHolders List of addresses which will
-    ///     be granted with role REMOVE_ALLOWED_RECIPIENT_ROLE
+    /// @param _addRecipientToAllowedListRoleHolders List of addresses which will be
+    ///     granted with role ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE
+    /// @param _removeRecipientFromAllowedListRoleHolders List of addresses which will
+    ///     be granted with role REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE
+    /// @param _setLimitParametersRoleHolders List of addresses which will
+    ///     be granted with role SET_LIMIT_PARAMETERS_ROLE
+    /// @param _updateLimitSpendingsRoleHolders List of addresses which will
+    ///     be granted with role UPDATE_LIMIT_SPENDINGS_ROLE
+    /// @param _bokkyPooBahsDateTimeContract Address of bokkyPooBahs DateTime Contract
     constructor(
         address _admin,
-        address[] memory _addAllowedRecipientRoleHolders,
-        address[] memory _removeAllowedRecipientRoleHolders,
+        address[] memory _addRecipientToAllowedListRoleHolders,
+        address[] memory _removeRecipientFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateLimitSpendingsRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
@@ -65,11 +72,17 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
         )
     {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
-        for (uint256 i = 0; i < _addAllowedRecipientRoleHolders.length; i++) {
-            _setupRole(ADD_ALLOWED_RECIPIENT_ROLE, _addAllowedRecipientRoleHolders[i]);
+        for (uint256 i = 0; i < _addRecipientToAllowedListRoleHolders.length; i++) {
+            _setupRole(
+                ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
+                _addRecipientToAllowedListRoleHolders[i]
+            );
         }
-        for (uint256 i = 0; i < _removeAllowedRecipientRoleHolders.length; i++) {
-            _setupRole(REMOVE_ALLOWED_RECIPIENT_ROLE, _removeAllowedRecipientRoleHolders[i]);
+        for (uint256 i = 0; i < _removeRecipientFromAllowedListRoleHolders.length; i++) {
+            _setupRole(
+                REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
+                _removeRecipientFromAllowedListRoleHolders[i]
+            );
         }
     }
 
@@ -78,29 +91,29 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
     // -------------
 
     /// @notice Adds address to list of allowed addresses for payouts
-    function addAllowedRecipient(address _allowedRecipient, string memory _title)
+    function addRecipientToAllowedList(address _recipient, string memory _title)
         external
-        onlyRole(ADD_ALLOWED_RECIPIENT_ROLE)
+        onlyRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)
     {
         require(
-            allowedRecipientIndices[_allowedRecipient] == 0,
-            ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED
+            allowedRecipientIndices[_recipient] == 0,
+            ERROR_RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST
         );
 
-        allowedRecipients.push(_allowedRecipient);
-        allowedRecipientIndices[_allowedRecipient] = allowedRecipients.length;
-        emit AllowedRecipientAdded(_allowedRecipient, _title);
+        allowedRecipients.push(_recipient);
+        allowedRecipientIndices[_recipient] = allowedRecipients.length;
+        emit RecipientAddedToAllowedList(_recipient, _title);
     }
 
     /// @notice Removes address from list of allowed addresses for payouts
     /// @dev To delete an allowed address from the allowedRecipients array in O(1),
     /// we swap the element to delete with the last one in the array,
     /// and then remove the last element (sometimes called as 'swap and pop').
-    function removeAllowedRecipient(address _allowedRecipient)
+    function removeRecipientFromAllowedList(address _recipient)
         external
-        onlyRole(REMOVE_ALLOWED_RECIPIENT_ROLE)
+        onlyRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)
     {
-        uint256 index = _getAllowedRecipientIndex(_allowedRecipient);
+        uint256 index = _getAllowedRecipientIndex(_recipient);
         uint256 lastIndex = allowedRecipients.length - 1;
 
         if (index != lastIndex) {
@@ -110,8 +123,8 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
         }
 
         allowedRecipients.pop();
-        delete allowedRecipientIndices[_allowedRecipient];
-        emit AllowedRecipientRemoved(_allowedRecipient);
+        delete allowedRecipientIndices[_recipient];
+        emit RecipientRemovedFromAllowedList(_recipient);
     }
 
     /// @notice Returns if passed address are listed as allowed recipient in the registry
@@ -134,7 +147,7 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
         returns (uint256 _index)
     {
         _index = allowedRecipientIndices[_evmScriptFactory];
-        require(_index > 0, ERROR_ALLOWED_RECIPIENT_NOT_FOUND);
+        require(_index > 0, ERROR_RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST);
         _index -= 1;
     }
 }

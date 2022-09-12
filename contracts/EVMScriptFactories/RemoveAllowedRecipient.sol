@@ -56,7 +56,7 @@ contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(allowedRecipientsRegistry),
-                allowedRecipientsRegistry.removeAllowedRecipient.selector,
+                allowedRecipientsRegistry.removeRecipientFromAllowedList.selector,
                 _evmScriptCallData
             );
     }
