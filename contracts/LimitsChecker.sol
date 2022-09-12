@@ -5,7 +5,6 @@ pragma solidity ^0.8.4;
 
 import "./libraries/EVMScriptCreator.sol";
 import "./interfaces/IBokkyPooBahsDateTimeContract.sol";
-import "./EasyTrack.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author zuzueeka
@@ -43,7 +42,6 @@ contract LimitsChecker is AccessControl {
     // -------------
     string private constant ERROR_WRONG_PERIOD_DURATION = "WRONG_PERIOD_DURATION";
     string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
-    string private constant ERROR_CALLER_IS_FORBIDDEN = "CALLER_IS_FORBIDDEN";
     // -------------
     // ROLES
     // -------------
@@ -61,9 +59,6 @@ contract LimitsChecker is AccessControl {
     /// @notice Address of BokkyPooBahsDateTimeContract
     IBokkyPooBahsDateTimeContract public immutable bokkyPooBahsDateTimeContract;
 
-    /// @notice Address of EasyTrack
-    EasyTrack public immutable easyTrack;
-
     /// @notice Length of period in months
     uint256 internal periodDurationMonth;
 
@@ -80,12 +75,10 @@ contract LimitsChecker is AccessControl {
     // CONSTRUCTOR
     // ------------
     constructor(
-        EasyTrack _easy_track,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateLimitSpendingsRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) {
-        easyTrack = _easy_track;
         for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
             _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
         }

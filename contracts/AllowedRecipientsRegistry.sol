@@ -56,11 +56,9 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
         address[] memory _removeAllowedRecipientRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateLimitSpendingsRoleHolders,
-        EasyTrack _easy_track,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     )
         LimitsChecker(
-            _easy_track,
             _setLimitParametersRoleHolders,
             _updateLimitSpendingsRoleHolders,
             _bokkyPooBahsDateTimeContract

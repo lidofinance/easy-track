@@ -16,6 +16,7 @@ from utils.test_helpers import (
     assert_event_exists,
     access_control_revert_message,
     SET_LIMIT_PARAMETERS_ROLE,
+    UPDATE_LIMIT_SPENDINGS_ROLE,
 )
 
 from utils.deployment import attach_evm_script_allowed_recipients_factories
@@ -309,9 +310,10 @@ def test_limits_checker_access_restriction(
     owner, lego_program, stranger, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
     manager = lego_program
+    script_executor = easy_track.evmScriptExecutor()
 
     limits_checker = owner.deploy(
-        LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
+        LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
     )
 
     with reverts(access_control_revert_message(stranger, SET_LIMIT_PARAMETERS_ROLE)):
@@ -320,10 +322,10 @@ def test_limits_checker_access_restriction(
     with reverts(access_control_revert_message(owner, SET_LIMIT_PARAMETERS_ROLE)):
         limits_checker.setLimitParameters(123, 1, {"from": owner})
 
-    with reverts("CALLER_IS_FORBIDDEN"):
+    with reverts(access_control_revert_message(stranger, UPDATE_LIMIT_SPENDINGS_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": stranger})
 
-    with reverts("CALLER_IS_FORBIDDEN"):
+    with reverts(access_control_revert_message(manager, UPDATE_LIMIT_SPENDINGS_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": manager})
 
 
@@ -331,8 +333,10 @@ def test_limits_checker_incorrect_period_duration(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
     manager = lego_program
+    script_executor = easy_track.evmScriptExecutor()
+
     limits_checker = owner.deploy(
-        LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
+        LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
     )
 
     period_limit = 10**18
@@ -350,8 +354,9 @@ def calc_period_range_timestamps(now_timestamp, period_duration_months):
 def test_limits_checker_period_ranges(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
+    script_executor = easy_track.evmScriptExecutor()
     limits_checker = owner.deploy(
-        LimitsCheckerWrapper, easy_track, [owner], bokkyPooBahsDateTimeContract
+        LimitsCheckerWrapper, [owner], [script_executor], bokkyPooBahsDateTimeContract
     )
 
     period_limit, period_duration = 0, 3
@@ -375,7 +380,7 @@ def test_limits_checker_general(
     script_executor = easy_track.evmScriptExecutor()
 
     limits_checker = owner.deploy(
-        LimitsCheckerWrapper, easy_track, [manager], bokkyPooBahsDateTimeContract
+        LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
     )
     assert limits_checker.getLimitParameters() == (0, 0)
 
@@ -383,7 +388,7 @@ def test_limits_checker_general(
     # assert limits_checker.getCurrentPeriodState() == (0, 0, 0, 0)
 
     assert limits_checker.currentSpendableBalance() == 0
-    assert limits_checker.isUnderSpendableBalance(0)
+    assert limits_checker.isUnderSpendableBalance(0, easy_track.motionDuration())
 
     period_limit, period_duration = 3 * 10**18, 1
 
@@ -475,7 +480,6 @@ def test_allowed_recipients_happy_path(
         [voting, evm_script_executor],
         [voting, evm_script_executor],
         [voting, evm_script_executor],
-        easy_track,
         bokkyPooBahsDateTimeContract,
     )
     # deploy TopUpAllowedRecipients EVM script factory
@@ -485,6 +489,7 @@ def test_allowed_recipients_happy_path(
         allowed_recipients_registry,
         finance,
         ldo,
+        easy_track,
     )
     # deploy AddAllowedRecipient EVM script factory
     add_allowed_recipient = deployer.deploy(

@@ -8,6 +8,7 @@ import "../AllowedRecipientsRegistry.sol";
 import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
+import "../EasyTrack.sol";
 
 /// @notice Creates EVMScript to check limits and top up allowed recipients addresses
 contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
@@ -23,6 +24,9 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     // -------------
     // VARIABLES
     // -------------
+
+    /// @notice Address of EasyTrack
+    EasyTrack public immutable easyTrack;
 
     /// @notice Address of Aragon's Finance contract
     IFinance public immutable finance;
@@ -41,11 +45,13 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         address _trustedCaller,
         address _allowedRecipientsRegistry,
         address _finance,
-        address _token
+        address _token,
+        EasyTrack _easy_track
     ) TrustedCaller(_trustedCaller) {
         finance = IFinance(_finance);
         token = _token;
         allowedRecipientsRegistry = AllowedRecipientsRegistry(_allowedRecipientsRegistry);
+        easyTrack = _easy_track;
     }
 
     // -------------
@@ -136,6 +142,9 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     }
 
     function _checkLimit(uint256 _sum) private view {
-        require(allowedRecipientsRegistry.isUnderSpendableBalance(_sum), ERROR_SUM_EXCEEDS_LIMIT);
+        require(
+            allowedRecipientsRegistry.isUnderSpendableBalance(_sum, easyTrack.motionDuration()),
+            ERROR_SUM_EXCEEDS_LIMIT
+        );
     }
 }

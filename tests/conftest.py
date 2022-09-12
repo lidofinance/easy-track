@@ -254,13 +254,12 @@ def entire_allowed_recipients_setup(
         [voting, evm_script_executor],
         [voting, evm_script_executor],
         [voting, evm_script_executor],
-        easy_track,
         bokkyPooBahsDateTimeContract,
     )
 
     # deploy TopUpAllowedRecipients EVM script factory
     top_up_allowed_recipients = deployer.deploy(
-        TopUpAllowedRecipients, trusted_factories_caller, allowed_recipients_registry, finance, ldo
+        TopUpAllowedRecipients, trusted_factories_caller, allowed_recipients_registry, finance, ldo, easy_track
     )
 
     # add TopUpAllowedRecipients EVM script factory to easy track
