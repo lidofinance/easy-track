@@ -46,12 +46,12 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         address _allowedRecipientsRegistry,
         address _finance,
         address _token,
-        EasyTrack _easy_track
+        address _easy_track
     ) TrustedCaller(_trustedCaller) {
         finance = IFinance(_finance);
         token = _token;
         allowedRecipientsRegistry = AllowedRecipientsRegistry(_allowedRecipientsRegistry);
-        easyTrack = _easy_track;
+        easyTrack = EasyTrack(_easy_track);
     }
 
     // -------------
