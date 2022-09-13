@@ -19,4 +19,12 @@ contract LimitsCheckerWrapper is LimitsChecker {
             _bokkyPooBahsDateTimeContract
         )
     {}
+
+    function getFirstMonthInPeriodFromCurrentMonth(uint256 _month)
+        public
+        view
+        returns (uint256 _firstMonthInPeriod)
+    {
+        _firstMonthInPeriod = _getFirstMonthInPeriodFromCurrentMonth(_month);
+    }
 }
