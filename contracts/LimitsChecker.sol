@@ -60,16 +60,16 @@ contract LimitsChecker is AccessControl {
     IBokkyPooBahsDateTimeContract public immutable bokkyPooBahsDateTimeContract;
 
     /// @notice Length of period in months
-    uint256 internal periodDurationMonth;
+    uint64 internal periodDurationMonth;
 
     /// @notice End of the current period
-    uint256 internal currentPeriodEnd;
+    uint128 internal currentPeriodEnd;
 
     /// @notice The maximum that can be spent in a period
-    uint256 internal limit;
+    uint128 internal limit;
 
     /// @notice Amount already spent in the period
-    uint256 internal spent;
+    uint128 internal spent;
 
     // ------------
     // CONSTRUCTOR
@@ -150,9 +150,9 @@ contract LimitsChecker is AccessControl {
         onlyRole(SET_LIMIT_PARAMETERS_ROLE)
     {
         _checkPeriodDurationMonth(_periodDurationMonth);
-        periodDurationMonth = _periodDurationMonth;
-        currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
-        limit = _limit;
+        periodDurationMonth = uint64(_periodDurationMonth);
+        currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
+        limit = uint128(_limit);
 
         emit LimitsParametersChanged(_limit, _periodDurationMonth);
     }
@@ -200,7 +200,7 @@ contract LimitsChecker is AccessControl {
     function _checkAndUpdateLimitParameters() internal {
         _checkPeriodDurationMonth(periodDurationMonth);
         if (block.timestamp >= currentPeriodEnd) {
-            currentPeriodEnd = _getPeriodEndFromTimestamp(block.timestamp);
+            currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
             spent = 0;
         }
     }
@@ -221,7 +221,7 @@ contract LimitsChecker is AccessControl {
     }
 
     function _increaseSpent(uint256 _payoutSum) internal {
-        spent += _payoutSum;
+        spent += uint128(_payoutSum);
     }
 
     function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
