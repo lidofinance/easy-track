@@ -1,4 +1,4 @@
-import datetime
+from datetime import datetime
 
 from brownie.network import chain
 from brownie import EasyTrack, EVMScriptExecutor, accounts, reverts
@@ -15,8 +15,12 @@ from utils.test_helpers import (
     assert_single_event,
     assert_event_exists,
     access_control_revert_message,
+    get_month_start_timestamp,
+    get_next_month_start_timestamp,
     SET_LIMIT_PARAMETERS_ROLE,
     UPDATE_LIMIT_SPENDINGS_ROLE,
+    ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
+    REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
 )
 
 from utils.deployment import attach_evm_script_allowed_recipients_factories
@@ -51,9 +55,9 @@ MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
 # TODO: test attempt to add an already allowed recipient
 
-# TODO: ?? the limits are checked at the time of enactment
+# TODO: the limits are checked at the time of enactment
 
-# TODO: ?? the limits are checked at the time of motion creation
+# TODO: the limits are checked at the time of motion creation
 
 # TODO: test LimitsChecker functions
 #       - incorrect period durations (e. g. 7 months)
@@ -141,19 +145,9 @@ def do_payout_to_allowed_recipients(recipients, amounts, easy_track, top_up_fact
     )
 
 
-def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, stranger):
-    (
-        easy_track,
-        _,  # evm_script_executor,
-        allowed_recipients_registry,
-        _,  # top_up_factory,
-        add_recipient_factory,
-        remove_recipient_factory,
-    ) = entire_allowed_recipients_setup
-
-    recipient = accounts[8]
-    recipient_title = "New Allowed Recipient"
-
+def add_recipient(
+    recipient, recipient_title, easy_track, add_recipient_factory, allowed_recipients_registry
+):
     add_recipient_calldata = encode_calldata(
         "(address,string)", [recipient.address, recipient_title]
     )
@@ -169,21 +163,17 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     tx = easy_track.enactMotion(
         easy_track.getMotions()[0][0],
         tx.events["MotionCreated"]["_evmScriptCallData"],
-        {"from": stranger},
+        {"from": recipient},
     )
     assert_event_exists(
         tx,
         "RecipientAddedToAllowedList",
         {"_recipient": recipient, "_title": recipient_title},
     )
-
-    assert len(easy_track.getMotions()) == 0
-    assert allowed_recipients_registry.getAllowedRecipients() == [recipient]
-
     assert allowed_recipients_registry.isAllowedRecipient(recipient)
-    assert not allowed_recipients_registry.isAllowedRecipient(stranger)
 
-    # create new motion to remove a allowed recipient
+
+def remove_recipient(recipient, easy_track, remove_recipient_factory, allowed_recipients_registry):
     tx = easy_track.createMotion(
         remove_recipient_factory,
         encode_single("(address)", [recipient.address]),
@@ -196,15 +186,120 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     tx = easy_track.enactMotion(
         easy_track.getMotions()[0][0],
         motion_calldata,
-        {"from": stranger},
+        {"from": recipient},
     )
-    assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
     assert_event_exists(
         tx,
         "RecipientRemovedFromAllowedList",
         {"_recipient": recipient},
     )
     assert not allowed_recipients_registry.isAllowedRecipient(recipient)
+
+
+def test_add_same_recipient_twice(entire_allowed_recipients_setup, accounts):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        _,  # top_up_factory,
+        add_recipient_factory,
+        _,  # remove_recipient_factory,
+    ) = entire_allowed_recipients_setup
+
+    recipient = accounts[8]
+    recipient_title = "New Allowed Recipient"
+
+    add_recipient(
+        recipient, recipient_title, easy_track, add_recipient_factory, allowed_recipients_registry
+    )
+
+    with reverts("ALLOWED_RECIPIENT_ALREADY_ADDED"):
+        add_recipient(
+            recipient,
+            recipient_title,
+            easy_track,
+            add_recipient_factory,
+            allowed_recipients_registry,
+        )
+
+
+def test_remove_not_added_recipient(entire_allowed_recipients_setup, accounts):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        _,  # top_up_factory,
+        _,  # add_recipient_factory,
+        remove_recipient_factory,
+    ) = entire_allowed_recipients_setup
+
+    recipient = accounts[8]
+    assert not allowed_recipients_registry.isAllowedRecipient(recipient)
+
+    with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
+        remove_recipient(
+            recipient, easy_track, remove_recipient_factory, allowed_recipients_registry
+        )
+
+
+def test_add_remove_recipients_directly_via_registry(
+    AllowedRecipientsRegistry, owner, voting, accounts, bokkyPooBahsDateTimeContract
+):
+    deployer = owner
+    manager = accounts[7]
+    registry = deployer.deploy(
+        AllowedRecipientsRegistry,
+        voting,
+        [manager],
+        [manager],
+        [manager],
+        [manager],
+        bokkyPooBahsDateTimeContract,
+    )
+    recipient = accounts[8].address
+    recipient_title = "New Allowed Recipient"
+
+    with reverts(access_control_revert_message(deployer, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
+        registry.addRecipientToAllowedList(recipient, recipient_title, {"from": deployer})
+
+    registry.addRecipientToAllowedList(recipient, recipient_title, {"from": manager})
+    assert registry.getAllowedRecipients() == [recipient]
+
+    with reverts("RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST"):
+        registry.addRecipientToAllowedList(recipient, recipient_title, {"from": manager})
+
+    with reverts(access_control_revert_message(deployer, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
+        registry.removeRecipientFromAllowedList(recipient, {"from": deployer})
+
+    registry.removeRecipientFromAllowedList(recipient, {"from": manager})
+    assert registry.getAllowedRecipients() == []
+
+    with reverts("RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST"):
+        registry.removeRecipientFromAllowedList(recipient, {"from": manager})
+
+
+def test_add_remove_recipient_happy_path(entire_allowed_recipients_setup, accounts, stranger):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        _,  # top_up_factory,
+        add_recipient_factory,
+        remove_recipient_factory,
+    ) = entire_allowed_recipients_setup
+
+    recipient = accounts[8]
+    recipient_title = "New Allowed Recipient"
+
+    add_recipient(
+        recipient, recipient_title, easy_track, add_recipient_factory, allowed_recipients_registry
+    )
+    assert len(easy_track.getMotions()) == 0
+    assert allowed_recipients_registry.getAllowedRecipients() == [recipient]
+    assert not allowed_recipients_registry.isAllowedRecipient(stranger)
+
+    remove_recipient(recipient, easy_track, remove_recipient_factory, allowed_recipients_registry)
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
 
 
 def test_motion_created_and_enacted_in_same_period(
@@ -326,7 +421,7 @@ def test_limits_checker_access_restriction(
 
 
 def test_limits_checker_update_balance_with_zero_periodDuration(
-    owner, lego_program, stranger, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+    owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
     manager = lego_program
     script_executor = easy_track.evmScriptExecutor()
@@ -356,7 +451,7 @@ def test_limits_checker_incorrect_period_duration(
 
 
 def calc_period_range_timestamps(now_timestamp, period_duration_months):
-    now = datetime.datetime.fromtimestamp(now_timestamp)
+    now = datetime.fromtimestamp(now_timestamp)
     now.date()
     pass
 
@@ -373,7 +468,7 @@ def test_limits_checker_period_ranges(
     limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
     (_, _, start, end) = limits_checker.getCurrentPeriodState()
     print(
-        f"start={start}, {datetime.datetime.fromtimestamp(start).isoformat()},\nend={end}, {datetime.datetime.fromtimestamp(end).isoformat()}"
+        f"start={start}, {datetime.fromtimestamp(start).isoformat()},\nend={end}, {datetime.fromtimestamp(end).isoformat()}"
     )
 
 
@@ -454,11 +549,8 @@ def test_limits_checker_get_first_month_in_period(
 def test_limits_checker_general(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
-    # TODO: don't fix specific months, otherwise the test won't work next month
-    SEPTEMBER_1 = 1661990400  # Sep 01 2022 00:00:00 GMT+0000
-    OCTOBER_1 = 1664582400  # Oct 01 2022 00:00:00 GMT+0000
-    period_start = SEPTEMBER_1
-    period_end = OCTOBER_1
+    period_start = get_month_start_timestamp(datetime.now())
+    period_end = get_next_month_start_timestamp(datetime.now())
 
     manager = lego_program
     script_executor = easy_track.evmScriptExecutor()
@@ -483,11 +575,16 @@ def test_limits_checker_general(
         {"_limit": period_limit, "_periodDurationMonth": period_duration},
     )
     assert limits_checker.getLimitParameters() == (period_limit, period_duration)
+    assert limits_checker.isUnderSpendableBalance(period_limit, 0)
 
     spending = 1 * 10**18
     spendable = period_limit - spending
     tx = limits_checker.updateSpendableBalance(spending, {"from": script_executor})
     assert limits_checker.getCurrentPeriodState() == (spending, spendable, period_start, period_end)
+    assert limits_checker.isUnderSpendableBalance(spendable, 0)
+    assert limits_checker.isUnderSpendableBalance(
+        period_limit, period_duration * MAX_SECONDS_IN_MONTH
+    )
     assert_single_event(
         tx,
         "FundsSpent",
@@ -517,6 +614,61 @@ def test_limits_checker_general(
 
     with reverts("SUM_EXCEEDS_LIMIT"):
         limits_checker.updateSpendableBalance(1, {"from": script_executor})
+
+
+def test_top_up_factory_evm_script_validation(
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,
+    voting,
+    bokkyPooBahsDateTimeContract,
+    stranger,
+):
+    deployer = owner
+    trusted_caller = owner
+    manager = accounts[7]
+    recipient = deployer.address
+
+    registry = deployer.deploy(
+        AllowedRecipientsRegistry,
+        voting,
+        [manager],
+        [manager],
+        [manager],
+        [manager],
+        bokkyPooBahsDateTimeContract,
+    )
+    registry.addRecipientToAllowedList(recipient, "Test Recipient", {"from": manager})
+
+    top_up_factory = deployer.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+    )
+
+    def make_call_data(recipients, amounts):
+        return encode_single("(address[],uint256[])", [recipients, amounts])
+
+    with reverts("EMPTY_DATA"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([], []))
+
+    with reverts("LENGTH_MISMATCH"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([recipient], []))
+
+    with reverts("LENGTH_MISMATCH"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([], [123]))
+
+    with reverts("ZERO_AMOUNT"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([recipient], [0]))
+
+    with reverts("ZERO_AMOUNT"):
+        top_up_factory.createEVMScript(
+            trusted_caller, make_call_data([recipient, recipient], [123, 0])
+        )
+
+    with reverts("RECIPIENT_NOT_ALLOWED"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
 
 
 def test_create_top_up_motion_above_limits(
