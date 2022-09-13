@@ -258,7 +258,7 @@ def entire_allowed_recipients_setup(
     )
 
     # deploy TopUpAllowedRecipients EVM script factory
-    top_up_allowed_recipients = deployer.deploy(
+    top_up_factory = deployer.deploy(
         TopUpAllowedRecipients, trusted_factories_caller, allowed_recipients_registry, finance, ldo, easy_track
     )
 
@@ -271,10 +271,10 @@ def entire_allowed_recipients_setup(
 
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
-    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
+    easy_track.addEVMScriptFactory(top_up_factory, permissions, {"from": deployer})
 
     # deploy AddAllowedRecipient EVM script factory
-    add_allowed_recipient = deployer.deploy(
+    add_recipient_factory = deployer.deploy(
         AddAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
     )
 
@@ -284,11 +284,11 @@ def entire_allowed_recipients_setup(
     )
 
     easy_track.addEVMScriptFactory(
-        add_allowed_recipient, add_allowed_recipient_permission, {"from": deployer}
+        add_recipient_factory, add_allowed_recipient_permission, {"from": deployer}
     )
 
     # deploy RemoveAllowedRecipient EVM script factory
-    remove_allowed_recipient = deployer.deploy(
+    remove_recipient_factory = deployer.deploy(
         RemoveAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
     )
 
@@ -297,7 +297,7 @@ def entire_allowed_recipients_setup(
         allowed_recipients_registry, "removeRecipientFromAllowedList"
     )
     easy_track.addEVMScriptFactory(
-        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
+        remove_recipient_factory, remove_allowed_recipient_permission, {"from": deployer}
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
@@ -328,9 +328,9 @@ def entire_allowed_recipients_setup(
         easy_track,
         evm_script_executor,
         allowed_recipients_registry,
-        top_up_allowed_recipients,
-        add_allowed_recipient,
-        remove_allowed_recipient,
+        top_up_factory,
+        add_recipient_factory,
+        remove_recipient_factory,
     )
 
 
@@ -344,9 +344,9 @@ def entire_allowed_recipients_setup_with_two_recipients(
         easy_track,
         evm_script_executor,
         allowed_recipients_registry,
-        top_up_allowed_recipients,
-        add_allowed_recipient,
-        remove_allowed_recipient,
+        top_up_factory,
+        add_recipient_factory,
+        remove_recipient_factory,
     ) = entire_allowed_recipients_setup
 
     recipient1 = accounts[8]
@@ -355,16 +355,16 @@ def entire_allowed_recipients_setup_with_two_recipients(
     recipient2_title = "Recipient 2"
 
     tx = easy_track.createMotion(
-        add_allowed_recipient,
+        add_recipient_factory,
         encode_calldata("(address,string)", [recipient1.address, recipient1_title]),
-        {"from": add_allowed_recipient.trustedCaller()},
+        {"from": add_recipient_factory.trustedCaller()},
     )
     motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 
     tx = easy_track.createMotion(
-        add_allowed_recipient,
+        add_recipient_factory,
         encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
-        {"from": add_allowed_recipient.trustedCaller()}
+        {"from": add_recipient_factory.trustedCaller()}
     )
     motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 
@@ -386,9 +386,9 @@ def entire_allowed_recipients_setup_with_two_recipients(
         easy_track,
         evm_script_executor,
         allowed_recipients_registry,
-        top_up_allowed_recipients,
-        add_allowed_recipient,
-        remove_allowed_recipient,
+        top_up_factory,
+        add_recipient_factory,
+        remove_recipient_factory,
         recipient1,
         recipient2,
     )
