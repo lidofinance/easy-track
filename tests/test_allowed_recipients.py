@@ -227,9 +227,7 @@ def test_motion_created_and_enacted_in_same_period(
     set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
 
     recipients = list(map(lambda x: x.address, [recipient1, recipient2]))
-    do_payout_to_allowed_recipients(
-        recipients, [int(3e18), int(90e18)], easy_track, top_up_factory
-    )
+    do_payout_to_allowed_recipients(recipients, [int(3e18), int(90e18)], easy_track, top_up_factory)
 
     with reverts("SUM_EXCEEDS_LIMIT"):
         do_payout_to_allowed_recipients(
@@ -256,16 +254,12 @@ def test_limit_is_renewed_in_next_period(
     set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
 
     recipients = list(map(lambda x: x.address, [recipient1, recipient2]))
-    do_payout_to_allowed_recipients(
-        recipients, [int(3e18), int(90e18)], easy_track, top_up_factory
-    )
+    do_payout_to_allowed_recipients(recipients, [int(3e18), int(90e18)], easy_track, top_up_factory)
 
     chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
 
     second_payout = [int(5e18), int(4e18)]
-    do_payout_to_allowed_recipients(
-        recipients, second_payout, easy_track, top_up_factory
-    )
+    do_payout_to_allowed_recipients(recipients, second_payout, easy_track, top_up_factory)
     assert allowed_recipients_registry.getCurrentPeriodState()[0] == sum(second_payout)
 
 
@@ -523,3 +517,57 @@ def test_limits_checker_general(
 
     with reverts("SUM_EXCEEDS_LIMIT"):
         limits_checker.updateSpendableBalance(1, {"from": script_executor})
+
+
+def test_create_top_up_motion_above_limits(
+    entire_allowed_recipients_setup_with_two_recipients, agent
+):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        top_up_factory,
+        _,  # add_recipient_factory,
+        _,  # remove_recipient_factory,
+        recipient1,
+        _,  # recipient2,
+    ) = entire_allowed_recipients_setup_with_two_recipients
+
+    period_limit, period_duration = 100 * 10**18, 1
+    set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
+
+    with reverts("SUM_EXCEEDS_LIMIT"):
+        create_top_up_motion([recipient1.address], [period_limit + 1], easy_track, top_up_factory)
+
+
+def test_limit_decreased_while_motion_is_in_flight(
+    entire_allowed_recipients_setup_with_two_recipients, agent
+):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        top_up_factory,
+        _,  # add_recipient_factory,
+        _,  # remove_recipient_factory,
+        recipient1,
+        _,  # recipient2,
+    ) = entire_allowed_recipients_setup_with_two_recipients
+
+    period_limit, period_duration = 100 * 10**18, 1
+    set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
+
+    motion_id, motion_calldata = create_top_up_motion(
+        [recipient1.address], [period_limit], easy_track, top_up_factory
+    )
+
+    set_limit_parameters(period_limit // 2, period_duration, allowed_recipients_registry, agent)
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    with reverts("SUM_EXCEEDS_LIMIT"):
+        easy_track.enactMotion(
+            motion_id,
+            motion_calldata,
+            {"from": recipient1},
+        )
