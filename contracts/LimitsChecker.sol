@@ -153,6 +153,9 @@ contract LimitsChecker is AccessControl {
         periodDurationMonth = uint64(_periodDurationMonth);
         currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
         limit = uint128(_limit);
+        if (spent > limit) {
+            spent = limit;
+        }
 
         emit LimitsParametersChanged(_limit, _periodDurationMonth);
     }
