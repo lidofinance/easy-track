@@ -18,7 +18,7 @@ from utils.test_helpers import (
     get_month_start_timestamp,
     get_date_in_next_period,
     SET_LIMIT_PARAMETERS_ROLE,
-    UPDATE_LIMIT_SPENDINGS_ROLE,
+    UPDATE_SPENDABLE_BALANCE_ROLE,
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
 )
@@ -350,10 +350,10 @@ def test_limits_checker_access_restriction(
     with reverts(access_control_revert_message(owner, SET_LIMIT_PARAMETERS_ROLE)):
         limits_checker.setLimitParameters(123, 1, {"from": owner})
 
-    with reverts(access_control_revert_message(stranger, UPDATE_LIMIT_SPENDINGS_ROLE)):
+    with reverts(access_control_revert_message(stranger, UPDATE_SPENDABLE_BALANCE_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": stranger})
 
-    with reverts(access_control_revert_message(manager, UPDATE_LIMIT_SPENDINGS_ROLE)):
+    with reverts(access_control_revert_message(manager, UPDATE_SPENDABLE_BALANCE_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": manager})
 
 
@@ -367,7 +367,7 @@ def test_limits_checker_update_balance_with_zero_periodDuration(
         LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
     )
 
-    with reverts("WRONG_PERIOD_DURATION"):
+    with reverts("INVALID_PERIOD_DURATION"):
         limits_checker.updateSpendableBalance(123, {"from": script_executor})
 
 
@@ -383,7 +383,7 @@ def test_limits_checker_incorrect_period_duration(
 
     period_limit = 10**18
     for duration in [0, 4, 5, 7, 8, 9, 10, 11, 13, 14, 100500]:
-        with reverts("WRONG_PERIOD_DURATION"):
+        with reverts("INVALID_PERIOD_DURATION"):
             limits_checker.setLimitParameters(period_limit, duration, {"from": manager})
 
 
@@ -516,7 +516,7 @@ def test_limits_checker_general(
     assert_single_event(
         tx,
         "LimitsParametersChanged",
-        {"_limit": period_limit, "_periodDurationMonth": period_duration},
+        {"_limit": period_limit, "_periodDurationMonths": period_duration},
     )
     assert limits_checker.getLimitParameters() == (period_limit, period_duration)
     assert limits_checker.isUnderSpendableBalance(period_limit, 0)
@@ -531,7 +531,7 @@ def test_limits_checker_general(
     )
     assert_single_event(
         tx,
-        "FundsSpent",
+        "SpendableAmountChanged",
         {
             "_alreadySpentAmount": spending,
             "_spendableAmount": spendable,

@@ -9,13 +9,13 @@ import "../EasyTrack.sol";
 
 contract LimitsCheckerWrapper is LimitsChecker {
     constructor(
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateLimitSpendingsRoleHolders,
+        address[] memory _setLimitParameterRoleHolders,
+        address[] memory _updateLimitSpendingRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     )
         LimitsChecker(
-            _setLimitParametersRoleHolders,
-            _updateLimitSpendingsRoleHolders,
+            _setLimitParameterRoleHolders,
+            _updateLimitSpendingRoleHolders,
             _bokkyPooBahsDateTimeContract
         )
     {}

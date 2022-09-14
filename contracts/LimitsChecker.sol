@@ -5,14 +5,15 @@ pragma solidity ^0.8.4;
 
 import "./libraries/EVMScriptCreator.sol";
 import "./interfaces/IBokkyPooBahsDateTimeContract.sol";
+
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author zuzueeka
-/// @notice Stores limits params and checks limits
+/// @notice Stores limits params and provides limit-enforcement logic
 ///
-/// ▲ limit-spent
+/// ▲ limit-spent (spendable balance)
 /// |
-/// │......               |.............       |..............     limit-spent = limit
+/// │......               |.............       |..............     limit-spent = limit-0 = limit
 /// │      .......        |                    |
 /// │             ....    |             ....   |
 /// │                 ....|                 ...|
@@ -21,32 +22,36 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 /// │                     |currentPeriodEnd    |currentPeriodEnd
 /// |                     |spent=0             |spent=0
 ///
-/// currentPeriodEnd is calculated as a calendar date of the beginning of a next month, bi-months, quarter, half year, or year period.
-/// If, for example, periodDurationMonth = 3, then it is considered that the date changes once a quarter. And can take values 01.01, 01.04, 01.07, 01.10.
-/// If periodDurationMonth = 1, then shift of currentPeriodEnd occures once a month and currentPeriodEnd can take values 01.01, 01.02, 01.03 etc
+/// currentPeriodEnd is calculated as a calendar date of the beginning of
+/// a next month, bi-months, quarter, half year, or year period.
+/// If, for example, periodDurationMonths = 3, then it is considered that the date changes once a quarter.
+/// And currentPeriodEnd can take values 1 Apr, 1 Jul, 1 Oky, 1 Jan.
+/// If periodDurationMonths = 1, then shift of currentPeriodEnd occurs once a month
+/// and currentPeriodEnd can take values 1 Feb, 1 Mar, 1 Apr etc
 ///
 contract LimitsChecker is AccessControl {
     // -------------
     // EVENTS
     // -------------
-    event LimitsParametersChanged(uint256 _limit, uint256 _periodDurationMonth);
-    event FundsSpent(
+    event LimitsParametersChanged(uint256 _limit, uint256 _periodDurationMonths);
+    event SpendableAmountChanged(
         uint256 _alreadySpentAmount,
         uint256 _spendableAmount,
-        uint256 _periodStartTimestamp,
+        uint256 indexed _periodStartTimestamp,
         uint256 _periodEndTimestamp
     );
 
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_WRONG_PERIOD_DURATION = "WRONG_PERIOD_DURATION";
+    string private constant ERROR_INVALID_PERIOD_DURATION = "INVALID_PERIOD_DURATION";
     string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
     // -------------
     // ROLES
     // -------------
     bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
-    bytes32 public constant UPDATE_LIMIT_SPENDINGS_ROLE = keccak256("UPDATE_LIMIT_SPENDINGS_ROLE");
+    bytes32 public constant UPDATE_SPENDABLE_BALANCE_ROLE =
+        keccak256("UPDATE_SPENDABLE_BALANCE_ROLE");
 
     // -------------
     // CONSTANTS
@@ -60,7 +65,7 @@ contract LimitsChecker is AccessControl {
     IBokkyPooBahsDateTimeContract public immutable bokkyPooBahsDateTimeContract;
 
     /// @notice Length of period in months
-    uint64 internal periodDurationMonth;
+    uint64 internal periodDurationMonths;
 
     /// @notice End of the current period
     uint128 internal currentPeriodEnd;
@@ -75,15 +80,15 @@ contract LimitsChecker is AccessControl {
     // CONSTRUCTOR
     // ------------
     constructor(
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateLimitSpendingsRoleHolders,
+        address[] memory _setLimitParameterRoleHolders,
+        address[] memory _updateLimitSpendingRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) {
-        for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
-            _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
+        for (uint256 i = 0; i < _setLimitParameterRoleHolders.length; i++) {
+            _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParameterRoleHolders[i]);
         }
-        for (uint256 i = 0; i < _updateLimitSpendingsRoleHolders.length; i++) {
-            _setupRole(UPDATE_LIMIT_SPENDINGS_ROLE, _updateLimitSpendingsRoleHolders[i]);
+        for (uint256 i = 0; i < _updateLimitSpendingRoleHolders.length; i++) {
+            _setupRole(UPDATE_SPENDABLE_BALANCE_ROLE, _updateLimitSpendingRoleHolders[i]);
         }
         bokkyPooBahsDateTimeContract = _bokkyPooBahsDateTimeContract;
     }
@@ -112,7 +117,7 @@ contract LimitsChecker is AccessControl {
     /// @notice updates period if needed and increases the amount spent in the current period
     function updateSpendableBalance(uint256 _payoutSum)
         external
-        onlyRole(UPDATE_LIMIT_SPENDINGS_ROLE)
+        onlyRole(UPDATE_SPENDABLE_BALANCE_ROLE)
     {
         _checkAndUpdateLimitParameters();
         _checkLimit(_payoutSum);
@@ -125,7 +130,7 @@ contract LimitsChecker is AccessControl {
             uint256 _periodEndTimestamp
         ) = this.getCurrentPeriodState();
 
-        emit FundsSpent(
+        emit SpendableAmountChanged(
             _alreadySpentAmount,
             _spendableAmount,
             _periodStartTimestamp,
@@ -139,32 +144,32 @@ contract LimitsChecker is AccessControl {
         return limit - spent;
     }
 
-    /// @notice Sets periodDurationMonth and limit
+    /// @notice Sets periodDurationMonths and limit
     /// currentPeriodEnd will be calculated as a calendar date of the beginning of next month,
     /// bi-months, quarter, half year, or year period.
     /// @param _limit Limit to set
-    /// @param _periodDurationMonth  Length of period in months to set.
+    /// @param _periodDurationMonths  Length of period in months to set.
     /// Duration of the period can be 1, 2, 3, 6 or 12 months.
-    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonth)
+    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths)
         external
         onlyRole(SET_LIMIT_PARAMETERS_ROLE)
     {
-        _checkPeriodDurationMonth(_periodDurationMonth);
-        periodDurationMonth = uint64(_periodDurationMonth);
+        _checkPeriodDurationMonths(_periodDurationMonths);
+        periodDurationMonths = uint64(_periodDurationMonths);
         currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
         limit = uint128(_limit);
         if (spent > limit) {
             spent = limit;
         }
 
-        emit LimitsParametersChanged(_limit, _periodDurationMonth);
+        emit LimitsParametersChanged(_limit, _periodDurationMonths);
     }
 
-    /// @notice Returns limit and periodDurationMonth
+    /// @notice Returns limit and periodDurationMonths
     /// @return limit - the maximum that can be spent in a period
-    /// @return periodDurationMonth - length of period in months
+    /// @return periodDurationMonths - length of period in months
     function getLimitParameters() external view returns (uint256, uint256) {
-        return (limit, periodDurationMonth);
+        return (limit, periodDurationMonths);
     }
 
     /// @notice Returns amount spent in the current period, balance available for spending,
@@ -195,27 +200,31 @@ contract LimitsChecker is AccessControl {
     // PRIVATE METHODS
     // ------------------
 
-    /// currentPeriodEnd is calculated as a calendar date of the beginning of a next month, bi-months, quarter, half year, or year period.
-    /// If, for example, periodDurationMonth = 3, then it is considered that the date changes once a quarter.
-    /// And can take values 01.01, 01.04, 01.07, 01.10.
-    /// Then at the moment when it is necessary to shift the currentPeriodEnd (the condition is fulfilled: block.timestamp >= currentPeriodEnd),
+    /// currentPeriodEnd is calculated as a calendar date of the beginning of
+    /// a next month, bi-months, quarter, half year, or year period.
+    /// If, for example, periodDurationMonths = 3, then it is considered that the date changes once a quarter.
+    /// And currentPeriodEnd can take values 1 Apr, 1 Jul, 1 Oky, 1 Jan.
+    /// If periodDurationMonths = 1, then shift of currentPeriodEnd occurs once a month
+    /// and currentPeriodEnd can take values 1 Feb, 1 Mar, 1 Apr etc
+    /// At the moment when it is necessary to shift the currentPeriodEnd
+    /// (the condition is fulfilled: block.timestamp >= currentPeriodEnd),
     /// currentPeriodEnd takes on a new value and spent is set to zero. Thus begins a new period.
     function _checkAndUpdateLimitParameters() internal {
-        _checkPeriodDurationMonth(periodDurationMonth);
+        _checkPeriodDurationMonths(periodDurationMonths);
         if (block.timestamp >= currentPeriodEnd) {
             currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
             spent = 0;
         }
     }
 
-    function _checkPeriodDurationMonth(uint256 _periodDurationMonth) internal view {
+    function _checkPeriodDurationMonths(uint256 _periodDurationMonths) internal view {
         require(
-            _periodDurationMonth == 1 ||
-                _periodDurationMonth == 2 ||
-                _periodDurationMonth == 3 ||
-                _periodDurationMonth == 6 ||
-                _periodDurationMonth == 12,
-            ERROR_WRONG_PERIOD_DURATION
+            _periodDurationMonths == 1 ||
+                _periodDurationMonths == 2 ||
+                _periodDurationMonths == 3 ||
+                _periodDurationMonths == 6 ||
+                _periodDurationMonths == 12,
+            ERROR_INVALID_PERIOD_DURATION
         );
     }
 
@@ -254,14 +263,14 @@ contract LimitsChecker is AccessControl {
     {
         // To get the number of the first month in the period:
         //   1. get the number of the period:
-        uint256 _periodNumber = (_month - 1) / periodDurationMonth;
+        uint256 _periodNumber = (_month - 1) / periodDurationMonths;
         //   2. and then the number of the first month in this period:
-        _firstMonthInPeriod = _periodNumber * periodDurationMonth + 1;
+        _firstMonthInPeriod = _periodNumber * periodDurationMonths + 1;
         //The shift by - 1 and then by + 1 happens because the months in the calendar start from 1 and not from 0.
     }
 
     function _getPeriodEndFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
         uint256 _periodStart = _getPeriodStartFromTimestamp(_timestamp);
-        return bokkyPooBahsDateTimeContract.addMonths(_periodStart, periodDurationMonth);
+        return bokkyPooBahsDateTimeContract.addMonths(_periodStart, periodDurationMonths);
     }
 }
