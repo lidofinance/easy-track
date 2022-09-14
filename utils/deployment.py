@@ -188,37 +188,6 @@ def add_evm_script_reward_program_factories(
         tx_params,
     )
 
-def attach_evm_script_allowed_recipients_factories(
-    easy_track,
-    add_allowed_recipient,
-    remove_allowed_recipient,
-    top_up_allowed_recipients,
-    allowed_recipients_registry,
-    finance,
-    tx_params
-):
-    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
-
-    update_limit_permission = create_permission(
-        allowed_recipients_registry, "updateSpendableBalance"
-    )
-    permissions = new_immediate_payment_permission + update_limit_permission[2:]
-
-    easy_track.addEVMScriptFactory(
-        top_up_allowed_recipients,
-        permissions,
-        tx_params,
-    )
-    easy_track.addEVMScriptFactory(
-        add_allowed_recipient,
-        create_permission(allowed_recipients_registry, "addRecipientToAllowedList"),
-        tx_params,
-    )
-    easy_track.addEVMScriptFactory(
-        remove_allowed_recipient,
-        create_permission(allowed_recipients_registry, "removeRecipientFromAllowedList"),
-        tx_params,
-    )
 
 def transfer_admin_role(deployer, easy_track, new_admin, tx_params):
     easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), new_admin, tx_params)
