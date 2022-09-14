@@ -261,7 +261,7 @@ def test_second_top_up_motion_exceeds_limit_in_same_period(
     recipients = list(map(lambda x: x.address, [recipient1, recipient2]))
     do_payout_to_allowed_recipients(recipients, [int(3e18), int(90e18)], easy_track, top_up_factory)
 
-    with reverts("SUM_EXCEEDS_LIMIT"):
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         do_payout_to_allowed_recipients(
             recipients, [int(5e18), int(4e18)], easy_track, top_up_factory
         )
@@ -330,7 +330,7 @@ def test_both_motions_enacted_next_period_second_exceeds_limit(
 
     easy_track.enactMotion(motion1_id, motion1_calldata, {"from": recipient1})
 
-    with reverts("SUM_EXCEEDS_LIMIT"):
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         easy_track.enactMotion(motion2_id, motion2_calldata, {"from": recipient1})
 
 
@@ -556,7 +556,7 @@ def test_limits_checker_general(
         period_end,
     )
 
-    with reverts("SUM_EXCEEDS_LIMIT"):
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         limits_checker.updateSpendableBalance(1, {"from": script_executor})
 
 
@@ -632,7 +632,7 @@ def test_create_top_up_motion_above_limits(
     period_limit, period_duration = 100 * 10**18, 1
     set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
 
-    with reverts("SUM_EXCEEDS_LIMIT"):
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion([recipient1.address], [period_limit + 1], easy_track, top_up_factory)
 
 
@@ -661,7 +661,7 @@ def test_limit_decreased_while_motion_is_in_flight(
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
-    with reverts("SUM_EXCEEDS_LIMIT"):
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         easy_track.enactMotion(
             motion_id,
             motion_calldata,

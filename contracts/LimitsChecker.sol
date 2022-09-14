@@ -41,7 +41,7 @@ contract LimitsChecker is AccessControl {
     // ERRORS
     // -------------
     string private constant ERROR_WRONG_PERIOD_DURATION = "WRONG_PERIOD_DURATION";
-    string private constant ERROR_SUM_EXCEEDS_LIMIT = "SUM_EXCEEDS_LIMIT";
+    string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
     // -------------
     // ROLES
     // -------------
@@ -220,7 +220,7 @@ contract LimitsChecker is AccessControl {
     }
 
     function _checkLimit(uint256 _payoutSum) internal view {
-        require(_payoutSum <= limit - spent, ERROR_SUM_EXCEEDS_LIMIT);
+        require(_payoutSum <= limit - spent, ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
     }
 
     function _increaseSpent(uint256 _payoutSum) internal {
