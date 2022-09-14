@@ -39,11 +39,26 @@ def get_month_start_timestamp(any_point_in_this_month: datetime):
     )
 
 
-def get_next_month_start_timestamp(any_point_in_this_month: datetime):
+def get_date_in_next_period(any_point_in_this_month: datetime, period_duration_months: int):
     NUM_MONTHS = 12
-    next_month = 1 + (any_point_in_this_month.month % NUM_MONTHS)
+    next_month_unlimited_from_zero = any_point_in_this_month.month + (period_duration_months - 1)
+    next_month = 1 + (next_month_unlimited_from_zero % NUM_MONTHS)
     next_year = any_point_in_this_month.year
-    if next_month == 1:
+    if next_month_unlimited_from_zero >= NUM_MONTHS:
+        next_year += 1
+
+    return any_point_in_this_month.replace(
+        year=next_year,
+        month=next_month,
+    )
+
+
+def get_next_month_start_timestamp(any_point_in_this_month: datetime, num_months: int):
+    NUM_MONTHS = 12
+    next_month_unlimited_from_zero = any_point_in_this_month.month + (num_months - 1)
+    next_month = 1 + (next_month_unlimited_from_zero % NUM_MONTHS)
+    next_year = any_point_in_this_month.year
+    if next_month_unlimited_from_zero >= NUM_MONTHS:
         next_year += 1
 
     return int(

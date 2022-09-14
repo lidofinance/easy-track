@@ -16,7 +16,7 @@ from utils.test_helpers import (
     assert_event_exists,
     access_control_revert_message,
     get_month_start_timestamp,
-    get_next_month_start_timestamp,
+    get_date_in_next_period,
     SET_LIMIT_PARAMETERS_ROLE,
     UPDATE_LIMIT_SPENDINGS_ROLE,
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
@@ -461,12 +461,39 @@ def test_limits_checker_get_first_month_in_period(
     assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 1
 
 
+def test_limits_checker_period_range(
+    owner, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    script_executor = easy_track.evmScriptExecutor()
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, [owner], [script_executor], bokkyPooBahsDateTimeContract
+    )
+
+    def get_period_range_from_contract():
+        return limits_checker.getCurrentPeriodState()[2:]
+
+    def calc_period_range(period_months):
+        first_month = limits_checker.getFirstMonthInPeriodFromCurrentMonth(datetime.now().month)
+        first_month_date = datetime.now().replace(month=first_month)
+        next_period_date = get_date_in_next_period(first_month_date, period_months)
+
+        return (
+            get_month_start_timestamp(first_month_date),
+            get_month_start_timestamp(next_period_date),
+        )
+
+    period_limit, period_duration = 0, 1
+
+    for period_duration in [1, 2, 3, 6, 12]:
+        limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+        assert get_period_range_from_contract() == calc_period_range(
+            period_duration
+        ), f"incorrect range for period {period_duration}"
+
+
 def test_limits_checker_general(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
-    period_start = get_month_start_timestamp(datetime.now())
-    period_end = get_next_month_start_timestamp(datetime.now())
-
     manager = lego_program
     script_executor = easy_track.evmScriptExecutor()
 
@@ -482,6 +509,8 @@ def test_limits_checker_general(
     assert limits_checker.isUnderSpendableBalance(0, easy_track.motionDuration())
 
     period_limit, period_duration = 3 * 10**18, 1
+    period_start = get_month_start_timestamp(datetime.now())
+    period_end = get_month_start_timestamp(get_date_in_next_period(datetime.now(), period_duration))
 
     tx = limits_checker.setLimitParameters(period_limit, period_duration, {"from": manager})
     assert_single_event(
