@@ -163,15 +163,15 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     )
     assert_event_exists(
         tx,
-        "RecipientAddedToAllowedList",
+        "RecipientAdded",
         {"_recipient": recipient, "_title": recipient_title},
     )
 
     assert len(easy_track.getMotions()) == 0
     assert allowed_recipients_registry.getAllowedRecipients() == [recipient]
 
-    assert allowed_recipients_registry.isAllowedRecipient(recipient)
-    assert not allowed_recipients_registry.isAllowedRecipient(stranger)
+    assert allowed_recipients_registry.isRecipientAllowed(recipient)
+    assert not allowed_recipients_registry.isRecipientAllowed(stranger)
 
     # create new motion to remove a allowed recipient
     tx = easy_track.createMotion(
@@ -191,10 +191,10 @@ def test_add_remove_recipient(entire_allowed_recipients_setup, accounts, strange
     assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
     assert_event_exists(
         tx,
-        "RecipientRemovedFromAllowedList",
+        "RecipientRemoved",
         {"_recipient": recipient},
     )
-    assert not allowed_recipients_registry.isAllowedRecipient(recipient)
+    assert not allowed_recipients_registry.isRecipientAllowed(recipient)
 
 
 def test_motion_created_and_enacted_in_same_period(

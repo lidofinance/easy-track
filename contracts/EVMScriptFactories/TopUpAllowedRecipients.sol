@@ -125,7 +125,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _allowedRecipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
             require(
-                allowedRecipientsRegistry.isAllowedRecipient(_allowedRecipients[i]),
+                allowedRecipientsRegistry.isRecipientAllowed(_allowedRecipients[i]),
                 ERROR_RECIPIENT_NOT_ALLOWED
             );
             _totalAmount += _amounts[i];

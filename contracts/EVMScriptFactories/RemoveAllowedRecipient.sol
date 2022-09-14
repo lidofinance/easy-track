@@ -48,7 +48,7 @@ contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         require(
-            allowedRecipientsRegistry.isAllowedRecipient(
+            allowedRecipientsRegistry.isRecipientAllowed(
                 _decodeEVMScriptCallData(_evmScriptCallData)
             ),
             ERROR_ALLOWED_RECIPIENT_NOT_FOUND
@@ -56,7 +56,7 @@ contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(allowedRecipientsRegistry),
-                allowedRecipientsRegistry.removeRecipientFromAllowedList.selector,
+                allowedRecipientsRegistry.removeRecipient.selector,
                 _evmScriptCallData
             );
     }

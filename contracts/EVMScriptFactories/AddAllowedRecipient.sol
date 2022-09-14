@@ -50,14 +50,14 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     {
         (address _recipientAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
         require(
-            !allowedRecipientsRegistry.isAllowedRecipient(_recipientAddress),
+            !allowedRecipientsRegistry.isRecipientAllowed(_recipientAddress),
             ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED
         );
 
         return
             EVMScriptCreator.createEVMScript(
                 address(allowedRecipientsRegistry),
-                allowedRecipientsRegistry.addRecipientToAllowedList.selector,
+                allowedRecipientsRegistry.addRecipient.selector,
                 _evmScriptCallData
             );
     }

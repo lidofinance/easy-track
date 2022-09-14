@@ -3,18 +3,17 @@
 
 pragma solidity ^0.8.4;
 
-import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 import "./LimitsChecker.sol";
 
 /// @author psirex, zuzueeka
 /// @title Registry of allowed addresses for payouts
 /// @notice Stores list of allowed addresses
-contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
+contract AllowedRecipientsRegistry is LimitsChecker {
     // -------------
     // EVENTS
     // -------------
-    event RecipientAddedToAllowedList(address indexed _recipient, string _title);
-    event RecipientRemovedFromAllowedList(address indexed _recipient);
+    event RecipientAdded(address indexed _recipient, string _title);
+    event RecipientRemoved(address indexed _recipient);
 
     // -------------
     // ROLES
@@ -91,7 +90,7 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
     // -------------
 
     /// @notice Adds address to list of allowed addresses for payouts
-    function addRecipientToAllowedList(address _recipient, string memory _title)
+    function addRecipient(address _recipient, string memory _title)
         external
         onlyRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)
     {
@@ -102,14 +101,14 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
 
         allowedRecipients.push(_recipient);
         allowedRecipientIndices[_recipient] = allowedRecipients.length;
-        emit RecipientAddedToAllowedList(_recipient, _title);
+        emit RecipientAdded(_recipient, _title);
     }
 
     /// @notice Removes address from list of allowed addresses for payouts
     /// @dev To delete an allowed address from the allowedRecipients array in O(1),
     /// we swap the element to delete with the last one in the array,
     /// and then remove the last element (sometimes called as 'swap and pop').
-    function removeRecipientFromAllowedList(address _recipient)
+    function removeRecipient(address _recipient)
         external
         onlyRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)
     {
@@ -124,11 +123,11 @@ contract AllowedRecipientsRegistry is AccessControl, LimitsChecker {
 
         allowedRecipients.pop();
         delete allowedRecipientIndices[_recipient];
-        emit RecipientRemovedFromAllowedList(_recipient);
+        emit RecipientRemoved(_recipient);
     }
 
     /// @notice Returns if passed address are listed as allowed recipient in the registry
-    function isAllowedRecipient(address _address) external view returns (bool) {
+    function isRecipientAllowed(address _address) external view returns (bool) {
         return allowedRecipientIndices[_address] > 0;
     }
 
