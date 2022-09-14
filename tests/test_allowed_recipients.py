@@ -107,7 +107,7 @@ def add_recipient(
         "RecipientAdded",
         {"_recipient": recipient, "_title": recipient_title},
     )
-    assert allowed_recipients_registry.isAllowedRecipient(recipient)
+    assert allowed_recipients_registry.isRecipientAllowed(recipient)
 
 
 def remove_recipient(recipient, easy_track, remove_recipient_factory, allowed_recipients_registry):
@@ -151,22 +151,22 @@ def test_add_remove_recipients_directly_via_registry(
     recipient_title = "New Allowed Recipient"
 
     with reverts(access_control_revert_message(deployer, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
-        registry.addRecipientToAllowedList(recipient, recipient_title, {"from": deployer})
+        registry.addRecipient(recipient, recipient_title, {"from": deployer})
 
-    registry.addRecipientToAllowedList(recipient, recipient_title, {"from": manager})
+    registry.addRecipient(recipient, recipient_title, {"from": manager})
     assert registry.getAllowedRecipients() == [recipient]
 
     with reverts("RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST"):
-        registry.addRecipientToAllowedList(recipient, recipient_title, {"from": manager})
+        registry.addRecipient(recipient, recipient_title, {"from": manager})
 
     with reverts(access_control_revert_message(deployer, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
-        registry.removeRecipientFromAllowedList(recipient, {"from": deployer})
+        registry.removeRecipient(recipient, {"from": deployer})
 
-    registry.removeRecipientFromAllowedList(recipient, {"from": manager})
+    registry.removeRecipient(recipient, {"from": manager})
     assert registry.getAllowedRecipients() == []
 
     with reverts("RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST"):
-        registry.removeRecipientFromAllowedList(recipient, {"from": manager})
+        registry.removeRecipient(recipient, {"from": manager})
 
 
 def test_add_same_recipient_twice(entire_allowed_recipients_setup, accounts):
@@ -207,7 +207,7 @@ def test_remove_not_added_recipient(entire_allowed_recipients_setup, accounts):
     ) = entire_allowed_recipients_setup
 
     recipient = accounts[8]
-    assert not allowed_recipients_registry.isAllowedRecipient(recipient)
+    assert not allowed_recipients_registry.isRecipientAllowed(recipient)
 
     with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
         remove_recipient(
@@ -233,7 +233,7 @@ def test_add_remove_recipient_happy_path(entire_allowed_recipients_setup, accoun
     )
     assert len(easy_track.getMotions()) == 0
     assert allowed_recipients_registry.getAllowedRecipients() == [recipient]
-    assert not allowed_recipients_registry.isAllowedRecipient(stranger)
+    assert not allowed_recipients_registry.isRecipientAllowed(stranger)
 
     remove_recipient(recipient, easy_track, remove_recipient_factory, allowed_recipients_registry)
     assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
@@ -585,7 +585,7 @@ def test_top_up_factory_evm_script_validation(
         [manager],
         bokkyPooBahsDateTimeContract,
     )
-    registry.addRecipientToAllowedList(recipient, "Test Recipient", {"from": manager})
+    registry.addRecipient(recipient, "Test Recipient", {"from": manager})
 
     top_up_factory = deployer.deploy(
         TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
