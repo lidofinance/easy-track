@@ -12,7 +12,8 @@ REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = "0x491d7752c25cfca0f73715cde1130022a9b
 PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
 
 
-def access_control_revert_message(sender, role=DEFAULT_ADMIN_ROLE):
+def access_revert_message(sender, role=DEFAULT_ADMIN_ROLE):
+    """Format access error message crafted by OpenZeppelin/AccessControl contract"""
     PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
     return PERMISSION_ERROR_TEMPLATE % (sender.address.lower(), role)
 

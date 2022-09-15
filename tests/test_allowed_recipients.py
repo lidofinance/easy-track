@@ -14,7 +14,7 @@ from utils.lido import create_voting, execute_voting, addresses
 from utils.test_helpers import (
     assert_single_event,
     assert_event_exists,
-    access_control_revert_message,
+    access_revert_message,
     get_month_start_timestamp,
     get_date_in_next_period,
     SET_LIMIT_PARAMETERS_ROLE,
@@ -150,7 +150,7 @@ def test_add_remove_recipients_directly_via_registry(
     recipient = accounts[8].address
     recipient_title = "New Allowed Recipient"
 
-    with reverts(access_control_revert_message(deployer, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
+    with reverts(access_revert_message(deployer, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
         registry.addRecipient(recipient, recipient_title, {"from": deployer})
 
     registry.addRecipient(recipient, recipient_title, {"from": manager})
@@ -159,7 +159,7 @@ def test_add_remove_recipients_directly_via_registry(
     with reverts("RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST"):
         registry.addRecipient(recipient, recipient_title, {"from": manager})
 
-    with reverts(access_control_revert_message(deployer, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
+    with reverts(access_revert_message(deployer, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
         registry.removeRecipient(recipient, {"from": deployer})
 
     registry.removeRecipient(recipient, {"from": manager})
@@ -344,16 +344,16 @@ def test_limits_checker_access_restriction(
         LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
     )
 
-    with reverts(access_control_revert_message(stranger, SET_LIMIT_PARAMETERS_ROLE)):
+    with reverts(access_revert_message(stranger, SET_LIMIT_PARAMETERS_ROLE)):
         limits_checker.setLimitParameters(123, 1, {"from": stranger})
 
-    with reverts(access_control_revert_message(owner, SET_LIMIT_PARAMETERS_ROLE)):
+    with reverts(access_revert_message(owner, SET_LIMIT_PARAMETERS_ROLE)):
         limits_checker.setLimitParameters(123, 1, {"from": owner})
 
-    with reverts(access_control_revert_message(stranger, UPDATE_SPENDABLE_BALANCE_ROLE)):
+    with reverts(access_revert_message(stranger, UPDATE_SPENDABLE_BALANCE_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": stranger})
 
-    with reverts(access_control_revert_message(manager, UPDATE_SPENDABLE_BALANCE_ROLE)):
+    with reverts(access_revert_message(manager, UPDATE_SPENDABLE_BALANCE_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": manager})
 
 
