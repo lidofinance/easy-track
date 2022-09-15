@@ -169,6 +169,46 @@ def test_add_remove_recipients_directly_via_registry(
         registry.removeRecipient(recipient, {"from": manager})
 
 
+def test_allowed_recipients_registry_roles(
+    AllowedRecipientsRegistry, owner, voting, accounts, bokkyPooBahsDateTimeContract
+):
+    deployer = owner
+    add_role_holder = accounts[6]
+    remove_role_holder = accounts[7]
+    set_limit_role_holder = accounts[8]
+    update_limit_role_holder = accounts[9]
+
+    registry = deployer.deploy(
+        AllowedRecipientsRegistry,
+        voting,
+        [add_role_holder],
+        [remove_role_holder],
+        [set_limit_role_holder],
+        [update_limit_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+    assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), voting)
+
+    recipient = accounts[8].address
+    recipient_title = "New Allowed Recipient"
+
+    for caller in [deployer, remove_role_holder, set_limit_role_holder, update_limit_role_holder]:
+        with reverts(access_revert_message(caller, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
+            registry.addRecipient(recipient, recipient_title, {"from": caller})
+
+    for caller in [deployer, add_role_holder, set_limit_role_holder, update_limit_role_holder]:
+        with reverts(access_revert_message(caller, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
+            registry.removeRecipient(recipient, {"from": caller})
+
+    for caller in [deployer, add_role_holder, remove_role_holder, update_limit_role_holder]:
+        with reverts(access_revert_message(caller, SET_LIMIT_PARAMETERS_ROLE)):
+            registry.setLimitParameters(0, 1, {"from": caller})
+
+    for caller in [deployer, add_role_holder, remove_role_holder, set_limit_role_holder]:
+        with reverts(access_revert_message(caller, UPDATE_SPENDABLE_BALANCE_ROLE)):
+            registry.updateSpendableBalance(1, {"from": caller})
+
+
 def test_add_same_recipient_twice(entire_allowed_recipients_setup, accounts):
     (
         easy_track,
@@ -501,6 +541,8 @@ def test_limits_checker_general(
         LimitsCheckerWrapper, [manager], [script_executor], bokkyPooBahsDateTimeContract
     )
     assert limits_checker.getLimitParameters() == (0, 0)
+    assert not limits_checker.hasRole(limits_checker.DEFAULT_ADMIN_ROLE(), manager)
+    assert not limits_checker.hasRole(limits_checker.DEFAULT_ADMIN_ROLE(), script_executor)
 
     with reverts():
         limits_checker.getCurrentPeriodState()
