@@ -254,7 +254,7 @@ contract LimitsChecker is AccessControl {
         // because the beginning of the current calendar period will necessarily be in the same year.
         uint256 _periodStartYear = _year;
         // Get the number of the start date month:
-        uint256 _periodStartMonth = _getFirstMonthInPeriodFromtMonth(_month);
+        uint256 _periodStartMonth = _getFirstMonthInPeriodFromMonth(_month);
         // The beginning of the period always matches the calendar date of the beginning of the month.
         uint256 _periodStartDay = 1;
         return
@@ -265,7 +265,7 @@ contract LimitsChecker is AccessControl {
             );
     }
 
-    function _getFirstMonthInPeriodFromtMonth(uint256 _month)
+    function _getFirstMonthInPeriodFromMonth(uint256 _month)
         internal
         view
         returns (uint256 _firstMonthInPeriod)

@@ -25,6 +25,6 @@ contract LimitsCheckerWrapper is LimitsChecker {
         view
         returns (uint256 _firstMonthInPeriod)
     {
-        _firstMonthInPeriod = _getFirstMonthInPeriodFromtMonth(_month);
+        _firstMonthInPeriod = _getFirstMonthInPeriodFromMonth(_month);
     }
 }
