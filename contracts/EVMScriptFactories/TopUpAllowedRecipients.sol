@@ -69,6 +69,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     /// @param _evmScriptCallData Encoded tuple: (address[] _recipients, uint256[] _amounts) where
     /// _recipients - addresses of recipients to top up
     /// _amounts - corresponding amount of tokens to transfer
+    /// @dev note that the arrays below has one extra element to store limit enforcement calls
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -86,7 +87,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         bytes[] memory evmScriptsCalldata = new bytes[](recipients.length + 1);
 
         _to[0] = address(allowedRecipientsRegistry);
-        _methodIds[0] = allowedRecipientsRegistry.updateSpendableBalance.selector;
+        _methodIds[0] = allowedRecipientsRegistry.updateSpentAmount.selector;
         evmScriptsCalldata[0] = abi.encode(_totalAmount);
 
         for (uint256 i = 0; i < recipients.length; ++i) {

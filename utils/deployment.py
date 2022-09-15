@@ -200,7 +200,7 @@ def attach_evm_script_allowed_recipients_factories(
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
     update_limit_permission = create_permission(
-        allowed_recipients_registry, "updateSpendableBalance"
+        allowed_recipients_registry, "updateSpentAmount"
     )
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 

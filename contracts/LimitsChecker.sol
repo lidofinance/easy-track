@@ -102,10 +102,12 @@ contract LimitsChecker is AccessControl {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Checks if _payoutAmount is less or equal than may be spent in the period
+    /// @notice Checks if _payoutAmount is less or equal than the may be spent
     /// @param _payoutAmount Motion total amount
     /// @param _motionDuration Motion duration - minimal time required to pass before enacting of motion
-    /// @return True if _payoutAmount is less or equal than may be spent in the period
+    /// @return True if _payoutAmount is less or equal than may be spent
+    /// @dev note that upfront check is used to compare _paymentSum with total limit in case
+    /// when motion is started in one period and will be probably enacted in the next.
     function isUnderSpendableBalance(uint256 _payoutAmount, uint256 _motionDuration)
         external
         view
@@ -118,23 +120,18 @@ contract LimitsChecker is AccessControl {
         }
     }
 
-    /// @notice Checks if _payoutAmount is less or equal than may be spent,
-    /// @notice updates period if needed and increases the amount spent in the current period
-    function updateSpendableBalance(uint256 _payoutAmount)
-        external
-        onlyRole(UPDATE_SPENT_AMOUNT_ROLE)
-    {
-        _checkPeriodDurationMonths(periodDurationMonths);
-
-        /// At the moment when it is necessary to shift the currentPeriodEndTimestamp
-        /// currentPeriodEndTimestamp takes on a new value and spent is set to zero. Thus begins a new period.
+    /// @notice Checks if _payoutAmount may be spent and increases spentAmount on _payoutAmount.
+    /// @notice Also updates the period boundaries if necessary.
+    function updateSpentAmount(uint256 _payoutAmount) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
+        /// When it is necessary to shift the currentPeriodEndTimestamp it takes on a new value.
+        /// And also spent is set to zero. Thus begins a new period.
         if (block.timestamp >= currentPeriodEndTimestamp) {
             currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
             spentAmount = 0;
+            emit CurrentPeriodAdvanced(currentPeriodEndTimestamp);
         }
 
         require(_payoutAmount <= _currentSpendableBalance(), ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
-
         spentAmount += uint128(_payoutAmount);
 
         (
@@ -170,9 +167,10 @@ contract LimitsChecker is AccessControl {
     {
         require(_limit <= type(uint128).max, ERROR_TOO_LARGE_LIMIT);
 
-        _checkPeriodDurationMonths(_periodDurationMonths);
+        _validatePeriodDurationMonths(_periodDurationMonths);
         periodDurationMonths = uint64(_periodDurationMonths);
         currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
+        emit CurrentPeriodAdvanced(currentPeriodEndTimestamp);
         limit = uint128(_limit);
 
         /// set spent to _limit if it's greater to avoid math underflow error
@@ -234,7 +232,7 @@ contract LimitsChecker is AccessControl {
         return limit - spentAmount;
     }
 
-    function _checkPeriodDurationMonths(uint256 _periodDurationMonths) internal view {
+    function _validatePeriodDurationMonths(uint256 _periodDurationMonths) internal view {
         require(
             _periodDurationMonths == 1 ||
                 _periodDurationMonths == 2 ||
@@ -270,6 +268,8 @@ contract LimitsChecker is AccessControl {
         view
         returns (uint256 _firstMonthInPeriod)
     {
+        require(periodDurationMonths != 0, ERROR_INVALID_PERIOD_DURATION);
+
         // To get the number of the first month in the period:
         //   1. get the number of the period within the current year, starting from its beginning:
         uint256 _periodNumber = (_month - 1) / periodDurationMonths;
