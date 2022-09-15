@@ -48,10 +48,20 @@ def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
         voting, [voting, evm_script_executor], [voting, evm_script_executor], tx_params
     )
 
-def deploy_allowed_recipients_registry(voting, evm_script_executor, easy_track, bokkyPooBahsDateTimeContract, tx_params):
+
+def deploy_allowed_recipients_registry(
+    voting, evm_script_executor, date_time_contract, tx_params
+):
     return AllowedRecipientsRegistry.deploy(
-        voting, [voting, evm_script_executor], [voting, evm_script_executor], [voting, evm_script_executor], easy_track, bokkyPooBahsDateTimeContract, tx_params
+        voting,
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        [voting],
+        [evm_script_executor],
+        date_time_contract,
+        tx_params,
     )
+
 
 def deploy_increase_node_operator_staking_limit(node_operators_registry, tx_params):
     return IncreaseNodeOperatorStakingLimit.deploy(node_operators_registry, tx_params)
@@ -72,12 +82,14 @@ def deploy_add_reward_program(
         reward_programs_multisig, reward_programs_registry, tx_params
     )
 
+
 def deploy_remove_reward_program(
     reward_programs_registry, reward_programs_multisig, tx_params
 ):
     return RemoveRewardProgram.deploy(
         reward_programs_multisig, reward_programs_registry, tx_params
     )
+
 
 def deploy_top_up_reward_programs(
     finance,
@@ -94,34 +106,40 @@ def deploy_top_up_reward_programs(
         tx_params,
     )
 
+
 def deploy_add_allowed_recipient(
-    allowed_recipients_registry, allowed_recipients_multisig, tx_params
+    allowed_recipients_registry, committee_multisig, tx_params
 ):
     return AddAllowedRecipient.deploy(
-        allowed_recipients_multisig, allowed_recipients_registry, tx_params
+        committee_multisig, allowed_recipients_registry, tx_params
     )
 
+
 def deploy_remove_allowed_recipient(
-    allowed_recipients_registry, allowed_recipients_multisig, tx_params
+    allowed_recipients_registry, committee_multisig, tx_params
 ):
     return RemoveAllowedRecipient.deploy(
-        allowed_recipients_multisig, allowed_recipients_registry, tx_params
+        committee_multisig, allowed_recipients_registry, tx_params
     )
+
 
 def deploy_top_up_allowed_recipients(
     finance,
     governance_token,
     allowed_recipients_registry,
-    allowed_recipients_multisig,
+    committee_multisig,
+    easy_track,
     tx_params,
 ):
     return TopUpAllowedRecipients.deploy(
-        allowed_recipients_multisig,
+        committee_multisig,
         allowed_recipients_registry,
         finance,
         governance_token,
+        easy_track,
         tx_params,
     )
+
 
 def grant_roles(easy_track, admin, pause_address, tx_params):
     easy_track.grantRole(easy_track.PAUSE_ROLE(), admin, tx_params)
@@ -160,8 +178,9 @@ def add_evm_script_factories(
         top_up_reward_programs,
         reward_programs_registry,
         lido_contracts,
-        tx_params
+        tx_params,
     )
+
 
 def add_evm_script_reward_program_factories(
     easy_track,
@@ -170,7 +189,7 @@ def add_evm_script_reward_program_factories(
     top_up_reward_programs,
     reward_programs_registry,
     lido_contracts,
-    tx_params
+    tx_params,
 ):
     easy_track.addEVMScriptFactory(
         top_up_reward_programs,
@@ -188,6 +207,7 @@ def add_evm_script_reward_program_factories(
         tx_params,
     )
 
+
 def attach_evm_script_allowed_recipients_factories(
     easy_track,
     add_allowed_recipient,
@@ -195,7 +215,7 @@ def attach_evm_script_allowed_recipients_factories(
     top_up_allowed_recipients,
     allowed_recipients_registry,
     finance,
-    tx_params
+    tx_params,
 ):
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
@@ -219,6 +239,7 @@ def attach_evm_script_allowed_recipients_factories(
         create_permission(allowed_recipients_registry, "removeRecipient"),
         tx_params,
     )
+
 
 def transfer_admin_role(deployer, easy_track, new_admin, tx_params):
     easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), new_admin, tx_params)
