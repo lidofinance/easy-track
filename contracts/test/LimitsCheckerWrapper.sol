@@ -10,12 +10,12 @@ import "../EasyTrack.sol";
 contract LimitsCheckerWrapper is LimitsChecker {
     constructor(
         address[] memory _setLimitParameterRoleHolders,
-        address[] memory _updateLimitSpendingRoleHolders,
+        address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     )
         LimitsChecker(
             _setLimitParameterRoleHolders,
-            _updateLimitSpendingRoleHolders,
+            _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
         )
     {}
@@ -25,6 +25,6 @@ contract LimitsCheckerWrapper is LimitsChecker {
         view
         returns (uint256 _firstMonthInPeriod)
     {
-        _firstMonthInPeriod = _getFirstMonthInPeriodFromCurrentMonth(_month);
+        _firstMonthInPeriod = _getFirstMonthInPeriodFromtMonth(_month);
     }
 }

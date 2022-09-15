@@ -18,7 +18,7 @@ from utils.test_helpers import (
     get_month_start_timestamp,
     get_date_in_next_period,
     SET_LIMIT_PARAMETERS_ROLE,
-    UPDATE_SPENDABLE_BALANCE_ROLE,
+    UPDATE_SPENT_AMOUNT_ROLE,
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
 )
@@ -28,6 +28,7 @@ import constants
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
+#TODO test for ERROR_TOO_LARGE_LIMIT
 
 def set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent):
     """Do Aragon voting to set limit parameters to the allowed recipients registry"""
@@ -205,7 +206,7 @@ def test_allowed_recipients_registry_roles(
             registry.setLimitParameters(0, 1, {"from": caller})
 
     for caller in [deployer, add_role_holder, remove_role_holder, set_limit_role_holder]:
-        with reverts(access_revert_message(caller, UPDATE_SPENDABLE_BALANCE_ROLE)):
+        with reverts(access_revert_message(caller, UPDATE_SPENT_AMOUNT_ROLE)):
             registry.updateSpendableBalance(1, {"from": caller})
 
 
@@ -390,10 +391,10 @@ def test_limits_checker_access_restriction(
     with reverts(access_revert_message(owner, SET_LIMIT_PARAMETERS_ROLE)):
         limits_checker.setLimitParameters(123, 1, {"from": owner})
 
-    with reverts(access_revert_message(stranger, UPDATE_SPENDABLE_BALANCE_ROLE)):
+    with reverts(access_revert_message(stranger, UPDATE_SPENT_AMOUNT_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": stranger})
 
-    with reverts(access_revert_message(manager, UPDATE_SPENDABLE_BALANCE_ROLE)):
+    with reverts(access_revert_message(manager, UPDATE_SPENT_AMOUNT_ROLE)):
         limits_checker.updateSpendableBalance(123, {"from": manager})
 
 
@@ -576,7 +577,7 @@ def test_limits_checker_general(
         "SpendableAmountChanged",
         {
             "_alreadySpentAmount": spending,
-            "_spendableAmount": spendable,
+            "_spendableBalance": spendable,
             "_periodStartTimestamp": period_start,
             "_periodEndTimestamp": period_end,
         },
