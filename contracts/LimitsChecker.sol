@@ -13,21 +13,21 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 ///
 /// ▲ limit-spent (spendable balance)
 /// |
-/// │......               |.............       |..............     limit-spent = limit-0 = limit
-/// │      .......        |                    |
-/// │             ....    |             ....   |
-/// │                 ....|                 ...|
+/// │             |................              |..               limit-spent = limit-0 = limit
+/// │.....        |                ...           |
+/// │     ........|                   ......     |  ..............
+///               |                         .....|
 /// │─────────────────────────────────────────────────────────────> Time
-/// |      ^      ^   ^   |             ^   ^  |                 ^ - Motion enactment
-/// │                     |currentPeriodEnd    |currentPeriodEnd
-/// |                     |spent=0             |spent=0
+/// |     ^       |                ^  ^     ^    |  ^               ^ - Motion enactment
+/// │             |currentPeriodEndTimestamp     |currentPeriodEndTimestamp
+/// |             |spent=0                       |spent=0
 ///
-/// currentPeriodEnd is calculated as a calendar date of the beginning of
+/// currentPeriodEndTimestamp is calculated as a calendar date of the beginning of
 /// a next month, bi-months, quarter, half year, or year period.
 /// If, for example, periodDurationMonths = 3, then it is considered that the date changes once a quarter.
-/// And currentPeriodEnd can take values 1 Apr, 1 Jul, 1 Oky, 1 Jan.
-/// If periodDurationMonths = 1, then shift of currentPeriodEnd occurs once a month
-/// and currentPeriodEnd can take values 1 Feb, 1 Mar, 1 Apr etc
+/// And currentPeriodEndTimestamp can take values 1 Apr, 1 Jul, 1 Okt, 1 Jan.
+/// If periodDurationMonths = 1, then shift of currentPeriodEndTimestamp occurs once a month
+/// and currentPeriodEndTimestamp can take values 1 Feb, 1 Mar, 1 Apr etc
 ///
 contract LimitsChecker is AccessControl {
     // -------------
@@ -40,7 +40,7 @@ contract LimitsChecker is AccessControl {
         uint256 indexed _periodStartTimestamp,
         uint256 _periodEndTimestamp
     );
-
+    event CurrentPeriodAdvanced(uint256 _currentPeriodEndTimestamp);
     // -------------
     // ERRORS
     // -------------
@@ -68,7 +68,7 @@ contract LimitsChecker is AccessControl {
     uint64 internal periodDurationMonths;
 
     /// @notice End of the current period
-    uint128 internal currentPeriodEnd;
+    uint128 internal currentPeriodEndTimestamp;
 
     /// @notice The maximum that can be spent in a period
     uint128 internal limit;
@@ -97,31 +97,40 @@ contract LimitsChecker is AccessControl {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Checks if _payoutSum is less than may be spent in the period
-    /// @param _payoutSum Motion sum
+    /// @notice Checks if _payoutAmount is less or equal than may be spent in the period
+    /// @param _payoutAmount Motion total amount
     /// @param _motionDuration Motion duration - minimal time required to pass before enacting of motion
-    /// @return True if _payoutSum is less than may be spent in the period
-    function isUnderSpendableBalance(uint256 _payoutSum, uint256 _motionDuration)
+    /// @return True if _payoutAmount is less or equal than may be spent in the period
+    function isUnderSpendableBalance(uint256 _payoutAmount, uint256 _motionDuration)
         external
         view
         returns (bool)
     {
-        if (block.timestamp + _motionDuration >= currentPeriodEnd) {
-            return _payoutSum <= limit;
+        if (block.timestamp + _motionDuration >= currentPeriodEndTimestamp) {
+            return _payoutAmount <= limit;
         } else {
-            return _payoutSum <= limit - spent;
+            return _payoutAmount <= limit - spent;
         }
     }
 
-    /// @notice Checks if _payoutSum is less than may be spent,
+    /// @notice Checks if _payoutAmount is less or equal than may be spent,
     /// @notice updates period if needed and increases the amount spent in the current period
-    function updateSpendableBalance(uint256 _payoutSum)
+    function updateSpendableBalance(uint256 _payoutAmount)
         external
         onlyRole(UPDATE_SPENDABLE_BALANCE_ROLE)
     {
-        _checkAndUpdateLimitParameters();
-        _checkLimit(_payoutSum);
-        _increaseSpent(_payoutSum);
+        _checkPeriodDurationMonths(periodDurationMonths);
+
+        /// At the moment when it is necessary to shift the currentPeriodEndTimestamp
+        /// currentPeriodEndTimestamp takes on a new value and spent is set to zero. Thus begins a new period.
+        if (block.timestamp >= currentPeriodEndTimestamp) {
+            currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
+            spent = 0;
+        }
+
+        require(_payoutAmount <= limit - spent, ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
+
+        spent += uint128(_payoutAmount);
 
         (
             uint256 _alreadySpentAmount,
@@ -145,7 +154,7 @@ contract LimitsChecker is AccessControl {
     }
 
     /// @notice Sets periodDurationMonths and limit
-    /// currentPeriodEnd will be calculated as a calendar date of the beginning of next month,
+    /// currentPeriodEndTimestamp will be calculated as a calendar date of the beginning of next month,
     /// bi-months, quarter, half year, or year period.
     /// @param _limit Limit to set
     /// @param _periodDurationMonths  Length of period in months to set.
@@ -156,7 +165,7 @@ contract LimitsChecker is AccessControl {
     {
         _checkPeriodDurationMonths(_periodDurationMonths);
         periodDurationMonths = uint64(_periodDurationMonths);
-        currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
+        currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
         limit = uint128(_limit);
         if (spent > limit) {
             spent = limit;
@@ -191,32 +200,14 @@ contract LimitsChecker is AccessControl {
         return (
             spent,
             limit - spent,
-            _getPeriodStartFromTimestamp(currentPeriodEnd - 1),
-            currentPeriodEnd
+            _getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1),
+            currentPeriodEndTimestamp
         );
     }
 
     // ------------------
     // PRIVATE METHODS
     // ------------------
-
-    /// currentPeriodEnd is calculated as a calendar date of the beginning of
-    /// a next month, bi-months, quarter, half year, or year period.
-    /// If, for example, periodDurationMonths = 3, then it is considered that the date changes once a quarter.
-    /// And currentPeriodEnd can take values 1 Apr, 1 Jul, 1 Oky, 1 Jan.
-    /// If periodDurationMonths = 1, then shift of currentPeriodEnd occurs once a month
-    /// and currentPeriodEnd can take values 1 Feb, 1 Mar, 1 Apr etc
-    /// At the moment when it is necessary to shift the currentPeriodEnd
-    /// (the condition is fulfilled: block.timestamp >= currentPeriodEnd),
-    /// currentPeriodEnd takes on a new value and spent is set to zero. Thus begins a new period.
-    function _checkAndUpdateLimitParameters() internal {
-        _checkPeriodDurationMonths(periodDurationMonths);
-        if (block.timestamp >= currentPeriodEnd) {
-            currentPeriodEnd = uint128(_getPeriodEndFromTimestamp(block.timestamp));
-            spent = 0;
-        }
-    }
-
     function _checkPeriodDurationMonths(uint256 _periodDurationMonths) internal view {
         require(
             _periodDurationMonths == 1 ||
@@ -226,14 +217,6 @@ contract LimitsChecker is AccessControl {
                 _periodDurationMonths == 12,
             ERROR_INVALID_PERIOD_DURATION
         );
-    }
-
-    function _checkLimit(uint256 _payoutSum) internal view {
-        require(_payoutSum <= limit - spent, ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
-    }
-
-    function _increaseSpent(uint256 _payoutSum) internal {
-        spent += uint128(_payoutSum);
     }
 
     function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
@@ -246,7 +229,7 @@ contract LimitsChecker is AccessControl {
         uint256 _periodStartYear = _year;
         // Get the number of the start date month:
         uint256 _periodStartMonth = _getFirstMonthInPeriodFromCurrentMonth(_month);
-        //The beginning of the period always matches the calendar date of the beginning of the month.
+        // The beginning of the period always matches the calendar date of the beginning of the month.
         uint256 _periodStartDay = 1;
         return
             bokkyPooBahsDateTimeContract.timestampFromDate(
@@ -266,7 +249,7 @@ contract LimitsChecker is AccessControl {
         uint256 _periodNumber = (_month - 1) / periodDurationMonths;
         //   2. and then the number of the first month in this period:
         _firstMonthInPeriod = _periodNumber * periodDurationMonths + 1;
-        //The shift by - 1 and then by + 1 happens because the months in the calendar start from 1 and not from 0.
+        // The shift by - 1 and then by + 1 happens because the months in the calendar start from 1 and not from 0.
     }
 
     function _getPeriodEndFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
