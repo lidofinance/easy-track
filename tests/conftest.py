@@ -3,10 +3,12 @@ from typing import Optional
 
 import pytest
 import brownie
-from brownie import chain
+from brownie import chain, EasyTrack, EVMScriptExecutor
 
 import constants
-from utils.lido import contracts
+from utils.evm_script import encode_call_script, encode_calldata
+from utils.lido import contracts, create_voting, execute_voting
+from utils.config import get_network_name
 from utils import test_helpers
 
 brownie.web3.enable_strict_bytes_type_checking()
@@ -124,15 +126,17 @@ def evm_script_executor(owner, easy_track, calls_script, EVMScriptExecutor):
 
 
 @pytest.fixture(scope="module")
-def reward_programs_registry(
-    owner, voting, evm_script_executor_stub, RewardProgramsRegistry
-):
+def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProgramsRegistry):
     return owner.deploy(
         RewardProgramsRegistry,
         voting,
         [voting, evm_script_executor_stub],
         [voting, evm_script_executor_stub],
     )
+
+@pytest.fixture(scope="module")
+def limits_checker_wrapper(owner, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract):
+    return owner.deploy(LimitsCheckerWrapper, easy_track, [owner], bokkyPooBahsDateTimeContract)
 
 
 ############
@@ -151,17 +155,16 @@ def increase_node_operator_staking_limit(
 def add_reward_program(owner, reward_programs_registry, AddRewardProgram):
     return owner.deploy(AddRewardProgram, owner, reward_programs_registry)
 
+
 @pytest.fixture(scope="module")
 def remove_reward_program(owner, reward_programs_registry, RemoveRewardProgram):
     return owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
 
+
 @pytest.fixture(scope="module")
-def top_up_reward_programs(
-    owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms
-):
-    return owner.deploy(
-        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
-    )
+def top_up_reward_programs(owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms):
+    return owner.deploy(TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo)
+
 
 @pytest.fixture(scope="module")
 def top_up_lego_program(owner, finance, lego_program, TopUpLegoProgram):
@@ -201,6 +204,194 @@ def evm_script_factory_stub(owner, EVMScriptFactoryStub):
 @pytest.fixture(scope="module")
 def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     return owner.deploy(EVMScriptExecutorStub)
+
+
+@pytest.fixture(scope="module")
+def entire_allowed_recipients_setup(
+    accounts,
+    owner,
+    ldo,
+    voting,
+    calls_script,
+    finance,
+    agent,
+    acl,
+    bokkyPooBahsDateTimeContract,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
+):
+    deployer = owner
+    trusted_factories_caller = accounts[7]
+
+    def create_permission(contract, method):
+        return contract.address + getattr(contract, method).signature[2:]
+
+    # deploy easy track
+    easy_track = deployer.deploy(
+        EasyTrack,
+        ldo,
+        deployer,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
+
+    # deploy evm script executor
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
+    evm_script_executor.transferOwnership(voting, {"from": deployer})
+    assert evm_script_executor.owner() == voting
+
+    # set EVM script executor in easy track
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
+
+    # deploy AllowedRecipientsRegistry
+    allowed_recipients_registry = deployer.deploy(
+        AllowedRecipientsRegistry,
+        voting,
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        bokkyPooBahsDateTimeContract,
+    )
+
+    # deploy TopUpAllowedRecipients EVM script factory
+    top_up_allowed_recipients = deployer.deploy(
+        TopUpAllowedRecipients, trusted_factories_caller, allowed_recipients_registry, finance, ldo, easy_track
+    )
+
+    # add TopUpAllowedRecipients EVM script factory to easy track
+    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
+
+    update_limit_permission = create_permission(
+        allowed_recipients_registry, "updateSpentAmount"
+    )
+
+    permissions = new_immediate_payment_permission + update_limit_permission[2:]
+
+    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
+
+    # deploy AddAllowedRecipient EVM script factory
+    add_allowed_recipient = deployer.deploy(
+        AddAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
+    )
+
+    # add AddAllowedRecipient EVM script factory to easy track
+    add_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "addRecipient"
+    )
+
+    easy_track.addEVMScriptFactory(
+        add_allowed_recipient, add_allowed_recipient_permission, {"from": deployer}
+    )
+
+    # deploy RemoveAllowedRecipient EVM script factory
+    remove_allowed_recipient = deployer.deploy(
+        RemoveAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
+    )
+
+    # add RemoveAllowedRecipient EVM script factory to easy track
+    remove_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "removeRecipient"
+    )
+    easy_track.addEVMScriptFactory(
+        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
+    )
+
+    # create voting to grant permissions to EVM script executor to create new payments
+    network_name = get_network_name()
+
+    add_create_payments_permissions_voting_id, _ = create_voting(
+        evm_script=encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        evm_script_executor,
+                        finance,
+                        finance.CREATE_PAYMENTS_ROLE(),
+                    ),
+                ),
+            ]
+        ),
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        network=network_name,
+        tx_params={"from": agent},
+    )
+
+    # execute voting to add permissions to EVM script executor to create payments
+    execute_voting(add_create_payments_permissions_voting_id, network_name)
+
+    return (
+        easy_track,
+        evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+    )
+
+
+@pytest.fixture(scope="module")
+def entire_allowed_recipients_setup_with_two_recipients(
+    entire_allowed_recipients_setup,
+    accounts,
+    stranger
+):
+    (
+        easy_track,
+        evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+    ) = entire_allowed_recipients_setup
+
+    recipient1 = accounts[8]
+    recipient1_title = "Recipient 1"
+    recipient2 = accounts[9]
+    recipient2_title = "Recipient 2"
+
+    tx = easy_track.createMotion(
+        add_allowed_recipient,
+        encode_calldata("(address,string)", [recipient1.address, recipient1_title]),
+        {"from": add_allowed_recipient.trustedCaller()},
+    )
+    motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    tx = easy_track.createMotion(
+        add_allowed_recipient,
+        encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
+        {"from": add_allowed_recipient.trustedCaller()}
+    )
+    motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion1_calldata,
+        {"from": stranger},
+    )
+    easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion2_calldata,
+        {"from": stranger},
+    )
+    assert allowed_recipients_registry.getAllowedRecipients() == [recipient1, recipient2]
+
+    return (
+        easy_track,
+        evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+        recipient1,
+        recipient2,
+    )
 
 
 ##########
@@ -285,41 +476,49 @@ def fund_with_ldo(ldo, agent):
 
     return method
 
+
 class Helpers:
     @staticmethod
-    def execute_vote(accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup='0.1 ether'):
+    def execute_vote(
+        accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup="0.1 ether"
+    ):
         if dao_voting.getVote(vote_id)[0]:
             for holder_addr in ldo_vote_executors_for_tests:
-                print('voting from acct:', holder_addr)
+                print("voting from acct:", holder_addr)
                 accounts[0].transfer(holder_addr, topup)
                 account = accounts.at(holder_addr, force=True)
-                dao_voting.vote(vote_id, True, False, {'from': account})
+                dao_voting.vote(vote_id, True, False, {"from": account})
 
         # wait for the vote to end
         chain.sleep(3 * 60 * 60 * 24)
         chain.mine()
 
         assert dao_voting.canExecute(vote_id)
-        tx = dao_voting.executeVote(vote_id, {'from': accounts[0]})
+        tx = dao_voting.executeVote(vote_id, {"from": accounts[0]})
 
-        print(f'vote #{vote_id} executed')
+        print(f"vote #{vote_id} executed")
         return tx
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def helpers():
     return Helpers
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def vote_id_from_env() -> Optional[int]:
     _env_name = "OMNIBUS_VOTE_ID"
     if os.getenv(_env_name):
         try:
             vote_id = int(os.getenv(_env_name))
-            print(f'OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}')
+            print(f"OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}")
             return vote_id
         except:
             pass
 
     return None
+
+
+@pytest.fixture(scope="module")
+def bokkyPooBahsDateTimeContract():
+    return "0x23d23d8f243e57d0b924bff3a3191078af325101"
