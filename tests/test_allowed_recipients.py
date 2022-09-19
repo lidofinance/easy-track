@@ -296,7 +296,7 @@ def test_second_top_up_motion_exceeds_limit_in_same_period(
         recipient2,
     ) = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, 1
+    period_limit, period_duration = 100 * 10**18, 6
     set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent)
 
     recipients = list(map(lambda x: x.address, [recipient1, recipient2]))
@@ -548,7 +548,7 @@ def test_limits_checker_general(
     with reverts():
         limits_checker.getCurrentPeriodState()
 
-    assert limits_checker.currentSpendableBalance() == 0
+    assert limits_checker.spendableBalance() == 0
     assert limits_checker.isUnderSpendableBalance(0, easy_track.motionDuration())
 
     period_limit, period_duration = 3 * 10**18, 1

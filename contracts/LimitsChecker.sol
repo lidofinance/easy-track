@@ -116,7 +116,7 @@ contract LimitsChecker is AccessControl {
         if (block.timestamp + _motionDuration >= currentPeriodEndTimestamp) {
             return _payoutAmount <= limit;
         } else {
-            return _payoutAmount <= _currentSpendableBalance();
+            return _payoutAmount <= _spendableBalance();
         }
     }
 
@@ -131,19 +131,19 @@ contract LimitsChecker is AccessControl {
             emit CurrentPeriodAdvanced(currentPeriodEndTimestamp);
         }
 
-        require(_payoutAmount <= _currentSpendableBalance(), ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
+        require(_payoutAmount <= _spendableBalance(), ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
         spentAmount += uint128(_payoutAmount);
 
         (
             uint256 _alreadySpentAmount,
-            uint256 _spendableBalance,
+            uint256 _spendableBalanceInPeriod,
             uint256 _periodStartTimestamp,
             uint256 _periodEndTimestamp
         ) = _getCurrentPeriodState();
 
         emit SpendableAmountChanged(
             _alreadySpentAmount,
-            _spendableBalance,
+            _spendableBalanceInPeriod,
             _periodStartTimestamp,
             _periodEndTimestamp
         );
@@ -151,8 +151,8 @@ contract LimitsChecker is AccessControl {
 
     /// @notice Returns balance that can be spent in the current period
     /// @return Balance that can be spent in the current period
-    function currentSpendableBalance() external view returns (uint256) {
-        return _currentSpendableBalance();
+    function spendableBalance() external view returns (uint256) {
+        return _spendableBalance();
     }
 
     /// @notice Sets periodDurationMonths and limit
@@ -191,7 +191,7 @@ contract LimitsChecker is AccessControl {
     /// @notice Returns state of the current period: amount spent, balance available for spending,
     /// @notice start date of the current period and end date of the current period
     /// @return _alreadySpentAmount - amount already spent in the current period
-    /// @return _spendableBalance - balance available for spending in the current period
+    /// @return _spendableBalanceInPeriod - balance available for spending in the current period
     /// @return _periodStartTimestamp - start date of the current period
     /// @return _periodEndTimestamp - end date of the current period
     function getCurrentPeriodState()
@@ -199,7 +199,7 @@ contract LimitsChecker is AccessControl {
         view
         returns (
             uint256 _alreadySpentAmount,
-            uint256 _spendableBalance,
+            uint256 _spendableBalanceInPeriod,
             uint256 _periodStartTimestamp,
             uint256 _periodEndTimestamp
         )
@@ -215,20 +215,20 @@ contract LimitsChecker is AccessControl {
         view
         returns (
             uint256 _alreadySpentAmount,
-            uint256 _spendableBalance,
+            uint256 _spendableBalanceInPeriod,
             uint256 _periodStartTimestamp,
             uint256 _periodEndTimestamp
         )
     {
         return (
             spentAmount,
-            _currentSpendableBalance(),
+            _spendableBalance(),
             _getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1),
             currentPeriodEndTimestamp
         );
     }
 
-    function _currentSpendableBalance() internal view returns (uint256) {
+    function _spendableBalance() internal view returns (uint256) {
         return limit - spentAmount;
     }
 
