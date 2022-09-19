@@ -150,6 +150,8 @@ contract LimitsChecker is AccessControl {
     }
 
     /// @notice Returns balance that can be spent in the current period
+    /// @notice If period advanced and the period was not shifted,
+    /// @notice then the method will return spendable balance corresponding to the previous period.
     /// @return Balance that can be spent in the current period
     function spendableBalance() external view returns (uint256) {
         return _spendableBalance();
@@ -190,11 +192,13 @@ contract LimitsChecker is AccessControl {
 
     /// @notice Returns state of the current period: amount spent, balance available for spending,
     /// @notice start date of the current period and end date of the current period
+    /// @notice If period advanced and the period was not shifted,
+    /// @notice then the method will return spendable balance corresponding to the previous period.
     /// @return _alreadySpentAmount - amount already spent in the current period
     /// @return _spendableBalanceInPeriod - balance available for spending in the current period
     /// @return _periodStartTimestamp - start date of the current period
     /// @return _periodEndTimestamp - end date of the current period
-    function getCurrentPeriodState()
+    function getPeriodState()
         external
         view
         returns (

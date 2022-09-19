@@ -333,7 +333,7 @@ def test_limit_is_renewed_in_next_period(
 
     second_payout = [int(5e18), int(4e18)]
     do_payout_to_allowed_recipients(recipients, second_payout, easy_track, top_up_factory)
-    assert allowed_recipients_registry.getCurrentPeriodState()[0] == sum(second_payout)
+    assert allowed_recipients_registry.getPeriodState()[0] == sum(second_payout)
 
 
 def test_both_motions_enacted_next_period_second_exceeds_limit(
@@ -511,7 +511,7 @@ def test_limits_checker_period_range(
     )
 
     def get_period_range_from_contract():
-        return limits_checker.getCurrentPeriodState()[2:]
+        return limits_checker.getPeriodState()[2:]
 
     def calc_period_range(period_months):
         first_month = limits_checker.getFirstMonthInPeriodFromCurrentMonth(datetime.now().month)
@@ -546,7 +546,7 @@ def test_limits_checker_general(
     assert not limits_checker.hasRole(limits_checker.DEFAULT_ADMIN_ROLE(), script_executor)
 
     with reverts():
-        limits_checker.getCurrentPeriodState()
+        limits_checker.getPeriodState()
 
     assert limits_checker.spendableBalance() == 0
     assert limits_checker.isUnderSpendableBalance(0, easy_track.motionDuration())
@@ -569,7 +569,7 @@ def test_limits_checker_general(
     spending = 1 * 10**18
     spendable = period_limit - spending
     tx = limits_checker.updateSpentAmount(spending, {"from": script_executor})
-    assert limits_checker.getCurrentPeriodState() == (spending, spendable, period_start, period_end)
+    assert limits_checker.getPeriodState() == (spending, spendable, period_start, period_end)
     assert limits_checker.isUnderSpendableBalance(spendable, 0)
     assert limits_checker.isUnderSpendableBalance(
         period_limit, period_duration * MAX_SECONDS_IN_MONTH
@@ -586,7 +586,7 @@ def test_limits_checker_general(
     )
 
     limits_checker.updateSpentAmount(spending, {"from": script_executor})
-    assert limits_checker.getCurrentPeriodState() == (
+    assert limits_checker.getPeriodState() == (
         2 * spending,
         period_limit - 2 * spending,
         period_start,
@@ -594,7 +594,7 @@ def test_limits_checker_general(
     )
 
     limits_checker.updateSpentAmount(spending, {"from": script_executor})
-    assert limits_checker.getCurrentPeriodState() == (
+    assert limits_checker.getPeriodState() == (
         period_limit,
         0,
         period_start,
