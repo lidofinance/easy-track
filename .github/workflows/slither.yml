@@ -27,7 +27,7 @@ jobs:
 
       - name: Run slither
         run: >
-          slither . --sarif results.sarif
+          poetry run slither . --sarif results.sarif
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
