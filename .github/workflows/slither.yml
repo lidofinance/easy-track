@@ -16,14 +16,14 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
-        with:
-          python-version: "3.9.10"
+      # - uses: actions/setup-python@v4
+      #   with:
+      #     python-version: "3.9.10"
 
-      - name: Install poetry requirements
-        run: >
-          curl -sSL https://install.python-poetry.org | python - &&
-          poetry install
+      # - name: Install poetry requirements
+      #   run: >
+      #     curl -sSL https://install.python-poetry.org | python - &&
+      #     poetry install
 
       - name: Run Slither
         uses: crytic/slither-action@v0.1.1
