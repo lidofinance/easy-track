@@ -5,7 +5,6 @@
   "author": "Bogdan Kovtun <psirex48@gmail.com>",
   "license": "GPL-3.0",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2",
     "ethlint": "^1.2.5",
     "husky": "^6.0.0",
     "prettier": "^2.3.0",
@@ -16,8 +15,7 @@
   "scripts": {
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
     "lint:check": "prettier --check **/*.sol **/*.json",
-    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",
-    "postinstall": "node postinstall.js"
+    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose"
   },
   "husky": {
     "hooks": {
