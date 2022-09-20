@@ -29,14 +29,14 @@ jobs:
         run: >
           poetry run slither . --sarif results.sarif
 
-    - name: Check results.sarif presence
-      if: always()
-      id: results
-      shell: bash
-      run: >
-        test -f ./results.sarif && 
-        echo '::set-output name=value::true' || 
-        echo '::set-output name=value::false'
+      - name: Check results.sarif presence
+        if: always()
+        id: results
+        shell: bash
+        run: >
+          test -f ./results.sarif && 
+          echo '::set-output name=value::true' || 
+          echo '::set-output name=value::false'
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
