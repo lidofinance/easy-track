@@ -180,8 +180,11 @@ contract LimitsChecker is AccessControl {
 
         _validatePeriodDurationMonths(_periodDurationMonths);
         periodDurationMonths = uint64(_periodDurationMonths);
-        currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
-        emit CurrentPeriodAdvanced(_getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1));
+        uint256 currentPeriodEndTimestampLocal = _getPeriodEndFromTimestamp(block.timestamp);
+        emit CurrentPeriodAdvanced(
+            _getPeriodStartFromTimestamp(currentPeriodEndTimestampLocal - 1)
+        );
+        currentPeriodEndTimestamp = uint128(currentPeriodEndTimestampLocal);
         limit = uint128(_limit);
 
         /// set spent to _limit if it's greater to avoid math underflow error
