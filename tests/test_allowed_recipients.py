@@ -9,7 +9,7 @@ from utils.evm_script import encode_call_script, encode_calldata
 
 from utils.config import get_network_name
 
-from utils.lido import create_voting, execute_voting, addresses
+from utils.lido import create_voting, execute_voting
 
 from utils.test_helpers import (
     assert_single_event,
@@ -28,7 +28,6 @@ import constants
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
-#TODO test for ERROR_TOO_LARGE_LIMIT
 
 def set_limit_parameters(period_limit, period_duration, allowed_recipients_registry, agent):
     """Do Aragon voting to set limit parameters to the allowed recipients registry"""
@@ -86,13 +85,15 @@ def do_payout_to_allowed_recipients(recipients, amounts, easy_track, top_up_fact
 def add_recipient(
     recipient, recipient_title, easy_track, add_recipient_factory, allowed_recipients_registry
 ):
-    add_recipient_calldata = encode_calldata(
-        "(address,string)", [recipient.address, recipient_title]
-    )
+    call_data = encode_calldata("(address,string)", [recipient.address, recipient_title])
+    assert add_recipient_factory.decodeEVMScriptCallData(call_data) == [
+        recipient.address,
+        recipient_title,
+    ]
 
     tx = easy_track.createMotion(
         add_recipient_factory,
-        add_recipient_calldata,
+        call_data,
         {"from": add_recipient_factory.trustedCaller()},
     )
 
@@ -112,18 +113,22 @@ def add_recipient(
 
 
 def remove_recipient(recipient, easy_track, remove_recipient_factory, allowed_recipients_registry):
+    call_data = encode_single("(address)", [recipient.address])
+    assert remove_recipient_factory.decodeEVMScriptCallData(call_data) == recipient.address
+
     tx = easy_track.createMotion(
         remove_recipient_factory,
-        encode_single("(address)", [recipient.address]),
+        call_data,
         {"from": remove_recipient_factory.trustedCaller()},
     )
-    motion_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    assert tx.events["MotionCreated"]["_evmScriptCallData"] == "0x" + call_data.hex()
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     tx = easy_track.enactMotion(
         easy_track.getMotions()[0][0],
-        motion_calldata,
+        call_data,
         {"from": recipient},
     )
     assert_event_exists(
@@ -168,6 +173,28 @@ def test_add_remove_recipients_directly_via_registry(
 
     with reverts("RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST"):
         registry.removeRecipient(recipient, {"from": manager})
+
+
+def test_limits_checker_views_in_next_period(
+    owner, LimitsCheckerWrapper, bokkyPooBahsDateTimeContract
+):
+    """amountSpent and spendableBalance"""
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, [owner], [owner], bokkyPooBahsDateTimeContract
+    )
+
+    period_limit, period_duration = int(10e18), 1
+    payout_amount = int(3e18)
+    spendable_balance = period_limit - payout_amount
+    limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+    limits_checker.updateSpentAmount(payout_amount, {"from": owner})
+    assert limits_checker.spendableBalance() == spendable_balance
+    assert limits_checker.getPeriodState()[:2] == (payout_amount, spendable_balance)
+
+    chain.sleep(MAX_SECONDS_IN_MONTH * period_duration)
+
+    assert limits_checker.spendableBalance() == spendable_balance
+    assert limits_checker.getPeriodState()[:2] == (payout_amount, spendable_balance)
 
 
 def test_allowed_recipients_registry_roles(
@@ -556,13 +583,13 @@ def test_limits_checker_general(
     period_end = get_month_start_timestamp(get_date_in_next_period(datetime.now(), period_duration))
 
     tx = limits_checker.setLimitParameters(period_limit, period_duration, {"from": manager})
-    #TODO fix the assert
-    '''assert_single_event(
+    # TODO fix the assert
+    """assert_single_event(
         tx,
         "LimitsParametersChanged",
         {"_limit": period_limit, "_periodDurationMonths": period_duration},
     )
-    '''
+    """
     assert limits_checker.getLimitParameters() == (period_limit, period_duration)
     assert limits_checker.isUnderSpendableBalance(period_limit, 0)
 
@@ -631,6 +658,7 @@ def test_top_up_factory_evm_script_validation(
         bokkyPooBahsDateTimeContract,
     )
     registry.addRecipient(recipient, "Test Recipient", {"from": manager})
+    registry.setLimitParameters(int(100e18), 12, {"from": manager})
 
     top_up_factory = deployer.deploy(
         TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
@@ -658,6 +686,12 @@ def test_top_up_factory_evm_script_validation(
 
     with reverts("RECIPIENT_NOT_ALLOWED"):
         top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
+
+    payout = int(1e18)
+    call_data = make_call_data([recipient], [payout])
+    evm_script = top_up_factory.createEVMScript(trusted_caller, call_data)
+    assert top_up_factory.decodeEVMScriptCallData(call_data) == ([recipient], [payout])
+    assert "Top up allowed recipients".encode("utf-8").hex() in str(evm_script)
 
 
 def test_create_top_up_motion_above_limits(
