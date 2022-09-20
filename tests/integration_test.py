@@ -17,6 +17,7 @@ from utils.lido import create_voting, execute_voting
 
 from utils.config import get_network_name
 
+
 @pytest.mark.skip_coverage
 def test_node_operators_easy_track(
     stranger,
@@ -104,7 +105,10 @@ def test_node_operators_easy_track(
     )
 
     add_node_operators_voting_id, _ = create_voting(
-        add_node_operator_evm_script, "Add node operator to registry", get_network_name(), {"from": agent}
+        add_node_operator_evm_script,
+        "Add node operator to registry",
+        get_network_name(),
+        {"from": agent},
     )
     # execute vote to add test node operator
     execute_voting(add_node_operators_voting_id)
@@ -435,7 +439,7 @@ def test_lego_easy_track(
     execute_voting(add_create_payments_permissions_voting_id)
 
     # create new motion to make transfers to lego programs
-    ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
+    ldo_amount, steth_amount, eth_amount = 10**18, 2 * 10**18, 3 * 10**18
 
     tx = easy_track.createMotion(
         top_up_lego_program,
@@ -471,7 +475,7 @@ def test_lego_easy_track(
 
     assert ldo.balanceOf(lego_program) == 0
     assert steth.balanceOf(lego_program) == 0
-    assert lego_program.balance() == 100 * 10 ** 18
+    lego_program_balance_before = lego_program.balance()
 
     easy_track.enactMotion(
         motions[0][0],
@@ -482,4 +486,4 @@ def test_lego_easy_track(
     assert len(easy_track.getMotions()) == 0
     assert ldo.balanceOf(lego_program) == ldo_amount
     assert abs(steth.balanceOf(lego_program) - steth_amount) <= 10
-    assert lego_program.balance() == 103 * 10 ** 18
+    assert lego_program.balance() - lego_program_balance_before == eth_amount
