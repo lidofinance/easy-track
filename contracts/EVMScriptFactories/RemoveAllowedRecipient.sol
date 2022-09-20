@@ -21,7 +21,7 @@ contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     /// @notice Address of AllowedRecipientsRegistry
-    AllowedRecipientsRegistry public immutable allowedRecipientsRegistry;
+    AllowedRecipientsRegistry public allowedRecipientsRegistry;
 
     // -------------
     // CONSTRUCTOR

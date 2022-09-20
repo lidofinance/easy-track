@@ -35,7 +35,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     address public immutable token;
 
     /// @notice Address of AllowedRecipientsRegistry contract
-    AllowedRecipientsRegistry public immutable allowedRecipientsRegistry;
+    AllowedRecipientsRegistry public allowedRecipientsRegistry;
 
     // -------------
     // CONSTRUCTOR

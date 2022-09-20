@@ -150,9 +150,6 @@ Current brownie version has problems with coverage reports for some contracts. C
 - [RemoveRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/RemoveRewardProgram.sol#L23)
 - [TopUpLegoProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpLegoProgram.sol#L26)
 - [TopUpRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpRewardPrograms.sol#L27)
-- [AddAllowedRecipient.sol](TBA)
-- [RemoveAllowedRecipient.sol](TBA)
-- [TopUpAllowedRecipients.sol](TBA)
-- [LimitsChecker.sol](TBA)
+- [TopUpAllowedRecipients.sol](https://github.com/lidofinance/easy-track/blob/522ae893f6c03516354a8d1950b29b3203adae52/contracts/EVMScriptFactories/TopUpAllowedRecipients.sol#L29)
 
 The workaround for the coverage problem is removing the `immutable` modifier from the above contracts. Without modifier above contracts will be listed in the coverage report
