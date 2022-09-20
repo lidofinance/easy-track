@@ -116,30 +116,41 @@ contract LimitsChecker is AccessControl {
         if (block.timestamp + _motionDuration >= currentPeriodEndTimestamp) {
             return _payoutAmount <= limit;
         } else {
-            return _payoutAmount <= _spendableBalance();
+            return _payoutAmount <= _spendableBalance(limit, spentAmount);
         }
     }
 
     /// @notice Checks if _payoutAmount may be spent and increases spentAmount on _payoutAmount.
     /// @notice Also updates the period boundaries if necessary.
     function updateSpentAmount(uint256 _payoutAmount) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
+        uint256 spentAmountLocal = spentAmount;
+        uint256 limitLocal = limit;
+        uint256 currentPeriodEndTimestampLocal = currentPeriodEndTimestamp;
+
         /// When it is necessary to shift the currentPeriodEndTimestamp it takes on a new value.
         /// And also spent is set to zero. Thus begins a new period.
-        if (block.timestamp >= currentPeriodEndTimestamp) {
-            currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
-            spentAmount = 0;
-            emit CurrentPeriodAdvanced(_getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1));
+        if (block.timestamp >= currentPeriodEndTimestampLocal) {
+            currentPeriodEndTimestampLocal = _getPeriodEndFromTimestamp(block.timestamp);
+            spentAmountLocal = 0;
+            emit CurrentPeriodAdvanced(
+                _getPeriodStartFromTimestamp(currentPeriodEndTimestampLocal - 1)
+            );
+            currentPeriodEndTimestamp = uint128(currentPeriodEndTimestampLocal);
         }
 
-        require(_payoutAmount <= _spendableBalance(), ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
-        spentAmount += uint128(_payoutAmount);
+        require(
+            _payoutAmount <= _spendableBalance(limitLocal, spentAmountLocal),
+            ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE
+        );
+        spentAmountLocal += _payoutAmount;
+        spentAmount = uint128(spentAmountLocal);
 
         (
             uint256 alreadySpentAmount,
             uint256 spendableBalanceInPeriod,
             uint256 periodStartTimestamp,
             uint256 periodEndTimestamp
-        ) = _getCurrentPeriodState();
+        ) = _getCurrentPeriodState(limitLocal, spentAmountLocal, currentPeriodEndTimestampLocal);
 
         emit SpendableAmountChanged(
             alreadySpentAmount,
@@ -154,7 +165,7 @@ contract LimitsChecker is AccessControl {
     /// @notice then the method will return spendable balance corresponding to the previous period.
     /// @return Balance that can be spent in the current period
     function spendableBalance() external view returns (uint256) {
-        return _spendableBalance();
+        return _spendableBalance(limit, spentAmount);
     }
 
     /// @notice Sets periodDurationMonths and limit
@@ -192,49 +203,57 @@ contract LimitsChecker is AccessControl {
     /// @notice start date of the current period and end date of the current period
     /// @notice If period advanced and the period was not shifted,
     /// @notice then the method will return spendable balance corresponding to the previous period.
-    /// @return alreadySpentAmount - amount already spent in the current period
-    /// @return spendableBalanceInPeriod - balance available for spending in the current period
-    /// @return periodStartTimestamp - start date of the current period
-    /// @return periodEndTimestamp - end date of the current period
+    /// @return _alreadySpentAmount - amount already spent in the current period
+    /// @return _spendableBalanceInPeriod - balance available for spending in the current period
+    /// @return _periodStartTimestamp - start date of the current period
+    /// @return _periodEndTimestamp - end date of the current period
     function getPeriodState()
         external
         view
         returns (
-            uint256 alreadySpentAmount,
-            uint256 spendableBalanceInPeriod,
-            uint256 periodStartTimestamp,
-            uint256 periodEndTimestamp
+            uint256 _alreadySpentAmount,
+            uint256 _spendableBalanceInPeriod,
+            uint256 _periodStartTimestamp,
+            uint256 _periodEndTimestamp
         )
     {
-        return _getCurrentPeriodState();
+        return _getCurrentPeriodState(limit, spentAmount, currentPeriodEndTimestamp);
     }
 
     // ------------------
     // PRIVATE METHODS
     // ------------------
-    function _getCurrentPeriodState()
+    function _getCurrentPeriodState(
+        uint256 _limit,
+        uint256 _spentAmount,
+        uint256 _currentPeriodEndTimestamp
+    )
         internal
         view
         returns (
-            uint256 alreadySpentAmount,
-            uint256 spendableBalanceInPeriod,
-            uint256 periodStartTimestamp,
-            uint256 periodEndTimestamp
+            uint256 _alreadySpentAmount,
+            uint256 _spendableBalanceInPeriod,
+            uint256 _periodStartTimestamp,
+            uint256 _periodEndTimestamp
         )
     {
         return (
-            spentAmount,
-            _spendableBalance(),
-            _getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1),
-            currentPeriodEndTimestamp
+            _spentAmount,
+            _spendableBalance(_limit, _spentAmount),
+            _getPeriodStartFromTimestamp(_currentPeriodEndTimestamp - 1),
+            _currentPeriodEndTimestamp
         );
     }
 
-    function _spendableBalance() internal view returns (uint256) {
-        return limit - spentAmount;
+    function _spendableBalance(uint256 _limit, uint256 _spentAmount)
+        internal
+        pure
+        returns (uint256)
+    {
+        return _limit - _spentAmount;
     }
 
-    function _validatePeriodDurationMonths(uint256 _periodDurationMonths) internal view {
+    function _validatePeriodDurationMonths(uint256 _periodDurationMonths) internal pure {
         require(
             _periodDurationMonths == 1 ||
                 _periodDurationMonths == 2 ||
@@ -252,7 +271,7 @@ contract LimitsChecker is AccessControl {
         // because the beginning of the current calendar period will necessarily be in the same year.
         uint256 periodStartYear = year;
         // Get the number of the start date month:
-        uint256 periodStartMonth = _getFirstMonthInPeriodFromMonth(month);
+        uint256 periodStartMonth = _getFirstMonthInPeriodFromMonth(month, periodDurationMonths);
         // The beginning of the period always matches the calendar date of the beginning of the month.
         uint256 periodStartDay = 1;
         return
@@ -263,18 +282,18 @@ contract LimitsChecker is AccessControl {
             );
     }
 
-    function _getFirstMonthInPeriodFromMonth(uint256 _month)
+    function _getFirstMonthInPeriodFromMonth(uint256 _month, uint256 _periodDurationMonths)
         internal
-        view
-        returns (uint256 firstMonthInPeriod)
+        pure
+        returns (uint256 _firstMonthInPeriod)
     {
-        require(periodDurationMonths != 0, ERROR_INVALID_PERIOD_DURATION);
+        require(_periodDurationMonths != 0, ERROR_INVALID_PERIOD_DURATION);
 
         // To get the number of the first month in the period:
         //   1. get the number of the period within the current year, starting from its beginning:
-        uint256 periodNumber = (_month - 1) / periodDurationMonths;
+        uint256 periodNumber = (_month - 1) / _periodDurationMonths;
         //   2. and then the number of the first month in this period:
-        firstMonthInPeriod = periodNumber * periodDurationMonths + 1;
+        _firstMonthInPeriod = periodNumber * _periodDurationMonths + 1;
         // The shift by - 1 and then by + 1 happens because the months in the calendar start from 1 and not from 0.
     }
 
