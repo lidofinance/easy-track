@@ -40,7 +40,7 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to add new allowed recipient address to allowedRecipientsRegistry
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress)
+    /// @param _evmScriptCallData Encoded tuple: (address recipientAddress)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -48,9 +48,9 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address _recipientAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address recipientAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
         require(
-            !allowedRecipientsRegistry.isRecipientAllowed(_recipientAddress),
+            !allowedRecipientsRegistry.isRecipientAllowed(recipientAddress),
             ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED
         );
 
@@ -63,8 +63,9 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress, string _title)
-    /// @return _rewardProgram Address of new recipient address
+    /// @param _evmScriptCallData Encoded tuple: (address recipientAddress, string title)
+    /// @return Address of recipient to add
+    /// @return Title of  the recipient
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

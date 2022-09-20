@@ -25,9 +25,9 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 /// currentPeriodEndTimestamp is calculated as a calendar date of the beginning of
 /// a next month, bi-months, quarter, half year, or year period.
 /// If, for example, periodDurationMonths = 3, then it is considered that the date changes once a quarter.
-/// And currentPeriodEndTimestamp can take values 1 Apr, 1 Jul, 1 Okt, 1 Jan.
+/// And currentPeriodEndTimestamp can take values 1 Apr, 1 Jul, 1 Oct, 1 Jan.
 /// If periodDurationMonths = 1, then shift of currentPeriodEndTimestamp occurs once a month
-/// and currentPeriodEndTimestamp can take values 1 Feb, 1 Mar, 1 Apr etc
+/// and currentPeriodEndTimestamp can take values 1 Feb, 1 Mar, 1 Apr, etc
 ///
 contract LimitsChecker is AccessControl {
     // -------------
@@ -40,7 +40,7 @@ contract LimitsChecker is AccessControl {
         uint256 indexed _periodStartTimestamp,
         uint256 _periodEndTimestamp
     );
-    event CurrentPeriodAdvanced(uint256 _currentPeriodEndTimestamp);
+    event CurrentPeriodAdvanced(uint256 indexed _periodStartTimestamp);
     // -------------
     // ERRORS
     // -------------
@@ -79,18 +79,18 @@ contract LimitsChecker is AccessControl {
     // ------------
     // CONSTRUCTOR
     // ------------
-    /// @param _setLimitParameterRoleHolders List of addresses which will
+    /// @param _setLimitParametersRoleHolders List of addresses which will
     ///     be granted with role SET_LIMIT_PARAMETERS_ROLE
     /// @param _updateSpentAmountRoleHolders List of addresses which will
     ///     be granted with role UPDATE_SPENT_AMOUNT_ROLE
     /// @param _bokkyPooBahsDateTimeContract Address of bokkyPooBahs DateTime Contract
     constructor(
-        address[] memory _setLimitParameterRoleHolders,
+        address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) {
-        for (uint256 i = 0; i < _setLimitParameterRoleHolders.length; i++) {
-            _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParameterRoleHolders[i]);
+        for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
+            _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
         }
         for (uint256 i = 0; i < _updateSpentAmountRoleHolders.length; i++) {
             _setupRole(UPDATE_SPENT_AMOUNT_ROLE, _updateSpentAmountRoleHolders[i]);
@@ -128,29 +128,29 @@ contract LimitsChecker is AccessControl {
         if (block.timestamp >= currentPeriodEndTimestamp) {
             currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
             spentAmount = 0;
-            emit CurrentPeriodAdvanced(currentPeriodEndTimestamp);
+            emit CurrentPeriodAdvanced(_getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1));
         }
 
         require(_payoutAmount <= _spendableBalance(), ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE);
         spentAmount += uint128(_payoutAmount);
 
         (
-            uint256 _alreadySpentAmount,
-            uint256 _spendableBalanceInPeriod,
-            uint256 _periodStartTimestamp,
-            uint256 _periodEndTimestamp
+            uint256 alreadySpentAmount,
+            uint256 spendableBalanceInPeriod,
+            uint256 periodStartTimestamp,
+            uint256 periodEndTimestamp
         ) = _getCurrentPeriodState();
 
         emit SpendableAmountChanged(
-            _alreadySpentAmount,
-            _spendableBalanceInPeriod,
-            _periodStartTimestamp,
-            _periodEndTimestamp
+            alreadySpentAmount,
+            spendableBalanceInPeriod,
+            periodStartTimestamp,
+            periodEndTimestamp
         );
     }
 
     /// @notice Returns balance that can be spent in the current period
-    /// @notice If period advanced and the period was not shifted,
+    /// @notice If period advanced and no call to updateSpentAmount or setLimitParameters made,
     /// @notice then the method will return spendable balance corresponding to the previous period.
     /// @return Balance that can be spent in the current period
     function spendableBalance() external view returns (uint256) {
@@ -158,11 +158,9 @@ contract LimitsChecker is AccessControl {
     }
 
     /// @notice Sets periodDurationMonths and limit
-    /// currentPeriodEndTimestamp will be calculated as a calendar date of the beginning of next month,
-    /// bi-months, quarter, half year, or year period.
+    /// @notice Calculates currentPeriodEndTimestamp as a calendar date of the beginning of next period.
     /// @param _limit Limit to set
-    /// @param _periodDurationMonths  Length of period in months to set.
-    /// Duration of the period must be one of the following: 1, 2, 3, 6 or 12 months.
+    /// @param _periodDurationMonths Length of period in months. Must be 1, 2, 3, 6 or 12.
     function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths)
         external
         onlyRole(SET_LIMIT_PARAMETERS_ROLE)
@@ -172,7 +170,7 @@ contract LimitsChecker is AccessControl {
         _validatePeriodDurationMonths(_periodDurationMonths);
         periodDurationMonths = uint64(_periodDurationMonths);
         currentPeriodEndTimestamp = uint128(_getPeriodEndFromTimestamp(block.timestamp));
-        emit CurrentPeriodAdvanced(currentPeriodEndTimestamp);
+        emit CurrentPeriodAdvanced(_getPeriodStartFromTimestamp(currentPeriodEndTimestamp - 1));
         limit = uint128(_limit);
 
         /// set spent to _limit if it's greater to avoid math underflow error
@@ -194,18 +192,18 @@ contract LimitsChecker is AccessControl {
     /// @notice start date of the current period and end date of the current period
     /// @notice If period advanced and the period was not shifted,
     /// @notice then the method will return spendable balance corresponding to the previous period.
-    /// @return _alreadySpentAmount - amount already spent in the current period
-    /// @return _spendableBalanceInPeriod - balance available for spending in the current period
-    /// @return _periodStartTimestamp - start date of the current period
-    /// @return _periodEndTimestamp - end date of the current period
+    /// @return alreadySpentAmount - amount already spent in the current period
+    /// @return spendableBalanceInPeriod - balance available for spending in the current period
+    /// @return periodStartTimestamp - start date of the current period
+    /// @return periodEndTimestamp - end date of the current period
     function getPeriodState()
         external
         view
         returns (
-            uint256 _alreadySpentAmount,
-            uint256 _spendableBalanceInPeriod,
-            uint256 _periodStartTimestamp,
-            uint256 _periodEndTimestamp
+            uint256 alreadySpentAmount,
+            uint256 spendableBalanceInPeriod,
+            uint256 periodStartTimestamp,
+            uint256 periodEndTimestamp
         )
     {
         return _getCurrentPeriodState();
@@ -218,10 +216,10 @@ contract LimitsChecker is AccessControl {
         internal
         view
         returns (
-            uint256 _alreadySpentAmount,
-            uint256 _spendableBalanceInPeriod,
-            uint256 _periodStartTimestamp,
-            uint256 _periodEndTimestamp
+            uint256 alreadySpentAmount,
+            uint256 spendableBalanceInPeriod,
+            uint256 periodStartTimestamp,
+            uint256 periodEndTimestamp
         )
     {
         return (
@@ -249,41 +247,39 @@ contract LimitsChecker is AccessControl {
 
     function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
         // Get year and number of month of the timestamp:
-        (uint256 _year, uint256 _month, ) = bokkyPooBahsDateTimeContract.timestampToDate(
-            _timestamp
-        );
+        (uint256 year, uint256 month, ) = bokkyPooBahsDateTimeContract.timestampToDate(_timestamp);
         // We assume that the year will remain the same,
         // because the beginning of the current calendar period will necessarily be in the same year.
-        uint256 _periodStartYear = _year;
+        uint256 periodStartYear = year;
         // Get the number of the start date month:
-        uint256 _periodStartMonth = _getFirstMonthInPeriodFromMonth(_month);
+        uint256 periodStartMonth = _getFirstMonthInPeriodFromMonth(month);
         // The beginning of the period always matches the calendar date of the beginning of the month.
-        uint256 _periodStartDay = 1;
+        uint256 periodStartDay = 1;
         return
             bokkyPooBahsDateTimeContract.timestampFromDate(
-                _periodStartYear,
-                _periodStartMonth,
-                _periodStartDay
+                periodStartYear,
+                periodStartMonth,
+                periodStartDay
             );
     }
 
     function _getFirstMonthInPeriodFromMonth(uint256 _month)
         internal
         view
-        returns (uint256 _firstMonthInPeriod)
+        returns (uint256 firstMonthInPeriod)
     {
         require(periodDurationMonths != 0, ERROR_INVALID_PERIOD_DURATION);
 
         // To get the number of the first month in the period:
         //   1. get the number of the period within the current year, starting from its beginning:
-        uint256 _periodNumber = (_month - 1) / periodDurationMonths;
+        uint256 periodNumber = (_month - 1) / periodDurationMonths;
         //   2. and then the number of the first month in this period:
-        _firstMonthInPeriod = _periodNumber * periodDurationMonths + 1;
+        firstMonthInPeriod = periodNumber * periodDurationMonths + 1;
         // The shift by - 1 and then by + 1 happens because the months in the calendar start from 1 and not from 0.
     }
 
     function _getPeriodEndFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
-        uint256 _periodStart = _getPeriodStartFromTimestamp(_timestamp);
-        return bokkyPooBahsDateTimeContract.addMonths(_periodStart, periodDurationMonths);
+        uint256 periodStart = _getPeriodStartFromTimestamp(_timestamp);
+        return bokkyPooBahsDateTimeContract.addMonths(periodStart, periodDurationMonths);
     }
 }

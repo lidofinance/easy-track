@@ -9,7 +9,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 /// @author psirex, zuzueeka
-/// @notice Creates EVMScript to remove allowed recipient address from allowedRecipientsRegistry
+/// @notice Creates EVMScript to remove allowed recipient address from AllowedRecipientsRegistry
 contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -39,7 +39,7 @@ contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to remove allowed recipient address from allowedRecipientsRegistry
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress)
+    /// @param _evmScriptCallData Encoded tuple: (address recipientAddress)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -62,12 +62,12 @@ contract RemoveAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address _recipientAddress)
-    /// @return _recipientAddress Address to remove
+    /// @param _evmScriptCallData Encoded tuple: (address recipientAddress)
+    /// @return recipientAddress Address to remove
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address _recipientAddress)
+        returns (address recipientAddress)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }

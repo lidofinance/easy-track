@@ -51,7 +51,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
     ///     granted with role ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE
     /// @param _removeRecipientFromAllowedListRoleHolders List of addresses which will
     ///     be granted with role REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE
-    /// @param _setLimitParameterRoleHolders List of addresses which will
+    /// @param _setLimitParametersRoleHolders List of addresses which will
     ///     be granted with role SET_LIMIT_PARAMETERS_ROLE
     /// @param _updateSpentAmountRoleHolders List of addresses which will
     ///     be granted with role UPDATE_SPENT_AMOUNT_ROLE
@@ -60,12 +60,12 @@ contract AllowedRecipientsRegistry is LimitsChecker {
         address _admin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParameterRoleHolders,
+        address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     )
         LimitsChecker(
-            _setLimitParameterRoleHolders,
+            _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
         )
@@ -126,7 +126,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
         emit RecipientRemoved(_recipient);
     }
 
-    /// @notice Returns if passed address are listed as allowed recipient in the registry
+    /// @notice Returns if passed address is listed as allowed recipient in the registry
     function isRecipientAllowed(address _address) external view returns (bool) {
         return allowedRecipientIndices[_address] > 0;
     }
