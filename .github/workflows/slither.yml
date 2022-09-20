@@ -34,12 +34,12 @@ jobs:
         id: results
         shell: bash
         run: >
-          test -f ./results.sarif && 
-          echo '::set-output name=value::true' || 
-          echo '::set-output name=value::false'
+          test -f results.sarif && 
+          echo '::set-output name=value::present' || 
+          echo '::set-output name=value::not'
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
-        if: ${{ steps.results.outputs.value == true }}
+        if: ${{ steps.results.outputs.value == 'present' }}
         with:
           sarif_file: results.sarif
