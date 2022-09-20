@@ -30,8 +30,8 @@ jobs:
           poetry run slither . --sarif results.sarif
 
       - name: Check results.sarif presence
-        if: always()
         id: results
+        if: always()
         shell: bash
         run: >
           test -f results.sarif && 
@@ -40,6 +40,6 @@ jobs:
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
-        if: ${{ steps.results.outputs.value == 'present' }}
+        if: ${{ always() && steps.results.outputs.value == 'present' }}
         with:
           sarif_file: results.sarif
