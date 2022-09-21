@@ -2,8 +2,8 @@
 
 ## Problem
 
-Lido DAO governance currently relies on Aragon voting model. This means DAO approves or rejects proposals via direct governance token voting. Though transparent and reliable, it is not a convenient way to make decisions only affecting small groups of Lido DAO members. Besides, direct token voting doesn't exactly reflect all the decision making processes within the Lido DAO and is often used only to rubberstamp an existing consensus.
-There are a few natural sub-governance groups within the DAO, e.g. validators commitee, financial operations team and LEGO commitee. Every day they need to take routine actions only related to their field of expertise. The decisions they make hardly ever spark any debate in the comunity, and votings on such decisions often struggle to attract wider DAO attention and thus, to pass.
+Lido DAO governance currently relies on Aragon voting model. This means DAO approves or rejects proposals via direct governance token voting. Though transparent and reliable, it is not a convenient way to make decisions only affecting small groups of Lido DAO members. Besides, direct token voting doesn't exactly reflect all the decision making processes within the Lido DAO and is often used only to rubber-stamp an existing consensus.
+There are a few natural sub-governance groups within the DAO, e.g. validators committee, financial operations team and LEGO committee. Every day they need to take routine actions only related to their field of expertise. The decisions they make hardly ever spark any debate in the community, and votings on such decisions often struggle to attract wider DAO attention and thus, to pass.
 
 ## Solution
 
@@ -23,7 +23,7 @@ See [specification.md](https://github.com/lidofinance/easy-track/blob/master/spe
 
 ## EVMScript Factory Requirements
 
-### Methods Compability
+### Methods Compatibility
 
 **Every EVMScript factory must implement [`IEVMScriptFactory`](https://github.com/lidofinance/easy-track/blob/master/contracts/interfaces/IEVMScriptFactory.sol) interface.**
 
@@ -33,7 +33,7 @@ Methods from this interface are used by EasyTrack at the motion lifecycle.
 
 **Every action done by EasyTrack must be allowed to do also by Aragon Voting.**
 
-This requirement fills automatically in cases when easy tracks do actions provided by the Aragon application. But for contracts outside the Aragon ecosystem access to Voting must be provided explicitly. To grant such access you can use role-based control access contracts from the OpenZeppelin package. To see an example of how this pattern was used in EVMScript factories see the `RewardPrgoramsRegistry.sol` contract.
+This requirement fills automatically in cases when easy tracks do actions provided by the Aragon application. But for contracts outside the Aragon ecosystem access to Voting must be provided explicitly. To grant such access you can use role-based control access contracts from the OpenZeppelin package. To see an example of how this pattern was used in EVMScript factories see the `RewardProgramsRegistry.sol` contract.
 
 ### Onchain EVMScript calldata decoding
 
@@ -60,10 +60,12 @@ To use the tools that this project provides, please pull the repository from Git
 ```bash
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
-npm install
+yarn install
 poetry install
+poetry run brownie networks import network-config.yaml True
 poetry shell
 ```
+
 
 Compile the Smart Contracts:
 
@@ -148,5 +150,6 @@ Current brownie version has problems with coverage reports for some contracts. C
 - [RemoveRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/RemoveRewardProgram.sol#L23)
 - [TopUpLegoProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpLegoProgram.sol#L26)
 - [TopUpRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpRewardPrograms.sol#L27)
+- [TopUpAllowedRecipients.sol](https://github.com/lidofinance/easy-track/blob/522ae893f6c03516354a8d1950b29b3203adae52/contracts/EVMScriptFactories/TopUpAllowedRecipients.sol#L29)
 
 The workaround for the coverage problem is removing the `immutable` modifier from the above contracts. Without modifier above contracts will be listed in the coverage report

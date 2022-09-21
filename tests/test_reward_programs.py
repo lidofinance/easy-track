@@ -11,9 +11,7 @@ from brownie import (
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
-from utils.config import (
-    network_name
-)
+from utils.config import get_network_name
 
 from utils.lido import create_voting, execute_voting
 
@@ -122,9 +120,6 @@ def test_reward_programs_easy_track(
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
     # create voting to grant permissions to EVM script executor to create new payments
-
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
-
     add_create_payments_permissions_voting_id, _ = create_voting(
         evm_script=encode_call_script(
             [
@@ -139,12 +134,12 @@ def test_reward_programs_easy_track(
             ]
         ),
         description="Grant permissions to EVMScriptExecutor to make payments",
-        network=netname,
+        network=get_network_name(),
         tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(add_create_payments_permissions_voting_id, netname)
+    execute_voting(add_create_payments_permissions_voting_id, get_network_name())
 
     add_reward_program_calldata = encode_calldata(
             "(address,string)", [
