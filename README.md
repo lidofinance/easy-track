@@ -55,7 +55,7 @@ Permissions for EVMScript factory must contain only methods used by generated EV
 
 ## Project Setup
 
-To use the tools that this project provides, please pull the repository from GitHub and install its dependencies as follows. It is recommended to use a Python virtual environment.
+To use the tools that this project provides, please pull the repository from GitHub and install its dependencies as follows.
 
 ```bash
 git clone https://github.com/lidofinance/easy-track
@@ -65,7 +65,6 @@ poetry install
 poetry run brownie networks import network-config.yaml True
 poetry shell
 ```
-
 
 Compile the Smart Contracts:
 

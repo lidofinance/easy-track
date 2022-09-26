@@ -9,9 +9,12 @@ packages = []
 
 [tool.poetry.dependencies]
 setuptools = "^63.0.0"
-python = ">=3.9.0,<3.10"
+python = ">=3.9,<3.11"
 eth-abi = "^2.1.1"
-eth-brownie = "^1.18.1"
+eth-brownie = "^1.19.1"
+
+[tool.poetry.group.dev.dependencies]
+slither-analyzer = "^0.8.3"
 
 [build-system]
 requires = ["poetry-core"]
