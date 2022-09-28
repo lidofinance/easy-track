@@ -27,7 +27,7 @@ jobs:
 
       - name: Run slither
         run: >
-          poetry run slither . --sarif results.sarif
+          poetry run slither . --sarif results.sarif || true
 
       - name: Check results.sarif presence
         id: results
