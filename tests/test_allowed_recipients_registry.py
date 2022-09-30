@@ -51,7 +51,7 @@ def set_limit_parameters(period_limit, period_duration, allowed_recipients_regis
     # execute voting to add permissions to EVM script executor to create payments
     execute_voting(set_limit_parameters_voting_id, get_network_name())
 
-    allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
+    assert allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
 
 
 def create_top_up_motion(recipients: List[str], amounts: List[int], easy_track, top_up_factory):
@@ -394,6 +394,21 @@ def test_limits_checker_period_range(
         ), f"incorrect range for period {period_duration}"
 
 
+def test_limits_checker_too_large_limit(
+    owner, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
+):
+    script_executor = easy_track.evmScriptExecutor()
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper, [owner], [script_executor], bokkyPooBahsDateTimeContract
+    )
+
+    period_limit, period_duration = 2 ** 128, 1
+
+    with reverts("TOO_LARGE_LIMIT"):
+        limits_checker.setLimitParameters(period_limit, period_duration, {"from": owner})
+
+
+
 def test_limits_checker_general(
     owner, lego_program, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract
 ):
@@ -418,13 +433,10 @@ def test_limits_checker_general(
     period_end = get_month_start_timestamp(get_date_in_next_period(datetime.now(), period_duration))
 
     tx = limits_checker.setLimitParameters(period_limit, period_duration, {"from": manager})
-    # TODO fix the assert
-    """assert_single_event(
-        tx,
-        "LimitsParametersChanged",
-        {"_limit": period_limit, "_periodDurationMonths": period_duration},
-    )
-    """
+    assert_event_exists(tx, "CurrentPeriodAdvanced", {"_periodStartTimestamp": period_start})
+    assert_event_exists(tx, "LimitsParametersChanged", {"_limit": period_limit, "_periodDurationMonths": period_duration})
+    assert len(tx.events) == 2, f"must exist two events"
+
     assert limits_checker.getLimitParameters() == (period_limit, period_duration)
     assert limits_checker.isUnderSpendableBalance(period_limit, 0)
 
