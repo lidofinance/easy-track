@@ -123,7 +123,7 @@ def test_create_motion(
     assert new_motion[2] == owner  # creator
     assert new_motion[3] == constants.MIN_MOTION_DURATION  # duration
     assert new_motion[4] == chain[-1].timestamp  # startDate
-    assert new_motion[5] == chain[-1].number  # snapshotBlock
+    assert new_motion[5] == chain[-1].number - 1  # snapshotBlock
     assert (
         new_motion[6] == constants.DEFAULT_OBJECTIONS_THRESHOLD
     )  # objectionsThreshold
@@ -786,3 +786,62 @@ def test_can_object_to_motion(
     assert easy_track.canObjectToMotion(1, ldo_holders[0])
     easy_track.objectToMotion(1, {"from": ldo_holders[0]})
     assert not easy_track.canObjectToMotion(1, ldo_holders[0])
+
+
+def test_snapshot_block(
+    owner,
+    voting,
+    stranger,
+    ldo_holders,
+    ldo,
+    easy_track,
+    evm_script_factory_stub,
+    distribute_holder_balance,
+    motion_starter,
+):
+    "Must return False if caller had no governance tokens one block before the motion start."
+    "Returns True in other cases"
+
+    # add evm script factory to create motions§
+    permissions = (
+        evm_script_factory_stub.address
+        + evm_script_factory_stub.setEVMScript.signature[2:]
+    )
+    easy_track.addEVMScriptFactory(
+        evm_script_factory_stub, permissions, {"from": voting}
+    )
+    evm_script = encode_call_script(
+        [
+            (
+                evm_script_factory_stub.address,
+                evm_script_factory_stub.setEVMScript.encode_input(b""),
+            )
+        ]
+    )
+    evm_script_factory_stub.setEVMScript(evm_script)
+
+    assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
+
+    ldo.transfer(
+        motion_starter, ldo.balanceOf(ldo_holders[0]), {"from": ldo_holders[0]}
+    )
+
+    chain = Chain()
+    chain.mine(1)
+
+    assert ldo.balanceOf(stranger) == 0
+    assert ldo.balanceOf(motion_starter) > 0
+
+    motion_starter.startMotionTransferringLDO(
+        evm_script_factory_stub, b"", stranger, {"from": owner}
+    )
+
+    chain.mine(1)
+
+    assert ldo.balanceOf(stranger) > 0
+    assert ldo.balanceOf(motion_starter) == 0
+
+    assert not easy_track.canObjectToMotion(1, stranger)
+    assert easy_track.canObjectToMotion(1, motion_starter)
+    easy_track.objectToMotion(1, {"from": motion_starter})
+    assert not easy_track.canObjectToMotion(1, motion_starter)
