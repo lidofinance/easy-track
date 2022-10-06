@@ -134,10 +134,6 @@ def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProg
         [voting, evm_script_executor_stub],
     )
 
-@pytest.fixture(scope="module")
-def limits_checker_wrapper(owner, LimitsCheckerWrapper, easy_track, bokkyPooBahsDateTimeContract):
-    return owner.deploy(LimitsCheckerWrapper, easy_track, [owner], bokkyPooBahsDateTimeContract)
-
 
 ############
 # EVM SCRIPT FACTORIES
@@ -207,6 +203,34 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 
 @pytest.fixture(scope="module")
+def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):
+    set_limits_role_holder = accounts[8]
+    update_spent_amount_role_holder = accounts[9]
+    limits_checker = owner.deploy(
+        LimitsChecker,
+        [set_limits_role_holder],
+        [update_spent_amount_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+    return (limits_checker, set_limits_role_holder, update_spent_amount_role_holder)
+
+
+@pytest.fixture(scope="module")
+def limits_checker_with_private_method_exposed(
+    owner, accounts, LimitsCheckerWrapper, bokkyPooBahsDateTimeContract
+):
+    set_limits_role_holder = accounts[8]
+    update_spent_amount_role_holder = accounts[9]
+    limits_checker = owner.deploy(
+        LimitsCheckerWrapper,
+        [set_limits_role_holder],
+        [update_spent_amount_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+    return (limits_checker, set_limits_role_holder, update_spent_amount_role_holder)
+
+
+@pytest.fixture(scope="module")
 def entire_allowed_recipients_setup(
     accounts,
     owner,
@@ -259,15 +283,18 @@ def entire_allowed_recipients_setup(
 
     # deploy TopUpAllowedRecipients EVM script factory
     top_up_allowed_recipients = deployer.deploy(
-        TopUpAllowedRecipients, trusted_factories_caller, allowed_recipients_registry, finance, ldo, easy_track
+        TopUpAllowedRecipients,
+        trusted_factories_caller,
+        allowed_recipients_registry,
+        finance,
+        ldo,
+        easy_track,
     )
 
     # add TopUpAllowedRecipients EVM script factory to easy track
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
-    update_limit_permission = create_permission(
-        allowed_recipients_registry, "updateSpentAmount"
-    )
+    update_limit_permission = create_permission(allowed_recipients_registry, "updateSpentAmount")
 
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
@@ -336,9 +363,7 @@ def entire_allowed_recipients_setup(
 
 @pytest.fixture(scope="module")
 def entire_allowed_recipients_setup_with_two_recipients(
-    entire_allowed_recipients_setup,
-    accounts,
-    stranger
+    entire_allowed_recipients_setup, accounts, stranger
 ):
     (
         easy_track,
@@ -364,7 +389,7 @@ def entire_allowed_recipients_setup_with_two_recipients(
     tx = easy_track.createMotion(
         add_allowed_recipient,
         encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
-        {"from": add_allowed_recipient.trustedCaller()}
+        {"from": add_allowed_recipient.trustedCaller()},
     )
     motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
 
