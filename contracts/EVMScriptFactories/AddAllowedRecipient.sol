@@ -14,6 +14,9 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
+
+    string private constant ERROR_RECIPIENT_ADDRESS_IS_ZERO_ADDRESS =
+        "RECIPIENT_ADDRESS_IS_ZERO_ADDRESS";
     string private constant ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED =
         "ALLOWED_RECIPIENT_ALREADY_ADDED";
 
@@ -49,6 +52,7 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (address recipientAddress, ) = _decodeEVMScriptCallData(_evmScriptCallData);
+        require(recipientAddress != address(0), ERROR_RECIPIENT_ADDRESS_IS_ZERO_ADDRESS);
         require(
             !allowedRecipientsRegistry.isRecipientAllowed(recipientAddress),
             ERROR_ALLOWED_RECIPIENT_ALREADY_ADDED
