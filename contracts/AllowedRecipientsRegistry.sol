@@ -127,7 +127,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
     }
 
     /// @notice Returns if passed address is listed as allowed recipient in the registry
-    function isRecipientAllowed(address _address) external view returns (bool) {
+    function isRecipientAllowed(address _recipient) external view returns (bool) {
         return allowedRecipientIndices[_address] > 0;
     }
 
@@ -140,12 +140,8 @@ contract AllowedRecipientsRegistry is LimitsChecker {
     // PRIVATE METHODS
     // ------------------
 
-    function _getAllowedRecipientIndex(address _evmScriptFactory)
-        private
-        view
-        returns (uint256 _index)
-    {
-        _index = allowedRecipientIndices[_evmScriptFactory];
+    function _getAllowedRecipientIndex(address _recipient) private view returns (uint256 _index) {
+        _index = allowedRecipientIndices[_recipient];
         require(_index > 0, ERROR_RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST);
         _index -= 1;
     }
