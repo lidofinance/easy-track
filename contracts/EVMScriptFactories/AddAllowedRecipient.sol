@@ -43,7 +43,7 @@ contract AddAllowedRecipient is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to add new allowed recipient address to allowedRecipientsRegistry
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address recipientAddress)
+    /// @param _evmScriptCallData Encoded tuple: (address recipientAddress, string memory title)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
