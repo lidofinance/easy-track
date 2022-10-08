@@ -128,7 +128,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
 
     /// @notice Returns if passed address is listed as allowed recipient in the registry
     function isRecipientAllowed(address _recipient) external view returns (bool) {
-        return allowedRecipientIndices[_address] > 0;
+        return allowedRecipientIndices[_recipient] > 0;
     }
 
     /// @notice Returns current list of allowed recipients
