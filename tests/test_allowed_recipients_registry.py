@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 
 from brownie.network import chain
-from brownie import accounts, reverts
+from brownie import accounts, reverts, ZERO_ADDRESS
 
 
 from utils.evm_script import encode_call_script
@@ -27,29 +27,89 @@ from utils.lido import create_voting, execute_voting
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
 
-def test_limits_checker_initial_contract_state(
-    owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract
+def test_registry_initial_state(
+    AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract
 ):
+    add_recipient_role_holder = accounts[6]
+    remove_recipient_role_holder = accounts[7]
     set_limits_role_holder = accounts[8]
-    update_spent_amount_role_holder = accounts[9]
-    limits_checker = owner.deploy(
-        LimitsChecker,
+    update_spent_role_holder = accounts[9]
+
+    registry = owner.deploy(
+        AllowedRecipientsRegistry,
+        owner,
+        [add_recipient_role_holder],
+        [remove_recipient_role_holder],
         [set_limits_role_holder],
-        [update_spent_amount_role_holder],
+        [update_spent_role_holder],
         bokkyPooBahsDateTimeContract,
     )
 
-    assert limits_checker.hasRole(SET_LIMIT_PARAMETERS_ROLE, set_limits_role_holder)
-    assert limits_checker.hasRole(UPDATE_SPENT_AMOUNT_ROLE, update_spent_amount_role_holder)
-    assert not limits_checker.hasRole(limits_checker.DEFAULT_ADMIN_ROLE(), set_limits_role_holder)
-    assert not limits_checker.hasRole(
-        limits_checker.DEFAULT_ADMIN_ROLE(), update_spent_amount_role_holder
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, add_recipient_role_holder)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, remove_recipient_role_holder)
+    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, set_limits_role_holder)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, update_spent_role_holder)
+    assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), owner)
+
+    for role_holder in [
+        add_recipient_role_holder,
+        remove_recipient_role_holder,
+        set_limits_role_holder,
+        update_spent_role_holder,
+    ]:
+        assert not registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), role_holder)
+
+    assert registry.spendableBalance() == 0
+    assert registry.getLimitParameters() == (0, 0)
+    with reverts():
+        registry.getPeriodState()
+
+    assert len(registry.getAllowedRecipients()) == 0
+
+
+def test_registry_zero_admin_allowed(
+    AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract
+):
+    """Checking no revert"""
+    owner.deploy(
+        AllowedRecipientsRegistry,
+        ZERO_ADDRESS,
+        [owner],
+        [owner],
+        [owner],
+        [owner],
+        bokkyPooBahsDateTimeContract,
     )
 
-    assert limits_checker.spendableBalance() == 0
-    assert limits_checker.getLimitParameters() == (0, 0)
-    with reverts():
-        limits_checker.getPeriodState()
+
+def test_registry_none_role_holders_allowed(
+    AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract
+):
+    """Checking no revert"""
+    owner.deploy(
+        AllowedRecipientsRegistry,
+        owner,
+        [],
+        [],
+        [],
+        [],
+        bokkyPooBahsDateTimeContract,
+    )
+
+
+def test_registry_zero_booky_poo_bahs_data_time_address_allowed(
+    AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract
+):
+    """Checking no revert"""
+    owner.deploy(
+        AllowedRecipientsRegistry,
+        owner,
+        [owner],
+        [owner],
+        [owner],
+        [owner],
+        ZERO_ADDRESS,
+    )
 
 
 def test_set_limit_parameters_happy_path(limits_checker, period_duration):
