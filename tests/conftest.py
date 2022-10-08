@@ -231,6 +231,55 @@ def limits_checker_with_private_method_exposed(
 
 
 @pytest.fixture(scope="module")
+def allowed_recipients_registry(
+    AllowedRecipientsRegistry, bokkyPooBahsDateTimeContract, owner, accounts
+):
+    add_recipient_role_holder = accounts[6]
+    remove_recipient_role_holder = accounts[7]
+    set_limit_role_holder = accounts[8]
+    update_spent_role_holder = accounts[9]
+
+    registry = owner.deploy(
+        AllowedRecipientsRegistry,
+        owner,
+        [add_recipient_role_holder],
+        [remove_recipient_role_holder],
+        [set_limit_role_holder],
+        [update_spent_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+
+    return (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        remove_recipient_role_holder,
+        set_limit_role_holder,
+        update_spent_role_holder,
+    )
+
+
+@pytest.fixture(scope="module")
+def top_up_allowed_recipients(
+    allowed_recipients_registry,
+    accounts,
+    finance,
+    ldo,
+    easy_track,
+    TopUpAllowedRecipients,
+):
+    (registry, owner, _, _, _, _) = allowed_recipients_registry
+
+    trusted_caller = accounts[4]
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+    )
+
+    return top_up_factory
+
+
+@pytest.fixture(scope="module")
 def entire_allowed_recipients_setup(
     accounts,
     owner,
