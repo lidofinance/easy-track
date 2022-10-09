@@ -5,7 +5,11 @@ from eth_abi import encode_single
 from utils.evm_script import encode_calldata
 
 
-from utils.allowed_recipients_motions import *
+from utils.allowed_recipients_motions import (
+    add_recipient_by_motion,
+    remove_recipient_by_motion,
+    create_top_up_motion,
+)
 
 from utils.test_helpers import (
     assert_event_exists,
@@ -24,7 +28,7 @@ def test_add_recipient_motion(entire_allowed_recipients_setup, accounts):
         allowed_recipients_registry,
         _,  # top_up_factory,
         add_recipient_factory,
-        remove_recipient_factory,
+        _,  # remove_recipient_factory,
     ) = entire_allowed_recipients_setup
 
     recipient = accounts[8]
@@ -56,6 +60,49 @@ def test_add_recipient_motion(entire_allowed_recipients_setup, accounts):
     )
     assert allowed_recipients_registry.isRecipientAllowed(recipient)
     assert len(allowed_recipients_registry.getAllowedRecipients()) == 1
+
+
+def test_add_multiple_recipients_by_concurrent_motions(entire_allowed_recipients_setup, accounts):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        _,  # top_up_factory,
+        add_recipient_factory,
+        _,
+    ) = entire_allowed_recipients_setup
+
+    recipient1 = accounts[8].address
+    recipient1_title = "New Allowed Recipient #1"
+    recipient2 = accounts[9].address
+    recipient2_title = "New Allowed Recipient #2"
+
+    tx = easy_track.createMotion(
+        add_recipient_factory,
+        encode_calldata("(address,string)", [recipient1, recipient1_title]),
+        {"from": add_recipient_factory.trustedCaller()},
+    )
+    motion1_id = tx.events["MotionCreated"]["_motionId"]
+    motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    tx = easy_track.createMotion(
+        add_recipient_factory,
+        encode_calldata("(address,string)", [recipient2, recipient2_title]),
+        {"from": add_recipient_factory.trustedCaller()},
+    )
+    motion2_id = tx.events["MotionCreated"]["_motionId"]
+    motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    # Enact in reverse order just to check that order in the registry
+    # depends on the order of motions enactment but order of creation
+    easy_track.enactMotion(motion2_id, motion2_calldata, {"from": easy_track})
+    easy_track.enactMotion(motion1_id, motion1_calldata, {"from": easy_track})
+
+    assert allowed_recipients_registry.isRecipientAllowed(recipient1)
+    assert allowed_recipients_registry.isRecipientAllowed(recipient2)
+    assert allowed_recipients_registry.getAllowedRecipients() == [recipient2, recipient1]
 
 
 def test_fail_if_add_same_recipient_twice(entire_allowed_recipients_setup, accounts):
@@ -128,7 +175,9 @@ def test_remove_recipient_motion(entire_allowed_recipients_setup, accounts):
     assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
 
 
-def test_fail_if_remove_not_allowed_recipient(entire_allowed_recipients_setup, accounts):
+def test_fail_remove_recipient_if_empty_allowed_recipients_list(
+    entire_allowed_recipients_setup, accounts
+):
     (
         easy_track,
         _,  # evm_script_executor,
@@ -139,11 +188,34 @@ def test_fail_if_remove_not_allowed_recipient(entire_allowed_recipients_setup, a
     ) = entire_allowed_recipients_setup
 
     recipient = accounts[8]
-    assert not allowed_recipients_registry.isRecipientAllowed(recipient)
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
 
     with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
         remove_recipient_by_motion(
             recipient, easy_track, remove_recipient_factory, allowed_recipients_registry
+        )
+
+
+def test_fail_remove_recipient_if_it_is_not_allowed(
+    entire_allowed_recipients_setup, accounts, stranger
+):
+    (
+        easy_track,
+        _,  # evm_script_executor,
+        allowed_recipients_registry,
+        _,  # top_up_factory,
+        add_recipient_factory,
+        remove_recipient_factory,
+    ) = entire_allowed_recipients_setup
+
+    add_recipient_by_motion(accounts[8], "Allowed Recipient", easy_track, add_recipient_factory)
+
+    assert len(allowed_recipients_registry.getAllowedRecipients()) > 0
+    assert not allowed_recipients_registry.isRecipientAllowed(stranger)
+
+    with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
+        remove_recipient_by_motion(
+            stranger, easy_track, remove_recipient_factory, allowed_recipients_registry
         )
 
 

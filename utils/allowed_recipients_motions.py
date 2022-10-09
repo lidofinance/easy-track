@@ -91,10 +91,7 @@ def set_limit_parameters_by_aragon_voting(
 
 
 def create_top_up_motion(recipients: List[str], amounts: List[int], easy_track, top_up_factory):
-    script_call_data = encode_single(
-        "(address[],uint256[])",
-        [recipients, amounts],
-    )
+    script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
     tx = easy_track.createMotion(
         top_up_factory,
         script_call_data,
