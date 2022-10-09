@@ -9,6 +9,8 @@ from utils.allowed_recipients_motions import (
     add_recipient_by_motion,
     remove_recipient_by_motion,
     create_top_up_motion,
+    set_limit_parameters_by_aragon_voting,
+    do_payout_to_allowed_recipients_by_motion,
 )
 
 from utils.test_helpers import (
@@ -118,18 +120,10 @@ def test_fail_if_add_same_recipient_twice(entire_allowed_recipients_setup, accou
     recipient = accounts[8]
     recipient_title = "New Allowed Recipient"
 
-    add_recipient_by_motion(
-        recipient, recipient_title, easy_track, add_recipient_factory, allowed_recipients_registry
-    )
+    add_recipient_by_motion(recipient, recipient_title, easy_track, add_recipient_factory)
 
     with reverts("ALLOWED_RECIPIENT_ALREADY_ADDED"):
-        add_recipient_by_motion(
-            recipient,
-            recipient_title,
-            easy_track,
-            add_recipient_factory,
-            allowed_recipients_registry,
-        )
+        add_recipient_by_motion(recipient, recipient_title, easy_track, add_recipient_factory)
 
 
 def test_remove_recipient_motion(entire_allowed_recipients_setup, accounts):
