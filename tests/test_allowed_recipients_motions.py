@@ -214,6 +214,86 @@ def test_fail_if_second_top_up_in_the_period_exceeds_limit(
         )
 
 
+def test_top_up_single_recipient_happy_path(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+):
+    setup = entire_allowed_recipients_setup_with_two_recipients
+    recipients = [setup.recipient1.address]
+    amounts = [2 * 10**18]
+
+    period_limit = 3 * 10**18
+    period_duration = 1
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
+
+    script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
+    tx = setup.easy_track.createMotion(
+        setup.top_up_factory,
+        script_call_data,
+        {"from": setup.top_up_factory.trustedCaller()},
+    )
+    motion_id = tx.events["MotionCreated"]["_motionId"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    tx = setup.easy_track.enactMotion(
+        motion_id,
+        script_call_data,
+        {"from": setup.recipient1},
+    )
+
+    spending = sum(amounts)
+    spendable = period_limit - spending
+    assert setup.registry.isUnderSpendableBalance(spendable, 0)
+    assert setup.registry.isUnderSpendableBalance(
+        period_limit, period_duration * MAX_SECONDS_IN_MONTH
+    )
+    assert "SpendableAmountChanged" in tx.events
+    assert tx.events["SpendableAmountChanged"]["_alreadySpentAmount"] == spending
+    assert tx.events["SpendableAmountChanged"]["_spendableBalance"] == spendable
+
+
+def test_top_up_multiple_recipients_happy_path(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+):
+    setup = entire_allowed_recipients_setup_with_two_recipients
+    recipients = [setup.recipient1.address, setup.recipient2.address]
+    amounts = [2 * 10**18, 1 * 10**18]
+
+    period_limit = 4 * 10**18
+    period_duration = 1
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
+
+    script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
+    tx = setup.easy_track.createMotion(
+        setup.top_up_factory,
+        script_call_data,
+        {"from": setup.top_up_factory.trustedCaller()},
+    )
+    motion_id = tx.events["MotionCreated"]["_motionId"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    tx = setup.easy_track.enactMotion(
+        motion_id,
+        script_call_data,
+        {"from": setup.recipient1},
+    )
+
+    spending = sum(amounts)
+    spendable = period_limit - spending
+    assert setup.registry.isUnderSpendableBalance(spendable, 0)
+    assert setup.registry.isUnderSpendableBalance(
+        period_limit, period_duration * MAX_SECONDS_IN_MONTH
+    )
+    assert "SpendableAmountChanged" in tx.events
+    assert tx.events["SpendableAmountChanged"]["_alreadySpentAmount"] == spending
+    assert tx.events["SpendableAmountChanged"]["_spendableBalance"] == spendable
+
+
 def test_limit_is_renewed_in_next_period(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
     agent,
