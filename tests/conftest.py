@@ -1,5 +1,5 @@
 import os
-from typing import Optional
+from typing import Optional, NamedTuple, Any
 
 import pytest
 import brownie
@@ -18,6 +18,26 @@ brownie.web3.enable_strict_bytes_type_checking()
 ####################################
 
 # autouse, so enabled by default for all test modules in this directory
+
+
+class AllowedRecipientsSetup(NamedTuple):
+    easy_track: Any
+    evm_script_executor: Any
+    registry: Any
+    top_up_factory: Any
+    add_recipient_factory: Any
+    remove_recipient_factory: Any
+
+
+class AllowedRecipientsSetupWithTwoRecipients(NamedTuple):
+    easy_track: Any
+    evm_script_executor: Any
+    registry: Any
+    top_up_factory: Any
+    add_recipient_factory: Any
+    remove_recipient_factory: Any
+    recipient1: Any
+    recipient2: Any
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -400,7 +420,7 @@ def entire_allowed_recipients_setup(
     # execute voting to add permissions to EVM script executor to create payments
     execute_voting(add_create_payments_permissions_voting_id, network_name)
 
-    return (
+    return AllowedRecipientsSetup(
         easy_track,
         evm_script_executor,
         allowed_recipients_registry,
@@ -456,7 +476,7 @@ def entire_allowed_recipients_setup_with_two_recipients(
     )
     assert allowed_recipients_registry.getAllowedRecipients() == [recipient1, recipient2]
 
-    return (
+    return AllowedRecipientsSetupWithTwoRecipients(
         easy_track,
         evm_script_executor,
         allowed_recipients_registry,
