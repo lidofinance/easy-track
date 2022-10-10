@@ -187,6 +187,18 @@ def top_up_lego_program(owner, finance, lego_program, TopUpLegoProgram):
     return owner.deploy(TopUpLegoProgram, owner, finance, lego_program)
 
 
+@pytest.fixture(scope="module")
+def add_allowed_recipients(owner, allowed_recipients_registry, AddAllowedRecipient):
+    (registry, _, _, _, _, _) = allowed_recipients_registry
+    return owner.deploy(AddAllowedRecipient, owner, registry)
+
+
+@pytest.fixture(scope="module")
+def remove_allowed_recipients(owner, allowed_recipients_registry, RemoveAllowedRecipient):
+    (registry, _, _, _, _, _) = allowed_recipients_registry
+    return owner.deploy(RemoveAllowedRecipient, owner, registry)
+
+
 ############
 # MOCKS AND TEST WRAPPERS
 ############
