@@ -120,7 +120,7 @@ contract LimitsChecker is AccessControl {
         }
     }
 
-    /// @notice Checks if _payoutAmount may be spent and increases spentAmount on _payoutAmount.
+    /// @notice Checks if _payoutAmount may be spent and increases spentAmount by _payoutAmount.
     /// @notice Also updates the period boundaries if necessary.
     function updateSpentAmount(uint256 _payoutAmount) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
         uint256 spentAmountLocal = spentAmount;

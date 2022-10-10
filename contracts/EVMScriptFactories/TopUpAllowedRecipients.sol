@@ -97,7 +97,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
                 token,
                 recipients[i],
                 amounts[i],
-                "Top up allowed recipients"
+                "Easy Track: top up recipient"
             );
         }
 
