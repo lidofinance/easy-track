@@ -1,5 +1,6 @@
 from brownie.network import chain
 from typing import List
+from datetime import datetime
 
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script, encode_calldata
@@ -113,3 +114,21 @@ def do_payout_to_allowed_recipients_by_motion(recipients, amounts, easy_track, t
         script_call_data,
         {"from": recipients[0]},
     )
+
+
+def advance_time_to_beginning_of_the_next_period(limits_checker):
+    """Helps to avoid the situation when the tests run at the end of current period
+    and the period advanced unexpectedly while the test was run and/or chain time
+    advanced till the motion is ended.
+    Advances to the first or the second day of the month roughly, just to avoid
+    dealing with timezones"""
+    SECONDS_IN_A_DAY = 24 * 60 * 60
+
+    assert (
+        limits_checker.getLimitParameters()[1] != 0
+    ), "LimitsChecker must be initialized with some period"
+
+    period_end_timestamp = limits_checker.getPeriodState()[3]
+    now_timestamp = round(datetime.now().timestamp())
+
+    chain.sleep(period_end_timestamp + SECONDS_IN_A_DAY - now_timestamp)

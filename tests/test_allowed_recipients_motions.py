@@ -14,6 +14,7 @@ from utils.allowed_recipients_motions import (
     remove_recipient_by_motion,
     create_top_up_motion,
     do_payout_to_allowed_recipients_by_motion,
+    advance_time_to_beginning_of_the_next_period,
 )
 
 from utils.test_helpers import (
@@ -205,6 +206,7 @@ def test_top_up_single_recipient(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
 
     script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
     tx = setup.easy_track.createMotion(
@@ -245,6 +247,7 @@ def test_top_up_multiple_recipients(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
 
     script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
     tx = setup.easy_track.createMotion(
@@ -282,6 +285,7 @@ def test_spendable_balance_is_renewed_in_next_period(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
 
     assert setup.registry.spendableBalance() == period_limit
 
@@ -316,6 +320,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(
@@ -333,6 +338,7 @@ def test_fail_2nd_top_up_motion_enactment_if_spendable_amount_became_not_enough(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
 
     payout1 = [int(40e18), int(30e18)]
     payout2 = [int(30e18), int(20e18)]
@@ -362,6 +368,7 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
     payout1 = [int(3e18), int(90e18)]
     payout2 = [int(5e18), int(4e18)]
     assert sum(payout1 + payout2) > period_limit
@@ -385,6 +392,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    advance_time_to_beginning_of_the_next_period(setup.registry)
 
     motion_id, motion_calldata = create_top_up_motion(
         [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
