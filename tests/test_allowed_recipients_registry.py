@@ -25,6 +25,7 @@ from utils.lido import create_voting, execute_voting
 
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
+RECIPIENT_TITLE = "New Allowed Recipient"
 
 
 def test_registry_initial_state(
@@ -393,65 +394,104 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
         limits_checker.updateSpentAmount(123, {"from": update_spent_amount_role_holder})
 
 
-def test_add_remove_recipients_directly_via_registry(
-    AllowedRecipientsRegistry, owner, voting, accounts, bokkyPooBahsDateTimeContract
-):
-    # TODO: separate the test in two
-    deployer = owner
-    manager = accounts[7]
-    registry = deployer.deploy(
-        AllowedRecipientsRegistry,
-        voting,
-        [manager],
-        [manager],
-        [manager],
-        [manager],
-        bokkyPooBahsDateTimeContract,
-    )
+def test_add_recipient(allowed_recipients_registry):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
     recipient = accounts[8].address
-    recipient_title = "New Allowed Recipient"
 
-    with reverts(access_revert_message(deployer, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
-        registry.addRecipient(recipient, recipient_title, {"from": deployer})
+    registry.addRecipient(recipient, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
 
-    registry.addRecipient(recipient, recipient_title, {"from": manager})
-    assert registry.getAllowedRecipients() == [recipient]
+    assert registry.isRecipientAllowed(recipient)
 
+
+def test_add_recipient_with_empty_title(allowed_recipients_registry):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    recipient = accounts[8].address
+
+    registry.addRecipient(recipient, "", {"from": add_recipient_role_holder})
+
+    assert registry.isRecipientAllowed(recipient)
+
+
+def test_add_recipient_with_zero_address(allowed_recipients_registry):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+
+    registry.addRecipient(ZERO_ADDRESS, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+
+    assert registry.isRecipientAllowed(ZERO_ADDRESS)
+
+
+def test_add_multiple_recipients(allowed_recipients_registry):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    recipient1 = accounts[8].address
+    recipient2 = accounts[9].address
+
+    registry.addRecipient(recipient1, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+    registry.addRecipient(recipient2, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+
+    assert registry.isRecipientAllowed(recipient1)
+    assert registry.isRecipientAllowed(recipient2)
+
+
+def test_fail_if_add_the_same_recipient(allowed_recipients_registry):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    recipient = accounts[8].address
+
+    registry.addRecipient(recipient, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+
+    assert registry.isRecipientAllowed(recipient)
     with reverts("RECIPIENT_ALREADY_ADDED_TO_ALLOWED_LIST"):
-        registry.addRecipient(recipient, recipient_title, {"from": manager})
+        registry.addRecipient(recipient, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
 
-    with reverts(access_revert_message(deployer, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
-        registry.removeRecipient(recipient, {"from": deployer})
 
-    registry.removeRecipient(recipient, {"from": manager})
-    assert registry.getAllowedRecipients() == []
+def test_remove_recipient(allowed_recipients_registry):
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        remove_recipient_role_holder,
+        _,
+        _,
+    ) = allowed_recipients_registry
+    recipient = accounts[8].address
+
+    registry.addRecipient(recipient, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+
+    assert registry.isRecipientAllowed(recipient)
+
+    registry.removeRecipient(recipient, {"from": remove_recipient_role_holder})
+
+    assert False == registry.isRecipientAllowed(recipient)
+
+
+def test_fail_if_remove_recipient_from_empty_allowed_list(allowed_recipients_registry):
+    (registry, _, _, remove_recipient_role_holder, _, _) = allowed_recipients_registry
+    recipient = accounts[8].address
+
+    assert 0 == len(registry.getAllowedRecipients())
+    assert False == registry.isRecipientAllowed(recipient)
 
     with reverts("RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST"):
-        registry.removeRecipient(recipient, {"from": manager})
+        registry.removeRecipient(recipient, {"from": remove_recipient_role_holder})
 
 
-def test_add_recipient():
-    pass  # assert False, "TODO"
+def test_fail_if_remove_not_allowed_recipient(allowed_recipients_registry):
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        remove_recipient_role_holder,
+        _,
+        _,
+    ) = allowed_recipients_registry
+    recipient1 = accounts[8].address
+    recipient2 = accounts[9].address
 
+    registry.addRecipient(recipient1, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
 
-def test_add_multiple_recipients():
-    pass  # assert False, "TODO"
+    assert registry.isRecipientAllowed(recipient1)
 
-
-def test_fail_if_add_the_same_recipient():
-    pass  # assert False, "TODO"
-
-
-def test_remove_recipient():
-    pass  # assert False, "TODO"
-
-
-def test_fail_if_remove_recipient_from_empty_allowed_list():
-    pass  # assert False, "TODO"
-
-
-def test_fail_if_remove_not_allowed_recipient():
-    pass  # assert False, "TODO"
+    with reverts("RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST"):
+        registry.removeRecipient(recipient2, {"from": remove_recipient_role_holder})
 
 
 def test_access_stranger_cannot_set_limit_parameters(limits_checker, stranger):
