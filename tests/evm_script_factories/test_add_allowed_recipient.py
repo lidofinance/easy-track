@@ -1,5 +1,4 @@
 from brownie import ZERO_ADDRESS, reverts
-#from eth_abi import encode_single
 from utils.evm_script import encode_calldata, encode_call_script
 
 EVM_SCRIPT_CALL_DATA_TITLE = "TITLE"

@@ -1,5 +1,5 @@
 from brownie import ZERO_ADDRESS, reverts
-from eth_abi import encode_single
+from utils.evm_script import encode_calldata, encode_call_script
 
 
 def test_deploy(owner, RemoveAllowedRecipient, allowed_recipients_registry):
@@ -57,6 +57,31 @@ def test_revert_create_evm_script_with_empty_calldata(owner, remove_allowed_reci
         remove_allowed_recipients.createEVMScript(owner, "0x", {"from": owner})
 
 
+def test_revert_recipient_not_found(owner, stranger, remove_allowed_recipients):
+    call_data = create_calldata(stranger.address)
+
+    with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
+        remove_allowed_recipients.createEVMScript(owner, call_data)
+
+
+def test_create_evm_script_correctly(owner, stranger, remove_allowed_recipients, allowed_recipients_registry):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    registry.addRecipient(stranger, "Stranger", {"from": add_recipient_role_holder})
+    call_data = create_calldata(stranger.address)
+    evm_script = remove_allowed_recipients.createEVMScript(owner, call_data)
+    (registry, _, _, _, _, _) = allowed_recipients_registry
+    expected_evm_script = encode_call_script(
+        [
+            (
+                registry.address,
+                registry.removeRecipient.encode_input(stranger),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
+
+
 def test_decode_evm_script_calldata_correctly(owner, remove_allowed_recipients):
     call_data = create_calldata(owner.address)
 
@@ -65,4 +90,4 @@ def test_decode_evm_script_calldata_correctly(owner, remove_allowed_recipients):
 
 
 def create_calldata(recipient):
-    return encode_single("(address)", [recipient])
+    return encode_calldata("(address)", [recipient])
