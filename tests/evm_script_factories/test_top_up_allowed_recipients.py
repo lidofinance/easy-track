@@ -59,6 +59,121 @@ def test_top_up_factory_constructor_zero_argument_addresses_allowed(TopUpAllowed
     )
 
 
+def test_fail_create_evm_script_if_not_trusted_caller(top_up_allowed_recipients, stranger):
+    with reverts(""):
+        top_up_allowed_recipients.createEVMScript(stranger, make_call_data([], []))
+
+
+def test_create_evm_script_is_permissionless(allowed_recipients_registry, stranger, top_up_allowed_recipients):
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+    registry.addRecipient(stranger.address, "Test Recipient", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    call_data = make_call_data([stranger.address], [123])
+    trusted_caller = top_up_allowed_recipients.trustedCaller()
+    top_up_allowed_recipients.createEVMScript(trusted_caller, call_data, {"from": stranger})
+
+
+def test_decode_evm_script_calldata_is_permissionless(stranger, top_up_allowed_recipients):
+    call_data = make_call_data([stranger.address], [123])
+    top_up_allowed_recipients.decodeEVMScriptCallData(call_data, {"from": stranger})
+
+
+def test_fail_create_evm_script_if_length_mismatch(top_up_allowed_recipients, accounts):
+    factory = top_up_allowed_recipients
+    trusted_caller = top_up_allowed_recipients.trustedCaller()
+    recipient = accounts[2].address
+
+    with reverts("LENGTH_MISMATCH"):
+        factory.createEVMScript(trusted_caller, make_call_data([recipient], []))
+
+    with reverts("LENGTH_MISMATCH"):
+        factory.createEVMScript(trusted_caller, make_call_data([], [123]))
+
+
+def test_fail_create_evm_script_if_empty_data(top_up_allowed_recipients, accounts):
+    factory = top_up_allowed_recipients
+    trusted_caller = top_up_allowed_recipients.trustedCaller()
+
+    with reverts("EMPTY_DATA"):
+        factory.createEVMScript(trusted_caller, make_call_data([], []))
+
+
+def test_fail_create_evm_script_if_zero_amount(
+    allowed_recipients_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,
+):
+    trusted_caller = owner
+    recipient = accounts[4].address
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+
+    registry.addRecipient(recipient, "Test Recipient", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+    )
+
+    with reverts("ZERO_AMOUNT"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([recipient], [0]))
+
+    with reverts("ZERO_AMOUNT"):
+        top_up_factory.createEVMScript(
+            trusted_caller, make_call_data([recipient, recipient], [123, 0])
+        )
+
+
+def test_fail_create_evm_script_if_recipient_not_allowed(
+    allowed_recipients_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,
+    stranger,
+):
+    trusted_caller = owner
+    recipient = accounts[4].address
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+
+    registry.addRecipient(recipient, "Test Recipient", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+    )
+
+    with reverts("RECIPIENT_NOT_ALLOWED"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
+
+
+
 def test_top_up_factory_evm_script_creation_happy_path(
     allowed_recipients_registry,
     TopUpAllowedRecipients,
@@ -91,68 +206,6 @@ def test_top_up_factory_evm_script_creation_happy_path(
     evm_script = top_up_factory.createEVMScript(trusted_caller, call_data)
     assert top_up_factory.decodeEVMScriptCallData(call_data) == ([recipient], [payout])
     assert "Easy Track: top up recipient".encode("utf-8").hex() in str(evm_script)
-
-
-def test_fail_create_evm_script_if_params_invalid_according_to_registry(
-    allowed_recipients_registry,
-    TopUpAllowedRecipients,
-    owner,
-    finance,
-    ldo,
-    easy_track,
-    stranger,
-):
-    """Fail if the parameters are incorrect according to the registry"""
-    trusted_caller = owner
-    recipient = accounts[4].address
-
-    (
-        registry,
-        owner,
-        add_recipient_role_holder,
-        _,
-        set_limit_role_holder,
-        _,
-    ) = allowed_recipients_registry
-
-    registry.addRecipient(recipient, "Test Recipient", {"from": add_recipient_role_holder})
-    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
-
-    top_up_factory = owner.deploy(
-        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
-    )
-
-    with reverts("ZERO_AMOUNT"):
-        top_up_factory.createEVMScript(trusted_caller, make_call_data([recipient], [0]))
-
-    with reverts("ZERO_AMOUNT"):
-        top_up_factory.createEVMScript(
-            trusted_caller, make_call_data([recipient, recipient], [123, 0])
-        )
-
-    with reverts("RECIPIENT_NOT_ALLOWED"):
-        top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
-
-
-def test_fail_create_evm_script_if_invalid_parameters_format(top_up_allowed_recipients, accounts):
-    """Check the data format is invalid"""
-    factory = top_up_allowed_recipients
-    trusted_caller = top_up_allowed_recipients.trustedCaller()
-    recipient = accounts[2].address
-
-    with reverts("EMPTY_DATA"):
-        factory.createEVMScript(trusted_caller, make_call_data([], []))
-
-    with reverts("LENGTH_MISMATCH"):
-        factory.createEVMScript(trusted_caller, make_call_data([recipient], []))
-
-    with reverts("LENGTH_MISMATCH"):
-        factory.createEVMScript(trusted_caller, make_call_data([], [123]))
-
-
-def test_fail_create_evm_script_if_not_trusted_caller(top_up_allowed_recipients, stranger):
-    with reverts(""):
-        top_up_allowed_recipients.createEVMScript(stranger, make_call_data([], []))
 
 
 def test_decode_evm_script_call_data(top_up_allowed_recipients, accounts):
