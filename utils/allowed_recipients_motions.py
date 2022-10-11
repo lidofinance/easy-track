@@ -87,7 +87,7 @@ def set_limit_parameters_by_aragon_voting(
     # execute voting to add permissions to EVM script executor to create payments
     execute_voting(set_limit_parameters_voting_id, get_network_name())
 
-    allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
+    assert allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
 
 
 def create_top_up_motion(recipients: List[str], amounts: List[int], easy_track, top_up_factory):

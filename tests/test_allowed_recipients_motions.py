@@ -13,7 +13,6 @@ from utils.allowed_recipients_motions import (
     add_recipient_by_motion,
     remove_recipient_by_motion,
     create_top_up_motion,
-    set_limit_parameters_by_aragon_voting,
     do_payout_to_allowed_recipients_by_motion,
 )
 
@@ -193,28 +192,7 @@ def test_fail_remove_recipient_if_it_is_not_allowed(
         )
 
 
-def test_fail_if_second_top_up_in_the_period_exceeds_limit(
-    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
-    agent,
-):
-    """Revert 2nd payout which together with 1st payout exceed limits in the same period"""
-    setup = entire_allowed_recipients_setup_with_two_recipients
-
-    period_limit, period_duration = 100 * 10**18, 6
-    set_limit_parameters_by_aragon_voting(period_limit, period_duration, setup.registry, agent)
-
-    recipients = list(map(lambda x: x.address, [setup.recipient1, setup.recipient2]))
-    do_payout_to_allowed_recipients_by_motion(
-        recipients, [int(3e18), int(90e18)], setup.easy_track, setup.top_up_factory
-    )
-
-    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        do_payout_to_allowed_recipients_by_motion(
-            recipients, [int(5e18), int(4e18)], setup.easy_track, setup.top_up_factory
-        )
-
-
-def test_top_up_single_recipient_happy_path(
+def test_top_up_single_recipient(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
@@ -222,7 +200,7 @@ def test_top_up_single_recipient_happy_path(
     amounts = [2 * 10**18]
 
     period_limit = 3 * 10**18
-    period_duration = 1
+    period_duration = 12
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -254,7 +232,7 @@ def test_top_up_single_recipient_happy_path(
     assert tx.events["SpendableAmountChanged"]["_spendableBalance"] == spendable
 
 
-def test_top_up_multiple_recipients_happy_path(
+def test_top_up_multiple_recipients(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
@@ -262,7 +240,7 @@ def test_top_up_multiple_recipients_happy_path(
     amounts = [2 * 10**18, 1 * 10**18]
 
     period_limit = 4 * 10**18
-    period_duration = 1
+    period_duration = 12
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -294,33 +272,42 @@ def test_top_up_multiple_recipients_happy_path(
     assert tx.events["SpendableAmountChanged"]["_spendableBalance"] == spendable
 
 
-def test_limit_is_renewed_in_next_period(
+def test_spendable_balance_is_renewed_in_next_period(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
-    agent,
 ):
-    """Check limit is renewed in the next period"""
     setup = entire_allowed_recipients_setup_with_two_recipients
 
     period_limit, period_duration = 100 * 10**18, 1
-    set_limit_parameters_by_aragon_voting(period_limit, period_duration, setup.registry, agent)
-
-    recipients = list(map(lambda x: x.address, [setup.recipient1, setup.recipient2]))
-    do_payout_to_allowed_recipients_by_motion(
-        recipients, [int(3e18), int(90e18)], setup.easy_track, setup.top_up_factory
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+
+    assert setup.registry.spendableBalance() == period_limit
+
+    payout_amounts = [int(3e18), int(90e18)]
+    recipients = [setup.recipient1.address, setup.recipient2.address]
+    do_payout_to_allowed_recipients_by_motion(
+        recipients, payout_amounts, setup.easy_track, setup.top_up_factory
+    )
+
+    amount_spent = sum(payout_amounts)
+    assert setup.registry.getPeriodState()[0] == amount_spent
+    assert setup.registry.spendableBalance() == period_limit - amount_spent
 
     chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
 
-    second_payout = [int(5e18), int(4e18)]
+    # cannot just check the views `spendableBalance` and `getPeriodState`
+    # because they are not updated without a call of updateSpentAmount
+    # or setLimitParameters. So trying to make a full period limit amount payout
     do_payout_to_allowed_recipients_by_motion(
-        recipients, second_payout, setup.easy_track, setup.top_up_factory
+        [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
     )
-    assert setup.registry.getPeriodState()[0] == sum(second_payout)
+    assert setup.registry.getPeriodState()[0] == period_limit
+    assert setup.registry.spendableBalance() == 0
 
 
 def test_both_motions_enacted_next_period_second_exceeds_limit(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
-    agent,
 ):
     """
     Two motion created this period, the first enacted next period, the second
@@ -330,7 +317,9 @@ def test_both_motions_enacted_next_period_second_exceeds_limit(
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
     period_limit, period_duration = 100 * 10**18, 1
-    set_limit_parameters_by_aragon_voting(period_limit, period_duration, setup.registry, agent)
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
 
     payout1 = [int(40e18), int(30e18)]
     payout2 = [int(30e18), int(20e18)]
@@ -351,12 +340,13 @@ def test_both_motions_enacted_next_period_second_exceeds_limit(
 
 def test_fail_create_top_up_motion_if_exceeds_limit(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
-    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
     period_limit, period_duration = 100 * 10**18, 1
-    set_limit_parameters_by_aragon_voting(period_limit, period_duration, setup.registry, agent)
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(
@@ -364,20 +354,45 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
         )
 
 
+def test_fail_top_up_if_second_top_up_in_the_period_exceeds_limit(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+):
+    """Revert 2nd payout which together with 1st payout exceed the current period limit"""
+    setup = entire_allowed_recipients_setup_with_two_recipients
+
+    period_limit, period_duration = 100 * 10**18, 6
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
+
+    recipients = list(map(lambda x: x.address, [setup.recipient1, setup.recipient2]))
+    do_payout_to_allowed_recipients_by_motion(
+        recipients, [int(3e18), int(90e18)], setup.easy_track, setup.top_up_factory
+    )
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        do_payout_to_allowed_recipients_by_motion(
+            recipients, [int(5e18), int(4e18)], setup.easy_track, setup.top_up_factory
+        )
+
+
 def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
-    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
     period_limit, period_duration = 100 * 10**18, 1
-    set_limit_parameters_by_aragon_voting(period_limit, period_duration, setup.registry, agent)
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
 
     motion_id, motion_calldata = create_top_up_motion(
         [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
     )
 
-    set_limit_parameters_by_aragon_voting(period_limit // 2, period_duration, setup.registry, agent)
+    setup.registry.setLimitParameters(
+        period_limit // 2, period_duration, {"from": setup.evm_script_executor}
+    )
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 

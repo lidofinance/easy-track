@@ -7,7 +7,7 @@ import "../LimitsChecker.sol";
 import "../interfaces/IBokkyPooBahsDateTimeContract.sol";
 import "../EasyTrack.sol";
 
-contract LimitsCheckerWrapper is LimitsChecker {
+contract LimitsCheckerWithPrivateViewExposed is LimitsChecker {
     constructor(
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,

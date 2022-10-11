@@ -249,12 +249,12 @@ def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract)
 
 @pytest.fixture(scope="module")
 def limits_checker_with_private_method_exposed(
-    owner, accounts, LimitsCheckerWrapper, bokkyPooBahsDateTimeContract
+    owner, accounts, LimitsCheckerWithPrivateViewExposed, bokkyPooBahsDateTimeContract
 ):
     set_limits_role_holder = accounts[8]
     update_spent_amount_role_holder = accounts[9]
     limits_checker = owner.deploy(
-        LimitsCheckerWrapper,
+        LimitsCheckerWithPrivateViewExposed,
         [set_limits_role_holder],
         [update_spent_amount_role_holder],
         bokkyPooBahsDateTimeContract,

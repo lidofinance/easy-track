@@ -118,7 +118,6 @@ def test_set_limit_parameters_happy_path(limits_checker):
     period_limit, period_duration = 3 * 10**18, 1
     now = datetime.now()
     period_start = get_month_start_timestamp(now)
-    period_end = get_month_start_timestamp(get_date_in_next_period(now, period_duration))
 
     tx = limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
@@ -182,8 +181,9 @@ def test_period_range_calculation_for_all_allowed_period_durations(
         return limits_checker.getPeriodState()[2:]
 
     def calc_period_range(period_months):
-        first_month = limits_checker.getFirstMonthInPeriodFromCurrentMonth(datetime.now().month)
-        first_month_date = datetime.now().replace(month=first_month)
+        now = datetime.now()
+        first_month = limits_checker.getFirstMonthInPeriodFromCurrentMonth(now.month)
+        first_month_date = now.replace(month=first_month)
         next_period_date = get_date_in_next_period(first_month_date, period_months)
 
         return (
@@ -211,89 +211,85 @@ def test_fail_if_set_incorrect_period_durations(limits_checker, period_duration)
         )
 
 
+@pytest.mark.parametrize(
+    "period_duration,current_month,period_first_month",
+    [
+        (1, 1, 1),
+        (1, 2, 2),
+        (1, 3, 3),
+        (1, 4, 4),
+        (1, 5, 5),
+        (1, 6, 6),
+        (1, 7, 7),
+        (1, 8, 8),
+        (1, 9, 9),
+        (1, 10, 10),
+        (1, 11, 11),
+        (1, 12, 12),
+        (2, 1, 1),
+        (2, 2, 1),
+        (2, 3, 3),
+        (2, 4, 3),
+        (2, 5, 5),
+        (2, 6, 5),
+        (2, 7, 7),
+        (2, 8, 7),
+        (2, 9, 9),
+        (2, 10, 9),
+        (2, 11, 11),
+        (2, 12, 11),
+        (3, 1, 1),
+        (3, 2, 1),
+        (3, 3, 1),
+        (3, 4, 4),
+        (3, 5, 4),
+        (3, 6, 4),
+        (3, 7, 7),
+        (3, 8, 7),
+        (3, 9, 7),
+        (3, 10, 10),
+        (3, 11, 10),
+        (3, 12, 10),
+        (6, 1, 1),
+        (6, 2, 1),
+        (6, 3, 1),
+        (6, 4, 1),
+        (6, 5, 1),
+        (6, 6, 1),
+        (6, 7, 7),
+        (6, 8, 7),
+        (6, 9, 7),
+        (6, 10, 7),
+        (6, 11, 7),
+        (6, 12, 7),
+        (12, 1, 1),
+        (12, 2, 1),
+        (12, 3, 1),
+        (12, 4, 1),
+        (12, 5, 1),
+        (12, 6, 1),
+        (12, 7, 1),
+        (12, 8, 1),
+        (12, 9, 1),
+        (12, 10, 1),
+        (12, 11, 1),
+        (12, 12, 1),
+    ],
+)
 def test_get_first_month_in_period_for_all_allowed_period_durations(
     limits_checker_with_private_method_exposed,
+    period_duration,
+    current_month,
+    period_first_month,
 ):
-    (
-        limits_checker,
-        set_limits_role_holder,
-        update_spent_amount_role_holder,
-    ) = limits_checker_with_private_method_exposed
+    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
 
-    period_limit, period_duration = 0, 1
+    period_limit = 0
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
-    for i in range(1, 13):
-        assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(i) == i
 
-    period_duration = 2
-    limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
-    )
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 3
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 3
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 5
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 5
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 9
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 9
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 11
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 11
-
-    period_duration = 3
-    limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
-    )
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 4
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 4
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 4
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 10
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 10
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 10
-
-    period_duration = 6
-    limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
-    )
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 7
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 7
-
-    period_duration = 12
-    limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
-    )
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(1) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(2) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(3) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(4) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(5) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(6) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(7) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(8) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(9) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(10) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(11) == 1
-    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(12) == 1
+    assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(current_month) == period_first_month
 
 
 def test_fail_if_set_limit_greater_than_max_limit(limits_checker):

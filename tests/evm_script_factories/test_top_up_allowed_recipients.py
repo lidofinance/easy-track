@@ -90,7 +90,7 @@ def test_top_up_factory_evm_script_creation_happy_path(
     call_data = make_call_data([recipient], [payout])
     evm_script = top_up_factory.createEVMScript(trusted_caller, call_data)
     assert top_up_factory.decodeEVMScriptCallData(call_data) == ([recipient], [payout])
-    assert "Top up allowed recipients".encode("utf-8").hex() in str(evm_script)
+    assert "Easy Track: top up recipient".encode("utf-8").hex() in str(evm_script)
 
 
 def test_fail_create_evm_script_if_params_invalid_according_to_registry(

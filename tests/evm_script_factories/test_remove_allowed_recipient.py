@@ -12,7 +12,7 @@ def test_deploy(owner, RemoveAllowedRecipient, allowed_recipients_registry):
 
 
 def test_deploy_zero_trusted_caller(owner, RemoveAllowedRecipient, allowed_recipients_registry):
-    "Must revert deploying a contract woth zero trusted caller"
+    "Must revert deploying a contract with zero trusted caller"
     (registry, _, _, _, _, _) = allowed_recipients_registry
 
     with reverts("TRUSTED_CALLER_IS_ZERO_ADDRESS"):
