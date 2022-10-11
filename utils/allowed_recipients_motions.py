@@ -116,7 +116,7 @@ def do_payout_to_allowed_recipients_by_motion(recipients, amounts, easy_track, t
     )
 
 
-def advance_time_to_beginning_of_the_next_period(limits_checker):
+def advance_chain_time_to_beginning_of_the_next_period(limits_checker):
     """Helps to avoid the situation when the tests run at the end of current period
     and the period advanced unexpectedly while the test was run and/or chain time
     advanced till the motion is ended.
