@@ -171,9 +171,8 @@ def test_set_limit_parameters_by_aragon_voting(entire_allowed_recipients_setup, 
     assert allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
 
 
-@pytest.mark.parametrize("period_duration", [1, 2, 3, 6, 12])
 def test_period_range_calculation_for_all_allowed_period_durations(
-    limits_checker_with_private_method_exposed, period_duration
+    limits_checker_with_private_method_exposed,
 ):
     (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
 
@@ -191,13 +190,18 @@ def test_period_range_calculation_for_all_allowed_period_durations(
             get_month_start_timestamp(next_period_date),
         )
 
+    assert limits_checker.getLimitParameters()[1] == 0
+
     period_limit = 0
-    limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
-    )
-    assert get_period_range_from_contract() == calc_period_range(
-        period_duration
-    ), f"incorrect range for period {period_duration}"
+
+    # duration is iterated inside the test instead of test parametrization
+    # to check that period range is calculated correctly even if the contract
+    # state wasn't the initial state
+    for duration in [1, 2, 3, 6, 12]:
+        limits_checker.setLimitParameters(period_limit, duration, {"from": set_limits_role_holder})
+        assert get_period_range_from_contract() == calc_period_range(
+            duration
+        ), f"incorrect range for period {duration}"
 
 
 @pytest.mark.parametrize("period_duration", [0, 4, 5, 7, 8, 9, 10, 11, 13, 14, 100500])
