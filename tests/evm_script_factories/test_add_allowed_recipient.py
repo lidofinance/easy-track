@@ -58,6 +58,17 @@ def test_revert_create_evm_script_with_empty_recipient_address(owner, add_allowe
     with reverts("RECIPIENT_ADDRESS_IS_ZERO_ADDRESS"):
         add_allowed_recipients.createEVMScript(owner, call_data, {"from": owner})
 
+def test_revert_recipient_already_added(
+    owner, stranger, add_allowed_recipients, allowed_recipients_registry
+):
+    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    registry.addRecipient(stranger, "Stranger", {"from": add_recipient_role_holder})
+    call_data = create_calldata(stranger.address)
+
+    with reverts("ALLOWED_RECIPIENT_ALREADY_ADDED"):
+        add_allowed_recipients.createEVMScript(owner, call_data)
+
+
 def test_create_evm_script_correctly(owner, add_allowed_recipients, allowed_recipients_registry):
     call_data = create_calldata(owner.address)
     evm_script = add_allowed_recipients.createEVMScript(owner, call_data)
