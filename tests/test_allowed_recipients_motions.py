@@ -24,6 +24,7 @@ import constants
 
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
+DEFAULT_PERIOD_DURATION_MONTHS = 3
 
 
 def test_add_recipient_motion(entire_allowed_recipients_setup: AllowedRecipientsSetup, accounts):
@@ -200,7 +201,7 @@ def test_top_up_single_recipient(
     amounts = [2 * 10**18]
 
     period_limit = 3 * 10**18
-    period_duration = 12
+    period_duration = DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -240,7 +241,7 @@ def test_top_up_multiple_recipients(
     amounts = [2 * 10**18, 1 * 10**18]
 
     period_limit = 4 * 10**18
-    period_duration = 12
+    period_duration = DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -277,7 +278,7 @@ def test_spendable_balance_is_renewed_in_next_period(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, 1
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -306,44 +307,12 @@ def test_spendable_balance_is_renewed_in_next_period(
     assert setup.registry.spendableBalance() == 0
 
 
-def test_both_motions_enacted_next_period_second_exceeds_limit(
-    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
-):
-    """
-    Two motion created this period, the first enacted next period, the second
-    is reverted due to the limit in the second period
-    """
-    setup = entire_allowed_recipients_setup_with_two_recipients
-    recipients = [setup.recipient1.address, setup.recipient2.address]
-
-    period_limit, period_duration = 100 * 10**18, 1
-    setup.registry.setLimitParameters(
-        period_limit, period_duration, {"from": setup.evm_script_executor}
-    )
-
-    payout1 = [int(40e18), int(30e18)]
-    payout2 = [int(30e18), int(20e18)]
-    motion1_id, motion1_calldata = create_top_up_motion(
-        recipients, payout1, setup.easy_track, setup.top_up_factory
-    )
-    motion2_id, motion2_calldata = create_top_up_motion(
-        recipients, payout2, setup.easy_track, setup.top_up_factory
-    )
-
-    chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
-
-    setup.easy_track.enactMotion(motion1_id, motion1_calldata, {"from": setup.recipient1})
-
-    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.recipient1})
-
-
 def test_fail_create_top_up_motion_if_exceeds_limit(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, 1
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -354,26 +323,57 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
         )
 
 
-def test_fail_top_up_if_second_top_up_in_the_period_exceeds_limit(
+def test_fail_2nd_top_up_motion_enactment_if_spendable_amount_became_not_enough(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+):
+    setup = entire_allowed_recipients_setup_with_two_recipients
+    recipients = [setup.recipient1.address, setup.recipient2.address]
+
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
+
+    payout1 = [int(40e18), int(30e18)]
+    payout2 = [int(30e18), int(20e18)]
+    assert sum(payout1 + payout2) > period_limit
+    motion1_id, motion1_calldata = create_top_up_motion(
+        recipients, payout1, setup.easy_track, setup.top_up_factory
+    )
+    motion2_id, motion2_calldata = create_top_up_motion(
+        recipients, payout2, setup.easy_track, setup.top_up_factory
+    )
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    setup.easy_track.enactMotion(motion1_id, motion1_calldata, {"from": setup.recipient1})
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.recipient1})
+
+
+def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
 ):
     """Revert 2nd payout which together with 1st payout exceed the current period limit"""
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, 6
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
+    payout1 = [int(3e18), int(90e18)]
+    payout2 = [int(5e18), int(4e18)]
+    assert sum(payout1 + payout2) > period_limit
 
     recipients = list(map(lambda x: x.address, [setup.recipient1, setup.recipient2]))
     do_payout_to_allowed_recipients_by_motion(
-        recipients, [int(3e18), int(90e18)], setup.easy_track, setup.top_up_factory
+        recipients, payout1, setup.easy_track, setup.top_up_factory
     )
+    assert sum(payout2) > setup.registry.spendableBalance()
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        do_payout_to_allowed_recipients_by_motion(
-            recipients, [int(5e18), int(4e18)], setup.easy_track, setup.top_up_factory
-        )
+        create_top_up_motion(recipients, payout2, setup.easy_track, setup.top_up_factory)
 
 
 def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
@@ -381,7 +381,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, 1
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
