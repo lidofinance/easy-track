@@ -384,8 +384,43 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(limits_
         limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
 
-def test_fail_if_update_spent_amount_beyond_the_limit():
-    pass  # assert False, "TODO"
+def test_spending_amount_is_restored_in_the_next_period(limits_checker):
+    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    period_limit, period_duration = 3 * 10**18, 1
+    spending = 3 * 10**18
+    spendable = period_limit - spending
+
+    limits_checker.setLimitParameters(
+        period_limit, period_duration, {"from": set_limits_role_holder}
+    )
+
+    limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
+    assert limits_checker.spendableBalance() == spendable
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
+
+    chain.sleep(MAX_SECONDS_IN_MONTH * period_duration)
+
+    limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
+    assert limits_checker.spendableBalance() == spendable
+
+
+def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
+    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    period_limit, period_duration = 3 * 10**18, 1
+    spending = 5 * 10**18
+
+    limits_checker.setLimitParameters(
+        period_limit, period_duration, {"from": set_limits_role_holder}
+    )
+
+    (_, spendable_balance, _, _) = limits_checker.getPeriodState()
+
+    assert spendable_balance == (period_limit)
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
 
 
 def test_spendable_amount_if_limit_increased(limits_checker):
