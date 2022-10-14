@@ -698,3 +698,76 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
 
     with reverts("INVALID_PERIOD_DURATION"):
         limits_checker.updateSpentAmount(123, {"from": update_spent_amount_role_holder})
+
+
+@pytest.mark.parametrize(
+    "inputs, period_duration, expected_result",
+    [
+        [[1640995200, 1640998800, 1642208400, 1643670000, 1643673599], 1, 1640995200],
+        [[1646092800, 1646096400, 1648774800, 1651359600, 1651363199], 2, 1646092800],
+        [[1648771200, 1648774800, 1652576400, 1656630000, 1656633599], 3, 1648771200],
+        [[1656633600, 1656637200, 1664586000, 1672527600, 1672531199], 6, 1656633600],
+        [[1640995200, 1640998800, 1652576400, 1672527600, 1672531199], 12, 1640995200],
+    ],
+)
+def test_period_start_from_timestamp(
+    limits_checker_with_private_method_exposed, inputs, period_duration, expected_result
+):
+    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
+    period_limit = 3 * 10**18
+
+    for timestamp in inputs:
+        limits_checker.setLimitParameters(
+            period_limit, period_duration, {"from": set_limits_role_holder}
+        )
+        assert limits_checker.getPeriodStartFromTimestamp(timestamp) == expected_result
+
+    assert (
+        limits_checker.getPeriodStartFromTimestamp(inputs[0] - 3600) != expected_result
+    )  # 1 hour before the period
+    assert (
+        limits_checker.getPeriodStartFromTimestamp(inputs[0] - 1) != expected_result
+    )  # second before the period
+    assert (
+        limits_checker.getPeriodStartFromTimestamp(inputs[len(inputs) - 1] + 1) != expected_result
+    )  # second after the period
+    assert (
+        limits_checker.getPeriodStartFromTimestamp(inputs[len(inputs) - 1] + 3600)
+        != expected_result
+    )  # hour after the period
+
+
+@pytest.mark.parametrize(
+    "inputs, period_duration, expected_result",
+    [
+        [[1640995200, 1640998800, 1642208400, 1643670000, 1643673599], 1, 1643673600],
+        [[1646092800, 1646096400, 1648774800, 1651359600, 1651363199], 2, 1651363200],
+        [[1648771200, 1648774800, 1652576400, 1656630000, 1656633599], 3, 1656633600],
+        [[1656633600, 1656637200, 1664586000, 1672527600, 1672531199], 6, 1672531200],
+        [[1640995200, 1640998800, 1652576400, 1672527600, 1672531199], 12, 1672531200],
+    ],
+)
+def test_period_end_from_timestamp(
+    limits_checker_with_private_method_exposed, inputs, period_duration, expected_result
+):
+    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
+    period_limit = 3 * 10**18
+
+    for timestamp in inputs:
+        limits_checker.setLimitParameters(
+            period_limit, period_duration, {"from": set_limits_role_holder}
+        )
+        assert limits_checker.getPeriodEndFromTimestamp(timestamp) == expected_result
+
+    assert (
+        limits_checker.getPeriodEndFromTimestamp(inputs[0] - 3600) != expected_result
+    )  # hour before the period
+    assert (
+        limits_checker.getPeriodEndFromTimestamp(inputs[0] - 1) != expected_result
+    )  # second before the period
+    assert (
+        limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 2) != expected_result
+    )  # second after the period
+    assert (
+        limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 3600) != expected_result
+    )  # hour after the period

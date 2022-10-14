@@ -7,7 +7,7 @@ import "../LimitsChecker.sol";
 import "../interfaces/IBokkyPooBahsDateTimeContract.sol";
 import "../EasyTrack.sol";
 
-contract LimitsCheckerWithPrivateViewExposed is LimitsChecker {
+contract LimitsCheckerWithPrivateViewsExposed is LimitsChecker {
     constructor(
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
@@ -26,5 +26,13 @@ contract LimitsCheckerWithPrivateViewExposed is LimitsChecker {
         returns (uint256 _firstMonthInPeriod)
     {
         _firstMonthInPeriod = _getFirstMonthInPeriodFromMonth(_month, periodDurationMonths);
+    }
+
+    function getPeriodStartFromTimestamp(uint256 _timestamp) public view returns (uint256) {
+        return _getPeriodStartFromTimestamp(_timestamp);
+    }
+
+    function getPeriodEndFromTimestamp(uint256 _timestamp) public view returns (uint256) {
+        return _getPeriodEndFromTimestamp(_timestamp);
     }
 }
