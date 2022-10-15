@@ -74,3 +74,83 @@ def get_next_month_start_timestamp(any_point_in_this_month: datetime, num_months
             tzinfo=timezone.utc,
         ).timestamp()
     )
+
+
+def calc_period_first_month(period_duration, current_month):
+    """Calculates the same value as LimitsChecker/_getFirstMonthInPeriodFromMonth"""
+    data = {
+        (1, 1): 1,
+        (1, 2): 2,
+        (1, 3): 3,
+        (1, 4): 4,
+        (1, 5): 5,
+        (1, 6): 6,
+        (1, 7): 7,
+        (1, 8): 8,
+        (1, 9): 9,
+        (1, 10): 10,
+        (1, 11): 11,
+        (1, 12): 12,
+        (2, 1): 1,
+        (2, 2): 1,
+        (2, 3): 3,
+        (2, 4): 3,
+        (2, 5): 5,
+        (2, 6): 5,
+        (2, 7): 7,
+        (2, 8): 7,
+        (2, 9): 9,
+        (2, 10): 9,
+        (2, 11): 11,
+        (2, 12): 11,
+        (3, 1): 1,
+        (3, 2): 1,
+        (3, 3): 1,
+        (3, 4): 4,
+        (3, 5): 4,
+        (3, 6): 4,
+        (3, 7): 7,
+        (3, 8): 7,
+        (3, 9): 7,
+        (3, 10): 10,
+        (3, 11): 10,
+        (3, 12): 10,
+        (6, 1): 1,
+        (6, 2): 1,
+        (6, 3): 1,
+        (6, 4): 1,
+        (6, 5): 1,
+        (6, 6): 1,
+        (6, 7): 7,
+        (6, 8): 7,
+        (6, 9): 7,
+        (6, 10): 7,
+        (6, 11): 7,
+        (6, 12): 7,
+        (12, 1): 1,
+        (12, 2): 1,
+        (12, 3): 1,
+        (12, 4): 1,
+        (12, 5): 1,
+        (12, 6): 1,
+        (12, 7): 1,
+        (12, 8): 1,
+        (12, 9): 1,
+        (12, 10): 1,
+        (12, 11): 1,
+        (12, 12): 1,
+    }
+    return data[(period_duration, current_month)]
+
+
+def calc_period_range(period_duration: int, now_timestamp: int):
+    """Calculates the same range as LimitsChecker.sol"""
+    now = datetime.fromtimestamp(now_timestamp)
+    first_month = calc_period_first_month(period_duration, now.month)
+    first_month_date = now.replace(month=first_month)
+    next_period_date = get_date_in_next_period(first_month_date, period_duration)
+
+    return (
+        get_month_start_timestamp(first_month_date),
+        get_month_start_timestamp(next_period_date),
+    )

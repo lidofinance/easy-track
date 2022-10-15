@@ -374,7 +374,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
         )
 
 
-def test_fail_2nd_top_up_motion_enactment_if_spendable_amount_became_not_enough(
+def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
@@ -402,6 +402,10 @@ def test_fail_2nd_top_up_motion_enactment_if_spendable_amount_became_not_enough(
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.recipient1})
+
+    chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
+
+    setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.recipient1})
 
 
 def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(

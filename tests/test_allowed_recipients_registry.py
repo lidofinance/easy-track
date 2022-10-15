@@ -13,6 +13,8 @@ from utils.test_helpers import (
     access_revert_message,
     get_month_start_timestamp,
     get_date_in_next_period,
+    calc_period_first_month,
+    calc_period_range,
     SET_LIMIT_PARAMETERS_ROLE,
     UPDATE_SPENT_AMOUNT_ROLE,
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
@@ -373,20 +375,6 @@ def test_period_range_calculation_for_all_allowed_period_durations(
 ):
     (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
 
-    def get_period_range_from_contract():
-        return limits_checker.getPeriodState()[2:]
-
-    def calc_period_range(period_months):
-        now = datetime.now()
-        first_month = limits_checker.getFirstMonthInPeriodFromCurrentMonth(now.month)
-        first_month_date = now.replace(month=first_month)
-        next_period_date = get_date_in_next_period(first_month_date, period_months)
-
-        return (
-            get_month_start_timestamp(first_month_date),
-            get_month_start_timestamp(next_period_date),
-        )
-
     assert limits_checker.getLimitParameters()[1] == 0
 
     period_limit = 0
@@ -394,11 +382,17 @@ def test_period_range_calculation_for_all_allowed_period_durations(
     # duration is iterated inside the test instead of test parametrization
     # to check that period range is calculated correctly even if the contract
     # state wasn't the initial state
-    for duration in [1, 2, 3, 6, 12]:
-        limits_checker.setLimitParameters(period_limit, duration, {"from": set_limits_role_holder})
-        assert get_period_range_from_contract() == calc_period_range(
-            duration
-        ), f"incorrect range for period {duration}"
+    for _ in range(12):
+        for duration in [1, 2, 3, 6, 12]:
+            limits_checker.setLimitParameters(
+                period_limit, duration, {"from": set_limits_role_holder}
+            )
+            _, _, period_start, period_end = limits_checker.getPeriodState()
+            assert (period_start, period_end) == calc_period_range(
+                duration, chain.time()
+            ), f"incorrect range for period {duration}"
+
+        chain.sleep(MAX_SECONDS_IN_MONTH)
 
 
 @pytest.mark.parametrize("period_duration", [0, 4, 5, 7, 8, 9, 10, 11, 13, 14, 100500])
@@ -414,68 +408,11 @@ def test_fail_if_set_incorrect_period_durations(limits_checker, period_duration)
 
 @pytest.mark.parametrize(
     "period_duration,current_month,period_first_month",
-    [
-        (1, 1, 1),
-        (1, 2, 2),
-        (1, 3, 3),
-        (1, 4, 4),
-        (1, 5, 5),
-        (1, 6, 6),
-        (1, 7, 7),
-        (1, 8, 8),
-        (1, 9, 9),
-        (1, 10, 10),
-        (1, 11, 11),
-        (1, 12, 12),
-        (2, 1, 1),
-        (2, 2, 1),
-        (2, 3, 3),
-        (2, 4, 3),
-        (2, 5, 5),
-        (2, 6, 5),
-        (2, 7, 7),
-        (2, 8, 7),
-        (2, 9, 9),
-        (2, 10, 9),
-        (2, 11, 11),
-        (2, 12, 11),
-        (3, 1, 1),
-        (3, 2, 1),
-        (3, 3, 1),
-        (3, 4, 4),
-        (3, 5, 4),
-        (3, 6, 4),
-        (3, 7, 7),
-        (3, 8, 7),
-        (3, 9, 7),
-        (3, 10, 10),
-        (3, 11, 10),
-        (3, 12, 10),
-        (6, 1, 1),
-        (6, 2, 1),
-        (6, 3, 1),
-        (6, 4, 1),
-        (6, 5, 1),
-        (6, 6, 1),
-        (6, 7, 7),
-        (6, 8, 7),
-        (6, 9, 7),
-        (6, 10, 7),
-        (6, 11, 7),
-        (6, 12, 7),
-        (12, 1, 1),
-        (12, 2, 1),
-        (12, 3, 1),
-        (12, 4, 1),
-        (12, 5, 1),
-        (12, 6, 1),
-        (12, 7, 1),
-        (12, 8, 1),
-        (12, 9, 1),
-        (12, 10, 1),
-        (12, 11, 1),
-        (12, 12, 1),
-    ],
+    [(1, i, calc_period_first_month(1, i)) for i in range(1, 13)]
+    + [(2, i, calc_period_first_month(2, i)) for i in range(1, 13)]
+    + [(3, i, calc_period_first_month(3, i)) for i in range(1, 13)]
+    + [(6, i, calc_period_first_month(6, i)) for i in range(1, 13)]
+    + [(12, i, calc_period_first_month(12, i)) for i in range(1, 13)],
 )
 def test_get_first_month_in_period_for_all_allowed_period_durations(
     limits_checker_with_private_method_exposed,
