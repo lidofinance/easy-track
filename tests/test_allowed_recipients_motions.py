@@ -1,5 +1,6 @@
 from brownie.network import chain
 from brownie import reverts
+import pytest
 
 from eth_abi import encode_single
 from utils.evm_script import encode_calldata
@@ -15,6 +16,7 @@ from utils.allowed_recipients_motions import (
     create_top_up_motion,
     do_payout_to_allowed_recipients_by_motion,
     advance_chain_time_to_beginning_of_the_next_period,
+    advance_chain_time_to_n_seconds_before_current_period_end,
 )
 
 from utils.test_helpers import (
@@ -206,7 +208,7 @@ def test_top_up_single_recipient(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
     tx = setup.easy_track.createMotion(
@@ -247,7 +249,7 @@ def test_top_up_multiple_recipients(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
     tx = setup.easy_track.createMotion(
@@ -288,7 +290,7 @@ def test_top_up_motion_enacted_in_next_period(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     motion_id, script_call_data = create_top_up_motion(
         recipients, payout_amounts, setup.easy_track, setup.top_up_factory
@@ -297,6 +299,38 @@ def test_top_up_motion_enacted_in_next_period(
     chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
 
     setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
+
+
+def test_top_up_motion_ended_and_enacted_in_next_period(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+):
+    setup = entire_allowed_recipients_setup_with_two_recipients
+
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    payout_amounts = [int(3e18), int(90e18)]
+    recipients = [setup.recipient1.address, setup.recipient2.address]
+
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
+    advance_chain_time_to_n_seconds_before_current_period_end(
+        period_duration, constants.MIN_MOTION_DURATION // 2
+    )
+
+    motion_id, script_call_data = create_top_up_motion(
+        recipients, payout_amounts, setup.easy_track, setup.top_up_factory
+    )
+
+    _, _, *old_period_range = setup.registry.getPeriodState()
+
+    chain.sleep(constants.MIN_MOTION_DURATION)
+
+    setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
+    _, _, *new_period_range = setup.registry.getPeriodState()
+    assert (
+        old_period_range != new_period_range
+    ), "check periods when the motion was created and when it ended are different"
 
 
 def test_top_up_motion_enacted_in_second_next_period(
@@ -311,7 +345,7 @@ def test_top_up_motion_enacted_in_second_next_period(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     motion_id, script_call_data = create_top_up_motion(
         recipients, payout_amounts, setup.easy_track, setup.top_up_factory
@@ -331,7 +365,7 @@ def test_spendable_balance_is_renewed_in_next_period(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     assert setup.registry.spendableBalance() == period_limit
 
@@ -366,7 +400,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(
@@ -384,7 +418,7 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     payout1 = [int(40e18), int(30e18)]
     payout2 = [int(30e18), int(20e18)]
@@ -418,7 +452,7 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
     payout1 = [int(3e18), int(90e18)]
     payout2 = [int(5e18), int(4e18)]
     assert sum(payout1 + payout2) > period_limit
@@ -442,7 +476,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     motion_id, motion_calldata = create_top_up_motion(
         [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
@@ -467,7 +501,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(setup.registry)
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     motion_id, motion_calldata = create_top_up_motion(
         [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
@@ -480,3 +514,52 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     setup.easy_track.enactMotion(motion_id, motion_calldata, {"from": setup.recipient1})
+
+
+@pytest.mark.parametrize(
+    "initial_period_duration,new_period_duration", [(3, 2), (3, 6), (12, 1), (1, 12)]
+)
+def test_top_up_spendable_renewal_if_period_duration_changed(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    initial_period_duration: int,
+    new_period_duration: int,
+):
+    setup = entire_allowed_recipients_setup_with_two_recipients
+
+    period_limit = 100 * 10**18
+    recipients = [setup.recipient1.address]
+    first_payout = [period_limit]
+    second_payout = [1]  # just 1 wei
+
+    setup.registry.setLimitParameters(
+        period_limit, initial_period_duration, {"from": setup.evm_script_executor}
+    )
+    advance_chain_time_to_beginning_of_the_next_period(initial_period_duration)
+
+    do_payout_to_allowed_recipients_by_motion(
+        recipients, first_payout, setup.easy_track, setup.top_up_factory
+    )
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        create_top_up_motion(
+            [setup.recipient1.address], second_payout, setup.easy_track, setup.top_up_factory
+        )
+
+    setup.registry.setLimitParameters(
+        period_limit, new_period_duration, {"from": setup.evm_script_executor}
+    )
+
+    # expect it to revert because although calendar grid period has changed
+    # the amount spent and the limit are left intact
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        create_top_up_motion(
+            [setup.recipient1.address], second_payout, setup.easy_track, setup.top_up_factory
+        )
+
+    advance_chain_time_to_beginning_of_the_next_period(new_period_duration)
+
+    # when move time to time point in the next period of the new calendar period grid
+    # expect the spendable get renewed
+    do_payout_to_allowed_recipients_by_motion(
+        recipients, second_payout, setup.easy_track, setup.top_up_factory
+    )
