@@ -15,12 +15,12 @@ from utils.allowed_recipients_motions import (
     remove_recipient_by_motion,
     create_top_up_motion,
     do_payout_to_allowed_recipients_by_motion,
-    advance_chain_time_to_beginning_of_the_next_period,
-    advance_chain_time_to_n_seconds_before_current_period_end,
 )
 
 from utils.test_helpers import (
     assert_event_exists,
+    advance_chain_time_to_beginning_of_the_next_period,
+    advance_chain_time_to_n_seconds_before_current_period_end,
 )
 
 import constants

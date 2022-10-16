@@ -11,7 +11,6 @@ from utils.lido import create_voting, execute_voting
 
 from utils.test_helpers import (
     assert_event_exists,
-    calc_period_range,
 )
 
 import constants
@@ -115,31 +114,3 @@ def do_payout_to_allowed_recipients_by_motion(recipients, amounts, easy_track, t
         script_call_data,
         {"from": recipients[0]},
     )
-
-
-def advance_chain_time_to_n_seconds_before_current_period_end(
-    period_duration: int, seconds_before: int
-):
-    chain_now = chain.time()
-    _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
-    seconds_till_period_end = first_second_of_next_period - 1 - chain_now
-    assert (
-        seconds_till_period_end > seconds_before
-    ), f"cannot move chain time {seconds_before} seconds before current period \
-         end, because there {seconds_till_period_end} seconds left till current period end"
-
-    chain.sleep(seconds_till_period_end - seconds_before)
-    assert chain.time() + seconds_before + 1 == first_second_of_next_period
-
-
-def advance_chain_time_to_beginning_of_the_next_period(period_duration: int):
-    """Helps to avoid the situation when the tests run at the end of current period
-    and the period advanced unexpectedly while the test was run and/or chain time
-    advanced till the motion is ended.
-    Advances to the first or the second day of the month roughly, just to avoid
-    dealing with timezones"""
-
-    chain_now = chain.time()
-    _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
-    chain.sleep(first_second_of_next_period - chain_now)
-    assert chain.time() == first_second_of_next_period
