@@ -60,11 +60,13 @@ def test_top_up_factory_constructor_zero_argument_addresses_allowed(TopUpAllowed
 
 
 def test_fail_create_evm_script_if_not_trusted_caller(top_up_allowed_recipients, stranger):
-    with reverts(""):
+    with reverts("CALLER_IS_FORBIDDEN"):
         top_up_allowed_recipients.createEVMScript(stranger, make_call_data([], []))
 
 
-def test_create_evm_script_is_permissionless(allowed_recipients_registry, stranger, top_up_allowed_recipients):
+def test_create_evm_script_is_permissionless(
+    allowed_recipients_registry, stranger, top_up_allowed_recipients
+):
     (
         registry,
         owner,
@@ -173,7 +175,6 @@ def test_fail_create_evm_script_if_recipient_not_allowed(
         top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
 
 
-
 def test_top_up_factory_evm_script_creation_happy_path(
     allowed_recipients_registry,
     TopUpAllowedRecipients,
@@ -205,6 +206,41 @@ def test_top_up_factory_evm_script_creation_happy_path(
     call_data = make_call_data([recipient], [payout])
     evm_script = top_up_factory.createEVMScript(trusted_caller, call_data)
     assert top_up_factory.decodeEVMScriptCallData(call_data) == ([recipient], [payout])
+    assert "Easy Track: top up recipient".encode("utf-8").hex() in str(evm_script)
+
+
+def test_top_up_factory_evm_script_creation_multiple_recipients_happy_path(
+    allowed_recipients_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,
+):
+    trusted_caller = owner
+    recipients = [accounts[4].address, accounts[5].address]
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+
+    registry.addRecipient(recipients[0], "Test Recipient 1", {"from": add_recipient_role_holder})
+    registry.addRecipient(recipients[1], "Test Recipient 2", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+    )
+
+    payouts = [int(1e18), int(2e18)]
+    call_data = make_call_data(recipients, payouts)
+    evm_script = top_up_factory.createEVMScript(trusted_caller, call_data)
+    assert top_up_factory.decodeEVMScriptCallData(call_data) == (recipients, payouts)
     assert "Easy Track: top up recipient".encode("utf-8").hex() in str(evm_script)
 
 

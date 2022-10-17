@@ -282,9 +282,32 @@ def test_remove_recipient(allowed_recipients_registry):
 
     registry.removeRecipient(recipient, {"from": remove_recipient_role_holder})
 
-    assert False == registry.isRecipientAllowed(recipient)
+    assert not registry.isRecipientAllowed(recipient)
 
     assert len(registry.getAllowedRecipients()) == 0
+
+
+def test_remove_not_last_recipient_in_the_list(allowed_recipients_registry):
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        remove_recipient_role_holder,
+        _,
+        _,
+    ) = allowed_recipients_registry
+    recipient1 = accounts[8].address
+    recipient2 = accounts[9].address
+
+    registry.addRecipient(recipient1, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+    registry.addRecipient(recipient2, RECIPIENT_TITLE, {"from": add_recipient_role_holder})
+
+    assert registry.isRecipientAllowed(recipient1)
+    assert registry.isRecipientAllowed(recipient2)
+
+    registry.removeRecipient(recipient1, {"from": remove_recipient_role_holder})
+
+    assert registry.getAllowedRecipients() == [recipient2]
 
 
 def test_fail_if_remove_recipient_from_empty_allowed_list(allowed_recipients_registry):
@@ -292,7 +315,7 @@ def test_fail_if_remove_recipient_from_empty_allowed_list(allowed_recipients_reg
     recipient = accounts[8].address
 
     assert 0 == len(registry.getAllowedRecipients())
-    assert False == registry.isRecipientAllowed(recipient)
+    assert not registry.isRecipientAllowed(recipient)
 
     with reverts("RECIPIENT_NOT_FOUND_IN_ALLOWED_LIST"):
         registry.removeRecipient(recipient, {"from": remove_recipient_role_holder})
@@ -322,7 +345,7 @@ def test_fail_if_remove_not_allowed_recipient(allowed_recipients_registry):
     assert len(registry.getAllowedRecipients()) == 1
     assert registry.getAllowedRecipients()[0] == recipient1
     assert registry.isRecipientAllowed(recipient1)
-    assert False == registry.isRecipientAllowed(recipient2)
+    assert not registry.isRecipientAllowed(recipient2)
 
 
 # ------------
