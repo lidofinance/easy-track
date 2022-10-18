@@ -3,11 +3,10 @@ from datetime import datetime
 from brownie.network import chain
 from brownie import accounts, reverts, ZERO_ADDRESS
 
-from eth_abi import encode_single
-
+from utils.evm_script import encode_calldata, encode_call_script
 
 def make_call_data(recipients, amounts):
-    return encode_single("(address[],uint256[])", [recipients, amounts])
+    return encode_calldata("(address[],uint256[])", [recipients, amounts])
 
 
 def test_top_up_factory_initial_state(
@@ -242,6 +241,96 @@ def test_top_up_factory_evm_script_creation_multiple_recipients_happy_path(
     evm_script = top_up_factory.createEVMScript(trusted_caller, call_data)
     assert top_up_factory.decodeEVMScriptCallData(call_data) == (recipients, payouts)
     assert "Easy Track: top up recipient".encode("utf-8").hex() in str(evm_script)
+
+
+def test_fail_create_evm_script_if_sum_exceeds_limit(
+    allowed_recipients_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,):
+
+    recipients = [accounts[4].address, accounts[5].address]
+    payouts = [int(10e18), int(20e18)]
+    call_data = make_call_data(recipients, payouts)
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+
+    registry.addRecipient(recipients[0], "Test Recipient 1", {"from": add_recipient_role_holder})
+    registry.addRecipient(recipients[1], "Test Recipient 2", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(20e18), 12, {"from": set_limit_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, owner, registry, finance, ldo, easy_track
+    )
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        top_up_factory.createEVMScript(owner, call_data)
+
+
+def test_create_evm_script_correctly(
+    allowed_recipients_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,):
+
+    recipients = [accounts[4].address, accounts[5].address]
+    payouts = [int(1e18), int(2e18)]
+    totalAmount = int(3e18)
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+
+    registry.addRecipient(recipients[0], "Test Recipient 1", {"from": add_recipient_role_holder})
+    registry.addRecipient(recipients[1], "Test Recipient 2", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, owner, registry, finance, ldo, easy_track
+    )
+
+    call_data = make_call_data(recipients,payouts)
+    evm_script = top_up_factory.createEVMScript(owner, call_data)
+    expected_evm_script = encode_call_script(
+        [
+            (
+                registry.address,
+                registry.updateSpentAmount.encode_input(
+                    totalAmount
+                ),
+            ),
+            (
+                finance.address,
+                finance.newImmediatePayment.encode_input(
+                    ldo, recipients[0], payouts[0], "Easy Track: top up recipient"
+                ),
+            ),
+            (
+                finance.address,
+                finance.newImmediatePayment.encode_input(
+                    ldo, recipients[1], payouts[1], "Easy Track: top up recipient"
+                ),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
 
 
 def test_decode_evm_script_call_data(top_up_allowed_recipients, accounts):
