@@ -175,7 +175,7 @@ def advance_chain_time_to_n_seconds_before_current_period_end(
          end, because there {seconds_till_period_end} seconds left till current period end"
 
     chain.sleep(seconds_till_period_end - seconds_before)
-    assert chain.time() + seconds_before + 1 == first_second_of_next_period
+    assert chain.time() + seconds_before + 1 >= first_second_of_next_period
 
 
 def advance_chain_time_to_beginning_of_the_next_period(period_duration: int):
@@ -188,4 +188,4 @@ def advance_chain_time_to_beginning_of_the_next_period(period_duration: int):
     chain_now = chain.time()
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
     chain.sleep(first_second_of_next_period - chain_now)
-    assert chain.time() == first_second_of_next_period
+    assert chain.time() >= first_second_of_next_period
