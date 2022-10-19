@@ -138,7 +138,9 @@ Run tests with coverage and gas profiling:
 brownie test --coverage --gas
 ```
 
-#### Coverage notes
+### Coverage notes
+
+#### Immutable issues
 
 Current brownie version has problems with coverage reports for some contracts. Contracts which use `immutable` variables don't get on the resulting report. Details can be found in this [issue](https://github.com/eth-brownie/brownie/issues/1087). Easy Track uses `immutable` modifier in next contracts:
 
@@ -151,4 +153,17 @@ Current brownie version has problems with coverage reports for some contracts. C
 - [TopUpRewardProgram.sol](https://github.com/lidofinance/easy-track/blob/a72858804481009f2e09508ffbf93d8a4aee6c84/contracts/EVMScriptFactories/TopUpRewardPrograms.sol#L27)
 - [TopUpAllowedRecipients.sol](https://github.com/lidofinance/easy-track/blob/522ae893f6c03516354a8d1950b29b3203adae52/contracts/EVMScriptFactories/TopUpAllowedRecipients.sol#L29)
 
-The workaround for the coverage problem is removing the `immutable` modifier from the above contracts. Without modifier above contracts will be listed in the coverage report
+The workaround for the coverage problem is removing the `immutable` modifier from the above contracts. Without modifier above contracts will be listed in the coverage report.
+
+#### No-branching issue
+
+Another brownie issue is that some functions do not get into the coverage report. For example `decodeEVMScriptCallData` of `RemoveAllowedRecipient` contract:
+
+```
+  contract: RemoveAllowedRecipient - 100.0%
+    RemoveAllowedRecipient.createEVMScript - 100.0%
+```
+
+Although in brownie coverage report explorer (`brownie gui`) in statements section the function body is highlighted green, which means it is covered.
+
+It seems such functions are not reflected in % coverage report, due to absence of branching in the function body. Adding dummy branching brings them to the report.
