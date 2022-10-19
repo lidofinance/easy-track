@@ -424,6 +424,7 @@ def test_set_limit_parameters_happy_path(limits_checker):
     )
     assert len(tx.events) == 2, f"must exist two events"
 
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
     assert limits_checker.getLimitParameters() == (period_limit, period_duration)
     assert limits_checker.isUnderSpendableBalance(period_limit, 0)
 
@@ -467,6 +468,9 @@ def test_period_range_calculation_for_all_allowed_period_durations(
     assert limits_checker.getLimitParameters()[1] == 0
 
     period_limit = 0
+
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(1)
 
     # duration is iterated inside the test instead of test parametrization
     # to check that period range is calculated correctly even if the contract
@@ -539,6 +543,8 @@ def test_limits_checker_views_in_next_period(limits_checker):
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
     limits_checker.updateSpentAmount(payout_amount, {"from": update_spent_amount_role_holder})
     assert limits_checker.spendableBalance() == spendable_balance
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == payout_amount
@@ -554,7 +560,11 @@ def test_limits_checker_views_in_next_period(limits_checker):
 def test_update_spent_amount_within_the_limit(limits_checker):
     (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
-    now = datetime.now()
+
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
+
+    now = datetime.fromtimestamp(chain.time())
     period_start = get_month_start_timestamp(now)
     period_end = get_month_start_timestamp(get_date_in_next_period(now, period_duration))
 
@@ -588,6 +598,8 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(limits_
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     spending = 1 * 10**18
     spendable = period_limit - spending
@@ -623,6 +635,8 @@ def test_spending_amount_is_restored_in_the_next_period(limits_checker):
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
     assert limits_checker.spendableBalance() == spendable
@@ -644,6 +658,8 @@ def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     (_, spendable_balance, _, _) = limits_checker.getPeriodState()
 
@@ -660,6 +676,8 @@ def test_spendable_amount_if_limit_increased(limits_checker):
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     spending = 1 * 10**18
     spendable = period_limit - spending
@@ -685,6 +703,8 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     spending = 1 * 10**18
     spendable = period_limit - spending
@@ -712,6 +732,8 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
     )
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     spending = 1 * 10**18
     spendable = period_limit - spending
@@ -745,6 +767,7 @@ def test_spendable_amount_renewal_if_period_duration_changed(
     limits_checker.setLimitParameters(
         period_limit, initial_period_duration, {"from": set_limits_role_holder}
     )
+    advance_chain_time_to_beginning_of_the_next_period(initial_period_duration)
 
     spending = period_limit
     spendable = period_limit - spending

@@ -31,7 +31,9 @@ def assert_equals(desc, actual, expected):
 
 
 def assert_single_event(receipt, event_name, args: dict):
-    assert len(receipt.events) == 1, f"event '{event_name}' must exist and be single"
+    assert (
+        len(receipt.events) == 1
+    ), f"event '{event_name}' must exist and be single (all events: {', '.join(receipt.events.keys())})"
     assert dict(receipt.events[event_name]) == args, f"incorrect event '{event_name}' arguments"
 
 
