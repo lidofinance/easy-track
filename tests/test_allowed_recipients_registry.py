@@ -188,7 +188,7 @@ def test_rights_are_not_shared_by_different_roles(
 
 
 def test_multiple_role_holders(
-    AllowedRecipientsRegistry, owner, stranger, voting, accounts, bokkyPooBahsDateTimeContract
+    AllowedRecipientsRegistry, owner, voting, accounts, bokkyPooBahsDateTimeContract
 ):
     deployer = owner
     add_role_holders = (accounts[2], accounts[3])
@@ -207,29 +207,31 @@ def test_multiple_role_holders(
     )
     recipient_title = "New Allowed Recipient"
 
-    for caller in accounts[2:10]:
+    for caller in accounts:
         if not caller in add_role_holders:
             with reverts(access_revert_message(caller, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
                 registry.addRecipient(caller, recipient_title, {"from": caller})
 
-    for recipient in accounts[0:10]:
+    for recipient in accounts[0:5]:
         registry.addRecipient(recipient, recipient_title, {"from": add_role_holders[0]})
+    for recipient in accounts[5:10]:
+        registry.addRecipient(recipient, recipient_title, {"from": add_role_holders[1]})
 
-    for caller in accounts[2:10]:
+    for caller in accounts:
         if caller in remove_role_holders:
             registry.removeRecipient(caller, {"from": caller})
         else:
             with reverts(access_revert_message(caller, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
                 registry.removeRecipient(caller, {"from": caller})
 
-    for caller in accounts[2:10]:
+    for caller in accounts:
         if caller in set_limit_role_holders:
             registry.setLimitParameters(5, 1, {"from": caller})
         else:
             with reverts(access_revert_message(caller, SET_LIMIT_PARAMETERS_ROLE)):
                 registry.setLimitParameters(5, 1, {"from": caller})
 
-    for caller in accounts[2:10]:
+    for caller in accounts:
         if caller in update_limit_role_holders:
             registry.updateSpentAmount(1, {"from": caller})
         else:
