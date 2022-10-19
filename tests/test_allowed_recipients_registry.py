@@ -7,6 +7,8 @@ from brownie import accounts, reverts, ZERO_ADDRESS
 
 from utils.evm_script import encode_call_script
 
+from conftest import AllowedRecipientsSetup
+
 from utils.test_helpers import (
     assert_single_event,
     assert_event_exists,
@@ -184,7 +186,6 @@ def test_rights_are_not_shared_by_different_roles(
     for caller in [deployer, add_role_holder, remove_role_holder, set_limit_role_holder, stranger]:
         with reverts(access_revert_message(caller, UPDATE_SPENT_AMOUNT_ROLE)):
             registry.updateSpentAmount(1, {"from": caller})
-
 
 
 def test_multiple_role_holders(
@@ -427,16 +428,10 @@ def test_set_limit_parameters_happy_path(limits_checker):
     assert limits_checker.isUnderSpendableBalance(period_limit, 0)
 
 
-def test_set_limit_parameters_by_aragon_voting(entire_allowed_recipients_setup, agent):
-    # TODO: make it use only the registry (without the entire setup)
-    (
-        _,  # easy_track,
-        _,  # evm_script_executor,
-        allowed_recipients_registry,
-        _,  # top_up_factory,
-        _,  # add_recipient_factory,
-        _,  # remove_recipient_factory,
-    ) = entire_allowed_recipients_setup
+def test_set_limit_parameters_by_aragon_voting(
+    entire_allowed_recipients_setup: AllowedRecipientsSetup, agent
+):
+    allowed_recipients_registry = entire_allowed_recipients_setup.registry
 
     period_limit, period_duration = 100 * 10**18, 6
 
