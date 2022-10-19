@@ -186,6 +186,57 @@ def test_rights_are_not_shared_by_different_roles(
             registry.updateSpentAmount(1, {"from": caller})
 
 
+
+def test_multiple_role_holders(
+    AllowedRecipientsRegistry, owner, stranger, voting, accounts, bokkyPooBahsDateTimeContract
+):
+    deployer = owner
+    add_role_holders = (accounts[2], accounts[3])
+    remove_role_holders = (accounts[4], accounts[5])
+    set_limit_role_holders = (accounts[6], accounts[7])
+    update_limit_role_holders = (accounts[8], accounts[9])
+
+    registry = deployer.deploy(
+        AllowedRecipientsRegistry,
+        voting,
+        add_role_holders,
+        remove_role_holders,
+        set_limit_role_holders,
+        update_limit_role_holders,
+        bokkyPooBahsDateTimeContract,
+    )
+    recipient_title = "New Allowed Recipient"
+
+    for caller in accounts[2:10]:
+        if not caller in add_role_holders:
+            with reverts(access_revert_message(caller, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
+                registry.addRecipient(caller, recipient_title, {"from": caller})
+
+    for recipient in accounts[0:10]:
+        registry.addRecipient(recipient, recipient_title, {"from": add_role_holders[0]})
+
+    for caller in accounts[2:10]:
+        if caller in remove_role_holders:
+            registry.removeRecipient(caller, {"from": caller})
+        else:
+            with reverts(access_revert_message(caller, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
+                registry.removeRecipient(caller, {"from": caller})
+
+    for caller in accounts[2:10]:
+        if caller in set_limit_role_holders:
+            registry.setLimitParameters(5, 1, {"from": caller})
+        else:
+            with reverts(access_revert_message(caller, SET_LIMIT_PARAMETERS_ROLE)):
+                registry.setLimitParameters(5, 1, {"from": caller})
+
+    for caller in accounts[2:10]:
+        if caller in update_limit_role_holders:
+            registry.updateSpentAmount(1, {"from": caller})
+        else:
+            with reverts(access_revert_message(caller, UPDATE_SPENT_AMOUNT_ROLE)):
+                registry.updateSpentAmount(1, {"from": caller})
+
+
 def test_access_stranger_cannot_set_limit_parameters(limits_checker, stranger):
     (limits_checker, _, _) = limits_checker
 
