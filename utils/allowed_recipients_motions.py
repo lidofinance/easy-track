@@ -1,6 +1,5 @@
 from brownie.network import chain
 from typing import List
-from datetime import datetime
 
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script, encode_calldata
@@ -8,10 +7,6 @@ from utils.evm_script import encode_call_script, encode_calldata
 from utils.config import get_network_name
 
 from utils.lido import create_voting, execute_voting
-
-from utils.test_helpers import (
-    assert_event_exists,
-)
 
 import constants
 
@@ -39,27 +34,19 @@ def remove_recipient_by_motion(
     recipient, easy_track, remove_recipient_factory, allowed_recipients_registry
 ):
     call_data = encode_single("(address)", [recipient.address])
-    assert remove_recipient_factory.decodeEVMScriptCallData(call_data) == recipient.address
 
-    tx = easy_track.createMotion(
+    easy_track.createMotion(
         remove_recipient_factory,
         call_data,
         {"from": remove_recipient_factory.trustedCaller()},
     )
 
-    assert tx.events["MotionCreated"]["_evmScriptCallData"] == "0x" + call_data.hex()
-
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
-    tx = easy_track.enactMotion(
+    easy_track.enactMotion(
         easy_track.getMotions()[0][0],
         call_data,
         {"from": recipient},
-    )
-    assert_event_exists(
-        tx,
-        "RecipientRemoved",
-        {"_recipient": recipient},
     )
     assert not allowed_recipients_registry.isRecipientAllowed(recipient)
 
