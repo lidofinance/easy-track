@@ -475,7 +475,7 @@ def test_period_range_calculation_for_all_allowed_period_durations(
     # duration is iterated inside the test instead of test parametrization
     # to check that period range is calculated correctly even if the contract
     # state wasn't the initial state
-    for _ in range(12):
+    for _ in range(24):
         for duration in [1, 2, 3, 6, 12]:
             limits_checker.setLimitParameters(
                 period_limit, duration, {"from": set_limits_role_holder}
@@ -485,7 +485,7 @@ def test_period_range_calculation_for_all_allowed_period_durations(
                 duration, chain.time()
             ), f"incorrect range for period {duration}"
 
-        chain.sleep(MAX_SECONDS_IN_MONTH)
+        chain.sleep(MAX_SECONDS_IN_MONTH // 2)
 
 
 @pytest.mark.parametrize("period_duration", [0, 4, 5, 7, 8, 9, 10, 11, 13, 14, 100500])
@@ -527,6 +527,11 @@ def test_fail_if_set_limit_greater_than_max_limit(limits_checker):
     (limits_checker, set_limits_role_holder, _) = limits_checker
 
     period_limit, period_duration = 2**128, 1
+
+    # OK if 1 wei less the limit
+    limits_checker.setLimitParameters(
+        period_limit - 1, period_duration, {"from": set_limits_role_holder}
+    )
 
     with reverts("TOO_LARGE_LIMIT"):
         limits_checker.setLimitParameters(
@@ -629,7 +634,7 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(limits_
 def test_spending_amount_is_restored_in_the_next_period(limits_checker):
     (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
-    spending = 3 * 10**18
+    spending = period_limit
     spendable = period_limit - spending
 
     limits_checker.setLimitParameters(
@@ -653,7 +658,7 @@ def test_spending_amount_is_restored_in_the_next_period(limits_checker):
 def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
     (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
-    spending = 5 * 10**18
+    spending = period_limit + 1
 
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_limits_role_holder}
@@ -663,13 +668,13 @@ def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
 
     (_, spendable_balance, _, _) = limits_checker.getPeriodState()
 
-    assert spendable_balance == (period_limit)
+    assert spendable_balance == period_limit
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
 
 
-def test_spendable_amount_if_limit_increased(limits_checker):
+def test_spendable_amount_increased_if_limit_increased(limits_checker):
     (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
 
@@ -679,12 +684,15 @@ def test_spendable_amount_if_limit_increased(limits_checker):
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
-    spending = 1 * 10**18
+    spending = period_limit
     spendable = period_limit - spending
     limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
     assert limits_checker.spendableBalance() == spendable
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == spendable
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
     new_period_limit = 2 * period_limit
     new_spendable = spendable + (new_period_limit - period_limit)
@@ -694,6 +702,11 @@ def test_spendable_amount_if_limit_increased(limits_checker):
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == new_spendable
     assert limits_checker.spendableBalance() == new_spendable
+
+    limits_checker.updateSpentAmount(new_spendable, {"from": update_spent_amount_role_holder})
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
 
 def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
@@ -713,7 +726,7 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == spendable
 
-    new_period_limit = spending // 2
+    new_period_limit = spending - 1
     new_spendable = 0
     # NB!: already spent amount decreased to the new limit
     new_spending = new_period_limit
@@ -723,6 +736,9 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == new_spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == new_spendable
     assert limits_checker.spendableBalance() == new_spendable
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
 
 def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_checker):
@@ -752,6 +768,10 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == new_spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == new_spendable
     assert limits_checker.spendableBalance() == new_spendable
+
+    limits_checker.updateSpentAmount(new_spendable, {"from": update_spent_amount_role_holder})
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
 
 @pytest.mark.parametrize(
@@ -785,7 +805,14 @@ def test_spendable_amount_renewal_if_period_duration_changed(
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
-    advance_chain_time_to_beginning_of_the_next_period(new_period_duration)
+    if new_period_duration > initial_period_duration:
+        # check after old period end spendable is not renewed
+        chain.sleep(MAX_SECONDS_IN_MONTH * (initial_period_duration))
+        with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+            limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
+        chain.sleep(MAX_SECONDS_IN_MONTH * (new_period_duration - initial_period_duration))
+    else:
+        advance_chain_time_to_beginning_of_the_next_period(new_period_duration)
 
     limits_checker.updateSpentAmount(spending, {"from": update_spent_amount_role_holder})
 
@@ -813,6 +840,7 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
 def test_period_start_from_timestamp(
     limits_checker_with_private_method_exposed, inputs, period_duration, expected_result
 ):
+    # TODO: comment about the constants or use calc_period_range
     (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
     period_limit = 3 * 10**18
 
@@ -823,17 +851,16 @@ def test_period_start_from_timestamp(
         assert limits_checker.getPeriodStartFromTimestamp(timestamp) == expected_result
 
     assert (
-        limits_checker.getPeriodStartFromTimestamp(inputs[0] - 3600) != expected_result
+        limits_checker.getPeriodStartFromTimestamp(inputs[0] - 3600) < expected_result
     )  # 1 hour before the period
     assert (
-        limits_checker.getPeriodStartFromTimestamp(inputs[0] - 1) != expected_result
+        limits_checker.getPeriodStartFromTimestamp(inputs[0] - 1) < expected_result
     )  # second before the period
     assert (
-        limits_checker.getPeriodStartFromTimestamp(inputs[len(inputs) - 1] + 1) != expected_result
+        limits_checker.getPeriodStartFromTimestamp(inputs[len(inputs) - 1] + 1) > expected_result
     )  # second after the period
     assert (
-        limits_checker.getPeriodStartFromTimestamp(inputs[len(inputs) - 1] + 3600)
-        != expected_result
+        limits_checker.getPeriodStartFromTimestamp(inputs[len(inputs) - 1] + 3600) > expected_result
     )  # hour after the period
 
 
@@ -860,14 +887,14 @@ def test_period_end_from_timestamp(
         assert limits_checker.getPeriodEndFromTimestamp(timestamp) == expected_result
 
     assert (
-        limits_checker.getPeriodEndFromTimestamp(inputs[0] - 3600) != expected_result
+        limits_checker.getPeriodEndFromTimestamp(inputs[0] - 3600) < expected_result
     )  # hour before the period
     assert (
-        limits_checker.getPeriodEndFromTimestamp(inputs[0] - 1) != expected_result
+        limits_checker.getPeriodEndFromTimestamp(inputs[0] - 1) < expected_result
     )  # second before the period
     assert (
-        limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 2) != expected_result
+        limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 2) > expected_result
     )  # second after the period
     assert (
-        limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 3600) != expected_result
+        limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 3600) > expected_result
     )  # hour after the period

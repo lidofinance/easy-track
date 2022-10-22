@@ -24,6 +24,7 @@ def test_timestamp_to_date(date_time_library, timestamp, expected_date):
     [[1577836800, 1735689600]],
 )
 def test_timestamp_to_date_automated(date_time_library, start_date, end_date):
+    # TODO: add readable description for the constants
     current_date = datetime.fromtimestamp(start_date)
 
     while datetime.timestamp(current_date) < end_date:

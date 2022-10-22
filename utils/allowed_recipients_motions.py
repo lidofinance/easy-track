@@ -1,4 +1,5 @@
 from brownie.network import chain
+from brownie import interface
 from typing import List
 
 from eth_abi import encode_single
@@ -24,7 +25,7 @@ def add_recipient_by_motion(recipient, recipient_title, easy_track, add_recipien
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     easy_track.enactMotion(
-        easy_track.getMotions()[0][0],
+        tx.events["MotionCreated"]["_motionId"],
         tx.events["MotionCreated"]["_evmScriptCallData"],
         {"from": recipient},
     )
@@ -35,7 +36,7 @@ def remove_recipient_by_motion(
 ):
     call_data = encode_single("(address)", [recipient.address])
 
-    easy_track.createMotion(
+    tx = easy_track.createMotion(
         remove_recipient_factory,
         call_data,
         {"from": remove_recipient_factory.trustedCaller()},
@@ -44,7 +45,7 @@ def remove_recipient_by_motion(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     easy_track.enactMotion(
-        easy_track.getMotions()[0][0],
+        tx.events["MotionCreated"]["_motionId"],
         call_data,
         {"from": recipient},
     )
@@ -101,3 +102,26 @@ def do_payout_to_allowed_recipients_by_motion(recipients, amounts, easy_track, t
         script_call_data,
         {"from": recipients[0]},
     )
+
+
+def get_balances(recipients, token):
+    return [interface.ERC20(token).balanceOf(r) for r in recipients]
+
+
+def check_top_up(tx, balances_before, recipients, payouts, registry, top_up_factory):
+    limit, duration = registry.getLimitParameters()
+    spending = sum(payouts)
+    spendable = limit - spending
+
+    assert registry.isUnderSpendableBalance(spendable, 0)
+    assert registry.isUnderSpendableBalance(limit, duration * MAX_SECONDS_IN_MONTH)
+    assert registry.getPeriodState()["_alreadySpentAmount"] == spending
+    assert registry.getPeriodState()["_spendableBalanceInPeriod"] == spendable
+
+    balances = get_balances(recipients, top_up_factory.token())
+    for before, now, payment in zip(balances_before, balances, payouts):
+        assert now == before + payment
+
+    assert "SpendableAmountChanged" in tx.events
+    assert tx.events["SpendableAmountChanged"]["_alreadySpentAmount"] == spending
+    assert tx.events["SpendableAmountChanged"]["_spendableBalance"] == spendable
