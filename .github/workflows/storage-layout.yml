@@ -10,7 +10,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
       
-      - name: Build prod image
+      - name: Check storage-layout
         uses: lidofinance/storage-layout-action@v-0.0.1
         with:
           mode: check
