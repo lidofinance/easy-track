@@ -1,0 +1,18 @@
+name: Assert storage layout changes
+
+on: push
+
+jobs:
+  assert:
+    runs-on: ubuntu-latest
+    name: Assert storage layout 
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
+      - name: Build prod image
+        uses: lidofinance/storage-layout-action@v-0.0.1
+        with:
+          mode: check
+          src-folder: ./contracts
+          ignore-folders: test
