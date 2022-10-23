@@ -1,22 +1,36 @@
-name: Assert storage layout changes
+name: Update .storage-layout
 
 on:
-  push:
-    branches: [develop, master]
-  pull_request:
-    branches: [develop, master]
+  workflow_dispatch:
 
 jobs:
   assert:
     runs-on: ubuntu-latest
-    name: Assert storage layout 
+    name: Assert storage layout
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-      
+
       - name: Check storage-layout
         uses: lidofinance/storage-layout-action@v-0.0.1
         with:
-          mode: check
+          mode: generate
           src-folder: ./contracts
           ignore-folders: test
+
+      - name: Check for changes
+        id: changes
+        continue-on-error: true
+        run: .github/assert-git-changes.py
+        env:
+          TARGET_DIR: lib/abi/
+
+      - name: Create Pull Request
+        if: steps.changes.outcome != 'success'
+        uses: lidofinance/create-pull-request@v4
+        with:
+          branch: fix-abi-${{ github.ref_name }}
+          delete-branch: true
+          commit-message: "fix: Make storage-layout up to date"
+          title: "Fix .storage-layout for ${{ github.ref_name }} branch"
+          body: "This PR is generated automatically. Merge it to apply new version of .storage-layout"
