@@ -1,0 +1,712 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_trustedCaller",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [],
+      "name": "trustedCaller",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x60a060405234801561001057600080fd5b506040516101ee3803806101ee83398101604081905261002f916100a9565b60408051808201909152601e81527f545255535445445f43414c4c45525f49535f5a45524f5f41444452455353000060208201526001600160a01b0382166100935760405162461bcd60e51b815260040161008a91906100d9565b60405180910390fd5b5060601b6001600160601b03191660805261012e565b6000602082840312156100bb57600080fd5b81516001600160a01b03811681146100d257600080fd5b9392505050565b600060208083528351808285015260005b81811015610106578581018301518582016040015282016100ea565b81811115610118576000604083870101525b50601f01601f1916929092016040019392505050565b60805160601c60a561014960003960006031015260a56000f3fe6080604052348015600f57600080fd5b506004361060285760003560e01c8063268f076014602d575b600080fd5b60537f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200160405180910390f3fea2646970667358221220034c1b4fc45b20d417b5568133c9b7d971217a61ea524734950b6af86e48515d64736f6c63430008060033",
+    "sourceMap": "317:563:15:-:0;;;572:168;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;656:36;;;;;;;;;;;;;;;;;-1:-1:-1;;;;;626:28:15;;618:75;;;;-1:-1:-1;;;618:75:15;;;;;;;;:::i;:::-;;;;;;;;;-1:-1:-1;703:30:15;;-1:-1:-1;;;;;;703:30:15;;;317:563;;14:290:40;84:6;137:2;125:9;116:7;112:23;108:32;105:2;;;153:1;150;143:12;105:2;179:16;;-1:-1:-1;;;;;224:31:40;;214:42;;204:2;;270:1;267;260:12;204:2;293:5;95:209;-1:-1:-1;;;95:209:40:o;309:597::-;421:4;450:2;479;468:9;461:21;511:6;505:13;554:6;549:2;538:9;534:18;527:34;579:1;589:140;603:6;600:1;597:13;589:140;;;698:14;;;694:23;;688:30;664:17;;;683:2;660:26;653:66;618:10;;589:140;;;747:6;744:1;741:13;738:2;;;817:1;812:2;803:6;792:9;788:22;784:31;777:42;738:2;-1:-1:-1;890:2:40;869:15;-1:-1:-1;;865:29:40;850:45;;;;897:2;846:54;;430:476;-1:-1:-1;;;430:476:40:o;:::-;317:563:15;;;;;;;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x6080604052348015600f57600080fd5b506004361060285760003560e01c8063268f076014602d575b600080fd5b60537f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b03909116815260200160405180910390f3fea2646970667358221220034c1b4fc45b20d417b5568133c9b7d971217a61ea524734950b6af86e48515d64736f6c63430008060033",
+    "sourceMap": "317:563:15:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;527:38;;;;;;;;-1:-1:-1;;;;;178:32:40;;;160:51;;148:2;133:18;527:38:15;;;;;;",
+    "linkReferences": {},
+    "immutableReferences": {
+      "4057": [
+        {
+          "start": 49,
+          "length": 32
+        }
+      ]
+    }
+  },
+  "methodIdentifiers": {
+    "trustedCaller()": "268f0760"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_trustedCaller\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[],\"name\":\"trustedCaller\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"psirex\",\"details\":\"Trusted caller set once on deployment and can't be changed.\",\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"A helper contract contains logic to validate that only a trusted caller has access to certain methods.\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/TrustedCaller.sol\":\"TrustedCaller\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/TrustedCaller.sol\":{\"keccak256\":\"0x635af50e89095f2e12292373a717613df73857f39c043f73a8fb0590ac90fd41\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://eaa6fcc891e6e22bf4b8cdc99f0c2b1624cfe7180a94c9dd8cf6f7b647bc3ca4\",\"dweb:/ipfs/QmdBTbVsiggkWd8L5p1iXv2PozyD23n1mwXqvs3M7QxmJk\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_trustedCaller",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "trustedCaller",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/TrustedCaller.sol": "TrustedCaller"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/TrustedCaller.sol": {
+        "keccak256": "0x635af50e89095f2e12292373a717613df73857f39c043f73a8fb0590ac90fd41",
+        "urls": [
+          "bzz-raw://eaa6fcc891e6e22bf4b8cdc99f0c2b1624cfe7180a94c9dd8cf6f7b647bc3ca4",
+          "dweb:/ipfs/QmdBTbVsiggkWd8L5p1iXv2PozyD23n1mwXqvs3M7QxmJk"
+        ],
+        "license": "GPL-3.0"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": {}
+  },
+  "ast": {
+    "absolutePath": "contracts/TrustedCaller.sol",
+    "id": 4092,
+    "exportedSymbols": {
+      "TrustedCaller": [
+        4091
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:792:15",
+    "nodes": [
+      {
+        "id": 4048,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:15",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 4091,
+        "nodeType": "ContractDefinition",
+        "src": "317:563:15",
+        "nodes": [
+          {
+            "id": 4052,
+            "nodeType": "VariableDeclaration",
+            "src": "346:95:15",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_TRUSTED_CALLER_IS_ZERO_ADDRESS",
+            "nameLocation": "370:36:15",
+            "scope": 4091,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 4050,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "346:6:15",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "545255535445445f43414c4c45525f49535f5a45524f5f41444452455353",
+              "id": 4051,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "409:32:15",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_cc2ed6d7e4d51944922742f8ce47010cef5911ded77ab302742207e352e80dc6",
+                "typeString": "literal_string \"TRUSTED_CALLER_IS_ZERO_ADDRESS\""
+              },
+              "value": "TRUSTED_CALLER_IS_ZERO_ADDRESS"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 4055,
+            "nodeType": "VariableDeclaration",
+            "src": "447:73:15",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_CALLER_IS_FORBIDDEN",
+            "nameLocation": "471:25:15",
+            "scope": 4091,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 4053,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "447:6:15",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "43414c4c45525f49535f464f5242494444454e",
+              "id": 4054,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "499:21:15",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_b56e8073cd476a2f98c4ea1605f26d90c44752bc5035a2e0043e7c685c82fbe2",
+                "typeString": "literal_string \"CALLER_IS_FORBIDDEN\""
+              },
+              "value": "CALLER_IS_FORBIDDEN"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 4057,
+            "nodeType": "VariableDeclaration",
+            "src": "527:38:15",
+            "nodes": [],
+            "constant": false,
+            "functionSelector": "268f0760",
+            "mutability": "immutable",
+            "name": "trustedCaller",
+            "nameLocation": "552:13:15",
+            "scope": 4091,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_address",
+              "typeString": "address"
+            },
+            "typeName": {
+              "id": 4056,
+              "name": "address",
+              "nodeType": "ElementaryTypeName",
+              "src": "527:7:15",
+              "stateMutability": "nonpayable",
+              "typeDescriptions": {
+                "typeIdentifier": "t_address",
+                "typeString": "address"
+              }
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 4077,
+            "nodeType": "FunctionDefinition",
+            "src": "572:168:15",
+            "nodes": [],
+            "body": {
+              "id": 4076,
+              "nodeType": "Block",
+              "src": "608:132:15",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        "id": 4068,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "id": 4063,
+                          "name": "_trustedCaller",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 4059,
+                          "src": "626:14:15",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "!=",
+                        "rightExpression": {
+                          "arguments": [
+                            {
+                              "hexValue": "30",
+                              "id": 4066,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "kind": "number",
+                              "lValueRequested": false,
+                              "nodeType": "Literal",
+                              "src": "652:1:15",
+                              "typeDescriptions": {
+                                "typeIdentifier": "t_rational_0_by_1",
+                                "typeString": "int_const 0"
+                              },
+                              "value": "0"
+                            }
+                          ],
+                          "expression": {
+                            "argumentTypes": [
+                              {
+                                "typeIdentifier": "t_rational_0_by_1",
+                                "typeString": "int_const 0"
+                              }
+                            ],
+                            "id": 4065,
+                            "isConstant": false,
+                            "isLValue": false,
+                            "isPure": true,
+                            "lValueRequested": false,
+                            "nodeType": "ElementaryTypeNameExpression",
+                            "src": "644:7:15",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_type$_t_address_$",
+                              "typeString": "type(address)"
+                            },
+                            "typeName": {
+                              "id": 4064,
+                              "name": "address",
+                              "nodeType": "ElementaryTypeName",
+                              "src": "644:7:15",
+                              "typeDescriptions": {}
+                            }
+                          },
+                          "id": 4067,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "kind": "typeConversion",
+                          "lValueRequested": false,
+                          "names": [],
+                          "nodeType": "FunctionCall",
+                          "src": "644:10:15",
+                          "tryCall": false,
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "src": "626:28:15",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 4069,
+                        "name": "ERROR_TRUSTED_CALLER_IS_ZERO_ADDRESS",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4052,
+                        "src": "656:36:15",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 4062,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "618:7:15",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 4070,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "618:75:15",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 4071,
+                  "nodeType": "ExpressionStatement",
+                  "src": "618:75:15"
+                },
+                {
+                  "expression": {
+                    "id": 4074,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 4072,
+                      "name": "trustedCaller",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 4057,
+                      "src": "703:13:15",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 4073,
+                      "name": "_trustedCaller",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 4059,
+                      "src": "719:14:15",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "src": "703:30:15",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 4075,
+                  "nodeType": "ExpressionStatement",
+                  "src": "703:30:15"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "parameters": {
+              "id": 4060,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4059,
+                  "mutability": "mutable",
+                  "name": "_trustedCaller",
+                  "nameLocation": "592:14:15",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4077,
+                  "src": "584:22:15",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 4058,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "584:7:15",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "583:24:15"
+            },
+            "returnParameters": {
+              "id": 4061,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "608:0:15"
+            },
+            "scope": 4091,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "id": 4090,
+            "nodeType": "ModifierDefinition",
+            "src": "746:132:15",
+            "nodes": [],
+            "body": {
+              "id": 4089,
+              "nodeType": "Block",
+              "src": "790:88:15",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        "id": 4084,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "id": 4082,
+                          "name": "_caller",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 4079,
+                          "src": "808:7:15",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "==",
+                        "rightExpression": {
+                          "id": 4083,
+                          "name": "trustedCaller",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 4057,
+                          "src": "819:13:15",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "src": "808:24:15",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 4085,
+                        "name": "ERROR_CALLER_IS_FORBIDDEN",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4055,
+                        "src": "834:25:15",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 4081,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "800:7:15",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 4086,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "800:60:15",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 4087,
+                  "nodeType": "ExpressionStatement",
+                  "src": "800:60:15"
+                },
+                {
+                  "id": 4088,
+                  "nodeType": "PlaceholderStatement",
+                  "src": "870:1:15"
+                }
+              ]
+            },
+            "name": "onlyTrustedCaller",
+            "nameLocation": "755:17:15",
+            "parameters": {
+              "id": 4080,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4079,
+                  "mutability": "mutable",
+                  "name": "_caller",
+                  "nameLocation": "781:7:15",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4090,
+                  "src": "773:15:15",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 4078,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "773:7:15",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "772:17:15"
+            },
+            "virtual": false,
+            "visibility": "internal"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 4049,
+          "nodeType": "StructuredDocumentation",
+          "src": "114:203:15",
+          "text": "@author psirex\n @notice A helper contract contains logic to validate that only a trusted caller has access to certain methods.\n @dev Trusted caller set once on deployment and can't be changed."
+        },
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          4091
+        ],
+        "name": "TrustedCaller",
+        "nameLocation": "326:13:15",
+        "scope": 4092,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 15
+}

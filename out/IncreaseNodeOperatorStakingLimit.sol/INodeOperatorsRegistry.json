@@ -1,0 +1,3405 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "bool",
+          "name": "_fullInfo",
+          "type": "bool"
+        }
+      ],
+      "name": "getNodeOperator",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "active",
+          "type": "bool"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "address",
+          "name": "rewardAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint64",
+          "name": "stakingLimit",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "stoppedValidators",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "totalSigningKeys",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "usedSigningKeys",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_id",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64",
+          "name": "_stakingLimit",
+          "type": "uint64"
+        }
+      ],
+      "name": "setNodeOperatorStakingLimit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "getNodeOperator(uint256,bool)": "9a56983c",
+    "setNodeOperatorStakingLimit(uint256,uint64)": "ae962acf"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"bool\",\"name\":\"_fullInfo\",\"type\":\"bool\"}],\"name\":\"getNodeOperator\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"active\",\"type\":\"bool\"},{\"internalType\":\"string\",\"name\":\"name\",\"type\":\"string\"},{\"internalType\":\"address\",\"name\":\"rewardAddress\",\"type\":\"address\"},{\"internalType\":\"uint64\",\"name\":\"stakingLimit\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"stoppedValidators\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"totalSigningKeys\",\"type\":\"uint64\"},{\"internalType\":\"uint64\",\"name\":\"usedSigningKeys\",\"type\":\"uint64\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_id\",\"type\":\"uint256\"},{\"internalType\":\"uint64\",\"name\":\"_stakingLimit\",\"type\":\"uint64\"}],\"name\":\"setNodeOperatorStakingLimit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol\":\"INodeOperatorsRegistry\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol\":{\"keccak256\":\"0x2b71aeaa0368448c4b72dddc92427143ac1620a4369262b9c9e3d2a1d7aa81a3\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://941c77f76cde8f8916888cbae00863e027b61c91cbb08dfcb2d28df40980a9c0\",\"dweb:/ipfs/QmbHzbYShcG8aPrzyERxRZrLnKP1iaCcXYp79n3Nmmv8rJ\"]},\"contracts/interfaces/IEVMScriptFactory.sol\":{\"keccak256\":\"0x9817e66f8cca4676de6880e2036683512b0a9ded1a753dc6ada41a0e110ef484\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://32febde596db57b8b3bf1481d69b08e767e7cf4b3b88f3f69f06d5a2c4f12d46\",\"dweb:/ipfs/QmWTW7KgRxbDzdXHG1Rf7e4aXJ62Wbsw8dJdSfgeyLcRNs\"]},\"contracts/libraries/EVMScriptCreator.sol\":{\"keccak256\":\"0x97c8cc5c528317c7d88dee51465d1166d73ffc3956ce01f1ebd72d090a45d8ea\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://25f2973ba1d7c3c296410aa5eb4f2990bf147d9e328588bf2212b456c4f51a74\",\"dweb:/ipfs/QmdSouE4bPYtSDpLV2DcR38UmWksAuRN7fHZ2VSEG5MfKE\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "bool",
+              "name": "_fullInfo",
+              "type": "bool"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getNodeOperator",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "active",
+              "type": "bool"
+            },
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "address",
+              "name": "rewardAddress",
+              "type": "address"
+            },
+            {
+              "internalType": "uint64",
+              "name": "stakingLimit",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "stoppedValidators",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "totalSigningKeys",
+              "type": "uint64"
+            },
+            {
+              "internalType": "uint64",
+              "name": "usedSigningKeys",
+              "type": "uint64"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_id",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint64",
+              "name": "_stakingLimit",
+              "type": "uint64"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setNodeOperatorStakingLimit"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol": "INodeOperatorsRegistry"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol": {
+        "keccak256": "0x2b71aeaa0368448c4b72dddc92427143ac1620a4369262b9c9e3d2a1d7aa81a3",
+        "urls": [
+          "bzz-raw://941c77f76cde8f8916888cbae00863e027b61c91cbb08dfcb2d28df40980a9c0",
+          "dweb:/ipfs/QmbHzbYShcG8aPrzyERxRZrLnKP1iaCcXYp79n3Nmmv8rJ"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/interfaces/IEVMScriptFactory.sol": {
+        "keccak256": "0x9817e66f8cca4676de6880e2036683512b0a9ded1a753dc6ada41a0e110ef484",
+        "urls": [
+          "bzz-raw://32febde596db57b8b3bf1481d69b08e767e7cf4b3b88f3f69f06d5a2c4f12d46",
+          "dweb:/ipfs/QmWTW7KgRxbDzdXHG1Rf7e4aXJ62Wbsw8dJdSfgeyLcRNs"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/libraries/EVMScriptCreator.sol": {
+        "keccak256": "0x97c8cc5c528317c7d88dee51465d1166d73ffc3956ce01f1ebd72d090a45d8ea",
+        "urls": [
+          "bzz-raw://25f2973ba1d7c3c296410aa5eb4f2990bf147d9e328588bf2212b456c4f51a74",
+          "dweb:/ipfs/QmdSouE4bPYtSDpLV2DcR38UmWksAuRN7fHZ2VSEG5MfKE"
+        ],
+        "license": "GPL-3.0"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": {}
+  },
+  "ast": {
+    "absolutePath": "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol",
+    "id": 942,
+    "exportedSymbols": {
+      "EVMScriptCreator": [
+        4488
+      ],
+      "IEVMScriptFactory": [
+        4150
+      ],
+      "INodeOperatorsRegistry": [
+        724
+      ],
+      "IncreaseNodeOperatorStakingLimit": [
+        941
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:4924:4",
+    "nodes": [
+      {
+        "id": 693,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:4",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 694,
+        "nodeType": "ImportDirective",
+        "src": "114:43:4",
+        "nodes": [],
+        "absolutePath": "contracts/libraries/EVMScriptCreator.sol",
+        "file": "../libraries/EVMScriptCreator.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 942,
+        "sourceUnit": 4489,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 695,
+        "nodeType": "ImportDirective",
+        "src": "158:45:4",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/IEVMScriptFactory.sol",
+        "file": "../interfaces/IEVMScriptFactory.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 942,
+        "sourceUnit": 4151,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 724,
+        "nodeType": "ContractDefinition",
+        "src": "205:475:4",
+        "nodes": [
+          {
+            "id": 716,
+            "nodeType": "FunctionDefinition",
+            "src": "244:347:4",
+            "nodes": [],
+            "functionSelector": "9a56983c",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getNodeOperator",
+            "nameLocation": "253:15:4",
+            "parameters": {
+              "id": 700,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 697,
+                  "mutability": "mutable",
+                  "name": "_id",
+                  "nameLocation": "277:3:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "269:11:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 696,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "269:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 699,
+                  "mutability": "mutable",
+                  "name": "_fullInfo",
+                  "nameLocation": "287:9:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "282:14:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 698,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "282:4:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "268:29:4"
+            },
+            "returnParameters": {
+              "id": 715,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 702,
+                  "mutability": "mutable",
+                  "name": "active",
+                  "nameLocation": "363:6:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "358:11:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 701,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "358:4:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 704,
+                  "mutability": "mutable",
+                  "name": "name",
+                  "nameLocation": "397:4:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "383:18:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 703,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "383:6:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 706,
+                  "mutability": "mutable",
+                  "name": "rewardAddress",
+                  "nameLocation": "423:13:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "415:21:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 705,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "415:7:4",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 708,
+                  "mutability": "mutable",
+                  "name": "stakingLimit",
+                  "nameLocation": "457:12:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "450:19:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint64",
+                    "typeString": "uint64"
+                  },
+                  "typeName": {
+                    "id": 707,
+                    "name": "uint64",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "450:6:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint64",
+                      "typeString": "uint64"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 710,
+                  "mutability": "mutable",
+                  "name": "stoppedValidators",
+                  "nameLocation": "490:17:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "483:24:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint64",
+                    "typeString": "uint64"
+                  },
+                  "typeName": {
+                    "id": 709,
+                    "name": "uint64",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "483:6:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint64",
+                      "typeString": "uint64"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 712,
+                  "mutability": "mutable",
+                  "name": "totalSigningKeys",
+                  "nameLocation": "528:16:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "521:23:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint64",
+                    "typeString": "uint64"
+                  },
+                  "typeName": {
+                    "id": 711,
+                    "name": "uint64",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "521:6:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint64",
+                      "typeString": "uint64"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 714,
+                  "mutability": "mutable",
+                  "name": "usedSigningKeys",
+                  "nameLocation": "565:15:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 716,
+                  "src": "558:22:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint64",
+                    "typeString": "uint64"
+                  },
+                  "typeName": {
+                    "id": 713,
+                    "name": "uint64",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "558:6:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint64",
+                      "typeString": "uint64"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "344:246:4"
+            },
+            "scope": 724,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 723,
+            "nodeType": "FunctionDefinition",
+            "src": "597:81:4",
+            "nodes": [],
+            "functionSelector": "ae962acf",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "setNodeOperatorStakingLimit",
+            "nameLocation": "606:27:4",
+            "parameters": {
+              "id": 721,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 718,
+                  "mutability": "mutable",
+                  "name": "_id",
+                  "nameLocation": "642:3:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 723,
+                  "src": "634:11:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 717,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "634:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 720,
+                  "mutability": "mutable",
+                  "name": "_stakingLimit",
+                  "nameLocation": "654:13:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 723,
+                  "src": "647:20:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint64",
+                    "typeString": "uint64"
+                  },
+                  "typeName": {
+                    "id": 719,
+                    "name": "uint64",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "647:6:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint64",
+                      "typeString": "uint64"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "633:35:4"
+            },
+            "returnParameters": {
+              "id": 722,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "677:0:4"
+            },
+            "scope": 724,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          724
+        ],
+        "name": "INodeOperatorsRegistry",
+        "nameLocation": "215:22:4",
+        "scope": 942,
+        "usedErrors": []
+      },
+      {
+        "id": 941,
+        "nodeType": "ContractDefinition",
+        "src": "775:4237:4",
+        "nodes": [
+          {
+            "id": 738,
+            "nodeType": "StructDefinition",
+            "src": "844:167:4",
+            "nodes": [],
+            "canonicalName": "IncreaseNodeOperatorStakingLimit.NodeOperatorData",
+            "members": [
+              {
+                "constant": false,
+                "id": 729,
+                "mutability": "mutable",
+                "name": "id",
+                "nameLocation": "886:2:4",
+                "nodeType": "VariableDeclaration",
+                "scope": 738,
+                "src": "878:10:4",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 728,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "878:7:4",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 731,
+                "mutability": "mutable",
+                "name": "active",
+                "nameLocation": "903:6:4",
+                "nodeType": "VariableDeclaration",
+                "scope": 738,
+                "src": "898:11:4",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_bool",
+                  "typeString": "bool"
+                },
+                "typeName": {
+                  "id": 730,
+                  "name": "bool",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "898:4:4",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 733,
+                "mutability": "mutable",
+                "name": "rewardAddress",
+                "nameLocation": "927:13:4",
+                "nodeType": "VariableDeclaration",
+                "scope": 738,
+                "src": "919:21:4",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 732,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "919:7:4",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 735,
+                "mutability": "mutable",
+                "name": "stakingLimit",
+                "nameLocation": "958:12:4",
+                "nodeType": "VariableDeclaration",
+                "scope": 738,
+                "src": "950:20:4",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 734,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "950:7:4",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 737,
+                "mutability": "mutable",
+                "name": "totalSigningKeys",
+                "nameLocation": "988:16:4",
+                "nodeType": "VariableDeclaration",
+                "scope": 738,
+                "src": "980:24:4",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 736,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "980:7:4",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "name": "NodeOperatorData",
+            "nameLocation": "851:16:4",
+            "scope": 941,
+            "visibility": "public"
+          },
+          {
+            "id": 741,
+            "nodeType": "VariableDeclaration",
+            "src": "1074:79:4",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_NODE_OPERATOR_DISABLED",
+            "nameLocation": "1098:28:4",
+            "scope": 941,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 739,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "1074:6:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "4e4f44455f4f50455241544f525f44495341424c4544",
+              "id": 740,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "1129:24:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_1c3a6adcb46ec92dde32e11ecf3e2a735041cd1dc10df3d41e9fabdbc65f4542",
+                "typeString": "literal_string \"NODE_OPERATOR_DISABLED\""
+              },
+              "value": "NODE_OPERATOR_DISABLED"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 744,
+            "nodeType": "VariableDeclaration",
+            "src": "1159:89:4",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_CALLER_IS_NOT_NODE_OPERATOR",
+            "nameLocation": "1183:33:4",
+            "scope": 941,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 742,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "1159:6:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "43414c4c45525f49535f4e4f545f4e4f44455f4f50455241544f52",
+              "id": 743,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "1219:29:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_137a395338cfc4d15110c47bf5f7cbabf4c2195ff6fd01fcf26829dfb137bacb",
+                "typeString": "literal_string \"CALLER_IS_NOT_NODE_OPERATOR\""
+              },
+              "value": "CALLER_IS_NOT_NODE_OPERATOR"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 747,
+            "nodeType": "VariableDeclaration",
+            "src": "1254:77:4",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_STAKING_LIMIT_TOO_LOW",
+            "nameLocation": "1278:27:4",
+            "scope": 941,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 745,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "1254:6:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "5354414b494e475f4c494d49545f544f4f5f4c4f57",
+              "id": 746,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "1308:23:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_b7f3ef4aa2802d6c200be6223b43710bd6c00537cf22056983efb7ffd3f8f40d",
+                "typeString": "literal_string \"STAKING_LIMIT_TOO_LOW\""
+              },
+              "value": "STAKING_LIMIT_TOO_LOW"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 750,
+            "nodeType": "VariableDeclaration",
+            "src": "1337:81:4",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_NOT_ENOUGH_SIGNING_KEYS",
+            "nameLocation": "1361:29:4",
+            "scope": 941,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 748,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "1337:6:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "4e4f545f454e4f5547485f5349474e494e475f4b455953",
+              "id": 749,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "1393:25:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_a43ce21238de3700df5b5537642e028f309582ea123bc695c374c3e9db0fcdcc",
+                "typeString": "literal_string \"NOT_ENOUGH_SIGNING_KEYS\""
+              },
+              "value": "NOT_ENOUGH_SIGNING_KEYS"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 754,
+            "nodeType": "VariableDeclaration",
+            "src": "1543:61:4",
+            "nodes": [],
+            "constant": false,
+            "documentation": {
+              "id": 751,
+              "nodeType": "StructuredDocumentation",
+              "src": "1485:53:4",
+              "text": "@notice Address of NodeOperatorsRegistry contract"
+            },
+            "functionSelector": "227242b5",
+            "mutability": "immutable",
+            "name": "nodeOperatorsRegistry",
+            "nameLocation": "1583:21:4",
+            "scope": 941,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+              "typeString": "contract INodeOperatorsRegistry"
+            },
+            "typeName": {
+              "id": 753,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 752,
+                "name": "INodeOperatorsRegistry",
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 724,
+                "src": "1543:22:4"
+              },
+              "referencedDeclaration": 724,
+              "src": "1543:22:4",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                "typeString": "contract INodeOperatorsRegistry"
+              }
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 766,
+            "nodeType": "FunctionDefinition",
+            "src": "1673:131:4",
+            "nodes": [],
+            "body": {
+              "id": 765,
+              "nodeType": "Block",
+              "src": "1717:87:4",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "id": 763,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 759,
+                      "name": "nodeOperatorsRegistry",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 754,
+                      "src": "1727:21:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                        "typeString": "contract INodeOperatorsRegistry"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "arguments": [
+                        {
+                          "id": 761,
+                          "name": "_nodeOperatorsRegistry",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 756,
+                          "src": "1774:22:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        }
+                      ],
+                      "expression": {
+                        "argumentTypes": [
+                          {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        ],
+                        "id": 760,
+                        "name": "INodeOperatorsRegistry",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 724,
+                        "src": "1751:22:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_contract$_INodeOperatorsRegistry_$724_$",
+                          "typeString": "type(contract INodeOperatorsRegistry)"
+                        }
+                      },
+                      "id": 762,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "kind": "typeConversion",
+                      "lValueRequested": false,
+                      "names": [],
+                      "nodeType": "FunctionCall",
+                      "src": "1751:46:4",
+                      "tryCall": false,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                        "typeString": "contract INodeOperatorsRegistry"
+                      }
+                    },
+                    "src": "1727:70:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                      "typeString": "contract INodeOperatorsRegistry"
+                    }
+                  },
+                  "id": 764,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1727:70:4"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "parameters": {
+              "id": 757,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 756,
+                  "mutability": "mutable",
+                  "name": "_nodeOperatorsRegistry",
+                  "nameLocation": "1693:22:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 766,
+                  "src": "1685:30:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 755,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1685:7:4",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1684:32:4"
+            },
+            "returnParameters": {
+              "id": 758,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1717:0:4"
+            },
+            "scope": 941,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "id": 795,
+            "nodeType": "FunctionDefinition",
+            "src": "2226:476:4",
+            "nodes": [],
+            "body": {
+              "id": 794,
+              "nodeType": "Block",
+              "src": "2384:318:4",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 778,
+                        "name": "_creator",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 769,
+                        "src": "2431:8:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      },
+                      {
+                        "id": 779,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 771,
+                        "src": "2441:18:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "id": 777,
+                      "name": "_validateCreatorAndEVMScriptCallData",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 887,
+                      "src": "2394:36:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_view$_t_address_$_t_bytes_memory_ptr_$returns$__$",
+                        "typeString": "function (address,bytes memory) view"
+                      }
+                    },
+                    "id": 780,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2394:66:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 781,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2394:66:4"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "arguments": [
+                          {
+                            "id": 786,
+                            "name": "nodeOperatorsRegistry",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 754,
+                            "src": "2547:21:4",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                              "typeString": "contract INodeOperatorsRegistry"
+                            }
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                              "typeString": "contract INodeOperatorsRegistry"
+                            }
+                          ],
+                          "id": 785,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "nodeType": "ElementaryTypeNameExpression",
+                          "src": "2539:7:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_type$_t_address_$",
+                            "typeString": "type(address)"
+                          },
+                          "typeName": {
+                            "id": 784,
+                            "name": "address",
+                            "nodeType": "ElementaryTypeName",
+                            "src": "2539:7:4",
+                            "typeDescriptions": {}
+                          }
+                        },
+                        "id": 787,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "typeConversion",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "2539:30:4",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      },
+                      {
+                        "expression": {
+                          "expression": {
+                            "id": 788,
+                            "name": "nodeOperatorsRegistry",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 754,
+                            "src": "2587:21:4",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                              "typeString": "contract INodeOperatorsRegistry"
+                            }
+                          },
+                          "id": 789,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "setNodeOperatorStakingLimit",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": 723,
+                          "src": "2587:49:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_function_external_nonpayable$_t_uint256_$_t_uint64_$returns$__$",
+                            "typeString": "function (uint256,uint64) external"
+                          }
+                        },
+                        "id": 790,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "memberName": "selector",
+                        "nodeType": "MemberAccess",
+                        "src": "2587:58:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes4",
+                          "typeString": "bytes4"
+                        }
+                      },
+                      {
+                        "id": 791,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 771,
+                        "src": "2663:18:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        {
+                          "typeIdentifier": "t_bytes4",
+                          "typeString": "bytes4"
+                        },
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "expression": {
+                        "id": 782,
+                        "name": "EVMScriptCreator",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4488,
+                        "src": "2489:16:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_contract$_EVMScriptCreator_$4488_$",
+                          "typeString": "type(library EVMScriptCreator)"
+                        }
+                      },
+                      "id": 783,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "createEVMScript",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 4268,
+                      "src": "2489:32:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_address_$_t_bytes4_$_t_bytes_memory_ptr_$returns$_t_bytes_memory_ptr_$",
+                        "typeString": "function (address,bytes4,bytes memory) pure returns (bytes memory)"
+                      }
+                    },
+                    "id": 792,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2489:206:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_memory_ptr",
+                      "typeString": "bytes memory"
+                    }
+                  },
+                  "functionReturnParameters": 776,
+                  "id": 793,
+                  "nodeType": "Return",
+                  "src": "2470:225:4"
+                }
+              ]
+            },
+            "baseFunctions": [
+              4149
+            ],
+            "documentation": {
+              "id": 767,
+              "nodeType": "StructuredDocumentation",
+              "src": "1877:344:4",
+              "text": "@notice Creates EVMScript to increase staking limit for node operator\n @param _creator Address who creates EVMScript\n @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where\n _nodeOperatorId - id of node operator in NodeOperatorsRegistry\n _stakingLimit - new staking limit"
+            },
+            "functionSelector": "fea21c9c",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "createEVMScript",
+            "nameLocation": "2235:15:4",
+            "overrides": {
+              "id": 773,
+              "nodeType": "OverrideSpecifier",
+              "overrides": [],
+              "src": "2340:8:4"
+            },
+            "parameters": {
+              "id": 772,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 769,
+                  "mutability": "mutable",
+                  "name": "_creator",
+                  "nameLocation": "2259:8:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 795,
+                  "src": "2251:16:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 768,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2251:7:4",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 771,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "2282:18:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 795,
+                  "src": "2269:31:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 770,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2269:5:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2250:51:4"
+            },
+            "returnParameters": {
+              "id": 776,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 775,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 795,
+                  "src": "2366:12:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 774,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2366:5:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2365:14:4"
+            },
+            "scope": 941,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 810,
+            "nodeType": "FunctionDefinition",
+            "src": "3115:233:4",
+            "nodes": [],
+            "body": {
+              "id": 809,
+              "nodeType": "Block",
+              "src": "3280:68:4",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 806,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 798,
+                        "src": "3322:18:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "id": 805,
+                      "name": "_decodeEVMScriptCallData",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 834,
+                      "src": "3297:24:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_bytes_memory_ptr_$returns$_t_uint256_$_t_uint256_$",
+                        "typeString": "function (bytes memory) pure returns (uint256,uint256)"
+                      }
+                    },
+                    "id": 807,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3297:44:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$_t_uint256_$_t_uint256_$",
+                      "typeString": "tuple(uint256,uint256)"
+                    }
+                  },
+                  "functionReturnParameters": 804,
+                  "id": 808,
+                  "nodeType": "Return",
+                  "src": "3290:51:4"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 796,
+              "nodeType": "StructuredDocumentation",
+              "src": "2708:402:4",
+              "text": "@notice Decodes call data used by createEVMScript method\n @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where\n _nodeOperatorId - id of node operator in NodeOperatorsRegistry\n _stakingLimit - new staking limit\n @return _nodeOperatorId Id of node operator in NodeOperatorsRegistry\n @return _stakingLimit New staking limit"
+            },
+            "functionSelector": "ecf7c690",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "decodeEVMScriptCallData",
+            "nameLocation": "3124:23:4",
+            "parameters": {
+              "id": 799,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 798,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "3161:18:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 810,
+                  "src": "3148:31:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 797,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3148:5:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3147:33:4"
+            },
+            "returnParameters": {
+              "id": 804,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 801,
+                  "mutability": "mutable",
+                  "name": "_nodeOperatorId",
+                  "nameLocation": "3236:15:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 810,
+                  "src": "3228:23:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 800,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3228:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 803,
+                  "mutability": "mutable",
+                  "name": "_stakingLimit",
+                  "nameLocation": "3261:13:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 810,
+                  "src": "3253:21:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 802,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3253:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3227:48:4"
+            },
+            "scope": 941,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 834,
+            "nodeType": "FunctionDefinition",
+            "src": "3430:267:4",
+            "nodes": [],
+            "body": {
+              "id": 833,
+              "nodeType": "Block",
+              "src": "3595:102:4",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "id": 831,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "components": [
+                        {
+                          "id": 819,
+                          "name": "_nodeOperatorId",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 815,
+                          "src": "3606:15:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        {
+                          "id": 820,
+                          "name": "_stakingLimit",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 817,
+                          "src": "3623:13:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        }
+                      ],
+                      "id": 821,
+                      "isConstant": false,
+                      "isInlineArray": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "nodeType": "TupleExpression",
+                      "src": "3605:32:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_tuple$_t_uint256_$_t_uint256_$",
+                        "typeString": "tuple(uint256,uint256)"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "arguments": [
+                        {
+                          "id": 824,
+                          "name": "_evmScriptCallData",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 812,
+                          "src": "3651:18:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_bytes_memory_ptr",
+                            "typeString": "bytes memory"
+                          }
+                        },
+                        {
+                          "components": [
+                            {
+                              "id": 826,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "lValueRequested": false,
+                              "nodeType": "ElementaryTypeNameExpression",
+                              "src": "3672:7:4",
+                              "typeDescriptions": {
+                                "typeIdentifier": "t_type$_t_uint256_$",
+                                "typeString": "type(uint256)"
+                              },
+                              "typeName": {
+                                "id": 825,
+                                "name": "uint256",
+                                "nodeType": "ElementaryTypeName",
+                                "src": "3672:7:4",
+                                "typeDescriptions": {}
+                              }
+                            },
+                            {
+                              "id": 828,
+                              "isConstant": false,
+                              "isLValue": false,
+                              "isPure": true,
+                              "lValueRequested": false,
+                              "nodeType": "ElementaryTypeNameExpression",
+                              "src": "3681:7:4",
+                              "typeDescriptions": {
+                                "typeIdentifier": "t_type$_t_uint256_$",
+                                "typeString": "type(uint256)"
+                              },
+                              "typeName": {
+                                "id": 827,
+                                "name": "uint256",
+                                "nodeType": "ElementaryTypeName",
+                                "src": "3681:7:4",
+                                "typeDescriptions": {}
+                              }
+                            }
+                          ],
+                          "id": 829,
+                          "isConstant": false,
+                          "isInlineArray": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "nodeType": "TupleExpression",
+                          "src": "3671:18:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_tuple$_t_type$_t_uint256_$_$_t_type$_t_uint256_$_$",
+                            "typeString": "tuple(type(uint256),type(uint256))"
+                          }
+                        }
+                      ],
+                      "expression": {
+                        "argumentTypes": [
+                          {
+                            "typeIdentifier": "t_bytes_memory_ptr",
+                            "typeString": "bytes memory"
+                          },
+                          {
+                            "typeIdentifier": "t_tuple$_t_type$_t_uint256_$_$_t_type$_t_uint256_$_$",
+                            "typeString": "tuple(type(uint256),type(uint256))"
+                          }
+                        ],
+                        "expression": {
+                          "id": 822,
+                          "name": "abi",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": -1,
+                          "src": "3640:3:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_magic_abi",
+                            "typeString": "abi"
+                          }
+                        },
+                        "id": 823,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "lValueRequested": false,
+                        "memberName": "decode",
+                        "nodeType": "MemberAccess",
+                        "src": "3640:10:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_function_abidecode_pure$__$returns$__$",
+                          "typeString": "function () pure"
+                        }
+                      },
+                      "id": 830,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "kind": "functionCall",
+                      "lValueRequested": false,
+                      "names": [],
+                      "nodeType": "FunctionCall",
+                      "src": "3640:50:4",
+                      "tryCall": false,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_tuple$_t_uint256_$_t_uint256_$",
+                        "typeString": "tuple(uint256,uint256)"
+                      }
+                    },
+                    "src": "3605:85:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 832,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3605:85:4"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_decodeEVMScriptCallData",
+            "nameLocation": "3439:24:4",
+            "parameters": {
+              "id": 813,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 812,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "3477:18:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 834,
+                  "src": "3464:31:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 811,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3464:5:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3463:33:4"
+            },
+            "returnParameters": {
+              "id": 818,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 815,
+                  "mutability": "mutable",
+                  "name": "_nodeOperatorId",
+                  "nameLocation": "3551:15:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 834,
+                  "src": "3543:23:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 814,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3543:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 817,
+                  "mutability": "mutable",
+                  "name": "_stakingLimit",
+                  "nameLocation": "3576:13:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 834,
+                  "src": "3568:21:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 816,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3568:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3542:48:4"
+            },
+            "scope": 941,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "private"
+          },
+          {
+            "id": 887,
+            "nodeType": "FunctionDefinition",
+            "src": "3703:705:4",
+            "nodes": [],
+            "body": {
+              "id": 886,
+              "nodeType": "Block",
+              "src": "3833:575:4",
+              "nodes": [],
+              "statements": [
+                {
+                  "assignments": [
+                    842,
+                    844
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 842,
+                      "mutability": "mutable",
+                      "name": "_nodeOperatorId",
+                      "nameLocation": "3852:15:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 886,
+                      "src": "3844:23:4",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      },
+                      "typeName": {
+                        "id": 841,
+                        "name": "uint256",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "3844:7:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      "visibility": "internal"
+                    },
+                    {
+                      "constant": false,
+                      "id": 844,
+                      "mutability": "mutable",
+                      "name": "_stakingLimit",
+                      "nameLocation": "3877:13:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 886,
+                      "src": "3869:21:4",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      },
+                      "typeName": {
+                        "id": 843,
+                        "name": "uint256",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "3869:7:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      "visibility": "internal"
+                    }
+                  ],
+                  "id": 848,
+                  "initialValue": {
+                    "arguments": [
+                      {
+                        "id": 846,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 838,
+                        "src": "3931:18:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "id": 845,
+                      "name": "_decodeEVMScriptCallData",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 834,
+                      "src": "3906:24:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_bytes_memory_ptr_$returns$_t_uint256_$_t_uint256_$",
+                        "typeString": "function (bytes memory) pure returns (uint256,uint256)"
+                      }
+                    },
+                    "id": 847,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3906:44:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$_t_uint256_$_t_uint256_$",
+                      "typeString": "tuple(uint256,uint256)"
+                    }
+                  },
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "3843:107:4"
+                },
+                {
+                  "assignments": [
+                    851
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 851,
+                      "mutability": "mutable",
+                      "name": "nodeOperatorData",
+                      "nameLocation": "3984:16:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 886,
+                      "src": "3960:40:4",
+                      "stateVariable": false,
+                      "storageLocation": "memory",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                        "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData"
+                      },
+                      "typeName": {
+                        "id": 850,
+                        "nodeType": "UserDefinedTypeName",
+                        "pathNode": {
+                          "id": 849,
+                          "name": "NodeOperatorData",
+                          "nodeType": "IdentifierPath",
+                          "referencedDeclaration": 738,
+                          "src": "3960:16:4"
+                        },
+                        "referencedDeclaration": 738,
+                        "src": "3960:16:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_NodeOperatorData_$738_storage_ptr",
+                          "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData"
+                        }
+                      },
+                      "visibility": "internal"
+                    }
+                  ],
+                  "id": 855,
+                  "initialValue": {
+                    "arguments": [
+                      {
+                        "id": 853,
+                        "name": "_nodeOperatorId",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 842,
+                        "src": "4024:15:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 852,
+                      "name": "_getNodeOperatorData",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 940,
+                      "src": "4003:20:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_view$_t_uint256_$returns$_t_struct$_NodeOperatorData_$738_memory_ptr_$",
+                        "typeString": "function (uint256) view returns (struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory)"
+                      }
+                    },
+                    "id": 854,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "4003:37:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                      "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                    }
+                  },
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "3960:80:4"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        "id": 860,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "expression": {
+                            "id": 857,
+                            "name": "nodeOperatorData",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 851,
+                            "src": "4058:16:4",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                              "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                            }
+                          },
+                          "id": 858,
+                          "isConstant": false,
+                          "isLValue": true,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "rewardAddress",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": 733,
+                          "src": "4058:30:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "==",
+                        "rightExpression": {
+                          "id": 859,
+                          "name": "_creator",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 836,
+                          "src": "4092:8:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        },
+                        "src": "4058:42:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 861,
+                        "name": "ERROR_CALLER_IS_NOT_NODE_OPERATOR",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 744,
+                        "src": "4102:33:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 856,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "4050:7:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 862,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "4050:86:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 863,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4050:86:4"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "expression": {
+                          "id": 865,
+                          "name": "nodeOperatorData",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 851,
+                          "src": "4154:16:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                            "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                          }
+                        },
+                        "id": 866,
+                        "isConstant": false,
+                        "isLValue": true,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "memberName": "active",
+                        "nodeType": "MemberAccess",
+                        "referencedDeclaration": 731,
+                        "src": "4154:23:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 867,
+                        "name": "ERROR_NODE_OPERATOR_DISABLED",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 741,
+                        "src": "4179:28:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 864,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "4146:7:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 868,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "4146:62:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 869,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4146:62:4"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        "id": 874,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "expression": {
+                            "id": 871,
+                            "name": "nodeOperatorData",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 851,
+                            "src": "4226:16:4",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                              "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                            }
+                          },
+                          "id": 872,
+                          "isConstant": false,
+                          "isLValue": true,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "stakingLimit",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": 735,
+                          "src": "4226:29:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "<",
+                        "rightExpression": {
+                          "id": 873,
+                          "name": "_stakingLimit",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 844,
+                          "src": "4258:13:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "src": "4226:45:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 875,
+                        "name": "ERROR_STAKING_LIMIT_TOO_LOW",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 747,
+                        "src": "4273:27:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 870,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "4218:7:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 876,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "4218:83:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 877,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4218:83:4"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        "id": 882,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "expression": {
+                            "id": 879,
+                            "name": "nodeOperatorData",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 851,
+                            "src": "4319:16:4",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                              "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                            }
+                          },
+                          "id": 880,
+                          "isConstant": false,
+                          "isLValue": true,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "totalSigningKeys",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": 737,
+                          "src": "4319:33:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": ">=",
+                        "rightExpression": {
+                          "id": 881,
+                          "name": "_stakingLimit",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 844,
+                          "src": "4356:13:4",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "src": "4319:50:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 883,
+                        "name": "ERROR_NOT_ENOUGH_SIGNING_KEYS",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 750,
+                        "src": "4371:29:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 878,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "4311:7:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 884,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "4311:90:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 885,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4311:90:4"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_validateCreatorAndEVMScriptCallData",
+            "nameLocation": "3712:36:4",
+            "parameters": {
+              "id": 839,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 836,
+                  "mutability": "mutable",
+                  "name": "_creator",
+                  "nameLocation": "3757:8:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 887,
+                  "src": "3749:16:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 835,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3749:7:4",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 838,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "3780:18:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 887,
+                  "src": "3767:31:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 837,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3767:5:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3748:51:4"
+            },
+            "returnParameters": {
+              "id": 840,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3833:0:4"
+            },
+            "scope": 941,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "private"
+          },
+          {
+            "id": 940,
+            "nodeType": "FunctionDefinition",
+            "src": "4414:596:4",
+            "nodes": [],
+            "body": {
+              "id": 939,
+              "nodeType": "Block",
+              "src": "4562:448:4",
+              "nodes": [],
+              "statements": [
+                {
+                  "assignments": [
+                    896,
+                    null,
+                    898,
+                    900,
+                    null,
+                    902,
+                    null
+                  ],
+                  "declarations": [
+                    {
+                      "constant": false,
+                      "id": 896,
+                      "mutability": "mutable",
+                      "name": "active",
+                      "nameLocation": "4578:6:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 939,
+                      "src": "4573:11:4",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      },
+                      "typeName": {
+                        "id": 895,
+                        "name": "bool",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "4573:4:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      "visibility": "internal"
+                    },
+                    null,
+                    {
+                      "constant": false,
+                      "id": 898,
+                      "mutability": "mutable",
+                      "name": "rewardAddress",
+                      "nameLocation": "4596:13:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 939,
+                      "src": "4588:21:4",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      },
+                      "typeName": {
+                        "id": 897,
+                        "name": "address",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "4588:7:4",
+                        "stateMutability": "nonpayable",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      },
+                      "visibility": "internal"
+                    },
+                    {
+                      "constant": false,
+                      "id": 900,
+                      "mutability": "mutable",
+                      "name": "stakingLimit",
+                      "nameLocation": "4618:12:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 939,
+                      "src": "4611:19:4",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint64",
+                        "typeString": "uint64"
+                      },
+                      "typeName": {
+                        "id": 899,
+                        "name": "uint64",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "4611:6:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint64",
+                          "typeString": "uint64"
+                        }
+                      },
+                      "visibility": "internal"
+                    },
+                    null,
+                    {
+                      "constant": false,
+                      "id": 902,
+                      "mutability": "mutable",
+                      "name": "totalSigningKeys",
+                      "nameLocation": "4641:16:4",
+                      "nodeType": "VariableDeclaration",
+                      "scope": 939,
+                      "src": "4634:23:4",
+                      "stateVariable": false,
+                      "storageLocation": "default",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint64",
+                        "typeString": "uint64"
+                      },
+                      "typeName": {
+                        "id": 901,
+                        "name": "uint64",
+                        "nodeType": "ElementaryTypeName",
+                        "src": "4634:6:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint64",
+                          "typeString": "uint64"
+                        }
+                      },
+                      "visibility": "internal"
+                    },
+                    null
+                  ],
+                  "id": 908,
+                  "initialValue": {
+                    "arguments": [
+                      {
+                        "id": 905,
+                        "name": "_nodeOperatorId",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 889,
+                        "src": "4713:15:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      },
+                      {
+                        "hexValue": "66616c7365",
+                        "id": 906,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "kind": "bool",
+                        "lValueRequested": false,
+                        "nodeType": "Literal",
+                        "src": "4730:5:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        "value": "false"
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      ],
+                      "expression": {
+                        "id": 903,
+                        "name": "nodeOperatorsRegistry",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 754,
+                        "src": "4675:21:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_contract$_INodeOperatorsRegistry_$724",
+                          "typeString": "contract INodeOperatorsRegistry"
+                        }
+                      },
+                      "id": 904,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "getNodeOperator",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 716,
+                      "src": "4675:37:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_external_view$_t_uint256_$_t_bool_$returns$_t_bool_$_t_string_memory_ptr_$_t_address_$_t_uint64_$_t_uint64_$_t_uint64_$_t_uint64_$",
+                        "typeString": "function (uint256,bool) view external returns (bool,string memory,address,uint64,uint64,uint64,uint64)"
+                      }
+                    },
+                    "id": 907,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "4675:61:4",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$_t_bool_$_t_string_memory_ptr_$_t_address_$_t_uint64_$_t_uint64_$_t_uint64_$_t_uint64_$",
+                      "typeString": "tuple(bool,string memory,address,uint64,uint64,uint64,uint64)"
+                    }
+                  },
+                  "nodeType": "VariableDeclarationStatement",
+                  "src": "4572:164:4"
+                },
+                {
+                  "expression": {
+                    "id": 913,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "expression": {
+                        "id": 909,
+                        "name": "_nodeOperatorData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 893,
+                        "src": "4747:17:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                          "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                        }
+                      },
+                      "id": 911,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "id",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 729,
+                      "src": "4747:20:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 912,
+                      "name": "_nodeOperatorId",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 889,
+                      "src": "4770:15:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "src": "4747:38:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 914,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4747:38:4"
+                },
+                {
+                  "expression": {
+                    "id": 919,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "expression": {
+                        "id": 915,
+                        "name": "_nodeOperatorData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 893,
+                        "src": "4795:17:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                          "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                        }
+                      },
+                      "id": 917,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "active",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 731,
+                      "src": "4795:24:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 918,
+                      "name": "active",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 896,
+                      "src": "4822:6:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_bool",
+                        "typeString": "bool"
+                      }
+                    },
+                    "src": "4795:33:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "id": 920,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4795:33:4"
+                },
+                {
+                  "expression": {
+                    "id": 925,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "expression": {
+                        "id": 921,
+                        "name": "_nodeOperatorData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 893,
+                        "src": "4838:17:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                          "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                        }
+                      },
+                      "id": 923,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "rewardAddress",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 733,
+                      "src": "4838:31:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 924,
+                      "name": "rewardAddress",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 898,
+                      "src": "4872:13:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_address",
+                        "typeString": "address"
+                      }
+                    },
+                    "src": "4838:47:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "id": 926,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4838:47:4"
+                },
+                {
+                  "expression": {
+                    "id": 931,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "expression": {
+                        "id": 927,
+                        "name": "_nodeOperatorData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 893,
+                        "src": "4895:17:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                          "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                        }
+                      },
+                      "id": 929,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "stakingLimit",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 735,
+                      "src": "4895:30:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 930,
+                      "name": "stakingLimit",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 900,
+                      "src": "4928:12:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint64",
+                        "typeString": "uint64"
+                      }
+                    },
+                    "src": "4895:45:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 932,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4895:45:4"
+                },
+                {
+                  "expression": {
+                    "id": 937,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "expression": {
+                        "id": 933,
+                        "name": "_nodeOperatorData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 893,
+                        "src": "4950:17:4",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                          "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData memory"
+                        }
+                      },
+                      "id": 935,
+                      "isConstant": false,
+                      "isLValue": true,
+                      "isPure": false,
+                      "lValueRequested": true,
+                      "memberName": "totalSigningKeys",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 737,
+                      "src": "4950:34:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 936,
+                      "name": "totalSigningKeys",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 902,
+                      "src": "4987:16:4",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint64",
+                        "typeString": "uint64"
+                      }
+                    },
+                    "src": "4950:53:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 938,
+                  "nodeType": "ExpressionStatement",
+                  "src": "4950:53:4"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_getNodeOperatorData",
+            "nameLocation": "4423:20:4",
+            "parameters": {
+              "id": 890,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 889,
+                  "mutability": "mutable",
+                  "name": "_nodeOperatorId",
+                  "nameLocation": "4452:15:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 940,
+                  "src": "4444:23:4",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 888,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "4444:7:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4443:25:4"
+            },
+            "returnParameters": {
+              "id": 894,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 893,
+                  "mutability": "mutable",
+                  "name": "_nodeOperatorData",
+                  "nameLocation": "4539:17:4",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 940,
+                  "src": "4515:41:4",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_NodeOperatorData_$738_memory_ptr",
+                    "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData"
+                  },
+                  "typeName": {
+                    "id": 892,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 891,
+                      "name": "NodeOperatorData",
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 738,
+                      "src": "4515:16:4"
+                    },
+                    "referencedDeclaration": 738,
+                    "src": "4515:16:4",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_NodeOperatorData_$738_storage_ptr",
+                      "typeString": "struct IncreaseNodeOperatorStakingLimit.NodeOperatorData"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "4514:43:4"
+            },
+            "scope": 941,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "private"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 726,
+              "name": "IEVMScriptFactory",
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 4150,
+              "src": "820:17:4"
+            },
+            "id": 727,
+            "nodeType": "InheritanceSpecifier",
+            "src": "820:17:4"
+          }
+        ],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 725,
+          "nodeType": "StructuredDocumentation",
+          "src": "682:93:4",
+          "text": "@author psirex\n @notice Creates EVMScript to increase staking limit for node operator"
+        },
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          941,
+          4150
+        ],
+        "name": "IncreaseNodeOperatorStakingLimit",
+        "nameLocation": "784:32:4",
+        "scope": 942,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 4
+}

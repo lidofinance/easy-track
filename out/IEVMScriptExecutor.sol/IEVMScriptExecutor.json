@@ -1,0 +1,243 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_evmScript",
+          "type": "bytes"
+        }
+      ],
+      "name": "executeEVMScript",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "executeEVMScript(bytes)": "4a27111d"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_evmScript\",\"type\":\"bytes\"}],\"name\":\"executeEVMScript\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"Interface of EVMScript executor used by EasyTrack\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IEVMScriptExecutor.sol\":\"IEVMScriptExecutor\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/interfaces/IEVMScriptExecutor.sol\":{\"keccak256\":\"0x309134026ef64e7713bfa2a83b68d9d946c8e15226d84d827be49a0b5c82f2a5\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://9e89b82b85467f004a08f53de7b2897bb7ece632d06fcdf2615ea93f8def3e5c\",\"dweb:/ipfs/QmbDPSLyc3ZnVgiYjarky6McbX1CBaNNhCr5tXvLCpzK7n\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "_evmScript",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "executeEVMScript",
+          "outputs": [
+            {
+              "internalType": "bytes",
+              "name": "",
+              "type": "bytes"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/interfaces/IEVMScriptExecutor.sol": "IEVMScriptExecutor"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/interfaces/IEVMScriptExecutor.sol": {
+        "keccak256": "0x309134026ef64e7713bfa2a83b68d9d946c8e15226d84d827be49a0b5c82f2a5",
+        "urls": [
+          "bzz-raw://9e89b82b85467f004a08f53de7b2897bb7ece632d06fcdf2615ea93f8def3e5c",
+          "dweb:/ipfs/QmbDPSLyc3ZnVgiYjarky6McbX1CBaNNhCr5tXvLCpzK7n"
+        ],
+        "license": "GPL-3.0"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": {}
+  },
+  "ast": {
+    "absolutePath": "contracts/interfaces/IEVMScriptExecutor.sol",
+    "id": 4138,
+    "exportedSymbols": {
+      "IEVMScriptExecutor": [
+        4137
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:208:17",
+    "nodes": [
+      {
+        "id": 4128,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:17",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 4137,
+        "nodeType": "ContractDefinition",
+        "src": "176:120:17",
+        "nodes": [
+          {
+            "id": 4136,
+            "nodeType": "FunctionDefinition",
+            "src": "211:83:17",
+            "nodes": [],
+            "functionSelector": "4a27111d",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "executeEVMScript",
+            "nameLocation": "220:16:17",
+            "parameters": {
+              "id": 4132,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4131,
+                  "mutability": "mutable",
+                  "name": "_evmScript",
+                  "nameLocation": "250:10:17",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4136,
+                  "src": "237:23:17",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 4130,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "237:5:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "236:25:17"
+            },
+            "returnParameters": {
+              "id": 4135,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4134,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4136,
+                  "src": "280:12:17",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 4133,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "280:5:17",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "279:14:17"
+            },
+            "scope": 4137,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": {
+          "id": 4129,
+          "nodeType": "StructuredDocumentation",
+          "src": "114:62:17",
+          "text": "@notice Interface of EVMScript executor used by EasyTrack"
+        },
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          4137
+        ],
+        "name": "IEVMScriptExecutor",
+        "nameLocation": "186:18:17",
+        "scope": 4138,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 17
+}

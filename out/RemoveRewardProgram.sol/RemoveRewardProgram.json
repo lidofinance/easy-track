@@ -1,0 +1,1668 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_trustedCaller",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_rewardProgramsRegistry",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_creator",
+          "type": "address"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_evmScriptCallData",
+          "type": "bytes"
+        }
+      ],
+      "name": "createEVMScript",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_evmScriptCallData",
+          "type": "bytes"
+        }
+      ],
+      "name": "decodeEVMScriptCallData",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "_rewardProgram",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rewardProgramsRegistry",
+      "outputs": [
+        {
+          "internalType": "contract RewardProgramsRegistry",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "trustedCaller",
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x60c060405234801561001057600080fd5b5060405161077e38038061077e83398101604081905261002f916100d2565b60408051808201909152601e81527f545255535445445f43414c4c45525f49535f5a45524f5f414444524553530000602082015282906001600160a01b0382166100955760405162461bcd60e51b815260040161008c9190610105565b60405180910390fd5b506001600160601b0319606091821b811660805291901b1660a0525061015a565b80516001600160a01b03811681146100cd57600080fd5b919050565b600080604083850312156100e557600080fd5b6100ee836100b6565b91506100fc602084016100b6565b90509250929050565b600060208083528351808285015260005b8181101561013257858101830151858201604001528201610116565b81811115610144576000604083870101525b50601f01601f1916929092016040019392505050565b60805160601c60a05160601c6105e661019860003960008181609a0152818161018e01526102950152600081816056015261010501526105e66000f3fe608060405234801561001057600080fd5b506004361061004c5760003560e01c8063268f0760146100515780633f052ae914610095578063ecf7c690146100bc578063fea21c9c146100cf575b600080fd5b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020015b60405180910390f35b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6100786100ca366004610447565b6100ef565b6100e26100dd3660046103d5565b610100565b60405161008c9190610509565b60006100fa826102ca565b92915050565b6060827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316816001600160a01b0316146040518060400160405280601381526020017221a0a62622a92fa4a9afa327a92124a22222a760691b8152509061018b5760405162461bcd60e51b81526004016101829190610509565b60405180910390fd5b507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316639525581c6101c4856102ca565b6040516001600160e01b031960e084901b1681526001600160a01b03909116600482015260240160206040518083038186803b15801561020357600080fd5b505afa158015610217573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061023b9190610425565b6040518060400160405280601881526020017f5245574152445f50524f4752414d5f4e4f545f464f554e4400000000000000008152509061028f5760405162461bcd60e51b81526004016101829190610509565b506102c27f0000000000000000000000000000000000000000000000000000000000000000634a2919f160e11b856102e0565b949350505050565b6000818060200190518101906100fa91906103b1565b6060600160e01b84835160046102f6919061051c565b858560405160200161030c9594939291906104a8565b60405160208183030381529060405290509392505050565b600082601f83011261033557600080fd5b813567ffffffffffffffff8082111561035057610350610582565b604051601f8301601f19908116603f0116810190828211818310171561037857610378610582565b8160405283815286602085880101111561039157600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000602082840312156103c357600080fd5b81516103ce81610598565b9392505050565b600080604083850312156103e857600080fd5b82356103f381610598565b9150602083013567ffffffffffffffff81111561040f57600080fd5b61041b85828601610324565b9150509250929050565b60006020828403121561043757600080fd5b815180151581146103ce57600080fd5b60006020828403121561045957600080fd5b813567ffffffffffffffff81111561047057600080fd5b6102c284828501610324565b60008151808452610494816020860160208601610552565b601f01601f19169290920160200192915050565b6001600160e01b03198681168252606086901b6bffffffffffffffffffffffff1916600483015260e085901b811660188301528316601c82015281516000906104f8816020808601908701610552565b919091016020019695505050505050565b6020815260006103ce602083018461047c565b600063ffffffff80831681851680830382111561054957634e487b7160e01b600052601160045260246000fd5b01949350505050565b60005b8381101561056d578181015183820152602001610555565b8381111561057c576000848401525b50505050565b634e487b7160e01b600052604160045260246000fd5b6001600160a01b03811681146105ad57600080fd5b5056fea26469706673582212204f558fca19a1d21bd13653fcd9520b44cecdd48ba28c34d61cfc18b9c3e9772b64736f6c63430008060033",
+    "sourceMap": "378:2242:6:-:0;;;837:200;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;656:36:15;;;;;;;;;;;;;;;;;928:14:6;;-1:-1:-1;;;;;626:28:15;;618:75;;;;-1:-1:-1;;;618:75:15;;;;;;;;:::i;:::-;;;;;;;;;-1:-1:-1;;;;;;;703:30:15;;;;;;;;958:72:6;;;;::::1;::::0;-1:-1:-1;378:2242:6;;14:177:40;93:13;;-1:-1:-1;;;;;135:31:40;;125:42;;115:2;;181:1;178;171:12;115:2;74:117;;;:::o;196:293::-;275:6;283;336:2;324:9;315:7;311:23;307:32;304:2;;;352:1;349;342:12;304:2;375:40;405:9;375:40;:::i;:::-;365:50;;434:49;479:2;468:9;464:18;434:49;:::i;:::-;424:59;;294:195;;;;;:::o;494:597::-;606:4;635:2;664;653:9;646:21;696:6;690:13;739:6;734:2;723:9;719:18;712:34;764:1;774:140;788:6;785:1;782:13;774:140;;;883:14;;;879:23;;873:30;849:17;;;868:2;845:26;838:66;803:10;;774:140;;;932:6;929:1;926:13;923:2;;;1002:1;997:2;988:6;977:9;973:22;969:31;962:42;923:2;-1:-1:-1;1075:2:40;1054:15;-1:-1:-1;;1050:29:40;1035:45;;;;1082:2;1031:54;;615:476;-1:-1:-1;;;615:476:40:o;:::-;378:2242:6;;;;;;;;;;;;;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x608060405234801561001057600080fd5b506004361061004c5760003560e01c8063268f0760146100515780633f052ae914610095578063ecf7c690146100bc578063fea21c9c146100cf575b600080fd5b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6040516001600160a01b0390911681526020015b60405180910390f35b6100787f000000000000000000000000000000000000000000000000000000000000000081565b6100786100ca366004610447565b6100ef565b6100e26100dd3660046103d5565b610100565b60405161008c9190610509565b60006100fa826102ca565b92915050565b6060827f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316816001600160a01b0316146040518060400160405280601381526020017221a0a62622a92fa4a9afa327a92124a22222a760691b8152509061018b5760405162461bcd60e51b81526004016101829190610509565b60405180910390fd5b507f00000000000000000000000000000000000000000000000000000000000000006001600160a01b0316639525581c6101c4856102ca565b6040516001600160e01b031960e084901b1681526001600160a01b03909116600482015260240160206040518083038186803b15801561020357600080fd5b505afa158015610217573d6000803e3d6000fd5b505050506040513d601f19601f8201168201806040525081019061023b9190610425565b6040518060400160405280601881526020017f5245574152445f50524f4752414d5f4e4f545f464f554e4400000000000000008152509061028f5760405162461bcd60e51b81526004016101829190610509565b506102c27f0000000000000000000000000000000000000000000000000000000000000000634a2919f160e11b856102e0565b949350505050565b6000818060200190518101906100fa91906103b1565b6060600160e01b84835160046102f6919061051c565b858560405160200161030c9594939291906104a8565b60405160208183030381529060405290509392505050565b600082601f83011261033557600080fd5b813567ffffffffffffffff8082111561035057610350610582565b604051601f8301601f19908116603f0116810190828211818310171561037857610378610582565b8160405283815286602085880101111561039157600080fd5b836020870160208301376000602085830101528094505050505092915050565b6000602082840312156103c357600080fd5b81516103ce81610598565b9392505050565b600080604083850312156103e857600080fd5b82356103f381610598565b9150602083013567ffffffffffffffff81111561040f57600080fd5b61041b85828601610324565b9150509250929050565b60006020828403121561043757600080fd5b815180151581146103ce57600080fd5b60006020828403121561045957600080fd5b813567ffffffffffffffff81111561047057600080fd5b6102c284828501610324565b60008151808452610494816020860160208601610552565b601f01601f19169290920160200192915050565b6001600160e01b03198681168252606086901b6bffffffffffffffffffffffff1916600483015260e085901b811660188301528316601c82015281516000906104f8816020808601908701610552565b919091016020019695505050505050565b6020815260006103ce602083018461047c565b600063ffffffff80831681851680830382111561054957634e487b7160e01b600052601160045260246000fd5b01949350505050565b60005b8381101561056d578181015183820152602001610555565b8381111561057c576000848401525b50505050565b634e487b7160e01b600052604160045260246000fd5b6001600160a01b03811681146105ad57600080fd5b5056fea26469706673582212204f558fca19a1d21bd13653fcd9520b44cecdd48ba28c34d61cfc18b9c3e9772b64736f6c63430008060033",
+    "sourceMap": "378:2242:6:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;527:38:15;;;;;;;;-1:-1:-1;;;;;3156:32:40;;;3138:51;;3126:2;3111:18;527:38:15;;;;;;;;706:62:6;;;;;2136:209;;;;;;:::i;:::-;;:::i;1325:599::-;;;;;;:::i;:::-;;:::i;:::-;;;;;;;:::i;2136:209::-;2249:22;2294:44;2319:18;2294:24;:44::i;:::-;2287:51;2136:209;-1:-1:-1;;2136:209:6:o;1325:599::-;1501:12;1474:8;819:13:15;-1:-1:-1;;;;;808:24:15;:7;-1:-1:-1;;;;;808:24:15;;834:25;;;;;;;;;;;;;-1:-1:-1;;;834:25:15;;;800:60;;;;;-1:-1:-1;;;800:60:15;;;;;;;;:::i;:::-;;;;;;;;;;1550:22:6::1;-1:-1:-1::0;;;;;1550:38:6::1;;1589:44;1614:18;1589:24;:44::i;:::-;1550:84;::::0;-1:-1:-1;;;;;;1550:84:6::1;::::0;;;;;;-1:-1:-1;;;;;3156:32:40;;;1550:84:6::1;::::0;::::1;3138:51:40::0;3111:18;;1550:84:6::1;;;;;;;;;;;;;;;;::::0;::::1;;;;;;;;;;;;::::0;::::1;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;1648:30;;;;;;;;;;;;;;;;::::0;1529:159:::1;;;;;-1:-1:-1::0;;;1529:159:6::1;;;;;;;;:::i;:::-;-1:-1:-1::0;1717:200:6::1;1775:22;-1:-1:-1::0;;;1885:18:6;1717:32:::1;:200::i;:::-;1698:219:::0;1325:599;-1:-1:-1;;;;1325:599:6:o;2427:191::-;2540:7;2581:18;2570:41;;;;;;;;;;;;:::i;427:396:21:-;569:22;-1:-1:-1;;;681:3:21;709:18;:25;738:1;702:37;;;;:::i;:::-;757:9;784:18;622:194;;;;;;;;;;;;:::i;:::-;;;;;;;;;;;;;603:213;;427:396;;;;;:::o;14:718:40:-;56:5;109:3;102:4;94:6;90:17;86:27;76:2;;127:1;124;117:12;76:2;163:6;150:20;189:18;226:2;222;219:10;216:2;;;232:18;;:::i;:::-;307:2;301:9;275:2;361:13;;-1:-1:-1;;357:22:40;;;381:2;353:31;349:40;337:53;;;405:18;;;425:22;;;402:46;399:2;;;451:18;;:::i;:::-;491:10;487:2;480:22;526:2;518:6;511:18;572:3;565:4;560:2;552:6;548:15;544:26;541:35;538:2;;;589:1;586;579:12;538:2;653;646:4;638:6;634:17;627:4;619:6;615:17;602:54;700:1;693:4;688:2;680:6;676:15;672:26;665:37;720:6;711:15;;;;;;66:666;;;;:::o;737:259::-;815:6;868:2;856:9;847:7;843:23;839:32;836:2;;;884:1;881;874:12;836:2;916:9;910:16;935:31;960:5;935:31;:::i;:::-;985:5;826:170;-1:-1:-1;;;826:170:40:o;1001:455::-;1078:6;1086;1139:2;1127:9;1118:7;1114:23;1110:32;1107:2;;;1155:1;1152;1145:12;1107:2;1194:9;1181:23;1213:31;1238:5;1213:31;:::i;:::-;1263:5;-1:-1:-1;1319:2:40;1304:18;;1291:32;1346:18;1335:30;;1332:2;;;1378:1;1375;1368:12;1332:2;1401:49;1442:7;1433:6;1422:9;1418:22;1401:49;:::i;:::-;1391:59;;;1097:359;;;;;:::o;1461:277::-;1528:6;1581:2;1569:9;1560:7;1556:23;1552:32;1549:2;;;1597:1;1594;1587:12;1549:2;1629:9;1623:16;1682:5;1675:13;1668:21;1661:5;1658:32;1648:2;;1704:1;1701;1694:12;1743:320;1811:6;1864:2;1852:9;1843:7;1839:23;1835:32;1832:2;;;1880:1;1877;1870:12;1832:2;1920:9;1907:23;1953:18;1945:6;1942:30;1939:2;;;1985:1;1982;1975:12;1939:2;2008:49;2049:7;2040:6;2029:9;2025:22;2008:49;:::i;2068:257::-;2109:3;2147:5;2141:12;2174:6;2169:3;2162:19;2190:63;2246:6;2239:4;2234:3;2230:14;2223:4;2216:5;2212:16;2190:63;:::i;:::-;2307:2;2286:15;-1:-1:-1;;2282:29:40;2273:39;;;;2314:4;2269:50;;2117:208;-1:-1:-1;;2117:208:40:o;2330:657::-;-1:-1:-1;;;;;;2634:15:40;;;2622:28;;2687:2;2683:15;;;-1:-1:-1;;2679:53:40;2675:1;2666:11;;2659:74;2597:3;2767:16;;;2763:25;;2758:2;2749:12;;2742:47;2819:15;;2814:2;2805:12;;2798:37;2858:13;;2565:3;;2880:60;2858:13;2928:2;2919:12;;;;2902:15;;2880:60;:::i;:::-;2960:16;;;;2978:2;2956:25;;2573:414;-1:-1:-1;;;;;;2573:414:40:o;3200:217::-;3347:2;3336:9;3329:21;3310:4;3367:44;3407:2;3396:9;3392:18;3384:6;3367:44;:::i;3885:325::-;3924:3;3952:10;3989:2;3986:1;3982:10;4019:2;4016:1;4012:10;4050:3;4046:2;4042:12;4037:3;4034:21;4031:2;;;4097:10;4092:3;4088:20;4085:1;4078:31;4132:4;4129:1;4122:15;4160:4;4157:1;4150:15;4031:2;4191:13;;3932:278;-1:-1:-1;;;;3932:278:40:o;4215:258::-;4287:1;4297:113;4311:6;4308:1;4305:13;4297:113;;;4387:11;;;4381:18;4368:11;;;4361:39;4333:2;4326:10;4297:113;;;4428:6;4425:1;4422:13;4419:2;;;4463:1;4454:6;4449:3;4445:16;4438:27;4419:2;;4268:205;;;:::o;4478:127::-;4539:10;4534:3;4530:20;4527:1;4520:31;4570:4;4567:1;4560:15;4594:4;4591:1;4584:15;4610:131;-1:-1:-1;;;;;4685:31:40;;4675:42;;4665:2;;4731:1;4728;4721:12;4665:2;4655:86;:::o",
+    "linkReferences": {},
+    "immutableReferences": {
+      "1061": [
+        {
+          "start": 154,
+          "length": 32
+        },
+        {
+          "start": 398,
+          "length": 32
+        },
+        {
+          "start": 661,
+          "length": 32
+        }
+      ],
+      "4057": [
+        {
+          "start": 86,
+          "length": 32
+        },
+        {
+          "start": 261,
+          "length": 32
+        }
+      ]
+    }
+  },
+  "methodIdentifiers": {
+    "createEVMScript(address,bytes)": "fea21c9c",
+    "decodeEVMScriptCallData(bytes)": "ecf7c690",
+    "rewardProgramsRegistry()": "3f052ae9",
+    "trustedCaller()": "268f0760"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_trustedCaller\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_rewardProgramsRegistry\",\"type\":\"address\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_creator\",\"type\":\"address\"},{\"internalType\":\"bytes\",\"name\":\"_evmScriptCallData\",\"type\":\"bytes\"}],\"name\":\"createEVMScript\",\"outputs\":[{\"internalType\":\"bytes\",\"name\":\"\",\"type\":\"bytes\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_evmScriptCallData\",\"type\":\"bytes\"}],\"name\":\"decodeEVMScriptCallData\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"_rewardProgram\",\"type\":\"address\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"rewardProgramsRegistry\",\"outputs\":[{\"internalType\":\"contract RewardProgramsRegistry\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"trustedCaller\",\"outputs\":[{\"internalType\":\"address\",\"name\":\"\",\"type\":\"address\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"psirex\",\"kind\":\"dev\",\"methods\":{\"createEVMScript(address,bytes)\":{\"params\":{\"_creator\":\"Address who creates EVMScript\",\"_evmScriptCallData\":\"Encoded tuple: (address _rewardProgram)\"}},\"decodeEVMScriptCallData(bytes)\":{\"params\":{\"_evmScriptCallData\":\"Encoded tuple: (address _rewardProgram)\"},\"returns\":{\"_rewardProgram\":\"Address of reward program to remove\"}}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"createEVMScript(address,bytes)\":{\"notice\":\"Creates EVMScript to remove reward program from RewardProgramsRegistry\"},\"decodeEVMScriptCallData(bytes)\":{\"notice\":\"Decodes call data used by createEVMScript method\"},\"rewardProgramsRegistry()\":{\"notice\":\"Address of RewardsProgramsRegistry\"}},\"notice\":\"Creates EVMScript to remove reward program from RewardProgramsRegistry\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/EVMScriptFactories/RemoveRewardProgram.sol\":\"RemoveRewardProgram\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/EVMScriptFactories/RemoveRewardProgram.sol\":{\"keccak256\":\"0x4fbbb7d66667899e1c7c448a8754b6ccd09ab27e1e0ae22a8b758b0f794fdf3d\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://dda56960d2d4e00f5213f46d1197a20046672f0791fffc01d6a3cb05f87e7ad0\",\"dweb:/ipfs/QmbmWYKVLYSJ5ihtkk33UCCgBPofM3PLwuMmnuTEZTAfzt\"]},\"contracts/RewardProgramsRegistry.sol\":{\"keccak256\":\"0x30394aee9279cec3c0b31e81b34f2a097ababdf72ed61d6a252a979e32ae5363\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://f82ffa3641cd51ca01ca40f545e0f793c1e43efda19e3a679bd78527e97ebfc0\",\"dweb:/ipfs/QmfLeTAL6DAAFn2mzd5BX2u6EMp7fzQ8RU62TZjNGcTh7W\"]},\"contracts/TrustedCaller.sol\":{\"keccak256\":\"0x635af50e89095f2e12292373a717613df73857f39c043f73a8fb0590ac90fd41\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://eaa6fcc891e6e22bf4b8cdc99f0c2b1624cfe7180a94c9dd8cf6f7b647bc3ca4\",\"dweb:/ipfs/QmdBTbVsiggkWd8L5p1iXv2PozyD23n1mwXqvs3M7QxmJk\"]},\"contracts/interfaces/IEVMScriptFactory.sol\":{\"keccak256\":\"0x9817e66f8cca4676de6880e2036683512b0a9ded1a753dc6ada41a0e110ef484\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://32febde596db57b8b3bf1481d69b08e767e7cf4b3b88f3f69f06d5a2c4f12d46\",\"dweb:/ipfs/QmWTW7KgRxbDzdXHG1Rf7e4aXJ62Wbsw8dJdSfgeyLcRNs\"]},\"contracts/libraries/EVMScriptCreator.sol\":{\"keccak256\":\"0x97c8cc5c528317c7d88dee51465d1166d73ffc3956ce01f1ebd72d090a45d8ea\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://25f2973ba1d7c3c296410aa5eb4f2990bf147d9e328588bf2212b456c4f51a74\",\"dweb:/ipfs/QmdSouE4bPYtSDpLV2DcR38UmWksAuRN7fHZ2VSEG5MfKE\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol\":{\"keccak256\":\"0x183481af1c40d2efb26b86f63d6fe9e22f24c87e436d60a69f261b38500e7cd6\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://f562746c399ae045994a88b2218d1238a349de07afbfb305aab0c7fdbc2954cc\",\"dweb:/ipfs/QmYoFrDD2c6fi9CpPz1bjCMAyketjZ3G7ByUSVQMntysms\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol\":{\"keccak256\":\"0xfe0edb09653ed10e8a1bfe03eb9b0ff06775666eee817a95bd3d0799f1ee2b44\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fbb9d503857eab98f87465df0f02fef03083f30c1dbec82f319f41aaadae19b4\",\"dweb:/ipfs/QmTxDshRAMtoeM45YrTzQZdpmy4mt4scCNHjfZiWSvdETF\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol\":{\"keccak256\":\"0x90565a39ae45c80f0468dc96c7b20d0afc3055f344c8203a0c9258239f350b9f\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://26e8b38a7ac8e7b4463af00cf7fff1bf48ae9875765bf4f7751e100124d0bc8c\",\"dweb:/ipfs/QmWcsmkVr24xmmjfnBQZoemFniXjj3vwT78Cz6uqZW1Hux\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol\":{\"keccak256\":\"0x391d3ba97ab6856a16b225d6ee29617ad15ff00db70f3b4df1ab5ea33aa47c9d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d636ba90bbbeed04a1ea7fe9ec2466757e30fd38ba2ca173636dbf69a518735e\",\"dweb:/ipfs/QmQwCB2BHnEuYR22PYt9HkpbgeFDhq4rHmaYqAZbX3WRC7\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol\":{\"keccak256\":\"0x5718c5df9bd67ac68a796961df938821bb5dc0cd4c6118d77e9145afb187409b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d10e1d9b26042424789246603906ad06143bf9a928f4e99de8b5e3bdc662f549\",\"dweb:/ipfs/Qmejonoaj5MLekPus229rJQHcC6E9dz2xorjHJR84fMfmn\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0xa28007762d9da9db878dd421960c8cb9a10471f47ab5c1b3309bfe48e9e79ff4\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://796ab6e88af7bf0e78def0f059310c903af6a312b565344e0ff524a0f26e81c6\",\"dweb:/ipfs/QmcsVgLgzWdor3UnAztUkXKNGcysm1MPneWksF72AvnwBx\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_trustedCaller",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_rewardProgramsRegistry",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_creator",
+              "type": "address"
+            },
+            {
+              "internalType": "bytes",
+              "name": "_evmScriptCallData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "createEVMScript",
+          "outputs": [
+            {
+              "internalType": "bytes",
+              "name": "",
+              "type": "bytes"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "_evmScriptCallData",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "decodeEVMScriptCallData",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "_rewardProgram",
+              "type": "address"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "rewardProgramsRegistry",
+          "outputs": [
+            {
+              "internalType": "contract RewardProgramsRegistry",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "trustedCaller",
+          "outputs": [
+            {
+              "internalType": "address",
+              "name": "",
+              "type": "address"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "createEVMScript(address,bytes)": {
+            "params": {
+              "_creator": "Address who creates EVMScript",
+              "_evmScriptCallData": "Encoded tuple: (address _rewardProgram)"
+            }
+          },
+          "decodeEVMScriptCallData(bytes)": {
+            "params": {
+              "_evmScriptCallData": "Encoded tuple: (address _rewardProgram)"
+            },
+            "returns": {
+              "_rewardProgram": "Address of reward program to remove"
+            }
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "createEVMScript(address,bytes)": {
+            "notice": "Creates EVMScript to remove reward program from RewardProgramsRegistry"
+          },
+          "decodeEVMScriptCallData(bytes)": {
+            "notice": "Decodes call data used by createEVMScript method"
+          },
+          "rewardProgramsRegistry()": {
+            "notice": "Address of RewardsProgramsRegistry"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/EVMScriptFactories/RemoveRewardProgram.sol": "RemoveRewardProgram"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/EVMScriptFactories/RemoveRewardProgram.sol": {
+        "keccak256": "0x4fbbb7d66667899e1c7c448a8754b6ccd09ab27e1e0ae22a8b758b0f794fdf3d",
+        "urls": [
+          "bzz-raw://dda56960d2d4e00f5213f46d1197a20046672f0791fffc01d6a3cb05f87e7ad0",
+          "dweb:/ipfs/QmbmWYKVLYSJ5ihtkk33UCCgBPofM3PLwuMmnuTEZTAfzt"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/RewardProgramsRegistry.sol": {
+        "keccak256": "0x30394aee9279cec3c0b31e81b34f2a097ababdf72ed61d6a252a979e32ae5363",
+        "urls": [
+          "bzz-raw://f82ffa3641cd51ca01ca40f545e0f793c1e43efda19e3a679bd78527e97ebfc0",
+          "dweb:/ipfs/QmfLeTAL6DAAFn2mzd5BX2u6EMp7fzQ8RU62TZjNGcTh7W"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/TrustedCaller.sol": {
+        "keccak256": "0x635af50e89095f2e12292373a717613df73857f39c043f73a8fb0590ac90fd41",
+        "urls": [
+          "bzz-raw://eaa6fcc891e6e22bf4b8cdc99f0c2b1624cfe7180a94c9dd8cf6f7b647bc3ca4",
+          "dweb:/ipfs/QmdBTbVsiggkWd8L5p1iXv2PozyD23n1mwXqvs3M7QxmJk"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/interfaces/IEVMScriptFactory.sol": {
+        "keccak256": "0x9817e66f8cca4676de6880e2036683512b0a9ded1a753dc6ada41a0e110ef484",
+        "urls": [
+          "bzz-raw://32febde596db57b8b3bf1481d69b08e767e7cf4b3b88f3f69f06d5a2c4f12d46",
+          "dweb:/ipfs/QmWTW7KgRxbDzdXHG1Rf7e4aXJ62Wbsw8dJdSfgeyLcRNs"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/libraries/EVMScriptCreator.sol": {
+        "keccak256": "0x97c8cc5c528317c7d88dee51465d1166d73ffc3956ce01f1ebd72d090a45d8ea",
+        "urls": [
+          "bzz-raw://25f2973ba1d7c3c296410aa5eb4f2990bf147d9e328588bf2212b456c4f51a74",
+          "dweb:/ipfs/QmdSouE4bPYtSDpLV2DcR38UmWksAuRN7fHZ2VSEG5MfKE"
+        ],
+        "license": "GPL-3.0"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol": {
+        "keccak256": "0x183481af1c40d2efb26b86f63d6fe9e22f24c87e436d60a69f261b38500e7cd6",
+        "urls": [
+          "bzz-raw://f562746c399ae045994a88b2218d1238a349de07afbfb305aab0c7fdbc2954cc",
+          "dweb:/ipfs/QmYoFrDD2c6fi9CpPz1bjCMAyketjZ3G7ByUSVQMntysms"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol": {
+        "keccak256": "0xfe0edb09653ed10e8a1bfe03eb9b0ff06775666eee817a95bd3d0799f1ee2b44",
+        "urls": [
+          "bzz-raw://fbb9d503857eab98f87465df0f02fef03083f30c1dbec82f319f41aaadae19b4",
+          "dweb:/ipfs/QmTxDshRAMtoeM45YrTzQZdpmy4mt4scCNHjfZiWSvdETF"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol": {
+        "keccak256": "0x90565a39ae45c80f0468dc96c7b20d0afc3055f344c8203a0c9258239f350b9f",
+        "urls": [
+          "bzz-raw://26e8b38a7ac8e7b4463af00cf7fff1bf48ae9875765bf4f7751e100124d0bc8c",
+          "dweb:/ipfs/QmWcsmkVr24xmmjfnBQZoemFniXjj3vwT78Cz6uqZW1Hux"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol": {
+        "keccak256": "0x391d3ba97ab6856a16b225d6ee29617ad15ff00db70f3b4df1ab5ea33aa47c9d",
+        "urls": [
+          "bzz-raw://d636ba90bbbeed04a1ea7fe9ec2466757e30fd38ba2ca173636dbf69a518735e",
+          "dweb:/ipfs/QmQwCB2BHnEuYR22PYt9HkpbgeFDhq4rHmaYqAZbX3WRC7"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol": {
+        "keccak256": "0x5718c5df9bd67ac68a796961df938821bb5dc0cd4c6118d77e9145afb187409b",
+        "urls": [
+          "bzz-raw://d10e1d9b26042424789246603906ad06143bf9a928f4e99de8b5e3bdc662f549",
+          "dweb:/ipfs/Qmejonoaj5MLekPus229rJQHcC6E9dz2xorjHJR84fMfmn"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol": {
+        "keccak256": "0xa28007762d9da9db878dd421960c8cb9a10471f47ab5c1b3309bfe48e9e79ff4",
+        "urls": [
+          "bzz-raw://796ab6e88af7bf0e78def0f059310c903af6a312b565344e0ff524a0f26e81c6",
+          "dweb:/ipfs/QmcsVgLgzWdor3UnAztUkXKNGcysm1MPneWksF72AvnwBx"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": {}
+  },
+  "ast": {
+    "absolutePath": "contracts/EVMScriptFactories/RemoveRewardProgram.sol",
+    "id": 1146,
+    "exportedSymbols": {
+      "AccessControl": [
+        5459
+      ],
+      "Context": [
+        6047
+      ],
+      "ERC165": [
+        6334
+      ],
+      "EVMScriptCreator": [
+        4488
+      ],
+      "IAccessControl": [
+        5532
+      ],
+      "IERC165": [
+        6346
+      ],
+      "IEVMScriptFactory": [
+        4150
+      ],
+      "RemoveRewardProgram": [
+        1145
+      ],
+      "RewardProgramsRegistry": [
+        4046
+      ],
+      "Strings": [
+        6310
+      ],
+      "TrustedCaller": [
+        4091
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:2532:6",
+    "nodes": [
+      {
+        "id": 1045,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:6",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 1046,
+        "nodeType": "ImportDirective",
+        "src": "114:30:6",
+        "nodes": [],
+        "absolutePath": "contracts/TrustedCaller.sol",
+        "file": "../TrustedCaller.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 1146,
+        "sourceUnit": 4092,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 1047,
+        "nodeType": "ImportDirective",
+        "src": "145:39:6",
+        "nodes": [],
+        "absolutePath": "contracts/RewardProgramsRegistry.sol",
+        "file": "../RewardProgramsRegistry.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 1146,
+        "sourceUnit": 4047,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 1048,
+        "nodeType": "ImportDirective",
+        "src": "185:43:6",
+        "nodes": [],
+        "absolutePath": "contracts/libraries/EVMScriptCreator.sol",
+        "file": "../libraries/EVMScriptCreator.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 1146,
+        "sourceUnit": 4489,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 1049,
+        "nodeType": "ImportDirective",
+        "src": "229:45:6",
+        "nodes": [],
+        "absolutePath": "contracts/interfaces/IEVMScriptFactory.sol",
+        "file": "../interfaces/IEVMScriptFactory.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 1146,
+        "sourceUnit": 4151,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 1145,
+        "nodeType": "ContractDefinition",
+        "src": "378:2242:6",
+        "nodes": [
+          {
+            "id": 1057,
+            "nodeType": "VariableDeclaration",
+            "src": "505:83:6",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_REWARD_PROGRAM_NOT_FOUND",
+            "nameLocation": "529:30:6",
+            "scope": 1145,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 1055,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "505:6:6",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "5245574152445f50524f4752414d5f4e4f545f464f554e44",
+              "id": 1056,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "562:26:6",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_f35d06d47d37d053e3c600fb0de3d56e3f2c23f1e913f7beaa4fec67247aff30",
+                "typeString": "literal_string \"REWARD_PROGRAM_NOT_FOUND\""
+              },
+              "value": "REWARD_PROGRAM_NOT_FOUND"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 1061,
+            "nodeType": "VariableDeclaration",
+            "src": "706:62:6",
+            "nodes": [],
+            "constant": false,
+            "documentation": {
+              "id": 1058,
+              "nodeType": "StructuredDocumentation",
+              "src": "655:46:6",
+              "text": "@notice Address of RewardsProgramsRegistry"
+            },
+            "functionSelector": "3f052ae9",
+            "mutability": "immutable",
+            "name": "rewardProgramsRegistry",
+            "nameLocation": "746:22:6",
+            "scope": 1145,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+              "typeString": "contract RewardProgramsRegistry"
+            },
+            "typeName": {
+              "id": 1060,
+              "nodeType": "UserDefinedTypeName",
+              "pathNode": {
+                "id": 1059,
+                "name": "RewardProgramsRegistry",
+                "nodeType": "IdentifierPath",
+                "referencedDeclaration": 4046,
+                "src": "706:22:6"
+              },
+              "referencedDeclaration": 4046,
+              "src": "706:22:6",
+              "typeDescriptions": {
+                "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                "typeString": "contract RewardProgramsRegistry"
+              }
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 1078,
+            "nodeType": "FunctionDefinition",
+            "src": "837:200:6",
+            "nodes": [],
+            "body": {
+              "id": 1077,
+              "nodeType": "Block",
+              "src": "948:89:6",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "id": 1075,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 1071,
+                      "name": "rewardProgramsRegistry",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 1061,
+                      "src": "958:22:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                        "typeString": "contract RewardProgramsRegistry"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "arguments": [
+                        {
+                          "id": 1073,
+                          "name": "_rewardProgramsRegistry",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 1065,
+                          "src": "1006:23:6",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        }
+                      ],
+                      "expression": {
+                        "argumentTypes": [
+                          {
+                            "typeIdentifier": "t_address",
+                            "typeString": "address"
+                          }
+                        ],
+                        "id": 1072,
+                        "name": "RewardProgramsRegistry",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4046,
+                        "src": "983:22:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_contract$_RewardProgramsRegistry_$4046_$",
+                          "typeString": "type(contract RewardProgramsRegistry)"
+                        }
+                      },
+                      "id": 1074,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "kind": "typeConversion",
+                      "lValueRequested": false,
+                      "names": [],
+                      "nodeType": "FunctionCall",
+                      "src": "983:47:6",
+                      "tryCall": false,
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                        "typeString": "contract RewardProgramsRegistry"
+                      }
+                    },
+                    "src": "958:72:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                      "typeString": "contract RewardProgramsRegistry"
+                    }
+                  },
+                  "id": 1076,
+                  "nodeType": "ExpressionStatement",
+                  "src": "958:72:6"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [
+              {
+                "arguments": [
+                  {
+                    "id": 1068,
+                    "name": "_trustedCaller",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 1063,
+                    "src": "928:14:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  }
+                ],
+                "id": 1069,
+                "kind": "baseConstructorSpecifier",
+                "modifierName": {
+                  "id": 1067,
+                  "name": "TrustedCaller",
+                  "nodeType": "IdentifierPath",
+                  "referencedDeclaration": 4091,
+                  "src": "914:13:6"
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "914:29:6"
+              }
+            ],
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "parameters": {
+              "id": 1066,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1063,
+                  "mutability": "mutable",
+                  "name": "_trustedCaller",
+                  "nameLocation": "857:14:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1078,
+                  "src": "849:22:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1062,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "849:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 1065,
+                  "mutability": "mutable",
+                  "name": "_rewardProgramsRegistry",
+                  "nameLocation": "881:23:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1078,
+                  "src": "873:31:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1064,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "873:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "848:57:6"
+            },
+            "returnParameters": {
+              "id": 1070,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "948:0:6"
+            },
+            "scope": 1145,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "id": 1115,
+            "nodeType": "FunctionDefinition",
+            "src": "1325:599:6",
+            "nodes": [],
+            "body": {
+              "id": 1114,
+              "nodeType": "Block",
+              "src": "1519:405:6",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "arguments": [
+                          {
+                            "arguments": [
+                              {
+                                "id": 1096,
+                                "name": "_evmScriptCallData",
+                                "nodeType": "Identifier",
+                                "overloadedDeclarations": [],
+                                "referencedDeclaration": 1083,
+                                "src": "1614:18:6",
+                                "typeDescriptions": {
+                                  "typeIdentifier": "t_bytes_memory_ptr",
+                                  "typeString": "bytes memory"
+                                }
+                              }
+                            ],
+                            "expression": {
+                              "argumentTypes": [
+                                {
+                                  "typeIdentifier": "t_bytes_memory_ptr",
+                                  "typeString": "bytes memory"
+                                }
+                              ],
+                              "id": 1095,
+                              "name": "_decodeEVMScriptCallData",
+                              "nodeType": "Identifier",
+                              "overloadedDeclarations": [],
+                              "referencedDeclaration": 1144,
+                              "src": "1589:24:6",
+                              "typeDescriptions": {
+                                "typeIdentifier": "t_function_internal_pure$_t_bytes_memory_ptr_$returns$_t_address_$",
+                                "typeString": "function (bytes memory) pure returns (address)"
+                              }
+                            },
+                            "id": 1097,
+                            "isConstant": false,
+                            "isLValue": false,
+                            "isPure": false,
+                            "kind": "functionCall",
+                            "lValueRequested": false,
+                            "names": [],
+                            "nodeType": "FunctionCall",
+                            "src": "1589:44:6",
+                            "tryCall": false,
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_address",
+                              "typeString": "address"
+                            }
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_address",
+                              "typeString": "address"
+                            }
+                          ],
+                          "expression": {
+                            "id": 1093,
+                            "name": "rewardProgramsRegistry",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 1061,
+                            "src": "1550:22:6",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                              "typeString": "contract RewardProgramsRegistry"
+                            }
+                          },
+                          "id": 1094,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "isRewardProgram",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": 4010,
+                          "src": "1550:38:6",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_function_external_view$_t_address_$returns$_t_bool_$",
+                            "typeString": "function (address) view external returns (bool)"
+                          }
+                        },
+                        "id": 1098,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "functionCall",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "1550:84:6",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 1099,
+                        "name": "ERROR_REWARD_PROGRAM_NOT_FOUND",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1057,
+                        "src": "1648:30:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 1092,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "1529:7:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 1100,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "1529:159:6",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 1101,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1529:159:6"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "arguments": [
+                          {
+                            "id": 1106,
+                            "name": "rewardProgramsRegistry",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 1061,
+                            "src": "1775:22:6",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                              "typeString": "contract RewardProgramsRegistry"
+                            }
+                          }
+                        ],
+                        "expression": {
+                          "argumentTypes": [
+                            {
+                              "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                              "typeString": "contract RewardProgramsRegistry"
+                            }
+                          ],
+                          "id": 1105,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": true,
+                          "lValueRequested": false,
+                          "nodeType": "ElementaryTypeNameExpression",
+                          "src": "1767:7:6",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_type$_t_address_$",
+                            "typeString": "type(address)"
+                          },
+                          "typeName": {
+                            "id": 1104,
+                            "name": "address",
+                            "nodeType": "ElementaryTypeName",
+                            "src": "1767:7:6",
+                            "typeDescriptions": {}
+                          }
+                        },
+                        "id": 1107,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "kind": "typeConversion",
+                        "lValueRequested": false,
+                        "names": [],
+                        "nodeType": "FunctionCall",
+                        "src": "1767:31:6",
+                        "tryCall": false,
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      },
+                      {
+                        "expression": {
+                          "expression": {
+                            "id": 1108,
+                            "name": "rewardProgramsRegistry",
+                            "nodeType": "Identifier",
+                            "overloadedDeclarations": [],
+                            "referencedDeclaration": 1061,
+                            "src": "1816:22:6",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_contract$_RewardProgramsRegistry_$4046",
+                              "typeString": "contract RewardProgramsRegistry"
+                            }
+                          },
+                          "id": 1109,
+                          "isConstant": false,
+                          "isLValue": false,
+                          "isPure": false,
+                          "lValueRequested": false,
+                          "memberName": "removeRewardProgram",
+                          "nodeType": "MemberAccess",
+                          "referencedDeclaration": 3995,
+                          "src": "1816:42:6",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_function_external_nonpayable$_t_address_$returns$__$",
+                            "typeString": "function (address) external"
+                          }
+                        },
+                        "id": 1110,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "memberName": "selector",
+                        "nodeType": "MemberAccess",
+                        "src": "1816:51:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes4",
+                          "typeString": "bytes4"
+                        }
+                      },
+                      {
+                        "id": 1111,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1083,
+                        "src": "1885:18:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        },
+                        {
+                          "typeIdentifier": "t_bytes4",
+                          "typeString": "bytes4"
+                        },
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "expression": {
+                        "id": 1102,
+                        "name": "EVMScriptCreator",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4488,
+                        "src": "1717:16:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_contract$_EVMScriptCreator_$4488_$",
+                          "typeString": "type(library EVMScriptCreator)"
+                        }
+                      },
+                      "id": 1103,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "createEVMScript",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 4268,
+                      "src": "1717:32:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_address_$_t_bytes4_$_t_bytes_memory_ptr_$returns$_t_bytes_memory_ptr_$",
+                        "typeString": "function (address,bytes4,bytes memory) pure returns (bytes memory)"
+                      }
+                    },
+                    "id": 1112,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "1717:200:6",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_memory_ptr",
+                      "typeString": "bytes memory"
+                    }
+                  },
+                  "functionReturnParameters": 1091,
+                  "id": 1113,
+                  "nodeType": "Return",
+                  "src": "1698:219:6"
+                }
+              ]
+            },
+            "baseFunctions": [
+              4149
+            ],
+            "documentation": {
+              "id": 1079,
+              "nodeType": "StructuredDocumentation",
+              "src": "1110:210:6",
+              "text": "@notice Creates EVMScript to remove reward program from RewardProgramsRegistry\n @param _creator Address who creates EVMScript\n @param _evmScriptCallData Encoded tuple: (address _rewardProgram)"
+            },
+            "functionSelector": "fea21c9c",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "arguments": [
+                  {
+                    "id": 1087,
+                    "name": "_creator",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 1081,
+                    "src": "1474:8:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  }
+                ],
+                "id": 1088,
+                "kind": "modifierInvocation",
+                "modifierName": {
+                  "id": 1086,
+                  "name": "onlyTrustedCaller",
+                  "nodeType": "IdentifierPath",
+                  "referencedDeclaration": 4090,
+                  "src": "1456:17:6"
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "1456:27:6"
+              }
+            ],
+            "name": "createEVMScript",
+            "nameLocation": "1334:15:6",
+            "overrides": {
+              "id": 1085,
+              "nodeType": "OverrideSpecifier",
+              "overrides": [],
+              "src": "1439:8:6"
+            },
+            "parameters": {
+              "id": 1084,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1081,
+                  "mutability": "mutable",
+                  "name": "_creator",
+                  "nameLocation": "1358:8:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1115,
+                  "src": "1350:16:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1080,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1350:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 1083,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "1381:18:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1115,
+                  "src": "1368:31:6",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 1082,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1368:5:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1349:51:6"
+            },
+            "returnParameters": {
+              "id": 1091,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1090,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1115,
+                  "src": "1501:12:6",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 1089,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1501:5:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1500:14:6"
+            },
+            "scope": 1145,
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 1128,
+            "nodeType": "FunctionDefinition",
+            "src": "2136:209:6",
+            "nodes": [],
+            "body": {
+              "id": 1127,
+              "nodeType": "Block",
+              "src": "2277:68:6",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 1124,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1118,
+                        "src": "2319:18:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "id": 1123,
+                      "name": "_decodeEVMScriptCallData",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 1144,
+                      "src": "2294:24:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_bytes_memory_ptr_$returns$_t_address_$",
+                        "typeString": "function (bytes memory) pure returns (address)"
+                      }
+                    },
+                    "id": 1125,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2294:44:6",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "functionReturnParameters": 1122,
+                  "id": 1126,
+                  "nodeType": "Return",
+                  "src": "2287:51:6"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 1116,
+              "nodeType": "StructuredDocumentation",
+              "src": "1930:201:6",
+              "text": "@notice Decodes call data used by createEVMScript method\n @param _evmScriptCallData Encoded tuple: (address _rewardProgram)\n @return _rewardProgram Address of reward program to remove"
+            },
+            "functionSelector": "ecf7c690",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "decodeEVMScriptCallData",
+            "nameLocation": "2145:23:6",
+            "parameters": {
+              "id": 1119,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1118,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "2182:18:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1128,
+                  "src": "2169:31:6",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 1117,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2169:5:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2168:33:6"
+            },
+            "returnParameters": {
+              "id": 1122,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1121,
+                  "mutability": "mutable",
+                  "name": "_rewardProgram",
+                  "nameLocation": "2257:14:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1128,
+                  "src": "2249:22:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1120,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2249:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2248:24:6"
+            },
+            "scope": 1145,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 1144,
+            "nodeType": "FunctionDefinition",
+            "src": "2427:191:6",
+            "nodes": [],
+            "body": {
+              "id": 1143,
+              "nodeType": "Block",
+              "src": "2553:65:6",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 1137,
+                        "name": "_evmScriptCallData",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 1130,
+                        "src": "2581:18:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      },
+                      {
+                        "components": [
+                          {
+                            "id": 1139,
+                            "isConstant": false,
+                            "isLValue": false,
+                            "isPure": true,
+                            "lValueRequested": false,
+                            "nodeType": "ElementaryTypeNameExpression",
+                            "src": "2602:7:6",
+                            "typeDescriptions": {
+                              "typeIdentifier": "t_type$_t_address_$",
+                              "typeString": "type(address)"
+                            },
+                            "typeName": {
+                              "id": 1138,
+                              "name": "address",
+                              "nodeType": "ElementaryTypeName",
+                              "src": "2602:7:6",
+                              "typeDescriptions": {}
+                            }
+                          }
+                        ],
+                        "id": 1140,
+                        "isConstant": false,
+                        "isInlineArray": false,
+                        "isLValue": false,
+                        "isPure": true,
+                        "lValueRequested": false,
+                        "nodeType": "TupleExpression",
+                        "src": "2601:9:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_address_$",
+                          "typeString": "type(address)"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        },
+                        {
+                          "typeIdentifier": "t_type$_t_address_$",
+                          "typeString": "type(address)"
+                        }
+                      ],
+                      "expression": {
+                        "id": 1135,
+                        "name": "abi",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": -1,
+                        "src": "2570:3:6",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_magic_abi",
+                          "typeString": "abi"
+                        }
+                      },
+                      "id": 1136,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": true,
+                      "lValueRequested": false,
+                      "memberName": "decode",
+                      "nodeType": "MemberAccess",
+                      "src": "2570:10:6",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_abidecode_pure$__$returns$__$",
+                        "typeString": "function () pure"
+                      }
+                    },
+                    "id": 1141,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2570:41:6",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address_payable",
+                      "typeString": "address payable"
+                    }
+                  },
+                  "functionReturnParameters": 1134,
+                  "id": 1142,
+                  "nodeType": "Return",
+                  "src": "2563:48:6"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_decodeEVMScriptCallData",
+            "nameLocation": "2436:24:6",
+            "parameters": {
+              "id": 1131,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1130,
+                  "mutability": "mutable",
+                  "name": "_evmScriptCallData",
+                  "nameLocation": "2474:18:6",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1144,
+                  "src": "2461:31:6",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 1129,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2461:5:6",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2460:33:6"
+            },
+            "returnParameters": {
+              "id": 1134,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 1133,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 1144,
+                  "src": "2540:7:6",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 1132,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2540:7:6",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2539:9:6"
+            },
+            "scope": 1145,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "private"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 1051,
+              "name": "TrustedCaller",
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 4091,
+              "src": "410:13:6"
+            },
+            "id": 1052,
+            "nodeType": "InheritanceSpecifier",
+            "src": "410:13:6"
+          },
+          {
+            "baseName": {
+              "id": 1053,
+              "name": "IEVMScriptFactory",
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 4150,
+              "src": "425:17:6"
+            },
+            "id": 1054,
+            "nodeType": "InheritanceSpecifier",
+            "src": "425:17:6"
+          }
+        ],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 1050,
+          "nodeType": "StructuredDocumentation",
+          "src": "276:102:6",
+          "text": "@author psirex\n @notice Creates EVMScript to remove reward program from RewardProgramsRegistry"
+        },
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          1145,
+          4150,
+          4091
+        ],
+        "name": "RemoveRewardProgram",
+        "nameLocation": "387:19:6",
+        "scope": 1146,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 6
+}

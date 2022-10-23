@@ -1,0 +1,315 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_receiver",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_amount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "_reference",
+          "type": "string"
+        }
+      ],
+      "name": "newImmediatePayment",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x",
+    "sourceMap": "",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "newImmediatePayment(address,address,uint256,string)": "f6364846"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_token\",\"type\":\"address\"},{\"internalType\":\"address\",\"name\":\"_receiver\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_amount\",\"type\":\"uint256\"},{\"internalType\":\"string\",\"name\":\"_reference\",\"type\":\"string\"}],\"name\":\"newImmediatePayment\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"psirex\",\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"Interface of method from Aragon's Finance contract to create a new payment\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/interfaces/IFinance.sol\":\"IFinance\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/interfaces/IFinance.sol\":{\"keccak256\":\"0x9edbac8aff8aedf37708437e3caa935b072a19cbfa08095da2ba5cf91bf78adf\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://36b1ed8507718856c26adbc207a694287fb8061a865912196371fcde3e146577\",\"dweb:/ipfs/QmeKA83xCKmHntizk37CK8PicSsa25eT5drTjn9icgMAGb\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_token",
+              "type": "address"
+            },
+            {
+              "internalType": "address",
+              "name": "_receiver",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_amount",
+              "type": "uint256"
+            },
+            {
+              "internalType": "string",
+              "name": "_reference",
+              "type": "string"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "newImmediatePayment"
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/interfaces/IFinance.sol": "IFinance"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/interfaces/IFinance.sol": {
+        "keccak256": "0x9edbac8aff8aedf37708437e3caa935b072a19cbfa08095da2ba5cf91bf78adf",
+        "urls": [
+          "bzz-raw://36b1ed8507718856c26adbc207a694287fb8061a865912196371fcde3e146577",
+          "dweb:/ipfs/QmeKA83xCKmHntizk37CK8PicSsa25eT5drTjn9icgMAGb"
+        ],
+        "license": "GPL-3.0"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": {}
+  },
+  "ast": {
+    "absolutePath": "contracts/interfaces/IFinance.sol",
+    "id": 4166,
+    "exportedSymbols": {
+      "IFinance": [
+        4165
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:313:19",
+    "nodes": [
+      {
+        "id": 4152,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:19",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 4165,
+        "nodeType": "ContractDefinition",
+        "src": "220:181:19",
+        "nodes": [
+          {
+            "id": 4164,
+            "nodeType": "FunctionDefinition",
+            "src": "245:154:19",
+            "nodes": [],
+            "functionSelector": "f6364846",
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "newImmediatePayment",
+            "nameLocation": "254:19:19",
+            "parameters": {
+              "id": 4162,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4155,
+                  "mutability": "mutable",
+                  "name": "_token",
+                  "nameLocation": "291:6:19",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4164,
+                  "src": "283:14:19",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 4154,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "283:7:19",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 4157,
+                  "mutability": "mutable",
+                  "name": "_receiver",
+                  "nameLocation": "315:9:19",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4164,
+                  "src": "307:17:19",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 4156,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "307:7:19",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 4159,
+                  "mutability": "mutable",
+                  "name": "_amount",
+                  "nameLocation": "342:7:19",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4164,
+                  "src": "334:15:19",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 4158,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "334:7:19",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 4161,
+                  "mutability": "mutable",
+                  "name": "_reference",
+                  "nameLocation": "373:10:19",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4164,
+                  "src": "359:24:19",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_string_memory_ptr",
+                    "typeString": "string"
+                  },
+                  "typeName": {
+                    "id": 4160,
+                    "name": "string",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "359:6:19",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_string_storage_ptr",
+                      "typeString": "string"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "273:116:19"
+            },
+            "returnParameters": {
+              "id": 4163,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "398:0:19"
+            },
+            "scope": 4165,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": {
+          "id": 4153,
+          "nodeType": "StructuredDocumentation",
+          "src": "114:106:19",
+          "text": "@author psirex\n @notice Interface of method from Aragon's Finance contract to create a new payment"
+        },
+        "fullyImplemented": false,
+        "linearizedBaseContracts": [
+          4165
+        ],
+        "name": "IFinance",
+        "nameLocation": "230:8:19",
+        "scope": 4166,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 19
+}

@@ -1,0 +1,3225 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_admin",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_motionDuration",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_motionsCountLimit",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_objectionsThreshold",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_motionDuration",
+          "type": "uint256"
+        }
+      ],
+      "name": "MotionDurationChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_newMotionsCountLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "MotionsCountLimitChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "_newThreshold",
+          "type": "uint256"
+        }
+      ],
+      "name": "ObjectionsThresholdChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "previousAdminRole",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "newAdminRole",
+          "type": "bytes32"
+        }
+      ],
+      "name": "RoleAdminChanged",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleGranted",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "sender",
+          "type": "address"
+        }
+      ],
+      "name": "RoleRevoked",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "DEFAULT_ADMIN_ROLE",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_MOTIONS_LIMIT",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_OBJECTIONS_THRESHOLD",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MIN_MOTION_DURATION",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        }
+      ],
+      "name": "getRoleAdmin",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "grantRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "hasRole",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "motionDuration",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "motionsCountLimit",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "objectionsThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "renounceRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes32",
+          "name": "role",
+          "type": "bytes32"
+        },
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "revokeRole",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_motionDuration",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMotionDuration",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_motionsCountLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "setMotionsCountLimit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_objectionsThreshold",
+          "type": "uint256"
+        }
+      ],
+      "name": "setObjectionsThreshold",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes4",
+          "name": "interfaceId",
+          "type": "bytes4"
+        }
+      ],
+      "name": "supportsInterface",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x60806040523480156200001157600080fd5b5060405162000d9038038062000d908339810160408190526200003491620002b4565b620000416000856200006c565b6200004c836200007c565b62000057826200010f565b620000628162000191565b5050505062000359565b62000078828262000214565b5050565b60408051808201909152600f81526e159053155157d513d3d7d4d3505313608a1b60208201526202a300821015620000d25760405162461bcd60e51b8152600401620000c9919062000301565b60405180910390fd5b5060038190556040518181527f03765c4aa18fde3bfe4015073c2b138ce5a02536dd88ceae9739d3e0dbad5d0e906020015b60405180910390a150565b60408051808201909152600f81526e56414c55455f544f4f5f4c4152474560881b602082015260188211156200015a5760405162461bcd60e51b8152600401620000c9919062000301565b5060028190556040518181527f5e368703b7ab35fe9ef4dbc482cd414476841204c7484b8e834d0d3ac4ed86729060200162000104565b60408051808201909152600f81526e56414c55455f544f4f5f4c4152474560881b60208201526101f4821115620001dd5760405162461bcd60e51b8152600401620000c9919062000301565b5060018190556040518181527fd60715ce58337415334d06256811f30ed8db120287970870d8505e5ed9074c609060200162000104565b6000828152602081815260408083206001600160a01b038516845290915290205460ff1662000078576000828152602081815260408083206001600160a01b03851684529091529020805460ff19166001179055620002703390565b6001600160a01b0316816001600160a01b0316837f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45050565b60008060008060808587031215620002cb57600080fd5b84516001600160a01b0381168114620002e357600080fd5b60208601516040870151606090970151919890975090945092505050565b600060208083528351808285015260005b81811015620003305785810183015185820160400152820162000312565b8181111562000343576000604083870101525b50601f01601f1916929092016040019392505050565b610a2780620003696000396000f3fe608060405234801561001057600080fd5b50600436106101005760003560e01c806391d1485411610097578063d547741f11610066578063d547741f146101e2578063e1637395146101f5578063ef1ae2f6146101fd578063fdc28ab81461021057600080fd5b806391d14854146101b5578063930c2b31146101c8578063a217fddf146101d1578063cdb6aefc146101d957600080fd5b806331a40e6e116100d357806331a40e6e1461017c57806336568abe1461018f57806364993a73146101a257806388407bd4146101ab57600080fd5b806301ffc9a714610105578063248a9ca31461012d5780632f2ff15d1461015e5780633128cce014610173575b600080fd5b61011861011336600461085f565b610223565b60405190151581526020015b60405180910390f35b61015061013b36600461080a565b60009081526020819052604090206001015490565b604051908152602001610124565b61017161016c366004610823565b61025a565b005b61015060025481565b61017161018a36600461080a565b610285565b61017161019d366004610823565b61029e565b61015060035481565b6101506202a30081565b6101186101c3366004610823565b61031d565b61015060015481565b610150600081565b6101506101f481565b6101716101f0366004610823565b610346565b610150601881565b61017161020b36600461080a565b61036c565b61017161021e36600461080a565b610381565b60006001600160e01b03198216637965db0b60e01b148061025457506301ffc9a760e01b6001600160e01b03198316145b92915050565b6000828152602081905260409020600101546102768133610396565b61028083836103fa565b505050565b60006102918133610396565b61029a8261047e565b5050565b6001600160a01b03811633146103135760405162461bcd60e51b815260206004820152602f60248201527f416363657373436f6e74726f6c3a2063616e206f6e6c792072656e6f756e636560448201526e103937b632b9903337b91039b2b63360891b60648201526084015b60405180910390fd5b61029a8282610505565b6000918252602082815260408084206001600160a01b0393909316845291905290205460ff1690565b6000828152602081905260409020600101546103628133610396565b6102808383610505565b60006103788133610396565b61029a8261056a565b600061038d8133610396565b61029a826105e9565b6103a0828261031d565b61029a576103b8816001600160a01b03166014610667565b6103c3836020610667565b6040516020016103d4929190610889565b60408051601f198184030181529082905262461bcd60e51b825261030a916004016108fe565b610404828261031d565b61029a576000828152602081815260408083206001600160a01b03851684529091529020805460ff1916600117905561043a3390565b6001600160a01b0316816001600160a01b0316837f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45050565b60408051808201909152600f81526e159053155157d513d3d7d4d3505313608a1b60208201526202a3008210156104c85760405162461bcd60e51b815260040161030a91906108fe565b5060038190556040518181527f03765c4aa18fde3bfe4015073c2b138ce5a02536dd88ceae9739d3e0dbad5d0e906020015b60405180910390a150565b61050f828261031d565b1561029a576000828152602081815260408083206001600160a01b0385168085529252808320805460ff1916905551339285917ff6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b9190a45050565b60408051808201909152600f81526e56414c55455f544f4f5f4c4152474560881b60208201526101f48211156105b35760405162461bcd60e51b815260040161030a91906108fe565b5060018190556040518181527fd60715ce58337415334d06256811f30ed8db120287970870d8505e5ed9074c60906020016104fa565b60408051808201909152600f81526e56414c55455f544f4f5f4c4152474560881b602082015260188211156106315760405162461bcd60e51b815260040161030a91906108fe565b5060028190556040518181527f5e368703b7ab35fe9ef4dbc482cd414476841204c7484b8e834d0d3ac4ed8672906020016104fa565b60606000610676836002610949565b610681906002610931565b67ffffffffffffffff811115610699576106996109db565b6040519080825280601f01601f1916602001820160405280156106c3576020820181803683370190505b509050600360fc1b816000815181106106de576106de6109c5565b60200101906001600160f81b031916908160001a905350600f60fb1b8160018151811061070d5761070d6109c5565b60200101906001600160f81b031916908160001a9053506000610731846002610949565b61073c906001610931565b90505b60018111156107b4576f181899199a1a9b1b9c1cb0b131b232b360811b85600f1660108110610770576107706109c5565b1a60f81b828281518110610786576107866109c5565b60200101906001600160f81b031916908160001a90535060049490941c936107ad81610998565b905061073f565b5083156108035760405162461bcd60e51b815260206004820181905260248201527f537472696e67733a20686578206c656e67746820696e73756666696369656e74604482015260640161030a565b9392505050565b60006020828403121561081c57600080fd5b5035919050565b6000806040838503121561083657600080fd5b8235915060208301356001600160a01b038116811461085457600080fd5b809150509250929050565b60006020828403121561087157600080fd5b81356001600160e01b03198116811461080357600080fd5b7f416363657373436f6e74726f6c3a206163636f756e74200000000000000000008152600083516108c1816017850160208801610968565b7001034b99036b4b9b9b4b733903937b6329607d1b60179184019182015283516108f2816028840160208801610968565b01602801949350505050565b602081526000825180602084015261091d816040850160208701610968565b601f01601f19169190910160400192915050565b60008219821115610944576109446109af565b500190565b6000816000190483118215151615610963576109636109af565b500290565b60005b8381101561098357818101518382015260200161096b565b83811115610992576000848401525b50505050565b6000816109a7576109a76109af565b506000190190565b634e487b7160e01b600052601160045260246000fd5b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052604160045260246000fdfea26469706673582212200cefdee2009aa7cac40c12f60ceff60842ad385a8be8c74032433f0f6b142d9f64736f6c63430008060033",
+    "sourceMap": "341:3447:13:-:0;;;1804:355;;;;;;;;;;;;;;;;;;;;;;;;;;;;:::i;:::-;1963:38;1997:4:30;1994:6:13;1963:10;:38::i;:::-;2011:35;2030:15;2011:18;:35::i;:::-;2056:41;2078:18;2056:21;:41::i;:::-;2107:45;2131:20;2107:23;:45::i;:::-;1804:355;;;;341:3447;;6084:110:30;6162:25;6173:4;6179:7;6162:10;:25::i;:::-;6084:110;;:::o;2983:244:13:-;3103:21;;;;;;;;;;;;-1:-1:-1;;;3103:21:13;;;;1273:8;3063:38;;;3055:70;;;;-1:-1:-1;;;3055:70:13;;;;;;;;:::i;:::-;;;;;;;;;-1:-1:-1;3135:14:13;:32;;;3182:38;;1241:25:40;;;3182:38:13;;1229:2:40;1214:18;3182:38:13;;;;;;;;2983:244;:::o;3523:263::-;3650:21;;;;;;;;;;;;-1:-1:-1;;;3650:21:13;;;;992:2;3609:39;;;3601:71;;;;-1:-1:-1;;;3601:71:13;;;;;;;;:::i;:::-;-1:-1:-1;3682:17:13;:38;;;3735:44;;1241:25:40;;;3735:44:13;;1229:2:40;1214:18;3735:44:13;1196:76:40;3233:284:13;3373:21;;;;;;;;;;;;-1:-1:-1;;;3373:21:13;;;;1161:3;3323:48;;;3315:80;;;;-1:-1:-1;;;3315:80:13;;;;;;;;:::i;:::-;-1:-1:-1;3405:19:13;:42;;;3462:48;;1241:25:40;;;3462:48:13;;1229:2:40;1214:18;3462:48:13;1196:76:40;6572:224:30;2912:4;2935:12;;;;;;;;;;;-1:-1:-1;;;;;2935:29:30;;;;;;;;;;;;6641:149;;6684:6;:12;;;;;;;;;;;-1:-1:-1;;;;;6684:29:30;;;;;;;;;:36;;-1:-1:-1;;6684:36:30;6716:4;6684:36;;;6766:12;666:10:35;;587:96;6766:12:30;-1:-1:-1;;;;;6739:40:30;6757:7;-1:-1:-1;;;;;6739:40:30;6751:4;6739:40;;;;;;;;;;6572:224;;:::o;14:474:40:-;111:6;119;127;135;188:3;176:9;167:7;163:23;159:33;156:2;;;205:1;202;195:12;156:2;231:16;;-1:-1:-1;;;;;276:31:40;;266:42;;256:2;;322:1;319;312:12;256:2;390;375:18;;369:25;434:2;419:18;;413:25;478:2;463:18;;;457:25;345:5;;369:25;;-1:-1:-1;457:25:40;;-1:-1:-1;146:342:40;-1:-1:-1;;;146:342:40:o;493:597::-;605:4;634:2;663;652:9;645:21;695:6;689:13;738:6;733:2;722:9;718:18;711:34;763:1;773:140;787:6;784:1;781:13;773:140;;;882:14;;;878:23;;872:30;848:17;;;867:2;844:26;837:66;802:10;;773:140;;;931:6;928:1;925:13;922:2;;;1001:1;996:2;987:6;976:9;972:22;968:31;961:42;922:2;-1:-1:-1;1074:2:40;1053:15;-1:-1:-1;;1049:29:40;1034:45;;;;1081:2;1030:54;;614:476;-1:-1:-1;;;614:476:40:o;1196:76::-;341:3447:13;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x608060405234801561001057600080fd5b50600436106101005760003560e01c806391d1485411610097578063d547741f11610066578063d547741f146101e2578063e1637395146101f5578063ef1ae2f6146101fd578063fdc28ab81461021057600080fd5b806391d14854146101b5578063930c2b31146101c8578063a217fddf146101d1578063cdb6aefc146101d957600080fd5b806331a40e6e116100d357806331a40e6e1461017c57806336568abe1461018f57806364993a73146101a257806388407bd4146101ab57600080fd5b806301ffc9a714610105578063248a9ca31461012d5780632f2ff15d1461015e5780633128cce014610173575b600080fd5b61011861011336600461085f565b610223565b60405190151581526020015b60405180910390f35b61015061013b36600461080a565b60009081526020819052604090206001015490565b604051908152602001610124565b61017161016c366004610823565b61025a565b005b61015060025481565b61017161018a36600461080a565b610285565b61017161019d366004610823565b61029e565b61015060035481565b6101506202a30081565b6101186101c3366004610823565b61031d565b61015060015481565b610150600081565b6101506101f481565b6101716101f0366004610823565b610346565b610150601881565b61017161020b36600461080a565b61036c565b61017161021e36600461080a565b610381565b60006001600160e01b03198216637965db0b60e01b148061025457506301ffc9a760e01b6001600160e01b03198316145b92915050565b6000828152602081905260409020600101546102768133610396565b61028083836103fa565b505050565b60006102918133610396565b61029a8261047e565b5050565b6001600160a01b03811633146103135760405162461bcd60e51b815260206004820152602f60248201527f416363657373436f6e74726f6c3a2063616e206f6e6c792072656e6f756e636560448201526e103937b632b9903337b91039b2b63360891b60648201526084015b60405180910390fd5b61029a8282610505565b6000918252602082815260408084206001600160a01b0393909316845291905290205460ff1690565b6000828152602081905260409020600101546103628133610396565b6102808383610505565b60006103788133610396565b61029a8261056a565b600061038d8133610396565b61029a826105e9565b6103a0828261031d565b61029a576103b8816001600160a01b03166014610667565b6103c3836020610667565b6040516020016103d4929190610889565b60408051601f198184030181529082905262461bcd60e51b825261030a916004016108fe565b610404828261031d565b61029a576000828152602081815260408083206001600160a01b03851684529091529020805460ff1916600117905561043a3390565b6001600160a01b0316816001600160a01b0316837f2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d60405160405180910390a45050565b60408051808201909152600f81526e159053155157d513d3d7d4d3505313608a1b60208201526202a3008210156104c85760405162461bcd60e51b815260040161030a91906108fe565b5060038190556040518181527f03765c4aa18fde3bfe4015073c2b138ce5a02536dd88ceae9739d3e0dbad5d0e906020015b60405180910390a150565b61050f828261031d565b1561029a576000828152602081815260408083206001600160a01b0385168085529252808320805460ff1916905551339285917ff6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b9190a45050565b60408051808201909152600f81526e56414c55455f544f4f5f4c4152474560881b60208201526101f48211156105b35760405162461bcd60e51b815260040161030a91906108fe565b5060018190556040518181527fd60715ce58337415334d06256811f30ed8db120287970870d8505e5ed9074c60906020016104fa565b60408051808201909152600f81526e56414c55455f544f4f5f4c4152474560881b602082015260188211156106315760405162461bcd60e51b815260040161030a91906108fe565b5060028190556040518181527f5e368703b7ab35fe9ef4dbc482cd414476841204c7484b8e834d0d3ac4ed8672906020016104fa565b60606000610676836002610949565b610681906002610931565b67ffffffffffffffff811115610699576106996109db565b6040519080825280601f01601f1916602001820160405280156106c3576020820181803683370190505b509050600360fc1b816000815181106106de576106de6109c5565b60200101906001600160f81b031916908160001a905350600f60fb1b8160018151811061070d5761070d6109c5565b60200101906001600160f81b031916908160001a9053506000610731846002610949565b61073c906001610931565b90505b60018111156107b4576f181899199a1a9b1b9c1cb0b131b232b360811b85600f1660108110610770576107706109c5565b1a60f81b828281518110610786576107866109c5565b60200101906001600160f81b031916908160001a90535060049490941c936107ad81610998565b905061073f565b5083156108035760405162461bcd60e51b815260206004820181905260248201527f537472696e67733a20686578206c656e67746820696e73756666696369656e74604482015260640161030a565b9392505050565b60006020828403121561081c57600080fd5b5035919050565b6000806040838503121561083657600080fd5b8235915060208301356001600160a01b038116811461085457600080fd5b809150509250929050565b60006020828403121561087157600080fd5b81356001600160e01b03198116811461080357600080fd5b7f416363657373436f6e74726f6c3a206163636f756e74200000000000000000008152600083516108c1816017850160208801610968565b7001034b99036b4b9b9b4b733903937b6329607d1b60179184019182015283516108f2816028840160208801610968565b01602801949350505050565b602081526000825180602084015261091d816040850160208701610968565b601f01601f19169190910160400192915050565b60008219821115610944576109446109af565b500190565b6000816000190483118215151615610963576109636109af565b500290565b60005b8381101561098357818101518382015260200161096b565b83811115610992576000848401525b50505050565b6000816109a7576109a76109af565b506000190190565b634e487b7160e01b600052601160045260246000fd5b634e487b7160e01b600052603260045260246000fd5b634e487b7160e01b600052604160045260246000fdfea26469706673582212200cefdee2009aa7cac40c12f60ceff60842ad385a8be8c74032433f0f6b142d9f64736f6c63430008060033",
+    "sourceMap": "341:3447:13:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;2545:202:30;;;;;;:::i;:::-;;:::i;:::-;;;1990:14:40;;1983:22;1965:41;;1953:2;1938:18;2545:202:30;;;;;;;;3917:121;;;;;;:::i;:::-;3983:7;4009:12;;;;;;;;;;:22;;;;3917:121;;;;2163:25:40;;;2151:2;2136:18;3917:121:30;2118:76:40;4288:145:30;;;;;;:::i;:::-;;:::i;:::-;;1598:32:13;;;;;;2323:142;;;;;;:::i;:::-;;:::i;5305:214:30:-;;;;;;:::i;:::-;;:::i;1709:29:13:-;;;;;;1227:54;;1273:8;1227:54;;2834:137:30;;;;;;:::i;:::-;;:::i;1513:34:13:-;;;;;;1952:49:30;;1997:4;1952:49;;1110:54:13;;1161:3;1110:54;;4667:147:30;;;;;;:::i;:::-;;:::i;948:46:13:-;;992:2;948:46;;2565:182;;;;;;:::i;:::-;;:::i;2803:174::-;;;;;;:::i;:::-;;:::i;2545:202:30:-;2630:4;-1:-1:-1;;;;;;2653:47:30;;-1:-1:-1;;;2653:47:30;;:87;;-1:-1:-1;;;;;;;;;;871:40:38;;;2704:36:30;2646:94;2545:202;-1:-1:-1;;2545:202:30:o;4288:145::-;3983:7;4009:12;;;;;;;;;;:22;;;2430:30;2441:4;666:10:35;2430::30;:30::i;:::-;4401:25:::1;4412:4;4418:7;4401:10;:25::i;:::-;4288:145:::0;;;:::o;2323:142:13:-;1997:4:30;2430:30;1997:4;666:10:35;2430::30;:30::i;:::-;2423:35:13::1;2442:15;2423:18;:35::i;:::-;2323:142:::0;;:::o;5305:214:30:-;-1:-1:-1;;;;;5400:23:30;;666:10:35;5400:23:30;5392:83;;;;-1:-1:-1;;;5392:83:30;;3150:2:40;5392:83:30;;;3132:21:40;3189:2;3169:18;;;3162:30;3228:34;3208:18;;;3201:62;-1:-1:-1;;;3279:18:40;;;3272:45;3334:19;;5392:83:30;;;;;;;;;5486:26;5498:4;5504:7;5486:11;:26::i;2834:137::-;2912:4;2935:12;;;;;;;;;;;-1:-1:-1;;;;;2935:29:30;;;;;;;;;;;;;;;2834:137::o;4667:147::-;3983:7;4009:12;;;;;;;;;;:22;;;2430:30;2441:4;666:10:35;2430::30;:30::i;:::-;4781:26:::1;4793:4;4799:7;4781:11;:26::i;2565:182:13:-:0;1997:4:30;2430:30;1997:4;666:10:35;2430::30;:30::i;:::-;2695:45:13::1;2719:20;2695:23;:45::i;2803:174::-:0;1997:4:30;2430:30;1997:4;666:10:35;2430::30;:30::i;:::-;2929:41:13::1;2951:18;2929:21;:41::i;3252:484:30:-:0;3332:22;3340:4;3346:7;3332;:22::i;:::-;3327:403;;3515:41;3543:7;-1:-1:-1;;;;;3515:41:30;3553:2;3515:19;:41::i;:::-;3627:38;3655:4;3662:2;3627:19;:38::i;:::-;3422:265;;;;;;;;;:::i;:::-;;;;-1:-1:-1;;3422:265:30;;;;;;;;;;-1:-1:-1;;;3370:349:30;;;;;;;:::i;6572:224::-;6646:22;6654:4;6660:7;6646;:22::i;:::-;6641:149;;6684:6;:12;;;;;;;;;;;-1:-1:-1;;;;;6684:29:30;;;;;;;;;:36;;-1:-1:-1;;6684:36:30;6716:4;6684:36;;;6766:12;666:10:35;;587:96;6766:12:30;-1:-1:-1;;;;;6739:40:30;6757:7;-1:-1:-1;;;;;6739:40:30;6751:4;6739:40;;;;;;;;;;6572:224;;:::o;2983:244:13:-;3103:21;;;;;;;;;;;;-1:-1:-1;;;3103:21:13;;;;1273:8;3063:38;;;3055:70;;;;-1:-1:-1;;;3055:70:13;;;;;;;;:::i;:::-;-1:-1:-1;3135:14:13;:32;;;3182:38;;2163:25:40;;;3182:38:13;;2151:2:40;2136:18;3182:38:13;;;;;;;;2983:244;:::o;6802:225:30:-;6876:22;6884:4;6890:7;6876;:22::i;:::-;6872:149;;;6946:5;6914:12;;;;;;;;;;;-1:-1:-1;;;;;6914:29:30;;;;;;;;;;:37;;-1:-1:-1;;6914:37:30;;;6970:40;666:10:35;;6914:12:30;;6970:40;;6946:5;6970:40;6802:225;;:::o;3233:284:13:-;3373:21;;;;;;;;;;;;-1:-1:-1;;;3373:21:13;;;;1161:3;3323:48;;;3315:80;;;;-1:-1:-1;;;3315:80:13;;;;;;;;:::i;:::-;-1:-1:-1;3405:19:13;:42;;;3462:48;;2163:25:40;;;3462:48:13;;2151:2:40;2136:18;3462:48:13;2118:76:40;3523:263:13;3650:21;;;;;;;;;;;;-1:-1:-1;;;3650:21:13;;;;992:2;3609:39;;;3601:71;;;;-1:-1:-1;;;3601:71:13;;;;;;;;:::i;:::-;-1:-1:-1;3682:17:13;:38;;;3735:44;;2163:25:40;;;3735:44:13;;2151:2:40;2136:18;3735:44:13;2118:76:40;1535:441:37;1610:13;1635:19;1667:10;1671:6;1667:1;:10;:::i;:::-;:14;;1680:1;1667:14;:::i;:::-;1657:25;;;;;;;;:::i;:::-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;-1:-1:-1;1657:25:37;;1635:47;;-1:-1:-1;;;1692:6:37;1699:1;1692:9;;;;;;;;:::i;:::-;;;;:15;-1:-1:-1;;;;;1692:15:37;;;;;;;;;-1:-1:-1;;;1717:6:37;1724:1;1717:9;;;;;;;;:::i;:::-;;;;:15;-1:-1:-1;;;;;1717:15:37;;;;;;;;-1:-1:-1;1747:9:37;1759:10;1763:6;1759:1;:10;:::i;:::-;:14;;1772:1;1759:14;:::i;:::-;1747:26;;1742:132;1779:1;1775;:5;1742:132;;;-1:-1:-1;;;1826:5:37;1834:3;1826:11;1813:25;;;;;;;:::i;:::-;;;;1801:6;1808:1;1801:9;;;;;;;;:::i;:::-;;;;:37;-1:-1:-1;;;;;1801:37:37;;;;;;;;-1:-1:-1;1862:1:37;1852:11;;;;;1782:3;;;:::i;:::-;;;1742:132;;;-1:-1:-1;1891:10:37;;1883:55;;;;-1:-1:-1;;;1883:55:37;;2789:2:40;1883:55:37;;;2771:21:40;;;2808:18;;;2801:30;2867:34;2847:18;;;2840:62;2919:18;;1883:55:37;2761:182:40;1883:55:37;1962:6;1535:441;-1:-1:-1;;;1535:441:37:o;14:180:40:-;73:6;126:2;114:9;105:7;101:23;97:32;94:2;;;142:1;139;132:12;94:2;-1:-1:-1;165:23:40;;84:110;-1:-1:-1;84:110:40:o;199:354::-;267:6;275;328:2;316:9;307:7;303:23;299:32;296:2;;;344:1;341;334:12;296:2;367:23;;;-1:-1:-1;440:2:40;425:18;;412:32;-1:-1:-1;;;;;473:31:40;;463:42;;453:2;;519:1;516;509:12;453:2;542:5;532:15;;;286:267;;;;;:::o;558:286::-;616:6;669:2;657:9;648:7;644:23;640:32;637:2;;;685:1;682;675:12;637:2;711:23;;-1:-1:-1;;;;;;763:32:40;;753:43;;743:2;;810:1;807;800:12;1034:786;1445:25;1440:3;1433:38;1415:3;1500:6;1494:13;1516:62;1571:6;1566:2;1561:3;1557:12;1550:4;1542:6;1538:17;1516:62;:::i;:::-;-1:-1:-1;;;1637:2:40;1597:16;;;1629:11;;;1622:40;1687:13;;1709:63;1687:13;1758:2;1750:11;;1743:4;1731:17;;1709:63;:::i;:::-;1792:17;1811:2;1788:26;;1423:397;-1:-1:-1;;;;1423:397:40:o;2199:383::-;2348:2;2337:9;2330:21;2311:4;2380:6;2374:13;2423:6;2418:2;2407:9;2403:18;2396:34;2439:66;2498:6;2493:2;2482:9;2478:18;2473:2;2465:6;2461:15;2439:66;:::i;:::-;2566:2;2545:15;-1:-1:-1;;2541:29:40;2526:45;;;;2573:2;2522:54;;2320:262;-1:-1:-1;;2320:262:40:o;3546:128::-;3586:3;3617:1;3613:6;3610:1;3607:13;3604:2;;;3623:18;;:::i;:::-;-1:-1:-1;3659:9:40;;3594:80::o;3679:168::-;3719:7;3785:1;3781;3777:6;3773:14;3770:1;3767:21;3762:1;3755:9;3748:17;3744:45;3741:2;;;3792:18;;:::i;:::-;-1:-1:-1;3832:9:40;;3731:116::o;3852:258::-;3924:1;3934:113;3948:6;3945:1;3942:13;3934:113;;;4024:11;;;4018:18;4005:11;;;3998:39;3970:2;3963:10;3934:113;;;4065:6;4062:1;4059:13;4056:2;;;4100:1;4091:6;4086:3;4082:16;4075:27;4056:2;;3905:205;;;:::o;4115:136::-;4154:3;4182:5;4172:2;;4191:18;;:::i;:::-;-1:-1:-1;;;4227:18:40;;4162:89::o;4256:127::-;4317:10;4312:3;4308:20;4305:1;4298:31;4348:4;4345:1;4338:15;4372:4;4369:1;4362:15;4388:127;4449:10;4444:3;4440:20;4437:1;4430:31;4480:4;4477:1;4470:15;4504:4;4501:1;4494:15;4520:127;4581:10;4576:3;4572:20;4569:1;4562:31;4612:4;4609:1;4602:15;4636:4;4633:1;4626:15",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "DEFAULT_ADMIN_ROLE()": "a217fddf",
+    "MAX_MOTIONS_LIMIT()": "e1637395",
+    "MAX_OBJECTIONS_THRESHOLD()": "cdb6aefc",
+    "MIN_MOTION_DURATION()": "88407bd4",
+    "getRoleAdmin(bytes32)": "248a9ca3",
+    "grantRole(bytes32,address)": "2f2ff15d",
+    "hasRole(bytes32,address)": "91d14854",
+    "motionDuration()": "64993a73",
+    "motionsCountLimit()": "3128cce0",
+    "objectionsThreshold()": "930c2b31",
+    "renounceRole(bytes32,address)": "36568abe",
+    "revokeRole(bytes32,address)": "d547741f",
+    "setMotionDuration(uint256)": "31a40e6e",
+    "setMotionsCountLimit(uint256)": "fdc28ab8",
+    "setObjectionsThreshold(uint256)": "ef1ae2f6",
+    "supportsInterface(bytes4)": "01ffc9a7"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"address\",\"name\":\"_admin\",\"type\":\"address\"},{\"internalType\":\"uint256\",\"name\":\"_motionDuration\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_motionsCountLimit\",\"type\":\"uint256\"},{\"internalType\":\"uint256\",\"name\":\"_objectionsThreshold\",\"type\":\"uint256\"}],\"stateMutability\":\"nonpayable\",\"type\":\"constructor\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_motionDuration\",\"type\":\"uint256\"}],\"name\":\"MotionDurationChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_newMotionsCountLimit\",\"type\":\"uint256\"}],\"name\":\"MotionsCountLimitChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":false,\"internalType\":\"uint256\",\"name\":\"_newThreshold\",\"type\":\"uint256\"}],\"name\":\"ObjectionsThresholdChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"previousAdminRole\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"newAdminRole\",\"type\":\"bytes32\"}],\"name\":\"RoleAdminChanged\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleGranted\",\"type\":\"event\"},{\"anonymous\":false,\"inputs\":[{\"indexed\":true,\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"},{\"indexed\":true,\"internalType\":\"address\",\"name\":\"sender\",\"type\":\"address\"}],\"name\":\"RoleRevoked\",\"type\":\"event\"},{\"inputs\":[],\"name\":\"DEFAULT_ADMIN_ROLE\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_MOTIONS_LIMIT\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MAX_OBJECTIONS_THRESHOLD\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"MIN_MOTION_DURATION\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"}],\"name\":\"getRoleAdmin\",\"outputs\":[{\"internalType\":\"bytes32\",\"name\":\"\",\"type\":\"bytes32\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"grantRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"hasRole\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"motionDuration\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"motionsCountLimit\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[],\"name\":\"objectionsThreshold\",\"outputs\":[{\"internalType\":\"uint256\",\"name\":\"\",\"type\":\"uint256\"}],\"stateMutability\":\"view\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"renounceRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes32\",\"name\":\"role\",\"type\":\"bytes32\"},{\"internalType\":\"address\",\"name\":\"account\",\"type\":\"address\"}],\"name\":\"revokeRole\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_motionDuration\",\"type\":\"uint256\"}],\"name\":\"setMotionDuration\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_motionsCountLimit\",\"type\":\"uint256\"}],\"name\":\"setMotionsCountLimit\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"uint256\",\"name\":\"_objectionsThreshold\",\"type\":\"uint256\"}],\"name\":\"setObjectionsThreshold\",\"outputs\":[],\"stateMutability\":\"nonpayable\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes4\",\"name\":\"interfaceId\",\"type\":\"bytes4\"}],\"name\":\"supportsInterface\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"view\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"psirex\",\"kind\":\"dev\",\"methods\":{\"getRoleAdmin(bytes32)\":{\"details\":\"Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}.\"},\"grantRole(bytes32,address)\":{\"details\":\"Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role.\"},\"hasRole(bytes32,address)\":{\"details\":\"Returns `true` if `account` has been granted `role`.\"},\"renounceRole(bytes32,address)\":{\"details\":\"Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`.\"},\"revokeRole(bytes32,address)\":{\"details\":\"Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role.\"},\"supportsInterface(bytes4)\":{\"details\":\"See {IERC165-supportsInterface}.\"}},\"stateVariables\":{\"MAX_OBJECTIONS_THRESHOLD\":{\"details\":\"Stored in basis points (1% = 100)\"},\"objectionsThreshold\":{\"details\":\"Value stored in basis points: 1% == 100.\"}},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{\"MAX_MOTIONS_LIMIT()\":{\"notice\":\"Upper bound for motionsCountLimit variable.\"},\"MAX_OBJECTIONS_THRESHOLD()\":{\"notice\":\"Upper bound for objectionsThreshold variable.\"},\"MIN_MOTION_DURATION()\":{\"notice\":\"Lower bound for motionDuration variable\"},\"motionDuration()\":{\"notice\":\"Minimal time required to pass before enacting of motion\"},\"motionsCountLimit()\":{\"notice\":\"Max count of active motions\"},\"objectionsThreshold()\":{\"notice\":\"Percent from total supply of governance tokens required to reject motion.\"},\"setMotionDuration(uint256)\":{\"notice\":\"Sets the minimal time required to pass before enacting of motion\"},\"setMotionsCountLimit(uint256)\":{\"notice\":\"Sets max count of active motions.\"},\"setObjectionsThreshold(uint256)\":{\"notice\":\"Sets percent from total supply of governance tokens required to reject motion\"}},\"notice\":\"Provides methods to update motion duration, objections threshold, and limit of active motions of Easy Track\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/MotionSettings.sol\":\"MotionSettings\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/MotionSettings.sol\":{\"keccak256\":\"0x78af98d1da2bdfbc35760c17761e11637e438b85925d965d17c73624a1a512e4\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://468dd66d09671cabd70035dab80fd300be88770374657c974ab4d13c50110ecf\",\"dweb:/ipfs/QmP1eRCUaMhDvEa2kZBvoSaHeBR2ALjUZKNPh3NJoWc4Wy\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol\":{\"keccak256\":\"0x183481af1c40d2efb26b86f63d6fe9e22f24c87e436d60a69f261b38500e7cd6\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://f562746c399ae045994a88b2218d1238a349de07afbfb305aab0c7fdbc2954cc\",\"dweb:/ipfs/QmYoFrDD2c6fi9CpPz1bjCMAyketjZ3G7ByUSVQMntysms\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol\":{\"keccak256\":\"0xfe0edb09653ed10e8a1bfe03eb9b0ff06775666eee817a95bd3d0799f1ee2b44\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://fbb9d503857eab98f87465df0f02fef03083f30c1dbec82f319f41aaadae19b4\",\"dweb:/ipfs/QmTxDshRAMtoeM45YrTzQZdpmy4mt4scCNHjfZiWSvdETF\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol\":{\"keccak256\":\"0x90565a39ae45c80f0468dc96c7b20d0afc3055f344c8203a0c9258239f350b9f\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://26e8b38a7ac8e7b4463af00cf7fff1bf48ae9875765bf4f7751e100124d0bc8c\",\"dweb:/ipfs/QmWcsmkVr24xmmjfnBQZoemFniXjj3vwT78Cz6uqZW1Hux\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol\":{\"keccak256\":\"0x391d3ba97ab6856a16b225d6ee29617ad15ff00db70f3b4df1ab5ea33aa47c9d\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d636ba90bbbeed04a1ea7fe9ec2466757e30fd38ba2ca173636dbf69a518735e\",\"dweb:/ipfs/QmQwCB2BHnEuYR22PYt9HkpbgeFDhq4rHmaYqAZbX3WRC7\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol\":{\"keccak256\":\"0x5718c5df9bd67ac68a796961df938821bb5dc0cd4c6118d77e9145afb187409b\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://d10e1d9b26042424789246603906ad06143bf9a928f4e99de8b5e3bdc662f549\",\"dweb:/ipfs/Qmejonoaj5MLekPus229rJQHcC6E9dz2xorjHJR84fMfmn\"]},\"dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol\":{\"keccak256\":\"0xa28007762d9da9db878dd421960c8cb9a10471f47ab5c1b3309bfe48e9e79ff4\",\"license\":\"MIT\",\"urls\":[\"bzz-raw://796ab6e88af7bf0e78def0f059310c903af6a312b565344e0ff524a0f26e81c6\",\"dweb:/ipfs/QmcsVgLgzWdor3UnAztUkXKNGcysm1MPneWksF72AvnwBx\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "address",
+              "name": "_admin",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_motionDuration",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_motionsCountLimit",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "_objectionsThreshold",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "constructor"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_motionDuration",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "MotionDurationChanged",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_newMotionsCountLimit",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "MotionsCountLimitChanged",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_newThreshold",
+              "type": "uint256",
+              "indexed": false
+            }
+          ],
+          "type": "event",
+          "name": "ObjectionsThresholdChanged",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32",
+              "indexed": true
+            },
+            {
+              "internalType": "bytes32",
+              "name": "previousAdminRole",
+              "type": "bytes32",
+              "indexed": true
+            },
+            {
+              "internalType": "bytes32",
+              "name": "newAdminRole",
+              "type": "bytes32",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "RoleAdminChanged",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "RoleGranted",
+          "anonymous": false
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address",
+              "indexed": true
+            },
+            {
+              "internalType": "address",
+              "name": "sender",
+              "type": "address",
+              "indexed": true
+            }
+          ],
+          "type": "event",
+          "name": "RoleRevoked",
+          "anonymous": false
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "DEFAULT_ADMIN_ROLE",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "MAX_MOTIONS_LIMIT",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "MAX_OBJECTIONS_THRESHOLD",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "MIN_MOTION_DURATION",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "getRoleAdmin",
+          "outputs": [
+            {
+              "internalType": "bytes32",
+              "name": "",
+              "type": "bytes32"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "grantRole"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "hasRole",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "motionDuration",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "motionsCountLimit",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "objectionsThreshold",
+          "outputs": [
+            {
+              "internalType": "uint256",
+              "name": "",
+              "type": "uint256"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "renounceRole"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes32",
+              "name": "role",
+              "type": "bytes32"
+            },
+            {
+              "internalType": "address",
+              "name": "account",
+              "type": "address"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "revokeRole"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_motionDuration",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setMotionDuration"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_motionsCountLimit",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setMotionsCountLimit"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "uint256",
+              "name": "_objectionsThreshold",
+              "type": "uint256"
+            }
+          ],
+          "stateMutability": "nonpayable",
+          "type": "function",
+          "name": "setObjectionsThreshold"
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes4",
+              "name": "interfaceId",
+              "type": "bytes4"
+            }
+          ],
+          "stateMutability": "view",
+          "type": "function",
+          "name": "supportsInterface",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {
+          "getRoleAdmin(bytes32)": {
+            "details": "Returns the admin role that controls `role`. See {grantRole} and {revokeRole}. To change a role's admin, use {_setRoleAdmin}."
+          },
+          "grantRole(bytes32,address)": {
+            "details": "Grants `role` to `account`. If `account` had not been already granted `role`, emits a {RoleGranted} event. Requirements: - the caller must have ``role``'s admin role."
+          },
+          "hasRole(bytes32,address)": {
+            "details": "Returns `true` if `account` has been granted `role`."
+          },
+          "renounceRole(bytes32,address)": {
+            "details": "Revokes `role` from the calling account. Roles are often managed via {grantRole} and {revokeRole}: this function's purpose is to provide a mechanism for accounts to lose their privileges if they are compromised (such as when a trusted device is misplaced). If the calling account had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must be `account`."
+          },
+          "revokeRole(bytes32,address)": {
+            "details": "Revokes `role` from `account`. If `account` had been granted `role`, emits a {RoleRevoked} event. Requirements: - the caller must have ``role``'s admin role."
+          },
+          "supportsInterface(bytes4)": {
+            "details": "See {IERC165-supportsInterface}."
+          }
+        },
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {
+          "MAX_MOTIONS_LIMIT()": {
+            "notice": "Upper bound for motionsCountLimit variable."
+          },
+          "MAX_OBJECTIONS_THRESHOLD()": {
+            "notice": "Upper bound for objectionsThreshold variable."
+          },
+          "MIN_MOTION_DURATION()": {
+            "notice": "Lower bound for motionDuration variable"
+          },
+          "motionDuration()": {
+            "notice": "Minimal time required to pass before enacting of motion"
+          },
+          "motionsCountLimit()": {
+            "notice": "Max count of active motions"
+          },
+          "objectionsThreshold()": {
+            "notice": "Percent from total supply of governance tokens required to reject motion."
+          },
+          "setMotionDuration(uint256)": {
+            "notice": "Sets the minimal time required to pass before enacting of motion"
+          },
+          "setMotionsCountLimit(uint256)": {
+            "notice": "Sets max count of active motions."
+          },
+          "setObjectionsThreshold(uint256)": {
+            "notice": "Sets percent from total supply of governance tokens required to reject motion"
+          }
+        },
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/MotionSettings.sol": "MotionSettings"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/MotionSettings.sol": {
+        "keccak256": "0x78af98d1da2bdfbc35760c17761e11637e438b85925d965d17c73624a1a512e4",
+        "urls": [
+          "bzz-raw://468dd66d09671cabd70035dab80fd300be88770374657c974ab4d13c50110ecf",
+          "dweb:/ipfs/QmP1eRCUaMhDvEa2kZBvoSaHeBR2ALjUZKNPh3NJoWc4Wy"
+        ],
+        "license": "GPL-3.0"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol": {
+        "keccak256": "0x183481af1c40d2efb26b86f63d6fe9e22f24c87e436d60a69f261b38500e7cd6",
+        "urls": [
+          "bzz-raw://f562746c399ae045994a88b2218d1238a349de07afbfb305aab0c7fdbc2954cc",
+          "dweb:/ipfs/QmYoFrDD2c6fi9CpPz1bjCMAyketjZ3G7ByUSVQMntysms"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol": {
+        "keccak256": "0xfe0edb09653ed10e8a1bfe03eb9b0ff06775666eee817a95bd3d0799f1ee2b44",
+        "urls": [
+          "bzz-raw://fbb9d503857eab98f87465df0f02fef03083f30c1dbec82f319f41aaadae19b4",
+          "dweb:/ipfs/QmTxDshRAMtoeM45YrTzQZdpmy4mt4scCNHjfZiWSvdETF"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol": {
+        "keccak256": "0x90565a39ae45c80f0468dc96c7b20d0afc3055f344c8203a0c9258239f350b9f",
+        "urls": [
+          "bzz-raw://26e8b38a7ac8e7b4463af00cf7fff1bf48ae9875765bf4f7751e100124d0bc8c",
+          "dweb:/ipfs/QmWcsmkVr24xmmjfnBQZoemFniXjj3vwT78Cz6uqZW1Hux"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol": {
+        "keccak256": "0x391d3ba97ab6856a16b225d6ee29617ad15ff00db70f3b4df1ab5ea33aa47c9d",
+        "urls": [
+          "bzz-raw://d636ba90bbbeed04a1ea7fe9ec2466757e30fd38ba2ca173636dbf69a518735e",
+          "dweb:/ipfs/QmQwCB2BHnEuYR22PYt9HkpbgeFDhq4rHmaYqAZbX3WRC7"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol": {
+        "keccak256": "0x5718c5df9bd67ac68a796961df938821bb5dc0cd4c6118d77e9145afb187409b",
+        "urls": [
+          "bzz-raw://d10e1d9b26042424789246603906ad06143bf9a928f4e99de8b5e3bdc662f549",
+          "dweb:/ipfs/Qmejonoaj5MLekPus229rJQHcC6E9dz2xorjHJR84fMfmn"
+        ],
+        "license": "MIT"
+      },
+      "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol": {
+        "keccak256": "0xa28007762d9da9db878dd421960c8cb9a10471f47ab5c1b3309bfe48e9e79ff4",
+        "urls": [
+          "bzz-raw://796ab6e88af7bf0e78def0f059310c903af6a312b565344e0ff524a0f26e81c6",
+          "dweb:/ipfs/QmcsVgLgzWdor3UnAztUkXKNGcysm1MPneWksF72AvnwBx"
+        ],
+        "license": "MIT"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [
+      {
+        "astId": 5177,
+        "contract": "contracts/MotionSettings.sol:MotionSettings",
+        "label": "_roles",
+        "offset": 0,
+        "slot": "0",
+        "type": "t_mapping(t_bytes32,t_struct(RoleData)5172_storage)"
+      },
+      {
+        "astId": 3655,
+        "contract": "contracts/MotionSettings.sol:MotionSettings",
+        "label": "objectionsThreshold",
+        "offset": 0,
+        "slot": "1",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 3658,
+        "contract": "contracts/MotionSettings.sol:MotionSettings",
+        "label": "motionsCountLimit",
+        "offset": 0,
+        "slot": "2",
+        "type": "t_uint256"
+      },
+      {
+        "astId": 3661,
+        "contract": "contracts/MotionSettings.sol:MotionSettings",
+        "label": "motionDuration",
+        "offset": 0,
+        "slot": "3",
+        "type": "t_uint256"
+      }
+    ],
+    "types": {
+      "t_address": {
+        "encoding": "inplace",
+        "label": "address",
+        "numberOfBytes": "20"
+      },
+      "t_bool": {
+        "encoding": "inplace",
+        "label": "bool",
+        "numberOfBytes": "1"
+      },
+      "t_bytes32": {
+        "encoding": "inplace",
+        "label": "bytes32",
+        "numberOfBytes": "32"
+      },
+      "t_mapping(t_address,t_bool)": {
+        "encoding": "mapping",
+        "key": "t_address",
+        "label": "mapping(address => bool)",
+        "numberOfBytes": "32",
+        "value": "t_bool"
+      },
+      "t_mapping(t_bytes32,t_struct(RoleData)5172_storage)": {
+        "encoding": "mapping",
+        "key": "t_bytes32",
+        "label": "mapping(bytes32 => struct AccessControl.RoleData)",
+        "numberOfBytes": "32",
+        "value": "t_struct(RoleData)5172_storage"
+      },
+      "t_struct(RoleData)5172_storage": {
+        "encoding": "inplace",
+        "label": "struct AccessControl.RoleData",
+        "numberOfBytes": "64",
+        "members": [
+          {
+            "astId": 5169,
+            "contract": "contracts/MotionSettings.sol:MotionSettings",
+            "label": "members",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_mapping(t_address,t_bool)"
+          },
+          {
+            "astId": 5171,
+            "contract": "contracts/MotionSettings.sol:MotionSettings",
+            "label": "adminRole",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_bytes32"
+          }
+        ]
+      },
+      "t_uint256": {
+        "encoding": "inplace",
+        "label": "uint256",
+        "numberOfBytes": "32"
+      }
+    }
+  },
+  "ast": {
+    "absolutePath": "contracts/MotionSettings.sol",
+    "id": 3797,
+    "exportedSymbols": {
+      "AccessControl": [
+        5459
+      ],
+      "Context": [
+        6047
+      ],
+      "ERC165": [
+        6334
+      ],
+      "IAccessControl": [
+        5532
+      ],
+      "IERC165": [
+        6346
+      ],
+      "MotionSettings": [
+        3796
+      ],
+      "Strings": [
+        6310
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:3700:13",
+    "nodes": [
+      {
+        "id": 3618,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:13",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 3619,
+        "nodeType": "ImportDirective",
+        "src": "114:86:13",
+        "nodes": [],
+        "absolutePath": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "file": "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 3797,
+        "sourceUnit": 5460,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 3796,
+        "nodeType": "ContractDefinition",
+        "src": "341:3447:13",
+        "nodes": [
+          {
+            "id": 3626,
+            "nodeType": "EventDefinition",
+            "src": "444:53:13",
+            "nodes": [],
+            "anonymous": false,
+            "name": "MotionDurationChanged",
+            "nameLocation": "450:21:13",
+            "parameters": {
+              "id": 3625,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3624,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "_motionDuration",
+                  "nameLocation": "480:15:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3626,
+                  "src": "472:23:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3623,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "472:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "471:25:13"
+            }
+          },
+          {
+            "id": 3630,
+            "nodeType": "EventDefinition",
+            "src": "502:62:13",
+            "nodes": [],
+            "anonymous": false,
+            "name": "MotionsCountLimitChanged",
+            "nameLocation": "508:24:13",
+            "parameters": {
+              "id": 3629,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3628,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "_newMotionsCountLimit",
+                  "nameLocation": "541:21:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3630,
+                  "src": "533:29:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3627,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "533:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "532:31:13"
+            }
+          },
+          {
+            "id": 3634,
+            "nodeType": "EventDefinition",
+            "src": "569:56:13",
+            "nodes": [],
+            "anonymous": false,
+            "name": "ObjectionsThresholdChanged",
+            "nameLocation": "575:26:13",
+            "parameters": {
+              "id": 3633,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3632,
+                  "indexed": false,
+                  "mutability": "mutable",
+                  "name": "_newThreshold",
+                  "nameLocation": "610:13:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3634,
+                  "src": "602:21:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3631,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "602:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "601:23:13"
+            }
+          },
+          {
+            "id": 3637,
+            "nodeType": "VariableDeclaration",
+            "src": "688:65:13",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_VALUE_TOO_SMALL",
+            "nameLocation": "712:21:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 3635,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "688:6:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "56414c55455f544f4f5f534d414c4c",
+              "id": 3636,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "736:17:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_df39613d322d9b4cd0709b33b5378a536edb494d814dc46ec644661f6521a888",
+                "typeString": "literal_string \"VALUE_TOO_SMALL\""
+              },
+              "value": "VALUE_TOO_SMALL"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 3640,
+            "nodeType": "VariableDeclaration",
+            "src": "759:65:13",
+            "nodes": [],
+            "constant": true,
+            "mutability": "constant",
+            "name": "ERROR_VALUE_TOO_LARGE",
+            "nameLocation": "783:21:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_string_memory_ptr",
+              "typeString": "string"
+            },
+            "typeName": {
+              "id": 3638,
+              "name": "string",
+              "nodeType": "ElementaryTypeName",
+              "src": "759:6:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_string_storage_ptr",
+                "typeString": "string"
+              }
+            },
+            "value": {
+              "hexValue": "56414c55455f544f4f5f4c41524745",
+              "id": 3639,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "string",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "807:17:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_stringliteral_044045506da61d4d6fa17a32b2793c3d64aa86be9b561fa08e0dc6fd1f3955d1",
+                "typeString": "literal_string \"VALUE_TOO_LARGE\""
+              },
+              "value": "VALUE_TOO_LARGE"
+            },
+            "visibility": "private"
+          },
+          {
+            "id": 3644,
+            "nodeType": "VariableDeclaration",
+            "src": "948:46:13",
+            "nodes": [],
+            "constant": true,
+            "documentation": {
+              "id": 3641,
+              "nodeType": "StructuredDocumentation",
+              "src": "888:55:13",
+              "text": "@notice Upper bound for motionsCountLimit variable."
+            },
+            "functionSelector": "e1637395",
+            "mutability": "constant",
+            "name": "MAX_MOTIONS_LIMIT",
+            "nameLocation": "972:17:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 3642,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "948:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "value": {
+              "hexValue": "3234",
+              "id": 3643,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "number",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "992:2:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_rational_24_by_1",
+                "typeString": "int_const 24"
+              },
+              "value": "24"
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 3648,
+            "nodeType": "VariableDeclaration",
+            "src": "1110:54:13",
+            "nodes": [],
+            "constant": true,
+            "documentation": {
+              "id": 3645,
+              "nodeType": "StructuredDocumentation",
+              "src": "1001:104:13",
+              "text": "@notice Upper bound for objectionsThreshold variable.\n @dev Stored in basis points (1% = 100)"
+            },
+            "functionSelector": "cdb6aefc",
+            "mutability": "constant",
+            "name": "MAX_OBJECTIONS_THRESHOLD",
+            "nameLocation": "1134:24:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 3646,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1110:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "value": {
+              "hexValue": "353030",
+              "id": 3647,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "number",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "1161:3:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_rational_500_by_1",
+                "typeString": "int_const 500"
+              },
+              "value": "500"
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 3652,
+            "nodeType": "VariableDeclaration",
+            "src": "1227:54:13",
+            "nodes": [],
+            "constant": true,
+            "documentation": {
+              "id": 3649,
+              "nodeType": "StructuredDocumentation",
+              "src": "1171:51:13",
+              "text": "@notice Lower bound for motionDuration variable"
+            },
+            "functionSelector": "88407bd4",
+            "mutability": "constant",
+            "name": "MIN_MOTION_DURATION",
+            "nameLocation": "1251:19:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 3650,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1227:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "value": {
+              "hexValue": "3438",
+              "id": 3651,
+              "isConstant": false,
+              "isLValue": false,
+              "isPure": true,
+              "kind": "number",
+              "lValueRequested": false,
+              "nodeType": "Literal",
+              "src": "1273:8:13",
+              "subdenomination": "hours",
+              "typeDescriptions": {
+                "typeIdentifier": "t_rational_172800_by_1",
+                "typeString": "int_const 172800"
+              },
+              "value": "48"
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 3655,
+            "nodeType": "VariableDeclaration",
+            "src": "1513:34:13",
+            "nodes": [],
+            "constant": false,
+            "documentation": {
+              "id": 3653,
+              "nodeType": "StructuredDocumentation",
+              "src": "1369:139:13",
+              "text": "@notice Percent from total supply of governance tokens required to reject motion.\n @dev Value stored in basis points: 1% == 100."
+            },
+            "functionSelector": "930c2b31",
+            "mutability": "mutable",
+            "name": "objectionsThreshold",
+            "nameLocation": "1528:19:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 3654,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1513:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 3658,
+            "nodeType": "VariableDeclaration",
+            "src": "1598:32:13",
+            "nodes": [],
+            "constant": false,
+            "documentation": {
+              "id": 3656,
+              "nodeType": "StructuredDocumentation",
+              "src": "1554:39:13",
+              "text": "@notice Max count of active motions"
+            },
+            "functionSelector": "3128cce0",
+            "mutability": "mutable",
+            "name": "motionsCountLimit",
+            "nameLocation": "1613:17:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 3657,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1598:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 3661,
+            "nodeType": "VariableDeclaration",
+            "src": "1709:29:13",
+            "nodes": [],
+            "constant": false,
+            "documentation": {
+              "id": 3659,
+              "nodeType": "StructuredDocumentation",
+              "src": "1637:67:13",
+              "text": "@notice Minimal time required to pass before enacting of motion"
+            },
+            "functionSelector": "64993a73",
+            "mutability": "mutable",
+            "name": "motionDuration",
+            "nameLocation": "1724:14:13",
+            "scope": 3796,
+            "stateVariable": true,
+            "storageLocation": "default",
+            "typeDescriptions": {
+              "typeIdentifier": "t_uint256",
+              "typeString": "uint256"
+            },
+            "typeName": {
+              "id": 3660,
+              "name": "uint256",
+              "nodeType": "ElementaryTypeName",
+              "src": "1709:7:13",
+              "typeDescriptions": {
+                "typeIdentifier": "t_uint256",
+                "typeString": "uint256"
+              }
+            },
+            "visibility": "public"
+          },
+          {
+            "id": 3690,
+            "nodeType": "FunctionDefinition",
+            "src": "1804:355:13",
+            "nodes": [],
+            "body": {
+              "id": 3689,
+              "nodeType": "Block",
+              "src": "1953:206:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3673,
+                        "name": "DEFAULT_ADMIN_ROLE",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 5180,
+                        "src": "1974:18:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes32",
+                          "typeString": "bytes32"
+                        }
+                      },
+                      {
+                        "id": 3674,
+                        "name": "_admin",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3663,
+                        "src": "1994:6:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes32",
+                          "typeString": "bytes32"
+                        },
+                        {
+                          "typeIdentifier": "t_address",
+                          "typeString": "address"
+                        }
+                      ],
+                      "id": 3672,
+                      "name": "_setupRole",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 5369,
+                      "src": "1963:10:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_bytes32_$_t_address_$returns$__$",
+                        "typeString": "function (bytes32,address)"
+                      }
+                    },
+                    "id": 3675,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "1963:38:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3676,
+                  "nodeType": "ExpressionStatement",
+                  "src": "1963:38:13"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3678,
+                        "name": "_motionDuration",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3665,
+                        "src": "2030:15:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3677,
+                      "name": "_setMotionDuration",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3753,
+                      "src": "2011:18:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3679,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2011:35:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3680,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2011:35:13"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3682,
+                        "name": "_motionsCountLimit",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3667,
+                        "src": "2078:18:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3681,
+                      "name": "_setMotionsCountLimit",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3795,
+                      "src": "2056:21:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3683,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2056:41:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3684,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2056:41:13"
+                },
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3686,
+                        "name": "_objectionsThreshold",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3669,
+                        "src": "2131:20:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3685,
+                      "name": "_setObjectionsThreshold",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3774,
+                      "src": "2107:23:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3687,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2107:45:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3688,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2107:45:13"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "constructor",
+            "modifiers": [],
+            "name": "",
+            "nameLocation": "-1:-1:-1",
+            "parameters": {
+              "id": 3670,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3663,
+                  "mutability": "mutable",
+                  "name": "_admin",
+                  "nameLocation": "1833:6:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3690,
+                  "src": "1825:14:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 3662,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1825:7:13",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3665,
+                  "mutability": "mutable",
+                  "name": "_motionDuration",
+                  "nameLocation": "1857:15:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3690,
+                  "src": "1849:23:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3664,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1849:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3667,
+                  "mutability": "mutable",
+                  "name": "_motionsCountLimit",
+                  "nameLocation": "1890:18:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3690,
+                  "src": "1882:26:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3666,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1882:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 3669,
+                  "mutability": "mutable",
+                  "name": "_objectionsThreshold",
+                  "nameLocation": "1926:20:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3690,
+                  "src": "1918:28:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3668,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1918:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1815:137:13"
+            },
+            "returnParameters": {
+              "id": 3671,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1953:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "public"
+          },
+          {
+            "id": 3704,
+            "nodeType": "FunctionDefinition",
+            "src": "2323:142:13",
+            "nodes": [],
+            "body": {
+              "id": 3703,
+              "nodeType": "Block",
+              "src": "2413:52:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3700,
+                        "name": "_motionDuration",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3693,
+                        "src": "2442:15:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3699,
+                      "name": "_setMotionDuration",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3753,
+                      "src": "2423:18:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3701,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2423:35:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3702,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2423:35:13"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 3691,
+              "nodeType": "StructuredDocumentation",
+              "src": "2242:76:13",
+              "text": "@notice Sets the minimal time required to pass before enacting of motion"
+            },
+            "functionSelector": "31a40e6e",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "arguments": [
+                  {
+                    "id": 3696,
+                    "name": "DEFAULT_ADMIN_ROLE",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 5180,
+                    "src": "2393:18:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  }
+                ],
+                "id": 3697,
+                "kind": "modifierInvocation",
+                "modifierName": {
+                  "id": 3695,
+                  "name": "onlyRole",
+                  "nodeType": "IdentifierPath",
+                  "referencedDeclaration": 5193,
+                  "src": "2384:8:13"
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "2384:28:13"
+              }
+            ],
+            "name": "setMotionDuration",
+            "nameLocation": "2332:17:13",
+            "parameters": {
+              "id": 3694,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3693,
+                  "mutability": "mutable",
+                  "name": "_motionDuration",
+                  "nameLocation": "2358:15:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3704,
+                  "src": "2350:23:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3692,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2350:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2349:25:13"
+            },
+            "returnParameters": {
+              "id": 3698,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2413:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 3718,
+            "nodeType": "FunctionDefinition",
+            "src": "2565:182:13",
+            "nodes": [],
+            "body": {
+              "id": 3717,
+              "nodeType": "Block",
+              "src": "2685:62:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3714,
+                        "name": "_objectionsThreshold",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3707,
+                        "src": "2719:20:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3713,
+                      "name": "_setObjectionsThreshold",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3774,
+                      "src": "2695:23:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3715,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2695:45:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3716,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2695:45:13"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 3705,
+              "nodeType": "StructuredDocumentation",
+              "src": "2471:89:13",
+              "text": "@notice Sets percent from total supply of governance tokens required to reject motion"
+            },
+            "functionSelector": "ef1ae2f6",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "arguments": [
+                  {
+                    "id": 3710,
+                    "name": "DEFAULT_ADMIN_ROLE",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 5180,
+                    "src": "2661:18:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  }
+                ],
+                "id": 3711,
+                "kind": "modifierInvocation",
+                "modifierName": {
+                  "id": 3709,
+                  "name": "onlyRole",
+                  "nodeType": "IdentifierPath",
+                  "referencedDeclaration": 5193,
+                  "src": "2652:8:13"
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "2652:28:13"
+              }
+            ],
+            "name": "setObjectionsThreshold",
+            "nameLocation": "2574:22:13",
+            "parameters": {
+              "id": 3708,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3707,
+                  "mutability": "mutable",
+                  "name": "_objectionsThreshold",
+                  "nameLocation": "2605:20:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3718,
+                  "src": "2597:28:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3706,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2597:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2596:30:13"
+            },
+            "returnParameters": {
+              "id": 3712,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2685:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 3732,
+            "nodeType": "FunctionDefinition",
+            "src": "2803:174:13",
+            "nodes": [],
+            "body": {
+              "id": 3731,
+              "nodeType": "Block",
+              "src": "2919:58:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 3728,
+                        "name": "_motionsCountLimit",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3721,
+                        "src": "2951:18:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3727,
+                      "name": "_setMotionsCountLimit",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3795,
+                      "src": "2929:21:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3729,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "2929:41:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3730,
+                  "nodeType": "ExpressionStatement",
+                  "src": "2929:41:13"
+                }
+              ]
+            },
+            "documentation": {
+              "id": 3719,
+              "nodeType": "StructuredDocumentation",
+              "src": "2753:45:13",
+              "text": "@notice Sets max count of active motions."
+            },
+            "functionSelector": "fdc28ab8",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [
+              {
+                "arguments": [
+                  {
+                    "id": 3724,
+                    "name": "DEFAULT_ADMIN_ROLE",
+                    "nodeType": "Identifier",
+                    "overloadedDeclarations": [],
+                    "referencedDeclaration": 5180,
+                    "src": "2895:18:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes32",
+                      "typeString": "bytes32"
+                    }
+                  }
+                ],
+                "id": 3725,
+                "kind": "modifierInvocation",
+                "modifierName": {
+                  "id": 3723,
+                  "name": "onlyRole",
+                  "nodeType": "IdentifierPath",
+                  "referencedDeclaration": 5193,
+                  "src": "2886:8:13"
+                },
+                "nodeType": "ModifierInvocation",
+                "src": "2886:28:13"
+              }
+            ],
+            "name": "setMotionsCountLimit",
+            "nameLocation": "2812:20:13",
+            "parameters": {
+              "id": 3722,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3721,
+                  "mutability": "mutable",
+                  "name": "_motionsCountLimit",
+                  "nameLocation": "2841:18:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3732,
+                  "src": "2833:26:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3720,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "2833:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "2832:28:13"
+            },
+            "returnParameters": {
+              "id": 3726,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "2919:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 3753,
+            "nodeType": "FunctionDefinition",
+            "src": "2983:244:13",
+            "nodes": [],
+            "body": {
+              "id": 3752,
+              "nodeType": "Block",
+              "src": "3045:182:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        "id": 3740,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "id": 3738,
+                          "name": "_motionDuration",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3734,
+                          "src": "3063:15:13",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": ">=",
+                        "rightExpression": {
+                          "id": 3739,
+                          "name": "MIN_MOTION_DURATION",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3652,
+                          "src": "3082:19:13",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "src": "3063:38:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 3741,
+                        "name": "ERROR_VALUE_TOO_SMALL",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3637,
+                        "src": "3103:21:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 3737,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "3055:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 3742,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3055:70:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3743,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3055:70:13"
+                },
+                {
+                  "expression": {
+                    "id": 3746,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 3744,
+                      "name": "motionDuration",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3661,
+                      "src": "3135:14:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 3745,
+                      "name": "_motionDuration",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3734,
+                      "src": "3152:15:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "src": "3135:32:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 3747,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3135:32:13"
+                },
+                {
+                  "eventCall": {
+                    "arguments": [
+                      {
+                        "id": 3749,
+                        "name": "_motionDuration",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3734,
+                        "src": "3204:15:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3748,
+                      "name": "MotionDurationChanged",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3626,
+                      "src": "3182:21:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3750,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3182:38:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3751,
+                  "nodeType": "EmitStatement",
+                  "src": "3177:43:13"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_setMotionDuration",
+            "nameLocation": "2992:18:13",
+            "parameters": {
+              "id": 3735,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3734,
+                  "mutability": "mutable",
+                  "name": "_motionDuration",
+                  "nameLocation": "3019:15:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3753,
+                  "src": "3011:23:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3733,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3011:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3010:25:13"
+            },
+            "returnParameters": {
+              "id": 3736,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3045:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "internal"
+          },
+          {
+            "id": 3774,
+            "nodeType": "FunctionDefinition",
+            "src": "3233:284:13",
+            "nodes": [],
+            "body": {
+              "id": 3773,
+              "nodeType": "Block",
+              "src": "3305:212:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        "id": 3761,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "id": 3759,
+                          "name": "_objectionsThreshold",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3755,
+                          "src": "3323:20:13",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "<=",
+                        "rightExpression": {
+                          "id": 3760,
+                          "name": "MAX_OBJECTIONS_THRESHOLD",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3648,
+                          "src": "3347:24:13",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "src": "3323:48:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 3762,
+                        "name": "ERROR_VALUE_TOO_LARGE",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3640,
+                        "src": "3373:21:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 3758,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "3315:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 3763,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3315:80:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3764,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3315:80:13"
+                },
+                {
+                  "expression": {
+                    "id": 3767,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 3765,
+                      "name": "objectionsThreshold",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3655,
+                      "src": "3405:19:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 3766,
+                      "name": "_objectionsThreshold",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3755,
+                      "src": "3427:20:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "src": "3405:42:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 3768,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3405:42:13"
+                },
+                {
+                  "eventCall": {
+                    "arguments": [
+                      {
+                        "id": 3770,
+                        "name": "_objectionsThreshold",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3755,
+                        "src": "3489:20:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3769,
+                      "name": "ObjectionsThresholdChanged",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3634,
+                      "src": "3462:26:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3771,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3462:48:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3772,
+                  "nodeType": "EmitStatement",
+                  "src": "3457:53:13"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_setObjectionsThreshold",
+            "nameLocation": "3242:23:13",
+            "parameters": {
+              "id": 3756,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3755,
+                  "mutability": "mutable",
+                  "name": "_objectionsThreshold",
+                  "nameLocation": "3274:20:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3774,
+                  "src": "3266:28:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3754,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3266:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3265:30:13"
+            },
+            "returnParameters": {
+              "id": 3757,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3305:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "internal"
+          },
+          {
+            "id": 3795,
+            "nodeType": "FunctionDefinition",
+            "src": "3523:263:13",
+            "nodes": [],
+            "body": {
+              "id": 3794,
+              "nodeType": "Block",
+              "src": "3591:195:13",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "commonType": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        },
+                        "id": 3782,
+                        "isConstant": false,
+                        "isLValue": false,
+                        "isPure": false,
+                        "lValueRequested": false,
+                        "leftExpression": {
+                          "id": 3780,
+                          "name": "_motionsCountLimit",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3776,
+                          "src": "3609:18:13",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "nodeType": "BinaryOperation",
+                        "operator": "<=",
+                        "rightExpression": {
+                          "id": 3781,
+                          "name": "MAX_MOTIONS_LIMIT",
+                          "nodeType": "Identifier",
+                          "overloadedDeclarations": [],
+                          "referencedDeclaration": 3644,
+                          "src": "3631:17:13",
+                          "typeDescriptions": {
+                            "typeIdentifier": "t_uint256",
+                            "typeString": "uint256"
+                          }
+                        },
+                        "src": "3609:39:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        }
+                      },
+                      {
+                        "id": 3783,
+                        "name": "ERROR_VALUE_TOO_LARGE",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3640,
+                        "src": "3650:21:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bool",
+                          "typeString": "bool"
+                        },
+                        {
+                          "typeIdentifier": "t_string_memory_ptr",
+                          "typeString": "string memory"
+                        }
+                      ],
+                      "id": 3779,
+                      "name": "require",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [
+                        -18,
+                        -18
+                      ],
+                      "referencedDeclaration": -18,
+                      "src": "3601:7:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_require_pure$_t_bool_$_t_string_memory_ptr_$returns$__$",
+                        "typeString": "function (bool,string memory) pure"
+                      }
+                    },
+                    "id": 3784,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3601:71:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3785,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3601:71:13"
+                },
+                {
+                  "expression": {
+                    "id": 3788,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "lValueRequested": false,
+                    "leftHandSide": {
+                      "id": 3786,
+                      "name": "motionsCountLimit",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3658,
+                      "src": "3682:17:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "nodeType": "Assignment",
+                    "operator": "=",
+                    "rightHandSide": {
+                      "id": 3787,
+                      "name": "_motionsCountLimit",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3776,
+                      "src": "3702:18:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_uint256",
+                        "typeString": "uint256"
+                      }
+                    },
+                    "src": "3682:38:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 3789,
+                  "nodeType": "ExpressionStatement",
+                  "src": "3682:38:13"
+                },
+                {
+                  "eventCall": {
+                    "arguments": [
+                      {
+                        "id": 3791,
+                        "name": "_motionsCountLimit",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 3776,
+                        "src": "3760:18:13",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_uint256",
+                          "typeString": "uint256"
+                        }
+                      ],
+                      "id": 3790,
+                      "name": "MotionsCountLimitChanged",
+                      "nodeType": "Identifier",
+                      "overloadedDeclarations": [],
+                      "referencedDeclaration": 3630,
+                      "src": "3735:24:13",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_event_nonpayable$_t_uint256_$returns$__$",
+                        "typeString": "function (uint256)"
+                      }
+                    },
+                    "id": 3792,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "3735:44:13",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_tuple$__$",
+                      "typeString": "tuple()"
+                    }
+                  },
+                  "id": 3793,
+                  "nodeType": "EmitStatement",
+                  "src": "3730:49:13"
+                }
+              ]
+            },
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "_setMotionsCountLimit",
+            "nameLocation": "3532:21:13",
+            "parameters": {
+              "id": 3777,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 3776,
+                  "mutability": "mutable",
+                  "name": "_motionsCountLimit",
+                  "nameLocation": "3562:18:13",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 3795,
+                  "src": "3554:26:13",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 3775,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "3554:7:13",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "3553:28:13"
+            },
+            "returnParameters": {
+              "id": 3778,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "3591:0:13"
+            },
+            "scope": 3796,
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "internal"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [
+          {
+            "baseName": {
+              "id": 3621,
+              "name": "AccessControl",
+              "nodeType": "IdentifierPath",
+              "referencedDeclaration": 5459,
+              "src": "368:13:13"
+            },
+            "id": 3622,
+            "nodeType": "InheritanceSpecifier",
+            "src": "368:13:13"
+          }
+        ],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 3620,
+          "nodeType": "StructuredDocumentation",
+          "src": "202:139:13",
+          "text": "@author psirex\n @notice Provides methods to update motion duration, objections threshold, and limit of active motions of Easy Track"
+        },
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          3796,
+          5459,
+          6334,
+          6346,
+          5532,
+          6047
+        ],
+        "name": "MotionSettings",
+        "nameLocation": "350:14:13",
+        "scope": 3797,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 13
+}

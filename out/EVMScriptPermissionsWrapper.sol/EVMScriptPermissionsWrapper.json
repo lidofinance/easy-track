@@ -1,0 +1,608 @@
+{
+  "abi": [
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_permissions",
+          "type": "bytes"
+        },
+        {
+          "internalType": "bytes",
+          "name": "_evmScript",
+          "type": "bytes"
+        }
+      ],
+      "name": "canExecuteEVMScript",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "_permissions",
+          "type": "bytes"
+        }
+      ],
+      "name": "isValidPermissions",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    }
+  ],
+  "bytecode": {
+    "object": "0x608060405234801561001057600080fd5b5061043f806100206000396000f3fe608060405234801561001057600080fd5b50600436106100365760003560e01c80635e6ca0aa1461003b578063f89135f214610062575b600080fd5b61004e610049366004610347565b610075565b604051901515815260200160405180910390f35b61004e610070366004610312565b61008a565b60006100818383610095565b90505b92915050565b60006100848261012c565b600060046100a28461012c565b15806100af575080835111155b156100be576000915050610084565b8251811015610122576000806100d48584610158565b915091506100e286836101d3565b6100f25760009350505050610084565b63ffffffff8116610105600460146103ab565b61010f91906103ab565b61011990846103ab565b925050506100be565b5060019392505050565b60008082511180156100845750610145600460146103ab565b825161015191906103d1565b1592915050565b600080806101668585610237565b9050600061017f6101786014876103ab565b8790610252565b905060006101a460046101936014896103ab565b61019d91906103ab565b8890610252565b90508260601b6bffffffffffffffffffffffff19168163ffffffff1660401b1782945094505050509250929050565b6000805b835181101561022d5760006101ec858361026d565b905067ffffffffffffffff19808216908516141561020f57600192505050610084565b61021b600460146103ab565b61022590836103ab565b9150506101d7565b5060009392505050565b6000806102478484016020015190565b60601c949350505050565b6000806102628484016020015190565b60e01c949350505050565b60008061027d8484016020015190565b949350505050565b600082601f83011261029657600080fd5b813567ffffffffffffffff808211156102b1576102b16103f3565b604051601f8301601f19908116603f011681019082821181831017156102d9576102d96103f3565b816040528381528660208588010111156102f257600080fd5b836020870160208301376000602085830101528094505050505092915050565b60006020828403121561032457600080fd5b813567ffffffffffffffff81111561033b57600080fd5b61027d84828501610285565b6000806040838503121561035a57600080fd5b823567ffffffffffffffff8082111561037257600080fd5b61037e86838701610285565b9350602085013591508082111561039457600080fd5b506103a185828601610285565b9150509250929050565b600082198211156103cc57634e487b7160e01b600052601160045260246000fd5b500190565b6000826103ee57634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052604160045260246000fdfea2646970667358221220d789b1a8411e70837ab14b31514df52a369f8afef26b0dc4589ea8f9a7b038a964736f6c63430008060033",
+    "sourceMap": "267:440:27:-:0;;;;;;;;;;;;;;;;;;;",
+    "linkReferences": {}
+  },
+  "deployedBytecode": {
+    "object": "0x608060405234801561001057600080fd5b50600436106100365760003560e01c80635e6ca0aa1461003b578063f89135f214610062575b600080fd5b61004e610049366004610347565b610075565b604051901515815260200160405180910390f35b61004e610070366004610312565b61008a565b60006100818383610095565b90505b92915050565b60006100848261012c565b600060046100a28461012c565b15806100af575080835111155b156100be576000915050610084565b8251811015610122576000806100d48584610158565b915091506100e286836101d3565b6100f25760009350505050610084565b63ffffffff8116610105600460146103ab565b61010f91906103ab565b61011990846103ab565b925050506100be565b5060019392505050565b60008082511180156100845750610145600460146103ab565b825161015191906103d1565b1592915050565b600080806101668585610237565b9050600061017f6101786014876103ab565b8790610252565b905060006101a460046101936014896103ab565b61019d91906103ab565b8890610252565b90508260601b6bffffffffffffffffffffffff19168163ffffffff1660401b1782945094505050509250929050565b6000805b835181101561022d5760006101ec858361026d565b905067ffffffffffffffff19808216908516141561020f57600192505050610084565b61021b600460146103ab565b61022590836103ab565b9150506101d7565b5060009392505050565b6000806102478484016020015190565b60601c949350505050565b6000806102628484016020015190565b60e01c949350505050565b60008061027d8484016020015190565b949350505050565b600082601f83011261029657600080fd5b813567ffffffffffffffff808211156102b1576102b16103f3565b604051601f8301601f19908116603f011681019082821181831017156102d9576102d96103f3565b816040528381528660208588010111156102f257600080fd5b836020870160208301376000602085830101528094505050505092915050565b60006020828403121561032457600080fd5b813567ffffffffffffffff81111561033b57600080fd5b61027d84828501610285565b6000806040838503121561035a57600080fd5b823567ffffffffffffffff8082111561037257600080fd5b61037e86838701610285565b9350602085013591508082111561039457600080fd5b506103a185828601610285565b9150509250929050565b600082198211156103cc57634e487b7160e01b600052601160045260246000fd5b500190565b6000826103ee57634e487b7160e01b600052601260045260246000fd5b500690565b634e487b7160e01b600052604160045260246000fdfea2646970667358221220d789b1a8411e70837ab14b31514df52a369f8afef26b0dc4589ea8f9a7b038a964736f6c63430008060033",
+    "sourceMap": "267:440:27:-:0;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;310:228;;;;;;:::i;:::-;;:::i;:::-;;;1771:14:40;;1764:22;1746:41;;1734:2;1719:18;310:228:27;;;;;;;544:161;;;;;;:::i;:::-;;:::i;310:228::-;438:4;465:66;506:12;520:10;465:40;:66::i;:::-;458:73;;310:228;;;;;:::o;544:161::-;622:4;645:53;685:12;645:39;:53::i;1319:706:22:-;1447:4;627:1;1551:32;1570:12;1551:18;:32::i;:::-;1550:33;:66;;;;1608:8;1587:10;:17;:29;;1550:66;1546:109;;;1639:5;1632:12;;;;;1546:109;1683:10;:17;1672:8;:28;1665:333;;;1717:20;1739:21;1764:38;1781:10;1793:8;1764:16;:38::i;:::-;1716:86;;;;1821:42;1836:12;1850;1821:14;:42::i;:::-;1816:94;;1890:5;1883:12;;;;;;;1816:94;1935:52;;;:35;825:1;717:2;1935:35;:::i;:::-;:52;;;;:::i;:::-;1923:64;;;;:::i;:::-;;;1702:296;;1665:333;;;-1:-1:-1;2014:4:22;;1319:706;-1:-1:-1;;;1319:706:22:o;2118:177::-;2196:4;2241:1;2219:12;:19;:23;:69;;;;-1:-1:-1;1016:35:22;919:1;717:2;1016:35;:::i;:::-;2246:12;:19;:37;;;;:::i;:::-;:42;2212:76;2118:177;-1:-1:-1;;2118:177:22:o;2421:490::-;2537:7;;;2588:31;:10;2609:9;2588:20;:31::i;:::-;2568:51;-1:-1:-1;2629:21:22;2653:45;2673:24;717:2;2673:9;:24;:::i;:::-;2653:10;;:19;:45::i;:::-;2629:69;-1:-1:-1;2708:23:22;2746:68;825:1;2766:24;717:2;2766:9;:24;:::i;:::-;:47;;;;:::i;:::-;2746:10;;:19;:68::i;:::-;2708:106;;2877:9;2869:18;;2832:55;;;2848:16;2840:25;;2832:34;;:55;2889:14;2824:80;;;;;;;2421:490;;;;;:::o;2985:446::-;3105:4;;3155:248;3173:12;:19;3162:8;:30;3155:248;;;3208:18;3229:32;:12;3252:8;3229:22;:32::i;:::-;3208:53;-1:-1:-1;;;3279:27:22;;;;;;;3275:77;;;3333:4;3326:11;;;;;;3275:77;1016:35;919:1;717:2;1016:35;:::i;:::-;3365:27;;;;:::i;:::-;;;3194:209;3155:248;;;-1:-1:-1;3419:5:22;;2985:446;-1:-1:-1;;;2985:446:22:o;439:336:20:-;518:14;544:12;559:25;569:4;575:8;1271:30;1285:4;1271:30;1265:37;;1127:191;559:25;648:2;627:132;;439:336;-1:-1:-1;;;;439:336:20:o;781:340::-;861:13;886:12;901:27;911:5;918:9;1271:30;1285:4;1271:30;1265:37;;1127:191;901:27;993:3;972:133;;781:340;-1:-1:-1;;;;781:340:20:o;225:208::-;304:14;330:12;345:25;355:4;361:8;1271:30;1285:4;1271:30;1265:37;;1127:191;345:25;330:40;225:208;-1:-1:-1;;;;225:208:20:o;14:718:40:-;56:5;109:3;102:4;94:6;90:17;86:27;76:2;;127:1;124;117:12;76:2;163:6;150:20;189:18;226:2;222;219:10;216:2;;;232:18;;:::i;:::-;307:2;301:9;275:2;361:13;;-1:-1:-1;;357:22:40;;;381:2;353:31;349:40;337:53;;;405:18;;;425:22;;;402:46;399:2;;;451:18;;:::i;:::-;491:10;487:2;480:22;526:2;518:6;511:18;572:3;565:4;560:2;552:6;548:15;544:26;541:35;538:2;;;589:1;586;579:12;538:2;653;646:4;638:6;634:17;627:4;619:6;615:17;602:54;700:1;693:4;688:2;680:6;676:15;672:26;665:37;720:6;711:15;;;;;;66:666;;;;:::o;737:320::-;805:6;858:2;846:9;837:7;833:23;829:32;826:2;;;874:1;871;864:12;826:2;914:9;901:23;947:18;939:6;936:30;933:2;;;979:1;976;969:12;933:2;1002:49;1043:7;1034:6;1023:9;1019:22;1002:49;:::i;1062:539::-;1148:6;1156;1209:2;1197:9;1188:7;1184:23;1180:32;1177:2;;;1225:1;1222;1215:12;1177:2;1265:9;1252:23;1294:18;1335:2;1327:6;1324:14;1321:2;;;1351:1;1348;1341:12;1321:2;1374:49;1415:7;1406:6;1395:9;1391:22;1374:49;:::i;:::-;1364:59;;1476:2;1465:9;1461:18;1448:32;1432:48;;1505:2;1495:8;1492:16;1489:2;;;1521:1;1518;1511:12;1489:2;;1544:51;1587:7;1576:8;1565:9;1561:24;1544:51;:::i;:::-;1534:61;;;1167:434;;;;;:::o;1798:225::-;1838:3;1869:1;1865:6;1862:1;1859:13;1856:2;;;1914:10;1909:3;1905:20;1902:1;1895:31;1949:4;1946:1;1939:15;1977:4;1974:1;1967:15;1856:2;-1:-1:-1;2008:9:40;;1846:177::o;2028:209::-;2060:1;2086;2076:2;;2130:10;2125:3;2121:20;2118:1;2111:31;2165:4;2162:1;2155:15;2193:4;2190:1;2183:15;2076:2;-1:-1:-1;2222:9:40;;2066:171::o;2242:127::-;2303:10;2298:3;2294:20;2291:1;2284:31;2334:4;2331:1;2324:15;2358:4;2355:1;2348:15",
+    "linkReferences": {}
+  },
+  "methodIdentifiers": {
+    "canExecuteEVMScript(bytes,bytes)": "5e6ca0aa",
+    "isValidPermissions(bytes)": "f89135f2"
+  },
+  "rawMetadata": "{\"compiler\":{\"version\":\"0.8.6+commit.11564f7e\"},\"language\":\"Solidity\",\"output\":{\"abi\":[{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_permissions\",\"type\":\"bytes\"},{\"internalType\":\"bytes\",\"name\":\"_evmScript\",\"type\":\"bytes\"}],\"name\":\"canExecuteEVMScript\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"},{\"inputs\":[{\"internalType\":\"bytes\",\"name\":\"_permissions\",\"type\":\"bytes\"}],\"name\":\"isValidPermissions\",\"outputs\":[{\"internalType\":\"bool\",\"name\":\"\",\"type\":\"bool\"}],\"stateMutability\":\"pure\",\"type\":\"function\"}],\"devdoc\":{\"author\":\"psirex\",\"kind\":\"dev\",\"methods\":{},\"version\":1},\"userdoc\":{\"kind\":\"user\",\"methods\":{},\"notice\":\"Helper contract to test internal methods of EVMScriptPermissions library\",\"version\":1}},\"settings\":{\"compilationTarget\":{\"contracts/test/EVMScriptPermissionsWrapper.sol\":\"EVMScriptPermissionsWrapper\"},\"evmVersion\":\"berlin\",\"libraries\":{},\"metadata\":{\"bytecodeHash\":\"ipfs\"},\"optimizer\":{\"enabled\":true,\"runs\":200},\"remappings\":[\":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/\"]},\"sources\":{\"contracts/libraries/BytesUtils.sol\":{\"keccak256\":\"0xd596d92a5ede94f66548a4b0bb4bd193878e2dd5cd669dcb49ecd1aad8ba25aa\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://4667dee53566df473c8fc010c9d1813af010e16e5f197ad558c082af4883d7ae\",\"dweb:/ipfs/QmbHRHWACvLDWY2ybbmZbWC5cDnzyvsQhWc5ZBR8rHLy1P\"]},\"contracts/libraries/EVMScriptPermissions.sol\":{\"keccak256\":\"0x9093ac5de653ff91e9d53409fada5c4f4871b35f4f50d26e6ee4c5df9a82c05b\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://b944867621de08f7cfc5d1eb11f878cce191b5a9ede68f2a450963954c5f89e6\",\"dweb:/ipfs/QmXPaopzLST6m2uUS6CcAsbNS6qZDRe12pfNg5tVoF5ztP\"]},\"contracts/test/EVMScriptPermissionsWrapper.sol\":{\"keccak256\":\"0x45da7f16c3d3bf4b287232816209c9f637edf94ca0c76cf78d3673fd96fbd439\",\"license\":\"GPL-3.0\",\"urls\":[\"bzz-raw://ee11c814d53f7f445f85a5a217d2f049b4598439abbccc020ee00ee032042385\",\"dweb:/ipfs/QmQvUMqosJdr6acPTJCbZygcVgDmp3qK17spi2dy4kuims\"]}},\"version\":1}",
+  "metadata": {
+    "compiler": {
+      "version": "0.8.6+commit.11564f7e"
+    },
+    "language": "Solidity",
+    "output": {
+      "abi": [
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "_permissions",
+              "type": "bytes"
+            },
+            {
+              "internalType": "bytes",
+              "name": "_evmScript",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "canExecuteEVMScript",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ]
+        },
+        {
+          "inputs": [
+            {
+              "internalType": "bytes",
+              "name": "_permissions",
+              "type": "bytes"
+            }
+          ],
+          "stateMutability": "pure",
+          "type": "function",
+          "name": "isValidPermissions",
+          "outputs": [
+            {
+              "internalType": "bool",
+              "name": "",
+              "type": "bool"
+            }
+          ]
+        }
+      ],
+      "devdoc": {
+        "kind": "dev",
+        "methods": {},
+        "version": 1
+      },
+      "userdoc": {
+        "kind": "user",
+        "methods": {},
+        "version": 1
+      }
+    },
+    "settings": {
+      "remappings": [
+        ":OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"
+      ],
+      "optimizer": {
+        "enabled": true,
+        "runs": 200
+      },
+      "metadata": {
+        "bytecodeHash": "ipfs"
+      },
+      "compilationTarget": {
+        "contracts/test/EVMScriptPermissionsWrapper.sol": "EVMScriptPermissionsWrapper"
+      },
+      "libraries": {}
+    },
+    "sources": {
+      "contracts/libraries/BytesUtils.sol": {
+        "keccak256": "0xd596d92a5ede94f66548a4b0bb4bd193878e2dd5cd669dcb49ecd1aad8ba25aa",
+        "urls": [
+          "bzz-raw://4667dee53566df473c8fc010c9d1813af010e16e5f197ad558c082af4883d7ae",
+          "dweb:/ipfs/QmbHRHWACvLDWY2ybbmZbWC5cDnzyvsQhWc5ZBR8rHLy1P"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/libraries/EVMScriptPermissions.sol": {
+        "keccak256": "0x9093ac5de653ff91e9d53409fada5c4f4871b35f4f50d26e6ee4c5df9a82c05b",
+        "urls": [
+          "bzz-raw://b944867621de08f7cfc5d1eb11f878cce191b5a9ede68f2a450963954c5f89e6",
+          "dweb:/ipfs/QmXPaopzLST6m2uUS6CcAsbNS6qZDRe12pfNg5tVoF5ztP"
+        ],
+        "license": "GPL-3.0"
+      },
+      "contracts/test/EVMScriptPermissionsWrapper.sol": {
+        "keccak256": "0x45da7f16c3d3bf4b287232816209c9f637edf94ca0c76cf78d3673fd96fbd439",
+        "urls": [
+          "bzz-raw://ee11c814d53f7f445f85a5a217d2f049b4598439abbccc020ee00ee032042385",
+          "dweb:/ipfs/QmQvUMqosJdr6acPTJCbZygcVgDmp3qK17spi2dy4kuims"
+        ],
+        "license": "GPL-3.0"
+      }
+    },
+    "version": 1
+  },
+  "storageLayout": {
+    "storage": [],
+    "types": {}
+  },
+  "ast": {
+    "absolutePath": "contracts/test/EVMScriptPermissionsWrapper.sol",
+    "id": 4960,
+    "exportedSymbols": {
+      "BytesUtils": [
+        4234
+      ],
+      "EVMScriptPermissions": [
+        4695
+      ],
+      "EVMScriptPermissionsWrapper": [
+        4959
+      ]
+    },
+    "nodeType": "SourceUnit",
+    "src": "89:619:27",
+    "nodes": [
+      {
+        "id": 4927,
+        "nodeType": "PragmaDirective",
+        "src": "89:23:27",
+        "nodes": [],
+        "literals": [
+          "solidity",
+          "^",
+          "0.8",
+          ".4"
+        ]
+      },
+      {
+        "id": 4928,
+        "nodeType": "ImportDirective",
+        "src": "114:47:27",
+        "nodes": [],
+        "absolutePath": "contracts/libraries/EVMScriptPermissions.sol",
+        "file": "../libraries/EVMScriptPermissions.sol",
+        "nameLocation": "-1:-1:-1",
+        "scope": 4960,
+        "sourceUnit": 4696,
+        "symbolAliases": [],
+        "unitAlias": ""
+      },
+      {
+        "id": 4959,
+        "nodeType": "ContractDefinition",
+        "src": "267:440:27",
+        "nodes": [
+          {
+            "id": 4945,
+            "nodeType": "FunctionDefinition",
+            "src": "310:228:27",
+            "nodes": [],
+            "body": {
+              "id": 4944,
+              "nodeType": "Block",
+              "src": "448:90:27",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 4940,
+                        "name": "_permissions",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4931,
+                        "src": "506:12:27",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      },
+                      {
+                        "id": 4941,
+                        "name": "_evmScript",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4933,
+                        "src": "520:10:27",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        },
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "expression": {
+                        "id": 4938,
+                        "name": "EVMScriptPermissions",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4695,
+                        "src": "465:20:27",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_contract$_EVMScriptPermissions_$4695_$",
+                          "typeString": "type(library EVMScriptPermissions)"
+                        }
+                      },
+                      "id": 4939,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "canExecuteEVMScript",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 4579,
+                      "src": "465:40:27",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_bytes_memory_ptr_$_t_bytes_memory_ptr_$returns$_t_bool_$",
+                        "typeString": "function (bytes memory,bytes memory) pure returns (bool)"
+                      }
+                    },
+                    "id": 4942,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "465:66:27",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "functionReturnParameters": 4937,
+                  "id": 4943,
+                  "nodeType": "Return",
+                  "src": "458:73:27"
+                }
+              ]
+            },
+            "functionSelector": "5e6ca0aa",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "canExecuteEVMScript",
+            "nameLocation": "319:19:27",
+            "parameters": {
+              "id": 4934,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4931,
+                  "mutability": "mutable",
+                  "name": "_permissions",
+                  "nameLocation": "352:12:27",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4945,
+                  "src": "339:25:27",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 4930,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "339:5:27",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 4933,
+                  "mutability": "mutable",
+                  "name": "_evmScript",
+                  "nameLocation": "379:10:27",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4945,
+                  "src": "366:23:27",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 4932,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "366:5:27",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "338:52:27"
+            },
+            "returnParameters": {
+              "id": 4937,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4936,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4945,
+                  "src": "438:4:27",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 4935,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "438:4:27",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "437:6:27"
+            },
+            "scope": 4959,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "id": 4958,
+            "nodeType": "FunctionDefinition",
+            "src": "544:161:27",
+            "nodes": [],
+            "body": {
+              "id": 4957,
+              "nodeType": "Block",
+              "src": "628:77:27",
+              "nodes": [],
+              "statements": [
+                {
+                  "expression": {
+                    "arguments": [
+                      {
+                        "id": 4954,
+                        "name": "_permissions",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4947,
+                        "src": "685:12:27",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      }
+                    ],
+                    "expression": {
+                      "argumentTypes": [
+                        {
+                          "typeIdentifier": "t_bytes_memory_ptr",
+                          "typeString": "bytes memory"
+                        }
+                      ],
+                      "expression": {
+                        "id": 4952,
+                        "name": "EVMScriptPermissions",
+                        "nodeType": "Identifier",
+                        "overloadedDeclarations": [],
+                        "referencedDeclaration": 4695,
+                        "src": "645:20:27",
+                        "typeDescriptions": {
+                          "typeIdentifier": "t_type$_t_contract$_EVMScriptPermissions_$4695_$",
+                          "typeString": "type(library EVMScriptPermissions)"
+                        }
+                      },
+                      "id": 4953,
+                      "isConstant": false,
+                      "isLValue": false,
+                      "isPure": false,
+                      "lValueRequested": false,
+                      "memberName": "isValidPermissions",
+                      "nodeType": "MemberAccess",
+                      "referencedDeclaration": 4600,
+                      "src": "645:39:27",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_function_internal_pure$_t_bytes_memory_ptr_$returns$_t_bool_$",
+                        "typeString": "function (bytes memory) pure returns (bool)"
+                      }
+                    },
+                    "id": 4955,
+                    "isConstant": false,
+                    "isLValue": false,
+                    "isPure": false,
+                    "kind": "functionCall",
+                    "lValueRequested": false,
+                    "names": [],
+                    "nodeType": "FunctionCall",
+                    "src": "645:53:27",
+                    "tryCall": false,
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "functionReturnParameters": 4951,
+                  "id": 4956,
+                  "nodeType": "Return",
+                  "src": "638:60:27"
+                }
+              ]
+            },
+            "functionSelector": "f89135f2",
+            "implemented": true,
+            "kind": "function",
+            "modifiers": [],
+            "name": "isValidPermissions",
+            "nameLocation": "553:18:27",
+            "parameters": {
+              "id": 4948,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4947,
+                  "mutability": "mutable",
+                  "name": "_permissions",
+                  "nameLocation": "585:12:27",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4958,
+                  "src": "572:25:27",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bytes_memory_ptr",
+                    "typeString": "bytes"
+                  },
+                  "typeName": {
+                    "id": 4946,
+                    "name": "bytes",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "572:5:27",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bytes_storage_ptr",
+                      "typeString": "bytes"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "571:27:27"
+            },
+            "returnParameters": {
+              "id": 4951,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 4950,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 4958,
+                  "src": "622:4:27",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_bool",
+                    "typeString": "bool"
+                  },
+                  "typeName": {
+                    "id": 4949,
+                    "name": "bool",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "622:4:27",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_bool",
+                      "typeString": "bool"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "621:6:27"
+            },
+            "scope": 4959,
+            "stateMutability": "pure",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "contract",
+        "documentation": {
+          "id": 4929,
+          "nodeType": "StructuredDocumentation",
+          "src": "163:104:27",
+          "text": "@author psirex\n @notice Helper contract to test internal methods of EVMScriptPermissions library"
+        },
+        "fullyImplemented": true,
+        "linearizedBaseContracts": [
+          4959
+        ],
+        "name": "EVMScriptPermissionsWrapper",
+        "nameLocation": "276:27:27",
+        "scope": 4960,
+        "usedErrors": []
+      }
+    ],
+    "license": "GPL-3.0"
+  },
+  "id": 27
+}

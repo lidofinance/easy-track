@@ -1,0 +1,1856 @@
+{
+  "_format": "ethers-rs-sol-cache-3",
+  "paths": {
+    "artifacts": "out",
+    "build_infos": "out/build-info",
+    "sources": "contracts",
+    "tests": "test",
+    "scripts": "script",
+    "libraries": [
+      "lib"
+    ]
+  },
+  "files": {
+    "contracts/AllowedRecipientsRegistry.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "66d6397cf6ff71b847ceeecd185ce9d8",
+      "sourceName": "contracts/AllowedRecipientsRegistry.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/LimitsChecker.sol",
+        "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "AllowedRecipientsRegistry": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "AllowedRecipientsRegistry.sol/AllowedRecipientsRegistry.json"
+        }
+      }
+    },
+    "contracts/EVMScriptExecutor.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "5e2468dd9e14896461b307ec20a44b36",
+      "sourceName": "contracts/EVMScriptExecutor.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/Ownable.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Address.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/StorageSlot.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptExecutor": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptExecutor.sol/EVMScriptExecutor.json"
+        },
+        "ICallsScript": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptExecutor.sol/ICallsScript.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/AddAllowedRecipient.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "477375cdd2f5501fa136ed633a73cd2c",
+      "sourceName": "contracts/EVMScriptFactories/AddAllowedRecipient.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/AllowedRecipientsRegistry.sol",
+        "contracts/LimitsChecker.sol",
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "AddAllowedRecipient": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "AddAllowedRecipient.sol/AddAllowedRecipient.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/AddRewardProgram.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "e893a92e6c0eb400d5e54a136f580a0e",
+      "sourceName": "contracts/EVMScriptFactories/AddRewardProgram.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/RewardProgramsRegistry.sol",
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "AddRewardProgram": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "AddRewardProgram.sol/AddRewardProgram.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "1a9fadd50c253ed5d6b20993c3ddba13",
+      "sourceName": "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/EVMScriptCreator.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "INodeOperatorsRegistry": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IncreaseNodeOperatorStakingLimit.sol/INodeOperatorsRegistry.json"
+        },
+        "IncreaseNodeOperatorStakingLimit": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IncreaseNodeOperatorStakingLimit.sol/IncreaseNodeOperatorStakingLimit.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "3fa7327324aed0d8851507eae96d9e41",
+      "sourceName": "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/AllowedRecipientsRegistry.sol",
+        "contracts/LimitsChecker.sol",
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "RemoveAllowedRecipient": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "RemoveAllowedRecipient.sol/RemoveAllowedRecipient.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/RemoveRewardProgram.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "dba93064c2bf2defa6ca5469ab5dc585",
+      "sourceName": "contracts/EVMScriptFactories/RemoveRewardProgram.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/RewardProgramsRegistry.sol",
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "RemoveRewardProgram": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "RemoveRewardProgram.sol/RemoveRewardProgram.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "aa7d6ed648b1ae1747290a2d7b982ce7",
+      "sourceName": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/AllowedRecipientsRegistry.sol",
+        "contracts/EVMScriptFactoriesRegistry.sol",
+        "contracts/EasyTrack.sol",
+        "contracts/LimitsChecker.sol",
+        "contracts/MotionSettings.sol",
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+        "contracts/interfaces/IEVMScriptExecutor.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/interfaces/IFinance.sol",
+        "contracts/libraries/BytesUtils.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "contracts/libraries/EVMScriptPermissions.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "TopUpAllowedRecipients": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "TopUpAllowedRecipients.sol/TopUpAllowedRecipients.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/TopUpLegoProgram.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "45c6975d00833784ca42d7e45bf8ff38",
+      "sourceName": "contracts/EVMScriptFactories/TopUpLegoProgram.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/interfaces/IFinance.sol",
+        "contracts/libraries/EVMScriptCreator.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "TopUpLegoProgram": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "TopUpLegoProgram.sol/TopUpLegoProgram.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactories/TopUpRewardPrograms.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "1543946ea0b97e46c52ab9b9e95a0df6",
+      "sourceName": "contracts/EVMScriptFactories/TopUpRewardPrograms.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/RewardProgramsRegistry.sol",
+        "contracts/TrustedCaller.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/interfaces/IFinance.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "TopUpRewardPrograms": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "TopUpRewardPrograms.sol/TopUpRewardPrograms.json"
+        }
+      }
+    },
+    "contracts/EVMScriptFactoriesRegistry.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "5cc2c3f7a758278e71ac13f523cf521d",
+      "sourceName": "contracts/EVMScriptFactoriesRegistry.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/BytesUtils.sol",
+        "contracts/libraries/EVMScriptPermissions.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptFactoriesRegistry": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptFactoriesRegistry.sol/EVMScriptFactoriesRegistry.json"
+        }
+      }
+    },
+    "contracts/EasyTrack.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "ab251413d3cfa836d9bd631b7aad682c",
+      "sourceName": "contracts/EasyTrack.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/EVMScriptFactoriesRegistry.sol",
+        "contracts/MotionSettings.sol",
+        "contracts/interfaces/IEVMScriptExecutor.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/BytesUtils.sol",
+        "contracts/libraries/EVMScriptPermissions.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EasyTrack": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EasyTrack.sol/EasyTrack.json"
+        },
+        "IMiniMeToken": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EasyTrack.sol/IMiniMeToken.json"
+        }
+      }
+    },
+    "contracts/LimitsChecker.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "186988209e83d659e760d9ddd1f764d9",
+      "sourceName": "contracts/LimitsChecker.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "LimitsChecker": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "LimitsChecker.sol/LimitsChecker.json"
+        }
+      }
+    },
+    "contracts/MotionSettings.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "ec1a34f6a0001bc792ef47e1aac3c46d",
+      "sourceName": "contracts/MotionSettings.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "MotionSettings": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "MotionSettings.sol/MotionSettings.json"
+        }
+      }
+    },
+    "contracts/RewardProgramsRegistry.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "ad6511246371b5a08617335e97f5b349",
+      "sourceName": "contracts/RewardProgramsRegistry.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "RewardProgramsRegistry": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "RewardProgramsRegistry.sol/RewardProgramsRegistry.json"
+        }
+      }
+    },
+    "contracts/TrustedCaller.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "56324c12cb5182374b0da6176a789c12",
+      "sourceName": "contracts/TrustedCaller.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "TrustedCaller": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "TrustedCaller.sol/TrustedCaller.json"
+        }
+      }
+    },
+    "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "828dab89ef87afc95fbb596a0e0675aa",
+      "sourceName": "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "IBokkyPooBahsDateTimeContract": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IBokkyPooBahsDateTimeContract.sol/IBokkyPooBahsDateTimeContract.json"
+        }
+      }
+    },
+    "contracts/interfaces/IEVMScriptExecutor.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "b37dc07ccf010210c82285668ed5e6e6",
+      "sourceName": "contracts/interfaces/IEVMScriptExecutor.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "IEVMScriptExecutor": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IEVMScriptExecutor.sol/IEVMScriptExecutor.json"
+        }
+      }
+    },
+    "contracts/interfaces/IEVMScriptFactory.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "73f16a8dadeb91536ee34df4ee68622a",
+      "sourceName": "contracts/interfaces/IEVMScriptFactory.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "IEVMScriptFactory": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IEVMScriptFactory.sol/IEVMScriptFactory.json"
+        }
+      }
+    },
+    "contracts/interfaces/IFinance.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "8701f5f811f73ddbb0e6e853d7713d81",
+      "sourceName": "contracts/interfaces/IFinance.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "IFinance": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IFinance.sol/IFinance.json"
+        }
+      }
+    },
+    "contracts/libraries/BytesUtils.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "62d7bad0b2a12e63e8ec123d5fa05d91",
+      "sourceName": "contracts/libraries/BytesUtils.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "BytesUtils": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "BytesUtils.sol/BytesUtils.json"
+        }
+      }
+    },
+    "contracts/libraries/EVMScriptCreator.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "a4189f762d10658ac66426010040211e",
+      "sourceName": "contracts/libraries/EVMScriptCreator.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptCreator": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptCreator.sol/EVMScriptCreator.json"
+        }
+      }
+    },
+    "contracts/libraries/EVMScriptPermissions.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "6f69291d52023a86a8091ad48205e26d",
+      "sourceName": "contracts/libraries/EVMScriptPermissions.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/libraries/BytesUtils.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptPermissions": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptPermissions.sol/EVMScriptPermissions.json"
+        }
+      }
+    },
+    "contracts/test/BytesUtilsWrapper.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "9cbc609954dfd55b79e58cf1941a8546",
+      "sourceName": "contracts/test/BytesUtilsWrapper.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/libraries/BytesUtils.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "BytesUtilsWrapper": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "BytesUtilsWrapper.sol/BytesUtilsWrapper.json"
+        }
+      }
+    },
+    "contracts/test/EVMScriptCreatorWrapper.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "bd45b5c70ae3f42a64c31dd3fc73acb6",
+      "sourceName": "contracts/test/EVMScriptCreatorWrapper.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/libraries/EVMScriptCreator.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptCreatorWrapper": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptCreatorWrapper.sol/EVMScriptCreatorWrapper.json"
+        }
+      }
+    },
+    "contracts/test/EVMScriptExecutorStub.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "9d590d1b43d03868410f11249bc85af5",
+      "sourceName": "contracts/test/EVMScriptExecutorStub.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptExecutorStub": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptExecutorStub.sol/EVMScriptExecutorStub.json"
+        }
+      }
+    },
+    "contracts/test/EVMScriptFactoryStub.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "85386a46bd4381580d64924accdc0931",
+      "sourceName": "contracts/test/EVMScriptFactoryStub.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/interfaces/IEVMScriptFactory.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptFactoryStub": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptFactoryStub.sol/EVMScriptFactoryStub.json"
+        }
+      }
+    },
+    "contracts/test/EVMScriptPermissionsWrapper.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "4121147ccecb27f602257d0199e67330",
+      "sourceName": "contracts/test/EVMScriptPermissionsWrapper.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/libraries/BytesUtils.sol",
+        "contracts/libraries/EVMScriptPermissions.sol"
+      ],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "EVMScriptPermissionsWrapper": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "EVMScriptPermissionsWrapper.sol/EVMScriptPermissionsWrapper.json"
+        }
+      }
+    },
+    "contracts/test/LimitsCheckerWithPrivateViewsExposed.sol.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "86933accbe40f732d9572e0fb087c83b",
+      "sourceName": "contracts/test/LimitsCheckerWithPrivateViewsExposed.sol.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "contracts/EVMScriptFactoriesRegistry.sol",
+        "contracts/EasyTrack.sol",
+        "contracts/LimitsChecker.sol",
+        "contracts/MotionSettings.sol",
+        "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+        "contracts/interfaces/IEVMScriptExecutor.sol",
+        "contracts/interfaces/IEVMScriptFactory.sol",
+        "contracts/libraries/BytesUtils.sol",
+        "contracts/libraries/EVMScriptCreator.sol",
+        "contracts/libraries/EVMScriptPermissions.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "=0.8.6",
+      "artifacts": {
+        "LimitsCheckerWithPrivateViewsExposed": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "LimitsCheckerWithPrivateViewsExposed.sol.sol/LimitsCheckerWithPrivateViewsExposed.json"
+        }
+      }
+    },
+    "contracts/test/NodeOperatorsRegistryStub.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "4a9f8b35f750f7d015498a2ab29f8049",
+      "sourceName": "contracts/test/NodeOperatorsRegistryStub.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.4",
+      "artifacts": {
+        "NodeOperatorsRegistryStub": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "NodeOperatorsRegistryStub.sol/NodeOperatorsRegistryStub.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "74fb01cf14d85fd1e7f25b22c6472e6e",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "AccessControl": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "AccessControl.sol/AccessControl.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "e2ed3260ca37d27f68b0ab41f692b407",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/IAccessControl.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "IAccessControl": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IAccessControl.sol/IAccessControl.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/Ownable.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "4fe56b59ced59d87df6b796758f62895",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/Ownable.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol"
+      ],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "Ownable": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "Ownable.sol/Ownable.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "662437c05ba6f3706097c8d5ca68a52a",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/security/Pausable.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol"
+      ],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "Pausable": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "Pausable.sol/Pausable.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Address.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "c5f6c4e4df069c789e7d84b4c3011913",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Address.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "Address": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "Address.sol/Address.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "851485d5b925529b1a2f34a0be077891",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Context.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "Context": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "Context.sol/Context.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/StorageSlot.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "dcfdd37663042ccb99d67060a9eaebec",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/StorageSlot.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "StorageSlot": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "StorageSlot.sol/StorageSlot.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "62142442bed149f965c5ed971fae4182",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "Strings": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "Strings.sol/Strings.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "a9a5319dff9088c6ffe757ea1c2a6729",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/ERC165.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [
+        "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol"
+      ],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "ERC165": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "ERC165.sol/ERC165.json"
+        }
+      }
+    },
+    "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol": {
+      "lastModificationDate": 1666544260058,
+      "contentHash": "9a04322bb8f6b8f2767d8358d1d2537b",
+      "sourceName": "dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/introspection/IERC165.sol",
+      "solcConfig": {
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "metadata": {
+            "bytecodeHash": "ipfs",
+            "appendCBOR": true
+          },
+          "outputSelection": {
+            "*": {
+              "": [
+                "ast"
+              ],
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata",
+                "storageLayout"
+              ]
+            }
+          },
+          "evmVersion": "london",
+          "libraries": {}
+        }
+      },
+      "imports": [],
+      "versionRequirement": "^0.8.0",
+      "artifacts": {
+        "IERC165": {
+          "0.8.6+commit.11564f7e.Linux.gcc": "IERC165.sol/IERC165.json"
+        }
+      }
+    }
+  }
+}
