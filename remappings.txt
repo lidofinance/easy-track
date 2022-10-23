@@ -1,1 +1,1 @@
-@openzeppelin/contracts=OpenZeppelin/openzeppelin-contracts@4.3.2/contracts
+OpenZeppelin/openzeppelin-contracts@4.3.2=./dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2
