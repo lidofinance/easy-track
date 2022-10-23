@@ -189,12 +189,9 @@ class AgentPermissions:
 class LidoPermissions:
     def __init__(self, lido_app):
         self.PAUSE_ROLE = Permission(lido_app, "PAUSE_ROLE")
-        self.SET_ORACLE = Permission(lido_app, "SET_ORACLE")
         self.MANAGE_WITHDRAWAL_KEY = Permission(lido_app, "MANAGE_WITHDRAWAL_KEY")
         self.MANAGE_FEE = Permission(lido_app, "MANAGE_FEE")
-        self.SET_TREASURY = Permission(lido_app, "SET_TREASURY")
         self.BURN_ROLE = Permission(lido_app, "BURN_ROLE")
-        self.SET_INSURANCE_FUND = Permission(lido_app, "SET_INSURANCE_FUND")
 
 
 class NodeOperatorsRegistryPermissions:
