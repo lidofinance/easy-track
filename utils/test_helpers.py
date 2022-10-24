@@ -191,3 +191,8 @@ def advance_chain_time_to_beginning_of_the_next_period(period_duration: int):
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
     chain.sleep(first_second_of_next_period - chain_now)
     assert chain.time() >= first_second_of_next_period
+
+
+# NOTE: helper uses UTC time format which fits to the blockchain timezone
+def get_timestamp_from_date(year, month, day, hour=0, min=0, sec=0):
+    return datetime(year, month, day, hour, min, sec, tzinfo=timezone.utc).timestamp()

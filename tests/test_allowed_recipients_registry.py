@@ -27,6 +27,7 @@ from utils.test_helpers import (
 from utils.config import get_network_name
 
 from utils.lido import create_voting, execute_voting
+from utils.test_helpers import get_timestamp_from_date
 
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
@@ -830,11 +831,61 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
 @pytest.mark.parametrize(
     "inputs, period_duration, expected_result",
     [
-        [[1640995200, 1640998800, 1642208400, 1643670000, 1643673599], 1, 1640995200],
-        [[1646092800, 1646096400, 1648774800, 1651359600, 1651363199], 2, 1646092800],
-        [[1648771200, 1648774800, 1652576400, 1656630000, 1656633599], 3, 1648771200],
-        [[1656633600, 1656637200, 1664586000, 1672527600, 1672531199], 6, 1656633600],
-        [[1640995200, 1640998800, 1652576400, 1672527600, 1672531199], 12, 1640995200],
+        [
+            [
+                (2022, 1, 1),
+                (2022, 1, 1, 1),
+                (2022, 1, 15),
+                (2022, 1, 31, 23),
+                (2022, 1, 31, 23, 59, 59),
+            ],
+            1,
+            (2022, 1, 1),
+        ],
+        [
+            [
+                (2022, 3, 1),
+                (2022, 3, 1, 1),
+                (2022, 4, 1),
+                (2022, 4, 30, 23),
+                (2022, 4, 30, 23, 59, 59),
+            ],
+            2,
+            (2022, 3, 1),
+        ],
+        [
+            [
+                (2022, 4, 1),
+                (2022, 4, 1, 1),
+                (2022, 5, 15),
+                (2022, 6, 30, 23),
+                (2022, 6, 30, 23, 59, 59),
+            ],
+            3,
+            (2022, 4, 1),
+        ],
+        [
+            [
+                (2022, 7, 1),
+                (2022, 7, 1, 1),
+                (2022, 10, 1),
+                (2022, 12, 31, 23),
+                (2022, 12, 31, 23, 59, 59),
+            ],
+            6,
+            (2022, 7, 1),
+        ],
+        [
+            [
+                (2022, 1, 1),
+                (2022, 1, 1, 1),
+                (2022, 5, 15),
+                (2022, 12, 31, 23),
+                (2022, 12, 31, 23, 59, 59),
+            ],
+            12,
+            (2022, 1, 1),
+        ],
     ],
 )
 def test_period_start_from_timestamp(
@@ -843,6 +894,9 @@ def test_period_start_from_timestamp(
     # TODO: comment about the constants or use calc_period_range
     (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
     period_limit = 3 * 10**18
+
+    expected_result = get_timestamp_from_date(*expected_result)
+    inputs = [get_timestamp_from_date(*date) for date in inputs]
 
     for timestamp in inputs:
         limits_checker.setLimitParameters(
@@ -867,11 +921,61 @@ def test_period_start_from_timestamp(
 @pytest.mark.parametrize(
     "inputs, period_duration, expected_result",
     [
-        [[1640995200, 1640998800, 1642208400, 1643670000, 1643673599], 1, 1643673600],
-        [[1646092800, 1646096400, 1648774800, 1651359600, 1651363199], 2, 1651363200],
-        [[1648771200, 1648774800, 1652576400, 1656630000, 1656633599], 3, 1656633600],
-        [[1656633600, 1656637200, 1664586000, 1672527600, 1672531199], 6, 1672531200],
-        [[1640995200, 1640998800, 1652576400, 1672527600, 1672531199], 12, 1672531200],
+        [
+            [
+                (2022, 1, 1),
+                (2022, 1, 1, 1),
+                (2022, 1, 15),
+                (2022, 1, 31, 23),
+                (2022, 1, 31, 23, 59, 59),
+            ],
+            1,
+            (2022, 2, 1),
+        ],
+        [
+            [
+                (2022, 3, 1),
+                (2022, 3, 1, 1),
+                (2022, 4, 1),
+                (2022, 4, 30, 23),
+                (2022, 4, 30, 23, 59, 59),
+            ],
+            2,
+            (2022, 5, 1),
+        ],
+        [
+            [
+                (2022, 4, 1),
+                (2022, 4, 1, 1),
+                (2022, 5, 15),
+                (2022, 6, 30, 23),
+                (2022, 6, 30, 23, 59, 59),
+            ],
+            3,
+            (2022, 7, 1),
+        ],
+        [
+            [
+                (2022, 7, 1),
+                (2022, 7, 1, 1),
+                (2022, 10, 1),
+                (2022, 12, 31, 23),
+                (2022, 12, 31, 23, 59, 59),
+            ],
+            6,
+            (2023, 1, 1),
+        ],
+        [
+            [
+                (2022, 1, 1),
+                (2022, 1, 1, 1),
+                (2022, 5, 15),
+                (2022, 12, 31, 23),
+                (2022, 12, 31, 23, 59, 59),
+            ],
+            12,
+            (2023, 1, 1),
+        ],
     ],
 )
 def test_period_end_from_timestamp(
@@ -879,6 +983,9 @@ def test_period_end_from_timestamp(
 ):
     (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
     period_limit = 3 * 10**18
+
+    expected_result = get_timestamp_from_date(*expected_result)
+    inputs = [get_timestamp_from_date(*date) for date in inputs]
 
     for timestamp in inputs:
         limits_checker.setLimitParameters(
