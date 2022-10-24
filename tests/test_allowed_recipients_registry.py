@@ -891,7 +891,6 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
 def test_period_start_from_timestamp(
     limits_checker_with_private_method_exposed, inputs, period_duration, expected_result
 ):
-    # TODO: comment about the constants or use calc_period_range
     (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
     period_limit = 3 * 10**18
 
