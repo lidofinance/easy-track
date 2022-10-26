@@ -60,6 +60,7 @@ def get_date_in_next_period(any_point_in_this_month: datetime, period_duration_m
     return any_point_in_this_month.replace(
         year=next_year,
         month=next_month,
+        day=min(28, any_point_in_this_month.day)
     )
 
 

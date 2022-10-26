@@ -454,7 +454,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
         )
 
 
-def test_fail_to_create_top_up_motion_which_exceeds_spendable(
+def test_create_top_up_motion_which_exceeds_spendable_if_motion_ends_in_next_period(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
@@ -466,14 +466,42 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     )
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
-    payout1 = [int(40e18), int(60e18)]
-    assert sum(payout1) == period_limit
+    payout1 = [int(40e18), int(50e18)]
 
     do_payout_to_allowed_recipients_by_motion(
         recipients, payout1, setup.easy_track, setup.top_up_factory
     )
 
-    payout2 = [1, 1]
+    payout2 = [int(10e18), 1]
+    assert sum(payout1) + sum(payout2) > period_limit
+
+    advance_chain_time_to_n_seconds_before_current_period_end(
+        period_duration, constants.MIN_MOTION_DURATION // 2
+    )
+
+    create_top_up_motion(recipients, payout2, setup.easy_track, setup.top_up_factory)
+
+
+def test_fail_to_create_top_up_motion_which_exceeds_spendable_if_motion_ends_in_this_period(
+    entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+):
+    setup = entire_allowed_recipients_setup_with_two_recipients
+    recipients = [setup.recipient1.address, setup.recipient2.address]
+
+    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    setup.registry.setLimitParameters(
+        period_limit, period_duration, {"from": setup.evm_script_executor}
+    )
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
+
+    payout1 = [int(40e18), int(50e18)]
+
+    do_payout_to_allowed_recipients_by_motion(
+        recipients, payout1, setup.easy_track, setup.top_up_factory
+    )
+
+    payout2 = [int(10e18), 1]
+    assert sum(payout1) + sum(payout2) > period_limit
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(recipients, payout2, setup.easy_track, setup.top_up_factory)
 

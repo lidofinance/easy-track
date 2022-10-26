@@ -149,7 +149,16 @@ def test_rights_are_not_shared_by_different_roles(
         [update_limit_role_holder],
         bokkyPooBahsDateTimeContract,
     )
+
     assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), voting)
+    for address in [
+        deployer,
+        remove_role_holder,
+        set_limit_role_holder,
+        update_limit_role_holder,
+        stranger,
+    ]:
+        assert not registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), address)
 
     recipient = accounts[8].address
     recipient_title = "New Allowed Recipient"
