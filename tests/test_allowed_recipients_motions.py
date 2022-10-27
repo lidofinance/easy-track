@@ -1,5 +1,5 @@
 from brownie.network import chain
-from brownie import reverts
+from brownie import reverts, interface
 import pytest
 
 from eth_abi import encode_single
@@ -232,6 +232,7 @@ def test_fail_remove_recipient_if_it_is_not_allowed(
 
 def test_top_up_single_recipient(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address]
@@ -255,12 +256,23 @@ def test_top_up_single_recipient(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
+    agent_balance_before = interface.ERC20(setup.top_up_factory.token()).balanceOf(agent)
     tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, amounts, setup.registry, setup.top_up_factory)
+    check_top_up(
+        tx,
+        agent_balance_before,
+        balances_before,
+        recipients,
+        amounts,
+        setup.registry,
+        setup.top_up_factory,
+        agent,
+    )
 
 
 def test_top_up_multiple_recipients(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address, setup.recipient2.address]
@@ -284,12 +296,23 @@ def test_top_up_multiple_recipients(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
+    agent_balance_before = interface.ERC20(setup.top_up_factory.token()).balanceOf(agent)
     tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, amounts, setup.registry, setup.top_up_factory)
+    check_top_up(
+        tx,
+        agent_balance_before,
+        balances_before,
+        recipients,
+        amounts,
+        setup.registry,
+        setup.top_up_factory,
+        agent,
+    )
 
 
 def test_top_up_motion_enacted_in_next_period(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
@@ -309,12 +332,23 @@ def test_top_up_motion_enacted_in_next_period(
     chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
+    agent_balance_before = interface.ERC20(setup.top_up_factory.token()).balanceOf(agent)
     tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    check_top_up(
+        tx,
+        agent_balance_before,
+        balances_before,
+        recipients,
+        payouts,
+        setup.registry,
+        setup.top_up_factory,
+        agent,
+    )
 
 
 def test_top_up_motion_ended_and_enacted_in_next_period(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
@@ -339,8 +373,18 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
     chain.sleep(constants.MIN_MOTION_DURATION)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
+    agent_balance_before = interface.ERC20(setup.top_up_factory.token()).balanceOf(agent)
     tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    check_top_up(
+        tx,
+        agent_balance_before,
+        balances_before,
+        recipients,
+        payouts,
+        setup.registry,
+        setup.top_up_factory,
+        agent,
+    )
     _, _, *new_period_range = setup.registry.getPeriodState()
     assert (
         old_period_range != new_period_range
@@ -349,6 +393,7 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
 
 def test_top_up_motion_enacted_in_second_next_period(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
@@ -368,8 +413,18 @@ def test_top_up_motion_enacted_in_second_next_period(
     chain.sleep(2 * period_duration * MAX_SECONDS_IN_MONTH)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
+    agent_balance_before = interface.ERC20(setup.top_up_factory.token()).balanceOf(agent)
     tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    check_top_up(
+        tx,
+        agent_balance_before,
+        balances_before,
+        recipients,
+        payouts,
+        setup.registry,
+        setup.top_up_factory,
+        agent,
+    )
 
 
 def test_spendable_balance_is_renewed_in_next_period(
@@ -592,6 +647,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
 
 def test_top_up_if_limit_increased_while_motion_is_in_flight(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
+    agent,
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
@@ -614,11 +670,21 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
+    agent_balance_before = interface.ERC20(setup.top_up_factory.token()).balanceOf(agent)
     tx = setup.easy_track.enactMotion(motion_id, motion_calldata, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    check_top_up(
+        tx,
+        agent_balance_before,
+        balances_before,
+        recipients,
+        payouts,
+        setup.registry,
+        setup.top_up_factory,
+        agent,
+    )
 
 
-def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_increased(
+def test_two_motions_second_failed_to_enact_due_limit_but_succeeded_after_limit_increased(
     entire_allowed_recipients_setup_with_two_recipients: AllowedRecipientsSetupWithTwoRecipients,
     stranger,
 ):

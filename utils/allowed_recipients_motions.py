@@ -108,7 +108,9 @@ def get_balances(recipients, token):
     return [interface.ERC20(token).balanceOf(r) for r in recipients]
 
 
-def check_top_up(tx, balances_before, recipients, payouts, registry, top_up_factory):
+def check_top_up(
+    tx, finance_balance_before, balances_before, recipients, payouts, registry, top_up_factory, agent
+):
     limit, duration = registry.getLimitParameters()
     spending = sum(payouts)
     spendable = limit - spending
@@ -121,6 +123,9 @@ def check_top_up(tx, balances_before, recipients, payouts, registry, top_up_fact
     balances = get_balances(recipients, top_up_factory.token())
     for before, now, payment in zip(balances_before, balances, payouts):
         assert now == before + payment
+
+    agent_balance = interface.ERC20(top_up_factory.token()).balanceOf(agent)
+    assert finance_balance_before - spending == agent_balance
 
     assert "SpendableAmountChanged" in tx.events
     assert tx.events["SpendableAmountChanged"]["_alreadySpentAmount"] == spending
