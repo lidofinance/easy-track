@@ -1,8 +1,10 @@
 import pytest
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, tzinfo
 from dateutil.relativedelta import relativedelta
 from brownie import interface
+from brownie.test import given, strategy
+from hypothesis import Verbosity, settings
 from utils.test_helpers import get_timestamp_from_date
 
 
@@ -29,6 +31,23 @@ def test_timestamp_to_date_automated(date_time_library, start_date, end_date):
         )
 
         current_date += relativedelta(days=+1)
+
+
+@given(
+    timestamp=strategy(
+        "int",
+        min_value=get_timestamp_from_date(2022, 1, 1),
+        max_value=get_timestamp_from_date(2030, 1, 1),
+    )
+)
+@settings(max_examples=5000, verbosity=Verbosity.quiet)
+def test_property_based_timestamp_to_date(date_time_library, timestamp):
+    current_date = datetime.fromtimestamp(timestamp, tz=timezone.utc)
+    assert date_time_library.timestampToDate(timestamp) == (
+        current_date.year,
+        current_date.month,
+        current_date.day,
+    )
 
 
 @pytest.mark.parametrize(
@@ -60,6 +79,22 @@ def test_timestamp_from_date_automated(date_time_library, start_date, end_date):
         ) == datetime.timestamp(current_date)
 
         current_date += relativedelta(days=+1)
+
+
+TEST_START_DATE = datetime(2022, 1, 1, tzinfo=timezone.utc)
+TEST_END_DATE = datetime(2030, 1, 1, tzinfo=timezone.utc)
+
+
+@given(
+    days_shift=strategy("int", min_value=0, max_value=(TEST_END_DATE - TEST_START_DATE).days),
+)
+@settings(max_examples=5000, verbosity=Verbosity.quiet)
+def test_property_based_timestamp_from_date(date_time_library, days_shift):
+    date = TEST_START_DATE + relativedelta(days=+days_shift)
+    assert (
+        date_time_library.timestampFromDate(date.year, date.month, date.day)
+        == date.timestamp()
+    )
 
 
 @pytest.mark.parametrize(
