@@ -81,20 +81,19 @@ def test_timestamp_from_date_automated(date_time_library, start_date, end_date):
         current_date += relativedelta(days=+1)
 
 
-start_date = datetime(2022, 1, 1, tzinfo=timezone.utc)
-end_date = datetime(2030, 1, 1, tzinfo=timezone.utc)
-delta = end_date - start_date
+TEST_START_DATE = datetime(2022, 1, 1, tzinfo=timezone.utc)
+TEST_END_DATE = datetime(2030, 1, 1, tzinfo=timezone.utc)
 
 
 @given(
-    days_shift=strategy("int", min_value=0, max_value=delta.days),
+    days_shift=strategy("int", min_value=0, max_value=(TEST_END_DATE - TEST_START_DATE).days),
 )
 @settings(max_examples=5000, verbosity=Verbosity.quiet)
 def test_property_based_timestamp_from_date(date_time_library, days_shift):
-    current_date = start_date + relativedelta(days=+days_shift)
+    date = TEST_START_DATE + relativedelta(days=+days_shift)
     assert (
-        date_time_library.timestampFromDate(current_date.year, current_date.month, current_date.day)
-        == current_date.timestamp()
+        date_time_library.timestampFromDate(date.year, date.month, date.day)
+        == date.timestamp()
     )
 
 
