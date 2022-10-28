@@ -41,12 +41,16 @@ contract LimitsChecker is AccessControl {
         uint256 _periodEndTimestamp
     );
     event CurrentPeriodAdvanced(uint256 indexed _periodStartTimestamp);
+    event BokkyPooBahsDateTimeContractChanged(address indexed _newAddress);
+
     // -------------
     // ERRORS
     // -------------
     string private constant ERROR_INVALID_PERIOD_DURATION = "INVALID_PERIOD_DURATION";
     string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
     string private constant ERROR_TOO_LARGE_LIMIT = "TOO_LARGE_LIMIT";
+    string private constant ERROR_SAME_DATE_TIME_CONTRACT_ADDRESS =
+        "SAME_DATE_TIME_CONTRACT_ADDRESS";
     // -------------
     // ROLES
     // -------------
@@ -62,7 +66,7 @@ contract LimitsChecker is AccessControl {
     // ------------
 
     /// @notice Address of BokkyPooBahsDateTimeContract
-    IBokkyPooBahsDateTimeContract public immutable bokkyPooBahsDateTimeContract;
+    IBokkyPooBahsDateTimeContract public bokkyPooBahsDateTimeContract;
 
     /// @notice Length of period in months
     uint64 internal periodDurationMonths;
@@ -221,6 +225,22 @@ contract LimitsChecker is AccessControl {
         )
     {
         return _getCurrentPeriodState(limit, spentAmount, currentPeriodEndTimestamp);
+    }
+
+    /// @notice Sets address of BokkyPooBahsDateTime contract
+    /// @dev Need this to be able to replace the contract in case of a bug in it
+    /// @param _bokkyPooBahsDateTimeContract New address of the BokkyPooBahsDateTime library
+    function setBokkyPooBahsDateTimeContract(address _bokkyPooBahsDateTimeContract)
+        external
+        onlyRole(SET_LIMIT_PARAMETERS_ROLE)
+    {
+        require(
+            _bokkyPooBahsDateTimeContract != address(bokkyPooBahsDateTimeContract),
+            ERROR_SAME_DATE_TIME_CONTRACT_ADDRESS
+        );
+
+        bokkyPooBahsDateTimeContract = IBokkyPooBahsDateTimeContract(_bokkyPooBahsDateTimeContract);
+        emit BokkyPooBahsDateTimeContractChanged(_bokkyPooBahsDateTimeContract);
     }
 
     // ------------------
