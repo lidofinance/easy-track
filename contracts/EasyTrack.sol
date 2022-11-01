@@ -143,7 +143,7 @@ contract EasyTrack is Pausable, AccessControl, MotionSettings, EVMScriptFactorie
         newMotion.id = _newMotionId;
         newMotion.creator = msg.sender;
         newMotion.startDate = block.timestamp;
-        newMotion.snapshotBlock = block.number;
+        newMotion.snapshotBlock = block.number - 1;
         newMotion.duration = motionDuration;
         newMotion.objectionsThreshold = objectionsThreshold;
         newMotion.evmScriptFactory = _evmScriptFactory;

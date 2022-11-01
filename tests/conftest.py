@@ -628,3 +628,8 @@ def vote_id_from_env() -> Optional[int]:
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
     return "0x23d23d8f243e57d0b924bff3a3191078af325101"
+
+
+@pytest.fixture(scope="module")
+def motion_starter(owner, MotionStarter, easy_track):
+    return owner.deploy(MotionStarter, easy_track)
