@@ -8,7 +8,6 @@ import "./EVMScriptFactories/RemoveAllowedRecipient.sol";
 import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
 import "./AllowedRecipientsRegistry.sol";
 
-
 contract AllowedRecipientsFactory {
 
     bytes32 public constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
@@ -19,6 +18,7 @@ contract AllowedRecipientsFactory {
     bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
     bytes32 public constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
 
+    string private constant ERROR_LENGTH_MISMATCH = "LENGTH_MISMATCH";
 
     address public immutable easyTrack;
     address public immutable finance;
@@ -27,28 +27,44 @@ contract AllowedRecipientsFactory {
 
     event AllowedRecipientsRegistryDeployed(
         address creator,
+        address allowedRecipientsRegistry,
         address admin,
-        address[] addRecipientToAllowedListRoleHolders,
-        address[] removeRecipientFromAllowedListRoleHolders,
-        address[] setLimitParametersRoleHolders,
-        address[] updateSpentAmountRoleHolders,
-        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
+        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract,
+        uint256 limit, 
+        uint256 periodDurationMonths,
+        uint256 spentAmount
+        // address[] addRecipientToAllowedListRoleHolders,
+        // address[] removeRecipientFromAllowedListRoleHolders,
+        // address[] setLimitParametersRoleHolders,
+        // address[] updateSpentAmountRoleHolders,
+        // address[] recipients, 
+        // string[] titles
+    );
+
+    event FactoryInitialized(
+        address easyTrack,
+        address finance,
+        address evmScriptExecutor,
+        address defaultAdmin
     );
 
     event AddAllowedRecipientDeployed(
         address creator,
+        address addAllowedRecipient,
         address trustedCaller,
         address allowedRecipientsRegistry
     );
 
     event RemoveAllowedRecipientDeployed(
         address creator,
+        address removeAllowedRecipient,
         address trustedCaller,
         address allowedRecipientsRegistry
     );
 
     event TopUpAllowedRecipientsDeployed(
         address creator,
+        address topUpAllowedRecipients,
         address trustedCaller,
         address allowedRecipientsRegistry,
         address finance,
@@ -66,111 +82,125 @@ contract AllowedRecipientsFactory {
         finance = _finance;
         evmScriptExecutor = _evmScriptExecutor;
         defaultAdmin = _defaultAdmin;
-
-    }
-
-    function deploySingleRecipientSetup(
-        address _trustedCaller, 
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
-        uint256 _limit, 
-        uint256 _periodDurationMonths
-    ) public returns (address) {
-        AllowedRecipientsRegistry registry = _deployBaseSetup(
-            _trustedCaller,
-            _bokkyPooBahsDateTimeContract,
-            _token,
-            _limit,
-            _periodDurationMonths
-        );
-
-        registry.renounceRole(DEFAULT_ADMIN_ROLE, address(this));
-
-        _check_factory_roles_renounced(registry);
-    }
-
-    function deployFullSetup(
-        address _trustedCaller, 
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
-        uint256 _limit, 
-        uint256 _periodDurationMonths
-    ) public returns (address) {
-        AllowedRecipientsRegistry registry = _deployFullSetup(
-            _trustedCaller,
-            _bokkyPooBahsDateTimeContract,
-            _token,
-            _limit,
-            _periodDurationMonths
-        );
-
-        registry.renounceRole(DEFAULT_ADMIN_ROLE, address(this));
-
-        _check_factory_roles_renounced(registry);
-    }
-
-    function deployFullSetup(
-        address _trustedCaller, 
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
-        uint256 _limit, 
-        uint256 _periodDurationMonths,
-        address[] memory _recipients, 
-        string[] memory _titles,
-        uint256 _spentAmount
-    ) public returns (address) {
-
-        require(_recipients.length == _titles.length);
-
-        AllowedRecipientsRegistry registry = _deployFullSetup(
-            _trustedCaller,
-            _bokkyPooBahsDateTimeContract,
-            _token,
-            _limit,
-            _periodDurationMonths
-        );
         
-        registry.grantRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
-
-        for (uint256 i = 0; i < _recipients.length; i++) {
-            registry.addRecipient(_recipients[i], _titles[i]);
-        }
-
-        registry.renounceRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
-        registry.renounceRole(DEFAULT_ADMIN_ROLE, address(this));
-
-        _check_factory_roles_renounced(registry);
+        emit FactoryInitialized(easyTrack, finance, evmScriptExecutor, defaultAdmin);
     }
 
     function deployAllowedRecipientsRegistry(
-        address[] memory _addRecipientToAllowedListRoleHolders,
-        address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateSpentAmountRoleHolders,
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
+        address[] memory _recipients, 
+        string[] memory _titles,
+        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
+        uint256 _limit, 
+        uint256 _periodDurationMonths,
+        uint256 _spentAmount
     ) public returns(AllowedRecipientsRegistry) 
     {
+        require(_recipients.length == _titles.length, ERROR_LENGTH_MISMATCH);
+        
+        address[] memory addRecipientToAllowedListRoleHolders = new address[](3);
+        addRecipientToAllowedListRoleHolders[0] = defaultAdmin;
+        addRecipientToAllowedListRoleHolders[1] = evmScriptExecutor;
+        addRecipientToAllowedListRoleHolders[2] = address(this);
+        address[] memory removeRecipientFromAllowedListRoleHolders = new address[](2);
+        removeRecipientFromAllowedListRoleHolders[0] = defaultAdmin;
+        removeRecipientFromAllowedListRoleHolders[1] = evmScriptExecutor;
+        address[] memory setLimitParametersRoleHolders = new address[](2);
+        setLimitParametersRoleHolders[0] = defaultAdmin;
+        setLimitParametersRoleHolders[1] = address(this);
+        address[] memory updateSpentAmountRoleHolders = new address[](2);
+        updateSpentAmountRoleHolders[0] = defaultAdmin;
+        updateSpentAmountRoleHolders[1] = address(this);
+
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
-            defaultAdmin,
-            _addRecipientToAllowedListRoleHolders,
-            _removeRecipientFromAllowedListRoleHolders,
-            _setLimitParametersRoleHolders,
-            _updateSpentAmountRoleHolders,
+            defaultAdmin, 
+            addRecipientToAllowedListRoleHolders,
+            removeRecipientFromAllowedListRoleHolders,
+            setLimitParametersRoleHolders,
+            updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
         );
+        
+        for (uint256 i = 0; i < _recipients.length; i++) {
+            registry.addRecipient(_recipients[i], _titles[i]);
+        }
+        registry.renounceRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
+
+        require(registry.getAllowedRecipients().length == _recipients.length);
+
+        for (uint256 i = 0; i < _recipients.length; i++) {
+            registry.allowedRecipients(i) == _recipients[i];
+        }       
+
+        registry.setLimitParameters(_limit, _periodDurationMonths);
+        registry.renounceRole(SET_LIMIT_PARAMETERS_ROLE, address(this));
+
+        registry.updateSpentAmount(_spentAmount);
+        registry.renounceRole(UPDATE_SPENT_AMOUNT_ROLE, address(this));
+
+        require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin));
+        require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin));
+        require(registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, defaultAdmin));
+        require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, defaultAdmin));
+        require(registry.hasRole(DEFAULT_ADMIN_ROLE, defaultAdmin));
+
+        require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evmScriptExecutor));
+        require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
+
+        require(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this)));
+        require(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(this)));
+        require(!registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, address(this)));
+        require(!registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, address(this)));
+        require(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
 
         emit AllowedRecipientsRegistryDeployed(
             msg.sender,
+            address(registry),
             defaultAdmin,
-            _addRecipientToAllowedListRoleHolders,
-            _removeRecipientFromAllowedListRoleHolders,
-            _setLimitParametersRoleHolders,
-            _updateSpentAmountRoleHolders,
-            _bokkyPooBahsDateTimeContract
+            _bokkyPooBahsDateTimeContract,
+            _limit, 
+            _periodDurationMonths,
+            _spentAmount
         );
+
+        // TODO: fix logging
+            // addRecipientToAllowedListRoleHolders,
+            // removeRecipientFromAllowedListRoleHolders,
+            // setLimitParametersRoleHolders,
+            // updateSpentAmountRoleHolders,
+            // recipients, 
+            // titles,
 
         return registry;
     }
+
+
+    function deployTopUpAllowedRecipients(
+        address _trustedCaller, 
+        address _allowedRecipientsRegistry,
+        address _token
+    )   public returns(TopUpAllowedRecipients) 
+    {      
+        TopUpAllowedRecipients topUpAllowedRecipients = new TopUpAllowedRecipients(
+            _trustedCaller,
+            _allowedRecipientsRegistry,
+            finance,
+            _token,
+            easyTrack
+        );
+
+        emit TopUpAllowedRecipientsDeployed(
+            msg.sender,
+            address(topUpAllowedRecipients),
+            _trustedCaller,
+            _allowedRecipientsRegistry,
+            finance,
+            _token,
+            easyTrack
+        );
+
+        return topUpAllowedRecipients;
+    }
+
 
     function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry) 
         public
@@ -181,6 +211,7 @@ contract AllowedRecipientsFactory {
 
         emit AddAllowedRecipientDeployed(
             msg.sender,
+            address(addAllowedRecipient),
             _trustedCaller,
             _allowedRecipientsRegistry
         );
@@ -198,6 +229,7 @@ contract AllowedRecipientsFactory {
 
         emit RemoveAllowedRecipientDeployed(
             msg.sender,
+            address(removeAllowedRecipient),
             _trustedCaller,
             _allowedRecipientsRegistry
         );
@@ -205,108 +237,33 @@ contract AllowedRecipientsFactory {
         return removeAllowedRecipient;
     }
 
-    function deployTopUpAllowedRecipients(
+    function deploySingleRecipientSetup(
         address _trustedCaller, 
-        address _allowedRecipientsRegistry,
-        address _token
-    )   public returns(TopUpAllowedRecipients) 
-    {
-        TopUpAllowedRecipients topUpAllowedRecipients = new TopUpAllowedRecipients(
-            _trustedCaller,
-            _allowedRecipientsRegistry,
-            finance,
-            _token,
-            easyTrack
-        );
-
-        emit TopUpAllowedRecipientsDeployed(
-            msg.sender,
-            _trustedCaller,
-            _allowedRecipientsRegistry,
-            finance,
-            _token,
-            easyTrack
-        );
-        
-        return topUpAllowedRecipients;
+        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
+        address _token,
+        uint256 _limit, 
+        uint256 _periodDurationMonths
+    ) public returns (address) {
+       
     }
 
-    function _deployFullSetup(
+    function deployFullSetup(
+        address _trustedCaller, 
+        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
+        address _token,
+        uint256 _limit, 
+        uint256 _periodDurationMonths
+    ) public returns (address) {
+
+    }
+
+    function _deployTopUpOnlySetup(
         address _trustedCaller, 
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
         address _token,
         uint256 _limit, 
         uint256 _periodDurationMonths
     ) private returns (AllowedRecipientsRegistry) {
-        AllowedRecipientsRegistry registry = _deployBaseSetup(
-            _trustedCaller, 
-            _bokkyPooBahsDateTimeContract, 
-            _token, 
-            _limit, 
-            _periodDurationMonths
-        );
-        
-        AddAllowedRecipient addAllowedRecipient = deployAddAllowedRecipient(
-            _trustedCaller,
-            address(registry)
-        );
-        RemoveAllowedRecipient removeAllowedRecipient = deployRemoveAllowedRecipient(
-            _trustedCaller,
-            address(registry)
-        );
-        
-        registry.grantRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(addAllowedRecipient));
-        registry.grantRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(removeAllowedRecipient));
-
-        require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(addAllowedRecipient)));
-        require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(removeAllowedRecipient)));
-
-        return registry;
+     
     }
-
-    function _deployBaseSetup(
-        address _trustedCaller, 
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
-        uint256 _limit, 
-        uint256 _periodDurationMonths
-    ) private returns (AllowedRecipientsRegistry) {
-        AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
-            address(this), 
-            new address[](0),
-            new address[](0),
-            new address[](0),
-            new address[](0), 
-            _bokkyPooBahsDateTimeContract
-        );
-        
-        TopUpAllowedRecipients topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _trustedCaller,
-            address(registry),
-            _token
-        );
-        
-        registry.grantRole(DEFAULT_ADMIN_ROLE, defaultAdmin);
-        registry.grantRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin);
-        registry.grantRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin);
-        registry.grantRole(SET_LIMIT_PARAMETERS_ROLE, defaultAdmin);
-        registry.grantRole(UPDATE_SPENT_AMOUNT_ROLE, defaultAdmin);
-
-        require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin));
-        require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin));
-        require(registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, defaultAdmin));
-        require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, defaultAdmin));
-
-        return registry;
-    }
-
-    function _check_factory_roles_renounced(AllowedRecipientsRegistry registry) private
-    {
-        require(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this)));
-        require(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(this)));
-        require(!registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, address(this)));
-        require(!registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, address(this)));
-        require(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
-    }
-    
 }

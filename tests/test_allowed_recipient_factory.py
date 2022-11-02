@@ -17,13 +17,14 @@ def allowed_recipients_factory(owner, AllowedRecipientsFactory):
     )
 
 def test_deploy_full_setup(
-    allowed_recipients_factory, stranger, ldo
+    allowed_recipients_factory, stranger, ldo, bokkyPooBahsDateTimeContract
 ):
-    tx = allowed_recipients_factory.deployFullSetup(
-        stranger,
-        stranger,
-        ldo,
-        0,
-        0,
+    tx = allowed_recipients_factory.deployAllowedRecipientsRegistry(
+        [],
+        [],
+        bokkyPooBahsDateTimeContract,
+        1e18,
+        1,
+        1e18,
         {"from": stranger}
     )
