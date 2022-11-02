@@ -83,7 +83,7 @@ contract AllowedRecipientsFactory {
         evmScriptExecutor = _evmScriptExecutor;
         defaultAdmin = _defaultAdmin;
         
-        emit FactoryInitialized(easyTrack, finance, evmScriptExecutor, defaultAdmin);
+        emit FactoryInitialized(_easytrack, _finance, _evmScriptExecutor, _defaultAdmin);
     }
 
     function deployAllowedRecipientsRegistry(
@@ -237,33 +237,66 @@ contract AllowedRecipientsFactory {
         return removeAllowedRecipient;
     }
 
-    function deploySingleRecipientSetup(
-        address _trustedCaller, 
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
-        uint256 _limit, 
-        uint256 _periodDurationMonths
-    ) public returns (address) {
-       
-    }
-
     function deployFullSetup(
-        address _trustedCaller, 
+        address _trustedCaller,
+        address _token, 
+        address[] memory _recipients, 
+        string[] memory _titles,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
         uint256 _limit, 
-        uint256 _periodDurationMonths
+        uint256 _periodDurationMonths,
+        uint256 _spentAmount
     ) public returns (address) {
+        AllowedRecipientsRegistry registry = deployAllowedRecipientsRegistry(
+            _recipients,
+            _titles,
+            _bokkyPooBahsDateTimeContract,
+            _limit, 
+            _periodDurationMonths,
+            _spentAmount
+        );
+
+        TopUpAllowedRecipients topUpAllowedRecipients = deployTopUpAllowedRecipients(
+            _trustedCaller, 
+            address(registry),
+            _token
+        );
+
+        AddAllowedRecipient addAllowedRecipient = deployAddAllowedRecipient(
+            _trustedCaller, 
+            address(registry)
+        );
+
+        RemoveAllowedRecipient removeAllowedRecipient = deployRemoveAllowedRecipient(
+            _trustedCaller, 
+            address(registry)
+        );
 
     }
 
     function _deployTopUpOnlySetup(
         address _trustedCaller, 
+        address _token, 
+        address[] memory _recipients, 
+        string[] memory _titles,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract,
-        address _token,
         uint256 _limit, 
-        uint256 _periodDurationMonths
-    ) private returns (AllowedRecipientsRegistry) {
-     
+        uint256 _periodDurationMonths,
+        uint256 _spentAmount
+    ) public returns (address) {
+        AllowedRecipientsRegistry registry = deployAllowedRecipientsRegistry(
+            _recipients,
+            _titles,
+            _bokkyPooBahsDateTimeContract,
+            _limit, 
+            _periodDurationMonths,
+            _spentAmount
+        );
+
+        TopUpAllowedRecipients topUpAllowedRecipients = deployTopUpAllowedRecipients(
+            _trustedCaller, 
+            address(registry),
+            _token
+        );
     }
 }
