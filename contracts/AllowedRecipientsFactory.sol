@@ -10,6 +10,13 @@ import "./AllowedRecipientsRegistry.sol";
 
 contract AllowedRecipientsFactory {
 
+    struct AllowedRecipientsEasyTrack {
+        address allowedRecipientsRegistry;
+        address topUpAllowedRecipients;
+        address addAllowedRecipient;
+        address removeAllowedRecipient;
+    }
+
     bytes32 public constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
         keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
     bytes32 public constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
@@ -26,17 +33,17 @@ contract AllowedRecipientsFactory {
     address public immutable defaultAdmin;
 
     event AllowedRecipientsRegistryDeployed(
-        address creator,
-        address allowedRecipientsRegistry,
+        address indexed creator,
+        address indexed allowedRecipientsRegistry,
         address admin,
-        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract,
+        IBokkyPooBahsDateTimeContract indexed bokkyPooBahsDateTimeContract,
         uint256 limit, 
         uint256 periodDurationMonths,
-        uint256 spentAmount
-        // address[] addRecipientToAllowedListRoleHolders,
-        // address[] removeRecipientFromAllowedListRoleHolders,
-        // address[] setLimitParametersRoleHolders,
-        // address[] updateSpentAmountRoleHolders,
+        uint256 spentAmount,
+        address[] addRecipientToAllowedListRoleHolders,
+        address[] removeRecipientFromAllowedListRoleHolders,
+        address[] setLimitParametersRoleHolders,
+        address[] updateSpentAmountRoleHolders
         // address[] recipients, 
         // string[] titles
     );
@@ -49,22 +56,22 @@ contract AllowedRecipientsFactory {
     );
 
     event AddAllowedRecipientDeployed(
-        address creator,
-        address addAllowedRecipient,
+        address indexed creator,
+        address indexed addAllowedRecipient,
         address trustedCaller,
         address allowedRecipientsRegistry
     );
 
     event RemoveAllowedRecipientDeployed(
-        address creator,
-        address removeAllowedRecipient,
+        address indexed creator,
+        address indexed removeAllowedRecipient,
         address trustedCaller,
         address allowedRecipientsRegistry
     );
 
     event TopUpAllowedRecipientsDeployed(
-        address creator,
-        address topUpAllowedRecipients,
+        address indexed creator,
+        address indexed topUpAllowedRecipients,
         address trustedCaller,
         address allowedRecipientsRegistry,
         address finance,
@@ -152,23 +159,21 @@ contract AllowedRecipientsFactory {
         require(!registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, address(this)));
         require(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
 
-        emit AllowedRecipientsRegistryDeployed(
-            msg.sender,
+        _emitRegestryCreatedEvent(
             address(registry),
-            defaultAdmin,
             _bokkyPooBahsDateTimeContract,
             _limit, 
             _periodDurationMonths,
-            _spentAmount
+            _spentAmount, 
+            addRecipientToAllowedListRoleHolders,
+            removeRecipientFromAllowedListRoleHolders,
+            setLimitParametersRoleHolders,
+            updateSpentAmountRoleHolders
+            // _recipients, 
+            // _titles
         );
 
         // TODO: fix logging
-            // addRecipientToAllowedListRoleHolders,
-            // removeRecipientFromAllowedListRoleHolders,
-            // setLimitParametersRoleHolders,
-            // updateSpentAmountRoleHolders,
-            // recipients, 
-            // titles,
 
         return registry;
     }
@@ -246,7 +251,7 @@ contract AllowedRecipientsFactory {
         uint256 _limit, 
         uint256 _periodDurationMonths,
         uint256 _spentAmount
-    ) public returns (address) {
+    ) public returns (AllowedRecipientsEasyTrack memory) {
         AllowedRecipientsRegistry registry = deployAllowedRecipientsRegistry(
             _recipients,
             _titles,
@@ -272,6 +277,12 @@ contract AllowedRecipientsFactory {
             address(registry)
         );
 
+        return AllowedRecipientsEasyTrack(
+            address(registry),
+            address(topUpAllowedRecipients),
+            address(addAllowedRecipient),
+            address(removeAllowedRecipient)
+        );
     }
 
     function _deployTopUpOnlySetup(
@@ -283,7 +294,7 @@ contract AllowedRecipientsFactory {
         uint256 _limit, 
         uint256 _periodDurationMonths,
         uint256 _spentAmount
-    ) public returns (address) {
+    ) public returns (AllowedRecipientsEasyTrack memory) {
         AllowedRecipientsRegistry registry = deployAllowedRecipientsRegistry(
             _recipients,
             _titles,
@@ -297,6 +308,43 @@ contract AllowedRecipientsFactory {
             _trustedCaller, 
             address(registry),
             _token
+        );
+
+        return AllowedRecipientsEasyTrack(
+            address(registry),
+            address(topUpAllowedRecipients),
+            address(0),
+            address(0)
+        );
+    }
+
+    function _emitRegestryCreatedEvent(
+        address allowedRecipientsRegistry,
+        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract,
+        uint256 limit, 
+        uint256 periodDurationMonths,
+        uint256 spentAmount,
+        address[] memory addRecipientToAllowedListRoleHolders,
+        address[] memory removeRecipientFromAllowedListRoleHolders,
+        address[] memory setLimitParametersRoleHolders,
+        address[] memory updateSpentAmountRoleHolders
+        // address[] memory recipients, 
+        // string[] memory titles
+    ) private {
+        emit AllowedRecipientsRegistryDeployed(
+            msg.sender,
+            allowedRecipientsRegistry,
+            defaultAdmin,
+            bokkyPooBahsDateTimeContract,
+            limit, 
+            periodDurationMonths,
+            spentAmount, 
+            addRecipientToAllowedListRoleHolders,
+            removeRecipientFromAllowedListRoleHolders,
+            setLimitParametersRoleHolders,
+            updateSpentAmountRoleHolders
+            // recipients, 
+            // titles
         );
     }
 }
