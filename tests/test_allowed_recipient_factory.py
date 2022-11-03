@@ -7,13 +7,21 @@ from eth_abi import encode_single
 from utils.evm_script import encode_calldata
 
 @pytest.fixture(scope="module")
-def allowed_recipients_factory(owner, AllowedRecipientsFactory):
+def allowed_recipients_factory(
+    owner,
+    entire_allowed_recipients_setup,
+    agent,
+    finance,
+    bokkyPooBahsDateTimeContract,
+    AllowedRecipientsFactory
+):
     return owner.deploy(
         AllowedRecipientsFactory,
-        owner,
-        owner,
-        owner,
-        owner
+        entire_allowed_recipients_setup.easy_track,
+        finance,
+        entire_allowed_recipients_setup.evm_script_executor,
+        agent,
+        bokkyPooBahsDateTimeContract
     )
 
 def test_deploy_full_setup(
