@@ -63,7 +63,7 @@ def test_delploy_topup(
     
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     
-    assert tx.events["TopUpAllowedRecipientsDeployed"]["creator"] == stranger
+    assert tx.events["TopUpAllowedRecipientsDeployed"]["creator"] == allowed_recipients_builder
     assert tx.events["TopUpAllowedRecipientsDeployed"]["trustedCaller"] == trustedCaller
     assert tx.events["TopUpAllowedRecipientsDeployed"]["allowedRecipientsRegistry"] == registry
     assert tx.events["TopUpAllowedRecipientsDeployed"]["finance"] == finance
@@ -96,7 +96,7 @@ def test_delploy_add_recipient(
     
     addRecipientAddress = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
     
-    assert tx.events["AddAllowedRecipientDeployed"]["creator"] == stranger
+    assert tx.events["AddAllowedRecipientDeployed"]["creator"] == allowed_recipients_builder
     assert tx.events["AddAllowedRecipientDeployed"]["trustedCaller"] == trustedCaller
     assert tx.events["AddAllowedRecipientDeployed"]["allowedRecipientsRegistry"] == registry
 
@@ -125,8 +125,8 @@ def test_delploy_remove_recipient(
     )
     
     addRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
-    
-    assert tx.events["RemoveAllowedRecipientDeployed"]["creator"] == stranger
+
+    assert tx.events["RemoveAllowedRecipientDeployed"]["creator"] == allowed_recipients_builder
     assert tx.events["RemoveAllowedRecipientDeployed"]["trustedCaller"] == trustedCaller
     assert tx.events["RemoveAllowedRecipientDeployed"]["allowedRecipientsRegistry"] == registry
 
