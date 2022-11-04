@@ -54,7 +54,7 @@ contract LimitsChecker is AccessControl {
     // -------------
     // ROLES
     // -------------
-    bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
+    bytes32 public constant SET_PARAMETERS_ROLE = keccak256("SET_PARAMETERS_ROLE");
     bytes32 public constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
 
     // -------------
@@ -83,18 +83,18 @@ contract LimitsChecker is AccessControl {
     // ------------
     // CONSTRUCTOR
     // ------------
-    /// @param _setLimitParametersRoleHolders List of addresses which will
-    ///     be granted with role SET_LIMIT_PARAMETERS_ROLE
+    /// @param _setParametersRoleHolders List of addresses which will
+    ///     be granted with role SET_PARAMETERS_ROLE
     /// @param _updateSpentAmountRoleHolders List of addresses which will
     ///     be granted with role UPDATE_SPENT_AMOUNT_ROLE
     /// @param _bokkyPooBahsDateTimeContract Address of bokkyPooBahs DateTime Contract
     constructor(
-        address[] memory _setLimitParametersRoleHolders,
+        address[] memory _setParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) {
-        for (uint256 i = 0; i < _setLimitParametersRoleHolders.length; i++) {
-            _setupRole(SET_LIMIT_PARAMETERS_ROLE, _setLimitParametersRoleHolders[i]);
+        for (uint256 i = 0; i < _setParametersRoleHolders.length; i++) {
+            _setupRole(SET_PARAMETERS_ROLE, _setParametersRoleHolders[i]);
         }
         for (uint256 i = 0; i < _updateSpentAmountRoleHolders.length; i++) {
             _setupRole(UPDATE_SPENT_AMOUNT_ROLE, _updateSpentAmountRoleHolders[i]);
@@ -178,7 +178,7 @@ contract LimitsChecker is AccessControl {
     /// @param _periodDurationMonths Length of period in months. Must be 1, 2, 3, 6 or 12.
     function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths)
         external
-        onlyRole(SET_LIMIT_PARAMETERS_ROLE)
+        onlyRole(SET_PARAMETERS_ROLE)
     {
         require(_limit <= type(uint128).max, ERROR_TOO_LARGE_LIMIT);
 
@@ -232,7 +232,7 @@ contract LimitsChecker is AccessControl {
     /// @param _bokkyPooBahsDateTimeContract New address of the BokkyPooBahsDateTime library
     function setBokkyPooBahsDateTimeContract(address _bokkyPooBahsDateTimeContract)
         external
-        onlyRole(SET_LIMIT_PARAMETERS_ROLE)
+        onlyRole(SET_PARAMETERS_ROLE)
     {
         require(
             _bokkyPooBahsDateTimeContract != address(bokkyPooBahsDateTimeContract),

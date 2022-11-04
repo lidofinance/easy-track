@@ -18,7 +18,7 @@ from utils.test_helpers import (
     calc_period_first_month,
     calc_period_range,
     advance_chain_time_to_beginning_of_the_next_period,
-    SET_LIMIT_PARAMETERS_ROLE,
+    SET_PARAMETERS_ROLE,
     UPDATE_SPENT_AMOUNT_ROLE,
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
@@ -59,7 +59,7 @@ def test_registry_initial_state(
 
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, add_recipient_role_holder)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, remove_recipient_role_holder)
-    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, set_limits_role_holder)
+    assert registry.hasRole(SET_PARAMETERS_ROLE, set_limits_role_holder)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, update_spent_role_holder)
     assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), owner)
 
@@ -181,7 +181,7 @@ def test_rights_are_not_shared_by_different_roles(
         update_limit_role_holder,
         stranger,
     ]:
-        with reverts(access_revert_message(caller, SET_LIMIT_PARAMETERS_ROLE)):
+        with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
             registry.setLimitParameters(0, 1, {"from": caller})
 
     for caller in [deployer, add_role_holder, remove_role_holder, set_limit_role_holder, stranger]:
@@ -230,7 +230,7 @@ def test_multiple_role_holders(
         if caller in set_limit_role_holders:
             registry.setLimitParameters(5, 1, {"from": caller})
         else:
-            with reverts(access_revert_message(caller, SET_LIMIT_PARAMETERS_ROLE)):
+            with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
                 registry.setLimitParameters(5, 1, {"from": caller})
 
     for caller in accounts:
@@ -244,7 +244,7 @@ def test_multiple_role_holders(
 def test_access_stranger_cannot_set_limit_parameters(limits_checker, stranger):
     (limits_checker, _, _) = limits_checker
 
-    with reverts(access_revert_message(stranger, SET_LIMIT_PARAMETERS_ROLE)):
+    with reverts(access_revert_message(stranger, SET_PARAMETERS_ROLE)):
         limits_checker.setLimitParameters(123, 1, {"from": stranger})
 
 
