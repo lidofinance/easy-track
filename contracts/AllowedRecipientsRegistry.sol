@@ -51,8 +51,8 @@ contract AllowedRecipientsRegistry is LimitsChecker {
     ///     granted with role ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE
     /// @param _removeRecipientFromAllowedListRoleHolders List of addresses which will
     ///     be granted with role REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE
-    /// @param _setLimitParametersRoleHolders List of addresses which will
-    ///     be granted with role SET_LIMIT_PARAMETERS_ROLE
+    /// @param _setParametersRoleHolders List of addresses which will
+    ///     be granted with role SET_PARAMETERS_ROLE
     /// @param _updateSpentAmountRoleHolders List of addresses which will
     ///     be granted with role UPDATE_SPENT_AMOUNT_ROLE
     /// @param _bokkyPooBahsDateTimeContract Address of bokkyPooBahs DateTime Contract
@@ -60,12 +60,12 @@ contract AllowedRecipientsRegistry is LimitsChecker {
         address _admin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParametersRoleHolders,
+        address[] memory _setParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     )
         LimitsChecker(
-            _setLimitParametersRoleHolders,
+            _setParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
         )
