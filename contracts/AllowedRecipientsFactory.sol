@@ -10,13 +10,6 @@ import "./AllowedRecipientsRegistry.sol";
 
 contract AllowedRecipientsFactory {
 
-    struct AllowedRecipientsEasyTrack {
-        address allowedRecipientsRegistry;
-        address topUpAllowedRecipients;
-        address addAllowedRecipient;
-        address removeAllowedRecipient;
-    }
-
     bytes32 public constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
         keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
     bytes32 public constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
@@ -36,20 +29,9 @@ contract AllowedRecipientsFactory {
         address indexed allowedRecipientsRegistry,
         uint256 limit, 
         uint256 periodDurationMonths,
-        uint256 spentAmount
-    );
-
-    event AllowedRecipientsRegistryRecipients(
-        address[] recipients, 
-        string[] titles
-    );
-
-    event FactoryInitialized(
-        address easyTrack,
-        address finance,
-        address evmScriptExecutor,
+        uint256 spentAmount,
         address defaultAdmin,
-        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
+        address evmScriptExecutor
     );
 
     event AddAllowedRecipientDeployed(
@@ -76,14 +58,6 @@ contract AllowedRecipientsFactory {
         address easyTrack
     );
 
-    event AllowedRecipientsSetupDeployed(
-        address indexed creator,
-        address allowedRecipientsRegistry,
-        address topUpAllowedRecipients,
-        address addAllowedRecipient,
-        address removeAllowedRecipient
-    );
-
     constructor(
         address _easytrack,
         address _finance,
@@ -96,21 +70,13 @@ contract AllowedRecipientsFactory {
         evmScriptExecutor = _evmScriptExecutor;
         defaultAdmin = _defaultAdmin;
         bokkyPooBahsDateTimeContract = _bokkyPooBahsDateTimeContract;
-        
-        emit FactoryInitialized(
-            _easytrack,
-            _finance,
-            _evmScriptExecutor,
-            _defaultAdmin,
-            _bokkyPooBahsDateTimeContract
-        );
     }
 
     function deployAllowedRecipientsRegistry(
-        address[] memory _recipients, 
-        string[] memory _titles,
         uint256 _limit, 
         uint256 _periodDurationMonths,
+        address[] memory _recipients, 
+        string[] memory _titles,
         uint256 _spentAmount
     ) public returns(AllowedRecipientsRegistry) 
     {
@@ -146,8 +112,6 @@ contract AllowedRecipientsFactory {
         }
         registry.renounceRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
 
-        require(registry.getAllowedRecipients().length == _recipients.length);
-
         for (uint256 i = 0; i < _recipients.length; i++) {
             require(registry.isRecipientAllowed(_recipients[i]));
         }       
@@ -155,8 +119,14 @@ contract AllowedRecipientsFactory {
         registry.setLimitParameters(_limit, _periodDurationMonths);
         registry.renounceRole(SET_LIMIT_PARAMETERS_ROLE, address(this));
 
+        (uint256 registryLimit,  uint256 registryPeriodDuration) = registry.getLimitParameters();
+        require(registryLimit == _limit);
+        require(registryPeriodDuration == _periodDurationMonths);
+
         registry.updateSpentAmount(_spentAmount);
         registry.renounceRole(UPDATE_SPENT_AMOUNT_ROLE, address(this));
+
+        require(registry.spendableBalance() == _limit - _spentAmount);
 
         require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin));
         require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin));
@@ -167,6 +137,8 @@ contract AllowedRecipientsFactory {
         require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evmScriptExecutor));
         require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
         require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evmScriptExecutor));
+        require(!registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, evmScriptExecutor));
+        require(!registry.hasRole(DEFAULT_ADMIN_ROLE, evmScriptExecutor));
 
         require(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this)));
         require(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(this)));
@@ -179,17 +151,13 @@ contract AllowedRecipientsFactory {
             address(registry),
             _limit, 
             _periodDurationMonths,
-            _spentAmount
-        );
-
-        emit AllowedRecipientsRegistryRecipients( 
-            _recipients, 
-            _titles
+            _spentAmount,
+            defaultAdmin,
+            evmScriptExecutor
         );
 
         return registry;
     }
-
 
     function deployTopUpAllowedRecipients(
         address _trustedCaller, 
@@ -259,97 +227,5 @@ contract AllowedRecipientsFactory {
         );
 
         return removeAllowedRecipient;
-    }
-
-    function deployFullSetup(
-        address _trustedCaller,
-        address[] memory _recipients, 
-        string[] memory _titles,
-        address _token, 
-        uint256 _limit, 
-        uint256 _periodDurationMonths,
-        uint256 _spentAmount
-    ) public returns (AllowedRecipientsEasyTrack memory) {
-        AllowedRecipientsRegistry registry = deployAllowedRecipientsRegistry(
-            _recipients,
-            _titles,
-            _limit, 
-            _periodDurationMonths,
-            _spentAmount
-        );
-
-        TopUpAllowedRecipients topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _trustedCaller, 
-            address(registry),
-            _token
-        );
-
-        AddAllowedRecipient addAllowedRecipient = deployAddAllowedRecipient(
-            _trustedCaller, 
-            address(registry)
-        );
-
-        RemoveAllowedRecipient removeAllowedRecipient = deployRemoveAllowedRecipient(
-            _trustedCaller, 
-            address(registry)
-        );
-
-        emit AllowedRecipientsSetupDeployed(
-            msg.sender,
-            address(registry),
-            address(topUpAllowedRecipients),
-            address(addAllowedRecipient),
-            address(removeAllowedRecipient)
-        );
-
-        return AllowedRecipientsEasyTrack(
-            address(registry),
-            address(topUpAllowedRecipients),
-            address(addAllowedRecipient),
-            address(removeAllowedRecipient)
-        );
-    }
-
-    function _deploySingleRecipientTopUpOnlySetup(
-        address _recipient, 
-        string memory _title,
-        address _token,
-        uint256 _limit, 
-        uint256 _periodDurationMonths
-    ) public returns (AllowedRecipientsEasyTrack memory) {
-        address[] memory recipients = new address[](1);
-        recipients[0] = _recipient;
-
-        string[] memory titles = new string[](1);
-        titles[0] = _title;
-
-        AllowedRecipientsRegistry registry = deployAllowedRecipientsRegistry(
-            recipients,
-            titles,
-            _limit, 
-            _periodDurationMonths,
-            0
-        );
-
-        TopUpAllowedRecipients topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _recipient, 
-            address(registry),
-            _token
-        );
-
-        emit AllowedRecipientsSetupDeployed(
-            msg.sender,
-            address(registry),
-            address(topUpAllowedRecipients),
-            address(0),
-            address(0)
-        );
-
-        return AllowedRecipientsEasyTrack(
-            address(registry),
-            address(topUpAllowedRecipients),
-            address(0),
-            address(0)
-        );
     }
 }
