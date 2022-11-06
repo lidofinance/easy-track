@@ -1,5 +1,5 @@
 import pytest
-from brownie import Contract
+from brownie import Contract, reverts
 
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
 REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
@@ -113,7 +113,7 @@ def test_delploy_remove_recipient(
     allowed_recipients_builder, 
     accounts,
     stranger,
-    AddAllowedRecipient
+    RemoveAllowedRecipient
 ):
     trustedCaller = accounts[3];
     registry = accounts[4];
@@ -124,19 +124,19 @@ def test_delploy_remove_recipient(
         {"from": stranger}
     )
     
-    addRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
+    removeAllowedRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
 
     assert tx.events["RemoveAllowedRecipientDeployed"]["creator"] == allowed_recipients_builder
     assert tx.events["RemoveAllowedRecipientDeployed"]["trustedCaller"] == trustedCaller
     assert tx.events["RemoveAllowedRecipientDeployed"]["allowedRecipientsRegistry"] == registry
 
-    addAllowedRecipient = Contract.from_abi(
-        "AddAllowedRecipient", 
-        addRecipientAddress,
-        AddAllowedRecipient.abi
+    removeAllowedRecipient = Contract.from_abi(
+        "RemoveAllowedRecipient", 
+        removeAllowedRecipientAddress,
+        RemoveAllowedRecipient.abi
     )
 
-    assert addAllowedRecipient.allowedRecipientsRegistry() == registry
+    assert removeAllowedRecipient.allowedRecipientsRegistry() == registry
 
 
 def test_delploy_recipients_registry(
@@ -173,6 +173,214 @@ def test_delploy_recipients_registry(
     assert len(registry.getAllowedRecipients()) == len(recipients)
     for recipient in recipients:
         assert registry.isRecipientAllowed(recipient)
+    
+    registryLimit, registryPeriodDuration = registry.getLimitParameters()
+    assert registryLimit == limit
+    assert registryPeriodDuration == period
+
+    assert registry.spendableBalance() == limit - spentAmount
+    
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
+    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, agent)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
+    assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
+
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
+    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
+    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, regestryAddress)
+    assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
+
+def test_delploy_recipients_registry_reverts_recipients_length(
+    allowed_recipients_builder, 
+    accounts,
+    stranger
+):
+    limit = 1e18
+    period = 1
+    recipients = [accounts[3], accounts[4]]
+    titles = ["account 3"]
+    spentAmount = 1e10
+
+    with reverts(): 
+        allowed_recipients_builder.deployAllowedRecipientsRegistry(
+            limit,
+            period,
+            recipients,
+            titles,
+            spentAmount,
+            {"from": stranger}
+        )
+
+def test_delploy_recipients_registry_reverts_spentAmount_gt_limit(
+    allowed_recipients_builder, 
+    accounts,
+    stranger
+):
+    limit = 1e5
+    period = 1
+    recipients = [accounts[3], accounts[4]]
+    titles = ["account 3", "account 4"]
+    spentAmount = 1e10
+
+    with reverts('_spentAmount must be lower then limit'): 
+        allowed_recipients_builder.deployAllowedRecipientsRegistry(
+            limit,
+            period,
+            recipients,
+            titles,
+            spentAmount,
+            {"from": stranger}
+        )
+
+
+def test_delploy_deploy_full_setup(
+    allowed_recipients_builder, 
+    accounts,
+    stranger, 
+    agent,
+    ldo,
+    entire_allowed_recipients_setup,
+    AllowedRecipientsRegistry,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
+    TopUpAllowedRecipients
+):
+    trustedCaller = accounts[2]
+    limit = 1e18
+    period = 1
+    recipients = [accounts[3], accounts[4]]
+    titles = ["account 3", "account 4"]
+    spentAmount = 1e10
+
+    tx = allowed_recipients_builder.deployFullSetup(
+        trustedCaller,
+        ldo,
+        limit,
+        period,
+        recipients,
+        titles,
+        spentAmount,
+        {"from": stranger}
+    )
+    
+    regestryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+    topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
+    addRecipientAddress = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
+    removeAllowedRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
+
+    registry = Contract.from_abi(
+        "AllowedRecipientsRegistry", 
+        regestryAddress,
+        AllowedRecipientsRegistry.abi
+    )
+
+    topUpAllowedRecipients = Contract.from_abi(
+        "TopUpAllowedRecipients", 
+        topUpAddress,
+        TopUpAllowedRecipients.abi
+    )
+
+    addAllowedRecipient = Contract.from_abi(
+        "AddAllowedRecipient", 
+        addRecipientAddress,
+        AddAllowedRecipient.abi
+    )
+
+    removeAllowedRecipient = Contract.from_abi(
+        "RemoveAllowedRecipient", 
+        removeAllowedRecipientAddress,
+        RemoveAllowedRecipient.abi
+    )
+
+
+    assert topUpAllowedRecipients.allowedRecipientsRegistry() == registry
+    assert topUpAllowedRecipients.token() == ldo
+    assert removeAllowedRecipient.allowedRecipientsRegistry() == registry
+    assert addAllowedRecipient.allowedRecipientsRegistry() == registry
+
+    assert len(registry.getAllowedRecipients()) == len(recipients)
+    for recipient in recipients:
+        assert registry.isRecipientAllowed(recipient)
+    
+    registryLimit, registryPeriodDuration = registry.getLimitParameters()
+    assert registryLimit == limit
+    assert registryPeriodDuration == period
+
+    assert registry.spendableBalance() == limit - spentAmount
+    
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
+    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, agent)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
+    assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
+
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
+    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
+    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, regestryAddress)
+    assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
+
+
+
+def test_delploy_deploy_full_setup(
+    allowed_recipients_builder, 
+    accounts,
+    agent,
+    ldo,
+    stranger,
+    entire_allowed_recipients_setup,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients
+):
+    trustedCaller = accounts[2]
+    limit = 1e18
+    period = 1
+    spentAmount = 1e10
+
+    tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
+        trustedCaller,
+        "recipient",
+        ldo,
+        limit,
+        period,
+        spentAmount,
+        {"from": stranger}
+    )
+    
+    regestryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+    topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
+
+    registry = Contract.from_abi(
+        "AllowedRecipientsRegistry", 
+        regestryAddress,
+        AllowedRecipientsRegistry.abi
+    )
+
+    topUpAllowedRecipients = Contract.from_abi(
+        "TopUpAllowedRecipients", 
+        topUpAddress,
+        TopUpAllowedRecipients.abi
+    )
+
+    assert topUpAllowedRecipients.allowedRecipientsRegistry() == registry
+    assert topUpAllowedRecipients.token() == ldo
+
+    assert len(registry.getAllowedRecipients()) == 1
+    assert registry.isRecipientAllowed(trustedCaller)
     
     registryLimit, registryPeriodDuration = registry.getLimitParameters()
     assert registryLimit == limit

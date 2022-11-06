@@ -85,8 +85,8 @@ contract AllowedRecipientsBuilder {
         uint256 _spentAmount
     ) public returns(IAllowedRecipientsRegistry registry) 
     {
-        require(_recipients.length == _titles.length);
-        require(_spentAmount <= _limit);
+        require(_recipients.length == _titles.length, "Recipients data length mismatch");
+        require(_spentAmount <= _limit, "_spentAmount must be lower then limit");
         
         address[] memory addRecipientToAllowedListRoleHolders = new address[](3);
         addRecipientToAllowedListRoleHolders[0] = defaultAdmin;
@@ -115,22 +115,22 @@ contract AllowedRecipientsBuilder {
         }
         registry.renounceRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
 
-        require(registry.getAllowedRecipients().length == _recipients.length);
+        require(registry.getAllowedRecipients().length == _recipients.length, "Registry recipients count mismatch");
         for (uint256 i = 0; i < _recipients.length; i++) {
-            require(registry.isRecipientAllowed(_recipients[i]));
+            require(registry.isRecipientAllowed(_recipients[i]), "Recipient is not listed");
         }       
 
         registry.setLimitParameters(_limit, _periodDurationMonths);
         registry.renounceRole(SET_LIMIT_PARAMETERS_ROLE, address(this));
 
         (uint256 registryLimit,  uint256 registryPeriodDuration) = registry.getLimitParameters();
-        require(registryLimit == _limit);
-        require(registryPeriodDuration == _periodDurationMonths);
+        require(registryLimit == _limit, "Wrong limit");
+        require(registryPeriodDuration == _periodDurationMonths, "limit period mismatch");
 
         registry.updateSpentAmount(_spentAmount);
         registry.renounceRole(UPDATE_SPENT_AMOUNT_ROLE, address(this));
 
-        require(registry.spendableBalance() == _limit - _spentAmount);
+        require(registry.spendableBalance() == _limit - _spentAmount, "wrong spendableBalance");
 
         require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin));
         require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin));
@@ -163,10 +163,11 @@ contract AllowedRecipientsBuilder {
             _token
         );
 
-        require(topUpAllowedRecipients.token() == _token);
+        require(topUpAllowedRecipients.token() == _token, "Wrong token");
         require(
             address(topUpAllowedRecipients.allowedRecipientsRegistry()) == 
-            _allowedRecipientsRegistry
+            _allowedRecipientsRegistry,
+            "Wrong registry"
         );
     }
 
@@ -182,7 +183,8 @@ contract AllowedRecipientsBuilder {
 
         require(
             address(addAllowedRecipient.allowedRecipientsRegistry()) == 
-            _allowedRecipientsRegistry
+            _allowedRecipientsRegistry,
+            "Wrong registry"
         );
     }
 
@@ -196,7 +198,11 @@ contract AllowedRecipientsBuilder {
             _allowedRecipientsRegistry
         );
 
-        require(address(removeAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
+        require(
+            address(removeAllowedRecipient.allowedRecipientsRegistry()) == 
+            _allowedRecipientsRegistry,
+            "Wrong registry"
+        );
     }
 
     function deployFullSetup(
