@@ -10,7 +10,8 @@ from utils.config import (
 from utils import (
     lido,
     deployed_easy_track,
-    log
+    log,
+    deployed_date_time
 )
 
 from brownie import (
@@ -24,6 +25,7 @@ def main():
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
     deployer = get_deployer_account(get_is_live(), network=network_name)
+    bokky_poo_bahs_date_time_contract = deployed_date_time(network=network_name)
 
     easy_track = et_contracts.easy_track
     evm_script_executor = et_contracts.evm_script_executor
@@ -46,16 +48,21 @@ def main():
 
     log.br()
 
+    log.nb("BokkyPooBahsDateTimeContract", bokky_poo_bahs_date_time_contract)
+
+    log.br()
+
     print("Proceed? [yes/no]: ")
 
     if not prompt_bool():
         log.nb("Aborting")
         return
 
-    tx_params = { "from": deployer }
-    if (get_is_live()):
-        tx_params["priority_fee"] = "2 gwei"
-        tx_params["max_fee"] = "300 gwei"
+    tx_params = { 
+        "from": deployer,
+        "priority_fee": "2 gwei",
+        "max_fee": "50 gwei"
+    }
 
     (
         allowed_recipients_factory,
@@ -65,7 +72,7 @@ def main():
         finance = contracts.aragon.finance,
         agent = contracts.aragon.agent,
         evm_script_executor = evm_script_executor,
-        bokky_poo_bahs_date_time_contract,
+        bokky_poo_bahs_date_time_contract = bokky_poo_bahs_date_time_contract,
         tx_params = tx_params,
     )
 
@@ -92,19 +99,16 @@ def deploy_factory_and_builder(
     tx_params,
 ):
 
-    factory = AllowedRecipientsFactory.deploy(
-        easy_track,
-        finance,
-        evm_script_executor,
-        agent,
-        bokky_poo_bahs_date_time_contract,
-        tx_params
-    )
+    factory = AllowedRecipientsFactory.deploy(tx_params)
 
     builder = AllowedRecipientsBuilder.deploy(
         factory,
         evm_script_executor,
-        agent
+        agent,
+        easy_track,
+        finance,
+        bokky_poo_bahs_date_time_contract,
+        tx_params
     )
 
     return (
