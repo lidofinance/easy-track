@@ -9,35 +9,16 @@ import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
 import "./AllowedRecipientsRegistry.sol";
 
 contract AllowedRecipientsFactory {
-    address public immutable easyTrack;
-    address public immutable finance;
-    address public immutable evmScriptExecutor;
-    address public immutable defaultAdmin;
-    IBokkyPooBahsDateTimeContract public immutable bokkyPooBahsDateTimeContract;
-    
-    constructor(
-        address _easytrack,
-        address _finance,
-        address _evmScriptExecutor,
-        address _defaultAdmin,
-        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
-    ){
-        easyTrack = _easytrack;
-        finance = _finance;
-        evmScriptExecutor = _evmScriptExecutor;
-        defaultAdmin = _defaultAdmin;
-        bokkyPooBahsDateTimeContract = _bokkyPooBahsDateTimeContract;
-    }
 
     event AllowedRecipientsRegistryDeployed(
         address indexed creator,
         address indexed allowedRecipientsRegistry,
         address _defaultAdmin, 
-        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract,
         address[] addRecipientToAllowedListRoleHolders,
         address[] removeRecipientFromAllowedListRoleHolders,
         address[] setLimitParametersRoleHolders,
-        address[] updateSpentAmountRoleHolders
+        address[] updateSpentAmountRoleHolders,
+        IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
     );
 
     event TopUpAllowedRecipientsDeployed(
@@ -65,37 +46,41 @@ contract AllowedRecipientsFactory {
     );
 
     function deployAllowedRecipientsRegistry(
+        address _defaultAdmin, 
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateSpentAmountRoleHolders
+        address[] memory _updateSpentAmountRoleHolders,
+        IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) public returns(AllowedRecipientsRegistry registry) 
     {
         registry = new AllowedRecipientsRegistry(
-            defaultAdmin, 
+            _defaultAdmin, 
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
-            bokkyPooBahsDateTimeContract
+            _bokkyPooBahsDateTimeContract
         );
         
         emit AllowedRecipientsRegistryDeployed(
             msg.sender,
             address(registry),
-            defaultAdmin,
-            bokkyPooBahsDateTimeContract,
+            _defaultAdmin, 
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
-            _updateSpentAmountRoleHolders
+            _updateSpentAmountRoleHolders,
+            _bokkyPooBahsDateTimeContract
         );
     }
 
     function deployTopUpAllowedRecipients(
         address _trustedCaller, 
         address _allowedRecipientsRegistry,
-        address _token
+        address _token,
+        address _finance,
+        address _easyTrack
     )   
         public 
         returns(TopUpAllowedRecipients topUpAllowedRecipients) 
@@ -103,9 +88,9 @@ contract AllowedRecipientsFactory {
         topUpAllowedRecipients = new TopUpAllowedRecipients(
             _trustedCaller,
             _allowedRecipientsRegistry,
-            finance,
+            _finance,
             _token,
-            easyTrack
+            _easyTrack
         );
 
         emit TopUpAllowedRecipientsDeployed(
@@ -113,9 +98,9 @@ contract AllowedRecipientsFactory {
             address(topUpAllowedRecipients),
             _trustedCaller,
             _allowedRecipientsRegistry,
-            finance,
+            _finance,
             _token,
-            easyTrack
+            _easyTrack
         );
 
         return topUpAllowedRecipients;
