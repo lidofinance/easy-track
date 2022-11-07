@@ -8,6 +8,12 @@ import "./EVMScriptFactories/RemoveAllowedRecipient.sol";
 import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
 import "./AllowedRecipientsRegistry.sol";
 
+/// @author bulbozaur
+/// @notice Factory for Allowed Recipient Easy Track contracts
+/// https://github.com/lidofinance/easy-track/blob/2312647a758687a5fb6b6b9db51f6743068a1d61/contracts/AllowedRecipientsRegistry.sol
+/// https://github.com/lidofinance/easy-track/blob/2312647a758687a5fb6b6b9db51f6743068a1d61/contracts/EVMScriptFactories/TopUpAllowedRecipients.sol
+/// https://github.com/lidofinance/easy-track/blob/2312647a758687a5fb6b6b9db51f6743068a1d61/contracts/EVMScriptFactories/AddAllowedRecipient.sol
+/// https://github.com/lidofinance/easy-track/blob/2312647a758687a5fb6b6b9db51f6743068a1d61/contracts/EVMScriptFactories/RemoveAllowedRecipient.sol
 contract AllowedRecipientsFactory {
 
     event AllowedRecipientsRegistryDeployed(
