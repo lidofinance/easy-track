@@ -25,7 +25,7 @@ def main():
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
     deployer = get_deployer_account(get_is_live(), network=network_name)
-    bokky_poo_bahs_date_time_contract = deployed_date_time(network=network_name)
+    bokky_poo_bahs_date_time_contract = deployed_date_time.date_time_contract(network=network_name)
 
     easy_track = et_contracts.easy_track
     evm_script_executor = et_contracts.evm_script_executor
@@ -37,7 +37,6 @@ def main():
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
     log.ok("Governance Token", contracts.ldo)
-    log.ok("Aragon Voting", contracts.aragon.voting)
     log.ok("Aragon Finance", contracts.aragon.finance)
     log.ok("Aragon Agent", contracts.aragon.agent)
 
