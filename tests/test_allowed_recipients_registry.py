@@ -824,7 +824,9 @@ def test_spendable_amount_renewal_if_period_duration_changed(
     limits_checker.setLimitParameters(
         period_limit, initial_period_duration, {"from": set_parameters_role_holder}
     )
-    advance_chain_time_to_beginning_of_the_next_period(initial_period_duration)
+    advance_chain_time_to_beginning_of_the_next_period(
+        max(initial_period_duration, new_period_duration)
+    )
 
     spending = period_limit
     spendable = period_limit - spending
