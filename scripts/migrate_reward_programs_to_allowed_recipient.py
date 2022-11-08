@@ -1,7 +1,6 @@
 from brownie import chain, network
 
 from utils.config import (
-    get_env,
     get_is_live,
     get_deployer_account,
     prompt_bool,
@@ -10,12 +9,10 @@ from utils.config import (
 from utils import (
     lido,
     deployed_easy_track,
-    log,
-    deployed_date_time
+    log
 )
 
 from brownie import (
-    AllowedRecipientsFactory,
     AllowedRecipientsBuilder
 )
 
@@ -32,17 +29,14 @@ def main():
         "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
         "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97"
     ]
-
     titles = [
-        'recipient 1',
-        'recipient 2',
-        'recipient 3',
-        'recipient 4',
-        'recipient 5',
+        'Default Reward Program',
+        'Happy',
+        'Sergey\'2 #add RewardProgram',
+        'Jumpgate Test',
+        'tester',
     ]
-
-    trusted_caller = "0xc0e1418de75cD11B4C5cF60B9F86713e80689517"
-
+    trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
     limit = 10_000 * 1e18
     period = 1
     spent_amount = 0
@@ -54,7 +48,7 @@ def main():
     easy_track = et_contracts.easy_track
     evm_script_executor = et_contracts.evm_script_executor
 
-    allowed_recipients_builder = AllowedRecipientsBuilder.at("0x6fC826e3544C179D5D58AeaE9A1d6159Cd515Aaf")
+    allowed_recipients_builder = AllowedRecipientsBuilder.at("0x1082512D1d60a0480445353eb55de451D261b684")
 
     log.br()
 
