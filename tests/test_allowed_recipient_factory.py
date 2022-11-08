@@ -273,21 +273,34 @@ def test_delploy_deploy_full_setup(
     RemoveAllowedRecipient,
     TopUpAllowedRecipients
 ):
-    trustedCaller = accounts[2]
-    limit = 1e18
+
+    recipients = [
+        "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
+        "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
+        "0xa5F1d7D49F581136Cf6e58B32cBE9a2039C48bA1",
+        "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
+        "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97"
+    ]
+    titles = [
+        'Default Reward Program',
+        'Happy',
+        'Sergey\'2 #add RewardProgram',
+        'Jumpgate Test',
+        'tester',
+    ]
+    trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
+    limit = 10_000 * 1e18
     period = 1
-    recipients = [accounts[3], accounts[4]]
-    titles = ["account 3", "account 4"]
-    spentAmount = 1e10
+    spent_amount = 0
 
     tx = allowed_recipients_builder.deployFullSetup(
-        trustedCaller,
+        trusted_caller,
         ldo,
         limit,
         period,
         recipients,
         titles,
-        spentAmount,
+        spent_amount,
         {"from": stranger}
     )
     
@@ -320,11 +333,13 @@ def test_delploy_deploy_full_setup(
         RemoveAllowedRecipient.abi
     )
 
-
-    assert topUpAllowedRecipients.allowedRecipientsRegistry() == registry
     assert topUpAllowedRecipients.token() == ldo
-    assert removeAllowedRecipient.allowedRecipientsRegistry() == registry
+    assert topUpAllowedRecipients.allowedRecipientsRegistry() == registry
+    assert topUpAllowedRecipients.trustedCaller() == trusted_caller
     assert addAllowedRecipient.allowedRecipientsRegistry() == registry
+    assert addAllowedRecipient.trustedCaller() == trusted_caller
+    assert removeAllowedRecipient.allowedRecipientsRegistry() == registry
+    assert removeAllowedRecipient.trustedCaller() == trusted_caller
 
     assert len(registry.getAllowedRecipients()) == len(recipients)
     for recipient in recipients:
@@ -334,7 +349,7 @@ def test_delploy_deploy_full_setup(
     assert registryLimit == limit
     assert registryPeriodDuration == period
 
-    assert registry.spendableBalance() == limit - spentAmount
+    assert registry.spendableBalance() == limit - spent_amount
     
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
@@ -365,18 +380,20 @@ def test_delploy_deploy_single_recipient_top_up_only_setup(
     AllowedRecipientsRegistry,
     TopUpAllowedRecipients
 ):
-    trustedCaller = accounts[2]
+
+    recipient = accounts[2]
+    title = "recipient"
     limit = 1e18
     period = 1
-    spentAmount = 1e10
+    spent_amount = 1e10
 
     tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
-        trustedCaller,
-        "recipient",
+        recipient,
+        title,
         ldo,
         limit,
         period,
-        spentAmount,
+        spent_amount,
         {"from": stranger}
     )
     
@@ -399,13 +416,13 @@ def test_delploy_deploy_single_recipient_top_up_only_setup(
     assert topUpAllowedRecipients.token() == ldo
 
     assert len(registry.getAllowedRecipients()) == 1
-    assert registry.isRecipientAllowed(trustedCaller)
+    assert registry.isRecipientAllowed(recipient)
     
     registryLimit, registryPeriodDuration = registry.getLimitParameters()
     assert registryLimit == limit
     assert registryPeriodDuration == period
 
-    assert registry.spendableBalance() == limit - spentAmount
+    assert registry.spendableBalance() == limit - spent_amount
     
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
