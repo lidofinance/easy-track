@@ -236,30 +236,30 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 @pytest.fixture(scope="module")
 def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):
-    set_limits_role_holder = accounts[8]
+    set_parameters_role_holder = accounts[8]
     update_spent_amount_role_holder = accounts[9]
     limits_checker = owner.deploy(
         LimitsChecker,
-        [set_limits_role_holder],
+        [set_parameters_role_holder],
         [update_spent_amount_role_holder],
         bokkyPooBahsDateTimeContract,
     )
-    return (limits_checker, set_limits_role_holder, update_spent_amount_role_holder)
+    return (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder)
 
 
 @pytest.fixture(scope="module")
 def limits_checker_with_private_method_exposed(
     owner, accounts, LimitsCheckerWithPrivateViewsExposed, bokkyPooBahsDateTimeContract
 ):
-    set_limits_role_holder = accounts[8]
+    set_parameters_role_holder = accounts[8]
     update_spent_amount_role_holder = accounts[9]
     limits_checker = owner.deploy(
         LimitsCheckerWithPrivateViewsExposed,
-        [set_limits_role_holder],
+        [set_parameters_role_holder],
         [update_spent_amount_role_holder],
         bokkyPooBahsDateTimeContract,
     )
-    return (limits_checker, set_limits_role_holder, update_spent_amount_role_holder)
+    return (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder)
 
 
 @pytest.fixture(scope="module")
