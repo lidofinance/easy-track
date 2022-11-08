@@ -90,7 +90,7 @@ contract AllowedRecipientsBuilder {
     bytes32 public constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
         keccak256("REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
+    bytes32 public constant SET_PARAMETERS_ROLE = keccak256("SET_PARAMETERS_ROLE");
     bytes32 public constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
 
     constructor(
@@ -168,7 +168,7 @@ contract AllowedRecipientsBuilder {
         }
 
         registry.setLimitParameters(_limit, _periodDurationMonths);
-        registry.renounceRole(SET_LIMIT_PARAMETERS_ROLE, address(this));
+        registry.renounceRole(SET_PARAMETERS_ROLE, address(this));
 
         (uint256 registryLimit, uint256 registryPeriodDuration) = registry.getLimitParameters();
         require(registryLimit == _limit, "Wrong limit");
@@ -181,7 +181,7 @@ contract AllowedRecipientsBuilder {
 
         require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin));
         require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin));
-        require(registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, defaultAdmin));
+        require(registry.hasRole(SET_PARAMETERS_ROLE, defaultAdmin));
         require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, defaultAdmin));
         require(registry.hasRole(DEFAULT_ADMIN_ROLE, defaultAdmin));
 
@@ -193,12 +193,12 @@ contract AllowedRecipientsBuilder {
             require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
         }
         require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evmScriptExecutor));
-        require(!registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, evmScriptExecutor));
+        require(!registry.hasRole(SET_PARAMETERS_ROLE, evmScriptExecutor));
         require(!registry.hasRole(DEFAULT_ADMIN_ROLE, evmScriptExecutor));
 
         require(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this)));
         require(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(this)));
-        require(!registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, address(this)));
+        require(!registry.hasRole(SET_PARAMETERS_ROLE, address(this)));
         require(!registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, address(this)));
         require(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
     }

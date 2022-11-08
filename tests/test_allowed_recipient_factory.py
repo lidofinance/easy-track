@@ -3,7 +3,7 @@ from brownie import Contract, reverts
 
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
 REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
-SET_LIMIT_PARAMETERS_ROLE = "0x389c107d46e44659ea9e3d38a2e43f5414bdd0fd8244fa558561536ea90c2ece"
+SET_PARAMETERS_ROLE = "0x260b83d52a26066d8e9db550fa70395df5f3f064b50ff9d8a94267d9f1fe1967"
 UPDATE_SPENT_AMOUNT_ROLE = "0xc5260260446719a726d11a6faece21d19daa48b4cbcca118345832d4cb71df99"
 DEFAULT_ADMIN_ROLE = "0x00"
 
@@ -200,19 +200,19 @@ def test_delploy_recipients_registry(
     
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
-    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, agent)
+    assert registry.hasRole(SET_PARAMETERS_ROLE, agent)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
-    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, regestryAddress)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, regestryAddress)
     assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
 
@@ -338,19 +338,19 @@ def test_delploy_deploy_full_setup(
     
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
-    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, agent)
+    assert registry.hasRole(SET_PARAMETERS_ROLE, agent)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
-    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, regestryAddress)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, regestryAddress)
     assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
 
@@ -409,18 +409,18 @@ def test_delploy_deploy_single_recipient_top_up_only_setup(
     
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
-    assert registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, agent)
+    assert registry.hasRole(SET_PARAMETERS_ROLE, agent)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
-    assert not registry.hasRole(SET_LIMIT_PARAMETERS_ROLE, regestryAddress)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, regestryAddress)
     assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
