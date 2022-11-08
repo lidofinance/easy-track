@@ -44,7 +44,7 @@ def test_registry_initial_state(
 ):
     add_recipient_role_holder = accounts[6]
     remove_recipient_role_holder = accounts[7]
-    set_limits_role_holder = accounts[8]
+    set_parameters_role_holder = accounts[8]
     update_spent_role_holder = accounts[9]
 
     registry = owner.deploy(
@@ -52,14 +52,14 @@ def test_registry_initial_state(
         owner,
         [add_recipient_role_holder],
         [remove_recipient_role_holder],
-        [set_limits_role_holder],
+        [set_parameters_role_holder],
         [update_spent_role_holder],
         bokkyPooBahsDateTimeContract,
     )
 
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, add_recipient_role_holder)
     assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, remove_recipient_role_holder)
-    assert registry.hasRole(SET_PARAMETERS_ROLE, set_limits_role_holder)
+    assert registry.hasRole(SET_PARAMETERS_ROLE, set_parameters_role_holder)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, update_spent_role_holder)
     assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), owner)
 
@@ -68,7 +68,7 @@ def test_registry_initial_state(
     for role_holder in [
         add_recipient_role_holder,
         remove_recipient_role_holder,
-        set_limits_role_holder,
+        set_parameters_role_holder,
         update_spent_role_holder,
     ]:
         assert not registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), role_holder)
@@ -184,6 +184,9 @@ def test_rights_are_not_shared_by_different_roles(
         with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
             registry.setLimitParameters(0, 1, {"from": caller})
 
+        with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
+            registry.setBokkyPooBahsDateTimeContract(ZERO_ADDRESS, {"from": caller})
+
     for caller in [deployer, add_role_holder, remove_role_holder, set_limit_role_holder, stranger]:
         with reverts(access_revert_message(caller, UPDATE_SPENT_AMOUNT_ROLE)):
             registry.updateSpentAmount(1, {"from": caller})
@@ -195,7 +198,7 @@ def test_multiple_role_holders(
     deployer = owner
     add_role_holders = (accounts[2], accounts[3])
     remove_role_holders = (accounts[4], accounts[5])
-    set_limit_role_holders = (accounts[6], accounts[7])
+    set_parameters_role_holders = (accounts[6], accounts[7])
     update_limit_role_holders = (accounts[8], accounts[9])
 
     registry = deployer.deploy(
@@ -203,7 +206,7 @@ def test_multiple_role_holders(
         voting,
         add_role_holders,
         remove_role_holders,
-        set_limit_role_holders,
+        set_parameters_role_holders,
         update_limit_role_holders,
         bokkyPooBahsDateTimeContract,
     )
@@ -227,11 +230,13 @@ def test_multiple_role_holders(
                 registry.removeRecipient(caller, {"from": caller})
 
     for caller in accounts:
-        if caller in set_limit_role_holders:
+        if caller in set_parameters_role_holders:
             registry.setLimitParameters(5, 1, {"from": caller})
         else:
             with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
                 registry.setLimitParameters(5, 1, {"from": caller})
+            with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
+                registry.setBokkyPooBahsDateTimeContract(ZERO_ADDRESS, {"from": caller})
 
     for caller in accounts:
         if caller in update_limit_role_holders:
@@ -248,6 +253,13 @@ def test_access_stranger_cannot_set_limit_parameters(limits_checker, stranger):
         limits_checker.setLimitParameters(123, 1, {"from": stranger})
 
 
+def test_access_stranger_cannot_set_date_time_library(limits_checker, stranger):
+    (limits_checker, _, _) = limits_checker
+
+    with reverts(access_revert_message(stranger, SET_PARAMETERS_ROLE)):
+        limits_checker.setBokkyPooBahsDateTimeContract(ZERO_ADDRESS, {"from": stranger})
+
+
 def test_access_stranger_cannot_update_spent_amount(limits_checker, stranger):
     (limits_checker, _, _) = limits_checker
 
@@ -258,6 +270,30 @@ def test_access_stranger_cannot_update_spent_amount(limits_checker, stranger):
 # ------------
 # AllowedRecipientsRegistry logic
 # ------------
+
+
+def test_set_date_time_contract(limits_checker):
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
+    new_address = accounts[8]
+    assert limits_checker.bokkyPooBahsDateTimeContract() != new_address
+    tx = limits_checker.setBokkyPooBahsDateTimeContract(
+        new_address, {"from": set_parameters_role_holder}
+    )
+    assert limits_checker.bokkyPooBahsDateTimeContract() == new_address
+    assert_single_event(
+        tx,
+        "BokkyPooBahsDateTimeContractChanged",
+        {"_newAddress": new_address},
+    )
+
+
+def test_fail_if_set_same_time_contract(limits_checker, accounts):
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
+    current_address = limits_checker.bokkyPooBahsDateTimeContract()
+    with reverts("SAME_DATE_TIME_CONTRACT_ADDRESS"):
+        limits_checker.setBokkyPooBahsDateTimeContract(
+            current_address, {"from": set_parameters_role_holder}
+        )
 
 
 def test_add_recipient(allowed_recipients_registry):
@@ -409,13 +445,13 @@ def test_fail_if_remove_not_allowed_recipient(allowed_recipients_registry):
 
 
 def test_set_limit_parameters_happy_path(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
     now = datetime.now()
     period_start = get_month_start_timestamp(now)
 
     tx = limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     assert_event_exists(tx, "CurrentPeriodAdvanced", {"_periodStartTimestamp": period_start})
     assert_event_exists(
@@ -464,7 +500,7 @@ def test_set_limit_parameters_by_aragon_voting(
 def test_period_range_calculation_for_all_allowed_period_durations(
     limits_checker_with_private_method_exposed,
 ):
-    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
+    (limits_checker, set_parameters_role_holder, _) = limits_checker_with_private_method_exposed
 
     assert limits_checker.getLimitParameters()[1] == 0
 
@@ -479,7 +515,7 @@ def test_period_range_calculation_for_all_allowed_period_durations(
     for _ in range(24):
         for duration in [1, 2, 3, 6, 12]:
             limits_checker.setLimitParameters(
-                period_limit, duration, {"from": set_limits_role_holder}
+                period_limit, duration, {"from": set_parameters_role_holder}
             )
             _, _, period_start, period_end = limits_checker.getPeriodState()
             assert (period_start, period_end) == calc_period_range(
@@ -491,12 +527,12 @@ def test_period_range_calculation_for_all_allowed_period_durations(
 
 @pytest.mark.parametrize("period_duration", [0, 4, 5, 7, 8, 9, 10, 11, 13, 14, 100500])
 def test_fail_if_set_incorrect_period_durations(limits_checker, period_duration):
-    (limits_checker, set_limits_role_holder, _) = limits_checker
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
 
     period_limit = 10**18
     with reverts("INVALID_PERIOD_DURATION"):
         limits_checker.setLimitParameters(
-            period_limit, period_duration, {"from": set_limits_role_holder}
+            period_limit, period_duration, {"from": set_parameters_role_holder}
         )
 
 
@@ -514,40 +550,40 @@ def test_get_first_month_in_period_for_all_allowed_period_durations(
     current_month,
     period_first_month,
 ):
-    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
+    (limits_checker, set_parameters_role_holder, _) = limits_checker_with_private_method_exposed
 
     period_limit = 0
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
 
     assert limits_checker.getFirstMonthInPeriodFromCurrentMonth(current_month) == period_first_month
 
 
 def test_fail_if_set_limit_greater_than_max_limit(limits_checker):
-    (limits_checker, set_limits_role_holder, _) = limits_checker
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
 
     period_limit, period_duration = 2**128, 1
 
     # OK if 1 wei less the limit
     limits_checker.setLimitParameters(
-        period_limit - 1, period_duration, {"from": set_limits_role_holder}
+        period_limit - 1, period_duration, {"from": set_parameters_role_holder}
     )
 
     with reverts("TOO_LARGE_LIMIT"):
         limits_checker.setLimitParameters(
-            period_limit, period_duration, {"from": set_limits_role_holder}
+            period_limit, period_duration, {"from": set_parameters_role_holder}
         )
 
 
 def test_limits_checker_views_in_next_period(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
 
     period_limit, period_duration = int(10e18), 1
     payout_amount = int(3e18)
     spendable_balance = period_limit - payout_amount
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -564,7 +600,7 @@ def test_limits_checker_views_in_next_period(limits_checker):
 
 
 def test_update_spent_amount_within_the_limit(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
 
     # set chain time to the beginning of month to prevent switch while the test is running
@@ -575,7 +611,7 @@ def test_update_spent_amount_within_the_limit(limits_checker):
     period_end = get_month_start_timestamp(get_date_in_next_period(now, period_duration))
 
     tx = limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
 
     spending = 2 * 10**18
@@ -598,11 +634,11 @@ def test_update_spent_amount_within_the_limit(limits_checker):
 
 
 def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -633,13 +669,13 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(limits_
 
 
 def test_spending_amount_is_restored_in_the_next_period(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
     spending = period_limit
     spendable = period_limit - spending
 
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -657,12 +693,12 @@ def test_spending_amount_is_restored_in_the_next_period(limits_checker):
 
 
 def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
     spending = period_limit + 1
 
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -676,11 +712,11 @@ def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
 
 
 def test_spendable_amount_increased_if_limit_increased(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -698,7 +734,7 @@ def test_spendable_amount_increased_if_limit_increased(limits_checker):
     new_period_limit = 2 * period_limit
     new_spendable = spendable + (new_period_limit - period_limit)
     limits_checker.setLimitParameters(
-        new_period_limit, period_duration, {"from": set_limits_role_holder}
+        new_period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == new_spendable
@@ -711,11 +747,11 @@ def test_spendable_amount_increased_if_limit_increased(limits_checker):
 
 
 def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -732,7 +768,7 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     # NB!: already spent amount decreased to the new limit
     new_spending = new_period_limit
     limits_checker.setLimitParameters(
-        new_period_limit, period_duration, {"from": set_limits_role_holder}
+        new_period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == new_spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == new_spendable
@@ -743,11 +779,11 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
 
 
 def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_checker):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
-        period_limit, period_duration, {"from": set_limits_role_holder}
+        period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -764,7 +800,7 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
     # NB!: already spent amount decreased to the new limit
     new_spending = spending
     limits_checker.setLimitParameters(
-        new_period_limit, period_duration, {"from": set_limits_role_holder}
+        new_period_limit, period_duration, {"from": set_parameters_role_holder}
     )
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == new_spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == new_spendable
@@ -782,11 +818,11 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
 def test_spendable_amount_renewal_if_period_duration_changed(
     limits_checker, initial_period_duration, new_period_duration
 ):
-    (limits_checker, set_limits_role_holder, update_spent_amount_role_holder) = limits_checker
+    (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder) = limits_checker
     period_limit = 3 * 10**18
 
     limits_checker.setLimitParameters(
-        period_limit, initial_period_duration, {"from": set_limits_role_holder}
+        period_limit, initial_period_duration, {"from": set_parameters_role_holder}
     )
     advance_chain_time_to_beginning_of_the_next_period(initial_period_duration)
 
@@ -801,7 +837,7 @@ def test_spendable_amount_renewal_if_period_duration_changed(
         limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
 
     limits_checker.setLimitParameters(
-        period_limit, new_period_duration, {"from": set_limits_role_holder}
+        period_limit, new_period_duration, {"from": set_parameters_role_holder}
     )
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         limits_checker.updateSpentAmount(1, {"from": update_spent_amount_role_holder})
@@ -891,7 +927,7 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
 def test_period_start_from_timestamp(
     limits_checker_with_private_method_exposed, inputs, period_duration, expected_result
 ):
-    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
+    (limits_checker, set_parameters_role_holder, _) = limits_checker_with_private_method_exposed
     period_limit = 3 * 10**18
 
     expected_result = get_timestamp_from_date(*expected_result)
@@ -899,7 +935,7 @@ def test_period_start_from_timestamp(
 
     for timestamp in inputs:
         limits_checker.setLimitParameters(
-            period_limit, period_duration, {"from": set_limits_role_holder}
+            period_limit, period_duration, {"from": set_parameters_role_holder}
         )
         assert limits_checker.getPeriodStartFromTimestamp(timestamp) == expected_result
 
@@ -980,7 +1016,7 @@ def test_period_start_from_timestamp(
 def test_period_end_from_timestamp(
     limits_checker_with_private_method_exposed, inputs, period_duration, expected_result
 ):
-    (limits_checker, set_limits_role_holder, _) = limits_checker_with_private_method_exposed
+    (limits_checker, set_parameters_role_holder, _) = limits_checker_with_private_method_exposed
     period_limit = 3 * 10**18
 
     expected_result = get_timestamp_from_date(*expected_result)
@@ -988,7 +1024,7 @@ def test_period_end_from_timestamp(
 
     for timestamp in inputs:
         limits_checker.setLimitParameters(
-            period_limit, period_duration, {"from": set_limits_role_holder}
+            period_limit, period_duration, {"from": set_parameters_role_holder}
         )
         assert limits_checker.getPeriodEndFromTimestamp(timestamp) == expected_result
 
