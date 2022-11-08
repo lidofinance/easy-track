@@ -15,11 +15,10 @@ import "./AllowedRecipientsRegistry.sol";
 /// https://github.com/lidofinance/easy-track/blob/2312647a758687a5fb6b6b9db51f6743068a1d61/contracts/EVMScriptFactories/AddAllowedRecipient.sol
 /// https://github.com/lidofinance/easy-track/blob/2312647a758687a5fb6b6b9db51f6743068a1d61/contracts/EVMScriptFactories/RemoveAllowedRecipient.sol
 contract AllowedRecipientsFactory {
-
     event AllowedRecipientsRegistryDeployed(
         address indexed creator,
         address indexed allowedRecipientsRegistry,
-        address _defaultAdmin, 
+        address _defaultAdmin,
         address[] addRecipientToAllowedListRoleHolders,
         address[] removeRecipientFromAllowedListRoleHolders,
         address[] setLimitParametersRoleHolders,
@@ -52,27 +51,26 @@ contract AllowedRecipientsFactory {
     );
 
     function deployAllowedRecipientsRegistry(
-        address _defaultAdmin, 
+        address _defaultAdmin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
-    ) public returns(AllowedRecipientsRegistry registry) 
-    {
+    ) public returns (AllowedRecipientsRegistry registry) {
         registry = new AllowedRecipientsRegistry(
-            _defaultAdmin, 
+            _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
         );
-        
+
         emit AllowedRecipientsRegistryDeployed(
             msg.sender,
             address(registry),
-            _defaultAdmin, 
+            _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
@@ -82,15 +80,12 @@ contract AllowedRecipientsFactory {
     }
 
     function deployTopUpAllowedRecipients(
-        address _trustedCaller, 
+        address _trustedCaller,
         address _allowedRecipientsRegistry,
         address _token,
         address _finance,
         address _easyTrack
-    )   
-        public 
-        returns(TopUpAllowedRecipients topUpAllowedRecipients) 
-    {      
+    ) public returns (TopUpAllowedRecipients topUpAllowedRecipients) {
         topUpAllowedRecipients = new TopUpAllowedRecipients(
             _trustedCaller,
             _allowedRecipientsRegistry,
@@ -112,16 +107,11 @@ contract AllowedRecipientsFactory {
         return topUpAllowedRecipients;
     }
 
-
-    function deployAddAllowedRecipient(
-        address _trustedCaller, 
-        address _allowedRecipientsRegistry
-    ) 
+    function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
         public
-        returns(AddAllowedRecipient addAllowedRecipient) 
+        returns (AddAllowedRecipient addAllowedRecipient)
     {
-        addAllowedRecipient = 
-            new AddAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
+        addAllowedRecipient = new AddAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
 
         emit AddAllowedRecipientDeployed(
             msg.sender,
@@ -131,16 +121,14 @@ contract AllowedRecipientsFactory {
         );
     }
 
-    
     function deployRemoveAllowedRecipient(
         address _trustedCaller,
         address _allowedRecipientsRegistry
-    ) 
-        public
-        returns(RemoveAllowedRecipient removeAllowedRecipient) 
-    {
-        removeAllowedRecipient  =
-            new RemoveAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
+    ) public returns (RemoveAllowedRecipient removeAllowedRecipient) {
+        removeAllowedRecipient = new RemoveAllowedRecipient(
+            _trustedCaller,
+            _allowedRecipientsRegistry
+        );
 
         emit RemoveAllowedRecipientDeployed(
             msg.sender,

@@ -5,66 +5,79 @@ pragma solidity ^0.8.4;
 
 interface IAllowedRecipientsRegistry {
     function addRecipient(address _recipient, string memory _title) external;
+
     function renounceRole(bytes32 role, address account) external;
+
     function isRecipientAllowed(address _recipient) external view returns (bool);
+
     function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths) external;
+
     function getLimitParameters() external view returns (uint256, uint256);
+
     function updateSpentAmount(uint256 _payoutAmount) external;
+
     function spendableBalance() external view returns (uint256);
+
     function hasRole(bytes32 role, address account) external view returns (bool);
+
     function getAllowedRecipients() external view returns (address[] memory);
+
     function bokkyPooBahsDateTimeContract() external view returns (address);
 }
 
 interface ITopUpAllowedRecipients {
     function token() external view returns (address);
+
     function finance() external view returns (address);
+
     function easyTrack() external view returns (address);
+
     function trustedCaller() external view returns (address);
+
     function allowedRecipientsRegistry() external view returns (address);
 }
 
 interface IAddAllowedRecipient {
     function trustedCaller() external view returns (address);
+
     function allowedRecipientsRegistry() external view returns (address);
 }
 
 interface IRemoveAllowedRecipient {
     function trustedCaller() external view returns (address);
+
     function allowedRecipientsRegistry() external view returns (address);
 }
 
 interface IAllowedRecipientsFactory {
     function deployAllowedRecipientsRegistry(
-        address _defaultAdmin, 
+        address _defaultAdmin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         address bokkyPooBahsDateTimeContract
-    ) external returns(IAllowedRecipientsRegistry);
+    ) external returns (IAllowedRecipientsRegistry);
 
     function deployTopUpAllowedRecipients(
-        address _trustedCaller, 
+        address _trustedCaller,
         address _allowedRecipientsRegistry,
         address _token,
         address _finance,
         address _easyTrack
-    ) external returns(ITopUpAllowedRecipients);
+    ) external returns (ITopUpAllowedRecipients);
 
-    function deployAddAllowedRecipient(
-        address _trustedCaller, 
-        address _allowedRecipientsRegistry
-    ) external returns(IAddAllowedRecipient);
+    function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
+        external
+        returns (IAddAllowedRecipient);
 
     function deployRemoveAllowedRecipient(
         address _trustedCaller,
         address _allowedRecipientsRegistry
-    ) external returns(IRemoveAllowedRecipient);
+    ) external returns (IRemoveAllowedRecipient);
 }
 
 contract AllowedRecipientsBuilder {
-
     address public immutable easyTrack;
     address public immutable finance;
     address public immutable evmScriptExecutor;
@@ -80,7 +93,6 @@ contract AllowedRecipientsBuilder {
     bytes32 public constant SET_LIMIT_PARAMETERS_ROLE = keccak256("SET_LIMIT_PARAMETERS_ROLE");
     bytes32 public constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
 
-
     constructor(
         IAllowedRecipientsFactory _factory,
         address _evmScriptExecutor,
@@ -88,7 +100,7 @@ contract AllowedRecipientsBuilder {
         address _easytrack,
         address _finance,
         address _bokkyPooBahsDateTimeContract
-    ){
+    ) {
         factory = _factory;
         evmScriptExecutor = _evmScriptExecutor;
         defaultAdmin = _defaultAdmin;
@@ -98,24 +110,27 @@ contract AllowedRecipientsBuilder {
     }
 
     function deployAllowedRecipientsRegistry(
-        uint256 _limit, 
+        uint256 _limit,
         uint256 _periodDurationMonths,
-        address[] memory _recipients, 
+        address[] memory _recipients,
         string[] memory _titles,
         uint256 _spentAmount,
         bool _singleRecipient
-    ) public returns(IAllowedRecipientsRegistry registry) 
-    {
+    ) public returns (IAllowedRecipientsRegistry registry) {
         require(_recipients.length == _titles.length, "Recipients data length mismatch");
         require(_spentAmount <= _limit, "_spentAmount must be lower then limit");
-        
-        address[] memory addRecipientToAllowedListRoleHolders = new address[](_singleRecipient ? 2 : 3);
+
+        address[] memory addRecipientToAllowedListRoleHolders = new address[](
+            _singleRecipient ? 2 : 3
+        );
         addRecipientToAllowedListRoleHolders[0] = defaultAdmin;
         addRecipientToAllowedListRoleHolders[1] = address(this);
         if (!_singleRecipient) {
             addRecipientToAllowedListRoleHolders[2] = evmScriptExecutor;
         }
-        address[] memory removeRecipientFromAllowedListRoleHolders = new address[](_singleRecipient ? 1 : 2);
+        address[] memory removeRecipientFromAllowedListRoleHolders = new address[](
+            _singleRecipient ? 1 : 2
+        );
         removeRecipientFromAllowedListRoleHolders[0] = defaultAdmin;
         if (!_singleRecipient) {
             removeRecipientFromAllowedListRoleHolders[1] = evmScriptExecutor;
@@ -138,21 +153,24 @@ contract AllowedRecipientsBuilder {
         );
 
         require(registry.bokkyPooBahsDateTimeContract() == bokkyPooBahsDateTimeContract);
-        
+
         for (uint256 i = 0; i < _recipients.length; i++) {
             registry.addRecipient(_recipients[i], _titles[i]);
         }
         registry.renounceRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
 
-        require(registry.getAllowedRecipients().length == _recipients.length, "Registry recipients count mismatch");
+        require(
+            registry.getAllowedRecipients().length == _recipients.length,
+            "Registry recipients count mismatch"
+        );
         for (uint256 i = 0; i < _recipients.length; i++) {
             require(registry.isRecipientAllowed(_recipients[i]), "Recipient is not listed");
-        }       
+        }
 
         registry.setLimitParameters(_limit, _periodDurationMonths);
         registry.renounceRole(SET_LIMIT_PARAMETERS_ROLE, address(this));
 
-        (uint256 registryLimit,  uint256 registryPeriodDuration) = registry.getLimitParameters();
+        (uint256 registryLimit, uint256 registryPeriodDuration) = registry.getLimitParameters();
         require(registryLimit == _limit, "Wrong limit");
         require(registryPeriodDuration == _periodDurationMonths, "Limit period mismatch");
 
@@ -186,14 +204,13 @@ contract AllowedRecipientsBuilder {
     }
 
     function deployTopUpAllowedRecipients(
-        address _trustedCaller, 
+        address _trustedCaller,
         address _allowedRecipientsRegistry,
         address _token
-    )   public returns(ITopUpAllowedRecipients topUpAllowedRecipients) 
-    {      
+    ) public returns (ITopUpAllowedRecipients topUpAllowedRecipients) {
         topUpAllowedRecipients = factory.deployTopUpAllowedRecipients(
-            _trustedCaller, 
-            _allowedRecipientsRegistry, 
+            _trustedCaller,
+            _allowedRecipientsRegistry,
             _token,
             finance,
             easyTrack
@@ -204,64 +221,64 @@ contract AllowedRecipientsBuilder {
         require(topUpAllowedRecipients.easyTrack() == easyTrack, "Wrong Easy Track contract");
         require(topUpAllowedRecipients.trustedCaller() == _trustedCaller, "Invalid trusted caller");
         require(
-            address(topUpAllowedRecipients.allowedRecipientsRegistry()) == 
-            _allowedRecipientsRegistry,
+            address(topUpAllowedRecipients.allowedRecipientsRegistry()) ==
+                _allowedRecipientsRegistry,
             "Wrong registry contract"
         );
     }
 
-
-    function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry) 
+    function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
         public
-        returns(IAddAllowedRecipient addAllowedRecipient) 
+        returns (IAddAllowedRecipient addAllowedRecipient)
     {
         addAllowedRecipient = factory.deployAddAllowedRecipient(
-            _trustedCaller, 
+            _trustedCaller,
             _allowedRecipientsRegistry
         );
 
         require(addAllowedRecipient.trustedCaller() == _trustedCaller, "Invalid trusted caller");
         require(
-            address(addAllowedRecipient.allowedRecipientsRegistry()) == 
-            _allowedRecipientsRegistry,
+            address(addAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry,
             "Wrong registry contract"
         );
     }
 
-    
-    function deployRemoveAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry) 
-        public
-        returns(IRemoveAllowedRecipient removeAllowedRecipient) 
-    {
+    function deployRemoveAllowedRecipient(
+        address _trustedCaller,
+        address _allowedRecipientsRegistry
+    ) public returns (IRemoveAllowedRecipient removeAllowedRecipient) {
         removeAllowedRecipient = factory.deployRemoveAllowedRecipient(
-            _trustedCaller, 
+            _trustedCaller,
             _allowedRecipientsRegistry
         );
 
         require(removeAllowedRecipient.trustedCaller() == _trustedCaller, "Invalid trusted caller");
         require(
-            address(removeAllowedRecipient.allowedRecipientsRegistry()) == 
-            _allowedRecipientsRegistry,
+            address(removeAllowedRecipient.allowedRecipientsRegistry()) ==
+                _allowedRecipientsRegistry,
             "Wrong registry contract"
         );
     }
 
     function deployFullSetup(
         address _trustedCaller,
-        address _token, 
-        uint256 _limit, 
+        address _token,
+        uint256 _limit,
         uint256 _periodDurationMonths,
-        address[] memory _recipients, 
+        address[] memory _recipients,
         string[] memory _titles,
         uint256 _spentAmount
-    ) public returns (
-        IAllowedRecipientsRegistry allowedRecipientsRegistry,
-        ITopUpAllowedRecipients topUpAllowedRecipients,
-        IAddAllowedRecipient addAllowedRecipient,
-        IRemoveAllowedRecipient removeAllowedRecipient
-    ) {
+    )
+        public
+        returns (
+            IAllowedRecipientsRegistry allowedRecipientsRegistry,
+            ITopUpAllowedRecipients topUpAllowedRecipients,
+            IAddAllowedRecipient addAllowedRecipient,
+            IRemoveAllowedRecipient removeAllowedRecipient
+        )
+    {
         allowedRecipientsRegistry = deployAllowedRecipientsRegistry(
-            _limit, 
+            _limit,
             _periodDurationMonths,
             _recipients,
             _titles,
@@ -270,33 +287,36 @@ contract AllowedRecipientsBuilder {
         );
 
         topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _trustedCaller, 
+            _trustedCaller,
             address(allowedRecipientsRegistry),
             _token
         );
 
         addAllowedRecipient = deployAddAllowedRecipient(
-            _trustedCaller, 
+            _trustedCaller,
             address(allowedRecipientsRegistry)
         );
 
         removeAllowedRecipient = deployRemoveAllowedRecipient(
-            _trustedCaller, 
+            _trustedCaller,
             address(allowedRecipientsRegistry)
         );
     }
 
     function deploySingleRecipientTopUpOnlySetup(
-        address _recipient, 
+        address _recipient,
         string memory _title,
         address _token,
-        uint256 _limit, 
+        uint256 _limit,
         uint256 _periodDurationMonths,
         uint256 _spentAmount
-    ) public returns (
-        IAllowedRecipientsRegistry allowedRecipientsRegistry,
-        ITopUpAllowedRecipients topUpAllowedRecipients
-    ) {
+    )
+        public
+        returns (
+            IAllowedRecipientsRegistry allowedRecipientsRegistry,
+            ITopUpAllowedRecipients topUpAllowedRecipients
+        )
+    {
         address[] memory recipients = new address[](1);
         recipients[0] = _recipient;
 
@@ -304,7 +324,7 @@ contract AllowedRecipientsBuilder {
         titles[0] = _title;
 
         allowedRecipientsRegistry = deployAllowedRecipientsRegistry(
-            _limit, 
+            _limit,
             _periodDurationMonths,
             recipients,
             titles,
@@ -313,7 +333,7 @@ contract AllowedRecipientsBuilder {
         );
 
         topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _recipient, 
+            _recipient,
             address(allowedRecipientsRegistry),
             _token
         );
