@@ -12,22 +12,6 @@ from dataclasses import dataclass
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
-
-@pytest.fixture(scope="module")
-def easy_track_defaults():
-    @dataclass
-    class EasyTrackDefaults:
-        min_motion_duration: int
-        max_motions_limit: int
-        default_objections_threshold: int
-
-    return EasyTrackDefaults(
-        constants.MIN_MOTION_DURATION,
-        constants.MAX_MOTIONS_LIMIT,
-        constants.DEFAULT_OBJECTIONS_THRESHOLD,
-    )
-
-
 #####
 # ACCOUNTS
 #####
@@ -113,7 +97,6 @@ def lido_contracts():
 def easy_track(
     EasyTrack,
     EVMScriptExecutor,
-    easy_track_defaults,
     lido_contracts,
     deployer,
     load_deployed_contract,
@@ -127,9 +110,9 @@ def easy_track(
     deployed_easy_track = EasyTrack.deploy(
         lido_contracts.ldo,
         lido_contracts.aragon.voting,
-        easy_track_defaults.min_motion_duration,
-        easy_track_defaults.max_motions_limit,
-        easy_track_defaults.default_objections_threshold,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
         {"from": deployer},
     )
 
