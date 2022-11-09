@@ -7,10 +7,9 @@ from brownie import chain
 
 import constants
 from utils.evm_script import encode_call_script, encode_calldata
-from utils.lido import contracts, create_voting, execute_voting
+from utils.lido import contracts
 from utils.config import get_network_name
-from utils import test_helpers
-from utils.deployed_date_time import date_time_contract
+from utils import test_helpers, deployed_date_time
 
 brownie.web3.enable_strict_bytes_type_checking()
 
@@ -87,9 +86,7 @@ def lego_program(accounts):
 
 @pytest.fixture(scope="module")
 def lido_contracts():
-    # Have this as a fixture to cache the result.
-    network_name = get_network_name()
-    return contracts(network_name)
+    return contracts(network=brownie.network.show_active())
 
 
 @pytest.fixture(scope="module")
@@ -420,4 +417,4 @@ def vote_id_from_env() -> Optional[int]:
 
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
-    return date_time_contract(get_network_name())
+    return deployed_date_time.date_time_contract(network=brownie.network.show_active())

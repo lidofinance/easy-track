@@ -1,6 +1,7 @@
 import sys
 import pytest
 import constants
+import brownie
 from brownie.network import chain
 from brownie import (
     EasyTrack,
@@ -13,7 +14,7 @@ from brownie import (
 from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
-from utils.lido import create_voting, execute_voting
+from utils.lido import contracts
 
 from utils.config import get_network_name
 
@@ -31,6 +32,7 @@ def test_node_operators_easy_track(
     IncreaseNodeOperatorStakingLimit,
 ):
     deployer = accounts[0]
+    lido_contracts = contracts(network=brownie.network.show_active())
 
     # deploy easy track
     easy_track = deployer.deploy(
@@ -75,8 +77,8 @@ def test_node_operators_easy_track(
 
     # create voting to grant permissions to EVM script executor to set staking limit
 
-    add_set_staking_limit_permissions_voting_id, _ = create_voting(
-        encode_call_script(
+    add_set_staking_limit_permissions_voting_id, _ = lido_contracts.create_voting(
+        evm_script=encode_call_script(
             [
                 (
                     acl.address,
@@ -88,12 +90,11 @@ def test_node_operators_easy_track(
                 ),
             ]
         ),
-        "Grant permissions to EVMScriptExecutor to set staking limits",
-        get_network_name(),
-        {"from": agent},
+        description="Grant permissions to EVMScriptExecutor to set staking limits",
+        tx_params={"from": agent},
     )
 
-    execute_voting(add_set_staking_limit_permissions_voting_id)
+    lido_contracts.execute_voting(add_set_staking_limit_permissions_voting_id)
 
     # create vote to add test node operator
     node_operator = {"name": "test_node_operator", "address": accounts[3]}
@@ -104,17 +105,17 @@ def test_node_operators_easy_track(
         [(node_operators_registry.address, add_node_operator_calldata)]
     )
 
-    add_node_operators_voting_id, _ = create_voting(
-        add_node_operator_evm_script,
-        "Add node operator to registry",
-        get_network_name(),
-        {"from": agent},
+    add_node_operators_voting_id, _ = lido_contracts.create_voting(
+        evm_script=add_node_operator_evm_script,
+        description="Add node operator to registry",
+        tx_params={"from": agent},
     )
+
     # execute vote to add test node operator
-    execute_voting(add_node_operators_voting_id)
+    lido_contracts.execute_voting(add_node_operators_voting_id)
 
     # validate new node operator id
-    new_node_operator_id = node_operators_registry.getActiveNodeOperatorsCount() - 1
+    new_node_operator_id = node_operators_registry.getNodeOperatorsCount() - 1
     new_node_operator = node_operators_registry.getNodeOperator(
         new_node_operator_id, True
     )
@@ -197,6 +198,7 @@ def test_reward_programs_easy_track(
     reward_program = accounts[5]
     reward_program_title = "New Reward Program"
     trusted_address = accounts[7]
+    lido_contracts = contracts(network=brownie.network.show_active())
 
     # deploy easy track
     easy_track = deployer.deploy(
@@ -276,8 +278,8 @@ def test_reward_programs_easy_track(
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
     # create voting to grant permissions to EVM script executor to create new payments
-    add_create_payments_permissions_voting_id, _ = create_voting(
-        encode_call_script(
+    add_create_payments_permissions_voting_id, _ = lido_contracts.create_voting(
+        evm_script=encode_call_script(
             [
                 (
                     acl.address,
@@ -289,13 +291,12 @@ def test_reward_programs_easy_track(
                 ),
             ]
         ),
-        "Grant permissions to EVMScriptExecutor to make payments",
-        get_network_name(),
-        {"from": agent},
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(add_create_payments_permissions_voting_id)
+    lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
     # create new motion to add reward program
     tx = easy_track.createMotion(
@@ -381,6 +382,7 @@ def test_lego_easy_track(
 ):
     deployer = accounts[0]
     trusted_address = accounts[7]
+    lido_contracts = contracts(network=brownie.network.show_active())
 
     # deploy easy track
     easy_track = deployer.deploy(
@@ -417,8 +419,8 @@ def test_lego_easy_track(
     assert evm_script_factories[0] == top_up_lego_program
 
     # create voting to grant permissions to EVM script executor to create new payments
-    add_create_payments_permissions_voting_id, _ = create_voting(
-        encode_call_script(
+    add_create_payments_permissions_voting_id, _ = lido_contracts.create_voting(
+        evm_script=encode_call_script(
             [
                 (
                     acl.address,
@@ -430,16 +432,15 @@ def test_lego_easy_track(
                 ),
             ]
         ),
-        "Grant permissions to EVMScriptExecutor to make payments",
-        get_network_name(),
-        {"from": agent},
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(add_create_payments_permissions_voting_id)
+    lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
     # create new motion to make transfers to lego programs
-    ldo_amount, steth_amount, eth_amount = 10**18, 2 * 10**18, 3 * 10**18
+    ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
 
     tx = easy_track.createMotion(
         top_up_lego_program,

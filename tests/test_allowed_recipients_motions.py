@@ -1,3 +1,4 @@
+import brownie
 from typing import Optional, NamedTuple, Any
 from brownie.network import chain
 from brownie import reverts
@@ -23,7 +24,7 @@ from utils.test_helpers import (
 )
 
 from utils.config import get_network_name
-from utils.lido import create_voting, execute_voting
+from utils.lido import contracts
 
 import constants
 
@@ -50,6 +51,7 @@ class AllowedRecipientsSetupWithTwoRecipients(NamedTuple):
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 DEFAULT_PERIOD_DURATION_MONTHS = 3
+
 
 @pytest.fixture(scope="module")
 def entire_allowed_recipients_setup(
@@ -117,11 +119,15 @@ def entire_allowed_recipients_setup(
     # add TopUpAllowedRecipients EVM script factory to easy track
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
-    update_limit_permission = create_permission(allowed_recipients_registry, "updateSpentAmount")
+    update_limit_permission = create_permission(
+        allowed_recipients_registry, "updateSpentAmount"
+    )
 
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
-    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
+    easy_track.addEVMScriptFactory(
+        top_up_allowed_recipients, permissions, {"from": deployer}
+    )
 
     # deploy AddAllowedRecipient EVM script factory
     add_allowed_recipient = deployer.deploy(
@@ -147,13 +153,17 @@ def entire_allowed_recipients_setup(
         allowed_recipients_registry, "removeRecipient"
     )
     easy_track.addEVMScriptFactory(
-        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
+        remove_allowed_recipient,
+        remove_allowed_recipient_permission,
+        {"from": deployer},
     )
 
     # create voting to grant permissions to EVM script executor to create new payments
     network_name = get_network_name()
 
-    add_create_payments_permissions_voting_id, _ = create_voting(
+    lido_contracts = contracts(network=brownie.network.show_active())
+
+    add_create_payments_permissions_voting_id, _ = lido_contracts.create_voting(
         evm_script=encode_call_script(
             [
                 (
@@ -167,12 +177,11 @@ def entire_allowed_recipients_setup(
             ]
         ),
         description="Grant permissions to EVMScriptExecutor to make payments",
-        network=network_name,
         tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(add_create_payments_permissions_voting_id, network_name)
+    lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
     return AllowedRecipientsSetup(
         easy_track,
@@ -228,7 +237,10 @@ def entire_allowed_recipients_setup_with_two_recipients(
         motion2_calldata,
         {"from": stranger},
     )
-    assert allowed_recipients_registry.getAllowedRecipients() == [recipient1, recipient2]
+    assert allowed_recipients_registry.getAllowedRecipients() == [
+        recipient1,
+        recipient2,
+    ]
 
     return AllowedRecipientsSetupWithTwoRecipients(
         easy_track,
@@ -242,13 +254,17 @@ def entire_allowed_recipients_setup_with_two_recipients(
     )
 
 
-def test_add_recipient_motion(entire_allowed_recipients_setup: AllowedRecipientsSetup, accounts):
+def test_add_recipient_motion(
+    entire_allowed_recipients_setup: AllowedRecipientsSetup, accounts
+):
     setup = entire_allowed_recipients_setup
 
     recipient = accounts[8]
     recipient_title = "New Allowed Recipient"
 
-    call_data = encode_calldata("(address,string)", [recipient.address, recipient_title])
+    call_data = encode_calldata(
+        "(address,string)", [recipient.address, recipient_title]
+    )
     assert setup.add_recipient_factory.decodeEVMScriptCallData(call_data) == [
         recipient.address,
         recipient_title,
@@ -306,8 +322,12 @@ def test_add_multiple_recipients_by_concurrent_motions(
 
     # Enact in reverse order just to check that order in the registry
     # depends on the order of motions enactment but order of creation
-    setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.easy_track})
-    setup.easy_track.enactMotion(motion1_id, motion1_calldata, {"from": setup.easy_track})
+    setup.easy_track.enactMotion(
+        motion2_id, motion2_calldata, {"from": setup.easy_track}
+    )
+    setup.easy_track.enactMotion(
+        motion1_id, motion1_calldata, {"from": setup.easy_track}
+    )
 
     assert setup.registry.isRecipientAllowed(recipient1)
     assert setup.registry.isRecipientAllowed(recipient2)
@@ -340,10 +360,14 @@ def test_fail_add_same_recipient_by_second_concurrent_motion(
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
-    setup.easy_track.enactMotion(motion1_id, motion1_calldata, {"from": setup.easy_track})
+    setup.easy_track.enactMotion(
+        motion1_id, motion1_calldata, {"from": setup.easy_track}
+    )
 
     with reverts("ALLOWED_RECIPIENT_ALREADY_ADDED"):
-        setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.easy_track})
+        setup.easy_track.enactMotion(
+            motion2_id, motion2_calldata, {"from": setup.easy_track}
+        )
 
 
 def test_fail_if_add_same_recipient_twice(
@@ -364,7 +388,9 @@ def test_fail_if_add_same_recipient_twice(
         )
 
 
-def test_remove_recipient_motion(entire_allowed_recipients_setup: AllowedRecipientsSetup, accounts):
+def test_remove_recipient_motion(
+    entire_allowed_recipients_setup: AllowedRecipientsSetup, accounts
+):
     setup = entire_allowed_recipients_setup
 
     recipient = accounts[8]
@@ -376,7 +402,10 @@ def test_remove_recipient_motion(entire_allowed_recipients_setup: AllowedRecipie
     assert len(setup.registry.getAllowedRecipients()) == 1
 
     call_data = encode_single("(address)", [recipient.address])
-    assert setup.remove_recipient_factory.decodeEVMScriptCallData(call_data) == recipient.address
+    assert (
+        setup.remove_recipient_factory.decodeEVMScriptCallData(call_data)
+        == recipient.address
+    )
 
     tx = setup.easy_track.createMotion(
         setup.remove_recipient_factory,
@@ -445,9 +474,9 @@ def test_top_up_single_recipient(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address]
-    amounts = [2 * 10**18]
+    amounts = [2 * 10 ** 18]
 
-    period_limit = 3 * 10**18
+    period_limit = 3 * 10 ** 18
     period_duration = DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
@@ -465,8 +494,12 @@ def test_top_up_single_recipient(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
-    tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, amounts, setup.registry, setup.top_up_factory)
+    tx = setup.easy_track.enactMotion(
+        motion_id, script_call_data, {"from": setup.recipient1}
+    )
+    check_top_up(
+        tx, balances_before, recipients, amounts, setup.registry, setup.top_up_factory
+    )
 
 
 def test_top_up_multiple_recipients(
@@ -474,9 +507,9 @@ def test_top_up_multiple_recipients(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address, setup.recipient2.address]
-    amounts = [2 * 10**18, 1 * 10**18]
+    amounts = [2 * 10 ** 18, 1 * 10 ** 18]
 
-    period_limit = 4 * 10**18
+    period_limit = 4 * 10 ** 18
     period_duration = DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
@@ -494,8 +527,12 @@ def test_top_up_multiple_recipients(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
-    tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, amounts, setup.registry, setup.top_up_factory)
+    tx = setup.easy_track.enactMotion(
+        motion_id, script_call_data, {"from": setup.recipient1}
+    )
+    check_top_up(
+        tx, balances_before, recipients, amounts, setup.registry, setup.top_up_factory
+    )
 
 
 def test_top_up_motion_enacted_in_next_period(
@@ -503,7 +540,7 @@ def test_top_up_motion_enacted_in_next_period(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     payouts = [int(3e18), int(90e18)]
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
@@ -519,8 +556,12 @@ def test_top_up_motion_enacted_in_next_period(
     chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
-    tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    tx = setup.easy_track.enactMotion(
+        motion_id, script_call_data, {"from": setup.recipient1}
+    )
+    check_top_up(
+        tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory
+    )
 
 
 def test_top_up_motion_ended_and_enacted_in_next_period(
@@ -528,7 +569,7 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     payouts = [int(3e18), int(90e18)]
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
@@ -549,8 +590,12 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
     chain.sleep(constants.MIN_MOTION_DURATION)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
-    tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    tx = setup.easy_track.enactMotion(
+        motion_id, script_call_data, {"from": setup.recipient1}
+    )
+    check_top_up(
+        tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory
+    )
     _, _, *new_period_range = setup.registry.getPeriodState()
     assert (
         old_period_range != new_period_range
@@ -562,7 +607,7 @@ def test_top_up_motion_enacted_in_second_next_period(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     payouts = [int(3e18), int(90e18)]
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
@@ -578,8 +623,12 @@ def test_top_up_motion_enacted_in_second_next_period(
     chain.sleep(2 * period_duration * MAX_SECONDS_IN_MONTH)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
-    tx = setup.easy_track.enactMotion(motion_id, script_call_data, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    tx = setup.easy_track.enactMotion(
+        motion_id, script_call_data, {"from": setup.recipient1}
+    )
+    check_top_up(
+        tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory
+    )
 
 
 def test_spendable_balance_is_renewed_in_next_period(
@@ -587,7 +636,7 @@ def test_spendable_balance_is_renewed_in_next_period(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -616,7 +665,10 @@ def test_spendable_balance_is_renewed_in_next_period(
     # because they are not updated without a call of updateSpentAmount
     # or setLimitParameters. So trying to make a full period limit amount payout
     do_payout_to_allowed_recipients_by_motion(
-        [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
+        [setup.recipient1.address],
+        [period_limit],
+        setup.easy_track,
+        setup.top_up_factory,
     )
     assert setup.registry.getPeriodState()[0] == period_limit
     assert setup.registry.spendableBalance() == 0
@@ -627,7 +679,7 @@ def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -640,11 +692,16 @@ def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
     )
 
     remove_recipient_by_motion(
-        setup.recipient1, setup.easy_track, setup.remove_recipient_factory, setup.registry
+        setup.recipient1,
+        setup.easy_track,
+        setup.remove_recipient_factory,
+        setup.registry,
     )
 
     with reverts("RECIPIENT_NOT_ALLOWED"):
-        setup.easy_track.enactMotion(motion1_id, motion1_calldata, {"from": setup.recipient1})
+        setup.easy_track.enactMotion(
+            motion1_id, motion1_calldata, {"from": setup.recipient1}
+        )
 
 
 def test_fail_create_top_up_motion_if_exceeds_limit(
@@ -652,7 +709,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -660,7 +717,10 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(
-            [setup.recipient1.address], [period_limit + 1], setup.easy_track, setup.top_up_factory
+            [setup.recipient1.address],
+            [period_limit + 1],
+            setup.easy_track,
+            setup.top_up_factory,
         )
 
 
@@ -670,7 +730,7 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -685,7 +745,9 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
 
     payout2 = [1, 1]
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        create_top_up_motion(recipients, payout2, setup.easy_track, setup.top_up_factory)
+        create_top_up_motion(
+            recipients, payout2, setup.easy_track, setup.top_up_factory
+        )
 
 
 def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
@@ -694,7 +756,7 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -712,14 +774,20 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
 
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
-    setup.easy_track.enactMotion(motion1_id, motion1_calldata, {"from": setup.recipient1})
+    setup.easy_track.enactMotion(
+        motion1_id, motion1_calldata, {"from": setup.recipient1}
+    )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.recipient1})
+        setup.easy_track.enactMotion(
+            motion2_id, motion2_calldata, {"from": setup.recipient1}
+        )
 
     chain.sleep(period_duration * MAX_SECONDS_IN_MONTH)
 
-    setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": setup.recipient1})
+    setup.easy_track.enactMotion(
+        motion2_id, motion2_calldata, {"from": setup.recipient1}
+    )
 
 
 def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
@@ -728,7 +796,7 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     """Revert 2nd payout which together with 1st payout exceed the current period limit"""
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -744,7 +812,9 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     assert sum(payout2) > setup.registry.spendableBalance()
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        create_top_up_motion(recipients, payout2, setup.easy_track, setup.top_up_factory)
+        create_top_up_motion(
+            recipients, payout2, setup.easy_track, setup.top_up_factory
+        )
 
 
 def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
@@ -752,14 +822,17 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
     motion_id, motion_calldata = create_top_up_motion(
-        [setup.recipient1.address], [period_limit], setup.easy_track, setup.top_up_factory
+        [setup.recipient1.address],
+        [period_limit],
+        setup.easy_track,
+        setup.top_up_factory,
     )
 
     setup.registry.setLimitParameters(
@@ -769,7 +842,9 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        setup.easy_track.enactMotion(motion_id, motion_calldata, {"from": setup.recipient1})
+        setup.easy_track.enactMotion(
+            motion_id, motion_calldata, {"from": setup.recipient1}
+        )
 
 
 def test_top_up_if_limit_increased_while_motion_is_in_flight(
@@ -777,7 +852,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     recipients = [setup.recipient1.address]
     payouts = [period_limit]
     setup.registry.setLimitParameters(
@@ -796,8 +871,12 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     chain.sleep(constants.MIN_MOTION_DURATION + 100)
 
     balances_before = get_balances(recipients, setup.top_up_factory.token())
-    tx = setup.easy_track.enactMotion(motion_id, motion_calldata, {"from": setup.recipient1})
-    check_top_up(tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory)
+    tx = setup.easy_track.enactMotion(
+        motion_id, motion_calldata, {"from": setup.recipient1}
+    )
+    check_top_up(
+        tx, balances_before, recipients, payouts, setup.registry, setup.top_up_factory
+    )
 
 
 def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_increased(
@@ -807,7 +886,7 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
     setup = entire_allowed_recipients_setup_with_two_recipients
     recipients = [setup.recipient1.address, setup.recipient2.address]
 
-    period_limit, period_duration = 100 * 10**18, DEFAULT_PERIOD_DURATION_MONTHS
+    period_limit, period_duration = 100 * 10 ** 18, DEFAULT_PERIOD_DURATION_MONTHS
     setup.registry.setLimitParameters(
         period_limit, period_duration, {"from": setup.evm_script_executor}
     )
@@ -831,7 +910,9 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
         setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": stranger})
 
     setup.registry.setLimitParameters(
-        period_limit + sum(payout2), period_duration, {"from": setup.evm_script_executor}
+        period_limit + sum(payout2),
+        period_duration,
+        {"from": setup.evm_script_executor},
     )
 
     setup.easy_track.enactMotion(motion2_id, motion2_calldata, {"from": stranger})
@@ -847,7 +928,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
 ):
     setup = entire_allowed_recipients_setup_with_two_recipients
 
-    period_limit = 100 * 10**18
+    period_limit = 100 * 10 ** 18
     recipients = [setup.recipient1.address]
     first_payout = [period_limit]
     second_payout = [1]  # just 1 wei
@@ -863,7 +944,10 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(
-            [setup.recipient1.address], second_payout, setup.easy_track, setup.top_up_factory
+            [setup.recipient1.address],
+            second_payout,
+            setup.easy_track,
+            setup.top_up_factory,
         )
 
     setup.registry.setLimitParameters(
@@ -874,7 +958,10 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     # the amount spent and the limit are left intact
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_motion(
-            [setup.recipient1.address], second_payout, setup.easy_track, setup.top_up_factory
+            [setup.recipient1.address],
+            second_payout,
+            setup.easy_track,
+            setup.top_up_factory,
         )
 
     advance_chain_time_to_beginning_of_the_next_period(new_period_duration)

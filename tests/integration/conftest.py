@@ -129,9 +129,7 @@ def easy_track(
 
     assert evm_script_executor.owner() == lido_contracts.aragon.voting
 
-    create_payments_permission = lido.permissions(
-        contracts=lido_contracts
-    ).finance.CREATE_PAYMENTS_ROLE
+    create_payments_permission = lido_contracts.permissions.finance.CREATE_PAYMENTS_ROLE
 
     if not lido_contracts.aragon.acl.hasPermission(
         evm_script_executor,
@@ -300,7 +298,6 @@ def remove_allowed_recipient_by_motion(AllowedRecipientsRegistry, easy_track, st
 @pytest.fixture(scope="module")
 def top_up_allowed_recipients_evm_script_factory(
     TopUpAllowedRecipients,
-    ldo,
     easy_track,
     lido_contracts,
     load_deployed_contract,
@@ -314,7 +311,10 @@ def top_up_allowed_recipients_evm_script_factory(
 
     if evm_script_factory is None:
         tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
-            trusted_caller, allowed_recipients_registry, ldo, {"from": deployer}
+            trusted_caller,
+            allowed_recipients_registry,
+            lido_contracts.ldo,
+            {"from": deployer},
         )
 
         evm_script_factory = TopUpAllowedRecipients.at(

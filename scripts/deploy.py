@@ -9,7 +9,7 @@ from utils.constants import (
 
 
 def main():
-    contracts = lido.contracts()
+    contracts = lido.contracts(network.show_active())
     deployer = get_deployer_account(get_is_live())
 
     # address of Lido's LEGO program
