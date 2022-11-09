@@ -10,6 +10,7 @@ from utils.evm_script import encode_call_script, encode_calldata
 from utils.lido import contracts, create_voting, execute_voting
 from utils.config import get_network_name
 from utils import test_helpers
+from utils.deployed_date_time import date_time_contract
 
 brownie.web3.enable_strict_bytes_type_checking()
 
@@ -419,4 +420,4 @@ def vote_id_from_env() -> Optional[int]:
 
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
-    return "0x23d23d8f243e57d0b924bff3a3191078af325101"
+    return date_time_contract(get_network_name())
