@@ -22,24 +22,26 @@ def allowed_recipients_builder(
     owner,
     AllowedRecipientsBuilder,
     allowed_recipients_factory,
-    entire_allowed_recipients_setup,
     agent,
     finance,
+    easy_track,
+    evm_script_executor,
     bokkyPooBahsDateTimeContract,
 ):
     return owner.deploy(
         AllowedRecipientsBuilder,
         allowed_recipients_factory,
-        entire_allowed_recipients_setup.evm_script_executor,
+        evm_script_executor,
         agent,
-        entire_allowed_recipients_setup.easy_track,
+        easy_track,
         finance,
         bokkyPooBahsDateTimeContract
     )
 
 def test_builder_contructor_params(
     allowed_recipients_factory,
-    entire_allowed_recipients_setup,
+    easy_track,
+    evm_script_executor,
     agent,
     finance,
     bokkyPooBahsDateTimeContract,
@@ -48,9 +50,9 @@ def test_builder_contructor_params(
     assert allowed_recipients_builder.factory() == allowed_recipients_factory
     assert allowed_recipients_builder.defaultAdmin() == agent
     assert allowed_recipients_builder.finance() == finance
-    assert allowed_recipients_builder.easyTrack() == entire_allowed_recipients_setup.easy_track
+    assert allowed_recipients_builder.easyTrack() == easy_track
     assert allowed_recipients_builder.bokkyPooBahsDateTimeContract() == bokkyPooBahsDateTimeContract
-    assert allowed_recipients_builder.evmScriptExecutor() == entire_allowed_recipients_setup.evm_script_executor
+    assert allowed_recipients_builder.evmScriptExecutor() == evm_script_executor
     
 
 def test_delploy_topup(
@@ -59,11 +61,11 @@ def test_delploy_topup(
     stranger, 
     ldo,
     finance,
-    entire_allowed_recipients_setup,
+    easy_track,
     TopUpAllowedRecipients
 ):
-    trustedCaller = accounts[3];
-    registry = accounts[4];
+    trustedCaller = accounts[3]
+    registry = accounts[4]
 
     tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
         trustedCaller,
@@ -79,7 +81,7 @@ def test_delploy_topup(
     assert tx.events["TopUpAllowedRecipientsDeployed"]["allowedRecipientsRegistry"] == registry
     assert tx.events["TopUpAllowedRecipientsDeployed"]["finance"] == finance
     assert tx.events["TopUpAllowedRecipientsDeployed"]["token"] == ldo
-    assert tx.events["TopUpAllowedRecipientsDeployed"]["easyTrack"] == entire_allowed_recipients_setup.easy_track
+    assert tx.events["TopUpAllowedRecipientsDeployed"]["easyTrack"] == easy_track
 
     topUpAllowedRecipients = Contract.from_abi(
         "TopUpAllowedRecipients", 
@@ -91,7 +93,7 @@ def test_delploy_topup(
     assert topUpAllowedRecipients.trustedCaller() == trustedCaller
     assert topUpAllowedRecipients.finance() == finance
     assert topUpAllowedRecipients.token() == ldo
-    assert topUpAllowedRecipients.easyTrack() == entire_allowed_recipients_setup.easy_track
+    assert topUpAllowedRecipients.easyTrack() == easy_track
 
 
 def test_delploy_add_recipient(
@@ -161,7 +163,7 @@ def test_delploy_recipients_registry(
     accounts,
     stranger, 
     agent,
-    entire_allowed_recipients_setup,
+    evm_script_executor,
     AllowedRecipientsRegistry
 ):
     limit = 1e18
@@ -204,11 +206,11 @@ def test_delploy_recipients_registry(
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
-    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(SET_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
@@ -266,7 +268,7 @@ def test_deploy_full_setup(
     stranger, 
     agent,
     ldo,
-    entire_allowed_recipients_setup,
+    evm_script_executor,
     AllowedRecipientsRegistry,
     AddAllowedRecipient,
     RemoveAllowedRecipient,
@@ -356,11 +358,11 @@ def test_deploy_full_setup(
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
-    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(SET_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
@@ -375,7 +377,7 @@ def test_delploy_deploy_single_recipient_top_up_only_setup(
     agent,
     ldo,
     stranger,
-    entire_allowed_recipients_setup,
+    evm_script_executor,
     AllowedRecipientsRegistry,
     TopUpAllowedRecipients
 ):
@@ -429,11 +431,11 @@ def test_delploy_deploy_single_recipient_top_up_only_setup(
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
-    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(SET_PARAMETERS_ROLE, entire_allowed_recipients_setup.evm_script_executor)
-    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, entire_allowed_recipients_setup.evm_script_executor)
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
     assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
     assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)

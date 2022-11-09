@@ -4,7 +4,7 @@ from brownie import reverts
 import pytest
 
 from eth_abi import encode_single
-from utils.evm_script import encode_calldata
+from utils.evm_script import encode_calldata, encode_call_script
 
 
 from utils.allowed_recipients_motions import (
@@ -21,6 +21,9 @@ from utils.test_helpers import (
     advance_chain_time_to_beginning_of_the_next_period,
     advance_chain_time_to_n_seconds_before_current_period_end,
 )
+
+from utils.config import get_network_name
+from utils.lido import create_voting, execute_voting
 
 import constants
 
@@ -47,6 +50,196 @@ class AllowedRecipientsSetupWithTwoRecipients(NamedTuple):
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 DEFAULT_PERIOD_DURATION_MONTHS = 3
+
+@pytest.fixture(scope="module")
+def entire_allowed_recipients_setup(
+    accounts,
+    owner,
+    ldo,
+    voting,
+    calls_script,
+    finance,
+    agent,
+    acl,
+    EasyTrack,
+    EVMScriptExecutor,
+    bokkyPooBahsDateTimeContract,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+    AddAllowedRecipient,
+    RemoveAllowedRecipient,
+):
+    deployer = owner
+    trusted_factories_caller = accounts[7]
+
+    def create_permission(contract, method):
+        return contract.address + getattr(contract, method).signature[2:]
+
+    # deploy easy track
+    easy_track = deployer.deploy(
+        EasyTrack,
+        ldo,
+        deployer,
+        constants.MIN_MOTION_DURATION,
+        constants.MAX_MOTIONS_LIMIT,
+        constants.DEFAULT_OBJECTIONS_THRESHOLD,
+    )
+
+    # deploy evm script executor
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, calls_script, easy_track)
+    evm_script_executor.transferOwnership(voting, {"from": deployer})
+    assert evm_script_executor.owner() == voting
+
+    # set EVM script executor in easy track
+    easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
+
+    # deploy AllowedRecipientsRegistry
+    allowed_recipients_registry = deployer.deploy(
+        AllowedRecipientsRegistry,
+        voting,
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        [voting, evm_script_executor],
+        bokkyPooBahsDateTimeContract,
+    )
+
+    # deploy TopUpAllowedRecipients EVM script factory
+    top_up_allowed_recipients = deployer.deploy(
+        TopUpAllowedRecipients,
+        trusted_factories_caller,
+        allowed_recipients_registry,
+        finance,
+        ldo,
+        easy_track,
+    )
+
+    # add TopUpAllowedRecipients EVM script factory to easy track
+    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
+
+    update_limit_permission = create_permission(allowed_recipients_registry, "updateSpentAmount")
+
+    permissions = new_immediate_payment_permission + update_limit_permission[2:]
+
+    easy_track.addEVMScriptFactory(top_up_allowed_recipients, permissions, {"from": deployer})
+
+    # deploy AddAllowedRecipient EVM script factory
+    add_allowed_recipient = deployer.deploy(
+        AddAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
+    )
+
+    # add AddAllowedRecipient EVM script factory to easy track
+    add_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "addRecipient"
+    )
+
+    easy_track.addEVMScriptFactory(
+        add_allowed_recipient, add_allowed_recipient_permission, {"from": deployer}
+    )
+
+    # deploy RemoveAllowedRecipient EVM script factory
+    remove_allowed_recipient = deployer.deploy(
+        RemoveAllowedRecipient, trusted_factories_caller, allowed_recipients_registry
+    )
+
+    # add RemoveAllowedRecipient EVM script factory to easy track
+    remove_allowed_recipient_permission = create_permission(
+        allowed_recipients_registry, "removeRecipient"
+    )
+    easy_track.addEVMScriptFactory(
+        remove_allowed_recipient, remove_allowed_recipient_permission, {"from": deployer}
+    )
+
+    # create voting to grant permissions to EVM script executor to create new payments
+    network_name = get_network_name()
+
+    add_create_payments_permissions_voting_id, _ = create_voting(
+        evm_script=encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        evm_script_executor,
+                        finance,
+                        finance.CREATE_PAYMENTS_ROLE(),
+                    ),
+                ),
+            ]
+        ),
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        network=network_name,
+        tx_params={"from": agent},
+    )
+
+    # execute voting to add permissions to EVM script executor to create payments
+    execute_voting(add_create_payments_permissions_voting_id, network_name)
+
+    return AllowedRecipientsSetup(
+        easy_track,
+        evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+    )
+
+
+@pytest.fixture(scope="module")
+def entire_allowed_recipients_setup_with_two_recipients(
+    entire_allowed_recipients_setup, accounts, stranger
+):
+    (
+        easy_track,
+        evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+    ) = entire_allowed_recipients_setup
+
+    recipient1 = accounts[8]
+    recipient1_title = "Recipient 1"
+    recipient2 = accounts[9]
+    recipient2_title = "Recipient 2"
+
+    tx = easy_track.createMotion(
+        add_allowed_recipient,
+        encode_calldata("(address,string)", [recipient1.address, recipient1_title]),
+        {"from": add_allowed_recipient.trustedCaller()},
+    )
+    motion1_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    tx = easy_track.createMotion(
+        add_allowed_recipient,
+        encode_calldata("(address,string)", [recipient2.address, recipient2_title]),
+        {"from": add_allowed_recipient.trustedCaller()},
+    )
+    motion2_calldata = tx.events["MotionCreated"]["_evmScriptCallData"]
+
+    chain.sleep(constants.MIN_MOTION_DURATION + 100)
+
+    easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion1_calldata,
+        {"from": stranger},
+    )
+    easy_track.enactMotion(
+        easy_track.getMotions()[0][0],
+        motion2_calldata,
+        {"from": stranger},
+    )
+    assert allowed_recipients_registry.getAllowedRecipients() == [recipient1, recipient2]
+
+    return AllowedRecipientsSetupWithTwoRecipients(
+        easy_track,
+        evm_script_executor,
+        allowed_recipients_registry,
+        top_up_allowed_recipients,
+        add_allowed_recipient,
+        remove_allowed_recipient,
+        recipient1,
+        recipient2,
+    )
 
 
 def test_add_recipient_motion(entire_allowed_recipients_setup: AllowedRecipientsSetup, accounts):
