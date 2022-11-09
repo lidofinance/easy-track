@@ -3,7 +3,7 @@ from utils.evm_script import encode_call_script
 
 
 def addresses(network="mainnet"):
-    if network == "mainnet":
+    if network == "mainnet" or network == "mainnet-fork":
         return LidoSetup(
             aragon=AragonSetup(
                 acl="0x9895F0F17cc1d1891b6f18ee0b483B6f221b37Bb",
@@ -18,7 +18,7 @@ def addresses(network="mainnet"):
             oracle="0x442af784A788A5bd6F42A01Ebe9F287a871243fb",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
         )
-    if network == "goerli":
+    if network == "goerli" or network == "goerli-fork":
         return LidoSetup(
             aragon=AragonSetup(
                 acl="0xb3cf58412a00282934d3c3e73f49347567516e98",

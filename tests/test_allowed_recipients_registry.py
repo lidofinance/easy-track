@@ -7,8 +7,6 @@ from brownie import accounts, reverts, ZERO_ADDRESS
 
 from utils.evm_script import encode_call_script
 
-from conftest import AllowedRecipientsSetup
-
 from utils.test_helpers import (
     assert_single_event,
     assert_event_exists,
@@ -464,37 +462,6 @@ def test_set_limit_parameters_happy_path(limits_checker):
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
     assert limits_checker.getLimitParameters() == (period_limit, period_duration)
     assert limits_checker.isUnderSpendableBalance(period_limit, 0)
-
-
-def test_set_limit_parameters_by_aragon_voting(
-    entire_allowed_recipients_setup: AllowedRecipientsSetup, agent
-):
-    allowed_recipients_registry = entire_allowed_recipients_setup.registry
-
-    period_limit, period_duration = 100 * 10**18, 6
-
-    """Do Aragon voting to set limit parameters to the allowed recipients registry"""
-    set_limit_parameters_voting_id, _ = create_voting(
-        evm_script=encode_call_script(
-            [
-                (
-                    allowed_recipients_registry.address,
-                    allowed_recipients_registry.setLimitParameters.encode_input(
-                        period_limit,
-                        period_duration,
-                    ),
-                ),
-            ]
-        ),
-        description="Set limit parameters",
-        network=get_network_name(),
-        tx_params={"from": agent},
-    )
-
-    # execute voting to add permissions to EVM script executor to create payments
-    execute_voting(set_limit_parameters_voting_id, get_network_name())
-
-    assert allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
 
 
 def test_period_range_calculation_for_all_allowed_period_durations(
