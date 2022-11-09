@@ -22,21 +22,8 @@ def main():
     if (not (network_name == "goerli" or network_name == "goerli-fork")):
         raise EnvironmentError("network is not supported")
 
-    recipients = [
-        "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
-        "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
-        "0xa5F1d7D49F581136Cf6e58B32cBE9a2039C48bA1",
-        "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
-        "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97"
-    ]
-    titles = [
-        'Default Reward Program',
-        'Happy',
-        'Sergey\'2 #add RewardProgram',
-        'Jumpgate Test',
-        'tester',
-    ]
     trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
+    token = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
     limit = 10_000 * 1e18
     period = 1
     spent_amount = 0
@@ -85,7 +72,7 @@ def main():
     tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
         trusted_caller,
         'Trusted multisig',
-        '0x6B175474E89094C44Da98b954EedeAC495271d0F',
+        token,
         limit,
         period,
         spent_amount,

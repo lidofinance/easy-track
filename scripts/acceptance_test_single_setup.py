@@ -1,9 +1,7 @@
 from brownie import (
     chain, 
     AllowedRecipientsRegistry, 
-    TopUpAllowedRecipients, 
-    AddAllowedRecipient, 
-    RemoveAllowedRecipient
+    TopUpAllowedRecipients
 )
 
 from utils.config import (
@@ -27,19 +25,13 @@ def main():
     if (not (network_name == "goerli" or network_name == "goerli-fork")):
         raise EnvironmentError("network is not supported")
 
-    recipients = [
-        "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
-        "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
-        "0xa5F1d7D49F581136Cf6e58B32cBE9a2039C48bA1",
-        "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
-        "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97"
-    ]
-    trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
+    recipient = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
+    token = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
     limit = 10_000 * 1e18
     period = 1
     spent_amount = 0
 
-    tx = chain.get_transaction("0xd8bfe8b817231afb4851ac5926a84feb69b0a204f6ac37c3f3b91c6b8180981d")
+    tx = chain.get_transaction("0xcf663eebff6ce76b03867a2f32c6456b5bbb4a11e6441798fb15409c7ca39fab")
 
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
@@ -48,13 +40,11 @@ def main():
 
     regestryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-    addRecipientAddress = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
-    removeAllowedRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
 
     log.br()
 
-    log.nb("recipients", recipients)
-    log.nb("trusted_caller", trusted_caller)
+    log.nb("recipient", recipient)
+    log.nb("token", token)
     log.nb("limit", limit)
     log.nb("period", period)
     log.nb("spent_amount", spent_amount)
@@ -63,27 +53,18 @@ def main():
 
     log.nb("AllowedRecipientsRegistryDeployed", regestryAddress)
     log.nb("TopUpAllowedRecipientsDeployed", topUpAddress)
-    log.nb("AddAllowedRecipientDeployed", addRecipientAddress)
-    log.nb("RemoveAllowedRecipientDeployed", removeAllowedRecipientAddress)
 
     log.br()
 
     registry = AllowedRecipientsRegistry.at(regestryAddress)
     topUpAllowedRecipients = TopUpAllowedRecipients.at(topUpAddress)
-    addAllowedRecipient = AddAllowedRecipient.at(addRecipientAddress)
-    removeAllowedRecipient = RemoveAllowedRecipient.at(removeAllowedRecipientAddress) 
 
-    assert topUpAllowedRecipients.token() == contracts.ldo
+    assert topUpAllowedRecipients.token() == token
     assert topUpAllowedRecipients.allowedRecipientsRegistry() == registry
-    assert topUpAllowedRecipients.trustedCaller() == trusted_caller
-    assert addAllowedRecipient.allowedRecipientsRegistry() == registry
-    assert addAllowedRecipient.trustedCaller() == trusted_caller
-    assert removeAllowedRecipient.allowedRecipientsRegistry() == registry
-    assert removeAllowedRecipient.trustedCaller() == trusted_caller
+    assert topUpAllowedRecipients.trustedCaller() == recipient
 
-    assert len(registry.getAllowedRecipients()) == len(recipients)
-    for recipient in recipients:
-        assert registry.isRecipientAllowed(recipient)
+    assert len(registry.getAllowedRecipients()) == 1
+    assert registry.isRecipientAllowed(recipient)
     
     registryLimit, registryPeriodDuration = registry.getLimitParameters()
     assert registryLimit == limit
@@ -97,8 +78,8 @@ def main():
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, contracts.aragon.agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
 
-    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
-    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
     assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
