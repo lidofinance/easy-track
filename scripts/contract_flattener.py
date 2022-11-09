@@ -16,17 +16,17 @@ LICENSE_PATTERN = re.compile(r"^// SPDX-License-Identifier: (.*)$", re.MULTILINE
 
 def find_dependencies(contract, available_contract_list, sources):
     result = []
-    current_deps = [x[2] for x in IMPORT_PATTERN.findall(contract)]
+    current_deps = [x[2] for x in IMPORT_PATTERN.findall(sources[contract]["content"])]
 
     for contract_dep in current_deps:
-        inner_results = find_dependencies(
-            sources[contract_dep]["content"], available_contract_list, sources
-        )
+        inner_results = find_dependencies(contract_dep, available_contract_list, sources)
 
         for inner_result in inner_results:
             result.append(inner_result)
 
         result.append(contract_dep)
+
+    result.append(contract)
 
     return result
 
@@ -38,9 +38,7 @@ def flatten_contract(container):
 
     contracts_to_be_included = list(sources.keys())
 
-    dependencies = find_dependencies(
-        sources[contract_name + ".sol"]["content"], contracts_to_be_included, sources
-    )
+    dependencies = find_dependencies(contract_name + ".sol", contracts_to_be_included, sources)
 
     for dependency in dependencies:
         if dependency in contracts_to_be_included:
