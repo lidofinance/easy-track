@@ -1,3 +1,4 @@
+from typing import Optional, NamedTuple, Any
 from brownie.network import chain
 from brownie import reverts
 import pytest
@@ -5,10 +6,6 @@ import pytest
 from eth_abi import encode_single
 from utils.evm_script import encode_calldata
 
-from conftest import (
-    AllowedRecipientsSetup,
-    AllowedRecipientsSetupWithTwoRecipients,
-)
 
 from utils.allowed_recipients_motions import (
     add_recipient_by_motion,
@@ -26,6 +23,26 @@ from utils.test_helpers import (
 )
 
 import constants
+
+
+class AllowedRecipientsSetup(NamedTuple):
+    easy_track: Any
+    evm_script_executor: Any
+    registry: Any
+    top_up_factory: Any
+    add_recipient_factory: Any
+    remove_recipient_factory: Any
+
+
+class AllowedRecipientsSetupWithTwoRecipients(NamedTuple):
+    easy_track: Any
+    evm_script_executor: Any
+    registry: Any
+    top_up_factory: Any
+    add_recipient_factory: Any
+    remove_recipient_factory: Any
+    recipient1: Any
+    recipient2: Any
 
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60

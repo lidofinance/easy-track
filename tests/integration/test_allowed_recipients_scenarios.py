@@ -4,7 +4,7 @@ from brownie import reverts
 from brownie.network import chain
 from dataclasses import dataclass
 
-from utils import deployment, evm_script, test_helpers
+from utils import deployment, evm_script, test_helpers, lido, config
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
@@ -874,3 +874,33 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
         [r.address for r in allowed_recipients],
         second_top_up_amount,
     )
+
+def test_set_limit_parameters_by_aragon_agent_via_voting(
+ lido_contracts,
+ allowed_recipients_registry
+):
+    """Do Aragon Agent to set limit parameters to the allowed recipients registry"""
+    period_limit, period_duration = 100 * 10**18, 6
+
+    set_limit_parameters_voting_id, _ = lido.create_voting(
+        evm_script=evm_script.encode_call_script(
+            [
+                (lido_contracts.aragon.agent.address, lido_contracts.aragon.agent.execute.encode_input(
+                    allowed_recipients_registry,
+                    0,
+                    allowed_recipients_registry.setLimitParameters.encode_input(
+                        period_limit,
+                        period_duration,
+                    )
+                ))
+            ]
+        ),
+        description="Set limit parameters",
+        network=config.get_network_name(),
+        tx_params={"from": lido_contracts.aragon.agent},
+    )
+
+    # execute voting to add permissions to EVM script executor to create payments
+    lido.execute_voting(set_limit_parameters_voting_id, config.get_network_name())
+
+    assert allowed_recipients_registry.getLimitParameters() == (period_limit, period_duration)
