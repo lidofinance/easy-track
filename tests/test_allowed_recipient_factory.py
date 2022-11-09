@@ -261,9 +261,8 @@ def test_delploy_recipients_registry_reverts_spentAmount_gt_limit(
         )
 
 
-def test_delploy_deploy_full_setup(
-    allowed_recipients_builder, 
-    accounts,
+def test_deploy_full_setup(
+    allowed_recipients_builder,
     stranger, 
     agent,
     ldo,

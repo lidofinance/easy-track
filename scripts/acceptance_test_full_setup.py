@@ -31,13 +31,6 @@ def main():
         "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
         "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97"
     ]
-    titles = [
-        'Default Reward Program',
-        'Happy',
-        'Sergey\'2 #add RewardProgram',
-        'Jumpgate Test',
-        'tester',
-    ]
     trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
     limit = 10_000 * 1e18
     period = 1
@@ -98,4 +91,4 @@ def main():
     assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
 
-    
+
