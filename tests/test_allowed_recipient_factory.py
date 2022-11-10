@@ -25,13 +25,11 @@ def allowed_recipients_builder(
     agent,
     finance,
     easy_track,
-    evm_script_executor,
     bokkyPooBahsDateTimeContract,
 ):
     return owner.deploy(
         AllowedRecipientsBuilder,
         allowed_recipients_factory,
-        evm_script_executor,
         agent,
         easy_track,
         finance,

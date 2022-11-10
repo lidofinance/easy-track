@@ -106,7 +106,7 @@ def evm_script_factories_registry(owner, EVMScriptFactoriesRegistry):
 
 
 @pytest.fixture(scope="module")
-def easy_track(owner, ldo, voting, evm_script_executor_stub, EasyTrack):
+def easy_track(owner, ldo, voting, EasyTrack, EVMScriptExecutor, calls_script):
     contract = owner.deploy(
         EasyTrack,
         ldo,
@@ -115,13 +115,14 @@ def easy_track(owner, ldo, voting, evm_script_executor_stub, EasyTrack):
         constants.MAX_MOTIONS_LIMIT,
         constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
-    contract.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
+    evm_script_executor = owner.deploy(EVMScriptExecutor, calls_script, contract)
+    contract.setEVMScriptExecutor(evm_script_executor, {"from": voting})
     return contract
 
 
 @pytest.fixture(scope="module")
 def evm_script_executor(owner, easy_track, calls_script, EVMScriptExecutor):
-    return owner.deploy(EVMScriptExecutor, calls_script, easy_track)
+    return EVMScriptExecutor.at(easy_track.evmScriptExecutor())
 
 
 @pytest.fixture(scope="module")

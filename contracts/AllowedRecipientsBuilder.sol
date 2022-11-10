@@ -3,6 +3,10 @@
 
 pragma solidity ^0.8.4;
 
+interface IEasyTrack {
+    function evmScriptExecutor() external view returns (address);
+}
+
 interface IAllowedRecipientsRegistry {
     function addRecipient(address _recipient, string memory _title) external;
 
@@ -30,7 +34,7 @@ interface ITopUpAllowedRecipients {
 
     function finance() external view returns (address);
 
-    function easyTrack() external view returns (address);
+    function easyTrack() external view returns (IEasyTrack);
 
     function trustedCaller() external view returns (address);
 
@@ -64,7 +68,7 @@ interface IAllowedRecipientsFactory {
         address _allowedRecipientsRegistry,
         address _token,
         address _finance,
-        address _easyTrack
+        IEasyTrack _easyTrack
     ) external returns (ITopUpAllowedRecipients);
 
     function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
@@ -78,7 +82,7 @@ interface IAllowedRecipientsFactory {
 }
 
 contract AllowedRecipientsBuilder {
-    address public immutable easyTrack;
+    IEasyTrack public immutable easyTrack;
     address public immutable finance;
     address public immutable evmScriptExecutor;
     address public immutable defaultAdmin;
@@ -95,14 +99,13 @@ contract AllowedRecipientsBuilder {
 
     constructor(
         IAllowedRecipientsFactory _factory,
-        address _evmScriptExecutor,
         address _defaultAdmin,
-        address _easytrack,
+        IEasyTrack _easytrack,
         address _finance,
         address _bokkyPooBahsDateTimeContract
     ) {
         factory = _factory;
-        evmScriptExecutor = _evmScriptExecutor;
+        evmScriptExecutor = _easytrack.evmScriptExecutor();
         defaultAdmin = _defaultAdmin;
         easyTrack = _easytrack;
         finance = _finance;

@@ -551,7 +551,6 @@ def allowed_recipients_builder(
 
     return AllowedRecipientsBuilder.deploy(
         allowed_recipients_factory,
-        easy_track.evmScriptExecutor(),
         lido_contracts.aragon.agent,
         easy_track,
         lido_contracts.aragon.finance,

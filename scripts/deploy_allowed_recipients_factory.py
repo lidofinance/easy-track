@@ -70,7 +70,6 @@ def main():
         easy_track = easy_track,
         finance = contracts.aragon.finance,
         agent = contracts.aragon.agent,
-        evm_script_executor = evm_script_executor,
         bokky_poo_bahs_date_time_contract = bokky_poo_bahs_date_time_contract,
         tx_params = tx_params,
     )
@@ -93,7 +92,6 @@ def deploy_factory_and_builder(
     easy_track,
     finance,
     agent,
-    evm_script_executor,
     bokky_poo_bahs_date_time_contract,
     tx_params,
 ):
@@ -102,7 +100,6 @@ def deploy_factory_and_builder(
 
     builder = AllowedRecipientsBuilder.deploy(
         factory,
-        evm_script_executor,
         agent,
         easy_track,
         finance,
