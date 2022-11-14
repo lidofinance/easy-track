@@ -850,7 +850,7 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     assert limits_checker.getPeriodState()["_alreadySpentAmount"] == spending
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == spendable
 
-    new_period_limit = spending
+    new_period_limit = spending - 1
     new_spendable = 0
     # NB!: already spent amount decreased to the new limit
     new_spending = new_period_limit
