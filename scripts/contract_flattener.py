@@ -62,14 +62,24 @@ def flatten_contract(container):
     content.insert(0, "// SPDX-License-Identifier: " + " & ".join(licenses_list) + "\n")
     result = "".join(content)
 
-    filename = "./contracts_flattened/" + contract_name + ".sol"
+    return result
+
+
+def write_file(filename, content): 
     os.makedirs(os.path.dirname(filename), exist_ok=True)
     with open(filename, "w") as f:
-        f.write(result)
+        f.write(content)
+
+
+def flatten_contract_to_file(container):
+    contract_name = container.get_verification_info()["contract_name"]
+    content = flatten_contract(container)
+    filename = "./contracts_flattened/" + contract_name + ".sol"
+    write_file(filename, content)
 
 
 def main():
-    flatten_contract(AllowedRecipientsRegistry)
-    flatten_contract(TopUpAllowedRecipients)
-    flatten_contract(AddAllowedRecipient)
-    flatten_contract(RemoveAllowedRecipient)
+    flatten_contract_to_file(AllowedRecipientsRegistry)
+    flatten_contract_to_file(TopUpAllowedRecipients)
+    flatten_contract_to_file(AddAllowedRecipient)
+    flatten_contract_to_file(RemoveAllowedRecipient)
