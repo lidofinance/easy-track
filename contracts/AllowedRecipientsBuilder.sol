@@ -55,7 +55,7 @@ interface IRemoveAllowedRecipient {
 
 interface IAllowedRecipientsFactory {
     function deployAllowedRecipientsRegistry(
-        address _defaultAdmin,
+        address _admin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
@@ -85,7 +85,7 @@ contract AllowedRecipientsBuilder {
     IEasyTrack public immutable easyTrack;
     address public immutable finance;
     address public immutable evmScriptExecutor;
-    address public immutable defaultAdmin;
+    address public immutable admin;
     address public immutable bokkyPooBahsDateTimeContract;
     IAllowedRecipientsFactory public immutable factory;
 
@@ -99,14 +99,14 @@ contract AllowedRecipientsBuilder {
 
     constructor(
         IAllowedRecipientsFactory _factory,
-        address _defaultAdmin,
+        address _admin,
         IEasyTrack _easytrack,
         address _finance,
         address _bokkyPooBahsDateTimeContract
     ) {
         factory = _factory;
         evmScriptExecutor = _easytrack.evmScriptExecutor();
-        defaultAdmin = _defaultAdmin;
+        admin = _admin;
         easyTrack = _easytrack;
         finance = _finance;
         bokkyPooBahsDateTimeContract = _bokkyPooBahsDateTimeContract;
@@ -118,36 +118,36 @@ contract AllowedRecipientsBuilder {
         address[] memory _recipients,
         string[] memory _titles,
         uint256 _spentAmount,
-        bool _singleRecipient
+        bool _grantRightsToEVMScriptExecutor
     ) public returns (IAllowedRecipientsRegistry registry) {
         require(_recipients.length == _titles.length, "Recipients data length mismatch");
-        require(_spentAmount <= _limit, "_spentAmount must be lower then limit");
+        require(_spentAmount <= _limit, "_spentAmount must be lower or equal to limit");
 
         address[] memory addRecipientToAllowedListRoleHolders = new address[](
-            _singleRecipient ? 2 : 3
+            _grantRightsToEVMScriptExecutor ? 3 : 2
         );
-        addRecipientToAllowedListRoleHolders[0] = defaultAdmin;
+        addRecipientToAllowedListRoleHolders[0] = admin;
         addRecipientToAllowedListRoleHolders[1] = address(this);
-        if (!_singleRecipient) {
+        if (_grantRightsToEVMScriptExecutor) {
             addRecipientToAllowedListRoleHolders[2] = evmScriptExecutor;
         }
         address[] memory removeRecipientFromAllowedListRoleHolders = new address[](
-            _singleRecipient ? 1 : 2
+            _grantRightsToEVMScriptExecutor ? 2 : 1
         );
-        removeRecipientFromAllowedListRoleHolders[0] = defaultAdmin;
-        if (!_singleRecipient) {
+        removeRecipientFromAllowedListRoleHolders[0] = admin;
+        if (_grantRightsToEVMScriptExecutor) {
             removeRecipientFromAllowedListRoleHolders[1] = evmScriptExecutor;
         }
         address[] memory setLimitParametersRoleHolders = new address[](2);
-        setLimitParametersRoleHolders[0] = defaultAdmin;
+        setLimitParametersRoleHolders[0] = admin;
         setLimitParametersRoleHolders[1] = address(this);
         address[] memory updateSpentAmountRoleHolders = new address[](3);
-        updateSpentAmountRoleHolders[0] = defaultAdmin;
+        updateSpentAmountRoleHolders[0] = admin;
         updateSpentAmountRoleHolders[1] = evmScriptExecutor;
         updateSpentAmountRoleHolders[2] = address(this);
 
         registry = factory.deployAllowedRecipientsRegistry(
-            defaultAdmin,
+            admin,
             addRecipientToAllowedListRoleHolders,
             removeRecipientFromAllowedListRoleHolders,
             setLimitParametersRoleHolders,
@@ -155,55 +155,53 @@ contract AllowedRecipientsBuilder {
             bokkyPooBahsDateTimeContract
         );
 
-        require(registry.bokkyPooBahsDateTimeContract() == bokkyPooBahsDateTimeContract);
+        assert(registry.bokkyPooBahsDateTimeContract() == bokkyPooBahsDateTimeContract);
 
         for (uint256 i = 0; i < _recipients.length; i++) {
             registry.addRecipient(_recipients[i], _titles[i]);
         }
         registry.renounceRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this));
 
-        require(
-            registry.getAllowedRecipients().length == _recipients.length,
-            "Registry recipients count mismatch"
-        );
+        assert(registry.getAllowedRecipients().length == _recipients.length);
+
         for (uint256 i = 0; i < _recipients.length; i++) {
-            require(registry.isRecipientAllowed(_recipients[i]), "Recipient is not listed");
+            assert(registry.isRecipientAllowed(_recipients[i]));
         }
 
         registry.setLimitParameters(_limit, _periodDurationMonths);
         registry.renounceRole(SET_PARAMETERS_ROLE, address(this));
 
         (uint256 registryLimit, uint256 registryPeriodDuration) = registry.getLimitParameters();
-        require(registryLimit == _limit, "Wrong limit");
-        require(registryPeriodDuration == _periodDurationMonths, "Limit period mismatch");
+        assert(registryLimit == _limit);
+        assert(registryPeriodDuration == _periodDurationMonths);
 
         registry.updateSpentAmount(_spentAmount);
         registry.renounceRole(UPDATE_SPENT_AMOUNT_ROLE, address(this));
 
-        require(registry.spendableBalance() == _limit - _spentAmount, "Wrong spendableBalance");
+        assert(registry.spendableBalance() == _limit - _spentAmount);
 
-        require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, defaultAdmin));
-        require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, defaultAdmin));
-        require(registry.hasRole(SET_PARAMETERS_ROLE, defaultAdmin));
-        require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, defaultAdmin));
-        require(registry.hasRole(DEFAULT_ADMIN_ROLE, defaultAdmin));
+        assert(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, admin));
+        assert(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, admin));
+        assert(registry.hasRole(SET_PARAMETERS_ROLE, admin));
+        assert(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, admin));
+        assert(registry.hasRole(DEFAULT_ADMIN_ROLE, admin));
 
-        if (_singleRecipient) {
-            require(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evmScriptExecutor));
-            require(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
+        if (_grantRightsToEVMScriptExecutor) {
+            assert(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evmScriptExecutor));
+            assert(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
         } else {
-            require(registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evmScriptExecutor));
-            require(registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
+            assert(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evmScriptExecutor));
+            assert(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evmScriptExecutor));
         }
-        require(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evmScriptExecutor));
-        require(!registry.hasRole(SET_PARAMETERS_ROLE, evmScriptExecutor));
-        require(!registry.hasRole(DEFAULT_ADMIN_ROLE, evmScriptExecutor));
+        assert(registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evmScriptExecutor));
+        assert(!registry.hasRole(SET_PARAMETERS_ROLE, evmScriptExecutor));
+        assert(!registry.hasRole(DEFAULT_ADMIN_ROLE, evmScriptExecutor));
 
-        require(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this)));
-        require(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(this)));
-        require(!registry.hasRole(SET_PARAMETERS_ROLE, address(this)));
-        require(!registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, address(this)));
-        require(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
+        assert(!registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, address(this)));
+        assert(!registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, address(this)));
+        assert(!registry.hasRole(SET_PARAMETERS_ROLE, address(this)));
+        assert(!registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, address(this)));
+        assert(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
     }
 
     function deployTopUpAllowedRecipients(
@@ -219,14 +217,13 @@ contract AllowedRecipientsBuilder {
             easyTrack
         );
 
-        require(topUpAllowedRecipients.token() == _token, "Wrong token");
-        require(topUpAllowedRecipients.finance() == finance, "Wrong finance contract");
-        require(topUpAllowedRecipients.easyTrack() == easyTrack, "Wrong Easy Track contract");
-        require(topUpAllowedRecipients.trustedCaller() == _trustedCaller, "Invalid trusted caller");
-        require(
+        assert(topUpAllowedRecipients.token() == _token);
+        assert(topUpAllowedRecipients.finance() == finance);
+        assert(topUpAllowedRecipients.easyTrack() == easyTrack);
+        assert(topUpAllowedRecipients.trustedCaller() == _trustedCaller);
+        assert(
             address(topUpAllowedRecipients.allowedRecipientsRegistry()) ==
-                _allowedRecipientsRegistry,
-            "Wrong registry contract"
+                _allowedRecipientsRegistry
         );
     }
 
@@ -239,10 +236,9 @@ contract AllowedRecipientsBuilder {
             _allowedRecipientsRegistry
         );
 
-        require(addAllowedRecipient.trustedCaller() == _trustedCaller, "Invalid trusted caller");
-        require(
-            address(addAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry,
-            "Wrong registry contract"
+        assert(addAllowedRecipient.trustedCaller() == _trustedCaller);
+        assert(
+            address(addAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry
         );
     }
 
@@ -255,11 +251,10 @@ contract AllowedRecipientsBuilder {
             _allowedRecipientsRegistry
         );
 
-        require(removeAllowedRecipient.trustedCaller() == _trustedCaller, "Invalid trusted caller");
-        require(
+        assert(removeAllowedRecipient.trustedCaller() == _trustedCaller);
+        assert(
             address(removeAllowedRecipient.allowedRecipientsRegistry()) ==
-                _allowedRecipientsRegistry,
-            "Wrong registry contract"
+                _allowedRecipientsRegistry
         );
     }
 
@@ -286,7 +281,7 @@ contract AllowedRecipientsBuilder {
             _recipients,
             _titles,
             _spentAmount,
-            false
+            true
         );
 
         topUpAllowedRecipients = deployTopUpAllowedRecipients(
@@ -332,7 +327,7 @@ contract AllowedRecipientsBuilder {
             recipients,
             titles,
             _spentAmount,
-            true
+            false
         );
 
         topUpAllowedRecipients = deployTopUpAllowedRecipients(

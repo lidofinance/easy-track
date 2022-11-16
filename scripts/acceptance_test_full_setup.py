@@ -46,7 +46,7 @@ def main():
 
     evm_script_executor = et_contracts.evm_script_executor
 
-    regestryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     addRecipientAddress = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
     removeAllowedRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
@@ -61,14 +61,14 @@ def main():
 
     log.br()
 
-    log.nb("AllowedRecipientsRegistryDeployed", regestryAddress)
+    log.nb("AllowedRecipientsRegistryDeployed", registryAddress)
     log.nb("TopUpAllowedRecipientsDeployed", topUpAddress)
     log.nb("AddAllowedRecipientDeployed", addRecipientAddress)
     log.nb("RemoveAllowedRecipientDeployed", removeAllowedRecipientAddress)
 
     log.br()
 
-    registry = AllowedRecipientsRegistry.at(regestryAddress)
+    registry = AllowedRecipientsRegistry.at(registryAddress)
     topUpAllowedRecipients = TopUpAllowedRecipients.at(topUpAddress)
     addAllowedRecipient = AddAllowedRecipient.at(addRecipientAddress)
     removeAllowedRecipient = RemoveAllowedRecipient.at(removeAllowedRecipientAddress) 
@@ -103,11 +103,11 @@ def main():
     assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
-    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, regestryAddress)
-    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, regestryAddress)
-    assert not registry.hasRole(SET_PARAMETERS_ROLE, regestryAddress)
-    assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, regestryAddress)
-    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, regestryAddress)
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, registryAddress)
+    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, registryAddress)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, registryAddress)
+    assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, registryAddress)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, registryAddress)
 
     print("Setup is valid")
 
