@@ -191,11 +191,6 @@ contract LimitsChecker is AccessControl {
         currentPeriodEndTimestamp = uint128(currentPeriodEndTimestampLocal);
         limit = uint128(_limit);
 
-        /// set spent to _limit if it's greater to avoid math underflow error
-        if (spentAmount > _limit) {
-            spentAmount = uint128(_limit);
-        }
-
         emit LimitsParametersChanged(_limit, _periodDurationMonths);
     }
 
@@ -273,7 +268,7 @@ contract LimitsChecker is AccessControl {
         pure
         returns (uint256)
     {
-        return _limit - _spentAmount;
+        return _spentAmount < _limit ? _limit - _spentAmount : 0;
     }
 
     function _validatePeriodDurationMonths(uint256 _periodDurationMonths) internal pure {
