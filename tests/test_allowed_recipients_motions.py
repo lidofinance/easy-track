@@ -23,6 +23,7 @@ from utils.test_helpers import (
     assert_event_exists,
     advance_chain_time_to_beginning_of_the_next_period,
     advance_chain_time_to_n_seconds_before_current_period_end,
+    advance_chain_time_to_middle_of_the_next_period,
 )
 
 import constants
@@ -645,7 +646,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     setup.registry.setLimitParameters(
         period_limit, initial_period_duration, {"from": setup.evm_script_executor}
     )
-    advance_chain_time_to_beginning_of_the_next_period(initial_period_duration)
+    advance_chain_time_to_middle_of_the_next_period(initial_period_duration)
 
     do_payout_to_allowed_recipients_by_motion(
         recipients, first_payout, setup.easy_track, setup.top_up_factory
@@ -667,7 +668,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
             [setup.recipient1.address], second_payout, setup.easy_track, setup.top_up_factory
         )
 
-    advance_chain_time_to_beginning_of_the_next_period(new_period_duration)
+    advance_chain_time_to_middle_of_the_next_period(new_period_duration)
 
     # when move time to time point in the next period of the new calendar period grid
     # expect the spendable get renewed
