@@ -42,6 +42,7 @@ contract LimitsChecker is AccessControl {
     );
     event CurrentPeriodAdvanced(uint256 indexed _periodStartTimestamp);
     event BokkyPooBahsDateTimeContractChanged(address indexed _newAddress);
+    event SpentAmountChanged(uint256 _newSpentAmount);
 
     // -------------
     // ERRORS
@@ -51,6 +52,8 @@ contract LimitsChecker is AccessControl {
     string private constant ERROR_TOO_LARGE_LIMIT = "TOO_LARGE_LIMIT";
     string private constant ERROR_SAME_DATE_TIME_CONTRACT_ADDRESS =
         "SAME_DATE_TIME_CONTRACT_ADDRESS";
+    string private constant ERROR_SPENT_AMOUNT_EXCEEDS_LIMIT = "ERROR_SPENT_AMOUNT_EXCEEDS_LIMIT";
+
     // -------------
     // ROLES
     // -------------
@@ -236,6 +239,17 @@ contract LimitsChecker is AccessControl {
 
         bokkyPooBahsDateTimeContract = IBokkyPooBahsDateTimeContract(_bokkyPooBahsDateTimeContract);
         emit BokkyPooBahsDateTimeContractChanged(_bokkyPooBahsDateTimeContract);
+    }
+
+    /// @notice Allows setting the amount of spent tokens in the current period manually
+    /// @param _newSpentAmount New value for the amount of spent tokens in the current period
+    function unsafeSetSpentAmount(uint256 _newSpentAmount) external onlyRole(SET_PARAMETERS_ROLE) {
+        require(_newSpentAmount <= limit, ERROR_SPENT_AMOUNT_EXCEEDS_LIMIT);
+
+        if (spentAmount != _newSpentAmount) {
+            spentAmount = uint128(_newSpentAmount);
+            emit SpentAmountChanged(_newSpentAmount);
+        }
     }
 
     // ------------------

@@ -195,6 +195,9 @@ def test_rights_are_not_shared_by_different_roles(
         with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
             registry.setBokkyPooBahsDateTimeContract(ZERO_ADDRESS, {"from": caller})
 
+        with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
+            registry.unsafeSetSpentAmount(0, {"from": caller})
+
     for caller in [
         deployer,
         add_role_holder,
@@ -255,6 +258,8 @@ def test_multiple_role_holders(
                 registry.setLimitParameters(5, 1, {"from": caller})
             with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
                 registry.setBokkyPooBahsDateTimeContract(ZERO_ADDRESS, {"from": caller})
+            with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
+                registry.unsafeSetSpentAmount(0, {"from": caller})
 
     for caller in accounts:
         if caller in update_limit_role_holders:
@@ -276,6 +281,13 @@ def test_access_stranger_cannot_set_date_time_library(limits_checker, stranger):
 
     with reverts(access_revert_message(stranger, SET_PARAMETERS_ROLE)):
         limits_checker.setBokkyPooBahsDateTimeContract(ZERO_ADDRESS, {"from": stranger})
+
+
+def test_access_stranger_cannot_set_date_time_library(limits_checker, stranger):
+    (limits_checker, _, _) = limits_checker
+
+    with reverts(access_revert_message(stranger, SET_PARAMETERS_ROLE)):
+        limits_checker.unsafeSetSpentAmount(0, {"from": stranger})
 
 
 def test_access_stranger_cannot_update_spent_amount(limits_checker, stranger):
@@ -312,6 +324,93 @@ def test_fail_if_set_same_time_contract(limits_checker, accounts):
         limits_checker.setBokkyPooBahsDateTimeContract(
             current_address, {"from": set_parameters_role_holder}
         )
+
+
+def test_unsafe_set_spent_amount_when_spent_amount_exceeds_limit(limits_checker):
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
+
+    initial_limit = 100 * 10 ** 18
+    initial_duration = 3
+
+    limits_checker.setLimitParameters(
+        initial_limit, initial_duration, {"from": set_parameters_role_holder}
+    )
+
+    current_limit, current_duration = limits_checker.getLimitParameters()
+
+    assert current_limit == initial_limit
+    assert current_duration == initial_duration
+    assert limits_checker.getPeriodState()["_alreadySpentAmount"] == 0
+
+    with reverts("ERROR_SPENT_AMOUNT_EXCEEDS_LIMIT"):
+        limits_checker.unsafeSetSpentAmount(
+            initial_limit + 1, {"from": set_parameters_role_holder}
+        )
+
+
+def test_unsafe_set_spent_amount_when_new_spent_amount_the_same(limits_checker):
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
+
+    initial_limit = 100 * 10 ** 18
+    initial_duration = 3
+
+    limits_checker.setLimitParameters(
+        initial_limit, initial_duration, {"from": set_parameters_role_holder}
+    )
+
+    current_limit, current_duration = limits_checker.getLimitParameters()
+    already_spent_amount = limits_checker.getPeriodState()["_alreadySpentAmount"]
+
+    assert current_limit == initial_limit
+    assert current_duration == initial_duration
+    assert already_spent_amount == 0
+
+    tx = limits_checker.unsafeSetSpentAmount(
+        already_spent_amount, {"from": set_parameters_role_holder}
+    )
+
+    assert (
+        limits_checker.getPeriodState()["_alreadySpentAmount"] == already_spent_amount
+    )
+
+    # validate that the event isn't logged cause the new value wasn't set
+    assert "SpentAmountChanged" not in tx.events
+
+
+def test_unsafe_set_spent_amount(limits_checker):
+    (limits_checker, set_parameters_role_holder, _) = limits_checker
+
+    initial_limit = 100 * 10 ** 18
+    initial_duration = 3
+
+    limits_checker.setLimitParameters(
+        initial_limit, initial_duration, {"from": set_parameters_role_holder}
+    )
+
+    current_limit, current_duration = limits_checker.getLimitParameters()
+
+    assert current_limit == initial_limit
+    assert current_duration == initial_duration
+    assert limits_checker.getPeriodState()["_alreadySpentAmount"] == 0
+
+    new_spent_amount = current_limit // 2
+
+    tx = limits_checker.unsafeSetSpentAmount(
+        new_spent_amount, {"from": set_parameters_role_holder}
+    )
+
+    assert limits_checker.getPeriodState()["_alreadySpentAmount"] == new_spent_amount
+    assert tx.events["SpentAmountChanged"]["_newSpentAmount"] == new_spent_amount
+
+    # validate that update works also when the spent amount is not zero
+    new_spent_amount = initial_limit
+
+    tx = limits_checker.unsafeSetSpentAmount(
+        new_spent_amount, {"from": set_parameters_role_holder}
+    )
+
+    assert limits_checker.getPeriodState()["_alreadySpentAmount"] == new_spent_amount
+    assert tx.events["SpentAmountChanged"]["_newSpentAmount"] == new_spent_amount
 
 
 def test_add_recipient(allowed_recipients_registry):
