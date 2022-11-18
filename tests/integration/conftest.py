@@ -593,7 +593,7 @@ def allowed_recipients_registry(
         [],
         [],
         allowed_recipients_default_params.spent_amount,
-        False,
+        True,
         {"from": deployer},
     )
 
