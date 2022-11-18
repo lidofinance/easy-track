@@ -29,9 +29,6 @@ REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a
 def main():
     network_name = get_network_name()
 
-    if not (network_name == "goerli" or network_name == "goerli-fork"):
-        raise EnvironmentError("network is not supported")
-
     recipient = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
     token = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
     limit = 10_000 * 1e18
@@ -113,6 +110,14 @@ def main():
     assert not registry.hasRole(SET_PARAMETERS_ROLE, registry_address)
     assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, registry_address)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, registry_address)
+
+    registry_roles_holders = {
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE: [],
+        REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE: [],
+        SET_PARAMETERS_ROLE: [],
+        UPDATE_SPENT_AMOUNT_ROLE: [],
+        DEFAULT_ADMIN_ROLE: [],
+    }
 
     for event in tx.logs:
         # print(event["topics"][0])
