@@ -836,7 +836,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     allowed_recipients_registry.setLimitParameters(
         period_limit, initial_period_duration, {"from": lido_contracts.aragon.agent}
     )
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+    test_helpers.advance_chain_time_to_middle_of_the_next_period(
         initial_period_duration
     )
 
@@ -866,7 +866,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
             second_top_up_amount,
         )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(new_period_duration)
+    test_helpers.advance_chain_time_to_middle_of_the_next_period(new_period_duration)
 
     # when move time to time point in the next period of the new calendar period grid
     # expect the spendable get renewed

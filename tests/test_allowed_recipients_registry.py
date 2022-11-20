@@ -585,7 +585,7 @@ def test_set_limit_parameters_happy_path(limits_checker):
     (
         limits_checker,
         set_parameters_role_holder,
-        update_spent_amount_role_holder,
+        _,
     ) = limits_checker
     period_limit, period_duration = 3 * 10 ** 18, 1
     now = datetime.now()
