@@ -814,6 +814,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     allowed_recipients_registry,
     add_allowed_recipient_by_motion,
     lido_contracts,
+    create_top_up_allowed_recipients_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
@@ -846,7 +847,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        top_up_allowed_recipient_by_motion(
+        create_top_up_allowed_recipients_motion(
             top_up_allowed_recipients_evm_script_factory,
             [r.address for r in allowed_recipients],
             second_top_up_amount,
@@ -859,7 +860,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     # expect it to revert because although calendar grid period has changed
     # the amount spent and the limit are left intact
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        top_up_allowed_recipient_by_motion(
+        create_top_up_allowed_recipients_motion(
             top_up_allowed_recipients_evm_script_factory,
             [r.address for r in allowed_recipients],
             second_top_up_amount,
