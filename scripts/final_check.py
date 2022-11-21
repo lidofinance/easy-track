@@ -416,10 +416,9 @@ def validate_top_up_reward_programs(
 
 
 def grant_aragon_permissions(lido_contracts, evm_script_executor, voting_id=None):
-    lido_permissions = lido.permissions(contracts=lido_contracts)
     permissions_to_grant = [
-        lido_permissions.finance.CREATE_PAYMENTS_ROLE,
-        lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
+        lido_contracts.permissions.finance.CREATE_PAYMENTS_ROLE,
+        lido_contracts.permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
     ]
     log.nb("")
     log.nb(
@@ -436,7 +435,7 @@ def grant_aragon_permissions(lido_contracts, evm_script_executor, voting_id=None
         log.ok("  Voting was started. Voting id", voting_id)
     else:
         log.ok(f"  Voting {voting_id} was started separately.")
-    lido.execute_voting(voting_id=voting_id)
+    lido_contracts.execute_voting(voting_id)
     log.ok(f"  Voting {voting_id} successfully passed")
     assert_equals(
         "  EVMScriptExecutor has role CREATE_PAYMENTS_ROLE",
@@ -792,12 +791,12 @@ def simulate_unpause_by_voting(easy_track, pause_multisig, lido_contracts):
         [(easy_track.address, easy_track.unpause.encode_input())]
     )
     voting_id, _ = lido.create_voting(
-        unpause_evm_scirpt,
-        "Unpause EasyTracks",
-        {"from": lido_contracts.aragon.agent},
+        evm_script=unpause_evm_scirpt,
+        description="Unpause EasyTracks",
+        tx_params={"from": lido_contracts.aragon.agent},
     )
     log.ok("  Voting was started. Voting id", voting_id)
-    lido.execute_voting(voting_id)
+    lido_contracts.execute_voting(voting_id)
     log.ok("  Voting was executed")
     assert_equals("  EasyTrack is paused", easy_track.paused(), False)
     print()
@@ -819,13 +818,13 @@ def add_new_node_operator(lido_contracts):
         [(node_operators_registry.address, add_node_operator_calldata)]
     )
     voting_id, _ = lido.create_voting(
-        add_node_operator_evm_script,
-        "Add node operator to registry",
-        {"from": lido_contracts.aragon.agent},
+        evm_script=add_node_operator_evm_script,
+        desciption="Add node operator to registry",
+        tx_params={"from": lido_contracts.aragon.agent},
     )
     log.ok("  Voting was started. Voting id", voting_id)
     # execute vote to add test node operator
-    lido.execute_voting(voting_id)
+    lido_contracts.execute_voting(voting_id)
 
     # validate new node operator id
     new_node_operator_id = node_operators_registry.getActiveNodeOperatorsCount() - 1

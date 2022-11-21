@@ -2,24 +2,10 @@ import pytest
 import brownie
 import constants
 
-from brownie.network import chain
-from brownie import EasyTrack, EVMScriptExecutor, accounts
-
-from eth_abi import encode_single
-from utils.evm_script import encode_call_script
-
-from utils.config import get_network_name
-from utils import lido
+from utils import evm_script, lido
 
 
-def encode_calldata(signature, values):
-    return "0x" + encode_single(signature, values).hex()
-
-
-def create_permission(contract, method):
-    return contract.address + getattr(contract, method).signature[2:]
-
-
+@pytest.mark.skip_coverage
 def test_reward_programs_easy_track(
     stranger,
     agent,
@@ -28,14 +14,18 @@ def test_reward_programs_easy_track(
     ldo,
     calls_script,
     acl,
+    EasyTrack,
+    EVMScriptExecutor,
     RewardProgramsRegistry,
     TopUpRewardPrograms,
     AddRewardProgram,
     RemoveRewardProgram,
+    lido_contracts,
+    deployer,
+    accounts,
 ):
-    deployer = accounts[0]
     reward_program = accounts[5]
-    reward_program_title = "Our Reward Program"
+    reward_program_title = "New Reward Program"
     trusted_address = accounts[7]
 
     # deploy easy track
@@ -64,7 +54,7 @@ def test_reward_programs_easy_track(
         [voting, evm_script_executor],
     )
 
-    # deploy TopUpRewardPrograms EVM script factory
+    # deploy TopUpRewardProgram EVM script factory
     top_up_reward_programs = deployer.deploy(
         TopUpRewardPrograms,
         trusted_address,
@@ -73,9 +63,10 @@ def test_reward_programs_easy_track(
         ldo,
     )
 
-    # add TopUpRewardPrograms EVM script factory to easy track
-    new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
-
+    # add TopUpRewardProgram EVM script factory to easy track
+    new_immediate_payment_permission = (
+        finance.address + finance.newImmediatePayment.signature[2:]
+    )
     easy_track.addEVMScriptFactory(
         top_up_reward_programs, new_immediate_payment_permission, {"from": deployer}
     )
@@ -86,10 +77,10 @@ def test_reward_programs_easy_track(
     )
 
     # add AddRewardProgram EVM script factory to easy track
-    add_reward_program_permission = create_permission(
-        reward_programs_registry, "addRewardProgram"
+    add_reward_program_permission = (
+        reward_programs_registry.address
+        + reward_programs_registry.addRewardProgram.signature[2:]
     )
-
     easy_track.addEVMScriptFactory(
         add_reward_program, add_reward_program_permission, {"from": deployer}
     )
@@ -100,8 +91,9 @@ def test_reward_programs_easy_track(
     )
 
     # add RemoveRewardProgram EVM script factory to easy track
-    remove_reward_program_permission = create_permission(
-        reward_programs_registry, "removeRewardProgram"
+    remove_reward_program_permission = (
+        reward_programs_registry.address
+        + reward_programs_registry.removeRewardProgram.signature[2:]
     )
     easy_track.addEVMScriptFactory(
         remove_reward_program, remove_reward_program_permission, {"from": deployer}
@@ -113,11 +105,9 @@ def test_reward_programs_easy_track(
     easy_track.revokeRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer, {"from": deployer})
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
 
-    lido_contracts = lido.contracts(network=brownie.network.show_active())
-
     # create voting to grant permissions to EVM script executor to create new payments
     add_create_payments_permissions_voting_id, _ = lido_contracts.create_voting(
-        evm_script=encode_call_script(
+        evm_script=evm_script.encode_call_script(
             [
                 (
                     acl.address,
@@ -136,18 +126,19 @@ def test_reward_programs_easy_track(
     # execute voting to add permissions to EVM script executor to create payments
     lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
-    add_reward_program_calldata = encode_calldata(
-        "(address,string)", [reward_program.address, reward_program_title]
-    )
-
+    # create new motion to add reward program
     tx = easy_track.createMotion(
-        add_reward_program, add_reward_program_calldata, {"from": trusted_address}
+        add_reward_program,
+        evm_script.encode_calldata(
+            "(address,string)", [reward_program.address, reward_program_title]
+        ),
+        {"from": trusted_address},
     )
 
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    chain.sleep(48 * 60 * 60 + 100)
+    brownie.chain.sleep(48 * 60 * 60 + 100)
 
     easy_track.enactMotion(
         motions[0][0],
@@ -163,13 +154,15 @@ def test_reward_programs_easy_track(
     # create new motion to top up reward program
     tx = easy_track.createMotion(
         top_up_reward_programs,
-        encode_single("(address[],uint256[])", [[reward_program.address], [int(5e18)]]),
+        evm_script.encode_calldata(
+            "(address[],uint256[])", [[reward_program.address], [int(5e18)]]
+        ),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    chain.sleep(48 * 60 * 60 + 100)
+    brownie.chain.sleep(48 * 60 * 60 + 100)
 
     assert ldo.balanceOf(reward_program) == 0
 
@@ -182,17 +175,17 @@ def test_reward_programs_easy_track(
     assert len(easy_track.getMotions()) == 0
     assert ldo.balanceOf(reward_program) == 5e18
 
-    # create new motion to remove a reward program
+    # create new motion to remove reward program
     tx = easy_track.createMotion(
         remove_reward_program,
-        encode_single("(address)", [reward_program.address]),
+        evm_script.encode_calldata("(address)", [reward_program.address]),
         {"from": trusted_address},
     )
 
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    chain.sleep(48 * 60 * 60 + 100)
+    brownie.chain.sleep(48 * 60 * 60 + 100)
 
     easy_track.enactMotion(
         motions[0][0],

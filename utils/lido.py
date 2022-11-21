@@ -1,10 +1,11 @@
-from brownie import interface, chain, accounts
-from utils.evm_script import encode_call_script
+import brownie
+from utils import evm_script as evm_script_utils
 
+DEFAULT_NETWORK = "mainnet"
 
-def addresses(network="mainnet"):
-    if network == "mainnet":
-        return LidoSetup(
+def addresses(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return LidoAddressesSetup(
             aragon=AragonSetup(
                 acl="0x9895F0F17cc1d1891b6f18ee0b483B6f221b37Bb",
                 agent="0x3e40d73eb977dc6a537af587d48316fee66e9c8c",
@@ -18,8 +19,8 @@ def addresses(network="mainnet"):
             oracle="0x442af784A788A5bd6F42A01Ebe9F287a871243fb",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
         )
-    if network == "goerli":
-        return LidoSetup(
+    if network == "goerli" or network == "goerli-fork":
+        return LidoAddressesSetup(
             aragon=AragonSetup(
                 acl="0xb3cf58412a00282934d3c3e73f49347567516e98",
                 agent="0x4333218072d5d7008546737786663c38b4d561a4",
@@ -34,80 +35,72 @@ def addresses(network="mainnet"):
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, goerli."""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
     )
 
 
-def contracts(network="mainnet", interface=interface):
-    network_addresses = addresses(network)
-    return LidoSetup(
-        aragon=AragonSetup(
-            acl=interface.ACL(network_addresses.aragon.acl),
-            agent=interface.Agent(network_addresses.aragon.agent),
-            voting=interface.Voting(network_addresses.aragon.voting),
-            finance=interface.Finance(network_addresses.aragon.finance),
-            gov_token=interface.MiniMeToken(network_addresses.aragon.gov_token),
-            calls_script=interface.CallsScript(network_addresses.aragon.calls_script),
+def contracts(network=DEFAULT_NETWORK):
+    return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
+
+
+class LidoContractsSetup:
+    def __init__(self, interface, lido_addresses):
+        self.lido_addresses = lido_addresses
+        self.aragon = AragonSetup(
+            acl=interface.ACL(lido_addresses.aragon.acl),
+            agent=interface.Agent(lido_addresses.aragon.agent),
+            voting=interface.Voting(lido_addresses.aragon.voting),
+            finance=interface.Finance(lido_addresses.aragon.finance),
+            gov_token=interface.MiniMeToken(lido_addresses.aragon.gov_token),
+            calls_script=interface.CallsScript(lido_addresses.aragon.calls_script),
             token_manager=interface.TokenManager(
-                network_addresses.aragon.token_manager
+                lido_addresses.aragon.token_manager
             ),
-        ),
-        steth=interface.Lido(network_addresses.steth),
-        oracle=interface.Oracle(network_addresses.oracle),
-        node_operators_registry=interface.NodeOperatorsRegistry(
-            network_addresses.node_operators_registry
-        ),
-    )
+        )
+        self.steth=interface.Lido(lido_addresses.steth)
+        self.oracle=interface.Oracle(lido_addresses.oracle)
+        self.node_operators_registry=interface.NodeOperatorsRegistry(
+            lido_addresses.node_operators_registry
+        )
+        self.ldo = self.aragon.gov_token
+        self.permissions = Permissions(contracts=self)
 
+    def create_voting(self, evm_script, description, tx_params=None):
+        voting = self.aragon.voting
 
-def permissions(contracts):
-    return Permissions(contracts)
+        voting_tx = self.aragon.token_manager.forward(
+            evm_script_utils.encode_call_script(
+                [
+                    (
+                        voting.address,
+                        voting.newVote.encode_input(evm_script, description),
+                    )
+                ]
+            ),
+            tx_params or {"from": self.aragon.agent},
+        )
+        return voting_tx.events["StartVote"]["voteId"], voting_tx
 
+    def execute_voting(self, voting_id):
+        voting = self.aragon.voting
+        if voting.getVote(voting_id)["executed"]:
+            return
+        ldo_holders = [self.aragon.agent]
+        for holder_addr in ldo_holders:
+            if not voting.canVote(voting_id, holder_addr):
+                print(f"{holder_addr} can't vote in voting {voting_id}")
+                continue
+            brownie.accounts[0].transfer(holder_addr, "0.1 ether")
+            account = brownie.accounts.at(holder_addr, force=True)
+            voting.vote(voting_id, True, False, {"from": account})
 
-def create_voting(evm_script, description, network="mainnet", tx_params=None):
-    lido_contracts = contracts(network)
-    voting = lido_contracts.aragon.voting
+        brownie.chain.sleep(3 * 60 * 60 * 24)
+        brownie.chain.mine()
+        assert voting.canExecute(voting_id)
+        voting.executeVote(voting_id, {"from": brownie.accounts[0]})
+ 
 
-    voting_tx = lido_contracts.aragon.token_manager.forward(
-        encode_call_script(
-            [
-                (
-                    voting.address,
-                    voting.newVote.encode_input(evm_script, description),
-                )
-            ]
-        ),
-        tx_params or {"from": lido_contracts.aragon.agent},
-    )
-    return voting_tx.events["StartVote"]["voteId"], voting_tx
-
-
-def execute_voting(voting_id, network="mainnet"):
-    lido_contracts = contracts(network=network)
-    voting = lido_contracts.aragon.voting
-    if voting.getVote(voting_id)["executed"]:
-        return
-    ldo_holders = [
-        "0x3e40d73eb977dc6a537af587d48316fee66e9c8c",
-        "0xb8d83908aab38a159f3da47a59d84db8e1838712",
-        "0xa2dfc431297aee387c05beef507e5335e684fbcd",
-    ]
-    for holder_addr in ldo_holders:
-        if not voting.canVote(voting_id, holder_addr):
-            print(f"{holder_addr} can't vote in voting {voting_id}")
-            continue
-        accounts[0].transfer(holder_addr, "0.1 ether")
-        account = accounts.at(holder_addr, force=True)
-        voting.vote(voting_id, True, False, {"from": account})
-
-    # voting.vote(voting_id, True, False, {"from": agent})
-    chain.sleep(3 * 60 * 60 * 24)
-    chain.mine()
-    assert voting.canExecute(voting_id)
-    voting.executeVote(voting_id, {"from": accounts[0]})
-
-
-class LidoSetup:
+class LidoAddressesSetup:
     def __init__(self, aragon, steth, oracle, node_operators_registry):
         self.aragon = aragon
         self.steth = steth

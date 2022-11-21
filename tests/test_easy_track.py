@@ -1,3 +1,4 @@
+import pytest
 import constants
 from brownie.network.state import Chain
 from brownie import reverts, ZERO_ADDRESS
@@ -83,9 +84,7 @@ def test_create_motion_motions_limit_reached(
         easy_track.createMotion(evm_script_factory_stub, b"", {"from": stranger})
 
 
-def test_create_motion(
-    owner, voting, easy_track, evm_script_factory_stub, node_operators_registry_stub
-):
+def test_create_motion(owner, voting, easy_track, evm_script_factory_stub):
     "Must create new motion with correct data and emit"
     "MotionCreated event if called by easy track"
     chain = Chain()
@@ -342,6 +341,8 @@ def test_enact_motion(
     )
     assert easy_track.isEVMScriptFactory(evm_script_factory_stub)
 
+    easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
+
     # create new motion
     tx = easy_track.createMotion(evm_script_factory_stub, b"", {"from": owner})
     motions = easy_track.getMotions()
@@ -383,14 +384,13 @@ def test_object_to_motion_motion_not_found(owner, easy_track):
         easy_track.objectToMotion(1, {"from": owner})
 
 
+@pytest.mark.usefixtures("distribute_holder_balance")
 def test_object_to_motion_multiple_times(
     owner,
     voting,
     ldo_holders,
-    ldo,
     easy_track,
     evm_script_factory_stub,
-    distribute_holder_balance,
 ):
     "Must revert with message: 'ALREADY_OBJECTED' if sender already objected the motion with the given id"
     # add evm script factory to create motions
@@ -480,6 +480,7 @@ def test_object_to_motion_by_tokens_holder(
     )  # objectionsAmountPct
 
 
+@pytest.mark.usefixtures("distribute_holder_balance")
 def test_object_to_motion_rejected(
     owner,
     voting,
@@ -487,7 +488,6 @@ def test_object_to_motion_rejected(
     ldo,
     easy_track,
     evm_script_factory_stub,
-    distribute_holder_balance,
 ):
     "Must remove motion from list of active motions"
     "and emit ObjectionSent(_motionId,_objector,_weight,_newObjectionsAmount,_newObjectionsAmountPct)"
@@ -575,11 +575,8 @@ def test_cancel_motions_called_without_permissions(stranger, easy_track):
 def test_cancel_motions(
     owner,
     voting,
-    stranger,
     easy_track,
     evm_script_factory_stub,
-    finance,
-    node_operators_registry_stub,
 ):
     "Must cancel all motions in the list. Emits MotionCanceled(_motionId) event for each canceled motion."
     "If motion with passed id doesn't exists skip it and doesn't emit event"
@@ -664,17 +661,17 @@ def test_set_evm_script_executor_called_by_stranger(stranger, easy_track):
 
 
 def test_set_evm_script_executor_called_by_owner(
-    accounts, voting, easy_track, evm_script_executor, evm_script_executor_stub
+    voting, easy_track, evm_script_executor, evm_script_executor_stub
 ):
     "Must set new EVMScriptExecutor and emit EVMScriptExecutorChanged(_evmScriptExecutor) event"
 
-    assert easy_track.evmScriptExecutor() == evm_script_executor_stub
-    tx = easy_track.setEVMScriptExecutor(evm_script_executor, {"from": voting})
+    assert easy_track.evmScriptExecutor() == evm_script_executor
+    tx = easy_track.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
     assert (
         tx.events["EVMScriptExecutorChanged"]["_evmScriptExecutor"]
-        == evm_script_executor
+        == evm_script_executor_stub
     )
-    assert easy_track.evmScriptExecutor() == evm_script_executor
+    assert easy_track.evmScriptExecutor() == evm_script_executor_stub
 
 
 ########
@@ -746,15 +743,14 @@ def test_unpause_called_with_permissions(voting, easy_track):
 ########
 
 
+@pytest.mark.usefixtures("distribute_holder_balance")
 def test_can_object_to_motion(
     owner,
     voting,
     stranger,
     ldo_holders,
-    ldo,
     easy_track,
     evm_script_factory_stub,
-    distribute_holder_balance,
 ):
     "Must return False if caller has no governance tokens or if he has already voted."
     "Returns True in other cases"
