@@ -163,6 +163,10 @@ def test_single_recipient_top_up_only_setup_happy_path(
     first_top_up_amount = 50 * 10 ** 18
     second_top_up_amount = 100 * 10 ** 18
 
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_default_params.period_duration_months
+    )
+
     allowed_recipients_registry = (
         single_recipient_top_up_only_setup.allowed_recipients_registry
     )
@@ -253,6 +257,10 @@ def test_full_setup_happy_path(
 ):
     first_top_up_amount = 50 * 10 ** 18
     second_top_up_amount = 100 * 10 ** 18
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_default_params.period_duration_months
+    )
 
     # Add allowed recipient by motion
     add_allowed_recipient_evm_script_factory = (
