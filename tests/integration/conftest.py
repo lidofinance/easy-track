@@ -104,6 +104,14 @@ def easy_track(
 
     loaded_easy_track = load_deployed_contract("EasyTrack")
 
+    if loaded_easy_track:
+        lido_contracts.aragon.acl.grantPermission(
+            loaded_easy_track.evmScriptExecutor(),
+            lido_contracts.permissions.finance.CREATE_PAYMENTS_ROLE.app,
+            lido_contracts.permissions.finance.CREATE_PAYMENTS_ROLE.role,
+            {"from": lido_contracts.aragon.voting},
+        )
+
     if not loaded_easy_track is None:
         return loaded_easy_track
 
@@ -578,28 +586,48 @@ def allowed_recipients_registry(
     allowed_recipients_default_params,
     allowed_recipients_builder,
     load_deployed_contract,
+    lido_contracts,
+    easy_track,
     deployer,
 ):
-    loaded_allowed_recipients_registry = load_deployed_contract(
-        "AllowedRecipientsRegistry"
-    )
+    allowed_recipients_registry = load_deployed_contract("AllowedRecipientsRegistry")
 
-    if not loaded_allowed_recipients_registry is None:
-        return loaded_allowed_recipients_registry
+    if allowed_recipients_registry is None:
+        tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
+            allowed_recipients_default_params.limit,
+            allowed_recipients_default_params.period_duration_months,
+            [],
+            [],
+            allowed_recipients_default_params.spent_amount,
+            True,
+            {"from": deployer},
+        )
 
-    tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
-        allowed_recipients_default_params.limit,
-        allowed_recipients_default_params.period_duration_months,
-        [],
-        [],
-        allowed_recipients_default_params.spent_amount,
-        True,
-        {"from": deployer},
-    )
+        allowed_recipients_registry = AllowedRecipientsRegistry.at(
+            tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+        )
 
-    return AllowedRecipientsRegistry.at(
-        tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
-    )
+    if not allowed_recipients_registry.hasRole(
+        allowed_recipients_registry.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE(),
+        easy_track.evmScriptExecutor(),
+    ):
+        allowed_recipients_registry.grantRole(
+            allowed_recipients_registry.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE(),
+            easy_track.evmScriptExecutor(),
+            {"from": lido_contracts.aragon.agent},
+        )
+
+    if not allowed_recipients_registry.hasRole(
+        allowed_recipients_registry.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE(),
+        easy_track.evmScriptExecutor(),
+    ):
+        allowed_recipients_registry.grantRole(
+            allowed_recipients_registry.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE(),
+            easy_track.evmScriptExecutor(),
+            {"from": lido_contracts.aragon.agent},
+        )
+
+    return allowed_recipients_registry
 
 
 @pytest.fixture(scope="module")
