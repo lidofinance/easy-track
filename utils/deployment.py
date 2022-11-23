@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from brownie import (
     EasyTrack,
     TopUpLegoProgram,
@@ -13,6 +14,22 @@ from brownie import (
     AllowedRecipientsRegistry,
 )
 
+@dataclass
+class AllowedRecipientsDeployConfig:
+    token: str
+    limit: int
+    period: int
+    spent_amount: int
+    trusted_caller: str
+
+@dataclass
+class AllowedRecipientsSingleRecipientSetupDeployConfig(AllowedRecipientsDeployConfig):
+    title: str
+
+@dataclass
+class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
+    titles: [str]
+    recipients: [str]
 
 def deploy_easy_track(
     admin,
