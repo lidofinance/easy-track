@@ -43,6 +43,18 @@ def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
 
+def allowed_recipients_builder(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return brownie.AllowedRecipientsBuilder.at(
+            "0x958e0D946D014F377421a53AB5f9180d4485e63B"
+        )
+    if network == "goerli" or network == "goerli-fork":
+        raise Exception("AllowedRecipientsBuilder instance hasn't deployed yet")
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+    )
+
+
 class LidoContractsSetup:
     def __init__(self, interface, lido_addresses):
         self.lido_addresses = lido_addresses
@@ -53,13 +65,11 @@ class LidoContractsSetup:
             finance=interface.Finance(lido_addresses.aragon.finance),
             gov_token=interface.MiniMeToken(lido_addresses.aragon.gov_token),
             calls_script=interface.CallsScript(lido_addresses.aragon.calls_script),
-            token_manager=interface.TokenManager(
-                lido_addresses.aragon.token_manager
-            ),
+            token_manager=interface.TokenManager(lido_addresses.aragon.token_manager),
         )
-        self.steth=interface.Lido(lido_addresses.steth)
-        self.oracle=interface.Oracle(lido_addresses.oracle)
-        self.node_operators_registry=interface.NodeOperatorsRegistry(
+        self.steth = interface.Lido(lido_addresses.steth)
+        self.oracle = interface.Oracle(lido_addresses.oracle)
+        self.node_operators_registry = interface.NodeOperatorsRegistry(
             lido_addresses.node_operators_registry
         )
         self.ldo = self.aragon.gov_token
@@ -98,7 +108,7 @@ class LidoContractsSetup:
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
         voting.executeVote(voting_id, {"from": brownie.accounts[0]})
- 
+
 
 class LidoAddressesSetup:
     def __init__(self, aragon, steth, oracle, node_operators_registry):
