@@ -11,12 +11,12 @@ from utils import lido, deployed_easy_track, log, deployment
 from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
-    period=3,
+    period=0,
     spent_amount=0,
-    title="RCC DAI funder",
-    limit=3_000_000 * 10 ** 18,
-    token="0x6b175474e89094c44da98b954eedeac495271d0f",
-    trusted_caller="0xDE06d17Db9295Fa8c4082D4f73Ff81592A3aC437",
+    title="",
+    limit=0,
+    token="",
+    trusted_caller="",
 )
 
 
