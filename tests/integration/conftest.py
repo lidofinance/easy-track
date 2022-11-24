@@ -409,8 +409,10 @@ def top_up_allowed_recipient_by_motion(
 
 
 @pytest.fixture(scope="module")
-def get_balances(interface):
+def get_balances(interface, accounts):
     def _get_balances(token, recipients):
+        if token == brownie.ZERO_ADDRESS:
+            return [accounts.at(r).balance() for r in recipients]
         return [interface.ERC20(token).balanceOf(r) for r in recipients]
 
     return _get_balances
