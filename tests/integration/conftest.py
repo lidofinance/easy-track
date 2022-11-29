@@ -340,6 +340,9 @@ def top_up_allowed_recipients_evm_script_factory(
             )[2:],
             {"from": lido_contracts.aragon.voting},
         )
+        log.ok(
+            f"EVM Script Factory TopUpAllowedRecipients({evm_script_factory}) was added to EasyTrack"
+        )
 
     return evm_script_factory
 
