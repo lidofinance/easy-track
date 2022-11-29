@@ -2,7 +2,7 @@ import pytest
 import brownie
 
 import constants
-from utils import lido, deployment, deployed_date_time, evm_script
+from utils import lido, deployment, deployed_date_time, evm_script, log
 from collections import namedtuple
 from dataclasses import dataclass
 
@@ -82,7 +82,7 @@ def load_deployed_contract(deployed_contracts):
             and deployed_contracts[contract_name] != ""
         ):
             loaded_contract = Contract.at(deployed_contracts[contract_name])
-            print(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
+            log.ok(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
             return loaded_contract
 
     return _load_deployed_contract
@@ -198,7 +198,7 @@ def add_allowed_recipient_evm_script_factory(
             deployment.create_permission(allowed_recipients_registry, "addRecipient"),
             {"from": lido_contracts.aragon.voting},
         )
-        print(
+        log.ok(
             f"EVM Script Factory AddAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
@@ -235,7 +235,7 @@ def remove_allowed_recipient_evm_script_factory(
             ),
             {"from": lido_contracts.aragon.voting},
         )
-        print(
+        log.ok(
             f"EVM Script Factory RemoveAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
@@ -339,9 +339,6 @@ def top_up_allowed_recipients_evm_script_factory(
                 allowed_recipients_registry, "updateSpentAmount"
             )[2:],
             {"from": lido_contracts.aragon.voting},
-        )
-        print(
-            f"EVM Script Factory TopUpAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
     return evm_script_factory
