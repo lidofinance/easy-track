@@ -424,6 +424,7 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
     interface,
     easy_track,
     get_balances,
+    lido_contracts,
     enact_motion_by_creation_tx,
     check_top_up_motion_enactment,
 ):
@@ -439,9 +440,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             motion_creation_tx.events["MotionCreated"]["_evmScriptCallData"]
         )
 
-        balances_before = get_balances(
-            top_up_allowed_recipients_evm_script_factory.token(), recipients
+        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
+
+        (sender_balance_before,) = get_balances(
+            top_up_token, [lido_contracts.aragon.agent]
         )
+        recipients_balances_before = get_balances(top_up_token, recipients)
 
         motion_data = easy_track.getMotion(
             motion_creation_tx.events["MotionCreated"]["_motionId"]
@@ -457,11 +461,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
         motion_enactment_tx = enact_motion_by_creation_tx(motion_creation_tx)
 
         check_top_up_motion_enactment(
-            top_up_allowed_recipients_evm_script_factory,
-            motion_enactment_tx,
-            balances_before,
-            recipients,
-            amounts,
+            top_up_allowed_recipients_evm_script_factory=top_up_allowed_recipients_evm_script_factory,
+            top_up_motion_enactment_tx=motion_enactment_tx,
+            sender_balance_before=sender_balance_before,
+            recipients_balances_before=recipients_balances_before,
+            top_up_recipients=recipients,
+            top_up_amounts=amounts,
         )
 
     return _enact_top_up_allowed_recipient_motion_by_creation_tx
@@ -469,15 +474,15 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
 
 @pytest.fixture(scope="module")
 def check_top_up_motion_enactment(
-    AllowedRecipientsRegistry,
-    get_balances,
+    AllowedRecipientsRegistry, get_balances, lido_contracts
 ):
     """Note: this check works correctly only when was payment in the period"""
 
     def _check_top_up_motion_enactment(
         top_up_allowed_recipients_evm_script_factory,
         top_up_motion_enactment_tx,
-        balances_before,
+        sender_balance_before,
+        recipients_balances_before,
         top_up_recipients,
         top_up_amounts,
     ):
@@ -502,11 +507,18 @@ def check_top_up_motion_enactment(
             == spendable
         )
 
-        balances = get_balances(
-            top_up_allowed_recipients_evm_script_factory.token(),
+        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
+        (sender_balance,) = get_balances(top_up_token, [lido_contracts.aragon.agent])
+        recipients_balances = get_balances(
+            top_up_token,
             top_up_recipients,
         )
-        for before, now, payment in zip(balances_before, balances, top_up_amounts):
+
+        assert sender_balance == sender_balance_before - spending
+
+        for before, now, payment in zip(
+            recipients_balances_before, recipients_balances, top_up_amounts
+        ):
             assert now == before + payment
 
         assert "SpendableAmountChanged" in top_up_motion_enactment_tx.events
