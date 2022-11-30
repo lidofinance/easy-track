@@ -43,7 +43,7 @@ def compare(orig_address, comparing_address):
                     log_comparing_code = log_comparing_code + log_color_diff
 
                 log_code = log_code + orig_byte
-                log_comparing_code = log_comparing_code + co
+                log_comparing_code = log_comparing_code + comparing_byte
 
             log_code = log_code + log_color_default
             log_comparing_code = log_comparing_code + log_color_default
