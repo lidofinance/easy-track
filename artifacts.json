@@ -1,0 +1,83 @@
+[
+  {
+    "artifactPath": "build/contracts/AddRewardProgram.json",
+    "sourcePath": "contracts/EVMScriptFactories/AddRewardProgram.sol",
+    "name": "AddRewardProgram",
+    "address": "0x9D15032b91d01d5c1D940eb919461426AB0dD4e3",
+    "txHash": "0x72ceaeb7bc2127b343901943caed89fed8b7e7845acb3b5f54e753f9135a1f10"
+  },
+  {
+    "artifactPath": "build/contracts/AddRewardProgram.json",
+    "sourcePath": "contracts/EVMScriptFactories/AddRewardProgram.sol",
+    "name": "AddRewardProgram (Referral Program)",
+    "address": "0x929547490Ceb6AeEdD7d72F1Ab8957c0210b6E51",
+    "txHash": "0xb45a4f2f0fc11355e281cea3ea24f1e1cdf4bb581e8058c4081ecdd91027483e"
+  },
+  {
+    "artifactPath": "build/contracts/EasyTrack.json",
+    "sourcePath": "contracts/EasyTrack.sol",
+    "name": "EasyTrack",
+    "address": "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea"
+  },
+  {
+    "artifactPath": "build/contracts/EVMScriptExecutor.json",
+    "sourcePath": "contracts/EVMScriptExecutor.sol",
+    "name": "EVMScriptExecutor",
+    "address": "0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977",
+    "txHash": "0xc8f322a8e88319b4d0d0260b954591432f58c593e4c3f4a10b06209145424af4"
+  },
+  {
+    "artifactPath": "build/contracts/IncreaseNodeOperatorStakingLimit.json",
+    "sourcePath": "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol",
+    "name": "IncreaseNodeOperatorStakingLimit",
+    "address": "0xFeBd8FAC16De88206d4b18764e826AF38546AfE0",
+    "txHash": "0xf572ce96a2df0de4013e7ef0ee1e2dd25e079d11391e6587972f869f4f4b1f94"
+  },
+  {
+    "artifactPath": "build/contracts/RemoveRewardProgram.json",
+    "sourcePath": "contracts/EVMScriptFactories/RemoveRewardProgram.sol",
+    "name": "RemoveRewardProgram",
+    "address": "0xc21e5e72Ffc223f02fC410aAedE3084a63963932",
+    "txHash": "0x3f36774459f23185d5bac729d948572da74282c9dbb430e86d13ff1038ddf078"
+  },
+  {
+    "artifactPath": "build/contracts/RemoveRewardProgram.json",
+    "sourcePath": "contracts/EVMScriptFactories/RemoveRewardProgram.sol",
+    "name": "RemoveRewardProgram (Referral Program)",
+    "address": "0xE9eb838fb3A288bF59E9275Ccd7e124fDff88a9C",
+    "txHash": "0x1a73cace8f657bf89d50c8308f302736310ff2b7c43fc71bf5dbe5cc8c5d41b7"
+  },
+  {
+    "artifactPath": "build/contracts/RewardProgramsRegistry.json",
+    "sourcePath": "contracts/RewardProgramsRegistry.sol",
+    "name": "RewardProgramsRegistry",
+    "address": "0x3129C041B372eE93a5A8756dc4EC6f154D85Bc9a"
+  },
+  {
+    "artifactPath": "build/contracts/RewardProgramsRegistry.json",
+    "sourcePath": "contracts/RewardProgramsRegistry.sol",
+    "name": "RewardProgramsRegistry (Referral Program)",
+    "address": "0xfCaD241D9D2A2766979A2de208E8210eDf7b7D4F"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpLegoProgram.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpLegoProgram.sol",
+    "name": "TopUpLegoProgram",
+    "address": "0x648C8Be548F43eca4e482C0801Ebccccfb944931",
+    "txHash": "0xdff487d2eaba9fdd176923773904ce520cd755ad5728c994ad4457161887e959"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpRewardPrograms.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpRewardPrograms.sol",
+    "name": "TopUpRewardPrograms",
+    "address": "0x77781A93C4824d2299a38AC8bBB11eb3cd6Bc3B7",
+    "txHash": "0x8e4a1d5e390ba1a375fbd40b6886289e1b52a1647f8b0496267afe39b3c9a472"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpRewardPrograms.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpRewardPrograms.sol",
+    "name": "TopUpRewardPrograms",
+    "address": "0x54058ee0E0c87Ad813C002262cD75B98A7F59218",
+    "txHash": "0xdc88901783832ea7d78dcd0145030d9e7d1f45261b9dfe83fca541de056bb2e0"
+  }
+]
