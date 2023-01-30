@@ -49,7 +49,9 @@ def allowed_recipients_builder(network=DEFAULT_NETWORK):
             "0x958e0D946D014F377421a53AB5f9180d4485e63B"
         )
     if network == "goerli" or network == "goerli-fork":
-        raise Exception("AllowedRecipientsBuilder instance hasn't deployed yet")
+        return brownie.AllowedRecipientsBuilder.at(
+            "0x1082512D1d60a0480445353eb55de451D261b684"
+        )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
     )
