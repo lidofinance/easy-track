@@ -1,9 +1,9 @@
-from brownie import chain, AllowedRecipientsRegistry, TopUpAllowedRecipients
+from brownie import chain, network, AllowedRecipientsRegistry, TopUpAllowedRecipients
 
 from utils.config import (
     get_network_name,
 )
-from utils import lido, deployed_easy_track, log
+from utils import lido, deployed_easy_track, log, deployment
 from hexbytes import HexBytes
 
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = (
@@ -26,20 +26,22 @@ GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
 
+deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
+    period=0,
+    spent_amount=0,
+    title="",
+    limit=0,
+    token="",
+    trusted_caller="",
+)
+
+deployment_tx_hash = ""
+
+
 def main():
-    network_name = get_network_name()
+    network_name = network.show_active()
 
-    recipient = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
-    token = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-    limit = 10_000 * 1e18
-    period = 1
-    spent_amount = 0
-
-    tx_of_creation = (
-        "0xcf663eebff6ce76b03867a2f32c6456b5bbb4a11e6441798fb15409c7ca39fab"
-    )
-
-    tx = chain.get_transaction(tx_of_creation)
+    tx = chain.get_transaction(deployment_tx_hash)
 
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
@@ -54,15 +56,16 @@ def main():
     ]
     log.br()
 
-    log.nb("tx of creation", tx_of_creation)
+    log.nb("tx of creation", deployment_tx_hash)
 
     log.br()
 
-    log.nb("recipient", recipient)
-    log.nb("token", token)
-    log.nb("limit", limit)
-    log.nb("period", period)
-    log.nb("spent_amount", spent_amount)
+    log.nb("trusted_caller", deploy_config.trusted_caller)
+    log.nb("token", deploy_config.token)
+    log.nb("limit", deploy_config.limit)
+    log.nb("title", deploy_config.title)
+    log.nb("period", deploy_config.period)
+    log.nb("spent_amount", deploy_config.spent_amount)
 
     log.br()
 
@@ -74,18 +77,20 @@ def main():
     registry = AllowedRecipientsRegistry.at(registry_address)
     top_up_allowed_recipients = TopUpAllowedRecipients.at(add_allowed_recipient_address)
 
-    assert top_up_allowed_recipients.token() == token
+    assert top_up_allowed_recipients.token() == deploy_config.token
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
-    assert top_up_allowed_recipients.trustedCaller() == recipient
+    assert top_up_allowed_recipients.trustedCaller() == deploy_config.trusted_caller
 
     assert len(registry.getAllowedRecipients()) == 1
-    assert registry.isRecipientAllowed(recipient)
+    assert registry.isRecipientAllowed(deploy_config.trusted_caller)
 
     registryLimit, registryPeriodDuration = registry.getLimitParameters()
-    assert registryLimit == limit
-    assert registryPeriodDuration == period
+    assert registryLimit == deploy_config.limit
+    assert registryPeriodDuration == deploy_config.period
 
-    assert registry.spendableBalance() == limit - spent_amount
+    assert (
+        registry.spendableBalance() == deploy_config.limit - deploy_config.spent_amount
+    )
 
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent)
     assert registry.hasRole(

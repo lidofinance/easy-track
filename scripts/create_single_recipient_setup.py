@@ -6,36 +6,24 @@ from utils.config import (
     prompt_bool,
     get_network_name,
 )
-from utils import (
-    lido,
-    deployed_easy_track,
-    log
+from utils import lido, deployed_easy_track, log, deployment
+
+from brownie import AllowedRecipientsBuilder
+
+deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
+    period=0,
+    spent_amount=0,
+    title="",
+    limit=0,
+    token="",
+    trusted_caller="",
 )
 
-from brownie import (
-    AllowedRecipientsBuilder
-)
 
 def main():
-    network_name = get_network_name()
-
-    if (not (network_name == "goerli" or network_name == "goerli-fork")):
-        raise EnvironmentError("network is not supported")
-
-    trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
-    token = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
-    limit = 10_000 * 1e18
-    period = 1
-    spent_amount = 0
-
-    contracts = lido.contracts(network=network_name)
-    et_contracts = deployed_easy_track.contracts(network=network_name)
+    network_name = network.show_active()
     deployer = get_deployer_account(get_is_live(), network=network_name)
-
-    easy_track = et_contracts.easy_track
-    evm_script_executor = et_contracts.evm_script_executor
-
-    allowed_recipients_builder = AllowedRecipientsBuilder.at("0x1082512D1d60a0480445353eb55de451D261b684")
+    allowed_recipients_builder = lido.allowed_recipients_builder(network=network_name)
 
     log.br()
 
@@ -44,16 +32,12 @@ def main():
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
 
-    log.ok("Token", contracts.ldo)
-    log.ok("Trusted caller", trusted_caller)
-    log.ok("Limit", limit)
-    log.ok("Period", period)
-    log.ok("Spent amount", spent_amount)
-    
-    log.ok("Aragon Finance", contracts.aragon.finance)
-    log.ok("Aragon Agent", contracts.aragon.agent)
-    log.ok("EasyTrack", easy_track)
-    log.ok("EVMScript Executor", evm_script_executor)
+    log.ok("Token", deploy_config.token)
+    log.ok("Title", deploy_config.title)
+    log.ok("Trusted caller", deploy_config.trusted_caller)
+    log.ok("Limit", deploy_config.limit)
+    log.ok("Period", deploy_config.period)
+    log.ok("Spent amount", deploy_config.spent_amount)
 
     log.br()
 
@@ -63,25 +47,22 @@ def main():
         log.nb("Aborting")
         return
 
-    tx_params = { 
-        "from": deployer,
-        "priority_fee": "2 gwei",
-        "max_fee": "50 gwei"
-    }
+    tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
 
     tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
-        trusted_caller,
-        'Trusted multisig',
-        token,
-        limit,
-        period,
-        spent_amount,
-        tx_params
+        deploy_config.trusted_caller,
+        deploy_config.title,
+        deploy_config.token,
+        deploy_config.limit,
+        deploy_config.period,
+        deploy_config.spent_amount,
+        tx_params,
     )
 
-    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"][
+        "allowedRecipientsRegistry"
+    ]
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-
 
     log.ok("Allowed recipients easy track contracts have been deployed...")
     log.nb("Deployed AllowedRecipientsRegistryDeployed", registryAddress)

@@ -2,7 +2,7 @@ import pytest
 import brownie
 
 import constants
-from utils import lido, deployment, deployed_date_time, evm_script
+from utils import lido, deployment, deployed_date_time, evm_script, log
 from collections import namedtuple
 from dataclasses import dataclass
 
@@ -82,7 +82,7 @@ def load_deployed_contract(deployed_contracts):
             and deployed_contracts[contract_name] != ""
         ):
             loaded_contract = Contract.at(deployed_contracts[contract_name])
-            print(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
+            log.ok(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
             return loaded_contract
 
     return _load_deployed_contract
@@ -103,6 +103,14 @@ def easy_track(
 ):
 
     loaded_easy_track = load_deployed_contract("EasyTrack")
+
+    if loaded_easy_track:
+        lido_contracts.aragon.acl.grantPermission(
+            loaded_easy_track.evmScriptExecutor(),
+            lido_contracts.permissions.finance.CREATE_PAYMENTS_ROLE.app,
+            lido_contracts.permissions.finance.CREATE_PAYMENTS_ROLE.role,
+            {"from": lido_contracts.aragon.voting},
+        )
 
     if not loaded_easy_track is None:
         return loaded_easy_track
@@ -190,7 +198,7 @@ def add_allowed_recipient_evm_script_factory(
             deployment.create_permission(allowed_recipients_registry, "addRecipient"),
             {"from": lido_contracts.aragon.voting},
         )
-        print(
+        log.ok(
             f"EVM Script Factory AddAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
@@ -227,7 +235,7 @@ def remove_allowed_recipient_evm_script_factory(
             ),
             {"from": lido_contracts.aragon.voting},
         )
-        print(
+        log.ok(
             f"EVM Script Factory RemoveAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
@@ -332,8 +340,8 @@ def top_up_allowed_recipients_evm_script_factory(
             )[2:],
             {"from": lido_contracts.aragon.voting},
         )
-        print(
-            f"EVM Script Factory TopUpAllowedRecipient({evm_script_factory}) was added to EasyTrack"
+        log.ok(
+            f"EVM Script Factory TopUpAllowedRecipients({evm_script_factory}) was added to EasyTrack"
         )
 
     return evm_script_factory
@@ -401,8 +409,10 @@ def top_up_allowed_recipient_by_motion(
 
 
 @pytest.fixture(scope="module")
-def get_balances(interface):
+def get_balances(interface, accounts):
     def _get_balances(token, recipients):
+        if token == brownie.ZERO_ADDRESS:
+            return [accounts.at(r).balance() for r in recipients]
         return [interface.ERC20(token).balanceOf(r) for r in recipients]
 
     return _get_balances
@@ -414,6 +424,7 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
     interface,
     easy_track,
     get_balances,
+    lido_contracts,
     enact_motion_by_creation_tx,
     check_top_up_motion_enactment,
 ):
@@ -429,9 +440,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             motion_creation_tx.events["MotionCreated"]["_evmScriptCallData"]
         )
 
-        balances_before = get_balances(
-            top_up_allowed_recipients_evm_script_factory.token(), recipients
+        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
+
+        (sender_balance_before,) = get_balances(
+            top_up_token, [lido_contracts.aragon.agent]
         )
+        recipients_balances_before = get_balances(top_up_token, recipients)
 
         motion_data = easy_track.getMotion(
             motion_creation_tx.events["MotionCreated"]["_motionId"]
@@ -447,11 +461,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
         motion_enactment_tx = enact_motion_by_creation_tx(motion_creation_tx)
 
         check_top_up_motion_enactment(
-            top_up_allowed_recipients_evm_script_factory,
-            motion_enactment_tx,
-            balances_before,
-            recipients,
-            amounts,
+            top_up_allowed_recipients_evm_script_factory=top_up_allowed_recipients_evm_script_factory,
+            top_up_motion_enactment_tx=motion_enactment_tx,
+            sender_balance_before=sender_balance_before,
+            recipients_balances_before=recipients_balances_before,
+            top_up_recipients=recipients,
+            top_up_amounts=amounts,
         )
 
     return _enact_top_up_allowed_recipient_motion_by_creation_tx
@@ -459,15 +474,15 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
 
 @pytest.fixture(scope="module")
 def check_top_up_motion_enactment(
-    AllowedRecipientsRegistry,
-    get_balances,
+    AllowedRecipientsRegistry, get_balances, lido_contracts
 ):
     """Note: this check works correctly only when was payment in the period"""
 
     def _check_top_up_motion_enactment(
         top_up_allowed_recipients_evm_script_factory,
         top_up_motion_enactment_tx,
-        balances_before,
+        sender_balance_before,
+        recipients_balances_before,
         top_up_recipients,
         top_up_amounts,
     ):
@@ -492,11 +507,18 @@ def check_top_up_motion_enactment(
             == spendable
         )
 
-        balances = get_balances(
-            top_up_allowed_recipients_evm_script_factory.token(),
+        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
+        (sender_balance,) = get_balances(top_up_token, [lido_contracts.aragon.agent])
+        recipients_balances = get_balances(
+            top_up_token,
             top_up_recipients,
         )
-        for before, now, payment in zip(balances_before, balances, top_up_amounts):
+
+        assert sender_balance == sender_balance_before - spending
+
+        for before, now, payment in zip(
+            recipients_balances_before, recipients_balances, top_up_amounts
+        ):
             assert now == before + payment
 
         assert "SpendableAmountChanged" in top_up_motion_enactment_tx.events
@@ -578,28 +600,48 @@ def allowed_recipients_registry(
     allowed_recipients_default_params,
     allowed_recipients_builder,
     load_deployed_contract,
+    lido_contracts,
+    easy_track,
     deployer,
 ):
-    loaded_allowed_recipients_registry = load_deployed_contract(
-        "AllowedRecipientsRegistry"
-    )
+    allowed_recipients_registry = load_deployed_contract("AllowedRecipientsRegistry")
 
-    if not loaded_allowed_recipients_registry is None:
-        return loaded_allowed_recipients_registry
+    if allowed_recipients_registry is None:
+        tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
+            allowed_recipients_default_params.limit,
+            allowed_recipients_default_params.period_duration_months,
+            [],
+            [],
+            allowed_recipients_default_params.spent_amount,
+            True,
+            {"from": deployer},
+        )
 
-    tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
-        allowed_recipients_default_params.limit,
-        allowed_recipients_default_params.period_duration_months,
-        [],
-        [],
-        allowed_recipients_default_params.spent_amount,
-        True,
-        {"from": deployer},
-    )
+        allowed_recipients_registry = AllowedRecipientsRegistry.at(
+            tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+        )
 
-    return AllowedRecipientsRegistry.at(
-        tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
-    )
+    if not allowed_recipients_registry.hasRole(
+        allowed_recipients_registry.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE(),
+        easy_track.evmScriptExecutor(),
+    ):
+        allowed_recipients_registry.grantRole(
+            allowed_recipients_registry.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE(),
+            easy_track.evmScriptExecutor(),
+            {"from": lido_contracts.aragon.agent},
+        )
+
+    if not allowed_recipients_registry.hasRole(
+        allowed_recipients_registry.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE(),
+        easy_track.evmScriptExecutor(),
+    ):
+        allowed_recipients_registry.grantRole(
+            allowed_recipients_registry.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE(),
+            easy_track.evmScriptExecutor(),
+            {"from": lido_contracts.aragon.agent},
+        )
+
+    return allowed_recipients_registry
 
 
 @pytest.fixture(scope="module")

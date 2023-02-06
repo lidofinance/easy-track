@@ -1,5 +1,6 @@
 from brownie import (
     chain,
+    network,
     AllowedRecipientsRegistry,
     TopUpAllowedRecipients,
     AddAllowedRecipient,
@@ -9,7 +10,7 @@ from brownie import (
 from utils.config import (
     get_network_name,
 )
-from utils import lido, deployed_easy_track, log
+from utils import lido, deployed_easy_track, log, deployment
 from hexbytes import HexBytes
 
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = (
@@ -31,25 +32,23 @@ DEFAULT_ADMIN_ROLE = (
 GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
+deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
+    token="",
+    limit=0,
+    period=1,
+    spent_amount=0,
+    trusted_caller="",
+    titles=[],
+    recipients=[],
+)
+
+deployment_tx_hash = ""
+
 
 def main():
-    network_name = get_network_name()
+    network_name = network.show_active()
 
-    recipients = [
-        "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
-        "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
-        "0xa5F1d7D49F581136Cf6e58B32cBE9a2039C48bA1",
-        "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
-        "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97",
-    ]
-    trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
-    limit = 10_000 * 1e18
-    period = 1
-    spent_amount = 0
-
-    tx = chain.get_transaction(
-        "0xd8bfe8b817231afb4851ac5926a84feb69b0a204f6ac37c3f3b91c6b8180981d"
-    )
+    tx = chain.get_transaction(deployment_tx_hash)
 
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
@@ -72,16 +71,15 @@ def main():
     log.br()
 
     log.nb("Agent", contracts.aragon.agent)
-    log.nb("LDO Token", contracts.ldo)
     log.nb("Easy Track EVM Script Executor", evm_script_executor)
 
     log.br()
 
-    log.nb("recipients", recipients)
-    log.nb("trusted_caller", trusted_caller)
-    log.nb("limit", limit)
-    log.nb("period", period)
-    log.nb("spent_amount", spent_amount)
+    log.nb("recipients", deploy_config.recipients)
+    log.nb("trusted_caller", deploy_config.trusted_caller)
+    log.nb("limit", deploy_config.limit)
+    log.nb("period", deploy_config.period)
+    log.nb("spent_amount", deploy_config.spent_amount)
 
     log.br()
 
@@ -99,23 +97,25 @@ def main():
         remove_allowed_recipient_address
     )
 
-    assert top_up_allowed_recipients.token() == contracts.ldo
+    assert top_up_allowed_recipients.token() == deploy_config.token
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
-    assert top_up_allowed_recipients.trustedCaller() == trusted_caller
+    assert top_up_allowed_recipients.trustedCaller() == deploy_config.trusted_caller
     assert add_allowed_recipient.allowedRecipientsRegistry() == registry
-    assert add_allowed_recipient.trustedCaller() == trusted_caller
+    assert add_allowed_recipient.trustedCaller() == deploy_config.trusted_caller
     assert remove_allowed_recipient.allowedRecipientsRegistry() == registry
-    assert remove_allowed_recipient.trustedCaller() == trusted_caller
+    assert remove_allowed_recipient.trustedCaller() == deploy_config.trusted_caller
 
-    assert len(registry.getAllowedRecipients()) == len(recipients)
-    for recipient in recipients:
+    assert len(registry.getAllowedRecipients()) == len(deploy_config.recipients)
+    for recipient in deploy_config.recipients:
         assert registry.isRecipientAllowed(recipient)
 
     registryLimit, registryPeriodDuration = registry.getLimitParameters()
-    assert registryLimit == limit
-    assert registryPeriodDuration == period
+    assert registryLimit == deploy_config.limit
+    assert registryPeriodDuration == deploy_config.period
 
-    assert registry.spendableBalance() == limit - spent_amount
+    assert (
+        registry.spendableBalance() == deploy_config.limit - deploy_config.spent_amount
+    )
 
     assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent)
     assert registry.hasRole(
