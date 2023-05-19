@@ -429,6 +429,7 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
     lido_contracts,
     enact_motion_by_creation_tx,
     check_top_up_motion_enactment,
+    AllowedRecipientsRegistry,
 ):
     def _enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx):
         top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
@@ -448,6 +449,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             top_up_token, [lido_contracts.aragon.agent]
         )
         recipients_balances_before = get_balances(top_up_token, recipients)
+
+        allowed_recipients_registry = AllowedRecipientsRegistry.at(
+            top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
+        )
+        spendable_before = allowed_recipients_registry.spendableBalance()
+        spent_before = allowed_recipients_registry.getPeriodState()["_alreadySpentAmount"]
 
         motion_data = easy_track.getMotion(
             motion_creation_tx.events["MotionCreated"]["_motionId"]
@@ -469,6 +476,8 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             recipients_balances_before=recipients_balances_before,
             top_up_recipients=recipients,
             top_up_amounts=amounts,
+            spendable_before=spendable_before,
+            spent_before=spent_before,
         )
 
     return _enact_top_up_allowed_recipient_motion_by_creation_tx
@@ -487,26 +496,29 @@ def check_top_up_motion_enactment(
         recipients_balances_before,
         top_up_recipients,
         top_up_amounts,
+        spendable_before,
+        spent_before,
     ):
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
         )
         limit, duration = allowed_recipients_registry.getLimitParameters()
 
-        spending = sum(top_up_amounts)
-        spendable = limit - spending
+        sum_top_up_amounts = sum(top_up_amounts)
+        spending_after_enactment = spent_before + sum_top_up_amounts
+        spendable_after_enactment = spendable_before - sum_top_up_amounts
 
-        assert allowed_recipients_registry.isUnderSpendableBalance(spendable, 0)
+        assert allowed_recipients_registry.isUnderSpendableBalance(spendable_after_enactment, 0)
         assert allowed_recipients_registry.isUnderSpendableBalance(
             limit, duration * MAX_SECONDS_IN_MONTH
         )
         assert (
             allowed_recipients_registry.getPeriodState()["_alreadySpentAmount"]
-            == spending
+            == spending_after_enactment
         )
         assert (
             allowed_recipients_registry.getPeriodState()["_spendableBalanceInPeriod"]
-            == spendable
+            == spendable_after_enactment
         )
 
         top_up_token = top_up_allowed_recipients_evm_script_factory.token()
@@ -516,7 +528,7 @@ def check_top_up_motion_enactment(
             top_up_recipients,
         )
 
-        assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN)
+        assert math.isclose(sender_balance, sender_balance_before - sum_top_up_amounts, abs_tol = STETH_ERROR_MARGIN)
 
         for before, now, payment in zip(
             recipients_balances_before, recipients_balances, top_up_amounts
@@ -528,13 +540,13 @@ def check_top_up_motion_enactment(
             top_up_motion_enactment_tx.events["SpendableAmountChanged"][
                 "_alreadySpentAmount"
             ]
-            == spending
+            == spending_after_enactment
         )
         assert (
             top_up_motion_enactment_tx.events["SpendableAmountChanged"][
                 "_spendableBalance"
             ]
-            == spendable
+            == spendable_after_enactment
         )
 
     return _check_top_up_motion_enactment
