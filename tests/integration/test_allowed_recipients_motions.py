@@ -407,6 +407,8 @@ def test_spendable_balance_is_renewed_in_next_period(
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
+    create_top_up_allowed_recipients_motion,
+    enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
@@ -430,18 +432,65 @@ def test_spendable_balance_is_renewed_in_next_period(
         allowed_recipients[1].title,
     )
 
-    top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.1) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.9) * 10 ** 18,
+    top_up_amounts1 = [
+        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.2) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.2) * 10 ** 18,
     ]
+
+    top_up_amounts2 = [
+        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.2) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.2) * 10 ** 18,
+    ]
+
+    top_up_amounts3 = [
+        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.1) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.1) * 10 ** 18,
+    ]
+
+    '''top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        [r.address for r in allowed_recipients],
+        top_up_amounts1,
+    ) '''
+
+    motion_creation_tx1 = create_top_up_allowed_recipients_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        [r.address for r in allowed_recipients],
+        top_up_amounts1,
+    )
+
+    enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx1)
+
+    motion_creation_tx2 = create_top_up_allowed_recipients_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        [r.address for r in allowed_recipients],
+        top_up_amounts2,
+    )
+
+    enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx2)
+
+    motion_creation_tx3 = create_top_up_allowed_recipients_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        [r.address for r in allowed_recipients],
+        top_up_amounts3,
+    )
+
+    enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx3)
+
+
+    ''' top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        [r.address for r in allowed_recipients],
+        top_up_amounts2,
+    )
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         [r.address for r in allowed_recipients],
-        top_up_amounts,
-    )
+        top_up_amounts3,
+    )'''
 
-    amount_spent = sum(top_up_amounts)
+    amount_spent = sum(top_up_amounts1) + sum(top_up_amounts2) + sum(top_up_amounts3)
     assert allowed_recipients_registry.getPeriodState()[0] == amount_spent
     assert (
         allowed_recipients_registry.spendableBalance()
