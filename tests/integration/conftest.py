@@ -1,5 +1,6 @@
 import pytest
 import brownie
+import math
 
 import constants
 from utils import lido, deployment, deployed_date_time, evm_script, log
@@ -11,6 +12,7 @@ from dataclasses import dataclass
 #####
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
+STETH_ERROR_MARGIN = 2
 
 #####
 # ACCOUNTS
@@ -59,13 +61,13 @@ def deployed_contracts():
     To run tests on deployed contracts, set their address below
     """
     return {
-        "EasyTrack": "",
+        "EasyTrack": "0xAf072C8D368E4DD4A9d4fF6A76693887d6ae92Af",
         "AllowedRecipientsFactory": "",
         "AllowedRecipientsBuilder": "",
-        "AllowedRecipientsRegistry": "",
-        "AddAllowedRecipient": "",
-        "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipients": "",
+        "AllowedRecipientsRegistry": "0x78797efCca6C537BF92FA6b25cBb14A6f1c128A0",
+        "AddAllowedRecipient": "0x785A8B1CDC03Bb191670Ed4696e9ED5B11Af910A",
+        "RemoveAllowedRecipient": "0xEFEa524D1739800fF6F7d2532ED4C8508220239a",
+        "TopUpAllowedRecipients": "0xF2f7FC1E8879c10D4579Bc82D5FEa923A5a228dE",
     }
 
 
@@ -514,12 +516,12 @@ def check_top_up_motion_enactment(
             top_up_recipients,
         )
 
-        assert sender_balance == sender_balance_before - spending
+        assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN)
 
         for before, now, payment in zip(
             recipients_balances_before, recipients_balances, top_up_amounts
         ):
-            assert now == before + payment
+            assert math.isclose(now, before + payment, abs_tol = STETH_ERROR_MARGIN)
 
         assert "SpendableAmountChanged" in top_up_motion_enactment_tx.events
         assert (
