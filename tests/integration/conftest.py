@@ -516,12 +516,18 @@ def check_top_up_motion_enactment(
             top_up_recipients,
         )
 
-        assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN)
+        if top_up_token == lido_contracts.steth:
+            assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN)
+        else:
+            assert sender_balance == sender_balance_before - spending
 
         for before, now, payment in zip(
             recipients_balances_before, recipients_balances, top_up_amounts
         ):
-            math.isclose(now, before + payment, abs_tol = STETH_ERROR_MARGIN)
+            if top_up_token == lido_contracts.steth:
+                assert math.isclose(now, before + payment, abs_tol = STETH_ERROR_MARGIN)
+            else:
+                assert now == before + payment
 
         assert "SpendableAmountChanged" in top_up_motion_enactment_tx.events
         assert (
