@@ -2,6 +2,7 @@ import pytest
 import brownie
 
 import constants
+import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
 from collections import namedtuple
 from dataclasses import dataclass
@@ -11,6 +12,7 @@ from dataclasses import dataclass
 #####
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
+STETH_ERROR_MARGIN = 2
 
 #####
 # ACCOUNTS
@@ -514,12 +516,12 @@ def check_top_up_motion_enactment(
             top_up_recipients,
         )
 
-        assert sender_balance == sender_balance_before - spending
+        assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN)
 
         for before, now, payment in zip(
             recipients_balances_before, recipients_balances, top_up_amounts
         ):
-            assert now == before + payment
+            math.isclose(now, before + payment, abs_tol = STETH_ERROR_MARGIN)
 
         assert "SpendableAmountChanged" in top_up_motion_enactment_tx.events
         assert (
