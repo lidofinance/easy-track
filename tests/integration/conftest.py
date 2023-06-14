@@ -12,7 +12,7 @@ from dataclasses import dataclass
 #####
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
-STETH_ERROR_MARGIN = 2
+STETH_ERROR_MARGIN_WEI = 2
 
 #####
 # ACCOUNTS
@@ -517,7 +517,7 @@ def check_top_up_motion_enactment(
         )
 
         if top_up_token == lido_contracts.steth:
-            assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN)
+            assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN_WEI)
         else:
             assert sender_balance == sender_balance_before - spending
 
@@ -525,7 +525,7 @@ def check_top_up_motion_enactment(
             recipients_balances_before, recipients_balances, top_up_amounts
         ):
             if top_up_token == lido_contracts.steth:
-                assert math.isclose(now, before + payment, abs_tol = STETH_ERROR_MARGIN)
+                assert math.isclose(now, before + payment, abs_tol = STETH_ERROR_MARGIN_WEI)
             else:
                 assert now == before + payment
 
