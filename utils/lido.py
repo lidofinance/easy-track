@@ -16,7 +16,6 @@ def addresses(network=DEFAULT_NETWORK):
                 token_manager="0xf73a1260d222f447210581ddf212d915c09a3249",
             ),
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
-            accounting_oracle="0x852deD011285fe67063a08005c71a85690503Cee",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
         )
     if network == "goerli" or network == "goerli-fork":
@@ -31,7 +30,6 @@ def addresses(network=DEFAULT_NETWORK):
                 token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
             ),
             steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
-            accounting_oracle="0x76f358A842defa0E179a8970767CFf668Fc134d6",
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
         )
     raise NameError(
@@ -70,7 +68,6 @@ class LidoContractsSetup:
             token_manager=interface.TokenManager(lido_addresses.aragon.token_manager),
         )
         self.steth = interface.Lido(lido_addresses.steth)
-        self.accounting_oracle = interface.AccountingOracle(lido_addresses.accounting_oracle)
         self.node_operators_registry = interface.NodeOperatorsRegistry(
             lido_addresses.node_operators_registry
         )
@@ -113,10 +110,9 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, accounting_oracle, node_operators_registry):
+    def __init__(self, aragon, steth, node_operators_registry):
         self.aragon = aragon
         self.steth = steth
-        self.accounting_oracle = accounting_oracle
         self.node_operators_registry = node_operators_registry
         self.ldo = self.aragon.gov_token
 
@@ -143,7 +139,6 @@ class Permissions:
         self.node_operators_registry = NodeOperatorsRegistryPermissions(
             contracts.node_operators_registry
         )
-        self.accounting_oracle = AccountingOraclePermissions(contracts.accounting_oracle)
         self.token_manager = TokenManagerPermissions(contracts.aragon.token_manager)
         self.voting = VotingPermissions(contracts.aragon.voting)
 
@@ -160,7 +155,6 @@ class Permissions:
             + list(self.agent.__dict__.values())
             + list(self.lido.__dict__.values())
             + list(self.node_operators_registry.__dict__.values())
-            + list(self.oracle.__dict__.values())
             + list(self.token_manager.__dict__.values())
             + list(self.voting.__dict__.values())
         )
@@ -213,13 +207,6 @@ class NodeOperatorsRegistryPermissions:
             node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE"
         )
 
-
-class AccountingOraclePermissions:
-    def __init__(self, accounting_oracle_app):
-        self.DEFAULT_ADMIN_ROLE = Permission(accounting_oracle_app, "DEFAULT_ADMIN_ROLE")
-        self.SUBMIT_DATA_ROLE = Permission(accounting_oracle_app, "SUBMIT_DATA_ROLE")
-        self.MANAGE_CONSENSUS_CONTRACT_ROLE = Permission(accounting_oracle_app, "MANAGE_CONSENSUS_CONTRACT_ROLE")
-        self.MANAGE_CONSENSUS_VERSION_ROLE = Permission(accounting_oracle_app, "MANAGE_CONSENSUS_VERSION_ROLE")
 
 
 class TokenManagerPermissions:
