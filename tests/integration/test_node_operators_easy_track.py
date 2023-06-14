@@ -91,7 +91,21 @@ def test_node_operators_easy_track_happy_path(
         node_operator["name"], node_operator["address"]
     )
     add_node_operator_evm_script = evm_script.encode_call_script(
-        [(node_operators_registry.address, add_node_operator_calldata)]
+        [
+            (
+                acl.address,
+                acl.createPermission.encode_input(
+                    voting,
+                    node_operators_registry,
+                    node_operators_registry.MANAGE_NODE_OPERATOR_ROLE(),
+                    voting,
+                )
+            ),
+            (
+                node_operators_registry.address,
+                add_node_operator_calldata,
+            )
+        ]
     )
 
     add_node_operators_voting_id, _ = lido_contracts.create_voting(
