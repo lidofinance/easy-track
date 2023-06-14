@@ -448,6 +448,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             top_up_token, [lido_contracts.aragon.agent]
         )
         recipients_balances_before = get_balances(top_up_token, recipients)
+        sender_shares_balance_before = 0
+        recipients_shares_balance_before = 0
+        if top_up_token == lido_contracts.steth:
+            sender_shares_balance_before = lido_contracts.steth.sharesOf(lido_contracts.aragon.agent)
+            for r in recipients:
+                recipients_shares_balance_before += lido_contracts.steth.sharesOf(r)
 
         motion_data = easy_track.getMotion(
             motion_creation_tx.events["MotionCreated"]["_motionId"]
@@ -467,6 +473,8 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             top_up_motion_enactment_tx=motion_enactment_tx,
             sender_balance_before=sender_balance_before,
             recipients_balances_before=recipients_balances_before,
+            sender_shares_balance_before=sender_shares_balance_before,
+            recipients_shares_balance_before=recipients_shares_balance_before,
             top_up_recipients=recipients,
             top_up_amounts=amounts,
         )
@@ -485,6 +493,8 @@ def check_top_up_motion_enactment(
         top_up_motion_enactment_tx,
         sender_balance_before,
         recipients_balances_before,
+        sender_shares_balance_before,
+        recipients_shares_balance_before,
         top_up_recipients,
         top_up_amounts,
     ):
@@ -518,6 +528,13 @@ def check_top_up_motion_enactment(
 
         if top_up_token == lido_contracts.steth:
             assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN_WEI)
+
+            sender_shares_balance_after = lido_contracts.steth.sharesOf(lido_contracts.aragon.agent)
+            recipients_shares_balance_after = 0
+            for r in top_up_recipients:
+                recipients_shares_balance_after += lido_contracts.steth.sharesOf(r)
+            assert sender_shares_balance_before >= sender_shares_balance_after
+            assert sender_shares_balance_before - sender_shares_balance_after  == recipients_shares_balance_after - recipients_shares_balance_before
         else:
             assert sender_balance == sender_balance_before - spending
 
