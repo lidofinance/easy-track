@@ -16,7 +16,6 @@ def addresses(network=DEFAULT_NETWORK):
                 token_manager="0xf73a1260d222f447210581ddf212d915c09a3249",
             ),
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
-            oracle="0x442af784A788A5bd6F42A01Ebe9F287a871243fb",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
         )
     if network == "goerli" or network == "goerli-fork":
@@ -31,7 +30,6 @@ def addresses(network=DEFAULT_NETWORK):
                 token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
             ),
             steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
-            oracle="0x24d8451bc07e7af4ba94f69acdd9ad3c6579d9fb",
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
         )
     raise NameError(
@@ -70,7 +68,6 @@ class LidoContractsSetup:
             token_manager=interface.TokenManager(lido_addresses.aragon.token_manager),
         )
         self.steth = interface.Lido(lido_addresses.steth)
-        self.oracle = interface.Oracle(lido_addresses.oracle)
         self.node_operators_registry = interface.NodeOperatorsRegistry(
             lido_addresses.node_operators_registry
         )
@@ -113,10 +110,9 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, oracle, node_operators_registry):
+    def __init__(self, aragon, steth, node_operators_registry):
         self.aragon = aragon
         self.steth = steth
-        self.oracle = oracle
         self.node_operators_registry = node_operators_registry
         self.ldo = self.aragon.gov_token
 
@@ -143,7 +139,6 @@ class Permissions:
         self.node_operators_registry = NodeOperatorsRegistryPermissions(
             contracts.node_operators_registry
         )
-        self.oracle = OraclePermissions(contracts.oracle)
         self.token_manager = TokenManagerPermissions(contracts.aragon.token_manager)
         self.voting = VotingPermissions(contracts.aragon.voting)
 
@@ -160,7 +155,6 @@ class Permissions:
             + list(self.agent.__dict__.values())
             + list(self.lido.__dict__.values())
             + list(self.node_operators_registry.__dict__.values())
-            + list(self.oracle.__dict__.values())
             + list(self.token_manager.__dict__.values())
             + list(self.voting.__dict__.values())
         )
@@ -194,45 +188,25 @@ class AgentPermissions:
 class LidoPermissions:
     def __init__(self, lido_app):
         self.PAUSE_ROLE = Permission(lido_app, "PAUSE_ROLE")
-        self.MANAGE_WITHDRAWAL_KEY = Permission(lido_app, "MANAGE_WITHDRAWAL_KEY")
-        self.MANAGE_FEE = Permission(lido_app, "MANAGE_FEE")
-        self.BURN_ROLE = Permission(lido_app, "BURN_ROLE")
-
+        self.RESUME_ROLE = Permission(lido_app, "RESUME_ROLE")
+        self.STAKING_PAUSE_ROLE = Permission(lido_app, "STAKING_PAUSE_ROLE")
+        self.STAKING_CONTROL_ROLE = Permission(lido_app, "STAKING_CONTROL_ROLE")
 
 class NodeOperatorsRegistryPermissions:
     def __init__(self, node_operators_registry_app):
-        self.SET_NODE_OPERATOR_ADDRESS_ROLE = Permission(
-            node_operators_registry_app, "SET_NODE_OPERATOR_ADDRESS_ROLE"
+        self.STAKING_ROUTER_ROLE = Permission(
+            node_operators_registry_app, "STAKING_ROUTER_ROLE"
         )
-        self.SET_NODE_OPERATOR_NAME_ROLE = Permission(
-            node_operators_registry_app, "SET_NODE_OPERATOR_NAME_ROLE"
-        )
-        self.ADD_NODE_OPERATOR_ROLE = Permission(
-            node_operators_registry_app, "ADD_NODE_OPERATOR_ROLE"
-        )
-        self.REPORT_STOPPED_VALIDATORS_ROLE = Permission(
-            node_operators_registry_app, "REPORT_STOPPED_VALIDATORS_ROLE"
-        )
-        self.SET_NODE_OPERATOR_ACTIVE_ROLE = Permission(
-            node_operators_registry_app, "SET_NODE_OPERATOR_ACTIVE_ROLE"
-        )
-        self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(
-            node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE"
+        self.MANAGE_NODE_OPERATOR_ROLE = Permission(
+            node_operators_registry_app, "MANAGE_NODE_OPERATOR_ROLE"
         )
         self.MANAGE_SIGNING_KEYS = Permission(
             node_operators_registry_app, "MANAGE_SIGNING_KEYS"
         )
-
-
-class OraclePermissions:
-    def __init__(self, oracle_app):
-        self.MANAGE_QUORUM = Permission(oracle_app, "MANAGE_QUORUM")
-        self.SET_BEACON_REPORT_RECEIVER = Permission(
-            oracle_app, "SET_BEACON_REPORT_RECEIVER"
+        self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(
+            node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE"
         )
-        self.MANAGE_MEMBERS = Permission(oracle_app, "MANAGE_MEMBERS")
-        self.SET_BEACON_SPEC = Permission(oracle_app, "SET_BEACON_SPEC")
-        self.SET_REPORT_BOUNDARIES = Permission(oracle_app, "SET_REPORT_BOUNDARIES")
+
 
 
 class TokenManagerPermissions:
