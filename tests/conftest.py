@@ -253,6 +253,21 @@ def calls_script(lido_contracts):
     return lido_contracts.aragon.calls_script
 
 
+@pytest.fixture(scope="module")
+def kernel(lido_contracts):
+    return lido_contracts.aragon.kernel
+
+
+@pytest.fixture(scope="module")
+def staking_router(lido_contracts):
+    return lido_contracts.staking_router
+
+
+@pytest.fixture(scope="module")
+def locator(lido_contracts):
+    return lido_contracts.locator
+
+
 #########################
 # State Changing Fixtures
 #########################

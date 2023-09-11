@@ -13,10 +13,13 @@ def addresses(network="mainnet"):
                 gov_token="0x5a98fcbea516cf06857215779fd812ca3bef1b32",
                 calls_script="0x5cEb19e1890f677c3676d5ecDF7c501eBA01A054",
                 token_manager="0xf73a1260d222f447210581ddf212d915c09a3249",
+                kernel="0xb8FFC3Cd6e7Cf5a098A1c92F48009765B24088Dc",
             ),
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             oracle="0x442af784A788A5bd6F42A01Ebe9F287a871243fb",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
+            staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
+            locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
     if network == "goerli":
         return LidoSetup(
@@ -28,10 +31,13 @@ def addresses(network="mainnet"):
                 gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
                 calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
                 token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
+                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
             ),
             steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
             oracle="0x24d8451bc07e7af4ba94f69acdd9ad3c6579d9fb",
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
+            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
+            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, goerli."""
@@ -50,12 +56,21 @@ def contracts(network="mainnet", interface=interface):
             calls_script=interface.CallsScript(network_addresses.aragon.calls_script),
             token_manager=interface.TokenManager(
                 network_addresses.aragon.token_manager
+            ),            
+            kernel=interface.Kernel(
+                network_addresses.aragon.kernel
             ),
         ),
         steth=interface.Lido(network_addresses.steth),
         oracle=interface.Oracle(network_addresses.oracle),
         node_operators_registry=interface.NodeOperatorsRegistry(
             network_addresses.node_operators_registry
+        ),
+        staking_router=interface.StakingRouter(
+            network_addresses.staking_router
+        ),
+        locator=interface.LidoLocator(
+            network_addresses.locator
         ),
     )
 
@@ -108,17 +123,19 @@ def execute_voting(voting_id, network="mainnet"):
 
 
 class LidoSetup:
-    def __init__(self, aragon, steth, oracle, node_operators_registry):
+    def __init__(self, aragon, steth, oracle, node_operators_registry, staking_router, locator):
         self.aragon = aragon
         self.steth = steth
         self.oracle = oracle
         self.node_operators_registry = node_operators_registry
         self.ldo = self.aragon.gov_token
+        self.staking_router = staking_router
+        self.locator = locator
 
 
 class AragonSetup:
     def __init__(
-        self, acl, agent, voting, finance, gov_token, calls_script, token_manager
+        self, acl, agent, voting, finance, gov_token, calls_script, token_manager, kernel
     ):
         self.acl = acl
         self.agent = agent
@@ -127,6 +144,7 @@ class AragonSetup:
         self.gov_token = gov_token
         self.calls_script = calls_script
         self.token_manager = token_manager
+        self.kernel = kernel
 
 
 class Permissions:
