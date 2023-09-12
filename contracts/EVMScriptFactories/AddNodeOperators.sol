@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.12;
+pragma solidity ^0.8.6;
 
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
@@ -19,6 +19,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     struct NodeOperator {
         string name;
         address rewardAddress;
+
     }
 
     // -------------
@@ -51,7 +52,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         bytes[] memory nodeOperatorsCallData = new bytes[](decodedCallData.length);
 
         for (uint i = 0; i < decodedCallData.length; i++) {
-            nodeOperatorsCallData[i] = abi.encode(decodedCallData[i]);
+            nodeOperatorsCallData[i] = abi.encode(decodedCallData[i].name, decodedCallData[i].rewardAddress);
         }
 
         return

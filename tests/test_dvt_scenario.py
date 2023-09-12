@@ -450,8 +450,8 @@ def test_simple_dvt_scenario(
     for cluster_index in range(len(clusters)):
         cluster = simple_dvt.getNodeOperator(cluster_index, True)
         assert cluster["active"] == True
-        # assert cluster["name"] == clusters[cluster_index]["name"]
-        # assert cluster["rewardAddress"] == clusters[cluster_index]["address"]
+        assert cluster["name"] == clusters[cluster_index]["name"]
+        assert cluster["rewardAddress"] == clusters[cluster_index]["address"]
         assert cluster["totalVettedValidators"] == 0
         assert cluster["totalExitedValidators"] == 0
         assert cluster["totalAddedValidators"] == 0
