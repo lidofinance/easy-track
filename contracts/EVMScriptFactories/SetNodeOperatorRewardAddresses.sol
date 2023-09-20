@@ -8,18 +8,24 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 
 interface INodeOperatorsRegistry {
-    function setNodeOperatorName(uint256 _nodeOperatorId, string memory _name) external;
+    function setNodeOperatorRewardAddress(uint256 _nodeOperatorId, address _rewardAddress) external;
+
+    function MAX_NODE_OPERATOR_NAME_LENGTH() external view returns (uint256);
 
     function getNodeOperatorsCount() external view returns (uint256);
 
-    function MAX_NODE_OPERATOR_NAME_LENGTH() external view returns (uint256);
+    function getLocator() external view returns (ILidoLocator);
 }
 
-/// @notice Creates EVMScript to set node operators name
-contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
-    struct SetNameInput {
+interface ILidoLocator {
+    function lido() external view returns (address);
+}
+
+/// @notice Creates EVMScript to set node operators reward address
+contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
+    struct SetRewardAddressInput {
         uint256 nodeOperatorId;
-        string name;
+        address rewardAddress;
     }
 
     // -------------
@@ -27,7 +33,8 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
+    string private constant LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
+    string private constant ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
 
     // -------------
     // VARIABLES
@@ -55,30 +62,29 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        SetNameInput[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
+        SetRewardAddressInput[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
         _validateInputData(decodedCallData);
 
-        bytes[] memory nodeOperatorsNamesCalldata = new bytes[](decodedCallData.length);
+        bytes[] memory nodeOperatorRewardAddressesCalldata = new bytes[](decodedCallData.length);
 
         for (uint i = 0; i < decodedCallData.length; i++) {
-            nodeOperatorsNamesCalldata[i] = abi.encode(
+            nodeOperatorRewardAddressesCalldata[i] = abi.encode(
                 decodedCallData[i].nodeOperatorId,
-                decodedCallData[i].name
+                decodedCallData[i].rewardAddress
             );
         }
-
         return
             EVMScriptCreator.createEVMScript(
                 address(nodeOperatorsRegistry),
-                nodeOperatorsRegistry.setNodeOperatorName.selector,
-                nodeOperatorsNamesCalldata
+                nodeOperatorsRegistry.setNodeOperatorRewardAddress.selector,
+                nodeOperatorRewardAddressesCalldata
             );
     }
 
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) external pure returns (SetNameInput[] memory) {
+    ) external pure returns (SetRewardAddressInput[] memory) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -88,24 +94,22 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (SetNameInput[] memory) {
-        return abi.decode(_evmScriptCallData, (SetNameInput[]));
+    ) private pure returns (SetRewardAddressInput[] memory) {
+        return abi.decode(_evmScriptCallData, (SetRewardAddressInput[]));
     }
 
-    function _validateInputData(SetNameInput[] memory _nodeOperatorNamesInput) private view {
+    function _validateInputData(SetRewardAddressInput[] memory _nodeOperatorRewardAddressesInput) private view {
+        address lido = nodeOperatorsRegistry.getLocator().lido();
+
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
-        for (uint i = 0; i < _nodeOperatorNamesInput.length; i++) {
+        for (uint i = 0; i < _nodeOperatorRewardAddressesInput.length; i++) {
             require(
-                _nodeOperatorNamesInput[i].nodeOperatorId < nodeOperatorsCount,
+                _nodeOperatorRewardAddressesInput[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
-
-            require(
-                bytes(_nodeOperatorNamesInput[i].name).length > 0 &&
-                    bytes(_nodeOperatorNamesInput[i].name).length <=
-                    nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH(),
-                WRONG_NAME_LENGTH
-            );
+            
+            require(_nodeOperatorRewardAddressesInput[i].rewardAddress != lido, LIDO_REWARD_ADDRESS);
+            require(_nodeOperatorRewardAddressesInput[i].rewardAddress != address(0), ZERO_REWARD_ADDRESS);
         }
     }
 }

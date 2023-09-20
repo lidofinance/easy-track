@@ -213,7 +213,7 @@ def test_simple_dvt_scenario(
     # Set reward address of node operator
     new_reward_address = "0x000000000000000000000000000000000000dEaD"
     set_node_operator_reward_address_calldata = (
-        "0x" + encode_single("(uint256,address)", [6, new_reward_address]).hex()
+        "0x" + encode_single("((uint256,address)[])", [[(6, new_reward_address)]]).hex()
     )
 
     easytrack_executor(

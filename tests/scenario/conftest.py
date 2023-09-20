@@ -4,8 +4,8 @@ from brownie import (
     chain,
     ActivateNodeOperators,
     DeactivateNodeOperators,
-    SetNodeOperatorsName,
-    SetNodeOperatorRewardAddress,
+    SetNodeOperatorNames,
+    SetNodeOperatorRewardAddresses,
     IncreaseNodeOperatorStakingLimitWithManager,
     IncreaseNodeOperatorsStakingLimitByCommitee,
     UpdateTargetValidatorsLimits,
@@ -128,7 +128,7 @@ def deactivate_node_operators_factory(
 def set_node_operator_name_factory(
     et_contracts, voting, commitee_multisig, simple_dvt, deployer
 ):
-    factory = SetNodeOperatorsName.deploy(
+    factory = SetNodeOperatorNames.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
@@ -152,7 +152,7 @@ def set_node_operator_name_factory(
 def set_node_operator_reward_address_factory(
     et_contracts, voting, commitee_multisig, simple_dvt, deployer
 ):
-    factory = SetNodeOperatorRewardAddress.deploy(
+    factory = SetNodeOperatorRewardAddresses.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
