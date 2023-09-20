@@ -29,8 +29,8 @@ contract UpdateTargetValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
-        "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant TARGET_LIMIT_EXCEEDED = "TARGET_LIMIT_EXCEEDED";
 
     // -------------
     // VARIABLES
@@ -38,6 +38,12 @@ contract UpdateTargetValidatorsLimits is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
+
+    // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 internal constant UINT64_MAX = 0xFFFFFFFFFFFFFFFF;
 
     // -------------
     // CONSTRUCTOR
@@ -62,14 +68,12 @@ contract UpdateTargetValidatorsLimits is TrustedCaller, IEVMScriptFactory {
             _evmScriptCallData,
             (TargetValidatorsLimit[])
         );
+
+        _validateInputData(decodedCallData);
+
         bytes[] memory updateTargetLimitsCallData = new bytes[](decodedCallData.length);
 
-        uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         for (uint i = 0; i < decodedCallData.length; i++) {
-            require(
-                decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
-                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
-            );
             updateTargetLimitsCallData[i] = abi.encode(decodedCallData[i]);
         }
 
@@ -95,5 +99,18 @@ contract UpdateTargetValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         bytes memory _evmScriptCallData
     ) private pure returns (TargetValidatorsLimit[] memory) {
         return abi.decode(_evmScriptCallData, (TargetValidatorsLimit[]));
+    }    
+    
+    function _validateInputData(TargetValidatorsLimit[] memory _targetValidatorsLimitInput) private view {
+        uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+        for (uint i = 0; i < _targetValidatorsLimitInput.length; i++) {
+            require(
+                _targetValidatorsLimitInput[i].nodeOperatorId < nodeOperatorsCount,
+                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+            );
+            
+            if (_targetValidatorsLimitInput[i].isTargetLimitActive == true)
+                require(_targetValidatorsLimitInput[i].targetLimit < UINT64_MAX, TARGET_LIMIT_EXCEEDED);
+        }
     }
 }
