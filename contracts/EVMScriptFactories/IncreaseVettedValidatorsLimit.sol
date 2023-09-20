@@ -34,13 +34,17 @@ interface INodeOperatorsRegistry {
 
 /// @author psirex
 /// @notice Creates EVMScript to increase staking limit for node operator
-contract IncreaseNodeOperatorStakingLimitWithManager is IEVMScriptFactory {
+contract IncreaseVettedValidatorsLimit is IEVMScriptFactory {
+    struct VettedValidatorsLimitInput {
+        uint256 nodeOperatorId;
+        uint256 stakingLimit;
+    }
     struct NodeOperatorData {
         uint256 id;
         bool active;
         address rewardAddress;
-        uint256 stakingLimit;
-        uint256 totalSigningKeys;
+        uint64 stakingLimit;
+        uint64 totalSigningKeys;
     }
 
     // -------------
@@ -54,11 +58,11 @@ contract IncreaseNodeOperatorStakingLimitWithManager is IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_NODE_OPERATOR_DISABLED = "NODE_OPERATOR_DISABLED";
-    string private constant ERROR_CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER =
+    string private constant NODE_OPERATOR_DISABLED = "NODE_OPERATOR_DISABLED";
+    string private constant CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER =
         "CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER";
-    string private constant ERROR_STAKING_LIMIT_TOO_LOW = "STAKING_LIMIT_TOO_LOW";
-    string private constant ERROR_NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
+    string private constant STAKING_LIMIT_TOO_LOW = "STAKING_LIMIT_TOO_LOW";
+    string private constant NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
 
     // -------------
     // VARIABLES
@@ -88,7 +92,8 @@ contract IncreaseNodeOperatorStakingLimitWithManager is IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override returns (bytes memory) {
-        _validateCreatorAndEVMScriptCallData(_creator, _evmScriptCallData);
+        _validateInputData(_creator, _evmScriptCallData);
+
         return
             EVMScriptCreator.createEVMScript(
                 address(nodeOperatorsRegistry),
@@ -101,11 +106,10 @@ contract IncreaseNodeOperatorStakingLimitWithManager is IEVMScriptFactory {
     /// @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where
     /// _nodeOperatorId - id of node operator in NodeOperatorsRegistry
     /// _stakingLimit - new staking limit
-    /// @return _nodeOperatorId Id of node operator in NodeOperatorsRegistry
-    /// @return _stakingLimit New staking limit
+    /// @return VettedValidatorsLimitInput
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) external pure returns (uint256 _nodeOperatorId, uint256 _stakingLimit) {
+    ) external pure returns (VettedValidatorsLimitInput memory) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -115,29 +119,36 @@ contract IncreaseNodeOperatorStakingLimitWithManager is IEVMScriptFactory {
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (uint256 _nodeOperatorId, uint256 _stakingLimit) {
-        (_nodeOperatorId, _stakingLimit) = abi.decode(_evmScriptCallData, (uint256, uint256));
+    ) private pure returns (VettedValidatorsLimitInput memory) {
+        return abi.decode(_evmScriptCallData, (VettedValidatorsLimitInput));
     }
 
-    function _validateCreatorAndEVMScriptCallData(
-        address _creator,
-        bytes memory _evmScriptCallData
-    ) private view {
-        (uint256 _nodeOperatorId, uint256 _stakingLimit) = _decodeEVMScriptCallData(
+    function _validateInputData(address _creator, bytes memory _evmScriptCallData) private view {
+        VettedValidatorsLimitInput memory vettedValidatorsLimitInput = _decodeEVMScriptCallData(
             _evmScriptCallData
         );
-        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(_nodeOperatorId);
+
+        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(
+            vettedValidatorsLimitInput.nodeOperatorId
+        );
+
         uint256[] memory role_params = new uint256[](1);
-        role_params[0] = _nodeOperatorId;
+        role_params[0] = vettedValidatorsLimitInput.nodeOperatorId;
 
         require(
             _creator == nodeOperatorData.rewardAddress ||
                 nodeOperatorsRegistry.canPerform(_creator, MANAGE_SIGNING_KEYS_ROLE, role_params),
-            ERROR_CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER
+            CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER
         );
-        require(nodeOperatorData.active, ERROR_NODE_OPERATOR_DISABLED);
-        require(nodeOperatorData.stakingLimit < _stakingLimit, ERROR_STAKING_LIMIT_TOO_LOW);
-        require(nodeOperatorData.totalSigningKeys >= _stakingLimit, ERROR_NOT_ENOUGH_SIGNING_KEYS);
+        require(nodeOperatorData.active, NODE_OPERATOR_DISABLED);
+        require(
+            nodeOperatorData.stakingLimit < vettedValidatorsLimitInput.stakingLimit,
+            STAKING_LIMIT_TOO_LOW
+        );
+        require(
+            nodeOperatorData.totalSigningKeys >= vettedValidatorsLimitInput.stakingLimit,
+            NOT_ENOUGH_SIGNING_KEYS
+        );
     }
 
     function _getNodeOperatorData(

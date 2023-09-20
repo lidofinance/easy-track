@@ -85,7 +85,7 @@ def test_simple_dvt_scenario(
     deactivate_node_operators_factory,
     set_node_operator_name_factory,
     set_node_operator_reward_address_factory,
-    increase_node_operator_staking_limit_with_manager_factory,
+    increase_vetted_validators_limit_factory,
     increase_node_operators_staking_limit_by_commitee_factory,
     update_tareget_validators_limits_factory,
     transfer_node_operator_manager_factory,
@@ -241,27 +241,29 @@ def test_simple_dvt_scenario(
     assert cluster["totalVettedValidators"] == 0
 
     # Increase staking limit from NO
-    increase_node_operator_staking_limit_with_manager_calldata = (
+    increase_vetted_validators_limit_calldata = (
         "0x" + encode_single("(uint256,uint256)", [no_5_id, 1]).hex()
     )
+    print(increase_vetted_validators_limit_calldata)
+    print(increase_vetted_validators_limit_factory.decodeEVMScriptCallData(increase_vetted_validators_limit_calldata))
 
     easytrack_executor(
         no_5["rewardAddress"],
-        increase_node_operator_staking_limit_with_manager_factory,
-        increase_node_operator_staking_limit_with_manager_calldata,
+        increase_vetted_validators_limit_factory,
+        increase_vetted_validators_limit_calldata,
     )
 
     cluster = simple_dvt.getNodeOperator(no_5_id, False)
     assert cluster["totalVettedValidators"] == 1
 
-    increase_node_operator_staking_limit_with_manager_calldata = (
+    increase_vetted_validators_limit_calldata = (
         "0x" + encode_single("(uint256,uint256)", [no_5_id, 2]).hex()
     )
 
     easytrack_executor(
         clusters[no_5_id]["manager"],
-        increase_node_operator_staking_limit_with_manager_factory,
-        increase_node_operator_staking_limit_with_manager_calldata,
+        increase_vetted_validators_limit_factory,
+        increase_vetted_validators_limit_calldata,
     )
 
     cluster = simple_dvt.getNodeOperator(no_5_id, False)
