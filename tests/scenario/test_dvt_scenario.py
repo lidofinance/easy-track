@@ -198,7 +198,7 @@ def test_simple_dvt_scenario(
     # Set name of node operator
 
     set_node_operator_name_calldata = (
-        "0x" + encode_single("(uint256,string)", [6, "New Name"]).hex()
+        "0x" + encode_single("((uint256,string)[])", [[(6, "New Name")]]).hex()
     )
 
     easytrack_executor(

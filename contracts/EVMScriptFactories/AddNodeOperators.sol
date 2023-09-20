@@ -19,7 +19,7 @@ interface INodeOperatorsRegistry {
 
     function getNodeOperatorsCount() external view returns (uint256);
 
-    function getLocator() external view returns(ILidoLocator);
+    function getLocator() external view returns (ILidoLocator);
 }
 
 interface IACL {
@@ -39,7 +39,7 @@ interface IACL {
 }
 
 interface ILidoLocator {
-    function lido() external view returns(address);
+    function lido() external view returns (address);
 }
 
 /// @notice Creates EVMScript to add new batch of node operators
@@ -208,7 +208,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                 bytes(nodeOperatorInputs[i].name).length > 0 &&
                     bytes(nodeOperatorInputs[i].name).length <=
                     nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH(),
-                "WRONG_NAME_LENGTH"
+                WRONG_NAME_LENGTH
             );
         }
     }
