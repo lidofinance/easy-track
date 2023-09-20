@@ -74,7 +74,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
-    string private constant MANAGER_ADDRESSESS_HAS_DUPLICATE = "MANAGER_ADDRESSESS_HAS_DUPLICATE";
+    string private constant MANAGER_ADDRESSES_HAS_DUPLICATE = "MANAGER_ADDRESSES_HAS_DUPLICATE";
     string private constant NODE_OPERATORS_COUNT_MISMATCH = "NODE_OPERATORS_COUNT_MISMATCH";
     string private constant LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
     string private constant ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
@@ -165,35 +165,35 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(
-        uint256 nodeOperatorsCount,
-        AddNodeOperatorInput[] memory nodeOperatorInputs
+        uint256 _nodeOperatorsCount,
+        AddNodeOperatorInput[] memory _nodeOperatorInputs
     ) private view {
         address lido = nodeOperatorsRegistry.getLocator().lido();
 
         require(
-            nodeOperatorsRegistry.getNodeOperatorsCount() == nodeOperatorsCount,
+            nodeOperatorsRegistry.getNodeOperatorsCount() == _nodeOperatorsCount,
             NODE_OPERATORS_COUNT_MISMATCH
         );
 
         require(
-            nodeOperatorsCount + nodeOperatorInputs.length <=
+            _nodeOperatorsCount + _nodeOperatorInputs.length <=
                 nodeOperatorsRegistry.MAX_NODE_OPERATORS_COUNT(),
             MAX_OPERATORS_COUNT_EXCEEDED
         );
 
-        for (uint i = 0; i < nodeOperatorInputs.length; i++) {
+        for (uint i = 0; i < _nodeOperatorInputs.length; i++) {
             uint256[] memory permissionParams = new uint256[](1);
-            permissionParams[0] = (1 << 240) + nodeOperatorsCount + i;
-            for (uint test_index = i + 1; test_index < nodeOperatorInputs.length; test_index++) {
+            permissionParams[0] = (1 << 240) + _nodeOperatorsCount + i;
+            for (uint test_index = i + 1; test_index < _nodeOperatorInputs.length; test_index++) {
                 require(
-                    nodeOperatorInputs[i].managerAddress !=
-                        nodeOperatorInputs[test_index].managerAddress,
-                    MANAGER_ADDRESSESS_HAS_DUPLICATE
+                    _nodeOperatorInputs[i].managerAddress !=
+                        _nodeOperatorInputs[test_index].managerAddress,
+                    MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
             require(
                 acl.hasPermission(
-                    nodeOperatorInputs[i].managerAddress,
+                    _nodeOperatorInputs[i].managerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE,
                     permissionParams
@@ -201,12 +201,12 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                 MANAGER_ALREADY_HAS_ROLE
             );
 
-            require(nodeOperatorInputs[i].rewardAddress != lido, LIDO_REWARD_ADDRESS);
-            require(nodeOperatorInputs[i].rewardAddress != address(0), ZERO_REWARD_ADDRESS);
+            require(_nodeOperatorInputs[i].rewardAddress != lido, LIDO_REWARD_ADDRESS);
+            require(_nodeOperatorInputs[i].rewardAddress != address(0), ZERO_REWARD_ADDRESS);
 
             require(
-                bytes(nodeOperatorInputs[i].name).length > 0 &&
-                    bytes(nodeOperatorInputs[i].name).length <=
+                bytes(_nodeOperatorInputs[i].name).length > 0 &&
+                    bytes(_nodeOperatorInputs[i].name).length <=
                     nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH(),
                 WRONG_NAME_LENGTH
             );
