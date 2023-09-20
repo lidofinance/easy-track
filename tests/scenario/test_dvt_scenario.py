@@ -88,8 +88,9 @@ def test_simple_dvt_scenario(
     increase_node_operator_staking_limit_with_manager_factory,
     increase_node_operators_staking_limit_by_commitee_factory,
     update_tareget_validators_limits_factory,
-    revoke_manage_signing_keys_role_factory,
+    transfer_node_operator_manager_factory,
     renounce_manage_signing_keys_role_manager_factory,
+    stranger,
 ):
     # Grant roles
     acl.grantPermission(
@@ -125,12 +126,12 @@ def test_simple_dvt_scenario(
         "0x"
         + encode_single(
             "(uint256,(string,address,address)[])",
-            [   
+            [
                 0,
                 [
                     (cluster["name"], cluster["address"], cluster["manager"])
                     for cluster in clusters
-                ]
+                ],
             ],
         ).hex()
     )
@@ -148,7 +149,7 @@ def test_simple_dvt_scenario(
         assert cluster["totalExitedValidators"] == 0
         assert cluster["totalAddedValidators"] == 0
         assert cluster["totalDepositedValidators"] == 0
-        
+
         # manager permission parameter
         id8 = 0  # first arg
         op8 = 1  # EQ
@@ -156,7 +157,7 @@ def test_simple_dvt_scenario(
         permission_param = convert.to_uint(
             (id8 << 248) + (op8 << 240) + value240, "uint256"
         )
-        
+
         assert simple_dvt.canPerform(
             clusters[cluster_index]["manager"],
             simple_dvt.MANAGE_SIGNING_KEYS(),
@@ -253,7 +254,6 @@ def test_simple_dvt_scenario(
     cluster = simple_dvt.getNodeOperator(no_5_id, False)
     assert cluster["totalVettedValidators"] == 1
 
-
     increase_node_operator_staking_limit_with_manager_calldata = (
         "0x" + encode_single("(uint256,uint256)", [no_5_id, 2]).hex()
     )
@@ -319,18 +319,19 @@ def test_simple_dvt_scenario(
 
     # Revoke MANAGE_SIGNING_KEYS role
 
-    # Increase staking limit from manager
-    revoke_manage_signing_keys_role_calldata = (
+    # Transfer cluster manager
+    transfer_node_operator_manager_calldata = (
         "0x"
         + encode_single(
-            "((uint256,address)[])", [[(no_5_id, clusters[no_5_id]["manager"])]]
+            "((uint256,address,address)[])",
+            [[(no_5_id, clusters[no_5_id]["manager"], stranger.address)]],
         ).hex()
     )
 
     easytrack_executor(
         commitee_multisig,
-        revoke_manage_signing_keys_role_factory,
-        revoke_manage_signing_keys_role_calldata,
+        transfer_node_operator_manager_factory,
+        transfer_node_operator_manager_calldata,
     )
 
     # permission parameter
@@ -343,6 +344,11 @@ def test_simple_dvt_scenario(
 
     assert not simple_dvt.canPerform(
         clusters[no_5_id]["manager"],
+        simple_dvt.MANAGE_SIGNING_KEYS(),
+        [permission_param],
+    )
+    assert simple_dvt.canPerform(
+        stranger,
         simple_dvt.MANAGE_SIGNING_KEYS(),
         [permission_param],
     )

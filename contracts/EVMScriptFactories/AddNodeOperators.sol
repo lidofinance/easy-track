@@ -182,8 +182,6 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         );
 
         for (uint i = 0; i < _nodeOperatorInputs.length; i++) {
-            uint256[] memory permissionParams = new uint256[](1);
-            permissionParams[0] = (1 << 240) + _nodeOperatorsCount + i;
             for (uint test_index = i + 1; test_index < _nodeOperatorInputs.length; test_index++) {
                 require(
                     _nodeOperatorInputs[i].managerAddress !=
@@ -191,6 +189,9 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                     MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
+            
+            uint256[] memory permissionParams = new uint256[](1);
+            permissionParams[0] = (1 << 240) + _nodeOperatorsCount + i;
             require(
                 acl.hasPermission(
                     _nodeOperatorInputs[i].managerAddress,

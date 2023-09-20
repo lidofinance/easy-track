@@ -9,7 +9,7 @@ from brownie import (
     IncreaseNodeOperatorStakingLimitWithManager,
     IncreaseNodeOperatorsStakingLimitByCommitee,
     UpdateTargetValidatorsLimits,
-    RevokeManageSigningKeysRole,
+    TransferNodeOperatorManager,
     RenounceManageSigningKeysRoleManager,
 )
 from utils import deployed_easy_track
@@ -244,22 +244,25 @@ def update_tareget_validators_limits_factory(
 
 
 @pytest.fixture(scope="module")
-def revoke_manage_signing_keys_role_factory(
+def transfer_node_operator_manager_factory(
     et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
 ):
-    factory = RevokeManageSigningKeysRole.deploy(
+    factory = TransferNodeOperatorManager.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
     assert factory.acl() == acl
 
-    revoke_manage_signing_keys_role_permission = (
-        acl.address + acl.revokePermission.signature[2:]
+    transfer_node_operator_manager_permission = (
+        acl.address
+        + acl.revokePermission.signature[2:]
+        + acl.address[2:]
+        + acl.grantPermissionP.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
-        revoke_manage_signing_keys_role_permission,
+        transfer_node_operator_manager_permission,
         {"from": voting},
     )
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
