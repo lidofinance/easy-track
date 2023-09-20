@@ -111,7 +111,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         bytes4[] memory methodIds = new bytes4[](decodedCallData.length * 2);
         bytes[] memory encodedCalldata = new bytes[](decodedCallData.length * 2);
 
-        _validateNodeOperatorsData(nodeOperatorsCount, decodedCallData);
+        _validateInputData(nodeOperatorsCount, decodedCallData);
 
         for (uint i = 0; i < decodedCallData.length; i++) {
             toAddresses[i * 2] = address(nodeOperatorsRegistry);
@@ -164,7 +164,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         );
     }
 
-    function _validateNodeOperatorsData(
+    function _validateInputData(
         uint256 nodeOperatorsCount,
         AddNodeOperatorInput[] memory nodeOperatorInputs
     ) private view {
