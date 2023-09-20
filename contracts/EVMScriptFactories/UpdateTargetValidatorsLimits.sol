@@ -99,18 +99,23 @@ contract UpdateTargetValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         bytes memory _evmScriptCallData
     ) private pure returns (TargetValidatorsLimit[] memory) {
         return abi.decode(_evmScriptCallData, (TargetValidatorsLimit[]));
-    }    
-    
-    function _validateInputData(TargetValidatorsLimit[] memory _targetValidatorsLimitInput) private view {
+    }
+
+    function _validateInputData(
+        TargetValidatorsLimit[] memory _targetValidatorsLimitInput
+    ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         for (uint i = 0; i < _targetValidatorsLimitInput.length; i++) {
             require(
                 _targetValidatorsLimitInput[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
-            
+
             if (_targetValidatorsLimitInput[i].isTargetLimitActive == true)
-                require(_targetValidatorsLimitInput[i].targetLimit < UINT64_MAX, TARGET_LIMIT_EXCEEDED);
+                require(
+                    _targetValidatorsLimitInput[i].targetLimit < UINT64_MAX,
+                    TARGET_LIMIT_EXCEEDED
+                );
         }
     }
 }
