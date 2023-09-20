@@ -7,7 +7,7 @@ from brownie import (
     SetNodeOperatorNames,
     SetNodeOperatorRewardAddresses,
     IncreaseVettedValidatorsLimit,
-    IncreaseNodeOperatorsStakingLimitByCommitee,
+    SetVettedValidatorsLimits,
     UpdateTargetValidatorsLimits,
     TransferNodeOperatorManager,
     RenounceManageSigningKeysRoleManager,
@@ -196,21 +196,21 @@ def increase_vetted_validators_limit_factory(
 
 
 @pytest.fixture(scope="module")
-def increase_node_operators_staking_limit_by_commitee_factory(
+def set_vetted_validators_limit_factory(
     et_contracts, voting, simple_dvt, deployer, commitee_multisig
 ):
-    factory = IncreaseNodeOperatorsStakingLimitByCommitee.deploy(
+    factory = SetVettedValidatorsLimits.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
-    increase_node_operators_staking_limit_by_commitee_permission = (
+    set_vetted_validators_limit_permission = (
         simple_dvt.address + simple_dvt.setNodeOperatorStakingLimit.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
-        increase_node_operators_staking_limit_by_commitee_permission,
+        set_vetted_validators_limit_permission,
         {"from": voting},
     )
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()

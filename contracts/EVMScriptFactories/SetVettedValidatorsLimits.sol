@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.6;
+pragma solidity ^0.8.4;
 
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
@@ -31,22 +31,21 @@ interface INodeOperatorsRegistry {
     ) external view returns (bool);
 
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
+
+    function getNodeOperatorsCount() external view returns (uint256);
 }
 
 /// @author psirex
 /// @notice Creates EVMScript to increase staking limit for node operator
-contract IncreaseNodeOperatorsStakingLimitByCommitee is TrustedCaller, IEVMScriptFactory {
-    struct NodeOperatorData {
-        uint256 id;
-        bool active;
-        address rewardAddress;
-        uint256 stakingLimit;
-        uint256 totalSigningKeys;
-    }
-
-    struct StakingLimitData {
+contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
+    struct VettedValidatorsLimitInput {
         uint256 nodeOperatorId;
         uint256 stakingLimit;
+    }
+
+    struct NodeOperatorData {
+        uint256 id;
+        uint64 totalSigningKeys;
     }
 
     // -------------
@@ -60,11 +59,8 @@ contract IncreaseNodeOperatorsStakingLimitByCommitee is TrustedCaller, IEVMScrip
     // ERRORS
     // -------------
 
-    string private constant ERROR_NODE_OPERATOR_DISABLED = "NODE_OPERATOR_DISABLED";
-    string private constant ERROR_CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER =
-        "CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER";
-    string private constant ERROR_STAKING_LIMIT_TOO_LOW = "STAKING_LIMIT_TOO_LOW";
-    string private constant ERROR_NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
+    string private constant NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
+    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
 
     // -------------
     // VARIABLES
@@ -97,31 +93,37 @@ contract IncreaseNodeOperatorsStakingLimitByCommitee is TrustedCaller, IEVMScrip
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        StakingLimitData[] memory decodedCallData = abi.decode(
-            _evmScriptCallData,
-            (StakingLimitData[])
+        VettedValidatorsLimitInput[] memory decodedCallData = _decodeEVMScriptCallData(
+            _evmScriptCallData
         );
-        bytes[] memory stakingLimitCalldata = new bytes[](decodedCallData.length);
+
+        _validateInputData(decodedCallData);
+        
+        bytes[] memory setVettedValidatorsLimitsCalldata = new bytes[](decodedCallData.length);
 
         for (uint i = 0; i < decodedCallData.length; i++) {
-            _validateEVMScriptCallData(decodedCallData[i]);
-            stakingLimitCalldata[i] = abi.encode(decodedCallData[i]);
+            setVettedValidatorsLimitsCalldata[i] = abi.encode(
+                decodedCallData[i].nodeOperatorId,
+                decodedCallData[i].stakingLimit
+            );
         }
 
         return
             EVMScriptCreator.createEVMScript(
                 address(nodeOperatorsRegistry),
                 nodeOperatorsRegistry.setNodeOperatorStakingLimit.selector,
-                stakingLimitCalldata
+                setVettedValidatorsLimitsCalldata
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded (StakingLimitData[]) 
-    /// @return stakingLimit array of StakingLimitData struct
+    /// @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where
+    /// _nodeOperatorId - id of node operator in NodeOperatorsRegistry
+    /// _stakingLimit - new staking limit
+    /// @return VettedValidatorsLimitInput
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) external pure returns (StakingLimitData[] memory) {
+    ) external pure returns (VettedValidatorsLimitInput[] memory) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -131,42 +133,43 @@ contract IncreaseNodeOperatorsStakingLimitByCommitee is TrustedCaller, IEVMScrip
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (StakingLimitData[] memory) {
-        return abi.decode(_evmScriptCallData, (StakingLimitData[]));
+    ) private pure returns (VettedValidatorsLimitInput[] memory) {
+        return abi.decode(_evmScriptCallData, (VettedValidatorsLimitInput[]));
     }
 
-    function _validateEVMScriptCallData(StakingLimitData memory stakingLimitData) private view {
-        NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(
-            stakingLimitData.nodeOperatorId
-        );
+    function _validateInputData(VettedValidatorsLimitInput[] memory _decodedCallData) private view {
+        uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+        for (uint i = 0; i < _decodedCallData.length; i++) {
+            require(
+                _decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
+                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+            );
 
-        require(nodeOperatorData.active, ERROR_NODE_OPERATOR_DISABLED);
-        require(
-            nodeOperatorData.stakingLimit < stakingLimitData.stakingLimit,
-            ERROR_STAKING_LIMIT_TOO_LOW
-        );
-        require(
-            nodeOperatorData.totalSigningKeys >= stakingLimitData.stakingLimit,
-            ERROR_NOT_ENOUGH_SIGNING_KEYS
-        );
+            NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(
+                _decodedCallData[i].nodeOperatorId
+            );
+
+            require(
+                nodeOperatorData.totalSigningKeys >= _decodedCallData[i].stakingLimit,
+                NOT_ENOUGH_SIGNING_KEYS
+            );
+        }
     }
 
     function _getNodeOperatorData(
         uint256 _nodeOperatorId
     ) private view returns (NodeOperatorData memory _nodeOperatorData) {
         (
-            bool active,
             ,
             ,
-            uint64 stakingLimit,
+            ,
+            ,
             ,
             uint64 totalSigningKeys,
 
         ) = nodeOperatorsRegistry.getNodeOperator(_nodeOperatorId, false);
 
         _nodeOperatorData.id = _nodeOperatorId;
-        _nodeOperatorData.active = active;
-        _nodeOperatorData.stakingLimit = stakingLimit;
         _nodeOperatorData.totalSigningKeys = totalSigningKeys;
     }
 }

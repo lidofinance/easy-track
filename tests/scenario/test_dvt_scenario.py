@@ -86,7 +86,7 @@ def test_simple_dvt_scenario(
     set_node_operator_name_factory,
     set_node_operator_reward_address_factory,
     increase_vetted_validators_limit_factory,
-    increase_node_operators_staking_limit_by_commitee_factory,
+    set_vetted_validators_limit_factory,
     update_tareget_validators_limits_factory,
     transfer_node_operator_manager_factory,
     renounce_manage_signing_keys_role_manager_factory,
@@ -288,14 +288,14 @@ def test_simple_dvt_scenario(
         {"from": no_6["rewardAddress"]},
     )
 
-    increase_node_operators_staking_limit_by_commitee_calldata = (
+    set_vetted_validators_limit_calldata = (
         "0x"
         + encode_single("((uint256,uint256)[])", [[(no_5_id, 4), (no_6_id, 3)]]).hex()
     )
     easytrack_executor(
         commitee_multisig,
-        increase_node_operators_staking_limit_by_commitee_factory,
-        increase_node_operators_staking_limit_by_commitee_calldata,
+        set_vetted_validators_limit_factory,
+        set_vetted_validators_limit_calldata,
     )
 
     cluster_5 = simple_dvt.getNodeOperator(no_5_id, False)
