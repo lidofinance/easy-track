@@ -8,9 +8,7 @@ from brownie import (
     SetNodeOperatorRewardAddresses,
     IncreaseVettedValidatorsLimit,
     SetVettedValidatorsLimits,
-    UpdateTargetValidatorsLimits,
     TransferNodeOperatorManager,
-    RenounceManageSigningKeysRoleManager,
 )
 from utils import deployed_easy_track
 
@@ -78,16 +76,19 @@ def add_node_operators_factory(
 
 @pytest.fixture(scope="module")
 def activate_node_operators_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer
+    et_contracts, voting, commitee_multisig, simple_dvt, deployer, acl
 ):
     factory = ActivateNodeOperators.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
+        commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
     activate_node_operators_permissions = (
-        simple_dvt.address + simple_dvt.activateNodeOperator.signature[2:]
+        simple_dvt.address
+        + simple_dvt.activateNodeOperator.signature[2:]
+        + acl.address[2:]
+        + acl.grantPermissionP.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
@@ -102,16 +103,19 @@ def activate_node_operators_factory(
 
 @pytest.fixture(scope="module")
 def deactivate_node_operators_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer
+    et_contracts, voting, commitee_multisig, simple_dvt, deployer, acl
 ):
     factory = DeactivateNodeOperators.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
+        commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
     deactivate_node_operators_permissions = (
-        simple_dvt.address + simple_dvt.deactivateNodeOperator.signature[2:]
+        simple_dvt.address
+        + simple_dvt.deactivateNodeOperator.signature[2:]
+        + acl.address[2:]
+        + acl.revokePermission.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
@@ -176,9 +180,7 @@ def set_node_operator_reward_address_factory(
 def increase_vetted_validators_limit_factory(
     et_contracts, voting, simple_dvt, deployer
 ):
-    factory = IncreaseVettedValidatorsLimit.deploy(
-        simple_dvt, {"from": deployer}
-    )
+    factory = IncreaseVettedValidatorsLimit.deploy(simple_dvt, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
 
     increase_vetted_validators_limit_permissions = (
@@ -220,30 +222,6 @@ def set_vetted_validators_limit_factory(
 
 
 @pytest.fixture(scope="module")
-def update_tareget_validators_limits_factory(
-    et_contracts, voting, simple_dvt, deployer, commitee_multisig
-):
-    factory = UpdateTargetValidatorsLimits.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
-    )
-    assert factory.nodeOperatorsRegistry() == simple_dvt
-    assert factory.trustedCaller() == commitee_multisig
-
-    update_tareget_validators_limits_permission = (
-        simple_dvt.address + simple_dvt.updateTargetValidatorsLimits.signature[2:]
-    )
-    et_contracts.easy_track.addEVMScriptFactory(
-        factory,
-        update_tareget_validators_limits_permission,
-        {"from": voting},
-    )
-    evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
-    assert evm_script_factories[-1] == factory
-
-    return factory
-
-
-@pytest.fixture(scope="module")
 def transfer_node_operator_manager_factory(
     et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
 ):
@@ -263,31 +241,6 @@ def transfer_node_operator_manager_factory(
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
         transfer_node_operator_manager_permission,
-        {"from": voting},
-    )
-    evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
-    assert evm_script_factories[-1] == factory
-
-    return factory
-
-
-@pytest.fixture(scope="module")
-def renounce_manage_signing_keys_role_manager_factory(
-    et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
-):
-    factory = RenounceManageSigningKeysRoleManager.deploy(
-        commitee_multisig, simple_dvt, acl, {"from": deployer}
-    )
-    assert factory.nodeOperatorsRegistry() == simple_dvt
-    assert factory.trustedCaller() == commitee_multisig
-    assert factory.acl() == acl
-
-    renounce_manage_signing_keys_role_manager_permission = (
-        acl.address + acl.removePermissionManager.signature[2:]
-    )
-    et_contracts.easy_track.addEVMScriptFactory(
-        factory,
-        renounce_manage_signing_keys_role_manager_permission,
         {"from": voting},
     )
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()

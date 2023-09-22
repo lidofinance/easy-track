@@ -33,9 +33,14 @@ interface IACL {
     function hasPermission(
         address _entity,
         address _app,
-        bytes32 _role,
-        uint256[] memory _params
+        bytes32 _role
     ) external view returns (bool);
+
+    function getPermissionParamsLength(
+        address _entity,
+        address _app,
+        bytes32 _role
+    ) external view returns (uint256);
 }
 
 interface ILidoLocator {
@@ -189,16 +194,21 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                     MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
-            
-            uint256[] memory permissionParams = new uint256[](1);
-            permissionParams[0] = (1 << 240) + _nodeOperatorsCount + i;
+
             require(
                 acl.hasPermission(
                     _nodeOperatorInputs[i].managerAddress,
                     address(nodeOperatorsRegistry),
-                    MANAGE_SIGNING_KEYS_ROLE,
-                    permissionParams
+                    MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
+                MANAGER_ALREADY_HAS_ROLE
+            );
+            require(
+                acl.getPermissionParamsLength(
+                    _nodeOperatorInputs[i].managerAddress,
+                    address(nodeOperatorsRegistry),
+                    MANAGE_SIGNING_KEYS_ROLE
+                ) == 0,
                 MANAGER_ALREADY_HAS_ROLE
             );
 

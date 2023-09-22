@@ -3,7 +3,6 @@ from eth_abi import encode_single
 from brownie import (
     web3,
     interface,
-    ZERO_ADDRESS,
     convert,
 )
 
@@ -87,9 +86,7 @@ def test_simple_dvt_scenario(
     set_node_operator_reward_address_factory,
     increase_vetted_validators_limit_factory,
     set_vetted_validators_limit_factory,
-    update_tareget_validators_limits_factory,
     transfer_node_operator_manager_factory,
-    renounce_manage_signing_keys_role_manager_factory,
     stranger,
 ):
     # Grant roles
@@ -158,16 +155,27 @@ def test_simple_dvt_scenario(
             (id8 << 248) + (op8 << 240) + value240, "uint256"
         )
 
-        assert simple_dvt.canPerform(
-            clusters[cluster_index]["manager"],
-            simple_dvt.MANAGE_SIGNING_KEYS(),
-            [permission_param],
+        assert (
+            simple_dvt.canPerform(
+                clusters[cluster_index]["manager"],
+                simple_dvt.MANAGE_SIGNING_KEYS(),
+                [permission_param],
+            )
+            == True
         )
 
     # Deactivate node operators with ids 2,3,4
 
+    deactivate_node_operators_data = []
+
+    for cluster_index in range(2, 5):
+        deactivate_node_operators_data.append(
+            (cluster_index, clusters[cluster_index]["manager"])
+        )
+
     deactivate_node_operators_calldata = (
-        "0x" + encode_single("(uint256[])", [[2, 3, 4]]).hex()
+        "0x"
+        + encode_single("((uint256,address)[])", [deactivate_node_operators_data]).hex()
     )
 
     easytrack_executor(
@@ -180,10 +188,29 @@ def test_simple_dvt_scenario(
         cluster = simple_dvt.getNodeOperator(cluster_index, True)
         assert cluster["active"] == False
 
+        permission_param = convert.to_uint((1 << 240) + cluster_index, "uint256")
+
+        assert (
+            simple_dvt.canPerform(
+                clusters[cluster_index]["manager"],
+                simple_dvt.MANAGE_SIGNING_KEYS(),
+                [permission_param],
+            )
+            == False
+        )
+
     # Activate node operators with ids 2,3,4
 
+    activate_node_operators_data = []
+
+    for cluster_index in range(2, 5):
+        activate_node_operators_data.append(
+            (cluster_index, clusters[cluster_index]["manager"])
+        )
+
     activate_node_operators_calldata = (
-        "0x" + encode_single("(uint256[])", [[2, 3, 4]]).hex()
+        "0x"
+        + encode_single("((uint256,address)[])", [activate_node_operators_data]).hex()
     )
 
     easytrack_executor(
@@ -195,6 +222,17 @@ def test_simple_dvt_scenario(
     for cluster_index in range(2, 5):
         cluster = simple_dvt.getNodeOperator(cluster_index, True)
         assert cluster["active"] == True
+
+        permission_param = convert.to_uint((1 << 240) + cluster_index, "uint256")
+
+        assert (
+            simple_dvt.canPerform(
+                clusters[cluster_index]["manager"],
+                simple_dvt.MANAGE_SIGNING_KEYS(),
+                [permission_param],
+            )
+            == True
+        )
 
     # Set name of node operator
 
@@ -244,8 +282,6 @@ def test_simple_dvt_scenario(
     increase_vetted_validators_limit_calldata = (
         "0x" + encode_single("(uint256,uint256)", [no_5_id, 1]).hex()
     )
-    print(increase_vetted_validators_limit_calldata)
-    print(increase_vetted_validators_limit_factory.decodeEVMScriptCallData(increase_vetted_validators_limit_calldata))
 
     easytrack_executor(
         no_5["rewardAddress"],
@@ -303,22 +339,6 @@ def test_simple_dvt_scenario(
     cluster_6 = simple_dvt.getNodeOperator(no_6_id, False)
     assert cluster_6["totalVettedValidators"] == 3
 
-    # Update target validators limits
-
-    update_tareget_validators_limits_calldata = (
-        "0x"
-        + encode_single(
-            "((uint256,bool,uint256)[])", [[(no_5_id, True, 1), (no_6_id, True, 10)]]
-        ).hex()
-    )
-    easytrack_executor(
-        commitee_multisig,
-        update_tareget_validators_limits_factory,
-        update_tareget_validators_limits_calldata,
-    )
-
-    # Check it somehow
-
     # Revoke MANAGE_SIGNING_KEYS role
 
     # Transfer cluster manager
@@ -353,19 +373,4 @@ def test_simple_dvt_scenario(
         stranger,
         simple_dvt.MANAGE_SIGNING_KEYS(),
         [permission_param],
-    )
-
-    # Renounce MANAGE_SIGNING_KEYS role manager
-
-    easytrack_executor(
-        commitee_multisig,
-        renounce_manage_signing_keys_role_manager_factory,
-        "",
-    )
-
-    assert (
-        acl.getPermissionManager(
-            clusters[no_5_id]["manager"], simple_dvt.MANAGE_SIGNING_KEYS()
-        )
-        == ZERO_ADDRESS
     )
