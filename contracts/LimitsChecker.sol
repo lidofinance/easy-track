@@ -7,6 +7,7 @@ import "./libraries/EVMScriptCreator.sol";
 import "./interfaces/IBokkyPooBahsDateTimeContract.sol";
 
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /// @author zuzueeka
 /// @notice Stores limits params and provides limit-enforcement logic
@@ -50,8 +51,7 @@ contract LimitsChecker is AccessControl {
     string private constant ERROR_INVALID_PERIOD_DURATION = "INVALID_PERIOD_DURATION";
     string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
     string private constant ERROR_TOO_LARGE_LIMIT = "TOO_LARGE_LIMIT";
-    string private constant ERROR_SAME_DATE_TIME_CONTRACT_ADDRESS =
-        "SAME_DATE_TIME_CONTRACT_ADDRESS";
+    string private constant ERROR_SAME_DATE_TIME_CONTRACT_ADDRESS = "SAME_DATE_TIME_CONTRACT_ADDRESS";
     string private constant ERROR_SPENT_AMOUNT_EXCEEDS_LIMIT = "ERROR_SPENT_AMOUNT_EXCEEDS_LIMIT";
 
     // -------------
@@ -82,6 +82,9 @@ contract LimitsChecker is AccessControl {
 
     /// @notice Amount already spent in the period
     uint128 internal spentAmount;
+
+    /// @notice Amount already spent in the period
+    uint8 public constant decimals = 18;
 
     // ------------
     // CONSTRUCTOR
@@ -115,23 +118,27 @@ contract LimitsChecker is AccessControl {
     /// @return True if _payoutAmount is less or equal than may be spent
     /// @dev note that upfront check is used to compare _paymentSum with total limit in case
     /// when motion is started in one period and will be probably enacted in the next.
-    function isUnderSpendableBalance(uint256 _payoutAmount, uint256 _motionDuration)
+    function isUnderSpendableBalance(uint256 _payoutAmount, address _token, uint256 _motionDuration)
         external
         view
         returns (bool)
     {
+        uint256 localPayoutAmount = transformTokenAmountToLocalAmount(_payoutAmount, _token);
+
         if (block.timestamp + _motionDuration >= currentPeriodEndTimestamp) {
-            return _payoutAmount <= limit;
+            return localPayoutAmount <= limit;
         } else {
-            return _payoutAmount <= _spendableBalance(limit, spentAmount);
+            return localPayoutAmount <= _spendableBalance(limit, spentAmount);
         }
     }
 
     /// @notice Checks if _payoutAmount may be spent and increases spentAmount by _payoutAmount.
     /// @notice Also updates the period boundaries if necessary.
-    function updateSpentAmount(uint256 _payoutAmount) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
+    function updateSpentAmount(uint256 _payoutAmount, address _token) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
         uint256 spentAmountLocal = spentAmount;
         uint256 limitLocal = limit;
+        uint256 localPayoutAmount = transformTokenAmountToLocalAmount(_payoutAmount, _token);
+
         uint256 currentPeriodEndTimestampLocal = currentPeriodEndTimestamp;
 
         /// When it is necessary to shift the currentPeriodEndTimestamp it takes on a new value.
@@ -139,17 +146,14 @@ contract LimitsChecker is AccessControl {
         if (block.timestamp >= currentPeriodEndTimestampLocal) {
             currentPeriodEndTimestampLocal = _getPeriodEndFromTimestamp(block.timestamp);
             spentAmountLocal = 0;
-            emit CurrentPeriodAdvanced(
-                _getPeriodStartFromTimestamp(currentPeriodEndTimestampLocal - 1)
-            );
+            emit CurrentPeriodAdvanced(_getPeriodStartFromTimestamp(currentPeriodEndTimestampLocal - 1));
             currentPeriodEndTimestamp = uint128(currentPeriodEndTimestampLocal);
         }
 
         require(
-            _payoutAmount <= _spendableBalance(limitLocal, spentAmountLocal),
-            ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE
+            localPayoutAmount <= _spendableBalance(limitLocal, spentAmountLocal), ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE
         );
-        spentAmountLocal += _payoutAmount;
+        spentAmountLocal += localPayoutAmount;
         spentAmount = uint128(spentAmountLocal);
 
         (
@@ -160,10 +164,7 @@ contract LimitsChecker is AccessControl {
         ) = _getCurrentPeriodState(limitLocal, spentAmountLocal, currentPeriodEndTimestampLocal);
 
         emit SpendableAmountChanged(
-            alreadySpentAmount,
-            spendableBalanceInPeriod,
-            periodStartTimestamp,
-            periodEndTimestamp
+            alreadySpentAmount, spendableBalanceInPeriod, periodStartTimestamp, periodEndTimestamp
         );
     }
 
@@ -179,18 +180,13 @@ contract LimitsChecker is AccessControl {
     /// @notice Calculates currentPeriodEndTimestamp as a calendar date of the beginning of next period.
     /// @param _limit Limit to set
     /// @param _periodDurationMonths Length of period in months. Must be 1, 2, 3, 6 or 12.
-    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths)
-        external
-        onlyRole(SET_PARAMETERS_ROLE)
-    {
+    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths) external onlyRole(SET_PARAMETERS_ROLE) {
         require(_limit <= type(uint128).max, ERROR_TOO_LARGE_LIMIT);
 
         _validatePeriodDurationMonths(_periodDurationMonths);
         periodDurationMonths = uint64(_periodDurationMonths);
         uint256 currentPeriodEndTimestampLocal = _getPeriodEndFromTimestamp(block.timestamp);
-        emit CurrentPeriodAdvanced(
-            _getPeriodStartFromTimestamp(currentPeriodEndTimestampLocal - 1)
-        );
+        emit CurrentPeriodAdvanced(_getPeriodStartFromTimestamp(currentPeriodEndTimestampLocal - 1));
         currentPeriodEndTimestamp = uint128(currentPeriodEndTimestampLocal);
         limit = uint128(_limit);
 
@@ -252,14 +248,32 @@ contract LimitsChecker is AccessControl {
         }
     }
 
+    function test(uint256 _test) external view returns (uint256) {
+        return _test;
+    }
+
+    function transformTokenAmountToLocalAmount(uint256 _tokenAmount, address _token) public view returns (uint256) {
+        if (_token == address(0)) {
+            return _tokenAmount;
+        }
+
+        uint8 tokenDecimals = IERC20Metadata(_token).decimals();
+
+        if (tokenDecimals > decimals) {
+            uint256 factor = 10 ** (tokenDecimals - decimals);
+            return _tokenAmount / factor;
+        } else if (tokenDecimals < decimals) {
+            uint256 factor = 10 ** (decimals - tokenDecimals);
+            return _tokenAmount * factor;
+        } else {
+            return _tokenAmount;
+        }
+    }
+
     // ------------------
     // PRIVATE METHODS
     // ------------------
-    function _getCurrentPeriodState(
-        uint256 _limit,
-        uint256 _spentAmount,
-        uint256 _currentPeriodEndTimestamp
-    )
+    function _getCurrentPeriodState(uint256 _limit, uint256 _spentAmount, uint256 _currentPeriodEndTimestamp)
         internal
         view
         returns (
@@ -277,28 +291,21 @@ contract LimitsChecker is AccessControl {
         );
     }
 
-    function _spendableBalance(uint256 _limit, uint256 _spentAmount)
-        internal
-        pure
-        returns (uint256)
-    {
+    function _spendableBalance(uint256 _limit, uint256 _spentAmount) internal pure returns (uint256) {
         return _spentAmount < _limit ? _limit - _spentAmount : 0;
     }
 
     function _validatePeriodDurationMonths(uint256 _periodDurationMonths) internal pure {
         require(
-            _periodDurationMonths == 1 ||
-                _periodDurationMonths == 2 ||
-                _periodDurationMonths == 3 ||
-                _periodDurationMonths == 6 ||
-                _periodDurationMonths == 12,
+            _periodDurationMonths == 1 || _periodDurationMonths == 2 || _periodDurationMonths == 3
+                || _periodDurationMonths == 6 || _periodDurationMonths == 12,
             ERROR_INVALID_PERIOD_DURATION
         );
     }
 
     function _getPeriodStartFromTimestamp(uint256 _timestamp) internal view returns (uint256) {
         // Get year and number of month of the timestamp:
-        (uint256 year, uint256 month, ) = bokkyPooBahsDateTimeContract.timestampToDate(_timestamp);
+        (uint256 year, uint256 month,) = bokkyPooBahsDateTimeContract.timestampToDate(_timestamp);
         // We assume that the year will remain the same,
         // because the beginning of the current calendar period will necessarily be in the same year.
         uint256 periodStartYear = year;
@@ -306,12 +313,7 @@ contract LimitsChecker is AccessControl {
         uint256 periodStartMonth = _getFirstMonthInPeriodFromMonth(month, periodDurationMonths);
         // The beginning of the period always matches the calendar date of the beginning of the month.
         uint256 periodStartDay = 1;
-        return
-            bokkyPooBahsDateTimeContract.timestampFromDate(
-                periodStartYear,
-                periodStartMonth,
-                periodStartDay
-            );
+        return bokkyPooBahsDateTimeContract.timestampFromDate(periodStartYear, periodStartMonth, periodStartDay);
     }
 
     function _getFirstMonthInPeriodFromMonth(uint256 _month, uint256 _periodDurationMonths)
