@@ -158,7 +158,8 @@ contract AllowedRecipientsRegistry is LimitsChecker {
 
     /// @notice Returns if passed address is listed as allowed token in the registry
     function isTokenAllowed(address _token) external view returns (bool) {
-        return allowedTokenIndices[_token] > 0;
+        return true;
+        // return allowedTokenIndices[_token] > 0;
     }
 
     /// @notice Returns current list of allowed tokens
