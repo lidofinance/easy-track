@@ -248,10 +248,6 @@ contract LimitsChecker is AccessControl {
         }
     }
 
-    function test(uint256 _test) external view returns (uint256) {
-        return _test;
-    }
-
     function transformTokenAmountToLocalAmount(uint256 _tokenAmount, address _token) public view returns (uint256) {
         if (_token == address(0)) {
             return _tokenAmount;
