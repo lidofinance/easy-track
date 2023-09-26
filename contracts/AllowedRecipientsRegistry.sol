@@ -70,6 +70,8 @@ contract AllowedRecipientsRegistry is LimitsChecker {
         address _admin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
+        address[] memory _addTokenToAllowedListRoleHolders,
+        address[] memory _removeTokenFromAllowedListRoleHolders,
         address[] memory _setParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
@@ -80,6 +82,12 @@ contract AllowedRecipientsRegistry is LimitsChecker {
         }
         for (uint256 i = 0; i < _removeRecipientFromAllowedListRoleHolders.length; i++) {
             _setupRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, _removeRecipientFromAllowedListRoleHolders[i]);
+        }
+        for (uint256 i = 0; i < _addTokenToAllowedListRoleHolders.length; i++) {
+            _setupRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, _addTokenToAllowedListRoleHolders[i]);
+        }
+        for (uint256 i = 0; i < _removeTokenFromAllowedListRoleHolders.length; i++) {
+            _setupRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, _removeTokenFromAllowedListRoleHolders[i]);
         }
     }
 

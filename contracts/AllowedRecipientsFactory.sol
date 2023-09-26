@@ -6,6 +6,8 @@ pragma solidity ^0.8.4;
 import "./EVMScriptFactories/AddAllowedRecipient.sol";
 import "./EVMScriptFactories/RemoveAllowedRecipient.sol";
 import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
+import "./EVMScriptFactories/AddAllowedToken.sol";
+import "./EVMScriptFactories/RemoveAllowedToken.sol";
 import "./AllowedRecipientsRegistry.sol";
 
 /// @author bulbozaur
@@ -17,6 +19,8 @@ contract AllowedRecipientsFactory {
         address _defaultAdmin,
         address[] addRecipientToAllowedListRoleHolders,
         address[] removeRecipientFromAllowedListRoleHolders,
+        address[] addTokenToAllowedListRoleHolders,
+        address[] removeTokenFromAllowedListRoleHolders,
         address[] setLimitParametersRoleHolders,
         address[] updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
@@ -46,10 +50,26 @@ contract AllowedRecipientsFactory {
         address allowedRecipientsRegistry
     );
 
+    event AddAllowedTokenDeployed(
+        address indexed creator,
+        address indexed addAllowedToken,
+        address trustedCaller,
+        address allowedRecipientsRegistry
+    );
+
+    event RemoveAllowedTokenDeployed(
+        address indexed creator,
+        address indexed removeAllowedToken,
+        address trustedCaller,
+        address allowedRecipientsRegistry
+    );
+
     function deployAllowedRecipientsRegistry(
         address _defaultAdmin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
+        address[] memory _addTokenToAllowedListRoleHolders,
+        address[] memory _removeTokenFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
@@ -58,6 +78,8 @@ contract AllowedRecipientsFactory {
             _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
+            _addTokenToAllowedListRoleHolders,
+            _removeTokenFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
@@ -69,6 +91,8 @@ contract AllowedRecipientsFactory {
             _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
+            _addTokenToAllowedListRoleHolders,
+            _removeTokenFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
@@ -110,27 +134,41 @@ contract AllowedRecipientsFactory {
         addAllowedRecipient = new AddAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
 
         emit AddAllowedRecipientDeployed(
-            msg.sender,
-            address(addAllowedRecipient),
-            _trustedCaller,
-            _allowedRecipientsRegistry
+            msg.sender, address(addAllowedRecipient), _trustedCaller, _allowedRecipientsRegistry
         );
     }
 
-    function deployRemoveAllowedRecipient(
-        address _trustedCaller,
-        address _allowedRecipientsRegistry
-    ) public returns (RemoveAllowedRecipient removeAllowedRecipient) {
+    function deployRemoveAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
+        public
+        returns (RemoveAllowedRecipient removeAllowedRecipient)
+    {
         removeAllowedRecipient = new RemoveAllowedRecipient(
             _trustedCaller,
             _allowedRecipientsRegistry
         );
 
         emit RemoveAllowedRecipientDeployed(
-            msg.sender,
-            address(removeAllowedRecipient),
-            _trustedCaller,
-            _allowedRecipientsRegistry
+            msg.sender, address(removeAllowedRecipient), _trustedCaller, _allowedRecipientsRegistry
+        );
+    }
+
+    function deployAddAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
+        public
+        returns (AddAllowedToken addAllowedToken)
+    {
+        addAllowedToken = new AddAllowedToken(_trustedCaller, _allowedRecipientsRegistry);
+
+        emit AddAllowedTokenDeployed(msg.sender, address(addAllowedToken), _trustedCaller, _allowedRecipientsRegistry);
+    }
+
+    function deployRemoveAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
+        public
+        returns (RemoveAllowedToken removeAllowedToken)
+    {
+        removeAllowedToken = new RemoveAllowedToken(_trustedCaller, _allowedRecipientsRegistry);
+
+        emit RemoveAllowedTokenDeployed(
+            msg.sender, address(removeAllowedToken), _trustedCaller, _allowedRecipientsRegistry
         );
     }
 }
