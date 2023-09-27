@@ -317,33 +317,22 @@ contract AllowedRecipientsBuilder {
         address[] memory _recipients,
         string[] memory _titles,
         uint256 _spentAmount
-    )
-        public
-        returns (
-            IAllowedRecipientsRegistry allowedRecipientsRegistry,
-            ITopUpAllowedRecipients[] memory topUpAllowedRecipientsList,
-            IAddAllowedRecipient addAllowedRecipient,
-            IAddAllowedToken addAllowedToken,
-            IRemoveAllowedToken removeAllowedToken,
-            IRemoveAllowedRecipient removeAllowedRecipient
-        )
-    {
-        allowedRecipientsRegistry = deployAllowedRecipientsRegistry(
+    ) public {
+        IAllowedRecipientsRegistry allowedRecipientsRegistry = deployAllowedRecipientsRegistry(
             _limit, _periodDurationMonths, _tokens, _recipients, _titles, _spentAmount, true
         );
 
         for (uint256 i = 0; i < _tokens.length; i++) {
-            topUpAllowedRecipientsList[i] =
-                deployTopUpAllowedRecipients(_trustedCaller, address(allowedRecipientsRegistry), _tokens[i]);
+            deployTopUpAllowedRecipients(_trustedCaller, address(allowedRecipientsRegistry), _tokens[i]);
         }
 
-        addAllowedRecipient = deployAddAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
+        deployAddAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
 
-        removeAllowedRecipient = deployRemoveAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
+        deployRemoveAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
 
-        addAllowedToken = deployAddAllowedToken(_trustedCaller, address(allowedRecipientsRegistry));
+        deployAddAllowedToken(_trustedCaller, address(allowedRecipientsRegistry));
 
-        removeAllowedToken = deployRemoveAllowedToken(_trustedCaller, address(allowedRecipientsRegistry));
+        deployRemoveAllowedToken(_trustedCaller, address(allowedRecipientsRegistry));
     }
 
     function deploySingleRecipientTopUpOnlySetup(
