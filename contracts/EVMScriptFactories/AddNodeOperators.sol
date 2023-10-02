@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.6;
@@ -6,46 +6,8 @@ pragma solidity ^0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-
-interface INodeOperatorsRegistry {
-    function addNodeOperator(
-        string memory _name,
-        address _rewardAddress
-    ) external returns (uint256 id);
-
-    function MAX_NODE_OPERATOR_NAME_LENGTH() external view returns (uint256);
-
-    function MAX_NODE_OPERATORS_COUNT() external view returns (uint256);
-
-    function getNodeOperatorsCount() external view returns (uint256);
-
-    function getLocator() external view returns (ILidoLocator);
-}
-
-interface IACL {
-    function grantPermissionP(
-        address _entity,
-        address _app,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external;
-
-    function hasPermission(
-        address _entity,
-        address _app,
-        bytes32 _role
-    ) external view returns (bool);
-
-    function getPermissionParamsLength(
-        address _entity,
-        address _app,
-        bytes32 _role
-    ) external view returns (uint256);
-}
-
-interface ILidoLocator {
-    function lido() external view returns (address);
-}
+import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to add new batch of node operators
 contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {

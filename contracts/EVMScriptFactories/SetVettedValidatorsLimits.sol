@@ -6,36 +6,8 @@ pragma solidity ^0.8.4;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
+import "../interfaces/INodeOperatorRegestry.sol";
 
-interface INodeOperatorsRegistry {
-    function getNodeOperator(
-        uint256 _id,
-        bool _fullInfo
-    )
-        external
-        view
-        returns (
-            bool active,
-            string memory name,
-            address rewardAddress,
-            uint64 stakingLimit,
-            uint64 stoppedValidators,
-            uint64 totalSigningKeys,
-            uint64 usedSigningKeys
-        );
-
-    function canPerform(
-        address _sender,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external view returns (bool);
-
-    function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
-
-    function getNodeOperatorsCount() external view returns (uint256);
-}
-
-/// @author psirex
 /// @notice Creates EVMScript to increase staking limit for node operator
 contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     struct VettedValidatorsLimitInput {
@@ -160,13 +132,13 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         uint256 _nodeOperatorId
     ) private view returns (NodeOperatorData memory _nodeOperatorData) {
         (
-            ,
-            ,
-            ,
-            ,
-            ,
+            /* bool active */,
+            /* string memory name */,
+            /* address rewardAddress */,
+            /* uint64 stakingLimit */,
+            /* uint64 stoppedValidators */,
             uint64 totalSigningKeys,
-
+            /* uint64 usedSigningKeys */
         ) = nodeOperatorsRegistry.getNodeOperator(_nodeOperatorId, false);
 
         _nodeOperatorData.id = _nodeOperatorId;

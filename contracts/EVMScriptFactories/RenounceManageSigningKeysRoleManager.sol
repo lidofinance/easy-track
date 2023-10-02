@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.6;
@@ -6,14 +6,9 @@ pragma solidity ^0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
+import "../interfaces/IACL.sol";
 
-interface IACL {
-    function removePermissionManager(address _app, bytes32 _role) external;
-
-    function getPermissionManager(address _app, bytes32 _role) external view returns (address);
-}
-
-/// @notice Creates EVMScript to set node operators reward address
+/// @notice Creates EVMScript to renounce manager of MANAGE_SIGNING_KEYS role
 contract RenounceManageSigningKeysRoleManager is TrustedCaller, IEVMScriptFactory {
     // -------------
     // CONSTANTS
@@ -63,20 +58,4 @@ contract RenounceManageSigningKeysRoleManager is TrustedCaller, IEVMScriptFactor
                 abi.encode(nodeOperatorsRegistry, MANAGE_SIGNING_KEYS_ROLE)
             );
     }
-
-    // function decodeEVMScriptCallData(
-    //     bytes memory _evmScriptCallData
-    // ) external pure returns (PermissionData[] memory) {
-    //     return _decodeEVMScriptCallData(_evmScriptCallData);
-    // }
-
-    // // ------------------
-    // // PRIVATE METHODS
-    // // ------------------
-
-    // function _decodeEVMScriptCallData(
-    //     bytes memory _evmScriptCallData
-    // ) private pure returns (PermissionData[] memory) {
-    //     return abi.decode(_evmScriptCallData, (PermissionData[]));
-    // }
 }

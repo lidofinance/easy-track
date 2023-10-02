@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.6;
@@ -6,20 +6,7 @@ pragma solidity ^0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-
-interface INodeOperatorsRegistry {
-    function setNodeOperatorRewardAddress(uint256 _nodeOperatorId, address _rewardAddress) external;
-
-    function MAX_NODE_OPERATOR_NAME_LENGTH() external view returns (uint256);
-
-    function getNodeOperatorsCount() external view returns (uint256);
-
-    function getLocator() external view returns (ILidoLocator);
-}
-
-interface ILidoLocator {
-    function lido() external view returns (address);
-}
+import "../interfaces/INodeOperatorRegestry.sol";
 
 /// @notice Creates EVMScript to set node operators reward address
 contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
@@ -35,6 +22,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
     string private constant ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
+    string private constant SAME_REWARD_ADDRESS = "SAME_REWARD_ADDRESS";
 
     // -------------
     // VARIABLES
@@ -110,6 +98,18 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
             
             require(_nodeOperatorRewardAddressesInput[i].rewardAddress != lido, LIDO_REWARD_ADDRESS);
             require(_nodeOperatorRewardAddressesInput[i].rewardAddress != address(0), ZERO_REWARD_ADDRESS);
+
+            (
+                /* bool active */,
+                /* string memory name */,
+                address rewardAddress,
+                /* uint64 stakingLimit */,
+                /* uint64 stoppedValidators */,
+                /* uint64 totalSigningKeys */,
+                /* uint64 usedSigningKeys */
+            ) = nodeOperatorsRegistry.getNodeOperator(_nodeOperatorRewardAddressesInput[i].nodeOperatorId, false);
+
+            require(_nodeOperatorRewardAddressesInput[i].rewardAddress != rewardAddress, SAME_REWARD_ADDRESS);
         }
     }
 }

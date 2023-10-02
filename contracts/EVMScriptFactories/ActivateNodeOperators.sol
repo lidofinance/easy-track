@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.6;
@@ -6,35 +6,8 @@ pragma solidity ^0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-
-interface INodeOperatorsRegistry {
-    function activateNodeOperator(uint256 _nodeOperatorId) external;
-
-    function getNodeOperatorIsActive(uint256 _nodeOperatorId) external view returns (bool);
-
-    function getNodeOperatorsCount() external view returns (uint256);
-}
-
-interface IACL {
-    function grantPermissionP(
-        address _entity,
-        address _app,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external;
-
-    function hasPermission(
-        address _entity,
-        address _app,
-        bytes32 _role
-    ) external view returns (bool);
-
-    function getPermissionParamsLength(
-        address _entity,
-        address _app,
-        bytes32 _role
-    ) external view returns (uint256);
-}
+import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to activate several node operator
 contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {

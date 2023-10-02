@@ -6,40 +6,8 @@ pragma solidity ^0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-
-interface INodeOperatorsRegistry {
-    function getNodeOperatorsCount() external view returns (uint256);
-}
-
-interface IACL {
-    function revokePermission(address _entity, address _app, bytes32 _role) external;
-
-    function grantPermissionP(
-        address _entity,
-        address _app,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external;
-
-    function hasPermission(
-        address _entity,
-        address _app,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external view returns (bool);
-
-    function hasPermission(
-        address _entity,
-        address _app,
-        bytes32 _role
-    ) external view returns (bool);
-
-    function getPermissionParamsLength(
-        address _entity,
-        address _app,
-        bytes32 _role
-    ) external view returns (uint256);
-}
+import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to set node operators reward address
 contract TransferNodeOperatorManager is TrustedCaller, IEVMScriptFactory {

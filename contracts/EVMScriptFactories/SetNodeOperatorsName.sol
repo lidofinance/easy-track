@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2021 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity ^0.8.6;
@@ -6,14 +6,7 @@ pragma solidity ^0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-
-interface INodeOperatorsRegistry {
-    function setNodeOperatorName(uint256 _nodeOperatorId, string memory _name) external;
-
-    function getNodeOperatorsCount() external view returns (uint256);
-
-    function MAX_NODE_OPERATOR_NAME_LENGTH() external view returns (uint256);
-}
+import "../interfaces/INodeOperatorRegestry.sol";
 
 /// @notice Creates EVMScript to set node operators name
 contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
@@ -28,6 +21,7 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
 
     string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
+    string private constant SAME_NAME = "SAME_NAME";
 
     // -------------
     // VARIABLES
@@ -106,6 +100,18 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
                     nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH(),
                 WRONG_NAME_LENGTH
             );
+
+            (
+                /* bool active */,
+                string memory name,
+                /* address rewardAddress */,
+                /* uint64 stakingLimit */,
+                /* uint64 stoppedValidators */,
+                /* uint64 totalSigningKeys */,
+                /* uint64 usedSigningKeys */
+            ) = nodeOperatorsRegistry.getNodeOperator(_nodeOperatorNamesInput[i].nodeOperatorId, true);
+
+            require(keccak256(bytes(_nodeOperatorNamesInput[i].name)) != keccak256(bytes(name)), SAME_NAME);
         }
     }
 }

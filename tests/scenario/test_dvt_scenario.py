@@ -1,10 +1,6 @@
 import pytest
 from eth_abi import encode_single
-from brownie import (
-    web3,
-    interface,
-    convert,
-)
+from brownie import web3, interface, convert, ZERO_ADDRESS
 
 clusters = [
     {
@@ -84,7 +80,7 @@ def test_simple_dvt_scenario(
     deactivate_node_operators_factory,
     set_node_operator_name_factory,
     set_node_operator_reward_address_factory,
-    increase_vetted_validators_limit_factory,
+    renounce_manage_signing_keys_role_manager_factory,
     set_vetted_validators_limit_factory,
     transfer_node_operator_manager_factory,
     stranger,
@@ -278,33 +274,6 @@ def test_simple_dvt_scenario(
 
     assert cluster["totalVettedValidators"] == 0
 
-    # Increase staking limit from NO
-    increase_vetted_validators_limit_calldata = (
-        "0x" + encode_single("(uint256,uint256)", [no_5_id, 1]).hex()
-    )
-
-    easytrack_executor(
-        no_5["rewardAddress"],
-        increase_vetted_validators_limit_factory,
-        increase_vetted_validators_limit_calldata,
-    )
-
-    cluster = simple_dvt.getNodeOperator(no_5_id, False)
-    assert cluster["totalVettedValidators"] == 1
-
-    increase_vetted_validators_limit_calldata = (
-        "0x" + encode_single("(uint256,uint256)", [no_5_id, 2]).hex()
-    )
-
-    easytrack_executor(
-        clusters[no_5_id]["manager"],
-        increase_vetted_validators_limit_factory,
-        increase_vetted_validators_limit_calldata,
-    )
-
-    cluster = simple_dvt.getNodeOperator(no_5_id, False)
-    assert cluster["totalVettedValidators"] == 2
-
     # Increase staking limit with commitee
     simple_dvt.addSigningKeysOperatorBH(
         no_5_id,
@@ -373,4 +342,29 @@ def test_simple_dvt_scenario(
         stranger,
         simple_dvt.MANAGE_SIGNING_KEYS(),
         [permission_param],
+    )
+
+    # Renounce MANAGE_SIGNING_KEYS role manager
+
+    easytrack_executor(
+        commitee_multisig,
+        renounce_manage_signing_keys_role_manager_factory,
+        "",
+    )
+
+    assert (
+        acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS())
+        == ZERO_ADDRESS
+    )
+
+    acl.createPermission(
+        agent,
+        simple_dvt,
+        web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
+        agent,
+        {"from": voting},
+    )
+
+    assert (
+        acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == agent
     )
