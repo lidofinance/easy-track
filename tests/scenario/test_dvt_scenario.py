@@ -1,6 +1,7 @@
 import pytest
 from eth_abi import encode_single
-from brownie import web3, interface, convert, ZERO_ADDRESS
+from brownie import web3, interface, convert
+from utils.evm_script import encode_call_script
 
 clusters = [
     {
@@ -80,9 +81,9 @@ def test_simple_dvt_scenario(
     deactivate_node_operators_factory,
     set_node_operator_name_factory,
     set_node_operator_reward_address_factory,
-    renounce_manage_signing_keys_role_manager_factory,
     set_vetted_validators_limit_factory,
     transfer_node_operator_manager_factory,
+    update_tareget_validator_limits_factory,
     stranger,
 ):
     # Grant roles
@@ -308,6 +309,28 @@ def test_simple_dvt_scenario(
     cluster_6 = simple_dvt.getNodeOperator(no_6_id, False)
     assert cluster_6["totalVettedValidators"] == 3
 
+    # Update target validators limits
+
+    update_tareget_validator_limits_calldata = (
+        "0x"
+        + encode_single(
+            "((uint256,bool,uint256)[])", [[(no_5_id, True, 1), (no_6_id, True, 10)]]
+        ).hex()
+    )
+    easytrack_executor(
+        commitee_multisig,
+        update_tareget_validator_limits_factory,
+        update_tareget_validator_limits_calldata,
+    )
+
+    no_5_summary = simple_dvt.getNodeOperatorSummary(no_5_id)
+    no_6_summary = simple_dvt.getNodeOperatorSummary(no_6_id)
+
+    assert no_5_summary["isTargetLimitActive"] == True
+    assert no_6_summary["isTargetLimitActive"] == True
+    assert no_5_summary["targetValidatorsCount"] == 1
+    assert no_6_summary["targetValidatorsCount"] == 10
+
     # Revoke MANAGE_SIGNING_KEYS role
 
     # Transfer cluster manager
@@ -346,23 +369,36 @@ def test_simple_dvt_scenario(
 
     # Renounce MANAGE_SIGNING_KEYS role manager
 
-    easytrack_executor(
-        commitee_multisig,
-        renounce_manage_signing_keys_role_manager_factory,
-        "",
+    set_permission_manager_calldata = acl.setPermissionManager.encode_input(
+        agent, simple_dvt, web3.keccak(text="MANAGE_SIGNING_KEYS").hex()
     )
 
-    assert (
-        acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS())
-        == ZERO_ADDRESS
+    set_permission_manager_calldata = (
+        et_contracts.evm_script_executor.executeEVMScript.encode_input(
+            encode_call_script(
+                [
+                    (
+                        acl.address,
+                        acl.setPermissionManager.encode_input(
+                            agent,
+                            simple_dvt,
+                            web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
+                        ),
+                    )
+                ]
+            ),
+        )
     )
 
-    acl.createPermission(
-        agent,
-        simple_dvt,
-        web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        agent,
+    et_contracts.evm_script_executor.setEasyTrack(agent, {"from": voting})
+    agent.execute(
+        et_contracts.evm_script_executor,
+        0,
+        set_permission_manager_calldata,
         {"from": voting},
+    )
+    et_contracts.evm_script_executor.setEasyTrack(
+        et_contracts.easy_track, {"from": voting}
     )
 
     assert (

@@ -53,4 +53,10 @@ interface INodeOperatorsRegistry {
     ) external view returns (bool);
 
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
+
+    function updateTargetValidatorsLimits(
+        uint256 _nodeOperatorId,
+        bool _isTargetLimitActive,
+        uint256 _targetLimit
+    ) external;
 }

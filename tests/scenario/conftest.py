@@ -1,14 +1,14 @@
 import pytest
 from brownie import (
-    AddNodeOperators,
     chain,
+    AddNodeOperators,
     ActivateNodeOperators,
     DeactivateNodeOperators,
     SetNodeOperatorNames,
     SetNodeOperatorRewardAddresses,
     SetVettedValidatorsLimits,
     TransferNodeOperatorManager,
-    RenounceManageSigningKeysRoleManager,
+    UpdateTargetValidatorLimits
 )
 from utils import deployed_easy_track
 
@@ -229,22 +229,21 @@ def transfer_node_operator_manager_factory(
 
 
 @pytest.fixture(scope="module")
-def renounce_manage_signing_keys_role_manager_factory(
-    et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
+def update_tareget_validator_limits_factory(
+    et_contracts, voting, simple_dvt, deployer, commitee_multisig
 ):
-    factory = RenounceManageSigningKeysRoleManager.deploy(
-        commitee_multisig, simple_dvt, acl, {"from": deployer}
+    factory = UpdateTargetValidatorLimits.deploy(
+        commitee_multisig, simple_dvt, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
-    assert factory.acl() == acl
 
-    renounce_manage_signing_keys_role_manager_permission = (
-        acl.address + acl.removePermissionManager.signature[2:]
+    update_tareget_validators_limits_permission = (
+        simple_dvt.address + simple_dvt.updateTargetValidatorsLimits.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
-        renounce_manage_signing_keys_role_manager_permission,
+        update_tareget_validators_limits_permission,
         {"from": voting},
     )
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
