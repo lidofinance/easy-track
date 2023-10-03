@@ -77,6 +77,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) LimitsChecker(_setParametersRoleHolders, _updateSpentAmountRoleHolders, _bokkyPooBahsDateTimeContract) {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+        
         for (uint256 i = 0; i < _addRecipientToAllowedListRoleHolders.length; i++) {
             _setupRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, _addRecipientToAllowedListRoleHolders[i]);
         }
@@ -150,7 +151,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
     /// we swap the element to delete with the last one in the array,
     /// and then remove the last element (sometimes called as 'swap and pop').
     function removeToken(address _token) external onlyRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE) {
-        uint256 index = _getAllowedRecipientIndex(_token);
+        uint256 index = _getAllowedTokenIndex(_token);
         uint256 lastIndex = allowedTokens.length - 1;
 
         if (index != lastIndex) {
@@ -166,8 +167,7 @@ contract AllowedRecipientsRegistry is LimitsChecker {
 
     /// @notice Returns if passed address is listed as allowed token in the registry
     function isTokenAllowed(address _token) external view returns (bool) {
-        return true;
-        // return allowedTokenIndices[_token] > 0;
+        return allowedTokenIndices[_token] > 0;
     }
 
     /// @notice Returns current list of allowed tokens

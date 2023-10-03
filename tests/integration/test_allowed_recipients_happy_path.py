@@ -46,7 +46,6 @@ def single_recipient_top_up_only_setup(
     allowed_recipients_default_params,
     deployer,
 ):
-
     deploy_tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
         allowed_recipient.address,
         allowed_recipient.title,
@@ -95,9 +94,9 @@ def full_setup(
 ):
     deploy_tx = allowed_recipients_builder.deployFullSetup(
         trusted_caller,
-        lido_contracts.ldo,
         allowed_recipients_default_params.limit,
         allowed_recipients_default_params.period_duration_months,
+        [lido_contracts.ldo.address],
         [],
         [],
         allowed_recipients_default_params.spent_amount,
@@ -160,8 +159,8 @@ def test_single_recipient_top_up_only_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 50 * 10 ** 18
-    second_top_up_amount = 100 * 10 ** 18
+    first_top_up_amount = 50 * 10**18
+    second_top_up_amount = 100 * 10**18
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
@@ -255,8 +254,8 @@ def test_full_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 50 * 10 ** 18
-    second_top_up_amount = 100 * 10 ** 18
+    first_top_up_amount = 50 * 10**18
+    second_top_up_amount = 100 * 10**18
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months

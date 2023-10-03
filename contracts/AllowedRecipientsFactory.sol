@@ -6,8 +6,6 @@ pragma solidity ^0.8.4;
 import "./EVMScriptFactories/AddAllowedRecipient.sol";
 import "./EVMScriptFactories/RemoveAllowedRecipient.sol";
 import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
-import "./EVMScriptFactories/AddAllowedToken.sol";
-import "./EVMScriptFactories/RemoveAllowedToken.sol";
 import "./AllowedRecipientsRegistry.sol";
 
 /// @author bulbozaur
@@ -46,20 +44,6 @@ contract AllowedRecipientsFactory {
     event RemoveAllowedRecipientDeployed(
         address indexed creator,
         address indexed removeAllowedRecipient,
-        address trustedCaller,
-        address allowedRecipientsRegistry
-    );
-
-    event AddAllowedTokenDeployed(
-        address indexed creator,
-        address indexed addAllowedToken,
-        address trustedCaller,
-        address allowedRecipientsRegistry
-    );
-
-    event RemoveAllowedTokenDeployed(
-        address indexed creator,
-        address indexed removeAllowedToken,
         address trustedCaller,
         address allowedRecipientsRegistry
     );
@@ -149,26 +133,6 @@ contract AllowedRecipientsFactory {
 
         emit RemoveAllowedRecipientDeployed(
             msg.sender, address(removeAllowedRecipient), _trustedCaller, _allowedRecipientsRegistry
-        );
-    }
-
-    function deployAddAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
-        public
-        returns (AddAllowedToken addAllowedToken)
-    {
-        addAllowedToken = new AddAllowedToken(_trustedCaller, _allowedRecipientsRegistry);
-
-        emit AddAllowedTokenDeployed(msg.sender, address(addAllowedToken), _trustedCaller, _allowedRecipientsRegistry);
-    }
-
-    function deployRemoveAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
-        public
-        returns (RemoveAllowedToken removeAllowedToken)
-    {
-        removeAllowedToken = new RemoveAllowedToken(_trustedCaller, _allowedRecipientsRegistry);
-
-        emit RemoveAllowedTokenDeployed(
-            msg.sender, address(removeAllowedToken), _trustedCaller, _allowedRecipientsRegistry
         );
     }
 }

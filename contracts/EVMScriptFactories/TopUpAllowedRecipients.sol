@@ -20,7 +20,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
     string private constant ERROR_RECIPIENT_NOT_ALLOWED = "RECIPIENT_NOT_ALLOWED";
     string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
-    string private constant ERROR_TOKEN_NOT_ALLOWED = "ERROR_TOKEN_NOT_ALLOWED";
+    string private constant ERROR_TOKEN_NOT_ALLOWED = "TOKEN_NOT_ALLOWED";
 
     // -------------
     // VARIABLES

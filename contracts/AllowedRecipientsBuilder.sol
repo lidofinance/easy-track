@@ -59,18 +59,6 @@ interface IRemoveAllowedRecipient {
     function allowedRecipientsRegistry() external view returns (address);
 }
 
-interface IAddAllowedToken {
-    function trustedCaller() external view returns (address);
-
-    function allowedRecipientsRegistry() external view returns (address);
-}
-
-interface IRemoveAllowedToken {
-    function trustedCaller() external view returns (address);
-
-    function allowedRecipientsRegistry() external view returns (address);
-}
-
 interface IAllowedRecipientsFactory {
     function deployAllowedRecipientsRegistry(
         address _admin,
@@ -98,14 +86,6 @@ interface IAllowedRecipientsFactory {
     function deployRemoveAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
         external
         returns (IRemoveAllowedRecipient);
-
-    function deployAddAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
-        external
-        returns (IAddAllowedToken addAllowedToken);
-
-    function deployRemoveAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
-        external
-        returns (IRemoveAllowedToken removeAllowedToken);
 }
 
 contract AllowedRecipientsBuilder {
@@ -289,26 +269,6 @@ contract AllowedRecipientsBuilder {
         assert(address(removeAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
     }
 
-    function deployAddAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
-        public
-        returns (IAddAllowedToken addAllowedToken)
-    {
-        addAllowedToken = factory.deployAddAllowedToken(_trustedCaller, _allowedRecipientsRegistry);
-
-        assert(addAllowedToken.trustedCaller() == _trustedCaller);
-        assert(address(addAllowedToken.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
-    }
-
-    function deployRemoveAllowedToken(address _trustedCaller, address _allowedRecipientsRegistry)
-        public
-        returns (IRemoveAllowedToken removeAllowedToken)
-    {
-        removeAllowedToken = factory.deployRemoveAllowedToken(_trustedCaller, _allowedRecipientsRegistry);
-
-        assert(removeAllowedToken.trustedCaller() == _trustedCaller);
-        assert(address(removeAllowedToken.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
-    }
-
     function deployFullSetup(
         address _trustedCaller,
         uint256 _limit,
@@ -329,10 +289,6 @@ contract AllowedRecipientsBuilder {
         deployAddAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
 
         deployRemoveAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
-
-        deployAddAllowedToken(_trustedCaller, address(allowedRecipientsRegistry));
-
-        deployRemoveAllowedToken(_trustedCaller, address(allowedRecipientsRegistry));
     }
 
     function deploySingleRecipientTopUpOnlySetup(

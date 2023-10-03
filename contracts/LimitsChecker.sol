@@ -123,7 +123,7 @@ contract LimitsChecker is AccessControl {
         view
         returns (bool)
     {
-        uint256 localPayoutAmount = transformTokenAmountToLocalAmount(_payoutAmount, _token);
+        uint256 localPayoutAmount = normalizeAmount(_payoutAmount, _token);
 
         if (block.timestamp + _motionDuration >= currentPeriodEndTimestamp) {
             return localPayoutAmount <= limit;
@@ -137,7 +137,7 @@ contract LimitsChecker is AccessControl {
     function updateSpentAmount(uint256 _payoutAmount, address _token) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
         uint256 spentAmountLocal = spentAmount;
         uint256 limitLocal = limit;
-        uint256 localPayoutAmount = transformTokenAmountToLocalAmount(_payoutAmount, _token);
+        uint256 localPayoutAmount = normalizeAmount(_payoutAmount, _token);
 
         uint256 currentPeriodEndTimestampLocal = currentPeriodEndTimestamp;
 
@@ -248,22 +248,18 @@ contract LimitsChecker is AccessControl {
         }
     }
 
-    function transformTokenAmountToLocalAmount(uint256 _tokenAmount, address _token) public view returns (uint256) {
-        if (_token == address(0)) {
-            return _tokenAmount;
-        }
-
+    function normalizeAmount(uint256 _tokenAmount, address _token) public view returns (uint256) {
         uint8 tokenDecimals = IERC20Metadata(_token).decimals();
 
-        if (tokenDecimals > decimals) {
-            uint256 factor = 10 ** (tokenDecimals - decimals);
-            return _tokenAmount / factor;
-        } else if (tokenDecimals < decimals) {
-            uint256 factor = 10 ** (decimals - tokenDecimals);
-            return _tokenAmount * factor;
-        } else {
+        if (_token == address(0) || tokenDecimals == decimals) {
             return _tokenAmount;
         }
+
+        if (tokenDecimals > decimals) {
+            return _tokenAmount / 10 ** (tokenDecimals - decimals);
+        }
+
+        return _tokenAmount * 10 ** (decimals - tokenDecimals);
     }
 
     // ------------------

@@ -20,6 +20,8 @@ from utils.test_helpers import (
     UPDATE_SPENT_AMOUNT_ROLE,
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
+    ADD_TOKEN_TO_ALLOWED_LIST_ROLE,
+    REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE,
 )
 
 from utils.config import get_network_name
@@ -39,6 +41,8 @@ RECIPIENT_TITLE = "New Allowed Recipient"
 def test_registry_initial_state(
     AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract
 ):
+    add_token_role_holder = accounts[4]
+    remove_token_role_holder = accounts[5]
     add_recipient_role_holder = accounts[6]
     remove_recipient_role_holder = accounts[7]
     set_parameters_role_holder = accounts[8]
@@ -49,6 +53,8 @@ def test_registry_initial_state(
         owner,
         [add_recipient_role_holder],
         [remove_recipient_role_holder],
+        [add_token_role_holder],
+        [remove_token_role_holder],
         [set_parameters_role_holder],
         [update_spent_role_holder],
         bokkyPooBahsDateTimeContract,
@@ -60,6 +66,10 @@ def test_registry_initial_state(
     assert registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, remove_recipient_role_holder
     )
+    assert registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, add_token_role_holder)
+    assert registry.hasRole(
+        REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, remove_token_role_holder
+    )
     assert registry.hasRole(SET_PARAMETERS_ROLE, set_parameters_role_holder)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, update_spent_role_holder)
     assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), owner)
@@ -69,6 +79,8 @@ def test_registry_initial_state(
     for role_holder in [
         add_recipient_role_holder,
         remove_recipient_role_holder,
+        add_token_role_holder,
+        remove_token_role_holder,
         set_parameters_role_holder,
         update_spent_role_holder,
     ]:
@@ -93,6 +105,8 @@ def test_registry_zero_admin_allowed(
         [owner],
         [owner],
         [owner],
+        [owner],
+        [owner],
         bokkyPooBahsDateTimeContract,
     )
 
@@ -104,6 +118,8 @@ def test_registry_none_role_holders_allowed(
     owner.deploy(
         AllowedRecipientsRegistry,
         owner,
+        [],
+        [],
         [],
         [],
         [],
@@ -123,6 +139,8 @@ def test_registry_zero_booky_poo_bahs_data_time_address_allowed(
         [owner],
         [owner],
         [owner],
+        [owner],
+        [owner],
         ZERO_ADDRESS,
     )
 
@@ -134,13 +152,17 @@ def test_registry_zero_booky_poo_bahs_data_time_address_allowed(
 
 def test_rights_are_not_shared_by_different_roles(
     AllowedRecipientsRegistry,
+    ldo,
     owner,
+    steth,
     stranger,
     voting,
     accounts,
     bokkyPooBahsDateTimeContract,
 ):
     deployer = owner
+    remove_token_role_holder = accounts[3]
+    add_token_role_holder = accounts[4]
     add_role_holder = accounts[6]
     remove_role_holder = accounts[7]
     set_limit_role_holder = accounts[8]
@@ -151,6 +173,8 @@ def test_rights_are_not_shared_by_different_roles(
         voting,
         [add_role_holder],
         [remove_role_holder],
+        [add_token_role_holder],
+        [remove_token_role_holder],
         [set_limit_role_holder],
         [update_limit_role_holder],
         bokkyPooBahsDateTimeContract,
@@ -162,6 +186,8 @@ def test_rights_are_not_shared_by_different_roles(
 
     for caller in [
         deployer,
+        add_token_role_holder,
+        remove_token_role_holder,
         remove_role_holder,
         set_limit_role_holder,
         update_limit_role_holder,
@@ -185,6 +211,34 @@ def test_rights_are_not_shared_by_different_roles(
     for caller in [
         deployer,
         add_role_holder,
+        remove_token_role_holder,
+        remove_role_holder,
+        set_limit_role_holder,
+        update_limit_role_holder,
+        stranger,
+    ]:
+        with reverts(access_revert_message(caller, ADD_TOKEN_TO_ALLOWED_LIST_ROLE)):
+            registry.addToken(steth, {"from": caller})
+
+    for caller in [
+        deployer,
+        add_role_holder,
+        remove_role_holder,
+        add_token_role_holder,
+        set_limit_role_holder,
+        update_limit_role_holder,
+        stranger,
+    ]:
+        with reverts(
+            access_revert_message(caller, REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE)
+        ):
+            registry.removeToken(ldo, {"from": caller})
+
+    for caller in [
+        deployer,
+        add_token_role_holder,
+        remove_token_role_holder,
+        add_role_holder,
         remove_role_holder,
         update_limit_role_holder,
         stranger,
@@ -200,6 +254,8 @@ def test_rights_are_not_shared_by_different_roles(
 
     for caller in [
         deployer,
+        add_token_role_holder,
+        remove_token_role_holder,
         add_role_holder,
         remove_role_holder,
         set_limit_role_holder,
@@ -221,6 +277,8 @@ def test_multiple_role_holders(
     registry = deployer.deploy(
         AllowedRecipientsRegistry,
         voting,
+        add_role_holders,
+        remove_role_holders,
         add_role_holders,
         remove_role_holders,
         set_parameters_role_holders,
@@ -414,7 +472,16 @@ def test_unsafe_set_spent_amount(limits_checker):
 
 
 def test_add_recipient(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     registry.addRecipient(
@@ -427,7 +494,16 @@ def test_add_recipient(allowed_recipients_registry):
 
 
 def test_add_recipient_with_empty_title(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     registry.addRecipient(recipient, "", {"from": add_recipient_role_holder})
@@ -438,7 +514,16 @@ def test_add_recipient_with_empty_title(allowed_recipients_registry):
 
 
 def test_add_recipient_with_zero_address(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
 
     registry.addRecipient(
         ZERO_ADDRESS, RECIPIENT_TITLE, {"from": add_recipient_role_holder}
@@ -450,7 +535,16 @@ def test_add_recipient_with_zero_address(allowed_recipients_registry):
 
 
 def test_add_multiple_recipients(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient1 = accounts[8].address
     recipient2 = accounts[9].address
 
@@ -469,7 +563,16 @@ def test_add_multiple_recipients(allowed_recipients_registry):
 
 
 def test_fail_if_add_the_same_recipient(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     registry.addRecipient(
@@ -491,6 +594,8 @@ def test_remove_recipient(allowed_recipients_registry):
         _,
         add_recipient_role_holder,
         remove_recipient_role_holder,
+        _,
+        _,
         _,
         _,
     ) = allowed_recipients_registry
@@ -517,6 +622,8 @@ def test_remove_not_last_recipient_in_the_list(allowed_recipients_registry):
         remove_recipient_role_holder,
         _,
         _,
+        _,
+        _,
     ) = allowed_recipients_registry
     recipient1 = accounts[8].address
     recipient2 = accounts[9].address
@@ -537,7 +644,16 @@ def test_remove_not_last_recipient_in_the_list(allowed_recipients_registry):
 
 
 def test_fail_if_remove_recipient_from_empty_allowed_list(allowed_recipients_registry):
-    (registry, _, _, remove_recipient_role_holder, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        _,
+        remove_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     assert 0 == len(registry.getAllowedRecipients())
@@ -555,6 +671,8 @@ def test_fail_if_remove_not_allowed_recipient(allowed_recipients_registry):
         _,
         add_recipient_role_holder,
         remove_recipient_role_holder,
+        _,
+        _,
         _,
         _,
     ) = allowed_recipients_registry

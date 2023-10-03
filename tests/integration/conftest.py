@@ -498,6 +498,7 @@ def check_top_up_motion_enactment(
         top_up_recipients,
         top_up_amounts,
     ):
+        token = top_up_allowed_recipients_evm_script_factory.token()
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
         )
@@ -506,9 +507,9 @@ def check_top_up_motion_enactment(
         spending = sum(top_up_amounts)
         spendable = limit - spending
 
-        assert allowed_recipients_registry.isUnderSpendableBalance(spendable, 0)
+        assert allowed_recipients_registry.isUnderSpendableBalance(spendable, token, 0)
         assert allowed_recipients_registry.isUnderSpendableBalance(
-            limit, duration * MAX_SECONDS_IN_MONTH
+            limit, token, duration * MAX_SECONDS_IN_MONTH
         )
         assert (
             allowed_recipients_registry.getPeriodState()["_alreadySpentAmount"]
@@ -635,6 +636,7 @@ def allowed_recipients_registry(
         tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
             allowed_recipients_default_params.limit,
             allowed_recipients_default_params.period_duration_months,
+            [],
             [],
             [],
             allowed_recipients_default_params.spent_amount,

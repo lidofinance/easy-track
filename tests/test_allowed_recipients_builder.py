@@ -8,10 +8,10 @@ REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = (
     "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
 )
 ADD_TOKEN_TO_ALLOWED_LIST_ROLE = (
-    "f171689cfd5919fb6ea45c7db72005f66d37a9d2ecad9a9102caf8177435cf54"
+    "0xf171689cfd5919fb6ea45c7db72005f66d37a9d2ecad9a9102caf8177435cf54"
 )
 REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE = (
-    "9328ef869700347b81959a69acbca4adf93a9ee617e796e5692b2660ee007a81"
+    "0x9328ef869700347b81959a69acbca4adf93a9ee617e796e5692b2660ee007a81"
 )
 SET_PARAMETERS_ROLE = (
     "0x260b83d52a26066d8e9db550fa70395df5f3f064b50ff9d8a94267d9f1fe1967"
@@ -183,62 +183,6 @@ def test_deploy_remove_allowed_recipient(
     assert removeAllowedRecipient.trustedCaller() == trusted_caller
 
 
-def test_deploy_add_allowed_token(
-    allowed_recipients_builder, accounts, stranger, AddAllowedToken
-):
-    trusted_caller = accounts[3]
-    registry = accounts[4]
-
-    tx = allowed_recipients_builder.deployAddAllowedToken(
-        trusted_caller, registry, {"from": stranger}
-    )
-
-    add_token_address = tx.events["AddAllowedTokenDeployed"]["addAllowedToken"]
-
-    assert tx.events["AddAllowedTokenDeployed"]["creator"] == allowed_recipients_builder
-    assert tx.events["AddAllowedTokenDeployed"]["trustedCaller"] == trusted_caller
-    assert tx.events["AddAllowedTokenDeployed"]["allowedRecipientsRegistry"] == registry
-
-    addAllowedRecipient = Contract.from_abi(
-        "AddAllowedToken", add_token_address, AddAllowedToken.abi
-    )
-
-    assert addAllowedRecipient.allowedRecipientsRegistry() == registry
-    assert addAllowedRecipient.trustedCaller() == trusted_caller
-
-
-def test_deploy_remove_allowed_token(
-    allowed_recipients_builder, accounts, stranger, RemoveAllowedToken
-):
-    trusted_caller = accounts[3]
-    registry = accounts[4]
-
-    tx = allowed_recipients_builder.deployRemoveAllowedToken(
-        trusted_caller, registry, {"from": stranger}
-    )
-
-    remove_allowed_token_address = tx.events["RemoveAllowedTokenDeployed"][
-        "removeAllowedToken"
-    ]
-
-    assert (
-        tx.events["RemoveAllowedTokenDeployed"]["creator"] == allowed_recipients_builder
-    )
-    assert tx.events["RemoveAllowedTokenDeployed"]["trustedCaller"] == trusted_caller
-    assert (
-        tx.events["RemoveAllowedTokenDeployed"]["allowedRecipientsRegistry"] == registry
-    )
-
-    removeAllowedRecipient = Contract.from_abi(
-        "RemoveAllowedToken",
-        remove_allowed_token_address,
-        RemoveAllowedToken.abi,
-    )
-
-    assert removeAllowedRecipient.allowedRecipientsRegistry() == registry
-    assert removeAllowedRecipient.trustedCaller() == trusted_caller
-
-
 def test_deploy_allowed_recipients_registry(
     allowed_recipients_builder,
     accounts,
@@ -404,10 +348,6 @@ def test_deploy_full_setup(
     remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"][
         "removeAllowedRecipient"
     ]
-    add_allowed_token_address = tx.events["AddAllowedTokenDeployed"]["addAllowedToken"]
-    remove_allowed_token_address = tx.events["RemoveAllowedTokenDeployed"][
-        "removeAllowedToken"
-    ]
 
     registry = Contract.from_abi(
         "AllowedRecipientsRegistry", registry_address, AllowedRecipientsRegistry.abi
@@ -427,14 +367,6 @@ def test_deploy_full_setup(
         RemoveAllowedRecipient.abi,
     )
 
-    add_allowed_token = Contract.from_abi(
-        "AddAllowedToken", add_allowed_token_address, AddAllowedRecipient.abi
-    )
-
-    remove_allowed_token = Contract.from_abi(
-        "RemoveAllowedToken", remove_allowed_token_address, RemoveAllowedRecipient.abi
-    )
-
     assert top_up_allowed_recipients.token() == ldo
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
     assert top_up_allowed_recipients.trustedCaller() == trusted_caller
@@ -442,10 +374,6 @@ def test_deploy_full_setup(
     assert add_allowed_recipient.trustedCaller() == trusted_caller
     assert remove_allowed_recipient.allowedRecipientsRegistry() == registry
     assert remove_allowed_recipient.trustedCaller() == trusted_caller
-    assert add_allowed_token.allowedRecipientsRegistry() == registry
-    assert add_allowed_token.trustedCaller() == trusted_caller
-    assert remove_allowed_token.allowedRecipientsRegistry() == registry
-    assert remove_allowed_token.trustedCaller() == trusted_caller
 
     assert len(registry.getAllowedRecipients()) == len(recipients)
     for recipient in recipients:
