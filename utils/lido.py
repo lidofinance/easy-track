@@ -43,11 +43,11 @@ def contracts(network=DEFAULT_NETWORK):
 def external_contracts(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return {
-            "usdt": "0xdAC17F958D2ee523a2206206994597C13D831ec7"
+            "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
         }
     if network == "goerli" or network == "goerli-fork":
         return {
-            "usdt": "0x509Ee0d083DdF8AC028f2a56731412edD63223B9"
+            "usdc": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F"
         }
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""

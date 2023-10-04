@@ -94,6 +94,7 @@ def load_deployed_contract(deployed_contracts):
 def lido_contracts():
     return lido.contracts(network=brownie.network.show_active())
 
+
 @pytest.fixture(scope="module")
 def external_contracts():
     return lido.external_contracts(network=brownie.network.show_active())
@@ -349,6 +350,50 @@ def top_up_allowed_recipients_ldo_evm_script_factory(
     return evm_script_factory
 
 
+@pytest.fixture(scope="module")
+def top_up_allowed_recipients_usdc_evm_script_factory(
+    TopUpAllowedRecipients,
+    easy_track,
+    lido_contracts,
+    external_contracts,
+    load_deployed_contract,
+    allowed_recipients_builder,
+    allowed_recipients_registry,
+    trusted_caller,
+    deployer,
+):
+    evm_script_factory = load_deployed_contract("TopUpAllowedRecipients")
+
+    if evm_script_factory is None:
+        tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
+            trusted_caller,
+            allowed_recipients_registry,
+            external_contracts["usdc"],
+            {"from": deployer},
+        )
+
+        evm_script_factory = TopUpAllowedRecipients.at(
+            tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
+        )
+
+    if not easy_track.isEVMScriptFactory(evm_script_factory):
+        easy_track.addEVMScriptFactory(
+            evm_script_factory,
+            deployment.create_permission(
+                lido_contracts.aragon.finance, "newImmediatePayment"
+            )
+            + deployment.create_permission(
+                allowed_recipients_registry, "updateSpentAmount"
+            )[2:],
+            {"from": lido_contracts.aragon.voting},
+        )
+        log.ok(
+            f"EVM Script Factory TopUpAllowedRecipients({evm_script_factory}) was added to EasyTrack"
+        )
+
+    return evm_script_factory
+
+
 ####
 # ALLOWED RECIPIENTS FIXTURES
 ####
@@ -486,9 +531,21 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
 
 @pytest.fixture(scope="module")
 def check_top_up_motion_enactment(
-    AllowedRecipientsRegistry, get_balances, lido_contracts
+    AllowedRecipientsRegistry, get_balances, lido_contracts, external_contracts
 ):
     """Note: this check works correctly only when was payment in the period"""
+
+    def _normalize_amount_from_token(amount, token, registry):
+        token_decimals = brownie.interface.ERC20(token).decimals()
+        registry_decimals = registry.decimals()
+
+        decimals_diff = abs(token_decimals - registry_decimals)
+
+        if decimals_diff == 0:
+            return amount
+        if token_decimals > registry_decimals:
+            return amount / 10**decimals_diff
+        return amount * 10**decimals_diff
 
     def _check_top_up_motion_enactment(
         top_up_allowed_recipients_evm_script_factory,
@@ -500,23 +557,23 @@ def check_top_up_motion_enactment(
         top_up_recipients,
         top_up_amounts,
     ):
-        token = top_up_allowed_recipients_evm_script_factory.token()
-        token_contract = brownie.interface.ERC20(token)
-
-        print(token, token_contract.decimals())
+        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
 
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
         )
         limit, duration = allowed_recipients_registry.getLimitParameters()
 
-        spending = sum(top_up_amounts)
+        spending_in_tokens = sum(top_up_amounts)
+        spending = _normalize_amount_from_token(
+            spending_in_tokens, top_up_token, allowed_recipients_registry
+        )
         spendable = limit - spending
 
-        assert allowed_recipients_registry.isUnderSpendableBalance(spendable, token, 0)
+        assert allowed_recipients_registry.isUnderSpendableBalance(spendable, brownie.ZERO_ADDRESS, 0)
         assert allowed_recipients_registry.isUnderSpendableBalance(
             limit,
-            token,
+            brownie.ZERO_ADDRESS,
             duration * MAX_SECONDS_IN_MONTH,
         )
         assert (
@@ -527,8 +584,7 @@ def check_top_up_motion_enactment(
             allowed_recipients_registry.getPeriodState()["_spendableBalanceInPeriod"]
             == spendable
         )
-
-        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
+        
         (sender_balance,) = get_balances(top_up_token, [lido_contracts.aragon.agent])
         recipients_balances = get_balances(
             top_up_token,
@@ -538,7 +594,7 @@ def check_top_up_motion_enactment(
         if top_up_token == lido_contracts.steth:
             assert math.isclose(
                 sender_balance,
-                sender_balance_before - spending,
+                sender_balance_before - spending_in_tokens,
                 abs_tol=STETH_ERROR_MARGIN_WEI,
             )
 
@@ -554,7 +610,7 @@ def check_top_up_motion_enactment(
                 == recipients_shares_balance_after - recipients_shares_balance_before
             )
         else:
-            assert sender_balance == sender_balance_before - spending
+            assert sender_balance == sender_balance_before - spending_in_tokens
 
         for before, now, payment in zip(
             recipients_balances_before, recipients_balances, top_up_amounts
