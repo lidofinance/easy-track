@@ -209,11 +209,13 @@ def test_fail_remove_recipient_if_it_is_not_allowed(
 
 def test_top_up_single_recipient(
     recipients,
+    add_allowed_token_to_registry,
     allowed_recipients_limit_params,
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
+    
 ):
     allowed_recipient = recipients[0]
 
@@ -221,6 +223,10 @@ def test_top_up_single_recipient(
         add_allowed_recipient_evm_script_factory,
         allowed_recipient.address,
         allowed_recipient.title,
+    )
+
+    add_allowed_token_to_registry(
+        top_up_allowed_recipients_ldo_evm_script_factory.token()
     )
 
     top_up_recipient_addresses = [allowed_recipient.address]
@@ -231,7 +237,7 @@ def test_top_up_single_recipient(
     )
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         top_up_recipient_addresses,
         top_up_amounts,
     )
@@ -243,7 +249,7 @@ def test_top_up_multiple_recipients(
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
 ):
     allowed_recipients = recipients[:2]
 
@@ -265,7 +271,7 @@ def test_top_up_multiple_recipients(
     top_up_amounts = [2 * 10 ** 18, 1 * 10 ** 18]
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -277,7 +283,7 @@ def test_top_up_motion_enacted_in_next_period(
     add_allowed_recipient_by_motion,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     allowed_recipients = recipients[:2]
@@ -300,7 +306,7 @@ def test_top_up_motion_enacted_in_next_period(
     )
 
     motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -319,7 +325,7 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
     add_allowed_recipient_by_motion,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     allowed_recipients = recipients[:2]
@@ -345,7 +351,7 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
     )
 
     motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -366,7 +372,7 @@ def test_top_up_motion_enacted_in_second_next_period(
     add_allowed_recipient_by_motion,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     allowed_recipients = recipients[:2]
@@ -389,7 +395,7 @@ def test_top_up_motion_enacted_in_second_next_period(
     )
 
     motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -406,7 +412,7 @@ def test_spendable_balance_is_renewed_in_next_period(
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
 ):
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
@@ -436,7 +442,7 @@ def test_spendable_balance_is_renewed_in_next_period(
     ]
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -450,7 +456,7 @@ def test_spendable_balance_is_renewed_in_next_period(
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
-            top_up_allowed_recipients_evm_script_factory,
+            top_up_allowed_recipients_ldo_evm_script_factory,
             [allowed_recipients[0].address],
             [1],
         )
@@ -461,7 +467,7 @@ def test_spendable_balance_is_renewed_in_next_period(
     # because they are not updated without a call of updateSpentAmount
     # or setLimitParameters. So trying to make a full period limit amount payout
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [allowed_recipients[0].address],
         [allowed_recipients_limit_params.limit],
     )
@@ -481,7 +487,7 @@ def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
     remove_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
@@ -505,7 +511,7 @@ def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
     top_up_amounts = [int(40e18), int(30e18)]
 
     motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -524,7 +530,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
     add_allowed_recipient_by_motion,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
 ):
     allowed_recipient = recipients[0]
 
@@ -541,7 +547,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         exceeded_top_up_amounts = [allowed_recipients_limit_params.limit + 1]
         create_top_up_allowed_recipients_motion(
-            top_up_allowed_recipients_evm_script_factory,
+            top_up_allowed_recipients_ldo_evm_script_factory,
             [allowed_recipient.address],
             exceeded_top_up_amounts,
         )
@@ -553,7 +559,7 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
 ):
     allowed_recipients = recipients[:2]
 
@@ -580,7 +586,7 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     assert sum(first_top_up_amounts) == allowed_recipients_limit_params.limit
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         first_top_up_amounts,
     )
@@ -588,7 +594,7 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         second_top_up_amounts = [1, 1]
         top_up_allowed_recipient_by_motion(
-            top_up_allowed_recipients_evm_script_factory,
+            top_up_allowed_recipients_ldo_evm_script_factory,
             [r.address for r in allowed_recipients],
             second_top_up_amounts,
         )
@@ -600,7 +606,7 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
     add_allowed_recipient_by_motion,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     allowed_recipients = recipients[:2]
@@ -634,12 +640,12 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
         > allowed_recipients_limit_params.limit
     )
     first_motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         first_top_up_amount,
     )
     second_motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         second_top_up_amount,
     )
@@ -661,7 +667,7 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     allowed_recipients_limit_params,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
 ):
     """Revert 2nd payout which together with 1st payout exceed the current period limit"""
 
@@ -697,7 +703,7 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     )
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         first_top_up_amounts,
     )
@@ -706,7 +712,7 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
-            top_up_allowed_recipients_evm_script_factory,
+            top_up_allowed_recipients_ldo_evm_script_factory,
             [r.address for r in allowed_recipients],
             second_top_up_amounts,
         )
@@ -720,7 +726,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
     add_allowed_recipient_by_motion,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     allowed_recipients = recipients[:1]
@@ -737,7 +743,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
 
     top_up_amounts = [allowed_recipients_limit_params.limit]
     motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -760,7 +766,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     allowed_recipients_limit_params,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
 
@@ -777,7 +783,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
 
     top_up_amounts = [allowed_recipients_limit_params.limit]
     motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         top_up_amounts,
     )
@@ -801,7 +807,7 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
     allowed_recipients_limit_params,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
     allowed_recipients = recipients[:2]
@@ -829,13 +835,13 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
     second_top_up_amounts = [1, 1]
 
     first_motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         first_top_up_amounts,
     )
 
     second_motion_creation_tx = create_top_up_allowed_recipients_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         second_top_up_amounts,
     )
@@ -869,7 +875,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     create_top_up_allowed_recipients_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_evm_script_factory,
+    top_up_allowed_recipients_ldo_evm_script_factory,
     initial_period_duration: int,
     new_period_duration: int,
 ):
@@ -893,14 +899,14 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     )
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         first_top_up_amount,
     )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_allowed_recipients_motion(
-            top_up_allowed_recipients_evm_script_factory,
+            top_up_allowed_recipients_ldo_evm_script_factory,
             [r.address for r in allowed_recipients],
             second_top_up_amount,
         )
@@ -913,7 +919,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     # the amount spent and the limit are left intact
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         create_top_up_allowed_recipients_motion(
-            top_up_allowed_recipients_evm_script_factory,
+            top_up_allowed_recipients_ldo_evm_script_factory,
             [r.address for r in allowed_recipients],
             second_top_up_amount,
         )
@@ -923,7 +929,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     # when move time to time point in the next period of the new calendar period grid
     # expect the spendable get renewed
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
+        top_up_allowed_recipients_ldo_evm_script_factory,
         [r.address for r in allowed_recipients],
         second_top_up_amount,
     )
