@@ -169,7 +169,7 @@ def top_up_lego_program(owner, finance, lego_program, TopUpLegoProgram):
 
 @pytest.fixture(scope="module")
 def add_allowed_recipients(owner, allowed_recipients_registry, AddAllowedRecipient):
-    (registry, _, _, _, _, _) = allowed_recipients_registry
+    (registry, _, _, _, _, _, _, _) = allowed_recipients_registry
     return owner.deploy(AddAllowedRecipient, owner, registry)
 
 
@@ -246,6 +246,8 @@ def limits_checker_with_private_method_exposed(
 def allowed_recipients_registry(
     AllowedRecipientsRegistry, bokkyPooBahsDateTimeContract, owner, accounts
 ):
+    add_token_role_holder = accounts[4]
+    remove_token_role_holder = accounts[4]
     add_recipient_role_holder = accounts[6]
     remove_recipient_role_holder = accounts[7]
     set_limit_role_holder = accounts[8]
@@ -256,6 +258,8 @@ def allowed_recipients_registry(
         owner,
         [add_recipient_role_holder],
         [remove_recipient_role_holder],
+        [add_token_role_holder],
+        [remove_token_role_holder],
         [set_limit_role_holder],
         [update_spent_role_holder],
         bokkyPooBahsDateTimeContract,
@@ -266,6 +270,8 @@ def allowed_recipients_registry(
         owner,
         add_recipient_role_holder,
         remove_recipient_role_holder,
+        add_token_role_holder,
+        remove_token_role_holder,
         set_limit_role_holder,
         update_spent_role_holder,
     )
@@ -280,7 +286,7 @@ def top_up_allowed_recipients(
     easy_track,
     TopUpAllowedRecipients,
 ):
-    (registry, owner, _, _, _, _) = allowed_recipients_registry
+    (registry, owner, _, _, _, _, _, _) = allowed_recipients_registry
 
     trusted_caller = accounts[4]
 

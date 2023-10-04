@@ -17,6 +17,8 @@ contract AllowedRecipientsFactory {
         address _defaultAdmin,
         address[] addRecipientToAllowedListRoleHolders,
         address[] removeRecipientFromAllowedListRoleHolders,
+        address[] addTokenToAllowedListRoleHolders,
+        address[] removeTokenFromAllowedListRoleHolders,
         address[] setLimitParametersRoleHolders,
         address[] updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
@@ -50,6 +52,8 @@ contract AllowedRecipientsFactory {
         address _defaultAdmin,
         address[] memory _addRecipientToAllowedListRoleHolders,
         address[] memory _removeRecipientFromAllowedListRoleHolders,
+        address[] memory _addTokenToAllowedListRoleHolders,
+        address[] memory _removeTokenFromAllowedListRoleHolders,
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
@@ -58,6 +62,8 @@ contract AllowedRecipientsFactory {
             _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
+            _addTokenToAllowedListRoleHolders,
+            _removeTokenFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract
@@ -69,6 +75,8 @@ contract AllowedRecipientsFactory {
             _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
             _removeRecipientFromAllowedListRoleHolders,
+            _addTokenToAllowedListRoleHolders,
+            _removeTokenFromAllowedListRoleHolders,
             _setLimitParametersRoleHolders,
             _updateSpentAmountRoleHolders,
             _bokkyPooBahsDateTimeContract

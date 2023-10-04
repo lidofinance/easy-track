@@ -19,6 +19,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_DATA = "EMPTY_DATA";
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
     string private constant ERROR_RECIPIENT_NOT_ALLOWED = "RECIPIENT_NOT_ALLOWED";
+    string private constant ERROR_TOKEN_NOT_ALLOWED = "TOKEN_NOT_ALLOWED";
     string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
     // -------------
@@ -88,7 +89,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
 
         to[0] = address(allowedRecipientsRegistry);
         methodIds[0] = allowedRecipientsRegistry.updateSpentAmount.selector;
-        evmScriptsCalldata[0] = abi.encode(totalAmount);
+        evmScriptsCalldata[0] = abi.encode(totalAmount, token);
 
         for (uint256 i = 0; i < recipients.length; ++i) {
             to[i + 1] = address(finance);
@@ -129,6 +130,10 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     {
         require(_amounts.length == _recipients.length, ERROR_LENGTH_MISMATCH);
         require(_recipients.length > 0, ERROR_EMPTY_DATA);
+        require(
+            allowedRecipientsRegistry.isTokenAllowed(token),
+            ERROR_TOKEN_NOT_ALLOWED
+        );
 
         for (uint256 i = 0; i < _recipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
@@ -136,6 +141,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
                 allowedRecipientsRegistry.isRecipientAllowed(_recipients[i]),
                 ERROR_RECIPIENT_NOT_ALLOWED
             );
+            
             totalAmount += _amounts[i];
         }
 
@@ -152,7 +158,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
 
     function _validateSpendableBalance(uint256 _amount) private view {
         require(
-            allowedRecipientsRegistry.isUnderSpendableBalance(_amount, easyTrack.motionDuration()),
+            allowedRecipientsRegistry.isUnderSpendableBalance(_amount, token, easyTrack.motionDuration()),
             ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE
         );
     }

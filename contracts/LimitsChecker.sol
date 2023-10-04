@@ -7,6 +7,7 @@ import "./libraries/EVMScriptCreator.sol";
 import "./interfaces/IBokkyPooBahsDateTimeContract.sol";
 
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 /// @author zuzueeka
 /// @notice Stores limits params and provides limit-enforcement logic
@@ -83,6 +84,9 @@ contract LimitsChecker is AccessControl {
     /// @notice Amount already spent in the period
     uint128 internal spentAmount;
 
+    /// @notice Precise number of tokens in the system
+    uint8 public constant decimals = 18;
+
     // ------------
     // CONSTRUCTOR
     // ------------
@@ -115,23 +119,26 @@ contract LimitsChecker is AccessControl {
     /// @return True if _payoutAmount is less or equal than may be spent
     /// @dev note that upfront check is used to compare _paymentSum with total limit in case
     /// when motion is started in one period and will be probably enacted in the next.
-    function isUnderSpendableBalance(uint256 _payoutAmount, uint256 _motionDuration)
+    function isUnderSpendableBalance(uint256 _payoutAmount, address _token, uint256 _motionDuration)
         external
         view
         returns (bool)
     {
+        uint256 normalizedAmount = normalizeAmount(_payoutAmount, _token);
+
         if (block.timestamp + _motionDuration >= currentPeriodEndTimestamp) {
-            return _payoutAmount <= limit;
+            return normalizedAmount <= limit;
         } else {
-            return _payoutAmount <= _spendableBalance(limit, spentAmount);
+            return normalizedAmount <= _spendableBalance(limit, spentAmount);
         }
     }
 
     /// @notice Checks if _payoutAmount may be spent and increases spentAmount by _payoutAmount.
     /// @notice Also updates the period boundaries if necessary.
-    function updateSpentAmount(uint256 _payoutAmount) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
+    function updateSpentAmount(uint256 _payoutAmount, address _token) external onlyRole(UPDATE_SPENT_AMOUNT_ROLE) {
         uint256 spentAmountLocal = spentAmount;
         uint256 limitLocal = limit;
+        uint256 normalizedAmount = normalizeAmount(_payoutAmount, _token);
         uint256 currentPeriodEndTimestampLocal = currentPeriodEndTimestamp;
 
         /// When it is necessary to shift the currentPeriodEndTimestamp it takes on a new value.
@@ -146,10 +153,10 @@ contract LimitsChecker is AccessControl {
         }
 
         require(
-            _payoutAmount <= _spendableBalance(limitLocal, spentAmountLocal),
+            normalizedAmount <= _spendableBalance(limitLocal, spentAmountLocal),
             ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE
         );
-        spentAmountLocal += _payoutAmount;
+        spentAmountLocal += normalizedAmount;
         spentAmount = uint128(spentAmountLocal);
 
         (
@@ -255,6 +262,18 @@ contract LimitsChecker is AccessControl {
     // ------------------
     // PRIVATE METHODS
     // ------------------
+    function normalizeAmount(uint256 _tokenAmount, address _token) internal view returns (uint256) {
+        if (_token == address(0)) return _tokenAmount;
+
+        uint8 tokenDecimals = IERC20Metadata(_token).decimals();
+        
+        if (tokenDecimals == decimals) return _tokenAmount;
+        if (tokenDecimals > decimals) {
+            return _tokenAmount / 10 ** (tokenDecimals - decimals);
+        }
+        return _tokenAmount * 10 ** (decimals - tokenDecimals);
+    }
+
     function _getCurrentPeriodState(
         uint256 _limit,
         uint256 _spentAmount,

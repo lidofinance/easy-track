@@ -637,6 +637,7 @@ def allowed_recipients_registry(
             allowed_recipients_default_params.period_duration_months,
             [],
             [],
+            [],
             allowed_recipients_default_params.spent_amount,
             True,
             {"from": deployer},

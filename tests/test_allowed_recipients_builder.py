@@ -182,17 +182,19 @@ def test_deploy_allowed_recipients_registry(
     accounts,
     stranger,
     agent,
+    ldo,
     evm_script_executor,
     AllowedRecipientsRegistry,
 ):
     limit = 1e18
     period = 1
     recipients = [accounts[3], accounts[4]]
+    tokens = [ldo]
     titles = ["account 3", "account 4"]
     spentAmount = 1e10
 
     tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
-        limit, period, recipients, titles, spentAmount, True, {"from": stranger}
+        limit, period, tokens, recipients, titles, spentAmount, True, {"from": stranger}
     )
 
     registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
@@ -206,6 +208,9 @@ def test_deploy_allowed_recipients_registry(
     assert len(registry.getAllowedRecipients()) == len(recipients)
     for recipient in recipients:
         assert registry.isRecipientAllowed(recipient)
+
+    for token in tokens:
+        assert registry.isTokenAllowed(token)
 
     registry_limit, registry_period_duration = registry.getLimitParameters()
     assert registry_limit == limit
@@ -237,32 +242,48 @@ def test_deploy_allowed_recipients_registry(
 
 
 def test_deploy_recipients_registry_reverts_recipients_length(
-    allowed_recipients_builder, accounts, stranger
+    allowed_recipients_builder, ldo, accounts, stranger
 ):
     limit = 1e18
     period = 1
+    tokens = [ldo]
     recipients = [accounts[3], accounts[4]]
     titles = ["account 3"]
     spentAmount = 1e10
 
     with reverts():
         allowed_recipients_builder.deployAllowedRecipientsRegistry(
-            limit, period, recipients, titles, spentAmount, False, {"from": stranger}
+            limit,
+            period,
+            tokens,
+            recipients,
+            titles,
+            spentAmount,
+            False,
+            {"from": stranger},
         )
 
 
 def test_deploy_recipients_registry_reverts_spentAmount_gt_limit(
-    allowed_recipients_builder, accounts, stranger
+    allowed_recipients_builder, ldo, accounts, stranger
 ):
     limit = 1e5
     period = 1
+    tokens = [ldo]
     recipients = [accounts[3], accounts[4]]
     titles = ["account 3", "account 4"]
     spentAmount = 1e10
 
     with reverts("_spentAmount must be lower or equal to limit"):
         allowed_recipients_builder.deployAllowedRecipientsRegistry(
-            limit, period, recipients, titles, spentAmount, False, {"from": stranger}
+            limit,
+            period,
+            tokens,
+            recipients,
+            titles,
+            spentAmount,
+            False,
+            {"from": stranger},
         )
 
 
@@ -277,7 +298,6 @@ def test_deploy_full_setup(
     RemoveAllowedRecipient,
     TopUpAllowedRecipients,
 ):
-
     recipients = [
         "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
         "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
@@ -292,6 +312,7 @@ def test_deploy_full_setup(
         "Jumpgate Test",
         "tester",
     ]
+    tokens = [ldo]
     trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
     limit = 10_000 * 1e18
     period = 1
@@ -299,9 +320,9 @@ def test_deploy_full_setup(
 
     tx = allowed_recipients_builder.deployFullSetup(
         trusted_caller,
-        ldo,
         limit,
         period,
+        tokens,
         recipients,
         titles,
         spent_amount,
@@ -351,6 +372,9 @@ def test_deploy_full_setup(
     for recipient in recipients:
         assert registry.isRecipientAllowed(recipient)
 
+    for token in tokens:
+        assert registry.isTokenAllowed(token)
+
     registry_limit, registry_period_duration = registry.getLimitParameters()
     assert registry_limit == limit
     assert registry_period_duration == period
@@ -390,15 +414,15 @@ def test_deploy_deploy_single_recipient_top_up_only_setup(
     AllowedRecipientsRegistry,
     TopUpAllowedRecipients,
 ):
-
     recipient = accounts[2]
     title = "recipient"
+    tokens = [ldo]
     limit = 1e18
     period = 1
     spent_amount = 1e10
 
     tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
-        recipient, title, ldo, limit, period, spent_amount, {"from": stranger}
+        recipient, title, tokens, limit, period, spent_amount, {"from": stranger}
     )
 
     registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
@@ -418,6 +442,83 @@ def test_deploy_deploy_single_recipient_top_up_only_setup(
 
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
     assert top_up_allowed_recipients.token() == ldo
+
+    assert len(registry.getAllowedRecipients()) == 1
+    assert registry.isRecipientAllowed(recipient)
+
+    registry_limit, registry_period_duration = registry.getLimitParameters()
+    assert registry_limit == limit
+    assert registry_period_duration == period
+
+    assert registry.spendableBalance() == limit - spent_amount
+
+    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent)
+    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent)
+    assert registry.hasRole(SET_PARAMETERS_ROLE, agent)
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
+    assert registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
+
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert not registry.hasRole(
+        REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor
+    )
+    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
+
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, registry_address)
+    assert not registry.hasRole(
+        REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, registry_address
+    )
+    assert not registry.hasRole(SET_PARAMETERS_ROLE, registry_address)
+    assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, registry_address)
+    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, registry_address)
+
+
+def test_deploy_single_recipient_multitoken_top_up_only_setup(
+    allowed_recipients_builder,
+    accounts,
+    agent,
+    ldo,
+    steth,
+    stranger,
+    evm_script_executor,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+):
+    recipient = accounts[2]
+    title = "recipient"
+    tokens = [ldo, steth]
+    limit = 1e18
+    period = 1
+    spent_amount = 1e10
+
+    tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
+        recipient, title, tokens, limit, period, spent_amount, {"from": stranger}
+    )
+
+    registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
+        "allowedRecipientsRegistry"
+    ]
+
+    top_up_factories = []
+
+    for tx in tx.events["TopUpAllowedRecipientsDeployed"]:
+        top_up_factories.append(
+            Contract.from_abi(
+                "TopUpAllowedRecipients",
+                tx["topUpAllowedRecipients"],
+                TopUpAllowedRecipients.abi,
+            )
+        )
+
+    registry = Contract.from_abi(
+        "AllowedRecipientsRegistry", registry_address, AllowedRecipientsRegistry.abi
+    )
+
+    for i, factory in enumerate(top_up_factories):
+        assert factory.allowedRecipientsRegistry() == registry
+        assert factory.token() == tokens[i]
 
     assert len(registry.getAllowedRecipients()) == 1
     assert registry.isRecipientAllowed(recipient)

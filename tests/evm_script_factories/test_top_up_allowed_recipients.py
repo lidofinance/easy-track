@@ -17,7 +17,7 @@ def test_top_up_factory_initial_state(
     easy_track,
     TopUpAllowedRecipients,
 ):
-    (registry, owner, _, _, _, _) = allowed_recipients_registry
+    (registry, owner, _, _, _, _, _, _) = allowed_recipients_registry
 
     trusted_caller = accounts[4]
 
@@ -39,7 +39,7 @@ def test_fail_if_zero_trusted_caller(
     easy_track,
     TopUpAllowedRecipients,
 ):
-    (registry, owner, _, _, _, _) = allowed_recipients_registry
+    (registry, owner, _, _, _, _, _, _) = allowed_recipients_registry
 
     with reverts("TRUSTED_CALLER_IS_ZERO_ADDRESS"):
         owner.deploy(TopUpAllowedRecipients, ZERO_ADDRESS, registry, finance, ldo, easy_track)
@@ -64,18 +64,21 @@ def test_fail_create_evm_script_if_not_trusted_caller(top_up_allowed_recipients,
 
 
 def test_create_evm_script_is_permissionless(
-    allowed_recipients_registry, stranger, top_up_allowed_recipients
+    allowed_recipients_registry, stranger, top_up_allowed_recipients, ldo
 ):
     (
         registry,
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
     registry.addRecipient(stranger.address, "Test Recipient", {"from": add_recipient_role_holder})
     registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(top_up_allowed_recipients.token(), {"from": add_token_role_holder})
     call_data = make_call_data([stranger.address], [123])
     trusted_caller = top_up_allowed_recipients.trustedCaller()
     top_up_allowed_recipients.createEVMScript(trusted_caller, call_data, {"from": stranger})
@@ -122,12 +125,15 @@ def test_fail_create_evm_script_if_zero_amount(
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
 
     registry.addRecipient(recipient, "Test Recipient", {"from": add_recipient_role_holder})
     registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(ldo, {"from": add_token_role_holder})
 
     top_up_factory = owner.deploy(
         TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
@@ -159,6 +165,43 @@ def test_fail_create_evm_script_if_recipient_not_allowed(
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+
+    registry.addRecipient(recipient, "Test Recipient", {"from": add_recipient_role_holder})
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(ldo, {"from": add_token_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+    )
+
+    with reverts("RECIPIENT_NOT_ALLOWED"):
+        top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
+
+
+def test_fail_create_evm_script_if_token_not_allowed(
+    allowed_recipients_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,
+    stranger,
+):
+    trusted_caller = owner
+    recipient = accounts[4].address
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
@@ -170,7 +213,7 @@ def test_fail_create_evm_script_if_recipient_not_allowed(
         TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
     )
 
-    with reverts("RECIPIENT_NOT_ALLOWED"):
+    with reverts("TOKEN_NOT_ALLOWED"):
         top_up_factory.createEVMScript(trusted_caller, make_call_data([stranger.address], [123]))
 
 
@@ -190,12 +233,15 @@ def test_top_up_factory_evm_script_creation_happy_path(
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
 
     registry.addRecipient(recipient, "Test Recipient", {"from": add_recipient_role_holder})
     registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(ldo, {"from": add_token_role_holder})
 
     top_up_factory = owner.deploy(
         TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
@@ -224,6 +270,8 @@ def test_top_up_factory_evm_script_creation_multiple_recipients_happy_path(
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
@@ -231,6 +279,7 @@ def test_top_up_factory_evm_script_creation_multiple_recipients_happy_path(
     registry.addRecipient(recipients[0], "Test Recipient 1", {"from": add_recipient_role_holder})
     registry.addRecipient(recipients[1], "Test Recipient 2", {"from": add_recipient_role_holder})
     registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(ldo, {"from": add_token_role_holder})
 
     top_up_factory = owner.deploy(
         TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
@@ -260,6 +309,8 @@ def test_fail_create_evm_script_if_sum_exceeds_limit(
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
@@ -267,6 +318,7 @@ def test_fail_create_evm_script_if_sum_exceeds_limit(
     registry.addRecipient(recipients[0], "Test Recipient 1", {"from": add_recipient_role_holder})
     registry.addRecipient(recipients[1], "Test Recipient 2", {"from": add_recipient_role_holder})
     registry.setLimitParameters(int(20e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(ldo, {"from": add_token_role_holder})
 
     top_up_factory = owner.deploy(
         TopUpAllowedRecipients, owner, registry, finance, ldo, easy_track
@@ -293,6 +345,8 @@ def test_create_evm_script_correctly(
         owner,
         add_recipient_role_holder,
         _,
+        add_token_role_holder,
+        _,
         set_limit_role_holder,
         _,
     ) = allowed_recipients_registry
@@ -300,6 +354,7 @@ def test_create_evm_script_correctly(
     registry.addRecipient(recipients[0], "Test Recipient 1", {"from": add_recipient_role_holder})
     registry.addRecipient(recipients[1], "Test Recipient 2", {"from": add_recipient_role_holder})
     registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    registry.addToken(ldo, {"from": add_token_role_holder})
 
     top_up_factory = owner.deploy(
         TopUpAllowedRecipients, owner, registry, finance, ldo, easy_track
@@ -312,7 +367,8 @@ def test_create_evm_script_correctly(
             (
                 registry.address,
                 registry.updateSpentAmount.encode_input(
-                    totalAmount
+                    totalAmount,
+                    ldo
                 ),
             ),
             (
