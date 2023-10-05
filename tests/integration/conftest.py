@@ -544,8 +544,8 @@ def check_top_up_motion_enactment(
         if decimals_diff == 0:
             return amount
         if token_decimals > registry_decimals:
-            return amount / 10**decimals_diff
-        return amount * 10**decimals_diff
+            return int(amount / 10**decimals_diff)
+        return int(amount * 10**decimals_diff)
 
     def _check_top_up_motion_enactment(
         top_up_allowed_recipients_evm_script_factory,
@@ -564,11 +564,15 @@ def check_top_up_motion_enactment(
         )
         limit, duration = allowed_recipients_registry.getLimitParameters()
 
+        spendable_test = allowed_recipients_registry.spendableBalance()
+
         spending_in_tokens = sum(top_up_amounts)
         spending = _normalize_amount_from_token(
             spending_in_tokens, top_up_token, allowed_recipients_registry
         )
         spendable = limit - spending
+
+        print(spending_in_tokens, spending, spendable_test)
 
         assert allowed_recipients_registry.isUnderSpendableBalance(spendable, brownie.ZERO_ADDRESS, 0)
         assert allowed_recipients_registry.isUnderSpendableBalance(

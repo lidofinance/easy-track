@@ -663,48 +663,6 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
         )
 
 
-def test_fail_create_top_up_motion_if_exceeds_limit_different_decimals(
-    recipients,
-    add_allowed_token_to_registry,
-    allowed_recipients_limit_params,
-    add_allowed_recipient_by_motion,
-    create_top_up_allowed_recipients_motion,
-    add_allowed_recipient_evm_script_factory,
-    top_up_allowed_recipients_usdc_evm_script_factory,
-):
-    allowed_recipient = recipients[0]
-
-    add_allowed_recipient_by_motion(
-        add_allowed_recipient_evm_script_factory,
-        allowed_recipient.address,
-        allowed_recipient.title,
-    )
-
-    top_up_token = top_up_allowed_recipients_usdc_evm_script_factory.token()
-
-    add_allowed_token_to_registry(top_up_token)
-
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
-
-    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        token_decimals = interface.ERC20(top_up_token).decimals()
-        registry_decimals = interface.ERC20(
-            top_up_allowed_recipients_usdc_evm_script_factory.allowedRecipientsRegistry()
-        ).decimals()
-        decimals_diff = int(registry_decimals - token_decimals)
-
-        exceeded_top_up_amounts = [
-            int(allowed_recipients_limit_params.limit / 10**decimals_diff + 1)
-        ]
-        create_top_up_allowed_recipients_motion(
-            top_up_allowed_recipients_usdc_evm_script_factory,
-            [allowed_recipient.address],
-            exceeded_top_up_amounts,
-        )
-
-
 def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     recipients,
     add_allowed_token_to_registry,
@@ -1154,3 +1112,46 @@ def test_set_limit_parameters_by_aragon_agent_via_voting(
         period_limit,
         period_duration,
     )
+
+
+def test_fail_create_top_up_motion_if_exceeds_limit_different_decimals(
+    recipients,
+    add_allowed_token_to_registry,
+    allowed_recipients_limit_params,
+    add_allowed_recipient_by_motion,
+    create_top_up_allowed_recipients_motion,
+    add_allowed_recipient_evm_script_factory,
+    top_up_allowed_recipients_usdc_evm_script_factory,
+):
+    allowed_recipient = recipients[0]
+
+    add_allowed_recipient_by_motion(
+        add_allowed_recipient_evm_script_factory,
+        allowed_recipient.address,
+        allowed_recipient.title,
+    )
+
+    top_up_token = top_up_allowed_recipients_usdc_evm_script_factory.token()
+
+    add_allowed_token_to_registry(top_up_token)
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    token_decimals = interface.ERC20(top_up_token).decimals()
+    registry_decimals = interface.ERC20(
+        top_up_allowed_recipients_usdc_evm_script_factory.allowedRecipientsRegistry()
+    ).decimals()
+    decimals_diff = int(registry_decimals - token_decimals)
+
+    exceeded_top_up_amounts = [
+        int(allowed_recipients_limit_params.limit / 10**decimals_diff + 1)
+    ]
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        create_top_up_allowed_recipients_motion(
+            top_up_allowed_recipients_usdc_evm_script_factory,
+            [allowed_recipient.address],
+            exceeded_top_up_amounts,
+        )

@@ -2,7 +2,7 @@ import pytest
 from datetime import datetime
 
 from brownie.network import chain
-from brownie import accounts, reverts, ZERO_ADDRESS
+from brownie import accounts, reverts, ZERO_ADDRESS, interface
 
 
 from utils.evm_script import encode_call_script
@@ -21,7 +21,7 @@ from utils.test_helpers import (
     ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
     ADD_TOKEN_TO_ALLOWED_LIST_ROLE,
-    REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE
+    REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE,
 )
 
 from utils.config import get_network_name
@@ -226,7 +226,13 @@ def test_rights_are_not_shared_by_different_roles(
 
 
 def test_multiple_role_holders_token(
-    AllowedRecipientsRegistry, owner, voting, ldo, steth, accounts, bokkyPooBahsDateTimeContract
+    AllowedRecipientsRegistry,
+    owner,
+    voting,
+    ldo,
+    steth,
+    accounts,
+    bokkyPooBahsDateTimeContract,
 ):
     deployer = owner
     add_role_holders = (accounts[2], accounts[3])
@@ -248,9 +254,7 @@ def test_multiple_role_holders_token(
 
     for caller in accounts:
         if not caller in add_role_holders:
-            with reverts(
-                access_revert_message(caller, ADD_TOKEN_TO_ALLOWED_LIST_ROLE)
-            ):
+            with reverts(access_revert_message(caller, ADD_TOKEN_TO_ALLOWED_LIST_ROLE)):
                 registry.addToken(ldo, {"from": caller})
 
     for i, token in enumerate(tokens):
@@ -329,7 +333,6 @@ def test_multiple_role_holders_recipient(
                 registry.updateSpentAmount(1, ZERO_ADDRESS, {"from": caller})
 
 
-
 def test_access_stranger_cannot_set_limit_parameters(limits_checker, stranger):
     (limits_checker, _, _) = limits_checker
 
@@ -390,7 +393,7 @@ def test_fail_if_set_same_time_contract(limits_checker, accounts):
 def test_unsafe_set_spent_amount_when_spent_amount_exceeds_limit(limits_checker):
     (limits_checker, set_parameters_role_holder, _) = limits_checker
 
-    initial_limit = 100 * 10 ** 18
+    initial_limit = 100 * 10**18
     initial_duration = 3
 
     limits_checker.setLimitParameters(
@@ -412,7 +415,7 @@ def test_unsafe_set_spent_amount_when_spent_amount_exceeds_limit(limits_checker)
 def test_unsafe_set_spent_amount_when_new_spent_amount_the_same(limits_checker):
     (limits_checker, set_parameters_role_holder, _) = limits_checker
 
-    initial_limit = 100 * 10 ** 18
+    initial_limit = 100 * 10**18
     initial_duration = 3
 
     limits_checker.setLimitParameters(
@@ -441,7 +444,7 @@ def test_unsafe_set_spent_amount_when_new_spent_amount_the_same(limits_checker):
 def test_unsafe_set_spent_amount(limits_checker):
     (limits_checker, set_parameters_role_holder, _) = limits_checker
 
-    initial_limit = 100 * 10 ** 18
+    initial_limit = 100 * 10**18
     initial_duration = 3
 
     limits_checker.setLimitParameters(
@@ -475,7 +478,16 @@ def test_unsafe_set_spent_amount(limits_checker):
 
 
 def test_add_recipient(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     registry.addRecipient(
@@ -488,7 +500,16 @@ def test_add_recipient(allowed_recipients_registry):
 
 
 def test_add_recipient_with_empty_title(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     registry.addRecipient(recipient, "", {"from": add_recipient_role_holder})
@@ -499,7 +520,16 @@ def test_add_recipient_with_empty_title(allowed_recipients_registry):
 
 
 def test_add_recipient_with_zero_address(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
 
     registry.addRecipient(
         ZERO_ADDRESS, RECIPIENT_TITLE, {"from": add_recipient_role_holder}
@@ -511,7 +541,16 @@ def test_add_recipient_with_zero_address(allowed_recipients_registry):
 
 
 def test_add_multiple_recipients(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient1 = accounts[8].address
     recipient2 = accounts[9].address
 
@@ -530,7 +569,16 @@ def test_add_multiple_recipients(allowed_recipients_registry):
 
 
 def test_fail_if_add_the_same_recipient(allowed_recipients_registry):
-    (registry, _, add_recipient_role_holder, _, _, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        add_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     registry.addRecipient(
@@ -602,7 +650,16 @@ def test_remove_not_last_recipient_in_the_list(allowed_recipients_registry):
 
 
 def test_fail_if_remove_recipient_from_empty_allowed_list(allowed_recipients_registry):
-    (registry, _, _, remove_recipient_role_holder, _, _, _, _) = allowed_recipients_registry
+    (
+        registry,
+        _,
+        _,
+        remove_recipient_role_holder,
+        _,
+        _,
+        _,
+        _,
+    ) = allowed_recipients_registry
     recipient = accounts[8].address
 
     assert 0 == len(registry.getAllowedRecipients())
@@ -665,11 +722,13 @@ def test_add_multiple_tokens(allowed_recipients_registry, ldo, steth):
     assert registry.getAllowedTokens()[0] == ldo
     assert registry.getAllowedTokens()[1] == steth
 
+
 def test_add_recipient_with_zero_address(allowed_recipients_registry):
     (registry, _, _, _, add_token_role_holder, _, _, _) = allowed_recipients_registry
 
     with reverts("TOKEN_ADDRESS_IS_ZERO"):
         registry.addToken(ZERO_ADDRESS, {"from": add_token_role_holder})
+
 
 def test_add_already_added_token(allowed_recipients_registry, ldo):
     (registry, _, _, _, add_token_role_holder, _, _, _) = allowed_recipients_registry
@@ -681,6 +740,7 @@ def test_add_already_added_token(allowed_recipients_registry, ldo):
         registry.addToken(ldo, {"from": add_token_role_holder})
 
     assert len(registry.getAllowedTokens()) == 1
+
 
 def test_remove_token(allowed_recipients_registry, ldo):
     (
@@ -702,6 +762,7 @@ def test_remove_token(allowed_recipients_registry, ldo):
 
     assert not registry.isTokenAllowed(ldo)
     assert len(registry.getAllowedTokens()) == 0
+
 
 def test_remove_multiple_tokens(allowed_recipients_registry, ldo, steth):
     (
@@ -733,6 +794,7 @@ def test_remove_multiple_tokens(allowed_recipients_registry, ldo, steth):
     assert not registry.isTokenAllowed(steth)
     assert len(registry.getAllowedTokens()) == 0
 
+
 def test_fail_if_remove_token_from_empty_allowed_list(allowed_recipients_registry, ldo):
     (
         registry,
@@ -751,6 +813,7 @@ def test_fail_if_remove_token_from_empty_allowed_list(allowed_recipients_registr
         registry.removeToken(ldo, {"from": remove_token_role_holder})
 
     assert len(registry.getAllowedTokens()) == 0
+
 
 def test_fail_if_remove_not_allowed_token(allowed_recipients_registry, ldo, steth):
     (
@@ -789,7 +852,7 @@ def test_set_limit_parameters_happy_path(limits_checker):
         set_parameters_role_holder,
         _,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
     now = datetime.now()
     period_start = get_month_start_timestamp(now)
 
@@ -847,7 +910,7 @@ def test_period_range_calculation_for_all_allowed_period_durations(
 def test_fail_if_set_incorrect_period_durations(limits_checker, period_duration):
     (limits_checker, set_parameters_role_holder, _) = limits_checker
 
-    period_limit = 10 ** 18
+    period_limit = 10**18
     with reverts("INVALID_PERIOD_DURATION"):
         limits_checker.setLimitParameters(
             period_limit, period_duration, {"from": set_parameters_role_holder}
@@ -888,7 +951,7 @@ def test_get_first_month_in_period_for_all_allowed_period_durations(
 def test_fail_if_set_limit_greater_than_max_limit(limits_checker):
     (limits_checker, set_parameters_role_holder, _) = limits_checker
 
-    period_limit, period_duration = 2 ** 128, 1
+    period_limit, period_duration = 2**128, 1
 
     # OK if 1 wei less the limit
     limits_checker.setLimitParameters(
@@ -942,7 +1005,7 @@ def test_update_spent_amount_within_the_limit(limits_checker):
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
 
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
@@ -957,7 +1020,7 @@ def test_update_spent_amount_within_the_limit(limits_checker):
         period_limit, period_duration, {"from": set_parameters_role_holder}
     )
 
-    spending = 2 * 10 ** 18
+    spending = 2 * 10**18
     spendable = period_limit - spending
     tx = limits_checker.updateSpentAmount(
         spending, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
@@ -986,7 +1049,7 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_parameters_role_holder}
@@ -994,7 +1057,7 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
-    spending = 1 * 10 ** 18
+    spending = 1 * 10**18
     spendable = period_limit - spending
     limits_checker.updateSpentAmount(
         spending, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
@@ -1023,7 +1086,9 @@ def test_update_spent_amount_precisely_to_the_limit_in_multiple_portions(
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == 0
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
 
 def test_spending_amount_is_restored_in_the_next_period(limits_checker):
@@ -1032,7 +1097,7 @@ def test_spending_amount_is_restored_in_the_next_period(limits_checker):
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
     spending = period_limit
     spendable = period_limit - spending
 
@@ -1066,7 +1131,7 @@ def test_fail_if_update_spent_amount_beyond_the_limit(limits_checker):
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
     spending = period_limit + 1
 
     limits_checker.setLimitParameters(
@@ -1091,7 +1156,7 @@ def test_spendable_amount_increased_if_limit_increased(limits_checker):
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_parameters_role_holder}
@@ -1109,7 +1174,9 @@ def test_spendable_amount_increased_if_limit_increased(limits_checker):
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == spendable
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
     new_period_limit = 2 * period_limit
     new_spendable = spendable + (new_period_limit - period_limit)
@@ -1125,7 +1192,9 @@ def test_spendable_amount_increased_if_limit_increased(limits_checker):
     )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
 
 def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
@@ -1134,7 +1203,7 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_parameters_role_holder}
@@ -1142,7 +1211,7 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
-    spending = 1 * 10 ** 18
+    spending = 1 * 10**18
     spendable = period_limit - spending
     limits_checker.updateSpentAmount(
         spending, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
@@ -1164,7 +1233,9 @@ def test_spendable_amount_if_limit_decreased_below_spent_amount(limits_checker):
     assert limits_checker.spendableBalance() == new_spendable
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
 
 def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_checker):
@@ -1173,7 +1244,7 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit, period_duration = 3 * 10 ** 18, 1
+    period_limit, period_duration = 3 * 10**18, 1
 
     limits_checker.setLimitParameters(
         period_limit, period_duration, {"from": set_parameters_role_holder}
@@ -1181,7 +1252,7 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
     # set chain time to the beginning of month to prevent switch while the test is running
     advance_chain_time_to_beginning_of_the_next_period(period_duration)
 
-    spending = 1 * 10 ** 18
+    spending = 1 * 10**18
     spendable = period_limit - spending
     limits_checker.updateSpentAmount(
         spending, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
@@ -1206,7 +1277,9 @@ def test_spendable_amount_if_limit_decreased_not_below_spent_amount(limits_check
         new_spendable, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
     )
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
 
 @pytest.mark.parametrize(
@@ -1221,7 +1294,7 @@ def test_spendable_amount_renewal_if_period_duration_changed(
         set_parameters_role_holder,
         update_spent_amount_role_holder,
     ) = limits_checker
-    period_limit = 3 * 10 ** 18
+    period_limit = 3 * 10**18
 
     limits_checker.setLimitParameters(
         period_limit, initial_period_duration, {"from": set_parameters_role_holder}
@@ -1240,13 +1313,17 @@ def test_spendable_amount_renewal_if_period_duration_changed(
     assert limits_checker.getPeriodState()["_spendableBalanceInPeriod"] == spendable
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
     limits_checker.setLimitParameters(
         period_limit, new_period_duration, {"from": set_parameters_role_holder}
     )
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
     if new_period_duration > initial_period_duration:
         # check after old period end spendable is not renewed
@@ -1266,14 +1343,18 @@ def test_spendable_amount_renewal_if_period_duration_changed(
     )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
-        limits_checker.updateSpentAmount(1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            1, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
 
 def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker):
     (limits_checker, _, update_spent_amount_role_holder) = limits_checker
 
     with reverts("INVALID_PERIOD_DURATION"):
-        limits_checker.updateSpentAmount(123, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+        limits_checker.updateSpentAmount(
+            123, ZERO_ADDRESS, {"from": update_spent_amount_role_holder}
+        )
 
 
 @pytest.mark.parametrize(
@@ -1344,7 +1425,7 @@ def test_period_start_from_timestamp(
         set_parameters_role_holder,
         _,
     ) = limits_checker_with_private_method_exposed
-    period_limit = 3 * 10 ** 18
+    period_limit = 3 * 10**18
 
     expected_result = get_timestamp_from_date(*expected_result)
     inputs = [get_timestamp_from_date(*date) for date in inputs]
@@ -1439,7 +1520,7 @@ def test_period_end_from_timestamp(
         set_parameters_role_holder,
         _,
     ) = limits_checker_with_private_method_exposed
-    period_limit = 3 * 10 ** 18
+    period_limit = 3 * 10**18
 
     expected_result = get_timestamp_from_date(*expected_result)
     inputs = [get_timestamp_from_date(*date) for date in inputs]
@@ -1464,3 +1545,73 @@ def test_period_end_from_timestamp(
         limits_checker.getPeriodEndFromTimestamp(inputs[len(inputs) - 1] + 3600)
         > expected_result
     )  # hour after the period
+
+
+def test_is_under_spendable_amount_different_tokens(limits_checker, ldo, usdc):
+    (
+        limits_checker,
+        set_parameters_role_holder,
+        _,
+    ) = limits_checker
+
+    period_limit, period_duration = 3 * 10**18, 1
+
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
+
+    limits_checker.setLimitParameters(
+        period_limit, period_duration, {"from": set_parameters_role_holder}
+    )
+
+    registry_decimals = limits_checker.decimals()
+
+    spendable = period_limit
+    spendable_in_different_decimals = int(
+        spendable / 10 ** (registry_decimals - interface.ERC20(usdc).decimals())
+    )
+
+    print(spendable_in_different_decimals, spendable)
+
+    assert limits_checker.isUnderSpendableBalance(spendable, ZERO_ADDRESS, 0)
+    assert limits_checker.isUnderSpendableBalance(spendable, ldo, 0)
+    assert limits_checker.isUnderSpendableBalance(
+        spendable_in_different_decimals, usdc, 0
+    )
+
+    assert not limits_checker.isUnderSpendableBalance(spendable + 1, ZERO_ADDRESS, 0)
+    assert not limits_checker.isUnderSpendableBalance(spendable + 1, ldo, 0)
+    assert not limits_checker.isUnderSpendableBalance(
+        spendable_in_different_decimals + 1, usdc, 0
+    )
+
+def test_update_spent_amount_different_tokens(limits_checker, ldo, usdc):
+    (
+        limits_checker,
+        set_parameters_role_holder,
+        update_spent_amount_role_holder,
+    ) = limits_checker
+
+    period_limit, period_duration = 3 * 10**18, 1
+
+    # set chain time to the beginning of month to prevent switch while the test is running
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
+
+    limits_checker.setLimitParameters(
+        period_limit, period_duration, {"from": set_parameters_role_holder}
+    )
+
+    registry_decimals = limits_checker.decimals()
+    spendable = 10**18
+    spendable_in_different_decimals = int(
+        spendable / 10 ** (registry_decimals - interface.ERC20(usdc).decimals())
+    )
+
+    limits_checker.updateSpentAmount(spendable, ZERO_ADDRESS, {"from": update_spent_amount_role_holder})
+    assert limits_checker.spendableBalance() == spendable * 2
+
+    limits_checker.updateSpentAmount(spendable, ldo, {"from": update_spent_amount_role_holder})
+    assert limits_checker.spendableBalance() == spendable
+
+    limits_checker.updateSpentAmount(spendable_in_different_decimals, usdc, {"from": update_spent_amount_role_holder})
+    assert limits_checker.spendableBalance() == 0
+    

@@ -7,7 +7,7 @@ from brownie import chain
 
 import constants
 from utils.evm_script import encode_call_script, encode_calldata
-from utils.lido import contracts
+from utils.lido import contracts, external_contracts
 from utils.config import get_network_name
 from utils import test_helpers, deployed_date_time
 
@@ -175,7 +175,7 @@ def add_allowed_recipients(owner, allowed_recipients_registry, AddAllowedRecipie
 
 @pytest.fixture(scope="module")
 def remove_allowed_recipients(owner, allowed_recipients_registry, RemoveAllowedRecipient):
-    (registry, _, _, _, _, _) = allowed_recipients_registry
+    (registry, _, _, _, _, _, _, _) = allowed_recipients_registry
     return owner.deploy(RemoveAllowedRecipient, owner, registry)
 
 
@@ -306,6 +306,9 @@ def top_up_allowed_recipients(
 def ldo(lido_contracts):
     return lido_contracts.ldo
 
+@pytest.fixture(scope="module")
+def usdc():
+    return external_contracts(network=brownie.network.show_active())["usdc"]
 
 @pytest.fixture(scope="module")
 def steth(lido_contracts):
