@@ -94,6 +94,9 @@ def load_deployed_contract(deployed_contracts):
 def lido_contracts():
     return lido.contracts(network=brownie.network.show_active())
 
+@pytest.fixture(scope="module")
+def external_contracts():
+    return lido.external_contracts(network=brownie.network.show_active())
 
 @pytest.fixture(scope="module")
 def easy_track(
@@ -180,10 +183,11 @@ def add_allowed_recipient_evm_script_factory(
     trusted_caller,
     load_deployed_contract,
     allowed_recipients_builder,
-    allowed_recipients_registry,
+    registries,
     deployer,
 ):
 
+    (allowed_recipients_registry, _) = registries
     evm_script_factory = load_deployed_contract("AddAllowedRecipient")
 
     if evm_script_factory is None:
@@ -214,11 +218,12 @@ def remove_allowed_recipient_evm_script_factory(
     lido_contracts,
     load_deployed_contract,
     allowed_recipients_builder,
-    allowed_recipients_registry,
+    registries,
     deployer,
     trusted_caller,
 ):
     evm_script_factory = load_deployed_contract("RemoveAllowedRecipient")
+    (allowed_recipients_registry, _) = registries
 
     if evm_script_factory is None:
         tx = allowed_recipients_builder.deployRemoveAllowedRecipient(
@@ -312,17 +317,18 @@ def top_up_allowed_recipients_evm_script_factory(
     lido_contracts,
     load_deployed_contract,
     allowed_recipients_builder,
-    allowed_recipients_registry,
+    registries,
     trusted_caller,
     deployer,
 ):
-
+    (allowed_recipients_registry, allowed_tokens_registry) = registries
     evm_script_factory = load_deployed_contract("TopUpAllowedRecipients")
 
     if evm_script_factory is None:
         tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
             trusted_caller,
             allowed_recipients_registry,
+            allowed_tokens_registry,
             lido_contracts.ldo,
             {"from": deployer},
         )
@@ -484,9 +490,10 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
 
 @pytest.fixture(scope="module")
 def check_top_up_motion_enactment(
-    AllowedRecipientsRegistry, get_balances, lido_contracts
+    AllowedRecipientsRegistry, AllowedTokensRegistry, get_balances, lido_contracts
 ):
     """Note: this check works correctly only when was payment in the period"""
+
 
     def _check_top_up_motion_enactment(
         top_up_allowed_recipients_evm_script_factory,
@@ -498,12 +505,19 @@ def check_top_up_motion_enactment(
         top_up_recipients,
         top_up_amounts,
     ):
+        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
         )
+        allowed_tokens_registry = AllowedTokensRegistry.at(
+            top_up_allowed_recipients_evm_script_factory.allowedTokensRegistry()
+        )
         limit, duration = allowed_recipients_registry.getLimitParameters()
 
-        spending = sum(top_up_amounts)
+        spending_in_tokens = sum(top_up_amounts)
+        spending = allowed_tokens_registry.normalizeAmount(
+            spending_in_tokens, top_up_token
+        )
         spendable = limit - spending
 
         assert allowed_recipients_registry.isUnderSpendableBalance(spendable, 0)
@@ -519,7 +533,6 @@ def check_top_up_motion_enactment(
             == spendable
         )
 
-        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
         (sender_balance,) = get_balances(top_up_token, [lido_contracts.aragon.agent])
         recipients_balances = get_balances(
             top_up_token,
@@ -527,7 +540,7 @@ def check_top_up_motion_enactment(
         )
 
         if top_up_token == lido_contracts.steth:
-            assert math.isclose(sender_balance, sender_balance_before - spending, abs_tol = STETH_ERROR_MARGIN_WEI)
+            assert math.isclose(sender_balance, sender_balance_before - spending_in_tokens, abs_tol = STETH_ERROR_MARGIN_WEI)
 
             sender_shares_balance_after = lido_contracts.steth.sharesOf(lido_contracts.aragon.agent)
             recipients_shares_balance_after = 0
@@ -536,7 +549,7 @@ def check_top_up_motion_enactment(
             assert sender_shares_balance_before >= sender_shares_balance_after
             assert sender_shares_balance_before - sender_shares_balance_after  == recipients_shares_balance_after - recipients_shares_balance_before
         else:
-            assert sender_balance == sender_balance_before - spending
+            assert sender_balance == sender_balance_before - spending_in_tokens
 
         for before, now, payment in zip(
             recipients_balances_before, recipients_balances, top_up_amounts
@@ -620,8 +633,9 @@ def allowed_recipients_default_params():
 
 
 @pytest.fixture(scope="module")
-def allowed_recipients_registry(
+def registries(
     AllowedRecipientsRegistry,
+    AllowedTokensRegistry,
     allowed_recipients_default_params,
     allowed_recipients_builder,
     load_deployed_contract,
@@ -632,9 +646,10 @@ def allowed_recipients_registry(
     allowed_recipients_registry = load_deployed_contract("AllowedRecipientsRegistry")
 
     if allowed_recipients_registry is None:
-        tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
+        tx = allowed_recipients_builder.deployRegistries(
             allowed_recipients_default_params.limit,
             allowed_recipients_default_params.period_duration_months,
+            [],
             [],
             [],
             allowed_recipients_default_params.spent_amount,
@@ -644,6 +659,9 @@ def allowed_recipients_registry(
 
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+        )
+        allowed_tokens_registry = AllowedTokensRegistry.at(
+            tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
         )
 
     if not allowed_recipients_registry.hasRole(
@@ -666,15 +684,25 @@ def allowed_recipients_registry(
             {"from": lido_contracts.aragon.agent},
         )
 
-    return allowed_recipients_registry
+    return (allowed_recipients_registry, allowed_tokens_registry)
+
+@pytest.fixture(scope="module")
+def add_allowed_token(registries, lido_contracts):
+    (_, allowed_tokens_registry) = registries
+    def _add_allowed_token(token):
+        allowed_tokens_registry.addToken(token, {"from": lido_contracts.aragon.agent})
+        assert allowed_tokens_registry.isTokenAllowed(token)
+    return _add_allowed_token
 
 
 @pytest.fixture(scope="module")
-def allowed_recipients_limit_params(allowed_recipients_registry):
+def allowed_recipients_limit_params(registries):
     @dataclass
     class AllowedRecipientsLimits:
         limit: int
         duration: int
+
+    (allowed_recipients_registry, _) = registries
 
     limit, duration = allowed_recipients_registry.getLimitParameters()
     return AllowedRecipientsLimits(limit, duration)

@@ -7,6 +7,7 @@ import "./EVMScriptFactories/AddAllowedRecipient.sol";
 import "./EVMScriptFactories/RemoveAllowedRecipient.sol";
 import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
 import "./AllowedRecipientsRegistry.sol";
+import "./AllowedTokensRegistry.sol";
 
 /// @author bulbozaur
 /// @notice Factory for Allowed Recipient Easy Track contracts
@@ -22,11 +23,20 @@ contract AllowedRecipientsFactory {
         IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
     );
 
+    event AllowedTokensRegistryDeployed(
+        address indexed creator,
+        address indexed allowedTokensRegistry,
+        address _defaultAdmin,
+        address[] addTokenToAllowedListRoleHolders,
+        address[] removeTokenFromAllowedListRoleHolders
+    );
+
     event TopUpAllowedRecipientsDeployed(
         address indexed creator,
         address indexed topUpAllowedRecipients,
         address trustedCaller,
         address allowedRecipientsRegistry,
+        address allowedTokenssRegistry,
         address finance,
         address token,
         address easyTrack
@@ -75,9 +85,30 @@ contract AllowedRecipientsFactory {
         );
     }
 
+    function deployAllowedTokensRegistry(
+        address _defaultAdmin,
+        address[] memory _addTokensToAllowedListRoleHolders,
+        address[] memory _removeTokensFromAllowedListRoleHolders
+    ) public returns (AllowedTokensRegistry registry) {
+        registry = new AllowedTokensRegistry(
+            _defaultAdmin,
+            _addTokensToAllowedListRoleHolders,
+            _removeTokensFromAllowedListRoleHolders
+        );
+
+        emit AllowedTokensRegistryDeployed(
+            msg.sender,
+            address(registry),
+            _defaultAdmin,
+            _addTokensToAllowedListRoleHolders,
+            _removeTokensFromAllowedListRoleHolders
+        );
+    }
+
     function deployTopUpAllowedRecipients(
         address _trustedCaller,
         address _allowedRecipientsRegistry,
+        address _allowedTokensRegistry,
         address _token,
         address _finance,
         address _easyTrack
@@ -85,6 +116,7 @@ contract AllowedRecipientsFactory {
         topUpAllowedRecipients = new TopUpAllowedRecipients(
             _trustedCaller,
             _allowedRecipientsRegistry,
+            _allowedTokensRegistry,
             _finance,
             _token,
             _easyTrack
@@ -95,6 +127,7 @@ contract AllowedRecipientsFactory {
             address(topUpAllowedRecipients),
             _trustedCaller,
             _allowedRecipientsRegistry,
+            _allowedTokensRegistry,
             _finance,
             _token,
             _easyTrack

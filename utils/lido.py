@@ -37,6 +37,20 @@ def addresses(network=DEFAULT_NETWORK):
     )
 
 
+def external_contracts(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return {
+            "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"
+        }
+    if network == "goerli" or network == "goerli-fork":
+        return {
+            "usdc": "0x07865c6E87B9F70255377e024ace6630C1Eaa37F"
+        }
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+    )
+
+
 def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 

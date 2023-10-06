@@ -3,11 +3,11 @@ from typing import Optional, NamedTuple, Any
 
 import pytest
 import brownie
-from brownie import chain 
+from brownie import chain
 
 import constants
 from utils.evm_script import encode_call_script, encode_calldata
-from utils.lido import contracts
+from utils.lido import contracts, external_contracts
 from utils.config import get_network_name
 from utils import test_helpers, deployed_date_time
 
@@ -126,7 +126,9 @@ def evm_script_executor(owner, easy_track, calls_script, EVMScriptExecutor):
 
 
 @pytest.fixture(scope="module")
-def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProgramsRegistry):
+def reward_programs_registry(
+    owner, voting, evm_script_executor_stub, RewardProgramsRegistry
+):
     return owner.deploy(
         RewardProgramsRegistry,
         voting,
@@ -158,8 +160,12 @@ def remove_reward_program(owner, reward_programs_registry, RemoveRewardProgram):
 
 
 @pytest.fixture(scope="module")
-def top_up_reward_programs(owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms):
-    return owner.deploy(TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo)
+def top_up_reward_programs(
+    owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms
+):
+    return owner.deploy(
+        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
+    )
 
 
 @pytest.fixture(scope="module")
@@ -174,7 +180,9 @@ def add_allowed_recipients(owner, allowed_recipients_registry, AddAllowedRecipie
 
 
 @pytest.fixture(scope="module")
-def remove_allowed_recipients(owner, allowed_recipients_registry, RemoveAllowedRecipient):
+def remove_allowed_recipients(
+    owner, allowed_recipients_registry, RemoveAllowedRecipient
+):
     (registry, _, _, _, _, _) = allowed_recipients_registry
     return owner.deploy(RemoveAllowedRecipient, owner, registry)
 
@@ -272,20 +280,43 @@ def allowed_recipients_registry(
 
 
 @pytest.fixture(scope="module")
+def allowed_tokens_registry(AllowedTokensRegistry, owner, accounts):
+    add_token_role_holder = accounts[6]
+    remove_token_role_holder = accounts[7]
+
+    registry = owner.deploy(
+        AllowedTokensRegistry,
+        owner,
+        [add_token_role_holder],
+        [remove_token_role_holder],
+    )
+
+    return (registry, owner, add_token_role_holder, remove_token_role_holder)
+
+
+@pytest.fixture(scope="module")
 def top_up_allowed_recipients(
     allowed_recipients_registry,
+    allowed_tokens_registry,
     accounts,
     finance,
     ldo,
     easy_track,
     TopUpAllowedRecipients,
 ):
-    (registry, owner, _, _, _, _) = allowed_recipients_registry
+    (recipients_registry, owner, _, _, _, _) = allowed_recipients_registry
+    (tokens_registry, _, _, _) = allowed_tokens_registry
 
     trusted_caller = accounts[4]
 
     top_up_factory = owner.deploy(
-        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
+        TopUpAllowedRecipients,
+        trusted_caller,
+        recipients_registry,
+        tokens_registry,
+        finance,
+        ldo,
+        easy_track,
     )
 
     return top_up_factory
@@ -304,6 +335,11 @@ def ldo(lido_contracts):
 @pytest.fixture(scope="module")
 def steth(lido_contracts):
     return lido_contracts.steth
+
+
+@pytest.fixture(scope="module")
+def usdc():
+    return external_contracts(network=brownie.network.show_active())["usdc"]
 
 
 @pytest.fixture(scope="module")
