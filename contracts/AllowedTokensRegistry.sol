@@ -100,6 +100,8 @@ contract AllowedTokensRegistry is AccessControl {
     function normalizeAmount(uint256 _tokenAmount, address _token) external view returns (uint256) {
         require(_token != address(0), ERROR_TOKEN_ADDRESS_IS_ZERO);
 
+        if (_tokenAmount == 0) return 0;
+
         uint8 tokenDecimals = IERC20Metadata(_token).decimals();
 
         if (tokenDecimals == DECIMALS) return _tokenAmount;
