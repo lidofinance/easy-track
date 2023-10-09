@@ -82,7 +82,7 @@ def test_simple_dvt_scenario(
     set_node_operator_name_factory,
     set_node_operator_reward_address_factory,
     set_vetted_validators_limit_factory,
-    transfer_node_operator_manager_factory,
+    change_node_operator_manager_factory,
     update_tareget_validator_limits_factory,
     stranger,
 ):
@@ -334,7 +334,7 @@ def test_simple_dvt_scenario(
     # Revoke MANAGE_SIGNING_KEYS role
 
     # Transfer cluster manager
-    transfer_node_operator_manager_calldata = (
+    change_node_operator_manager_calldata = (
         "0x"
         + encode_single(
             "((uint256,address,address)[])",
@@ -344,8 +344,8 @@ def test_simple_dvt_scenario(
 
     easytrack_executor(
         commitee_multisig,
-        transfer_node_operator_manager_factory,
-        transfer_node_operator_manager_calldata,
+        change_node_operator_manager_factory,
+        change_node_operator_manager_calldata,
     )
 
     # permission parameter

@@ -10,7 +10,7 @@ import "../interfaces/INodeOperatorRegestry.sol";
 import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to set node operators reward address
-contract TransferNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
+contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
     struct PermissionInput {
         uint256 nodeOperatorId;
         address oldManagerAddress;
@@ -76,7 +76,7 @@ contract TransferNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(decodedCallData);
 
-        for (uint i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; i++) {
             toAddresses[i * 2] = address(acl);
             methodIds[i * 2] = REVOKE_PERMISSION_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(
@@ -120,16 +120,16 @@ contract TransferNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(PermissionInput[] memory _permissionInputs) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
-        for (uint i = 0; i < _permissionInputs.length; i++) {
+        for (uint256 i = 0; i < _permissionInputs.length; i++) {
             require(
                 _permissionInputs[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
 
-            for (uint test_index = i + 1; test_index < _permissionInputs.length; test_index++) {
+            for (uint256 testIndex = i + 1; testIndex < _permissionInputs.length; testIndex++) {
                 require(
                     _permissionInputs[i].newManagerAddress !=
-                        _permissionInputs[test_index].newManagerAddress,
+                        _permissionInputs[testIndex].newManagerAddress,
                     MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }

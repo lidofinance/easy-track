@@ -74,7 +74,7 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         bytes4[] memory methodIds = new bytes4[](decodedCallData.length * 2);
         bytes[] memory encodedCalldata = new bytes[](decodedCallData.length * 2);
 
-        for (uint i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; i++) {
             toAddresses[i * 2] = address(nodeOperatorsRegistry);
             methodIds[i * 2] = DEACTIVATE_NODE_OPERATOR_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(decodedCallData[i].nodeOperatorId);
@@ -111,7 +111,7 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         DeactivateNodeOperatorInput[] memory _deactivateNodeOperatorInputs
     ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
-        for (uint i = 0; i < _deactivateNodeOperatorInputs.length; i++) {
+        for (uint256 i = 0; i < _deactivateNodeOperatorInputs.length; i++) {
             require(
                 _deactivateNodeOperatorInputs[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE

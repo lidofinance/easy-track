@@ -73,7 +73,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         
         bytes[] memory setVettedValidatorsLimitsCalldata = new bytes[](decodedCallData.length);
 
-        for (uint i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; i++) {
             setVettedValidatorsLimitsCalldata[i] = abi.encode(
                 decodedCallData[i].nodeOperatorId,
                 decodedCallData[i].stakingLimit
@@ -111,7 +111,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
 
     function _validateInputData(VettedValidatorsLimitInput[] memory _decodedCallData) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
-        for (uint i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 _decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE

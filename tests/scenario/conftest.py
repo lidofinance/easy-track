@@ -7,7 +7,7 @@ from brownie import (
     SetNodeOperatorNames,
     SetNodeOperatorRewardAddresses,
     SetVettedValidatorsLimits,
-    TransferNodeOperatorManager,
+    ChangeNodeOperatorManager,
     UpdateTargetValidatorLimits
 )
 from utils import deployed_easy_track
@@ -201,17 +201,17 @@ def set_vetted_validators_limit_factory(
 
 
 @pytest.fixture(scope="module")
-def transfer_node_operator_manager_factory(
+def change_node_operator_manager_factory(
     et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
 ):
-    factory = TransferNodeOperatorManager.deploy(
+    factory = ChangeNodeOperatorManager.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
     assert factory.acl() == acl
 
-    transfer_node_operator_manager_permission = (
+    change_node_operator_manager_permission = (
         acl.address
         + acl.revokePermission.signature[2:]
         + acl.address[2:]
@@ -219,7 +219,7 @@ def transfer_node_operator_manager_factory(
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
-        transfer_node_operator_manager_permission,
+        change_node_operator_manager_permission,
         {"from": voting},
     )
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()

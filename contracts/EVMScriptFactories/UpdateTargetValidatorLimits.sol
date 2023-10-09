@@ -56,7 +56,7 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
         bytes[] memory updateTargetLimitsCallData = new bytes[](decodedCallData.length);
 
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
-        for (uint i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; i++) {
             require(
                 decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
                 ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
