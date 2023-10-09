@@ -4,12 +4,12 @@
 pragma solidity ^0.8.4;
 
 import "../TrustedCaller.sol";
-import "../AllowedRecipientsRegistry.sol";
-import "../AllowedTokensRegistry.sol";
+import "../interfaces/IAllowedRecipientsRegistry.sol";
+import "../interfaces/IAllowedTokensRegistry.sol";
 import "../interfaces/IFinance.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../EasyTrack.sol";
+import "../interfaces/IEasyTrack.sol";
 
 /// @notice Creates EVMScript to top up allowed recipients addresses within the current spendable balance
 contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
@@ -28,19 +28,16 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     /// @notice Address of EasyTrack contract
-    EasyTrack public immutable easyTrack;
+    IEasyTrack public immutable easyTrack;
 
     /// @notice Address of Aragon's Finance contract
     IFinance public immutable finance;
 
-    /// @notice Address of payout token
-    address public token;
-
     /// @notice Address of AllowedRecipientsRegistry contract
-    AllowedRecipientsRegistry public allowedRecipientsRegistry;
+    IAllowedRecipientsRegistry public immutable allowedRecipientsRegistry;
 
-    /// @notice Address of AllowedTokenssRegistry contract
-    AllowedTokensRegistry public allowedTokensRegistry;
+    /// @notice Address of AllowedTokensRegistry contract
+    IAllowedTokensRegistry public immutable allowedTokensRegistry;
 
     // -------------
     // CONSTRUCTOR
@@ -50,21 +47,18 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     ///     Set once on deployment and can't be changed.
     /// @param _allowedRecipientsRegistry Address of AllowedRecipientsRegistry contract
     /// @param _finance Address of Aragon's Finance contract
-    /// @param _token Address of payout token
     /// @param _easyTrack Address of EasyTrack contract
     constructor(
         address _trustedCaller,
         address _allowedRecipientsRegistry,
         address _allowedTokensRegistry,
         address _finance,
-        address _token,
         address _easyTrack
     ) TrustedCaller(_trustedCaller) {
         finance = IFinance(_finance);
-        token = _token;
-        allowedRecipientsRegistry = AllowedRecipientsRegistry(_allowedRecipientsRegistry);
-        allowedTokensRegistry = AllowedTokensRegistry(_allowedTokensRegistry);
-        easyTrack = EasyTrack(_easyTrack);
+        allowedRecipientsRegistry = IAllowedRecipientsRegistry(_allowedRecipientsRegistry);
+        allowedTokensRegistry = IAllowedTokensRegistry(_allowedTokensRegistry);
+        easyTrack = IEasyTrack(_easyTrack);
     }
 
     // -------------
@@ -73,7 +67,8 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to top up allowed recipients addresses
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address[] recipients, uint256[] amounts) where
+    /// @param _evmScriptCallData Encoded tuple: (address token, address[] recipients, uint256[] amounts) where
+    /// token - address of token to top up
     /// recipients - addresses of recipients to top up
     /// amounts - corresponding amounts of token to transfer
     /// @dev note that the arrays below has one extra element to store limit enforcement calls
@@ -84,8 +79,9 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address[] memory recipients, uint256[] memory amounts) = _decodeEVMScriptCallData(_evmScriptCallData);
-        uint256 totalAmount = _validateEVMScriptCallData(recipients, amounts);
+        (address token, address[] memory recipients, uint256[] memory amounts) =
+            _decodeEVMScriptCallData(_evmScriptCallData);
+        uint256 normalizedAmount = _validateEVMScriptCallData(token, recipients, amounts);
 
         address[] memory to = new address[](recipients.length + 1);
         bytes4[] memory methodIds = new bytes4[](recipients.length + 1);
@@ -93,7 +89,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
 
         to[0] = address(allowedRecipientsRegistry);
         methodIds[0] = allowedRecipientsRegistry.updateSpentAmount.selector;
-        evmScriptsCalldata[0] = abi.encode(allowedTokensRegistry.normalizeAmount(totalAmount, token));
+        evmScriptsCalldata[0] = abi.encode(normalizedAmount);
 
         for (uint256 i = 0; i < recipients.length; ++i) {
             to[i + 1] = address(finance);
@@ -108,12 +104,13 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     /// @param _evmScriptCallData Encoded tuple: (address[] recipients, uint256[] amounts) where
     /// recipients - addresses of recipients to top up
     /// amounts - corresponding amounts of token to transfer
+    /// @return token Address of payout token
     /// @return recipients Addresses of recipients to top up
     /// @return amounts Amounts of token to transfer
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address[] memory recipients, uint256[] memory amounts)
+        returns (address token, address[] memory recipients, uint256[] memory amounts)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -122,14 +119,16 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _validateEVMScriptCallData(address[] memory _recipients, uint256[] memory _amounts)
+    function _validateEVMScriptCallData(address token, address[] memory _recipients, uint256[] memory _amounts)
         private
         view
-        returns (uint256 totalAmount)
+        returns (uint256 normalizedAmount)
     {
         require(_amounts.length == _recipients.length, ERROR_LENGTH_MISMATCH);
         require(_recipients.length > 0, ERROR_EMPTY_DATA);
         require(allowedTokensRegistry.isTokenAllowed(token), ERROR_TOKEN_NOT_ALLOWED);
+
+        uint256 totalAmount = 0;
 
         for (uint256 i = 0; i < _recipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
@@ -137,15 +136,17 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
             totalAmount += _amounts[i];
         }
 
-        _validateSpendableBalance(allowedTokensRegistry.normalizeAmount(totalAmount, token));
+        normalizedAmount = allowedTokensRegistry.normalizeAmount(totalAmount, token);
+
+        _validateSpendableBalance(normalizedAmount);
     }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address[] memory recipients, uint256[] memory amounts)
+        returns (address token, address[] memory recipients, uint256[] memory amounts)
     {
-        return abi.decode(_evmScriptCallData, (address[], uint256[]));
+        return abi.decode(_evmScriptCallData, (address, address[], uint256[]));
     }
 
     function _validateSpendableBalance(uint256 _amount) private view {

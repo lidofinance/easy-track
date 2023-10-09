@@ -300,7 +300,6 @@ def top_up_allowed_recipients(
     allowed_tokens_registry,
     accounts,
     finance,
-    ldo,
     easy_track,
     TopUpAllowedRecipients,
 ):
@@ -315,7 +314,6 @@ def top_up_allowed_recipients(
         recipients_registry,
         tokens_registry,
         finance,
-        ldo,
         easy_track,
     )
 
@@ -340,6 +338,10 @@ def steth(lido_contracts):
 @pytest.fixture(scope="module")
 def usdc():
     return external_contracts(network=brownie.network.show_active())["usdc"]
+
+@pytest.fixture(scope="module")
+def dai():
+    return external_contracts(network=brownie.network.show_active())["dai"]
 
 
 @pytest.fixture(scope="module")

@@ -38,7 +38,6 @@ contract AllowedRecipientsFactory {
         address allowedRecipientsRegistry,
         address allowedTokenssRegistry,
         address finance,
-        address token,
         address easyTrack
     );
 
@@ -109,7 +108,6 @@ contract AllowedRecipientsFactory {
         address _trustedCaller,
         address _allowedRecipientsRegistry,
         address _allowedTokensRegistry,
-        address _token,
         address _finance,
         address _easyTrack
     ) public returns (TopUpAllowedRecipients topUpAllowedRecipients) {
@@ -118,7 +116,6 @@ contract AllowedRecipientsFactory {
             _allowedRecipientsRegistry,
             _allowedTokensRegistry,
             _finance,
-            _token,
             _easyTrack
         );
 
@@ -129,7 +126,6 @@ contract AllowedRecipientsFactory {
             _allowedRecipientsRegistry,
             _allowedTokensRegistry,
             _finance,
-            _token,
             _easyTrack
         );
 

@@ -329,7 +329,6 @@ def top_up_allowed_recipients_evm_script_factory(
             trusted_caller,
             allowed_recipients_registry,
             allowed_tokens_registry,
-            lido_contracts.ldo,
             {"from": deployer},
         )
 
@@ -380,13 +379,14 @@ def create_add_allowed_recipient_motion(easy_track):
 def create_top_up_allowed_recipients_motion(easy_track):
     def _create_top_up_allowed_recipients_motion(
         top_up_allowed_recipients_evm_script_factory,
+        token,
         recipient_addresses,
         top_up_amounts,
     ):
         return easy_track.createMotion(
             top_up_allowed_recipients_evm_script_factory,
             evm_script.encode_calldata(
-                "(address[],uint256[])", [recipient_addresses, top_up_amounts]
+                "(address,address[],uint256[])", [token, recipient_addresses, top_up_amounts]
             ),
             {"from": top_up_allowed_recipients_evm_script_factory.trustedCaller()},
         )
@@ -402,11 +402,13 @@ def top_up_allowed_recipient_by_motion(
 ):
     def _top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
+        token_address,
         recipient_addresses,
         top_up_amounts,
     ):
         motion_creation_tx = create_top_up_allowed_recipients_motion(
             top_up_allowed_recipients_evm_script_factory,
+            token_address,
             recipient_addresses,
             top_up_amounts,
         )
@@ -442,13 +444,12 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
         )
 
         (
+            top_up_token,
             recipients,
             amounts,
         ) = top_up_allowed_recipients_evm_script_factory.decodeEVMScriptCallData(
             motion_creation_tx.events["MotionCreated"]["_evmScriptCallData"]
         )
-
-        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
 
         (sender_balance_before,) = get_balances(
             top_up_token, [lido_contracts.aragon.agent]
@@ -481,6 +482,7 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             recipients_balances_before=recipients_balances_before,
             sender_shares_balance_before=sender_shares_balance_before,
             recipients_shares_balance_before=recipients_shares_balance_before,
+            top_up_token=top_up_token,
             top_up_recipients=recipients,
             top_up_amounts=amounts,
         )
@@ -502,10 +504,10 @@ def check_top_up_motion_enactment(
         recipients_balances_before,
         sender_shares_balance_before,
         recipients_shares_balance_before,
+        top_up_token,
         top_up_recipients,
         top_up_amounts,
     ):
-        top_up_token = top_up_allowed_recipients_evm_script_factory.token()
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
         )
@@ -646,10 +648,9 @@ def registries(
     allowed_recipients_registry = load_deployed_contract("AllowedRecipientsRegistry")
 
     if allowed_recipients_registry is None:
-        tx = allowed_recipients_builder.deployRegistries(
+        tx_recipients = allowed_recipients_builder.deployAllowedRecipientsRegistry(
             allowed_recipients_default_params.limit,
             allowed_recipients_default_params.period_duration_months,
-            [],
             [],
             [],
             allowed_recipients_default_params.spent_amount,
@@ -657,11 +658,13 @@ def registries(
             {"from": deployer},
         )
 
+        tx_tokens = allowed_recipients_builder.deployAllowedTokensRegistry([])
+
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
-            tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+            tx_recipients.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
         )
         allowed_tokens_registry = AllowedTokensRegistry.at(
-            tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
+            tx_tokens.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
         )
 
     if not allowed_recipients_registry.hasRole(

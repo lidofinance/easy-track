@@ -16,8 +16,8 @@ MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 @dataclass
 class SingleRecipientTopUpOnlySetup:
     allowed_recipients_registry: AllowedRecipientsRegistry
-    top_up_allowed_recipients_ldo_evm_script_factory: TopUpAllowedRecipients
-    top_up_allowed_recipients_usdc_evm_script_factory: TopUpAllowedRecipients
+    top_up_allowed_recipients_evm_script_factory: TopUpAllowedRecipients
+    allowed_tokens: list[str]
 
 
 @dataclass
@@ -42,16 +42,19 @@ def single_recipient_top_up_only_setup(
     TopUpAllowedRecipients,
     easy_track,
     lido_contracts,
-    external_contracts,
     allowed_recipient,
     allowed_recipients_builder,
     allowed_recipients_default_params,
     deployer,
+    dai,
+    usdc,
 ):
+    allowed_tokens = [dai, usdc]
+
     deploy_tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
         allowed_recipient.address,
         allowed_recipient.title,
-        [lido_contracts.ldo, external_contracts["usdc"]],
+        allowed_tokens,
         allowed_recipients_default_params.limit,
         allowed_recipients_default_params.period_duration_months,
         allowed_recipients_default_params.spent_amount,
@@ -63,25 +66,12 @@ def single_recipient_top_up_only_setup(
             "allowedRecipientsRegistry"
         ]
     )
-    top_up_allowed_recipients_ldo_evm_script_factory = TopUpAllowedRecipients.at(
-        deploy_tx.events["TopUpAllowedRecipientsDeployed"][0]["topUpAllowedRecipients"]
-    )
-    top_up_allowed_recipients_usdc_evm_script_factory = TopUpAllowedRecipients.at(
-        deploy_tx.events["TopUpAllowedRecipientsDeployed"][1]["topUpAllowedRecipients"]
+    top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
+        deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
 
     easy_track.addEVMScriptFactory(
-        top_up_allowed_recipients_ldo_evm_script_factory,
-        deployment.create_permission(
-            lido_contracts.aragon.finance, "newImmediatePayment"
-        )
-        + deployment.create_permission(
-            allowed_recipients_registry, "updateSpentAmount"
-        )[2:],
-        {"from": lido_contracts.aragon.voting},
-    )
-    easy_track.addEVMScriptFactory(
-        top_up_allowed_recipients_usdc_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
         deployment.create_permission(
             lido_contracts.aragon.finance, "newImmediatePayment"
         )
@@ -92,8 +82,8 @@ def single_recipient_top_up_only_setup(
     )
     return SingleRecipientTopUpOnlySetup(
         allowed_recipients_registry,
-        top_up_allowed_recipients_ldo_evm_script_factory,
-        top_up_allowed_recipients_usdc_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
+        allowed_tokens
     )
 
 
@@ -109,14 +99,15 @@ def full_setup(
     lido_contracts,
     allowed_recipients_default_params,
     deployer,
-    ldo,
-    usdc
+    dai,
+    usdc,
 ):
+    allowed_tokens = [dai, usdc]
     deploy_tx = allowed_recipients_builder.deployFullSetup(
         trusted_caller,
         allowed_recipients_default_params.limit,
         allowed_recipients_default_params.period_duration_months,
-        [ldo, usdc],
+        [dai, usdc],
         [],
         [],
         allowed_recipients_default_params.spent_amount,
@@ -148,24 +139,11 @@ def full_setup(
         {"from": lido_contracts.aragon.voting},
     )
 
-    top_up_allowed_recipients_ldo_evm_script_factory = TopUpAllowedRecipients.at(
-        deploy_tx.events["TopUpAllowedRecipientsDeployed"][0]["topUpAllowedRecipients"]
-    )
-    top_up_allowed_recipients_usdc_evm_script_factory = TopUpAllowedRecipients.at(
-        deploy_tx.events["TopUpAllowedRecipientsDeployed"][1]["topUpAllowedRecipients"]
+    top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
+        deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
     easy_track.addEVMScriptFactory(
-        top_up_allowed_recipients_ldo_evm_script_factory,
-        deployment.create_permission(
-            lido_contracts.aragon.finance, "newImmediatePayment"
-        )
-        + deployment.create_permission(
-            allowed_recipients_registry, "updateSpentAmount"
-        )[2:],
-        {"from": lido_contracts.aragon.voting},
-    )
-    easy_track.addEVMScriptFactory(
-        top_up_allowed_recipients_usdc_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
         deployment.create_permission(
             lido_contracts.aragon.finance, "newImmediatePayment"
         )
@@ -177,8 +155,8 @@ def full_setup(
 
     return FullSetup(
         allowed_recipients_registry,
-        top_up_allowed_recipients_ldo_evm_script_factory,
-        top_up_allowed_recipients_usdc_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
+        allowed_tokens,
         add_allowed_recipient_evm_script_factory,
         remove_allowed_recipient_evm_script_factory,
     )
@@ -193,8 +171,8 @@ def test_single_recipient_top_up_only_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 100 * 10**6
-    second_top_up_amount = 100 * 10**18
+    first_top_up_amount = 100 * 10**18
+    second_top_up_amount = 100 * 10**6
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
@@ -203,17 +181,17 @@ def test_single_recipient_top_up_only_setup_happy_path(
     allowed_recipients_registry = (
         single_recipient_top_up_only_setup.allowed_recipients_registry
     )
-    top_up_allowed_recipients_ldo_evm_script_factory = (
-        single_recipient_top_up_only_setup.top_up_allowed_recipients_ldo_evm_script_factory
+    top_up_allowed_recipients_evm_script_factory = (
+        single_recipient_top_up_only_setup.top_up_allowed_recipients_evm_script_factory
     )
-    top_up_allowed_recipients_usdc_evm_script_factory = (
-        single_recipient_top_up_only_setup.top_up_allowed_recipients_usdc_evm_script_factory
-    )
+
+    [dai, usdc] = single_recipient_top_up_only_setup.allowed_tokens
 
     # Top up allowed recipient
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_usdc_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
         [allowed_recipient.address],
         [first_top_up_amount],
     )
@@ -267,7 +245,8 @@ def test_single_recipient_top_up_only_setup_happy_path(
     # Top up newly added recipient
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_ldo_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
+        usdc,
         [new_recipient.address],
         [second_top_up_amount],
     )
@@ -275,7 +254,8 @@ def test_single_recipient_top_up_only_setup_happy_path(
     # Validate motion creation fails if the limit was exceeded
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
-            top_up_allowed_recipients_ldo_evm_script_factory,
+            top_up_allowed_recipients_evm_script_factory,
+            usdc,
             [new_recipient.address],
             [1],
         )
@@ -294,6 +274,10 @@ def test_full_setup_happy_path(
     first_top_up_amount = 50 * 10**6
     second_top_up_amount = 100 * 10**18
 
+    print(full_setup)
+
+    [dai, usdc] = full_setup.allowed_tokens
+
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
     )
@@ -309,11 +293,12 @@ def test_full_setup_happy_path(
     )
 
     # Top up allowed recipient by motion
-    top_up_allowed_recipients_ldo_evm_script_factory = (
-        full_setup.top_up_allowed_recipients_ldo_evm_script_factory
+    top_up_allowed_recipients_evm_script_factory = (
+        full_setup.top_up_allowed_recipients_evm_script_factory
     )
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_ldo_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
+        usdc,
         [allowed_recipient.address],
         [first_top_up_amount],
     )
@@ -343,11 +328,12 @@ def test_full_setup_happy_path(
     )
 
     # Top up newly allowed recipient by motion
-    top_up_allowed_recipients_ldo_evm_script_factory = (
-        full_setup.top_up_allowed_recipients_ldo_evm_script_factory
+    top_up_allowed_recipients_evm_script_factory = (
+        full_setup.top_up_allowed_recipients_evm_script_factory
     )
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_ldo_evm_script_factory,
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
         [new_recipient.address],
         [second_top_up_amount],
     )
@@ -355,7 +341,8 @@ def test_full_setup_happy_path(
     # Validate motion creation cause limit was spent
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
-            top_up_allowed_recipients_ldo_evm_script_factory,
+            top_up_allowed_recipients_evm_script_factory,
+            dai,
             [new_recipient.address],
             [1],
         )

@@ -31,13 +31,13 @@ contract AllowedTokensRegistry is AccessControl {
     // -------------
     /// @dev List of allowed tokens for payouts
     address[] public allowedTokens;
-
+ 
     // Position of the address in the `allowedTokens` array,
     // plus 1 because index 0 means a value is not in the set.
     mapping(address => uint256) private allowedTokenIndices;
 
     /// @notice Precise number of tokens in the system
-    uint8 public constant PRECISION = 18;
+    uint8 internal constant DECIMALS = 18;
 
     constructor(
         address _admin,
@@ -99,20 +99,21 @@ contract AllowedTokensRegistry is AccessControl {
     /// @notice Transforms amout from token format to precise format
     function normalizeAmount(uint256 _tokenAmount, address _token) external view returns (uint256) {
         require(_token != address(0), ERROR_TOKEN_ADDRESS_IS_ZERO);
-    
+
         uint8 tokenDecimals = IERC20Metadata(_token).decimals();
 
-        if (tokenDecimals == PRECISION) return _tokenAmount;
-        if (tokenDecimals > PRECISION) {
-            uint256 difference = tokenDecimals - PRECISION;
-            uint256 remainder = _tokenAmount % (10 ** difference);
-            uint256 quotient = _tokenAmount / (10 ** difference);
-            if (remainder > 0) {
-                quotient += 1;
-            }
-            return quotient;            
+        if (tokenDecimals == DECIMALS) return _tokenAmount;
+        if (tokenDecimals > DECIMALS) {
+            // It's rounded up to fit into limits
+            // https://github.com/OpenZeppelin/openzeppelin-contracts/blob/3e6c86392c97fbc30d3d20a378a6f58beba08eba/contracts/utils/math/Math.sol#L107
+            return (_tokenAmount - 1) / 10 ** (tokenDecimals - DECIMALS) + 1;
         }
-        return _tokenAmount * 10 ** (PRECISION - tokenDecimals);
+        return _tokenAmount * 10 ** (DECIMALS - tokenDecimals);
+    }
+
+    /// @notice Returns precision of the token
+    function decimals() pure external returns (uint8) {
+        return DECIMALS;
     }
 
     // ------------------

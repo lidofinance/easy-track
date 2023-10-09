@@ -231,14 +231,14 @@ def test_normalize_amount(allowed_tokens_registry):
         registry.normalizeAmount(1, ZERO_ADDRESS)
 
     
-    amount1 = 1000000000000000000
+    amount1 = 1000000000000000999
     assert registry.normalizeAmount(amount1, erc20decimals18) == amount1
 
     erc20decimals21 = MockERC20.deploy(21, {"from": accounts[0]})
-    amount2 = 1000000000000000000000
+    amount2 = 1000000000000000999000
     assert registry.normalizeAmount(amount2, erc20decimals21) == amount1
     assert registry.normalizeAmount(amount2 + 1, erc20decimals21) == amount1 + 1
 
     erc20decimals12 = MockERC20.deploy(12, {"from": accounts[0]})
-    amount3 = 1000000000000  # 1 token with 12 decimals
-    assert registry.normalizeAmount(amount3, erc20decimals12) == amount1
+    amount3 = 1000000000009
+    assert registry.normalizeAmount(amount3, erc20decimals12) == 1000000000009000000
