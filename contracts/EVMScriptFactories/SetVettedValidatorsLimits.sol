@@ -33,6 +33,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
 
     string private constant NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
     string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // VARIABLES
@@ -112,6 +113,12 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(VettedValidatorsLimitInput[] memory _decodedCallData) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         for (uint256 i = 0; i < _decodedCallData.length; i++) {
+            require(
+                i == 0 ||
+                    _decodedCallData[i].nodeOperatorId >
+                    _decodedCallData[i - 1].nodeOperatorId,
+                NODE_OPERATORS_IS_NOT_SORTED
+            );
             require(
                 _decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE

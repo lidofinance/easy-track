@@ -22,6 +22,7 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
     string private constant SAME_NAME = "SAME_NAME";
+    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // VARIABLES
@@ -89,6 +90,12 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(SetNameInput[] memory _nodeOperatorNamesInput) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         for (uint256 i = 0; i < _nodeOperatorNamesInput.length; i++) {
+            require(
+                i == 0 ||
+                    _nodeOperatorNamesInput[i].nodeOperatorId >
+                    _nodeOperatorNamesInput[i - 1].nodeOperatorId,
+                NODE_OPERATORS_IS_NOT_SORTED
+            );
             require(
                 _nodeOperatorNamesInput[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE

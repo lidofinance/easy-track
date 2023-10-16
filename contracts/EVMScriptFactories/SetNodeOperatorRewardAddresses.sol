@@ -23,6 +23,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     string private constant LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
     string private constant ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
     string private constant SAME_REWARD_ADDRESS = "SAME_REWARD_ADDRESS";
+    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // VARIABLES
@@ -91,6 +92,12 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         for (uint256 i = 0; i < _nodeOperatorRewardAddressesInput.length; i++) {
+            require(
+                i == 0 ||
+                    _nodeOperatorRewardAddressesInput[i].nodeOperatorId >
+                    _nodeOperatorRewardAddressesInput[i - 1].nodeOperatorId,
+                NODE_OPERATORS_IS_NOT_SORTED
+            );
             require(
                 _nodeOperatorRewardAddressesInput[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE

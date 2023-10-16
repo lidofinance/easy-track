@@ -37,6 +37,7 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
     string private constant OLD_MANAGER_HAS_NO_ROLE = "OLD_MANAGER_HAS_NO_ROLE";
     string private constant MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
     string private constant MANAGER_ADDRESSES_HAS_DUPLICATE = "MANAGER_ADDRESSES_HAS_DUPLICATE";
+    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // VARIABLES
@@ -121,6 +122,12 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
         for (uint256 i = 0; i < _permissionInputs.length; i++) {
+            require(
+                i == 0 ||
+                    _permissionInputs[i].nodeOperatorId >
+                    _permissionInputs[i - 1].nodeOperatorId,
+                NODE_OPERATORS_IS_NOT_SORTED
+            );
             require(
                 _permissionInputs[i].nodeOperatorId < nodeOperatorsCount,
                 NODE_OPERATOR_INDEX_OUT_OF_RANGE
