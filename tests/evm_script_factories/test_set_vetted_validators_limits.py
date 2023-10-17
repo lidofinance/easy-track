@@ -5,7 +5,6 @@ from brownie import reverts, SetVettedValidatorsLimits, ZERO_ADDRESS
 from utils.evm_script import encode_call_script
 
 
-
 @pytest.fixture(scope="module")
 def set_vetted_validators_limits_factory(owner, node_operators_registry):
     return SetVettedValidatorsLimits.deploy(
@@ -13,9 +12,7 @@ def set_vetted_validators_limits_factory(owner, node_operators_registry):
     )
 
 
-def test_deploy(
-    node_operators_registry, owner, set_vetted_validators_limits_factory
-):
+def test_deploy(node_operators_registry, owner, set_vetted_validators_limits_factory):
     "Must deploy contract with correct data"
     assert set_vetted_validators_limits_factory.trustedCaller() == owner
     assert (
@@ -38,18 +35,9 @@ def test_create_evm_script_called_by_stranger(
 def test_non_sorted_calldata(owner, set_vetted_validators_limits_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 
-    input_params = [
-        (id, new_reward_address)
-        for id, new_reward_address in enumerate(NEW_REWARD_ADDRESSES)
-    ]
-    print(input_params)
-
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
         NON_SORTED_CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])", [[input_params[1], input_params[0]]]
-            ).hex()
+            "0x" + encode_single("((uint256,uint256)[])", [[(1, 1), (0, 2)]]).hex()
         )
         set_vetted_validators_limits_factory.createEVMScript(
             owner, NON_SORTED_CALL_DATA
@@ -57,10 +45,7 @@ def test_non_sorted_calldata(owner, set_vetted_validators_limits_factory):
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
         NON_SORTED_CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])", [[input_params[0], input_params[0]]]
-            ).hex()
+            "0x" + encode_single("((uint256,uint256)[])", [[(0, 1), (0, 2)]]).hex()
         )
         set_vetted_validators_limits_factory.createEVMScript(
             owner, NON_SORTED_CALL_DATA
@@ -77,48 +62,18 @@ def test_operator_id_out_of_range(
         CALL_DATA = (
             "0x"
             + encode_single(
-                "((uint256,address)[])",
-                [[(node_operators_count, NEW_REWARD_ADDRESSES[0])]],
+                "((uint256,uint256)[])",
+                [[(node_operators_count, 1)]],
             ).hex()
         )
         set_vetted_validators_limits_factory.createEVMScript(owner, CALL_DATA)
 
 
-def test_same_reward_address(
-    owner, set_vetted_validators_limits_factory, node_operators_registry
-):
-    "Must revert with message 'SAME_REWARD_ADDRESS' when address is the same"
+def test_revert_on_not_enough_signing_keys(owner, set_vetted_validators_limits_factory, steth):
+    "Must revert with message 'NOT_ENOUGH_SIGNING_KEYS' when node operator has not enough keys"
 
-    with reverts("SAME_REWARD_ADDRESS"):
-        node_operator = node_operators_registry.getNodeOperator(0, True)
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])", [[(0, node_operator["rewardAddress"])]]
-            ).hex()
-        )
-        set_vetted_validators_limits_factory.createEVMScript(owner, CALL_DATA)
-
-
-def test_zero_reward_address(owner, set_vetted_validators_limits_factory):
-    "Must revert with message 'ZERO_REWARD_ADDRESS' when address is zero address"
-
-    with reverts("ZERO_REWARD_ADDRESS"):
-        CALL_DATA = (
-            "0x" + encode_single("((uint256,address)[])", [[(0, ZERO_ADDRESS)]]).hex()
-        )
-        set_vetted_validators_limits_factory.createEVMScript(owner, CALL_DATA)
-
-
-def test_lido_as_reward_address(
-    owner, set_vetted_validators_limits_factory, steth
-):
-    "Must revert with message 'ZERO_REWARD_ADDRESS' when address is lido address"
-
-    with reverts("LIDO_REWARD_ADDRESS"):
-        CALL_DATA = (
-            "0x" + encode_single("((uint256,address)[])", [[(0, steth.address)]]).hex()
-        )
+    with reverts("NOT_ENOUGH_SIGNING_KEYS"):
+        CALL_DATA = "0x" + encode_single("((uint256,uint256)[])", [[(0, 100000)]]).hex()
         set_vetted_validators_limits_factory.createEVMScript(owner, CALL_DATA)
 
 
@@ -128,13 +83,11 @@ def test_create_evm_script(
     node_operators_registry,
 ):
     "Must create correct EVMScript if all requirements are met"
-    input_params = [
-        (id, new_reward_address)
-        for id, new_reward_address in enumerate(NEW_REWARD_ADDRESSES)
-    ]
+
+    input_params = [(0, 1), (1, 1)]
 
     EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [input_params]).hex()
+        "0x" + encode_single("((uint256,uint256)[])", [input_params]).hex()
     )
     evm_script = set_vetted_validators_limits_factory.createEVMScript(
         owner, EVM_SCRIPT_CALL_DATA
@@ -143,7 +96,7 @@ def test_create_evm_script(
         [
             (
                 node_operators_registry.address,
-                node_operators_registry.setNodeOperatorRewardAddress.encode_input(
+                node_operators_registry.setNodeOperatorStakingLimit.encode_input(
                     input_param[0], input_param[1]
                 ),
             )
@@ -157,13 +110,10 @@ def test_decode_evm_script_call_data(
     node_operators_registry, set_vetted_validators_limits_factory
 ):
     "Must decode EVMScript call data correctly"
-    input_params = [
-        (id, new_reward_address)
-        for id, new_reward_address in enumerate(NEW_REWARD_ADDRESSES)
-    ]
+    input_params = [(0, 1), (1, 1)]
 
     EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [input_params]).hex()
+        "0x" + encode_single("((uint256,uint256)[])", [input_params]).hex()
     )
     assert (
         set_vetted_validators_limits_factory.decodeEVMScriptCallData(
