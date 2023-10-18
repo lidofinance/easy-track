@@ -5,7 +5,7 @@
   "author": "Bogdan Kovtun <psirex48@gmail.com>",
   "license": "GPL-3.0",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2",
+    "@openzeppelin/contracts": "^4.9.3",
     "ethlint": "^1.2.5",
     "husky": "^6.0.0",
     "prettier": "^2.3.0",
