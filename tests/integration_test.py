@@ -14,6 +14,7 @@ from eth_abi import encode_single
 from utils.evm_script import encode_call_script
 
 from utils.lido import create_voting, execute_voting
+from utils.test_helpers import is_almost_equal
 
 
 @pytest.mark.skip_coverage
@@ -74,7 +75,7 @@ def test_node_operators_easy_track(
     # create voting to grant permissions to EVM script executor to set staking limit
 
     add_set_staking_limit_permissions_voting_id, _ = create_voting(
-        encode_call_script(
+        evm_script=encode_call_script(
             [
                 (
                     acl.address,
@@ -86,8 +87,8 @@ def test_node_operators_easy_track(
                 ),
             ]
         ),
-        "Grant permissions to EVMScriptExecutor to set staking limits",
-        {"from": agent},
+        description="Grant permissions to EVMScriptExecutor to set staking limits",
+        tx_params={"from": agent},
     )
 
     execute_voting(add_set_staking_limit_permissions_voting_id)
@@ -102,7 +103,9 @@ def test_node_operators_easy_track(
     )
 
     add_node_operators_voting_id, _ = create_voting(
-        add_node_operator_evm_script, "Add node operator to registry", {"from": agent}
+        evm_script=add_node_operator_evm_script,
+        description="Add node operator to registry",
+        tx_params={"from": agent},
     )
     # execute vote to add test node operator
     execute_voting(add_node_operators_voting_id)
@@ -272,7 +275,7 @@ def test_reward_programs_easy_track(
     # create voting to grant permissions to EVM script executor to create new payments
 
     add_create_payments_permissions_voting_id, _ = create_voting(
-        encode_call_script(
+        evm_script=encode_call_script(
             [
                 (
                     acl.address,
@@ -284,8 +287,8 @@ def test_reward_programs_easy_track(
                 ),
             ]
         ),
-        "Grant permissions to EVMScriptExecutor to make payments",
-        {"from": agent},
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
@@ -412,7 +415,7 @@ def test_lego_easy_track(
 
     # create voting to grant permissions to EVM script executor to create new payments
     add_create_payments_permissions_voting_id, _ = create_voting(
-        encode_call_script(
+        evm_script=encode_call_script(
             [
                 (
                     acl.address,
@@ -424,8 +427,8 @@ def test_lego_easy_track(
                 ),
             ]
         ),
-        "Grant permissions to EVMScriptExecutor to make payments",
-        {"from": agent},
+        description="Grant permissions to EVMScriptExecutor to make payments",
+        tx_params={"from": agent},
     )
 
     # execute voting to add permissions to EVM script executor to create payments
@@ -466,9 +469,9 @@ def test_lego_easy_track(
     assert agent.balance(steth) >= steth_amount
     assert agent.balance(ZERO_ADDRESS) >= eth_amount
 
-    assert ldo.balanceOf(lego_program) == 0
-    assert steth.balanceOf(lego_program) == 0
-    assert lego_program.balance() == 100 * 10 ** 18
+    lego_program_ldo_balance_before = ldo.balanceOf(lego_program)
+    lego_program_steth_balance_before = steth.balanceOf(lego_program)
+    lego_program_eth_balance_before = lego_program.balance()
 
     easy_track.enactMotion(
         motions[0][0],
@@ -477,6 +480,9 @@ def test_lego_easy_track(
     )
 
     assert len(easy_track.getMotions()) == 0
-    assert ldo.balanceOf(lego_program) == ldo_amount
-    assert abs(steth.balanceOf(lego_program) - steth_amount) <= 10
-    assert lego_program.balance() == 103 * 10 ** 18
+    assert ldo.balanceOf(lego_program) - lego_program_ldo_balance_before == ldo_amount
+    assert is_almost_equal(
+        abs(steth.balanceOf(lego_program) - lego_program_steth_balance_before),
+        steth_amount,
+    )
+    assert lego_program.balance() - lego_program_eth_balance_before == eth_amount
