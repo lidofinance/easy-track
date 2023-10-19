@@ -314,7 +314,7 @@ def test_simple_dvt_scenario(
     update_tareget_validator_limits_calldata = (
         "0x"
         + encode_single(
-            "((uint256,bool,uint256)[])", [[(no_6_id, True, 10), (no_5_id, True, 1)]]
+            "((uint256,bool,uint256)[])", [[(no_5_id, True, 1), (no_6_id, True, 10)]]
         ).hex()
     )
     easytrack_executor(

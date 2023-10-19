@@ -21,9 +21,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
-    /// @notice keccak256("MANAGE_SIGNING_KEYS")
-    bytes32 private constant MANAGE_SIGNING_KEYS_ROLE =
-        0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
+    bytes32 private constant MANAGE_SIGNING_KEYS_ROLE = keccak256("MANAGE_SIGNING_KEYS");
     bytes4 private constant GRANT_PERMISSION_P_SELECTOR =
         bytes4(keccak256("grantPermissionP(address,address,bytes32,uint256[])"));
     bytes4 private constant REVOKE_PERMISSION_SELECTOR =

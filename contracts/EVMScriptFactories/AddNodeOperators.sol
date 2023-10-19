@@ -139,6 +139,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         AddNodeOperatorInput[] memory _nodeOperatorInputs
     ) private view {
         address lido = nodeOperatorsRegistry.getLocator().lido();
+        uint256 maxNameLength = nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH();
 
         require(
             nodeOperatorsRegistry.getNodeOperatorsCount() == _nodeOperatorsCount,
@@ -186,8 +187,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
 
             require(
                 bytes(_nodeOperatorInputs[i].name).length > 0 &&
-                    bytes(_nodeOperatorInputs[i].name).length <=
-                    nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH(),
+                    bytes(_nodeOperatorInputs[i].name).length <= maxNameLength,
                 ERROR_WRONG_NAME_LENGTH
             );
         }
