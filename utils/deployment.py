@@ -16,7 +16,7 @@ from brownie import (
 
 @dataclass
 class AllowedRecipientsDeployConfig:
-    token: str
+    tokens: [str]
     limit: int
     period: int
     spent_amount: int

@@ -287,6 +287,56 @@ def test_top_up_multiple_recipients(
     )
 
 
+def test_top_up_multiple_tokens(
+    recipients,
+    add_allowed_token,
+    allowed_recipients_limit_params,
+    add_allowed_recipient_by_motion,
+    top_up_allowed_recipient_by_motion,
+    add_allowed_recipient_evm_script_factory,
+    top_up_allowed_recipients_evm_script_factory,
+    dai,
+    usdc
+):
+    allowed_recipient = recipients[0]
+
+    add_allowed_recipient_by_motion(
+        add_allowed_recipient_evm_script_factory,
+        allowed_recipient.address,
+        allowed_recipient.title,
+    )
+
+    add_allowed_token(dai)
+
+    top_up_recipient_addresses = [allowed_recipient.address]
+    top_up_amounts = [1 * 10**18]
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
+        top_up_recipient_addresses,
+        top_up_amounts,
+    )
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    add_allowed_token(usdc)
+    top_up_amounts = [1 * 10**6]
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        usdc,
+        top_up_recipient_addresses,
+        top_up_amounts,
+    )
+
+
 def test_top_up_motion_enacted_in_next_period(
     dai,
     recipients,
@@ -515,13 +565,17 @@ def test_spendable_balance_is_renewed_in_next_period(
 
 def test_fail_if_token_not_allowed(
     dai,
+    registries,
     recipients,
+    add_allowed_token,
+    remove_allowed_token,
     add_allowed_recipient_by_motion,
     allowed_recipients_limit_params,
     create_top_up_allowed_recipients_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
 ):
+    (_, allowed_tokens_registry) = registries
     allowed_recipient = recipients[0]
 
     add_allowed_recipient_by_motion(
@@ -529,6 +583,11 @@ def test_fail_if_token_not_allowed(
         allowed_recipient.address,
         allowed_recipient.title,
     )
+
+    restore_after_test = False
+    if allowed_tokens_registry.isTokenAllowed(dai):
+        remove_allowed_token(dai)
+        restore_after_test = True
     
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
@@ -541,6 +600,8 @@ def test_fail_if_token_not_allowed(
             [allowed_recipient.address],
             [allowed_recipients_limit_params.limit],
         )
+    if restore_after_test:
+        add_allowed_token(dai)
 
 
 def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(

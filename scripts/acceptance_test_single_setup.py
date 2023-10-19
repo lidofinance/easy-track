@@ -1,41 +1,42 @@
-from brownie import chain, network, AllowedRecipientsRegistry, TopUpAllowedRecipients
+from brownie import (
+    chain,
+    network,
+    AllowedRecipientsRegistry,
+    TopUpAllowedRecipients,
+    AllowedTokensRegistry,
+)
 
 from utils.config import (
     get_network_name,
 )
+from utils.test_helpers import (
+    ADD_TOKEN_TO_ALLOWED_LIST_ROLE,
+    REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE,
+    ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE,
+    REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
+    SET_PARAMETERS_ROLE,
+    UPDATE_SPENT_AMOUNT_ROLE,
+    DEFAULT_ADMIN_ROLE
+)
 from utils import lido, deployed_easy_track, log, deployment
 from hexbytes import HexBytes
-
-ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = (
-    "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
-)
-REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = (
-    "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
-)
-SET_PARAMETERS_ROLE = (
-    "0x260b83d52a26066d8e9db550fa70395df5f3f064b50ff9d8a94267d9f1fe1967"
-)
-UPDATE_SPENT_AMOUNT_ROLE = (
-    "0xc5260260446719a726d11a6faece21d19daa48b4cbcca118345832d4cb71df99"
-)
-DEFAULT_ADMIN_ROLE = (
-    "0x0000000000000000000000000000000000000000000000000000000000000000"
-)
 
 GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
-    period=0,
+    period=1,
     spent_amount=0,
-    title="",
-    limit=0,
-    token="",
-    trusted_caller="",
+    title="Test",
+    limit=10000000000000000000000,
+    tokens=["0x6B175474E89094C44Da98b954EedeAC495271d0F"],
+    trusted_caller="0x3eaE0B337413407FB3C65324735D797ddc7E071D",
 )
 
-deployment_tx_hash = ""
+deployment_tx_hash = (
+    "0xa81d6d8350d5887ead9ce56ece056a3c0c20e334cd6a46ee9e12733351db8e2b"
+)
 
 
 def main():
@@ -48,8 +49,11 @@ def main():
 
     evm_script_executor = et_contracts.evm_script_executor
 
-    registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
+    recipients_registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
         "allowedRecipientsRegistry"
+    ]
+    tokens_registry_address = tx.events["AllowedTokensRegistryDeployed"][
+        "allowedTokensRegistry"
     ]
     add_allowed_recipient_address = tx.events["TopUpAllowedRecipientsDeployed"][
         "topUpAllowedRecipients"
@@ -61,7 +65,7 @@ def main():
     log.br()
 
     log.nb("trusted_caller", deploy_config.trusted_caller)
-    log.nb("token", deploy_config.token)
+    log.nb("tokens", deploy_config.tokens)
     log.nb("limit", deploy_config.limit)
     log.nb("title", deploy_config.title)
     log.nb("period", deploy_config.period)
@@ -69,52 +73,69 @@ def main():
 
     log.br()
 
-    log.nb("AllowedRecipientsRegistryDeployed", registry_address)
+    log.nb("AllowedRecipientsRegistryDeployed", recipients_registry_address)
+    log.nb("AllowedTokensRegistryDeployed", tokens_registry_address)
     log.nb("TopUpAllowedRecipientsDeployed", add_allowed_recipient_address)
 
     log.br()
 
-    registry = AllowedRecipientsRegistry.at(registry_address)
+    recipients_registry = AllowedRecipientsRegistry.at(recipients_registry_address)
     top_up_allowed_recipients = TopUpAllowedRecipients.at(add_allowed_recipient_address)
+    tokens_registry = AllowedTokensRegistry.at(tokens_registry_address)
 
-    assert top_up_allowed_recipients.token() == deploy_config.token
-    assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
+    assert tokens_registry.getAllowedTokens() == deploy_config.tokens
+    assert len(tokens_registry.getAllowedTokens()) == len(deploy_config.tokens)
+
+    assert top_up_allowed_recipients.allowedRecipientsRegistry() == recipients_registry
     assert top_up_allowed_recipients.trustedCaller() == deploy_config.trusted_caller
 
-    assert len(registry.getAllowedRecipients()) == 1
-    assert registry.isRecipientAllowed(deploy_config.trusted_caller)
+    assert len(recipients_registry.getAllowedRecipients()) == 1
+    assert recipients_registry.isRecipientAllowed(deploy_config.trusted_caller)
 
-    registryLimit, registryPeriodDuration = registry.getLimitParameters()
+    registryLimit, registryPeriodDuration = recipients_registry.getLimitParameters()
     assert registryLimit == deploy_config.limit
     assert registryPeriodDuration == deploy_config.period
 
     assert (
-        registry.spendableBalance() == deploy_config.limit - deploy_config.spent_amount
+        recipients_registry.spendableBalance()
+        == deploy_config.limit - deploy_config.spent_amount
     )
 
-    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent)
-    assert registry.hasRole(
+    assert recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent
+    )
+    assert recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, contracts.aragon.agent
     )
-    assert registry.hasRole(SET_PARAMETERS_ROLE, contracts.aragon.agent)
-    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, contracts.aragon.agent)
-    assert registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
+    assert recipients_registry.hasRole(SET_PARAMETERS_ROLE, contracts.aragon.agent)
+    assert recipients_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, contracts.aragon.agent)
+    assert recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
 
-    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
-    assert not registry.hasRole(
+    assert not recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor
+    )
+    assert not recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor
     )
-    assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
-    assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
-    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
+    assert recipients_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
+    assert not recipients_registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
+    assert not recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
-    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, registry_address)
-    assert not registry.hasRole(
-        REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, registry_address
+    assert not recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipients_registry_address
     )
-    assert not registry.hasRole(SET_PARAMETERS_ROLE, registry_address)
-    assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, registry_address)
-    assert not registry.hasRole(DEFAULT_ADMIN_ROLE, registry_address)
+    assert not recipients_registry.hasRole(
+        REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        SET_PARAMETERS_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        UPDATE_SPENT_AMOUNT_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        DEFAULT_ADMIN_ROLE, recipients_registry_address
+    )
 
     registry_roles_holders = {
         ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE: [],
@@ -122,6 +143,8 @@ def main():
         SET_PARAMETERS_ROLE: [],
         UPDATE_SPENT_AMOUNT_ROLE: [],
         DEFAULT_ADMIN_ROLE: [],
+        ADD_TOKEN_TO_ALLOWED_LIST_ROLE: [],
+        REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE: [],
     }
 
     for event in tx.logs:
@@ -148,6 +171,14 @@ def main():
     log.nb(
         "REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE role holders",
         registry_roles_holders[REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE],
+    )
+    log.nb(
+        "ADD_TOKEN_TO_ALLOWED_LIST_ROLE role holders",
+        registry_roles_holders[ADD_TOKEN_TO_ALLOWED_LIST_ROLE],
+    )
+    log.nb(
+        "REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE role holders",
+        registry_roles_holders[REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE],
     )
     log.nb(
         "SET_PARAMETERS_ROLE role holders",

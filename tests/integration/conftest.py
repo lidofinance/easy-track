@@ -65,6 +65,7 @@ def deployed_contracts():
         "AllowedRecipientsFactory": "",
         "AllowedRecipientsBuilder": "",
         "AllowedRecipientsRegistry": "",
+        "AllowedTokensRegistry": "",
         "AddAllowedRecipient": "",
         "RemoveAllowedRecipient": "",
         "TopUpAllowedRecipients": "",
@@ -646,6 +647,7 @@ def registries(
     deployer,
 ):
     allowed_recipients_registry = load_deployed_contract("AllowedRecipientsRegistry")
+    allowed_tokens_registry = load_deployed_contract("AllowedTokensRegistry")
 
     if allowed_recipients_registry is None:
         tx_recipients = allowed_recipients_builder.deployAllowedRecipientsRegistry(
@@ -693,9 +695,21 @@ def registries(
 def add_allowed_token(registries, lido_contracts):
     (_, allowed_tokens_registry) = registries
     def _add_allowed_token(token):
+        if (allowed_tokens_registry.isTokenAllowed(token)):
+            return
         allowed_tokens_registry.addToken(token, {"from": lido_contracts.aragon.agent})
         assert allowed_tokens_registry.isTokenAllowed(token)
     return _add_allowed_token
+
+@pytest.fixture(scope="module")
+def remove_allowed_token(registries, lido_contracts):
+    (_, allowed_tokens_registry) = registries
+    def _remove_allowed_token(token):
+        if not allowed_tokens_registry.isTokenAllowed(token):
+            return
+        allowed_tokens_registry.removeToken(token, {"from": lido_contracts.aragon.agent})
+        assert not allowed_tokens_registry.isTokenAllowed(token)
+    return _remove_allowed_token
 
 
 @pytest.fixture(scope="module")
