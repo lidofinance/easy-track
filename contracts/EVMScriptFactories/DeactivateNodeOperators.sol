@@ -39,10 +39,11 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant WRONG_OPERATOR_ACTIVE_STATE = "WRONG_OPERATOR_ACTIVE_STATE";
-    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant MANAGER_HAS_NO_ROLE = "MANAGER_HAS_NO_ROLE";
-    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_WRONG_OPERATOR_ACTIVE_STATE = "WRONG_OPERATOR_ACTIVE_STATE";
+    string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
+        "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant ERROR_MANAGER_HAS_NO_ROLE = "MANAGER_HAS_NO_ROLE";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // CONSTRUCTOR
@@ -117,17 +118,17 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                 i == 0 ||
                     _deactivateNodeOperatorInputs[i].nodeOperatorId >
                     _deactivateNodeOperatorInputs[i - 1].nodeOperatorId,
-                NODE_OPERATORS_IS_NOT_SORTED
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
                 _deactivateNodeOperatorInputs[i].nodeOperatorId < nodeOperatorsCount,
-                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
             require(
                 nodeOperatorsRegistry.getNodeOperatorIsActive(
                     _deactivateNodeOperatorInputs[i].nodeOperatorId
                 ) == true,
-                WRONG_OPERATOR_ACTIVE_STATE
+                ERROR_WRONG_OPERATOR_ACTIVE_STATE
             );
 
             require(
@@ -136,7 +137,7 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 1,
-                MANAGER_HAS_NO_ROLE
+                ERROR_MANAGER_HAS_NO_ROLE
             );
 
             (uint8 paramIndex, uint8 paramOp, uint240 param) = acl.getPermissionParam(
@@ -146,9 +147,12 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                 0
             );
 
-            require(paramIndex == 0, MANAGER_HAS_NO_ROLE);
-            require(paramOp == 1, MANAGER_HAS_NO_ROLE);
-            require(param == _deactivateNodeOperatorInputs[i].nodeOperatorId, MANAGER_HAS_NO_ROLE);
+            require(paramIndex == 0, ERROR_MANAGER_HAS_NO_ROLE);
+            require(paramOp == 1, ERROR_MANAGER_HAS_NO_ROLE);
+            require(
+                param == _deactivateNodeOperatorInputs[i].nodeOperatorId,
+                ERROR_MANAGER_HAS_NO_ROLE
+            );
         }
     }
 }

@@ -15,25 +15,14 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         uint256 stakingLimit;
     }
 
-    struct NodeOperatorData {
-        uint256 id;
-        uint64 totalSigningKeys;
-    }
-
-    // -------------
-    // CONSTANTS
-    // -------------
-    /// @notice keccak256("MANAGE_SIGNING_KEYS")
-    bytes32 private constant MANAGE_SIGNING_KEYS_ROLE =
-        0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
-
     // -------------
     // ERRORS
     // -------------
 
-    string private constant NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
-    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_NOT_ENOUGH_SIGNING_KEYS = "NOT_ENOUGH_SIGNING_KEYS";
+    string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
+        "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // VARIABLES
@@ -71,7 +60,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         );
 
         _validateInputData(decodedCallData);
-        
+
         bytes[] memory setVettedValidatorsLimitsCalldata = new bytes[](decodedCallData.length);
 
         for (uint256 i = 0; i < decodedCallData.length; i++) {
@@ -115,40 +104,31 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _decodedCallData[i].nodeOperatorId >
-                    _decodedCallData[i - 1].nodeOperatorId,
-                NODE_OPERATORS_IS_NOT_SORTED
+                    _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
                 _decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
-                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
 
-            NodeOperatorData memory nodeOperatorData = _getNodeOperatorData(
-                _decodedCallData[i].nodeOperatorId
+            (
+                /* bool active */,
+                /* string memory name */,
+                /* address rewardAddress */,
+                /* uint64 stakingLimit */,
+                /* uint64 stoppedValidators */,
+                uint64 totalSigningKeys,
+                /* uint64 usedSigningKeys */
+            ) = nodeOperatorsRegistry.getNodeOperator(
+                _decodedCallData[i].nodeOperatorId,
+                false
             );
 
             require(
-                nodeOperatorData.totalSigningKeys >= _decodedCallData[i].stakingLimit,
-                NOT_ENOUGH_SIGNING_KEYS
+                totalSigningKeys >= _decodedCallData[i].stakingLimit,
+                ERROR_NOT_ENOUGH_SIGNING_KEYS
             );
         }
-    }
-
-    function _getNodeOperatorData(
-        uint256 _nodeOperatorId
-    ) private view returns (NodeOperatorData memory _nodeOperatorData) {
-        (
-            /* bool active */,
-            /* string memory name */,
-            /* address rewardAddress */,
-            /* uint64 stakingLimit */,
-            /* uint64 stoppedValidators */,
-            uint64 totalSigningKeys,
-            /* uint64 usedSigningKeys */
-        ) = nodeOperatorsRegistry.getNodeOperator(_nodeOperatorId, false);
-
-        _nodeOperatorData.id = _nodeOperatorId;
-        _nodeOperatorData.totalSigningKeys = totalSigningKeys;
     }
 }

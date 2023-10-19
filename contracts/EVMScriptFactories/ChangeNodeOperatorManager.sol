@@ -10,8 +10,8 @@ import "../interfaces/INodeOperatorRegestry.sol";
 import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to set node operators reward address
-contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
-    struct PermissionInput {
+contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
+    struct ChangeNodeOperatorManagersInput {
         uint256 nodeOperatorId;
         address oldManagerAddress;
         address newManagerAddress;
@@ -33,11 +33,14 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant OLD_MANAGER_HAS_NO_ROLE = "OLD_MANAGER_HAS_NO_ROLE";
-    string private constant MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
-    string private constant MANAGER_ADDRESSES_HAS_DUPLICATE = "MANAGER_ADDRESSES_HAS_DUPLICATE";
-    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
+        "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant ERROR_OLD_MANAGER_HAS_NO_ROLE = "OLD_MANAGER_HAS_NO_ROLE";
+    string private constant ERROR_MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
+    string private constant ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE =
+        "MANAGER_ADDRESSES_HAS_DUPLICATE";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_ZERO_MANAGER_ADDRESS = "ZERO_MANAGER_ADDRESS";
 
     // -------------
     // VARIABLES
@@ -69,7 +72,9 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        PermissionInput[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
+        ChangeNodeOperatorManagersInput[] memory decodedCallData = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
 
         address[] memory toAddresses = new address[](decodedCallData.length * 2);
         bytes4[] memory methodIds = new bytes4[](decodedCallData.length * 2);
@@ -86,6 +91,7 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
                 MANAGE_SIGNING_KEYS_ROLE
             );
 
+            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             uint256[] memory permissionParams = new uint256[](1);
             permissionParams[0] = (1 << 240) + decodedCallData[i].nodeOperatorId;
 
@@ -104,7 +110,7 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
 
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) external pure returns (PermissionInput[] memory) {
+    ) external pure returns (ChangeNodeOperatorManagersInput[] memory) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -114,60 +120,85 @@ contract ChangeNodeOperatorManager is TrustedCaller, IEVMScriptFactory {
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (PermissionInput[] memory) {
-        return abi.decode(_evmScriptCallData, (PermissionInput[]));
+    ) private pure returns (ChangeNodeOperatorManagersInput[] memory) {
+        return abi.decode(_evmScriptCallData, (ChangeNodeOperatorManagersInput[]));
     }
 
-    function _validateInputData(PermissionInput[] memory _permissionInputs) private view {
+    function _validateInputData(
+        ChangeNodeOperatorManagersInput[] memory _ChangeNodeOperatorManagersInputs
+    ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
-        for (uint256 i = 0; i < _permissionInputs.length; i++) {
+        for (uint256 i = 0; i < _ChangeNodeOperatorManagersInputs.length; i++) {
             require(
                 i == 0 ||
-                    _permissionInputs[i].nodeOperatorId >
-                    _permissionInputs[i - 1].nodeOperatorId,
-                NODE_OPERATORS_IS_NOT_SORTED
+                    _ChangeNodeOperatorManagersInputs[i].nodeOperatorId >
+                    _ChangeNodeOperatorManagersInputs[i - 1].nodeOperatorId,
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
-                _permissionInputs[i].nodeOperatorId < nodeOperatorsCount,
-                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+                _ChangeNodeOperatorManagersInputs[i].nodeOperatorId < nodeOperatorsCount,
+                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
 
-            for (uint256 testIndex = i + 1; testIndex < _permissionInputs.length; testIndex++) {
+            for (
+                uint256 testIndex = i + 1;
+                testIndex < _ChangeNodeOperatorManagersInputs.length;
+                testIndex++
+            ) {
                 require(
-                    _permissionInputs[i].newManagerAddress !=
-                        _permissionInputs[testIndex].newManagerAddress,
-                    MANAGER_ADDRESSES_HAS_DUPLICATE
+                    _ChangeNodeOperatorManagersInputs[i].newManagerAddress !=
+                        _ChangeNodeOperatorManagersInputs[testIndex].newManagerAddress,
+                    ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
 
+            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             uint256[] memory permissionParams = new uint256[](1);
-            permissionParams[0] = (1 << 240) + _permissionInputs[i].nodeOperatorId;
+            permissionParams[0] = (1 << 240) + _ChangeNodeOperatorManagersInputs[i].nodeOperatorId;
             require(
-                acl.hasPermission(
-                    _permissionInputs[i].oldManagerAddress,
+                acl.getPermissionParamsLength(
+                    _ChangeNodeOperatorManagersInputs[i].oldManagerAddress,
                     address(nodeOperatorsRegistry),
-                    MANAGE_SIGNING_KEYS_ROLE,
-                    permissionParams
-                ) == true,
-                OLD_MANAGER_HAS_NO_ROLE
+                    MANAGE_SIGNING_KEYS_ROLE
+                ) == 1,
+                ERROR_OLD_MANAGER_HAS_NO_ROLE
+            );
+
+            (uint8 paramIndex, uint8 paramOp, uint240 param) = acl.getPermissionParam(
+                _ChangeNodeOperatorManagersInputs[i].oldManagerAddress,
+                address(nodeOperatorsRegistry),
+                MANAGE_SIGNING_KEYS_ROLE,
+                0
+            );
+
+            require(paramIndex == 0, ERROR_OLD_MANAGER_HAS_NO_ROLE);
+            require(paramOp == 1, ERROR_OLD_MANAGER_HAS_NO_ROLE);
+            require(
+                param == _ChangeNodeOperatorManagersInputs[i].nodeOperatorId,
+                ERROR_OLD_MANAGER_HAS_NO_ROLE
+            );
+
+            require(
+                _ChangeNodeOperatorManagersInputs[i].newManagerAddress != address(0),
+                ERROR_ZERO_MANAGER_ADDRESS
             );
 
             require(
                 acl.hasPermission(
-                    _permissionInputs[i].newManagerAddress,
+                    _ChangeNodeOperatorManagersInputs[i].newManagerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
-                MANAGER_ALREADY_HAS_ROLE
+                ERROR_MANAGER_ALREADY_HAS_ROLE
             );
             require(
                 acl.getPermissionParamsLength(
-                    _permissionInputs[i].newManagerAddress,
+                    _ChangeNodeOperatorManagersInputs[i].newManagerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 0,
-                MANAGER_ALREADY_HAS_ROLE
+                ERROR_MANAGER_ALREADY_HAS_ROLE
             );
         }
     }

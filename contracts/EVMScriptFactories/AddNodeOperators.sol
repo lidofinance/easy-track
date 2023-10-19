@@ -40,13 +40,15 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
-    string private constant MANAGER_ADDRESSES_HAS_DUPLICATE = "MANAGER_ADDRESSES_HAS_DUPLICATE";
-    string private constant NODE_OPERATORS_COUNT_MISMATCH = "NODE_OPERATORS_COUNT_MISMATCH";
-    string private constant LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
-    string private constant ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
-    string private constant WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
-    string private constant MAX_OPERATORS_COUNT_EXCEEDED = "MAX_OPERATORS_COUNT_EXCEEDED";
+    string private constant ERROR_MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
+    string private constant ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE =
+        "MANAGER_ADDRESSES_HAS_DUPLICATE";
+    string private constant ERROR_NODE_OPERATORS_COUNT_MISMATCH = "NODE_OPERATORS_COUNT_MISMATCH";
+    string private constant ERROR_LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
+    string private constant ERROR_ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
+    string private constant ERROR_ZERO_MANAGER_ADDRESS = "ZERO_MANAGER_ADDRESS";
+    string private constant ERROR_WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
+    string private constant ERROR_MAX_OPERATORS_COUNT_EXCEEDED = "MAX_OPERATORS_COUNT_EXCEEDED";
 
     // -------------
     // CONSTRUCTOR
@@ -88,6 +90,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                 decodedCallData[i].rewardAddress
             );
 
+            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             uint256[] memory permissionParams = new uint256[](1);
             permissionParams[0] = (1 << 240) + nodeOperatorsCount + i;
 
@@ -139,13 +142,13 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
 
         require(
             nodeOperatorsRegistry.getNodeOperatorsCount() == _nodeOperatorsCount,
-            NODE_OPERATORS_COUNT_MISMATCH
+            ERROR_NODE_OPERATORS_COUNT_MISMATCH
         );
 
         require(
             _nodeOperatorsCount + _nodeOperatorInputs.length <=
                 nodeOperatorsRegistry.MAX_NODE_OPERATORS_COUNT(),
-            MAX_OPERATORS_COUNT_EXCEEDED
+            ERROR_MAX_OPERATORS_COUNT_EXCEEDED
         );
 
         for (uint256 i = 0; i < _nodeOperatorInputs.length; i++) {
@@ -153,7 +156,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                 require(
                     _nodeOperatorInputs[i].managerAddress !=
                         _nodeOperatorInputs[testIndex].managerAddress,
-                    MANAGER_ADDRESSES_HAS_DUPLICATE
+                    ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
 
@@ -163,7 +166,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
-                MANAGER_ALREADY_HAS_ROLE
+                ERROR_MANAGER_ALREADY_HAS_ROLE
             );
             require(
                 acl.getPermissionParamsLength(
@@ -171,17 +174,21 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 0,
-                MANAGER_ALREADY_HAS_ROLE
+                ERROR_MANAGER_ALREADY_HAS_ROLE
             );
 
-            require(_nodeOperatorInputs[i].rewardAddress != lido, LIDO_REWARD_ADDRESS);
-            require(_nodeOperatorInputs[i].rewardAddress != address(0), ZERO_REWARD_ADDRESS);
+            require(_nodeOperatorInputs[i].rewardAddress != lido, ERROR_LIDO_REWARD_ADDRESS);
+            require(_nodeOperatorInputs[i].rewardAddress != address(0), ERROR_ZERO_REWARD_ADDRESS);
+            require(
+                _nodeOperatorInputs[i].managerAddress != address(0),
+                ERROR_ZERO_MANAGER_ADDRESS
+            );
 
             require(
                 bytes(_nodeOperatorInputs[i].name).length > 0 &&
                     bytes(_nodeOperatorInputs[i].name).length <=
                     nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH(),
-                WRONG_NAME_LENGTH
+                ERROR_WRONG_NAME_LENGTH
             );
         }
     }

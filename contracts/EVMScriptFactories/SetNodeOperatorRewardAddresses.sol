@@ -19,11 +19,12 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
-    string private constant ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
-    string private constant SAME_REWARD_ADDRESS = "SAME_REWARD_ADDRESS";
-    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
+        "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant ERROR_LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
+    string private constant ERROR_ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
+    string private constant ERROR_SAME_REWARD_ADDRESS = "SAME_REWARD_ADDRESS";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
 
     // -------------
     // VARIABLES
@@ -51,7 +52,9 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        SetRewardAddressInput[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
+        SetRewardAddressInput[] memory decodedCallData = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
 
         _validateInputData(decodedCallData);
 
@@ -87,7 +90,9 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
         return abi.decode(_evmScriptCallData, (SetRewardAddressInput[]));
     }
 
-    function _validateInputData(SetRewardAddressInput[] memory _nodeOperatorRewardAddressesInput) private view {
+    function _validateInputData(
+        SetRewardAddressInput[] memory _nodeOperatorRewardAddressesInput
+    ) private view {
         address lido = nodeOperatorsRegistry.getLocator().lido();
 
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
@@ -96,15 +101,21 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
                 i == 0 ||
                     _nodeOperatorRewardAddressesInput[i].nodeOperatorId >
                     _nodeOperatorRewardAddressesInput[i - 1].nodeOperatorId,
-                NODE_OPERATORS_IS_NOT_SORTED
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
                 _nodeOperatorRewardAddressesInput[i].nodeOperatorId < nodeOperatorsCount,
-                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
-            
-            require(_nodeOperatorRewardAddressesInput[i].rewardAddress != lido, LIDO_REWARD_ADDRESS);
-            require(_nodeOperatorRewardAddressesInput[i].rewardAddress != address(0), ZERO_REWARD_ADDRESS);
+
+            require(
+                _nodeOperatorRewardAddressesInput[i].rewardAddress != lido,
+                ERROR_LIDO_REWARD_ADDRESS
+            );
+            require(
+                _nodeOperatorRewardAddressesInput[i].rewardAddress != address(0),
+                ERROR_ZERO_REWARD_ADDRESS
+            );
 
             (
                 /* bool active */,
@@ -114,9 +125,15 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
                 /* uint64 stoppedValidators */,
                 /* uint64 totalSigningKeys */,
                 /* uint64 usedSigningKeys */
-            ) = nodeOperatorsRegistry.getNodeOperator(_nodeOperatorRewardAddressesInput[i].nodeOperatorId, false);
+            ) = nodeOperatorsRegistry.getNodeOperator(
+                _nodeOperatorRewardAddressesInput[i].nodeOperatorId,
+                false
+            );
 
-            require(_nodeOperatorRewardAddressesInput[i].rewardAddress != rewardAddress, SAME_REWARD_ADDRESS);
+            require(
+                _nodeOperatorRewardAddressesInput[i].rewardAddress != rewardAddress,
+                ERROR_SAME_REWARD_ADDRESS
+            );
         }
     }
 }

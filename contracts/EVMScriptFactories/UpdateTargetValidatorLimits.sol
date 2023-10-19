@@ -17,12 +17,19 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
     }
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 internal constant UINT64_MAX = 0xFFFFFFFFFFFFFFFF;
+
+    // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
         "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_TARGET_LIMIT_GREATER_THEN_UINT64 = "TARGET_LIMIT_GREATER_THEN_UINT64";
 
     // -------------
     // VARIABLES
@@ -62,7 +69,7 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < decodedCallData.length; i++) {
             updateTargetLimitsCallData[i] = abi.encode(decodedCallData[i]);
         }
-    
+
         return
             EVMScriptCreator.createEVMScript(
                 address(nodeOperatorsRegistry),
@@ -92,13 +99,16 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _decodedCallData[i].nodeOperatorId >
-                    _decodedCallData[i - 1].nodeOperatorId,
-                NODE_OPERATORS_IS_NOT_SORTED
+                    _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
                 _decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
                 ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
+            );
+            require(
+                _decodedCallData[i].targetLimit <= UINT64_MAX,
+                ERROR_TARGET_LIMIT_GREATER_THEN_UINT64
             );
         }
     }

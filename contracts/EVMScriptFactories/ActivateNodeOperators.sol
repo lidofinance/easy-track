@@ -39,10 +39,12 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant WRONG_OPERATOR_ACTIVE_STATE = "WRONG_OPERATOR_ACTIVE_STATE";
-    string private constant NODE_OPERATOR_INDEX_OUT_OF_RANGE = "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
-    string private constant MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
-    string private constant NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_WRONG_OPERATOR_ACTIVE_STATE = "WRONG_OPERATOR_ACTIVE_STATE";
+    string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
+        "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
+    string private constant ERROR_MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_ZERO_MANAGER_ADDRESS = "ZERO_MANAGER_ADDRESS";
 
     // -------------
     // CONSTRUCTOR
@@ -80,6 +82,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
             methodIds[i * 2] = ACTIVATE_NODE_OPERATOR_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(decodedCallData[i].nodeOperatorId);
 
+            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             uint256[] memory permissionParams = new uint256[](1);
             permissionParams[0] = (1 << 240) + decodedCallData[i].nodeOperatorId;
 
@@ -121,17 +124,22 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                 i == 0 ||
                     _activateNodeOperatorInputs[i].nodeOperatorId >
                     _activateNodeOperatorInputs[i - 1].nodeOperatorId,
-                NODE_OPERATORS_IS_NOT_SORTED
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
                 _activateNodeOperatorInputs[i].nodeOperatorId < nodeOperatorsCount,
-                NODE_OPERATOR_INDEX_OUT_OF_RANGE
+                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
             require(
                 nodeOperatorsRegistry.getNodeOperatorIsActive(
                     _activateNodeOperatorInputs[i].nodeOperatorId
                 ) == false,
-                WRONG_OPERATOR_ACTIVE_STATE
+                ERROR_WRONG_OPERATOR_ACTIVE_STATE
+            );
+
+            require(
+                _activateNodeOperatorInputs[i].managerAddress != address(0),
+                ERROR_ZERO_MANAGER_ADDRESS
             );
 
             require(
@@ -140,7 +148,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
-                MANAGER_ALREADY_HAS_ROLE
+                ERROR_MANAGER_ALREADY_HAS_ROLE
             );
             require(
                 acl.getPermissionParamsLength(
@@ -148,7 +156,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 0,
-                MANAGER_ALREADY_HAS_ROLE
+                ERROR_MANAGER_ALREADY_HAS_ROLE
             );
         }
     }

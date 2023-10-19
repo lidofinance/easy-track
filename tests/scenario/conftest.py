@@ -7,7 +7,7 @@ from brownie import (
     SetNodeOperatorNames,
     SetNodeOperatorRewardAddresses,
     SetVettedValidatorsLimits,
-    ChangeNodeOperatorManager,
+    ChangeNodeOperatorManagers,
     UpdateTargetValidatorLimits
 )
 from utils import deployed_easy_track
@@ -36,15 +36,19 @@ def easytrack_executor(et_contracts, stranger):
             calldata,
             {"from": creator},
         )
+
+        print('creation costs: ', tx.gas_used)
+
         motions = et_contracts.easy_track.getMotions()
 
         chain.sleep(72 * 60 * 60 + 100)
 
-        et_contracts.easy_track.enactMotion(
+        etx = et_contracts.easy_track.enactMotion(
             motions[-1][0],
             tx.events["MotionCreated"]["_evmScriptCallData"],
             {"from": stranger},
         )
+        print('enactment costs: ', etx.gas_used)
 
     return helper
 
@@ -204,7 +208,7 @@ def set_vetted_validators_limit_factory(
 def change_node_operator_manager_factory(
     et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
 ):
-    factory = ChangeNodeOperatorManager.deploy(
+    factory = ChangeNodeOperatorManagers.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
