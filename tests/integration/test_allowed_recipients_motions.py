@@ -237,6 +237,60 @@ def test_top_up_single_recipient(
     )
 
 
+def test_top_up_single_recipient_several_times_in_period(
+    recipients,
+    allowed_recipients_limit_params,
+    add_allowed_recipient_by_motion,
+    top_up_allowed_recipient_by_motion,
+    add_allowed_recipient_evm_script_factory,
+    top_up_allowed_recipients_evm_script_factory,
+):
+    allowed_recipient = recipients[0]
+
+    add_allowed_recipient_by_motion(
+        add_allowed_recipient_evm_script_factory,
+        allowed_recipient.address,
+        allowed_recipient.title,
+    )
+
+    top_up_recipient_addresses = [allowed_recipient.address]
+    top_up_amounts = [int(allowed_recipients_limit_params.limit / 2)]
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        top_up_recipient_addresses,
+        top_up_amounts,
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        top_up_recipient_addresses,
+        top_up_amounts,
+        sum(top_up_amounts)
+    )
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        top_up_allowed_recipient_by_motion(
+            top_up_allowed_recipients_evm_script_factory,
+            top_up_recipient_addresses,
+            [1],
+        )
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        top_up_recipient_addresses,
+        [allowed_recipients_limit_params.limit]
+    )
+
+
 def test_top_up_multiple_recipients(
     recipients,
     allowed_recipients_limit_params,
