@@ -91,29 +91,30 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(
-        SetRewardAddressInput[] memory _nodeOperatorRewardAddressesInput
+        SetRewardAddressInput[] memory _decodedCallData
     ) private view {
         address lido = nodeOperatorsRegistry.getLocator().lido();
 
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
-        for (uint256 i = 0; i < _nodeOperatorRewardAddressesInput.length; i++) {
+        require(
+            _decodedCallData[_decodedCallData.length]
+                .nodeOperatorId < nodeOperatorsCount,
+            ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
+        );
+
+        for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _nodeOperatorRewardAddressesInput[i].nodeOperatorId >
-                    _nodeOperatorRewardAddressesInput[i - 1].nodeOperatorId,
+                    _decodedCallData[i].nodeOperatorId >
+                    _decodedCallData[i - 1].nodeOperatorId,
                 ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
-                _nodeOperatorRewardAddressesInput[i].nodeOperatorId < nodeOperatorsCount,
-                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
-            );
-
-            require(
-                _nodeOperatorRewardAddressesInput[i].rewardAddress != lido,
+                _decodedCallData[i].rewardAddress != lido,
                 ERROR_LIDO_REWARD_ADDRESS
             );
             require(
-                _nodeOperatorRewardAddressesInput[i].rewardAddress != address(0),
+                _decodedCallData[i].rewardAddress != address(0),
                 ERROR_ZERO_REWARD_ADDRESS
             );
 
@@ -126,12 +127,17 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
                 /* uint64 totalSigningKeys */,
                 /* uint64 usedSigningKeys */
             ) = nodeOperatorsRegistry.getNodeOperator(
-                _nodeOperatorRewardAddressesInput[i].nodeOperatorId,
+                _decodedCallData[i].nodeOperatorId,
+                false
+            );
+            
+            nodeOperatorsRegistry.getNodeOperator(
+                _decodedCallData[i].nodeOperatorId,
                 false
             );
 
             require(
-                _nodeOperatorRewardAddressesInput[i].rewardAddress != rewardAddress,
+                _decodedCallData[i].rewardAddress != rewardAddress,
                 ERROR_SAME_REWARD_ADDRESS
             );
         }

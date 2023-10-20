@@ -116,35 +116,37 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(
-        ActivateNodeOperatorInput[] memory _activateNodeOperatorInputs
+        ActivateNodeOperatorInput[] memory _decodedCallData
     ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
-        for (uint256 i = 0; i < _activateNodeOperatorInputs.length; i++) {
+        require(
+            _decodedCallData[_decodedCallData.length - 1].nodeOperatorId <
+                nodeOperatorsCount,
+            ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
+        );
+
+        for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _activateNodeOperatorInputs[i].nodeOperatorId >
-                    _activateNodeOperatorInputs[i - 1].nodeOperatorId,
+                    _decodedCallData[i].nodeOperatorId >
+                    _decodedCallData[i - 1].nodeOperatorId,
                 ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
-                _activateNodeOperatorInputs[i].nodeOperatorId < nodeOperatorsCount,
-                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
-            );
-            require(
                 nodeOperatorsRegistry.getNodeOperatorIsActive(
-                    _activateNodeOperatorInputs[i].nodeOperatorId
+                    _decodedCallData[i].nodeOperatorId
                 ) == false,
                 ERROR_WRONG_OPERATOR_ACTIVE_STATE
             );
 
             require(
-                _activateNodeOperatorInputs[i].managerAddress != address(0),
+                _decodedCallData[i].managerAddress != address(0),
                 ERROR_ZERO_MANAGER_ADDRESS
             );
 
             require(
                 acl.hasPermission(
-                    _activateNodeOperatorInputs[i].managerAddress,
+                    _decodedCallData[i].managerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
@@ -152,7 +154,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
             );
             require(
                 acl.getPermissionParamsLength(
-                    _activateNodeOperatorInputs[i].managerAddress,
+                    _decodedCallData[i].managerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 0,

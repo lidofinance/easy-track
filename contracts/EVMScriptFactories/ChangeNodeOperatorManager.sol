@@ -123,40 +123,41 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(
-        ChangeNodeOperatorManagersInput[] memory _ChangeNodeOperatorManagersInputs
+        ChangeNodeOperatorManagersInput[] memory _decodedCallData
     ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+        require(
+            _decodedCallData[_decodedCallData.length]
+                .nodeOperatorId < nodeOperatorsCount,
+            ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
+        );
 
-        for (uint256 i = 0; i < _ChangeNodeOperatorManagersInputs.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _ChangeNodeOperatorManagersInputs[i].nodeOperatorId >
-                    _ChangeNodeOperatorManagersInputs[i - 1].nodeOperatorId,
+                    _decodedCallData[i].nodeOperatorId >
+                    _decodedCallData[i - 1].nodeOperatorId,
                 ERROR_NODE_OPERATORS_IS_NOT_SORTED
-            );
-            require(
-                _ChangeNodeOperatorManagersInputs[i].nodeOperatorId < nodeOperatorsCount,
-                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
 
             for (
                 uint256 testIndex = i + 1;
-                testIndex < _ChangeNodeOperatorManagersInputs.length;
+                testIndex < _decodedCallData.length;
                 testIndex++
             ) {
                 require(
-                    _ChangeNodeOperatorManagersInputs[i].newManagerAddress !=
-                        _ChangeNodeOperatorManagersInputs[testIndex].newManagerAddress,
+                    _decodedCallData[i].newManagerAddress !=
+                        _decodedCallData[testIndex].newManagerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
 
             // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             uint256[] memory permissionParams = new uint256[](1);
-            permissionParams[0] = (1 << 240) + _ChangeNodeOperatorManagersInputs[i].nodeOperatorId;
+            permissionParams[0] = (1 << 240) + _decodedCallData[i].nodeOperatorId;
             require(
                 acl.getPermissionParamsLength(
-                    _ChangeNodeOperatorManagersInputs[i].oldManagerAddress,
+                    _decodedCallData[i].oldManagerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 1,
@@ -164,7 +165,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             );
 
             (uint8 paramIndex, uint8 paramOp, uint240 param) = acl.getPermissionParam(
-                _ChangeNodeOperatorManagersInputs[i].oldManagerAddress,
+                _decodedCallData[i].oldManagerAddress,
                 address(nodeOperatorsRegistry),
                 MANAGE_SIGNING_KEYS_ROLE,
                 0
@@ -173,18 +174,18 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             require(paramIndex == 0, ERROR_OLD_MANAGER_HAS_NO_ROLE);
             require(paramOp == 1, ERROR_OLD_MANAGER_HAS_NO_ROLE);
             require(
-                param == _ChangeNodeOperatorManagersInputs[i].nodeOperatorId,
+                param == _decodedCallData[i].nodeOperatorId,
                 ERROR_OLD_MANAGER_HAS_NO_ROLE
             );
 
             require(
-                _ChangeNodeOperatorManagersInputs[i].newManagerAddress != address(0),
+                _decodedCallData[i].newManagerAddress != address(0),
                 ERROR_ZERO_MANAGER_ADDRESS
             );
 
             require(
                 acl.hasPermission(
-                    _ChangeNodeOperatorManagersInputs[i].newManagerAddress,
+                    _decodedCallData[i].newManagerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
@@ -192,7 +193,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             );
             require(
                 acl.getPermissionParamsLength(
-                    _ChangeNodeOperatorManagersInputs[i].newManagerAddress,
+                    _decodedCallData[i].newManagerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 0,

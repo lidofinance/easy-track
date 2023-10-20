@@ -96,15 +96,16 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
 
     function _validateInputData(TargetValidatorsLimit[] memory _decodedCallData) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+        require(
+            _decodedCallData[_decodedCallData.length].nodeOperatorId < nodeOperatorsCount,
+            ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
+        );
+
         for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
                 ERROR_NODE_OPERATORS_IS_NOT_SORTED
-            );
-            require(
-                _decodedCallData[i].nodeOperatorId < nodeOperatorsCount,
-                ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
             );
             require(
                 _decodedCallData[i].targetLimit <= UINT64_MAX,
