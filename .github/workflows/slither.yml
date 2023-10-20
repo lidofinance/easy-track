@@ -23,6 +23,7 @@ jobs:
       - name: Install poetry requirements
         run: >
           curl -sSL https://install.python-poetry.org | python - &&
+          poetry run pip install "cython<3.0" pyyaml==5.4.1 --no-build-isolation &&
           poetry install
 
       - name: Run slither
@@ -34,8 +35,8 @@ jobs:
         if: always()
         shell: bash
         run: >
-          test -f results.sarif && 
-          echo '::set-output name=value::present' || 
+          test -f results.sarif &&
+          echo '::set-output name=value::present' ||
           echo '::set-output name=value::not'
 
       - name: Upload SARIF file
