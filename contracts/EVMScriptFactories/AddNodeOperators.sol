@@ -67,6 +67,9 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to add batch of node operators
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (uint256,AddNodeOperatorInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -107,6 +110,10 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (uint256, AddNodeOperatorInput[])
+    /// @return nodeOperatorsCount current number of node operators in registry
+    /// @return nodeOperators AddNodeOperatorInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     )
@@ -153,10 +160,10 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         );
 
         for (uint256 i = 0; i < _nodeOperatorInputs.length; i++) {
+            address managerAddress = _nodeOperatorInputs[i].managerAddress;
             for (uint256 testIndex = i + 1; testIndex < _nodeOperatorInputs.length; testIndex++) {
                 require(
-                    _nodeOperatorInputs[i].managerAddress !=
-                        _nodeOperatorInputs[testIndex].managerAddress,
+                    managerAddress != _nodeOperatorInputs[testIndex].managerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }

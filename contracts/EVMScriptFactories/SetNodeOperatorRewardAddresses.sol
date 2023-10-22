@@ -8,7 +8,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorRegestry.sol";
 
-/// @notice Creates EVMScript to set node operators reward address
+/// @notice Creates EVMScript to set reward address of several node operators
 contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     struct SetRewardAddressInput {
         uint256 nodeOperatorId;
@@ -48,6 +48,9 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to set reward address of several node operators
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (SetRewardAddressInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -74,6 +77,9 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
             );
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (SetRewardAddressInput[])
+    /// @return SetRewardAddressInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (SetRewardAddressInput[] memory) {

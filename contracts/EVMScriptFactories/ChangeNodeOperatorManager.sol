@@ -9,7 +9,7 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorRegestry.sol";
 import "../interfaces/IACL.sol";
 
-/// @notice Creates EVMScript to set node operators reward address
+/// @notice Creates EVMScript to change signing keys manager for several node operators
 contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
     struct ChangeNodeOperatorManagersInput {
         uint256 nodeOperatorId;
@@ -66,6 +66,9 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to change managers of several node operators
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (ChangeNodeOperatorManagersInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -106,6 +109,9 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
         return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (ChangeNodeOperatorManagersInput[])
+    /// @return ChangeNodeOperatorManagersInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (ChangeNodeOperatorManagersInput[] memory) {
@@ -152,9 +158,6 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
                 );
             }
 
-            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
-            uint256[] memory permissionParams = new uint256[](1);
-            permissionParams[0] = (1 << 240) + _decodedCallData[i].nodeOperatorId;
             require(
                 acl.getPermissionParamsLength(
                     _decodedCallData[i].oldManagerAddress,
@@ -164,6 +167,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
                 ERROR_OLD_MANAGER_HAS_NO_ROLE
             );
 
+            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             (uint8 paramIndex, uint8 paramOp, uint240 param) = acl.getPermissionParam(
                 _decodedCallData[i].oldManagerAddress,
                 address(nodeOperatorsRegistry),

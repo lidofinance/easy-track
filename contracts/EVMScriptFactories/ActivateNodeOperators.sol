@@ -9,7 +9,7 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorRegestry.sol";
 import "../interfaces/IACL.sol";
 
-/// @notice Creates EVMScript to activate several node operator
+/// @notice Creates EVMScript to activate several node operators
 contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     struct ActivateNodeOperatorInput {
         uint256 nodeOperatorId;
@@ -63,6 +63,9 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to activate batch of node operators
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (ActivateNodeOperatorInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -99,6 +102,9 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (ActivateNodeOperatorInput[])
+    /// @return ActivateNodeOperatorInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (ActivateNodeOperatorInput[] memory) {

@@ -9,7 +9,7 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorRegestry.sol";
 import "../interfaces/IACL.sol";
 
-/// @notice Creates EVMScript to deactivate several node operator
+/// @notice Creates EVMScript to deactivate several node operators
 contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     struct DeactivateNodeOperatorInput {
         uint256 nodeOperatorId;
@@ -62,6 +62,9 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to deactivate batch of node operators
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (DeactivateNodeOperatorInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -93,6 +96,9 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (DeactivateNodeOperatorInput[])
+    /// @return DeactivateNodeOperatorInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (DeactivateNodeOperatorInput[] memory) {
@@ -142,6 +148,7 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                 ERROR_MANAGER_HAS_NO_ROLE
             );
 
+            // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             (uint8 paramIndex, uint8 paramOp, uint240 param) = acl.getPermissionParam(
                 _decodedCallData[i].managerAddress,
                 address(nodeOperatorsRegistry),

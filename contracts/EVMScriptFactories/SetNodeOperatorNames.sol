@@ -8,7 +8,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorRegestry.sol";
 
-/// @notice Creates EVMScript to set node operators name
+/// @notice Creates EVMScript to set name of several node operators
 contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     struct SetNameInput {
         uint256 nodeOperatorId;
@@ -47,6 +47,9 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to set name of several node operators
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (SetNameInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -72,6 +75,9 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
             );
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (SetNameInput[])
+    /// @return SetNameInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (SetNameInput[] memory) {

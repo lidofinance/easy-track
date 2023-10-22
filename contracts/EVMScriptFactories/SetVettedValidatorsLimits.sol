@@ -8,7 +8,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorRegestry.sol";
 
-/// @notice Creates EVMScript to increase staking limit for node operator
+/// @notice Creates EVMScript to set staking limit for node operators
 contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     struct VettedValidatorsLimitInput {
         uint256 nodeOperatorId;
@@ -46,11 +46,9 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to increase staking limit for node operator
+    /// @notice Creates EVMScript to set staking limit of several node operators
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where
-    /// _nodeOperatorId - id of node operator in NodeOperatorsRegistry
-    /// _stakingLimit - new staking limit
+    /// @param _evmScriptCallData Encoded (VettedValidatorsLimitInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -79,10 +77,8 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (uint256 _nodeOperatorId, uint256 _stakingLimit) where
-    /// _nodeOperatorId - id of node operator in NodeOperatorsRegistry
-    /// _stakingLimit - new staking limit
-    /// @return VettedValidatorsLimitInput
+    /// @param _evmScriptCallData Encoded (VettedValidatorsLimitInput[])
+    /// @return VettedValidatorsLimitInput[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (VettedValidatorsLimitInput[] memory) {

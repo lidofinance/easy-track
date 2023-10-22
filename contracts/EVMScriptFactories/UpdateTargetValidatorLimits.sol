@@ -53,6 +53,9 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
+    /// @notice Creates EVMScript to set node operators target validators limit
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded (TargetValidatorsLimit[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -78,6 +81,9 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
             );
     }
 
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded (TargetValidatorsLimit[])
+    /// @return TargetValidatorsLimit[]
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) external pure returns (TargetValidatorsLimit[] memory) {
