@@ -11,6 +11,7 @@ from brownie import (
     UpdateTargetValidatorLimits
 )
 from utils import deployed_easy_track
+from utils.config import get_network_name
 
 
 @pytest.fixture(scope="session")
@@ -25,7 +26,8 @@ def commitee_multisig(accounts):
 
 @pytest.fixture(scope="module")
 def et_contracts():
-    return deployed_easy_track.contracts()
+    network_name = get_network_name()
+    return deployed_easy_track.contracts(network_name)
 
 
 @pytest.fixture(scope="module")
