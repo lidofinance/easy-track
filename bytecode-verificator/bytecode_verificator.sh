@@ -27,7 +27,7 @@ prerequisites=(jq yarn awk curl shasum uname bc nc)
 envs=(ETHERSCAN_TOKEN)
 
 # Commandline args required
-cmdargs=(solc_version remote_rpc_url contract config_json)
+cmdargs=(solc_version remote_rpc_url etherscan_api_url contract config_json)
 sha256sum='shasum -a 256'
 
 # Vars
@@ -45,15 +45,16 @@ function show_help() {
 
   CLI tool to validate contract bytecode at remote rpc node, etherscan and bytecode deployed from local source code
 
-  $0 [--solc-version <arg>] [--remote-rpc-url <arg>] [--contract <arg>] [--config-json <arg>] [--constructor-calldata <arg>] [-h|--help]
+  $0 [--solc-version <arg>] [--remote-rpc-url <arg>] [--etherscan-api-url <arg>] [--contract <arg>] [--config-json <arg>] [--constructor-calldata <arg>] [-h|--help]
 
   Options:
-  --solc-version SOLC-VERSION      version of solidity to compile contract with (e.g. 0.4.24, 0.8.9)
-  --remote-rpc-url REMOTE-RPC-URL  Ethereum node URL that contains the comparating contract bytecode. e.g. https://mainnet.infura.io/v3/\$WEB3_INFURA_PROJECT_ID
-  --contract CONTRACT              Contract name from config file. (e.g. app:lido, stakingRouter, lidoLocator ...)
-  --config-json CONFIG-JSON        Path to JSON file. Artifacts of deployment (e.g './deployed-mainnet.json')
-  --constructor-calldata DATA      (optional) Calldata that will be used for local contract deployment. Will be encoded from config file if does not provided. (hex data with no 0x prefix)
-  -h, --help                       Prints help.
+  --solc-version SOLC-VERSION        version of solidity to compile contract with (e.g. 0.4.24, 0.8.9)
+  --remote-rpc-url REMOTE-RPC-URL    Ethereum node URL that contains the comparating contract bytecode. e.g. https://mainnet.infura.io/v3/\$WEB3_INFURA_PROJECT_ID
+  --etherscan-api ETHERSCAN-API-URL  Etherscan API URL e.g. https://api.etherscan.io/api
+  --contract CONTRACT                Contract name from config file. (e.g. app:lido, stakingRouter, lidoLocator ...)
+  --config-json CONFIG-JSON          Path to JSON file. Artifacts of deployment (e.g './deployed-mainnet.json')
+  --constructor-calldata DATA        (optional) Calldata that will be used for local contract deployment. Will be encoded from config file if does not provided. (hex data with no 0x prefix)
+  -h, --help                         Prints help.
 _EOF_
 }
 
@@ -108,6 +109,12 @@ function parse_cmd_args() {
     --remote-rpc-url)
       remote_rpc_url="$2"
       [[ "$remote_rpc_url" =~ ^http ]] || { _err "Invalid remote rpc URL: $remote_rpc_url"; }
+      shift
+      shift
+      ;;
+    --etherscan-api-url)
+      etherscan_api_url="$2"
+      [[ "$etherscan_api_url" =~ ^https ]] || { _err "Invalid Etherscan API URL: $remote_rpc_url"; }
       shift
       shift
       ;;
@@ -434,8 +441,7 @@ _get_code() {
 
 _get_code_etherscan() {
   local contract_address=$1
-  echo "curl -sS -G -d address=$contract_address -d action=eth_getCode -d module=proxy -d tag=latest -d apikey=$ETHERSCAN_TOKEN https://api.etherscan.io/api"
-  curl -sS -G -d "address=$contract_address" -d "action=eth_getCode" -d "module=proxy" -d "tag=latest" -d "apikey=$ETHERSCAN_TOKEN" https://api.etherscan.io/api | jq -r '.result'
+  curl -sS -G -d "address=$contract_address" -d "action=eth_getCode" -d "module=proxy" -d "tag=latest" -d "apikey=$ETHERSCAN_TOKEN" "$etherscan_api_url" | jq -r '.result'
 }
 
 _get_account() {
