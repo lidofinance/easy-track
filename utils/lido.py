@@ -128,6 +128,7 @@ class LidoContractsSetup:
     def execute_voting(self, voting_id):
         voting = self.aragon.voting
         if voting.getVote(voting_id)["executed"]:
+            print(f"Voting {voting_id} already executed")
             return
         ldo_holders = [self.aragon.agent]
         for holder_addr in ldo_holders:

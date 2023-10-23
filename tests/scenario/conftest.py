@@ -1,4 +1,7 @@
 import pytest
+import os
+import json
+
 from brownie import (
     chain,
     AddNodeOperators,
@@ -8,10 +11,12 @@ from brownie import (
     SetNodeOperatorRewardAddresses,
     SetVettedValidatorsLimits,
     ChangeNodeOperatorManagers,
-    UpdateTargetValidatorLimits
+    UpdateTargetValidatorLimits,
 )
 from utils import deployed_easy_track
 from utils.config import get_network_name
+
+ENV_VOTE_ID = "VOTE_ID"
 
 
 @pytest.fixture(scope="session")
@@ -39,7 +44,7 @@ def easytrack_executor(et_contracts, stranger):
             {"from": creator},
         )
 
-        print('creation costs: ', tx.gas_used)
+        print("creation costs: ", tx.gas_used)
 
         motions = et_contracts.easy_track.getMotions()
 
@@ -50,15 +55,54 @@ def easytrack_executor(et_contracts, stranger):
             tx.events["MotionCreated"]["_evmScriptCallData"],
             {"from": stranger},
         )
-        print('enactment costs: ', etx.gas_used)
+        print("enactment costs: ", etx.gas_used)
 
     return helper
 
 
+@pytest.fixture(scope="session")
+def vote_id_from_env():
+    if os.getenv(ENV_VOTE_ID):
+        try:
+            vote_id = int(os.getenv(ENV_VOTE_ID))
+            return vote_id
+        except:
+            pass
+
+
+@pytest.fixture(scope="session")
+def deployed_artifact():
+    network_name = get_network_name()
+    file_name = f"deployed-{network_name}.json"
+
+    try:
+        f = open(file_name)
+        return json.load(f)
+    except:
+        pass
+
+
+@pytest.fixture(scope="module", autouse=True)
+def execute_vote_from_env(vote_id_from_env, lido_contracts):
+    if vote_id_from_env:
+        print(f"VOTE_ID env var is set, executing voting {vote_id_from_env}")
+        lido_contracts.execute_voting(vote_id_from_env)
+
+
 @pytest.fixture(scope="module")
 def add_node_operators_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer, acl
+    et_contracts,
+    voting,
+    commitee_multisig,
+    simple_dvt,
+    deployer,
+    acl,
+    vote_id_from_env,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return AddNodeOperators.at(deployed_artifact["AddNodeOperators"]["address"])
+
     factory = AddNodeOperators.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
@@ -82,8 +126,19 @@ def add_node_operators_factory(
 
 @pytest.fixture(scope="module")
 def activate_node_operators_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer, acl
+    et_contracts,
+    voting,
+    commitee_multisig,
+    simple_dvt,
+    deployer,
+    acl,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return ActivateNodeOperators.at(
+            deployed_artifact["ActivateNodeOperators"]["address"]
+        )
+
     factory = ActivateNodeOperators.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
@@ -109,8 +164,19 @@ def activate_node_operators_factory(
 
 @pytest.fixture(scope="module")
 def deactivate_node_operators_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer, acl
+    et_contracts,
+    voting,
+    commitee_multisig,
+    simple_dvt,
+    deployer,
+    acl,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return DeactivateNodeOperators.at(
+            deployed_artifact["DeactivateNodeOperators"]["address"]
+        )
+
     factory = DeactivateNodeOperators.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
@@ -136,8 +202,18 @@ def deactivate_node_operators_factory(
 
 @pytest.fixture(scope="module")
 def set_node_operator_name_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer
+    et_contracts,
+    voting,
+    commitee_multisig,
+    simple_dvt,
+    deployer,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return SetNodeOperatorNames.at(
+            deployed_artifact["SetNodeOperatorNames"]["address"]
+        )
+
     factory = SetNodeOperatorNames.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )
@@ -160,8 +236,18 @@ def set_node_operator_name_factory(
 
 @pytest.fixture(scope="module")
 def set_node_operator_reward_address_factory(
-    et_contracts, voting, commitee_multisig, simple_dvt, deployer
+    et_contracts,
+    voting,
+    commitee_multisig,
+    simple_dvt,
+    deployer,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return SetNodeOperatorRewardAddresses.at(
+            deployed_artifact["SetNodeOperatorRewardAddresses"]["address"]
+        )
+
     factory = SetNodeOperatorRewardAddresses.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )
@@ -184,8 +270,18 @@ def set_node_operator_reward_address_factory(
 
 @pytest.fixture(scope="module")
 def set_vetted_validators_limit_factory(
-    et_contracts, voting, simple_dvt, deployer, commitee_multisig
+    et_contracts,
+    voting,
+    simple_dvt,
+    deployer,
+    commitee_multisig,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return SetVettedValidatorsLimits.at(
+            deployed_artifact["SetVettedValidatorsLimits"]["address"]
+        )
+
     factory = SetVettedValidatorsLimits.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )
@@ -208,8 +304,19 @@ def set_vetted_validators_limit_factory(
 
 @pytest.fixture(scope="module")
 def change_node_operator_manager_factory(
-    et_contracts, voting, simple_dvt, deployer, commitee_multisig, acl
+    et_contracts,
+    voting,
+    simple_dvt,
+    deployer,
+    commitee_multisig,
+    acl,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return ChangeNodeOperatorManagers.at(
+            deployed_artifact["ChangeNodeOperatorManagers"]["address"]
+        )
+
     factory = ChangeNodeOperatorManagers.deploy(
         commitee_multisig, simple_dvt, acl, {"from": deployer}
     )
@@ -236,8 +343,18 @@ def change_node_operator_manager_factory(
 
 @pytest.fixture(scope="module")
 def update_tareget_validator_limits_factory(
-    et_contracts, voting, simple_dvt, deployer, commitee_multisig
+    et_contracts,
+    voting,
+    simple_dvt,
+    deployer,
+    commitee_multisig,
+    deployed_artifact,
 ):
+    if vote_id_from_env:
+        return UpdateTargetValidatorLimits.at(
+            deployed_artifact["UpdateTargetValidatorLimits"]["address"]
+        )
+
     factory = UpdateTargetValidatorLimits.deploy(
         commitee_multisig, simple_dvt, {"from": deployer}
     )

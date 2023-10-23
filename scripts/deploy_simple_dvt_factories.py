@@ -171,7 +171,7 @@ def main():
     log.nb("All factories have been deployed.")
     log.nb("Saving atrifacts...")
 
-    with open("deployed-" + network_name + ".json", "w") as outfile:
+    with open(f"deployed-{network_name}.json", "w") as outfile:
         json.dump(deployment_artifacts, outfile)
 
     log.nb("Starting code verification.")
