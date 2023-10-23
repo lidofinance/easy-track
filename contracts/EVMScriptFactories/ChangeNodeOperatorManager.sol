@@ -133,31 +133,24 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
     ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         require(
-            _decodedCallData[_decodedCallData.length]
-                .nodeOperatorId < nodeOperatorsCount,
+            _decodedCallData[_decodedCallData.length - 1].nodeOperatorId < nodeOperatorsCount,
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
         for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _decodedCallData[i].nodeOperatorId >
-                    _decodedCallData[i - 1].nodeOperatorId,
+                    _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
                 ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
 
-            for (
-                uint256 testIndex = i + 1;
-                testIndex < _decodedCallData.length;
-                testIndex++
-            ) {
+            address managerAddress = _decodedCallData[i].newManagerAddress;
+            for (uint256 testIndex = i + 1; testIndex < _decodedCallData.length; testIndex++) {
                 require(
-                    _decodedCallData[i].newManagerAddress !=
-                        _decodedCallData[testIndex].newManagerAddress,
+                    managerAddress != _decodedCallData[testIndex].newManagerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
                 );
             }
-
             require(
                 acl.getPermissionParamsLength(
                     _decodedCallData[i].oldManagerAddress,
@@ -177,10 +170,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
 
             require(paramIndex == 0, ERROR_OLD_MANAGER_HAS_NO_ROLE);
             require(paramOp == 1, ERROR_OLD_MANAGER_HAS_NO_ROLE);
-            require(
-                param == _decodedCallData[i].nodeOperatorId,
-                ERROR_OLD_MANAGER_HAS_NO_ROLE
-            );
+            require(param == _decodedCallData[i].nodeOperatorId, ERROR_OLD_MANAGER_HAS_NO_ROLE);
 
             require(
                 _decodedCallData[i].newManagerAddress != address(0),

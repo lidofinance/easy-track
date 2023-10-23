@@ -1,6 +1,6 @@
 import pytest
 from eth_abi import encode_single
-from brownie import reverts, ActivateNodeOperators, web3, convert
+from brownie import reverts, ActivateNodeOperators, web3, convert, ZERO_ADDRESS
 
 from utils.evm_script import encode_call_script
 
@@ -60,7 +60,20 @@ def test_non_sorted_calldata(owner, activate_node_operators_factory):
         NON_SORTED_CALL_DATA = (
             "0x"
             + encode_single(
-                "((uint256,address)[])", [[(0, MANAGERS[0]), (0, MANAGERS[0])]]
+                "((uint256,address)[])", [[(0, MANAGERS[0]), (0, MANAGERS[1])]]
+            ).hex()
+        )
+        activate_node_operators_factory.createEVMScript(owner, NON_SORTED_CALL_DATA)
+
+
+def test_manager_has_duplicates(owner, activate_node_operators_factory):
+    "Must revert with message 'MANAGER_ADDRESSES_HAS_DUPLICATE' when managers had duplicates"
+
+    with reverts("MANAGER_ADDRESSES_HAS_DUPLICATE"):
+        NON_SORTED_CALL_DATA = (
+            "0x"
+            + encode_single(
+                "((uint256,address)[])", [[(0, MANAGERS[0]), (1, MANAGERS[0])]]
             ).hex()
         )
         activate_node_operators_factory.createEVMScript(owner, NON_SORTED_CALL_DATA)
@@ -90,9 +103,7 @@ def test_operator_id_out_of_range(
         activate_node_operators_factory.createEVMScript(owner, CALL_DATA)
 
 
-def test_node_operator_invalid_state(
-    owner, activate_node_operators_factory, node_operators_registry
-):
+def test_node_operator_invalid_state(owner, activate_node_operators_factory):
     "Must revert with message 'WRONG_OPERATOR_ACTIVE_STATE' when operator already active"
 
     with reverts("WRONG_OPERATOR_ACTIVE_STATE"):
@@ -139,6 +150,43 @@ def test_manager_already_has_permission_for_node_operator(
         activate_node_operators_factory.createEVMScript(owner, CALL_DATA)
 
 
+def test_duplicate_manager(owner, activate_node_operators_factory):
+    "Must revert with message 'MANAGER_ADDRESSES_HAS_DUPLICATE' when new maanger has duplicates"
+
+    with reverts("MANAGER_ADDRESSES_HAS_DUPLICATE"):
+        CALL_DATA = (
+            "0x"
+            + encode_single(
+                "((uint256,address)[])",
+                [
+                    [
+                        (0, MANAGERS[1]),
+                        (1, MANAGERS[1]),
+                    ]
+                ],
+            ).hex()
+        )
+        activate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+
+
+def test_zero_manager(owner, activate_node_operators_factory):
+    "Must revert with message 'ZERO_MANAGER_ADDRESS' when manager is zero address"
+
+    with reverts("ZERO_MANAGER_ADDRESS"):
+        CALL_DATA = (
+            "0x"
+            + encode_single(
+                "((uint256,address)[])",
+                [
+                    [
+                        (0, ZERO_ADDRESS),
+                    ]
+                ],
+            ).hex()
+        )
+        activate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+
+
 def test_create_evm_script(
     owner, activate_node_operators_factory, node_operators_registry, acl
 ):
@@ -181,9 +229,7 @@ def test_create_evm_script(
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(
-    node_operators_registry, activate_node_operators_factory
-):
+def test_decode_evm_script_call_data(activate_node_operators_factory):
     "Must decode EVMScript call data correctly"
     input_params = [(id, manager) for id, manager in enumerate(MANAGERS)]
 

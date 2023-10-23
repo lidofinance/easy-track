@@ -103,7 +103,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         require(
-            _decodedCallData[_decodedCallData.length]
+            _decodedCallData[_decodedCallData.length - 1]
                 .nodeOperatorId < nodeOperatorsCount,
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );

@@ -98,7 +98,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(VettedValidatorsLimitInput[] memory _decodedCallData) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         require(
-            _decodedCallData[_decodedCallData.length].nodeOperatorId < nodeOperatorsCount,
+            _decodedCallData[_decodedCallData.length - 1].nodeOperatorId < nodeOperatorsCount,
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 

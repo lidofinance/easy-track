@@ -43,6 +43,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
     string private constant ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE =
         "MANAGER_ADDRESSES_HAS_DUPLICATE";
+    string private constant ERROR_REWARD_ADDRESSES_HAS_DUPLICATE = "REWARD_ADDRESSES_HAS_DUPLICATE";
     string private constant ERROR_NODE_OPERATORS_COUNT_MISMATCH = "NODE_OPERATORS_COUNT_MISMATCH";
     string private constant ERROR_LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
     string private constant ERROR_ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
@@ -161,10 +162,15 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
 
         for (uint256 i = 0; i < _nodeOperatorInputs.length; i++) {
             address managerAddress = _nodeOperatorInputs[i].managerAddress;
+            address rewardAddress = _nodeOperatorInputs[i].rewardAddress;
             for (uint256 testIndex = i + 1; testIndex < _nodeOperatorInputs.length; testIndex++) {
                 require(
                     managerAddress != _nodeOperatorInputs[testIndex].managerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
+                );
+                require(
+                    rewardAddress != _nodeOperatorInputs[testIndex].rewardAddress,
+                    ERROR_REWARD_ADDRESSES_HAS_DUPLICATE
                 );
             }
 

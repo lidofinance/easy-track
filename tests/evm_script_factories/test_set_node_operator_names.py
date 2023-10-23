@@ -7,6 +7,7 @@ from utils.evm_script import encode_call_script
 
 @pytest.fixture(scope="module")
 def set_node_operator_name_factory(owner, node_operators_registry):
+    print(node_operators_registry.getNodeOperatorsCount())
     return SetNodeOperatorNames.deploy(owner, node_operators_registry, {"from": owner})
 
 
@@ -30,6 +31,7 @@ def test_non_sorted_calldata(owner, set_node_operator_name_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
+        print(12333)
         NON_SORTED_CALL_DATA = (
             "0x"
             + encode_single(

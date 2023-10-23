@@ -45,6 +45,8 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
     string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
     string private constant ERROR_ZERO_MANAGER_ADDRESS = "ZERO_MANAGER_ADDRESS";
+    string private constant ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE =
+        "MANAGER_ADDRESSES_HAS_DUPLICATE";
 
     // -------------
     // CONSTRUCTOR
@@ -149,6 +151,14 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
                 _decodedCallData[i].managerAddress != address(0),
                 ERROR_ZERO_MANAGER_ADDRESS
             );
+
+            address managerAddress = _decodedCallData[i].managerAddress;
+            for (uint256 testIndex = i + 1; testIndex < _decodedCallData.length; testIndex++) {
+                require(
+                    managerAddress != _decodedCallData[testIndex].managerAddress,
+                    ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
+                );
+            }
 
             require(
                 acl.hasPermission(
