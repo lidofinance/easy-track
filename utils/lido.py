@@ -98,8 +98,8 @@ class LidoContractsSetup:
         )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
-        self.staking_router = (interface.StakingRouter(lido_addresses.staking_router),)
-        self.locator = (interface.LidoLocator(lido_addresses.locator),)
+        self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
+        self.locator = interface.LidoLocator(lido_addresses.locator)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
