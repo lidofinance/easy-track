@@ -22,7 +22,8 @@ def get_is_live():
         "hardhat",
         "hardhat-fork",
         "mainnet-fork",
-        "goerli-fork"
+        "goerli-fork",
+        "holesky-fork"
     ]
     return network.show_active() not in dev_networks
 

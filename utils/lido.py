@@ -19,6 +19,7 @@ def addresses(network=DEFAULT_NETWORK):
             ),
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
+            simple_dvt=None,
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
@@ -36,6 +37,7 @@ def addresses(network=DEFAULT_NETWORK):
             ),
             steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
+            simple_dvt=None,
             staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
             locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
         )
@@ -53,6 +55,7 @@ def addresses(network=DEFAULT_NETWORK):
             ),
             steth="0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034",
             node_operators_registry="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+            simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
         )
@@ -96,6 +99,11 @@ class LidoContractsSetup:
         self.node_operators_registry = interface.NodeOperatorsRegistry(
             lido_addresses.node_operators_registry
         )
+        self.simple_dvt = (
+            None
+            if not lido_addresses.simple_dvt
+            else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
+        )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
@@ -137,10 +145,11 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, staking_router, locator):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
+        self.simple_dvt = simple_dvt
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
         self.locator = locator
