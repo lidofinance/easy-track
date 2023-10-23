@@ -24,7 +24,7 @@ placeholder_padding=$(printf '%0.1s' "-"{1..64})
 prerequisites=(jq yarn awk curl shasum uname bc nc)
 
 # Environment vailable required
-envs=(WEB3_INFURA_PROJECT_ID ETHERSCAN_TOKEN)
+envs=(ETHERSCAN_TOKEN)
 
 # Commandline args required
 cmdargs=(solc_version remote_rpc_url contract config_json)
@@ -186,7 +186,7 @@ function start_fork() {
     cat <<-_EOF_ | xargs | sed 's/ / /g'
     yarn ganache --chain.vmErrorsOnRPCResponse true
     --wallet.totalAccounts 10 --chain.chainId 1
-    --fork.url https://mainnet.infura.io/v3/${WEB3_INFURA_PROJECT_ID}
+    --fork.url ${remote_rpc_url}
     --miner.blockGasLimit 92000000
     --server.host 127.0.0.1 --server.port ${local_rpc_port}
     --hardfork istanbul -d
@@ -301,21 +301,11 @@ function endode_solidity_calldata_placeholder() {
 }
 
 function compile_contract() {
-  if [[ "$solc_version" =~ ^0.[678].[0-9]+$ ]]; then
-    rm -rf "${PWD}/build"
-    cd "${PWD}/.."
-    ./bytecode-verificator/"$solc" @openzeppelin/contracts-v4.4=./node_modules/@openzeppelin/contracts-v4.4 contracts/"$solc_version"/**/*.sol contracts/"$solc_version"/*.sol -o ./bytecode-verificator/build --bin --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
-    ./bytecode-verificator/"$solc" @openzeppelin/contracts-v4.4=./node_modules/@openzeppelin/contracts-v4.4 contracts/"$solc_version"/**/*.sol contracts/"$solc_version"/*.sol -o ./bytecode-verificator/build --abi --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
-    cd - &>/dev/null
-  elif [[ "$solc_version" == "0.4.24" ]]; then
-    rm -rf "${PWD}/build"
-    cd "${PWD}/.."
-    ./bytecode-verificator/"$solc" @aragon=./node_modules/@aragon openzeppelin-solidity/contracts=./node_modules/openzeppelin-solidity/contracts contracts/"$solc_version"/**/*.sol contracts/"$solc_version"/*.sol --allow-paths "$(pwd)" -o ./bytecode-verificator/build --bin --overwrite --optimize --optimize-runs 200 --evm-version constantinople 1>>./logs 2>&1
-    ./bytecode-verificator/"$solc" @aragon=./node_modules/@aragon openzeppelin-solidity/contracts=./node_modules/openzeppelin-solidity/contracts contracts/"$solc_version"/**/*.sol contracts/"$solc_version"/*.sol --allow-paths "$(pwd)" -o ./bytecode-verificator/build --abi --overwrite --optimize --optimize-runs 200 --evm-version constantinople 1>>./logs 2>&1
-    cd - &>/dev/null
-  else
-    _err "Unknown solidity version '$solc_version'"
-  fi
+  rm -rf "${PWD}/build"
+  cd "${PWD}/.."
+  ./bytecode-verificator/"$solc" OpenZeppelin/openzeppelin-contracts@4.3.2/contracts=./node_modules/@openzeppelin/contracts-v4.3.2 contracts/**/*.sol contracts/*.sol -o ./bytecode-verificator/build --allow-paths "$PWD" --bin --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
+  ./bytecode-verificator/"$solc" OpenZeppelin/openzeppelin-contracts@4.3.2/contracts=./node_modules/@openzeppelin/contracts-v4.3.2 contracts/**/*.sol contracts/*.sol -o ./bytecode-verificator/build --allow-paths "$PWD" --abi --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
+  cd - &>/dev/null
 }
 
 function deploy_contract_on_fork() {
@@ -444,7 +434,7 @@ _get_code() {
 
 _get_code_etherscan() {
   local contract_address=$1
-
+  echo "curl -sS -G -d address=$contract_address -d action=eth_getCode -d module=proxy -d tag=latest -d apikey=$ETHERSCAN_TOKEN https://api.etherscan.io/api"
   curl -sS -G -d "address=$contract_address" -d "action=eth_getCode" -d "module=proxy" -d "tag=latest" -d "apikey=$ETHERSCAN_TOKEN" https://api.etherscan.io/api | jq -r '.result'
 }
 

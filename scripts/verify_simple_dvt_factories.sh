@@ -1,0 +1,1 @@
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract AddNodeOperators

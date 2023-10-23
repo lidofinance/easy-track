@@ -1,15 +1,8 @@
-from brownie import chain
-
-from utils.config import (
-    get_is_live,
-    get_deployer_account,
-    prompt_bool,
-    get_network_name,
-)
-from utils import lido, log
+import json
 import os
 
 from brownie import (
+    chain,
     AddNodeOperators,
     ActivateNodeOperators,
     DeactivateNodeOperators,
@@ -19,6 +12,14 @@ from brownie import (
     SetVettedValidatorsLimits,
     UpdateTargetValidatorLimits,
     web3,
+)
+
+from utils import lido, log
+from utils.config import (
+    get_is_live,
+    get_deployer_account,
+    prompt_bool,
+    get_network_name,
 )
 
 
@@ -38,10 +39,12 @@ def main():
 
     deployer = get_deployer_account(get_is_live(), network=network_name)
     trusted_caller = get_trusted_caller()
+    simple_dvt = contracts.simple_dvt.address
+    acl = contracts.aragon.acl.address
 
     log.br()
 
-    log.nb("Current network", network_name(), color_hl=log.color_magenta)
+    log.nb("Current network", network_name, color_hl=log.color_magenta)
     log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.nb("chain id", chain.id)
 
@@ -51,8 +54,9 @@ def main():
 
     log.br()
 
-    log.ok("Simple DVT module address", contracts.simple_dvt)
-    log.ok("ACL", contracts.aragon.acl)
+
+    log.ok("Simple DVT module address", simple_dvt)
+    log.ok("ACL", acl)
     log.ok("Trusted caller", trusted_caller)
 
     log.br()
@@ -67,58 +71,121 @@ def main():
 
     log.br()
 
-    add_node_operator_address = AddNodeOperators.deploy(
-        trusted_caller, contracts.simple_dvt, contracts.aragon.acl, tx_params
-    )
-    activate_node_operators_address = ActivateNodeOperators.deploy(
-        trusted_caller, contracts.simple_dvt, contracts.aragon.acl, tx_params
-    )
-    deactivate_node_operators_address = DeactivateNodeOperators.deploy(
-        trusted_caller, contracts.simple_dvt, contracts.aragon.acl, tx_params
-    )
-    set_vetted_validators_limits_address = SetVettedValidatorsLimits.deploy(
-        trusted_caller, contracts.simple_dvt, tx_params
-    )
-    set_node_operator_names_address = SetNodeOperatorNames.deploy(
-        trusted_caller, contracts.simple_dvt, tx_params
-    )
-    set_node_operator_reward_address_address = SetNodeOperatorRewardAddresses.deploy(
-        trusted_caller, contracts.simple_dvt, tx_params
-    )
-    update_tareget_validator_limits_address = UpdateTargetValidatorLimits.deploy(
-        trusted_caller, contracts.simple_dvt, tx_params
-    )
-    change_node_operator_manager_address = ChangeNodeOperatorManagers.deploy(
-        trusted_caller, contracts.simple_dvt, contracts.aragon.acl, tx_params
-    )
+    deployment_artifacts = {}
 
-    log.ok("Deployed AddNodeOperators", add_node_operator_address)
-    log.ok("Deployed ActivateNodeOperators", activate_node_operators_address)
-    log.ok("Deployed DeactivateNodeOperators", deactivate_node_operators_address)
-    log.ok("Deployed SetVettedValidatorsLimits", set_vetted_validators_limits_address)
-    log.ok("Deployed SetNodeOperatorNames", set_node_operator_names_address)
+    # AddNodeOperators
+    add_node_operator = AddNodeOperators.deploy(
+        trusted_caller, simple_dvt, acl, tx_params
+    )
+    deployment_artifacts["AddNodeOperators"] = {
+        "contract": "AddNodeOperators",
+        "address": add_node_operator.address,
+        "constructorArgs": [trusted_caller, simple_dvt, acl],
+    }
+
+    # ActivateNodeOperators
+    activate_node_operators = ActivateNodeOperators.deploy(
+        trusted_caller, simple_dvt, acl, tx_params
+    )
+    deployment_artifacts["ActivateNodeOperators"] = {
+        "contract": "ActivateNodeOperators",
+        "address": activate_node_operators.address,
+        "constructorArgs": [trusted_caller, simple_dvt, acl],
+    }
+
+    # DeactivateNodeOperators
+    deactivate_node_operators = DeactivateNodeOperators.deploy(
+        trusted_caller, simple_dvt, acl, tx_params
+    )
+    deployment_artifacts["DeactivateNodeOperators"] = {
+        "contract": "DeactivateNodeOperators",
+        "address": deactivate_node_operators.address,
+        "constructorArgs": [trusted_caller, simple_dvt, acl],
+    }
+
+    # SetVettedValidatorsLimits
+    set_vetted_validators_limits = SetVettedValidatorsLimits.deploy(
+        trusted_caller, simple_dvt, tx_params
+    )
+    deployment_artifacts["SetVettedValidatorsLimits"] = {
+        "contract": "SetVettedValidatorsLimits",
+        "address": set_vetted_validators_limits.address,
+        "constructorArgs": [trusted_caller, simple_dvt],
+    }
+
+    # SetNodeOperatorNames
+    set_node_operator_names = SetNodeOperatorNames.deploy(
+        trusted_caller, simple_dvt, tx_params
+    )
+    deployment_artifacts["SetNodeOperatorNames"] = {
+        "contract": "SetNodeOperatorNames",
+        "address": set_node_operator_names.address,
+        "constructorArgs": [trusted_caller, simple_dvt],
+    }
+
+    # SetNodeOperatorRewardAddresses
+    set_node_operator_reward = SetNodeOperatorRewardAddresses.deploy(
+        trusted_caller, simple_dvt, tx_params
+    )
+    deployment_artifacts["SetNodeOperatorRewardAddresses"] = {
+        "contract": "SetNodeOperatorRewardAddresses",
+        "address": set_node_operator_reward.address,
+        "constructorArgs": [trusted_caller, simple_dvt],
+    }
+
+    # UpdateTargetValidatorLimits
+    update_tareget_validator_limits = UpdateTargetValidatorLimits.deploy(
+        trusted_caller, simple_dvt, tx_params
+    )
+    deployment_artifacts["UpdateTargetValidatorLimits"] = {
+        "contract": "UpdateTargetValidatorLimits",
+        "address": update_tareget_validator_limits.address,
+        "constructorArgs": [trusted_caller, simple_dvt],
+    }
+
+    # ChangeNodeOperatorManagers
+    change_node_operator_manager = ChangeNodeOperatorManagers.deploy(
+        trusted_caller, simple_dvt, acl, tx_params
+    )
+    deployment_artifacts["ChangeNodeOperatorManagers"] = {
+        "contract": "ChangeNodeOperatorManagers",
+        "address": change_node_operator_manager.address,
+        "constructorArgs": [trusted_caller, simple_dvt, acl],
+    }
+
+    log.ok("Deployed AddNodeOperators", add_node_operator)
+    log.ok("Deployed ActivateNodeOperators", activate_node_operators.address)
+    log.ok("Deployed DeactivateNodeOperators", deactivate_node_operators.address)
+    log.ok("Deployed SetVettedValidatorsLimits", set_vetted_validators_limits.address)
+    log.ok("Deployed SetNodeOperatorNames", set_node_operator_names.address)
     log.ok(
         "Deployed SetNodeOperatorRewardAddresses",
-        set_node_operator_reward_address_address,
+        set_node_operator_reward.address,
     )
     log.ok(
-        "Deployed UpdateTargetValidatorLimits", update_tareget_validator_limits_address
+        "Deployed UpdateTargetValidatorLimits", update_tareget_validator_limits.address
     )
-    log.ok("Deployed ChangeNodeOperatorManagers", change_node_operator_manager_address)
+    log.ok("Deployed ChangeNodeOperatorManagers", change_node_operator_manager.address)
 
     log.br()
-    log.nb("All factories have been deployed. Starting code verification")
+    log.nb("All factories have been deployed.")
+    log.nb("Saving atrifacts...")
+
+    with open("deployed-" + network_name + ".json", "w") as outfile:
+        json.dump(deployment_artifacts, outfile)
+
+    log.nb("Starting code verification.")
     log.br()
 
-    AddNodeOperators.publish_source(add_node_operator_address)
-    ActivateNodeOperators.publish_source(activate_node_operators_address)
-    DeactivateNodeOperators.publish_source(deactivate_node_operators_address)
-    SetVettedValidatorsLimits.publish_source(set_vetted_validators_limits_address)
-    SetNodeOperatorNames.publish_source(set_node_operator_names_address)
+    AddNodeOperators.publish_source(add_node_operator)
+    ActivateNodeOperators.publish_source(activate_node_operators.address)
+    DeactivateNodeOperators.publish_source(deactivate_node_operators.address)
+    SetVettedValidatorsLimits.publish_source(set_vetted_validators_limits.address)
+    SetNodeOperatorNames.publish_source(set_node_operator_names.address)
     SetNodeOperatorRewardAddresses.publish_source(
-        set_node_operator_reward_address_address
+        set_node_operator_reward.address
     )
-    UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits_address)
-    ChangeNodeOperatorManagers.publish_source(change_node_operator_manager_address)
+    UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits.address)
+    ChangeNodeOperatorManagers.publish_source(change_node_operator_manager.address)
 
     log.br()
