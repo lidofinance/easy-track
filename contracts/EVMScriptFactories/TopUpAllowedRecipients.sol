@@ -46,6 +46,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     /// @param _trustedCaller Address that has access to certain methods.
     ///     Set once on deployment and can't be changed.
     /// @param _allowedRecipientsRegistry Address of AllowedRecipientsRegistry contract
+    /// @param _allowedTokensRegistry Address of AllowedTokensRegistry contract
     /// @param _finance Address of Aragon's Finance contract
     /// @param _easyTrack Address of EasyTrack contract
     constructor(
