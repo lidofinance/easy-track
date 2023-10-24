@@ -62,7 +62,7 @@ contract AllowedRecipientsFactory {
         address[] memory _setLimitParametersRoleHolders,
         address[] memory _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
-    ) public returns (AllowedRecipientsRegistry registry) {
+    ) external returns (AllowedRecipientsRegistry registry) {
         registry = new AllowedRecipientsRegistry(
             _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
@@ -88,7 +88,7 @@ contract AllowedRecipientsFactory {
         address _defaultAdmin,
         address[] memory _addTokensToAllowedListRoleHolders,
         address[] memory _removeTokensFromAllowedListRoleHolders
-    ) public returns (AllowedTokensRegistry registry) {
+    ) external returns (AllowedTokensRegistry registry) {
         registry = new AllowedTokensRegistry(
             _defaultAdmin,
             _addTokensToAllowedListRoleHolders,
@@ -110,7 +110,7 @@ contract AllowedRecipientsFactory {
         address _allowedTokensRegistry,
         address _finance,
         address _easyTrack
-    ) public returns (TopUpAllowedRecipients topUpAllowedRecipients) {
+    ) external returns (TopUpAllowedRecipients topUpAllowedRecipients) {
         topUpAllowedRecipients = new TopUpAllowedRecipients(
             _trustedCaller,
             _allowedRecipientsRegistry,
@@ -133,7 +133,7 @@ contract AllowedRecipientsFactory {
     }
 
     function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
-        public
+        external
         returns (AddAllowedRecipient addAllowedRecipient)
     {
         addAllowedRecipient = new AddAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
@@ -149,7 +149,7 @@ contract AllowedRecipientsFactory {
     function deployRemoveAllowedRecipient(
         address _trustedCaller,
         address _allowedRecipientsRegistry
-    ) public returns (RemoveAllowedRecipient removeAllowedRecipient) {
+    ) external returns (RemoveAllowedRecipient removeAllowedRecipient) {
         removeAllowedRecipient = new RemoveAllowedRecipient(
             _trustedCaller,
             _allowedRecipientsRegistry
