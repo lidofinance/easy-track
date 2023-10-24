@@ -248,6 +248,68 @@ def test_top_up_single_recipient(
     )
 
 
+def test_top_up_single_recipient_several_times_in_period(
+    recipients,
+    add_allowed_token,
+    allowed_recipients_limit_params,
+    add_allowed_recipient_by_motion,
+    top_up_allowed_recipient_by_motion,
+    add_allowed_recipient_evm_script_factory,
+    top_up_allowed_recipients_evm_script_factory,
+    dai
+):
+    allowed_recipient = recipients[0]
+
+    add_allowed_recipient_by_motion(
+        add_allowed_recipient_evm_script_factory,
+        allowed_recipient.address,
+        allowed_recipient.title,
+    )
+
+    add_allowed_token(dai)
+
+    top_up_recipient_addresses = [allowed_recipient.address]
+    top_up_amounts = [int(allowed_recipients_limit_params.limit / 2)]
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
+        top_up_recipient_addresses,
+        top_up_amounts,
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
+        top_up_recipient_addresses,
+        top_up_amounts,
+        sum(top_up_amounts)
+    )
+
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        top_up_allowed_recipient_by_motion(
+            top_up_allowed_recipients_evm_script_factory,
+            dai,
+            top_up_recipient_addresses,
+            [1],
+        )
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    top_up_allowed_recipient_by_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
+        top_up_recipient_addresses,
+        [allowed_recipients_limit_params.limit]
+    )
+
+
 def test_top_up_multiple_recipients(
     recipients,
     add_allowed_token,
@@ -289,6 +351,7 @@ def test_top_up_multiple_recipients(
 
 def test_top_up_multiple_tokens(
     recipients,
+    registries,
     add_allowed_token,
     allowed_recipients_limit_params,
     add_allowed_recipient_by_motion,
@@ -298,6 +361,7 @@ def test_top_up_multiple_tokens(
     dai,
     usdc
 ):
+    (allowed_recipients_registry, _) = registries
     allowed_recipient = recipients[0]
 
     add_allowed_recipient_by_motion(
@@ -309,7 +373,7 @@ def test_top_up_multiple_tokens(
     add_allowed_token(dai)
 
     top_up_recipient_addresses = [allowed_recipient.address]
-    top_up_amounts = [1 * 10**18]
+    top_up_amounts_dai = [1 * 10**18]
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
@@ -319,22 +383,24 @@ def test_top_up_multiple_tokens(
         top_up_allowed_recipients_evm_script_factory,
         dai,
         top_up_recipient_addresses,
-        top_up_amounts,
-    )
-
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
+        top_up_amounts_dai,
     )
 
     add_allowed_token(usdc)
-    top_up_amounts = [1 * 10**6]
+    top_up_amounts_usdc = [1 * 10**6]
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         usdc,
         top_up_recipient_addresses,
-        top_up_amounts,
+        top_up_amounts_usdc,
+        sum(top_up_amounts_dai)
     )
+
+    (limit, _) = allowed_recipients_registry.getLimitParameters()
+
+    assert allowed_recipients_registry.spendableBalance() == limit - 2 * 10**18
+
 
 
 def test_top_up_motion_enacted_in_next_period(

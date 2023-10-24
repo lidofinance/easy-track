@@ -61,6 +61,11 @@ To use the tools that this project provides, please pull the repository from Git
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
 yarn install
+
+# in case of pyyaml installation issue, it should be installed manually
+# see issue for details https://github.com/yaml/pyyaml/issues/601
+poetry run pip install "cython<3.0" pyyaml==5.4.1 --no-build-isolation
+
 poetry install
 poetry run brownie networks import network-config.yaml True
 poetry shell

@@ -1,0 +1,36 @@
+---
+name: Verify deployed contracts' bytecode
+
+on:
+  pull_request:
+    branches:
+      - "master"
+
+jobs:
+  assert-bytecode:
+    runs-on: ubuntu-20.04
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version-file: .python-version
+          cache: poetry
+
+      - name: Install python dependencies
+        run: poetry install
+
+      - name: Compile contracts
+        run: poetry run brownie compile
+
+      - name: Verify bytecode of contracts
+        uses: lidofinance/action-verify-bytecode@master
+        with:
+          file: artifacts.json

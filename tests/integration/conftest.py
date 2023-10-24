@@ -406,6 +406,7 @@ def top_up_allowed_recipient_by_motion(
         token_address,
         recipient_addresses,
         top_up_amounts,
+        spent_amount=0
     ):
         motion_creation_tx = create_top_up_allowed_recipients_motion(
             top_up_allowed_recipients_evm_script_factory,
@@ -414,7 +415,7 @@ def top_up_allowed_recipient_by_motion(
             top_up_amounts,
         )
 
-        enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx)
+        enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx, spent_amount)
 
     return _top_up_allowed_recipient_by_motion
 
@@ -439,7 +440,7 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
     enact_motion_by_creation_tx,
     check_top_up_motion_enactment,
 ):
-    def _enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx):
+    def _enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx, spent_amount=0):
         top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
             motion_creation_tx.events["MotionCreated"]["_evmScriptFactory"]
         )
@@ -486,6 +487,7 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
             top_up_token=top_up_token,
             top_up_recipients=recipients,
             top_up_amounts=amounts,
+            spent_amount=spent_amount
         )
 
     return _enact_top_up_allowed_recipient_motion_by_creation_tx
@@ -508,6 +510,7 @@ def check_top_up_motion_enactment(
         top_up_token,
         top_up_recipients,
         top_up_amounts,
+        spent_amount,
     ):
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
@@ -521,7 +524,7 @@ def check_top_up_motion_enactment(
         spending = allowed_tokens_registry.normalizeAmount(
             spending_in_tokens, top_up_token
         )
-        spendable = limit - spending
+        spendable = limit - (spending + spent_amount)
 
         assert allowed_recipients_registry.isUnderSpendableBalance(spendable, 0)
         assert allowed_recipients_registry.isUnderSpendableBalance(
@@ -529,7 +532,7 @@ def check_top_up_motion_enactment(
         )
         assert (
             allowed_recipients_registry.getPeriodState()["_alreadySpentAmount"]
-            == spending
+            == spending + spent_amount
         )
         assert (
             allowed_recipients_registry.getPeriodState()["_spendableBalanceInPeriod"]
@@ -567,7 +570,7 @@ def check_top_up_motion_enactment(
             top_up_motion_enactment_tx.events["SpendableAmountChanged"][
                 "_alreadySpentAmount"
             ]
-            == spending
+            == spending + spent_amount
         )
         assert (
             top_up_motion_enactment_tx.events["SpendableAmountChanged"][
