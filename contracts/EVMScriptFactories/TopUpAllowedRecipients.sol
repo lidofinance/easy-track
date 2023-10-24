@@ -74,7 +74,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     /// recipients - addresses of recipients to top up
     /// amounts - corresponding amounts of token to transfer
     /// @dev note that the arrays below has one extra element to store limit enforcement calls
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -109,7 +109,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     /// @return token Address of payout token
     /// @return recipients Addresses of recipients to top up
     /// @return amounts Amounts of token to transfer
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (address token, address[] memory recipients, uint256[] memory amounts)
@@ -130,7 +130,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         require(_recipients.length > 0, ERROR_EMPTY_DATA);
         require(allowedTokensRegistry.isTokenAllowed(token), ERROR_TOKEN_NOT_ALLOWED);
 
-        uint256 totalAmount = 0;
+        uint256 totalAmount;
 
         for (uint256 i = 0; i < _recipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
@@ -144,7 +144,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
         _validateSpendableBalance(normalizedAmount);
     }
 
-    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function _decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         private
         pure
         returns (address token, address[] memory recipients, uint256[] memory amounts)

@@ -36,17 +36,17 @@ interface IRemoveAllowedRecipient {
 interface IAllowedRecipientsFactory {
     function deployAllowedRecipientsRegistry(
         address _admin,
-        address[] memory _addRecipientToAllowedListRoleHolders,
-        address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateSpentAmountRoleHolders,
+        address[] calldata _addRecipientToAllowedListRoleHolders,
+        address[] calldata _removeRecipientFromAllowedListRoleHolders,
+        address[] calldata _setLimitParametersRoleHolders,
+        address[] calldata _updateSpentAmountRoleHolders,
         address bokkyPooBahsDateTimeContract
     ) external returns (IAllowedRecipientsRegistry);
 
     function deployAllowedTokensRegistry(
         address _defaultAdmin,
-        address[] memory _addTokensToAllowedListRoleHolders,
-        address[] memory _removeTokensFromAllowedListRoleHolders
+        address[] calldata _addTokensToAllowedListRoleHolders,
+        address[] calldata _removeTokensFromAllowedListRoleHolders
     ) external returns (IAllowedTokensRegistry registry);
 
     function deployTopUpAllowedRecipients(
@@ -190,7 +190,7 @@ contract AllowedRecipientsBuilder {
         assert(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
     }
 
-    function deployAllowedTokensRegistry(address[] memory _tokens) public returns (IAllowedTokensRegistry registry) {
+    function deployAllowedTokensRegistry(address[] calldata _tokens) public returns (IAllowedTokensRegistry registry) {
         address[] memory addTokenRoleHolders = new address[](2);
         address[] memory removeTokenRoleHolders = new address[](1);
 
@@ -260,9 +260,9 @@ contract AllowedRecipientsBuilder {
         address _trustedCaller,
         uint256 _limit,
         uint256 _periodDurationMonths,
-        address[] memory _tokens,
-        address[] memory _recipients,
-        string[] memory _titles,
+        address[] calldata _tokens,
+        address[] calldata _recipients,
+        string[] calldata _titles,
         uint256 _spentAmount
     ) public {
         IAllowedRecipientsRegistry allowedRecipientsRegistry =
@@ -278,8 +278,8 @@ contract AllowedRecipientsBuilder {
 
     function deploySingleRecipientTopUpOnlySetup(
         address _recipient,
-        string memory _title,
-        address[] memory _tokens,
+        string calldata _title,
+        address[] calldata _tokens,
         uint256 _limit,
         uint256 _periodDurationMonths,
         uint256 _spentAmount

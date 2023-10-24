@@ -57,10 +57,10 @@ contract AllowedRecipientsFactory {
 
     function deployAllowedRecipientsRegistry(
         address _defaultAdmin,
-        address[] memory _addRecipientToAllowedListRoleHolders,
-        address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateSpentAmountRoleHolders,
+        address[] calldata _addRecipientToAllowedListRoleHolders,
+        address[] calldata _removeRecipientFromAllowedListRoleHolders,
+        address[] calldata _setLimitParametersRoleHolders,
+        address[] calldata _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
     ) external returns (AllowedRecipientsRegistry registry) {
         registry = new AllowedRecipientsRegistry(
@@ -86,8 +86,8 @@ contract AllowedRecipientsFactory {
 
     function deployAllowedTokensRegistry(
         address _defaultAdmin,
-        address[] memory _addTokensToAllowedListRoleHolders,
-        address[] memory _removeTokensFromAllowedListRoleHolders
+        address[] calldata _addTokensToAllowedListRoleHolders,
+        address[] calldata _removeTokensFromAllowedListRoleHolders
     ) external returns (AllowedTokensRegistry registry) {
         registry = new AllowedTokensRegistry(
             _defaultAdmin,
