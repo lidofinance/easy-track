@@ -21,6 +21,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_AMOUNT = "ZERO_AMOUNT";
     string private constant ERROR_TOKEN_NOT_ALLOWED = "TOKEN_NOT_ALLOWED";
     string private constant ERROR_RECIPIENT_NOT_ALLOWED = "RECIPIENT_NOT_ALLOWED";
+    string private constant ERROR_ZERO_RECIPIENT = "ZERO_RECIPIENT";
     string private constant ERROR_SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
     // -------------
@@ -133,6 +134,7 @@ contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
 
         for (uint256 i = 0; i < _recipients.length; ++i) {
             require(_amounts[i] > 0, ERROR_ZERO_AMOUNT);
+            require(_recipients[i] != address(0), ERROR_ZERO_RECIPIENT);
             require(allowedRecipientsRegistry.isRecipientAllowed(_recipients[i]), ERROR_RECIPIENT_NOT_ALLOWED);
             totalAmount += _amounts[i];
         }
