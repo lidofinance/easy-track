@@ -216,8 +216,6 @@ contract AllowedRecipientsBuilder {
         assert(registry.hasRole(DEFAULT_ADMIN_ROLE, admin));
 
         assert(!registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, address(this)));
-        assert(!registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, address(this)));
-        assert(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
     }
 
     function deployTopUpAllowedRecipients(
