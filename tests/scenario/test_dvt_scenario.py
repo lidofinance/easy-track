@@ -5,11 +5,11 @@ from utils.evm_script import encode_call_script
 
 clusters = [
     {
-        "address": "0x000000000000000000000000000000000000000" + str(i),
-        "manager": "0x000000000000000000000000000000000000001" + str(i),
+        "address": "0x000000000000000000000000000000000000{:04}".format(i),
+        "manager": "0x000000000000000000000000000000000000{:04}".format(i),
         "name": "Cluster " + str(i),
     }
-    for i in range(1, 10)
+    for i in range(1, 37)
 ]
 
 signing_keys = {

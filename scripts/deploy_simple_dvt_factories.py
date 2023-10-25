@@ -178,14 +178,14 @@ def main():
     log.br()
 
     AddNodeOperators.publish_source(add_node_operator)
-    ActivateNodeOperators.publish_source(activate_node_operators.address)
-    DeactivateNodeOperators.publish_source(deactivate_node_operators.address)
-    SetVettedValidatorsLimits.publish_source(set_vetted_validators_limits.address)
-    SetNodeOperatorNames.publish_source(set_node_operator_names.address)
+    ActivateNodeOperators.publish_source(activate_node_operators)
+    DeactivateNodeOperators.publish_source(deactivate_node_operators)
+    SetVettedValidatorsLimits.publish_source(set_vetted_validators_limits)
+    SetNodeOperatorNames.publish_source(set_node_operator_names)
     SetNodeOperatorRewardAddresses.publish_source(
-        set_node_operator_reward.address
+        set_node_operator_reward
     )
-    UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits.address)
-    ChangeNodeOperatorManagers.publish_source(change_node_operator_manager.address)
+    UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits)
+    ChangeNodeOperatorManagers.publish_source(change_node_operator_manager)
 
     log.br()

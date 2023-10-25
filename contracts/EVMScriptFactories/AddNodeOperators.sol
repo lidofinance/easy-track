@@ -148,6 +148,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     ) private view {
         address lido = nodeOperatorsRegistry.getLocator().lido();
         uint256 maxNameLength = nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH();
+        uint256 caldataLength = _nodeOperatorInputs.length;
 
         require(
             nodeOperatorsRegistry.getNodeOperatorsCount() == _nodeOperatorsCount,
@@ -155,28 +156,24 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         );
 
         require(
-            _nodeOperatorsCount + _nodeOperatorInputs.length <=
-                nodeOperatorsRegistry.MAX_NODE_OPERATORS_COUNT(),
+            _nodeOperatorsCount + caldataLength <= nodeOperatorsRegistry.MAX_NODE_OPERATORS_COUNT(),
             ERROR_MAX_OPERATORS_COUNT_EXCEEDED
         );
 
-        for (uint256 i = 0; i < _nodeOperatorInputs.length; i++) {
+        for (uint256 i = 0; i < caldataLength; i++) {
             address managerAddress = _nodeOperatorInputs[i].managerAddress;
             address rewardAddress = _nodeOperatorInputs[i].rewardAddress;
-            for (uint256 testIndex = i + 1; testIndex < _nodeOperatorInputs.length; testIndex++) {
+            string memory name = _nodeOperatorInputs[i].name;
+            for (uint256 testIndex = i + 1; testIndex < caldataLength; testIndex++) {
                 require(
                     managerAddress != _nodeOperatorInputs[testIndex].managerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
-                );
-                require(
-                    rewardAddress != _nodeOperatorInputs[testIndex].rewardAddress,
-                    ERROR_REWARD_ADDRESSES_HAS_DUPLICATE
                 );
             }
 
             require(
                 acl.hasPermission(
-                    _nodeOperatorInputs[i].managerAddress,
+                    managerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == false,
@@ -184,23 +181,19 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
             );
             require(
                 acl.getPermissionParamsLength(
-                    _nodeOperatorInputs[i].managerAddress,
+                    managerAddress,
                     address(nodeOperatorsRegistry),
                     MANAGE_SIGNING_KEYS_ROLE
                 ) == 0,
                 ERROR_MANAGER_ALREADY_HAS_ROLE
             );
 
-            require(_nodeOperatorInputs[i].rewardAddress != lido, ERROR_LIDO_REWARD_ADDRESS);
-            require(_nodeOperatorInputs[i].rewardAddress != address(0), ERROR_ZERO_REWARD_ADDRESS);
-            require(
-                _nodeOperatorInputs[i].managerAddress != address(0),
-                ERROR_ZERO_MANAGER_ADDRESS
-            );
+            require(rewardAddress != lido, ERROR_LIDO_REWARD_ADDRESS);
+            require(rewardAddress != address(0), ERROR_ZERO_REWARD_ADDRESS);
+            require(managerAddress != address(0), ERROR_ZERO_MANAGER_ADDRESS);
 
             require(
-                bytes(_nodeOperatorInputs[i].name).length > 0 &&
-                    bytes(_nodeOperatorInputs[i].name).length <= maxNameLength,
+                bytes(name).length > 0 && bytes(name).length <= maxNameLength,
                 ERROR_WRONG_NAME_LENGTH
             );
         }

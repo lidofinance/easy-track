@@ -67,7 +67,8 @@ def vote_id_from_env():
             vote_id = int(os.getenv(ENV_VOTE_ID))
             return vote_id
         except:
-            pass
+            return None
+    return None
 
 
 @pytest.fixture(scope="session")
@@ -133,7 +134,9 @@ def activate_node_operators_factory(
     deployer,
     acl,
     deployed_artifact,
+    vote_id_from_env,
 ):
+    print(vote_id_from_env)
     if vote_id_from_env:
         return ActivateNodeOperators.at(
             deployed_artifact["ActivateNodeOperators"]["address"]
@@ -171,6 +174,7 @@ def deactivate_node_operators_factory(
     deployer,
     acl,
     deployed_artifact,
+    vote_id_from_env,
 ):
     if vote_id_from_env:
         return DeactivateNodeOperators.at(
@@ -208,6 +212,7 @@ def set_node_operator_name_factory(
     simple_dvt,
     deployer,
     deployed_artifact,
+    vote_id_from_env,
 ):
     if vote_id_from_env:
         return SetNodeOperatorNames.at(
@@ -242,6 +247,7 @@ def set_node_operator_reward_address_factory(
     simple_dvt,
     deployer,
     deployed_artifact,
+    vote_id_from_env,
 ):
     if vote_id_from_env:
         return SetNodeOperatorRewardAddresses.at(
@@ -276,6 +282,7 @@ def set_vetted_validators_limit_factory(
     deployer,
     commitee_multisig,
     deployed_artifact,
+    vote_id_from_env,
 ):
     if vote_id_from_env:
         return SetVettedValidatorsLimits.at(
@@ -311,6 +318,7 @@ def change_node_operator_manager_factory(
     commitee_multisig,
     acl,
     deployed_artifact,
+    vote_id_from_env,
 ):
     if vote_id_from_env:
         return ChangeNodeOperatorManagers.at(
@@ -349,6 +357,7 @@ def update_tareget_validator_limits_factory(
     deployer,
     commitee_multisig,
     deployed_artifact,
+    vote_id_from_env,
 ):
     if vote_id_from_env:
         return UpdateTargetValidatorLimits.at(
