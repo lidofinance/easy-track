@@ -278,8 +278,6 @@ def test_top_up_single_recipient_several_times_in_period(
         allowed_recipients_limit_params.duration
     )
 
-    allowed_recipients_registry.updateSpentAmount(0, {"from": lido_contracts.aragon.agent})
-
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         dai,
@@ -557,7 +555,6 @@ def test_spendable_balance_is_renewed_in_next_period(
     recipients,
     allowed_recipients_limit_params,
     registries,
-    lido_contracts,
     add_allowed_token,
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
@@ -568,13 +565,6 @@ def test_spendable_balance_is_renewed_in_next_period(
     
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
-    )
-
-    allowed_recipients_registry.updateSpentAmount(0, {"from": lido_contracts.aragon.agent})
-
-    assert (
-        allowed_recipients_registry.spendableBalance()
-        == allowed_recipients_limit_params.limit
     )
 
     allowed_recipients = recipients[:2]
@@ -1065,7 +1055,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
         allowed_recipients_limit_params.duration
     )
 
-    allowed_recipients_registry.updateSpentAmount(0, {"from": lido_contracts.aragon.agent})
+    spent = allowed_recipients_limit_params.limit - allowed_recipients_registry.spendableBalance()
 
     top_up_amounts = [allowed_recipients_limit_params.limit]
     motion_creation_tx = create_top_up_allowed_recipients_motion(
@@ -1081,7 +1071,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
         {"from": lido_contracts.aragon.agent},
     )
 
-    enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx)
+    enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx, spent_amount=spent)
 
 
 def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_increased(
