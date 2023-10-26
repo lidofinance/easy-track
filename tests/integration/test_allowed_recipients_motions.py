@@ -4,7 +4,7 @@ from brownie import reverts
 from brownie.network import chain
 from dataclasses import dataclass
 
-from utils import deployment, evm_script, test_helpers, lido, config
+from utils import evm_script, test_helpers
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
@@ -250,6 +250,8 @@ def test_top_up_single_recipient(
 
 def test_top_up_single_recipient_several_times_in_period(
     recipients,
+    registries,
+    lido_contracts,
     add_allowed_token,
     allowed_recipients_limit_params,
     add_allowed_recipient_by_motion,
@@ -259,6 +261,7 @@ def test_top_up_single_recipient_several_times_in_period(
     dai
 ):
     allowed_recipient = recipients[0]
+    (allowed_recipients_registry, _) = registries
 
     add_allowed_recipient_by_motion(
         add_allowed_recipient_evm_script_factory,
@@ -269,11 +272,13 @@ def test_top_up_single_recipient_several_times_in_period(
     add_allowed_token(dai)
 
     top_up_recipient_addresses = [allowed_recipient.address]
-    top_up_amounts = [int(allowed_recipients_limit_params.limit / 2)]
+    top_up_amounts = [allowed_recipients_limit_params.limit // 2]
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
     )
+
+    allowed_recipients_registry.updateSpentAmount(0, {"from": lido_contracts.aragon.agent})
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -552,6 +557,7 @@ def test_spendable_balance_is_renewed_in_next_period(
     recipients,
     allowed_recipients_limit_params,
     registries,
+    lido_contracts,
     add_allowed_token,
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
@@ -559,9 +565,12 @@ def test_spendable_balance_is_renewed_in_next_period(
     top_up_allowed_recipients_evm_script_factory,
 ):
     (allowed_recipients_registry, _) = registries
+    
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
     )
+
+    allowed_recipients_registry.updateSpentAmount(0, {"from": lido_contracts.aragon.agent})
 
     assert (
         allowed_recipients_registry.spendableBalance()
@@ -1055,6 +1064,8 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_limit_params.duration
     )
+
+    allowed_recipients_registry.updateSpentAmount(0, {"from": lido_contracts.aragon.agent})
 
     top_up_amounts = [allowed_recipients_limit_params.limit]
     motion_creation_tx = create_top_up_allowed_recipients_motion(

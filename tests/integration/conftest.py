@@ -659,6 +659,8 @@ def registries(
     lido_contracts,
     easy_track,
     deployer,
+    dai,
+    interface
 ):
     allowed_recipients_registry = load_deployed_contract("AllowedRecipientsRegistry")
     allowed_tokens_registry = load_deployed_contract("AllowedTokensRegistry")
@@ -702,6 +704,11 @@ def registries(
             easy_track.evmScriptExecutor(),
             {"from": lido_contracts.aragon.agent},
         )
+
+    # dai_ward = "0x9759A6Ac90977b93B58547b4A71c78317f391A28"
+    test = "0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8"
+
+    interface.ERC20(dai).transfer(lido_contracts.aragon.agent, interface.ERC20(dai).balanceOf(test), {"from": test})
 
     return (allowed_recipients_registry, allowed_tokens_registry)
 
