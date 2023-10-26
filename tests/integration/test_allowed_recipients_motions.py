@@ -672,6 +672,50 @@ def test_fail_if_token_not_allowed(
 
 def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
     dai,
+    registries,
+    recipients,
+    add_allowed_token,
+    remove_allowed_token,
+    add_allowed_recipient_by_motion,
+    allowed_recipients_limit_params,
+    create_top_up_allowed_recipients_motion,
+    add_allowed_recipient_evm_script_factory,
+    top_up_allowed_recipients_evm_script_factory,
+    enact_top_up_allowed_recipient_motion_by_creation_tx
+):
+    allowed_recipient = recipients[0]
+
+    add_allowed_recipient_by_motion(
+        add_allowed_recipient_evm_script_factory,
+        allowed_recipient.address,
+        allowed_recipient.title,
+    )
+
+    add_allowed_token(dai)
+
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
+        allowed_recipients_limit_params.duration
+    )
+
+    motion_creation_tx = create_top_up_allowed_recipients_motion(
+        top_up_allowed_recipients_evm_script_factory,
+        dai,
+        [allowed_recipient.address],
+        allowed_recipients_limit_params.limit,
+    )
+
+    remove_allowed_token(dai)
+
+    with reverts("TOKEN_NOT_ALLOWED"):
+        enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx)
+
+    add_allowed_token(dai)
+
+    enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx)
+
+
+def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
+    dai,
     recipients,
     add_allowed_token,
     allowed_recipients_limit_params,

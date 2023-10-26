@@ -211,6 +211,45 @@ def test_fail_create_evm_script_if_recipient_not_allowed(
         )
 
 
+def test_fail_create_evm_script_if_recipient_is_zero(
+    allowed_recipients_registry,
+    allowed_tokens_registry,
+    TopUpAllowedRecipients,
+    owner,
+    finance,
+    ldo,
+    easy_track,
+):
+    trusted_caller = owner
+    recipient = ZERO_ADDRESS
+
+    (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        _,
+        set_limit_role_holder,
+        _,
+    ) = allowed_recipients_registry
+    (tokens_registry, _, add_token_role_holder, _) = allowed_tokens_registry
+
+    
+    registry.addRecipient(
+        recipient, "Test Recipient", {"from": add_recipient_role_holder}
+    )
+    registry.setLimitParameters(int(100e18), 12, {"from": set_limit_role_holder})
+    tokens_registry.addToken(ldo, {"from": add_token_role_holder})
+
+    top_up_factory = owner.deploy(
+        TopUpAllowedRecipients, trusted_caller, registry, tokens_registry, finance, easy_track
+    )
+
+    with reverts("ZERO_RECIPIENT"):
+        top_up_factory.createEVMScript(
+            trusted_caller, make_call_data(ldo.address, [recipient], [123])
+        )
+
+
 def test_fail_create_evm_script_if_token_not_allowed(
     allowed_recipients_registry,
     allowed_tokens_registry,
@@ -338,11 +377,10 @@ def test_fail_create_evm_script_if_sum_exceeds_limit(
     owner,
     finance,
     ldo,
+    usdc,
     easy_track,
 ):
     recipients = [accounts[4].address, accounts[5].address]
-    payouts = [int(10e18), int(20e18)]
-    call_data = make_call_data(ldo.address, recipients, payouts)
 
     (
         registry,
@@ -367,7 +405,15 @@ def test_fail_create_evm_script_if_sum_exceeds_limit(
     )
 
     tokens_registry.addToken(ldo, {"from": add_token_role_holder})
+    tokens_registry.addToken(usdc, {"from": add_token_role_holder})
 
+    payouts = [int(10e18), int(20e18)]
+    call_data = make_call_data(ldo.address, recipients, payouts)
+    with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
+        top_up_factory.createEVMScript(owner, call_data)
+
+    payouts = [int(10e6), int(20e6)]
+    call_data = make_call_data(usdc, recipients, payouts)
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_factory.createEVMScript(owner, call_data)
 

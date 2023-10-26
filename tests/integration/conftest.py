@@ -495,9 +495,23 @@ def enact_top_up_allowed_recipient_motion_by_creation_tx(
 
 @pytest.fixture(scope="module")
 def check_top_up_motion_enactment(
-    AllowedRecipientsRegistry, AllowedTokensRegistry, get_balances, lido_contracts
+    AllowedRecipientsRegistry, get_balances, lido_contracts, interface
 ):
     """Note: this check works correctly only when was payment in the period"""
+
+    def normalize_amount(token_amount, token):
+        DECIMALS = 18
+
+        if token_amount == 0:
+            return 0
+
+        token_decimals = interface.ERC20(token).decimals()
+
+        if token_decimals == DECIMALS:
+            return token_amount
+        if token_decimals > DECIMALS:
+            return (token_amount - 1) // (10 ** (token_decimals - DECIMALS)) + 1
+        return token_amount * (10 ** (DECIMALS - token_decimals))
 
 
     def _check_top_up_motion_enactment(
@@ -515,13 +529,10 @@ def check_top_up_motion_enactment(
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             top_up_allowed_recipients_evm_script_factory.allowedRecipientsRegistry()
         )
-        allowed_tokens_registry = AllowedTokensRegistry.at(
-            top_up_allowed_recipients_evm_script_factory.allowedTokensRegistry()
-        )
         limit, duration = allowed_recipients_registry.getLimitParameters()
 
         spending_in_tokens = sum(top_up_amounts)
-        spending = allowed_tokens_registry.normalizeAmount(
+        spending = normalize_amount(
             spending_in_tokens, top_up_token
         )
         spendable = limit - (spending + spent_amount)

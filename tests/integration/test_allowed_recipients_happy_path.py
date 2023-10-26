@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from brownie import (
     chain,
     reverts,
+    AllowedTokensRegistry,
     AllowedRecipientsRegistry,
     TopUpAllowedRecipients,
     AddAllowedRecipient,
@@ -15,6 +16,7 @@ MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
 @dataclass
 class SingleRecipientTopUpOnlySetup:
+    allowed_tokens_registry: AllowedTokensRegistry
     allowed_recipients_registry: AllowedRecipientsRegistry
     top_up_allowed_recipients_evm_script_factory: TopUpAllowedRecipients
     allowed_tokens: list[str]
@@ -39,6 +41,7 @@ def new_recipient(recipients):
 @pytest.fixture(scope="module")
 def single_recipient_top_up_only_setup(
     AllowedRecipientsRegistry,
+    AllowedTokensRegistry,
     TopUpAllowedRecipients,
     easy_track,
     lido_contracts,
@@ -66,6 +69,9 @@ def single_recipient_top_up_only_setup(
             "allowedRecipientsRegistry"
         ]
     )
+    allowed_tokens_registry = AllowedTokensRegistry.at(
+        deploy_tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
+    )
     top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
         deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
@@ -81,15 +87,17 @@ def single_recipient_top_up_only_setup(
         {"from": lido_contracts.aragon.voting},
     )
     return SingleRecipientTopUpOnlySetup(
-        allowed_recipients_registry,
-        top_up_allowed_recipients_evm_script_factory,
-        allowed_tokens
+        allowed_tokens_registry=allowed_tokens_registry,
+        allowed_recipients_registry=allowed_recipients_registry,
+        top_up_allowed_recipients_evm_script_factory=top_up_allowed_recipients_evm_script_factory,
+        allowed_tokens=allowed_tokens
     )
 
 
 @pytest.fixture(scope="module")
 def full_setup(
     AllowedRecipientsRegistry,
+    AllowedTokensRegistry,
     AddAllowedRecipient,
     TopUpAllowedRecipients,
     RemoveAllowedRecipient,
@@ -119,6 +127,9 @@ def full_setup(
             "allowedRecipientsRegistry"
         ]
     )
+    allowed_tokens_registry = AllowedTokensRegistry.at(
+        deploy_tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
+    )
 
     add_allowed_recipient_evm_script_factory = AddAllowedRecipient.at(
         deploy_tx.events["AddAllowedRecipientDeployed"][0]["addAllowedRecipient"]
@@ -133,6 +144,7 @@ def full_setup(
     remove_allowed_recipient_evm_script_factory = RemoveAllowedRecipient.at(
         deploy_tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
     )
+    
     easy_track.addEVMScriptFactory(
         remove_allowed_recipient_evm_script_factory,
         deployment.create_permission(allowed_recipients_registry, "removeRecipient"),
@@ -142,6 +154,7 @@ def full_setup(
     top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
         deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
+
     easy_track.addEVMScriptFactory(
         top_up_allowed_recipients_evm_script_factory,
         deployment.create_permission(
@@ -154,11 +167,12 @@ def full_setup(
     )
 
     return FullSetup(
-        allowed_recipients_registry,
-        top_up_allowed_recipients_evm_script_factory,
-        allowed_tokens,
-        add_allowed_recipient_evm_script_factory,
-        remove_allowed_recipient_evm_script_factory,
+        allowed_tokens_registry=allowed_tokens_registry,
+        allowed_recipients_registry=allowed_recipients_registry,
+        top_up_allowed_recipients_evm_script_factory=top_up_allowed_recipients_evm_script_factory,
+        allowed_tokens=allowed_tokens,
+        add_allowed_recipient_evm_script_factory=add_allowed_recipient_evm_script_factory,
+        remove_allowed_recipient_evm_script_factory=remove_allowed_recipient_evm_script_factory,
     )
 
 
@@ -180,6 +194,9 @@ def test_single_recipient_top_up_only_setup_happy_path(
 
     allowed_recipients_registry = (
         single_recipient_top_up_only_setup.allowed_recipients_registry
+    )
+    allowed_tokens_registry = (
+        single_recipient_top_up_only_setup.allowed_tokens_registry
     )
     top_up_allowed_recipients_evm_script_factory = (
         single_recipient_top_up_only_setup.top_up_allowed_recipients_evm_script_factory
@@ -235,6 +252,20 @@ def test_single_recipient_top_up_only_setup_happy_path(
         allowed_recipients_registry.removeRecipient(
             new_recipient.address, {"from": evm_script_executor}
         )
+
+    # Validate Aragon Agent can remove token
+    assert allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.removeToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    # Validate Aragon Agent can add token
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.addToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert allowed_tokens_registry.isTokenAllowed(dai)
 
     # wait next period
 
@@ -321,6 +352,21 @@ def test_full_setup_happy_path(
         {"from": lido_contracts.aragon.agent},
     )
     assert allowed_recipients_registry.isRecipientAllowed(new_recipient.address)
+
+    # Validate Aragon Agent can remove token
+    allowed_tokens_registry = full_setup.allowed_tokens_registry
+    assert allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.removeToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    # Validate Aragon Agent can add token
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.addToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert allowed_tokens_registry.isTokenAllowed(dai)
 
     # Wait for next period
     chain.sleep(

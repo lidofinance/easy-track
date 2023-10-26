@@ -8,9 +8,6 @@ from brownie import (
     RemoveAllowedRecipient,
 )
 
-from utils.config import (
-    get_network_name,
-)
 from utils import lido, deployed_easy_track, log, deployment
 from hexbytes import HexBytes
 
@@ -21,50 +18,70 @@ from utils.test_helpers import (
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
     SET_PARAMETERS_ROLE,
     UPDATE_SPENT_AMOUNT_ROLE,
-    DEFAULT_ADMIN_ROLE
+    DEFAULT_ADMIN_ROLE,
 )
 
 GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
 deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
-    tokens=["0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C", "0x56340274fB5a72af1A3C6609061c451De7961Bd4"],
-    limit=10000000000000000000, 
+    tokens=[],
+    limit=0,
     period=1,
     spent_amount=0,
-    trusted_caller="0x4333218072d5d7008546737786663c38b4d561a4",  
-    titles=["Agent"],
-    recipients=["0x4333218072d5d7008546737786663c38b4d561a4"],
+    trusted_caller="",
+    titles=[],
+    recipients=[],
 )
 
-deployment_tx_hash = "0x8fb7b98a7acdca0028fb8439278feff4ded27609c390274cc7b3ec0142b76133"
+deployment_tx_hash = ""
+
+recipients_registry_deploy_tx_hash = ""
+tokens_registry_deploy_tx_hash = ""
+top_up_allowed_recipients_deploy_tx_hash = ""
+add_allowed_token_deploy_tx_hash = ""
+remove_allowed_token_deploy_tx_hash = ""
 
 
 def main():
     network_name = network.show_active()
 
-    tx = chain.get_transaction(deployment_tx_hash)
+    recipients_registry_deploy_tx = chain.get_transaction(
+        recipients_registry_deploy_tx_hash or deployment_tx_hash
+    )
+    tokens_registry_deploy_tx = chain.get_transaction(
+        tokens_registry_deploy_tx_hash or deployment_tx_hash
+    )
+    top_up_deploy_tx = chain.get_transaction(
+        top_up_allowed_recipients_deploy_tx_hash or deployment_tx_hash
+    )
+    add_allowed_token_deploy_tx = chain.get_transaction(
+        add_allowed_token_deploy_tx_hash or deployment_tx_hash
+    )
+    remove_allowed_recipient_deploy_tx = chain.get_transaction(
+        remove_allowed_token_deploy_tx_hash or deployment_tx_hash
+    )
 
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
 
     evm_script_executor = et_contracts.evm_script_executor
 
-    recipients_registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
-        "allowedRecipientsRegistry"
-    ]
-    tokens_registry_address = tx.events["AllowedTokensRegistryDeployed"][
-        "allowedTokensRegistry"
-    ]
-    top_up_address = tx.events["TopUpAllowedRecipientsDeployed"][
-        "topUpAllowedRecipients"
-    ]
-    add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"][
-        "addAllowedRecipient"
-    ]
-    remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"][
-        "removeAllowedRecipient"
-    ]
+    recipients_registry_address = recipients_registry_deploy_tx.events[
+        "AllowedRecipientsRegistryDeployed"
+    ]["allowedRecipientsRegistry"]
+    tokens_registry_address = tokens_registry_deploy_tx.events[
+        "AllowedTokensRegistryDeployed"
+    ]["allowedTokensRegistry"]
+    top_up_address = top_up_deploy_tx.events[
+        "TopUpAllowedRecipientsDeployed"
+    ]["topUpAllowedRecipients"]
+    add_allowed_recipient_address = add_allowed_token_deploy_tx.events[
+        "AddAllowedRecipientDeployed"
+    ]["addAllowedRecipient"]
+    remove_allowed_recipient_address = remove_allowed_recipient_deploy_tx.events[
+        "RemoveAllowedRecipientDeployed"
+    ]["removeAllowedRecipient"]
 
     log.br()
 
@@ -106,7 +123,9 @@ def main():
     assert remove_allowed_recipient.allowedRecipientsRegistry() == recipients_registry
     assert remove_allowed_recipient.trustedCaller() == deploy_config.trusted_caller
 
-    assert len(recipients_registry.getAllowedRecipients()) == len(deploy_config.recipients)
+    assert len(recipients_registry.getAllowedRecipients()) == len(
+        deploy_config.recipients
+    )
     for recipient in deploy_config.recipients:
         assert recipients_registry.isRecipientAllowed(recipient)
 
@@ -115,10 +134,13 @@ def main():
     assert registryPeriodDuration == deploy_config.period
 
     assert (
-        recipients_registry.spendableBalance() == deploy_config.limit - deploy_config.spent_amount
+        recipients_registry.spendableBalance()
+        == deploy_config.limit - deploy_config.spent_amount
     )
 
-    assert recipients_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent)
+    assert recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent
+    )
     assert recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, contracts.aragon.agent
     )
@@ -126,7 +148,9 @@ def main():
     assert recipients_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, contracts.aragon.agent)
     assert recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
 
-    assert recipients_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor
+    )
     assert recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor
     )
@@ -134,13 +158,43 @@ def main():
     assert not recipients_registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
-    assert not recipients_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipients_registry_address)
+    assert not recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipients_registry_address
+    )
     assert not recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, recipients_registry_address
     )
-    assert not recipients_registry.hasRole(SET_PARAMETERS_ROLE, recipients_registry_address)
-    assert not recipients_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, recipients_registry_address)
-    assert not recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, recipients_registry_address)
+    assert not recipients_registry.hasRole(
+        SET_PARAMETERS_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        UPDATE_SPENT_AMOUNT_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        DEFAULT_ADMIN_ROLE, recipients_registry_address
+    )
+
+    for token in deploy_config.tokens:
+        assert tokens_registry.isTokenAllowed(token)
+
+    assert tokens_registry.getAllowedTokens() == deploy_config.tokens
+    assert len(tokens_registry.getAllowedTokens()) == len(deploy_config.tokens)
+
+    assert tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
+    assert tokens_registry.hasRole(
+        ADD_TOKEN_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent
+    )
+    assert tokens_registry.hasRole(
+        REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, contracts.aragon.agent
+    )
+
+    assert not tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, tokens_registry_address)
+    assert not tokens_registry.hasRole(
+        ADD_TOKEN_TO_ALLOWED_LIST_ROLE, tokens_registry_address
+    )
+    assert not tokens_registry.hasRole(
+        REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, tokens_registry_address
+    )
 
     registry_roles_holders = {
         ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE: [],
@@ -152,8 +206,27 @@ def main():
         REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE: [],
     }
 
-    for event in tx.logs:
-        # print(event["topics"][0])
+    def log_to_key(log):
+        return log["address"]
+
+    all_logs = (
+        recipients_registry_deploy_tx.logs
+        + tokens_registry_deploy_tx.logs
+        + top_up_deploy_tx.logs
+        + add_allowed_token_deploy_tx.logs
+        + remove_allowed_recipient_deploy_tx.logs
+    )
+
+    unique_logs = []
+    seen_keys = set()
+
+    for l in all_logs:
+        key = log_to_key(l)
+        if key not in seen_keys:
+            unique_logs.append(l)
+            seen_keys.add(key)
+
+    for event in all_logs:
         if event["topics"][0] == HexBytes(GRANT_ROLE_EVENT):
             registry_roles_holders[event["topics"][1].hex()].append(
                 "0x" + event["topics"][2].hex()[26:]

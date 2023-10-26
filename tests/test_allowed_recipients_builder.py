@@ -1,6 +1,9 @@
 import pytest
 from brownie import Contract, reverts
-from utils.test_helpers import ADD_TOKEN_TO_ALLOWED_LIST_ROLE, REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE
+from utils.test_helpers import (
+    ADD_TOKEN_TO_ALLOWED_LIST_ROLE,
+    REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE,
+)
 
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = (
     "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
@@ -181,15 +184,12 @@ def test_deploy_allowed_recipients_registry(
     accounts,
     stranger,
     agent,
-    ldo,
-    usdc,
     evm_script_executor,
     AllowedRecipientsRegistry,
 ):
     limit = 1e18
     period = 1
     recipients = [accounts[3], accounts[4]]
-    tokens = [ldo, usdc]
     titles = ["account 3", "account 4"]
     spentAmount = 1e10
 
@@ -197,20 +197,14 @@ def test_deploy_allowed_recipients_registry(
         limit, period, recipients, titles, spentAmount, True, {"from": stranger}
     )
 
-    tx_tokens = allowed_recipients_builder.deployAllowedTokensRegistry(tokens, {"from": stranger})
-
-    recipient_registry_address = tx_recipients.events["AllowedRecipientsRegistryDeployed"][
-        "allowedRecipientsRegistry"
-    ]
-    token_registry_address = tx_tokens.events["AllowedTokensRegistryDeployed"][
-        "allowedTokensRegistry"
-    ]
+    recipient_registry_address = tx_recipients.events[
+        "AllowedRecipientsRegistryDeployed"
+    ]["allowedRecipientsRegistry"]
 
     recipient_registry = Contract.from_abi(
-        "AllowedRecipientsRegistry", recipient_registry_address, AllowedRecipientsRegistry.abi
-    )
-    token_registry = Contract.from_abi(
-        "AllowedTokensRegistry", token_registry_address, AllowedRecipientsRegistry.abi
+        "AllowedRecipientsRegistry",
+        recipient_registry_address,
+        AllowedRecipientsRegistry.abi,
     )
 
     assert len(recipient_registry.getAllowedRecipients()) == len(recipients)
@@ -229,7 +223,9 @@ def test_deploy_allowed_recipients_registry(
     assert recipient_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert recipient_registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
-    assert recipient_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert recipient_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor
+    )
     assert recipient_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor
     )
@@ -237,16 +233,57 @@ def test_deploy_allowed_recipients_registry(
     assert not recipient_registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not recipient_registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
-    assert not recipient_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipient_registry_address)
+    assert not recipient_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipient_registry_address
+    )
     assert not recipient_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, recipient_registry_address
     )
-    assert not recipient_registry.hasRole(SET_PARAMETERS_ROLE, recipient_registry_address)
-    assert not recipient_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, recipient_registry_address)
-    assert not recipient_registry.hasRole(DEFAULT_ADMIN_ROLE, recipient_registry_address)
+    assert not recipient_registry.hasRole(
+        SET_PARAMETERS_ROLE, recipient_registry_address
+    )
+    assert not recipient_registry.hasRole(
+        UPDATE_SPENT_AMOUNT_ROLE, recipient_registry_address
+    )
+    assert not recipient_registry.hasRole(
+        DEFAULT_ADMIN_ROLE, recipient_registry_address
+    )
+
+
+def test_deploy_allowed_tokens_registry(
+    allowed_recipients_builder,
+    AllowedTokensRegistry,
+    stranger,
+    agent,
+    ldo,
+    usdc,
+):
+    tx_tokens = allowed_recipients_builder.deployAllowedTokensRegistry(
+        [ldo, usdc], {"from": stranger}
+    )
+    token_registry_address = tx_tokens.events["AllowedTokensRegistryDeployed"][
+        "allowedTokensRegistry"
+    ]
+    token_registry = Contract.from_abi(
+        "AllowedTokensRegistry", token_registry_address, AllowedTokensRegistry.abi
+    )
+
+    assert token_registry.isTokenAllowed(ldo)
+    assert token_registry.isTokenAllowed(usdc)
+    assert token_registry.getAllowedTokens() == [ldo, usdc]
+    assert len(token_registry.getAllowedTokens()) == 2
+
+    assert token_registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
+    assert not token_registry.hasRole(DEFAULT_ADMIN_ROLE, token_registry_address)
+    assert not token_registry.hasRole(DEFAULT_ADMIN_ROLE, allowed_recipients_builder)
 
     assert token_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, agent)
     assert token_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, agent)
+
+    assert not token_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, token_registry_address)
+    assert not token_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, token_registry_address)
+    assert not token_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, allowed_recipients_builder)
+    assert not token_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, allowed_recipients_builder)
 
 
 def test_deploy_recipients_registry_reverts_recipients_length(
@@ -292,7 +329,6 @@ def test_deploy_full_setup(
     RemoveAllowedRecipient,
     TopUpAllowedRecipients,
 ):
-
     recipients = [
         "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
         "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
@@ -340,7 +376,9 @@ def test_deploy_full_setup(
     ]
 
     recipients_registry = Contract.from_abi(
-        "AllowedRecipientsRegistry", recipients_registry_address, AllowedRecipientsRegistry.abi
+        "AllowedRecipientsRegistry",
+        recipients_registry_address,
+        AllowedRecipientsRegistry.abi,
     )
 
     tokens_registry = Contract.from_abi(
@@ -384,7 +422,9 @@ def test_deploy_full_setup(
     assert recipients_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent)
     assert recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
 
-    assert recipients_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor
+    )
     assert recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor
     )
@@ -392,19 +432,37 @@ def test_deploy_full_setup(
     assert not recipients_registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
-    assert not recipients_registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipients_registry_address)
+    assert not recipients_registry.hasRole(
+        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipients_registry_address
+    )
     assert not recipients_registry.hasRole(
         REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, recipients_registry_address
     )
-    assert not recipients_registry.hasRole(SET_PARAMETERS_ROLE, recipients_registry_address)
-    assert not recipients_registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, recipients_registry_address)
-    assert not recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, recipients_registry_address)
+    assert not recipients_registry.hasRole(
+        SET_PARAMETERS_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        UPDATE_SPENT_AMOUNT_ROLE, recipients_registry_address
+    )
+    assert not recipients_registry.hasRole(
+        DEFAULT_ADMIN_ROLE, recipients_registry_address
+    )
+
+    assert tokens_registry.isTokenAllowed(ldo)
+    assert tokens_registry.getAllowedTokens() == [ldo]
+    assert len(tokens_registry.getAllowedTokens()) == 1
+
+    assert tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
+    assert not tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, tokens_registry_address)
 
     assert tokens_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, agent)
     assert tokens_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, agent)
 
     assert not tokens_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, tokens_registry_address)
     assert not tokens_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, tokens_registry_address)
+    assert not tokens_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, allowed_recipients_builder)
+    assert not tokens_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, allowed_recipients_builder)
+
 
 def test_deploy_deploy_single_recipient_top_up_only_setup(
     allowed_recipients_builder,
@@ -417,7 +475,6 @@ def test_deploy_deploy_single_recipient_top_up_only_setup(
     AllowedTokensRegistry,
     TopUpAllowedRecipients,
 ):
-
     recipient = accounts[2]
     title = "recipient"
     limit = 1e18
@@ -482,8 +539,17 @@ def test_deploy_deploy_single_recipient_top_up_only_setup(
     assert not registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, registry_address)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, registry_address)
 
+    assert tokens_registry.isTokenAllowed(ldo)
+    assert tokens_registry.getAllowedTokens() == [ldo]
+    assert len(tokens_registry.getAllowedTokens()) == 1
+
+    assert tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, agent)
+    assert not tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, tokens_registry_address)
+
     assert tokens_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, agent)
     assert tokens_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, agent)
 
     assert not tokens_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, tokens_registry_address)
     assert not tokens_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, tokens_registry_address)
+    assert not tokens_registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, allowed_recipients_builder)
+    assert not tokens_registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, allowed_recipients_builder)

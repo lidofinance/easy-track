@@ -4,6 +4,7 @@ from brownie import reverts, ZERO_ADDRESS, MockERC20, accounts
 
 from utils.test_helpers import (
     access_revert_message,
+    DEFAULT_ADMIN_ROLE,
     ADD_TOKEN_TO_ALLOWED_LIST_ROLE,
     REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE,
 )
@@ -23,6 +24,8 @@ def test_registry_initial_state(AllowedTokensRegistry, accounts, owner):
         [add_token_role_holder],
         [remove_token_role_holder],
     )
+
+    assert registry.hasRole(DEFAULT_ADMIN_ROLE, owner)
 
     assert registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, add_token_role_holder)
     assert registry.hasRole(
