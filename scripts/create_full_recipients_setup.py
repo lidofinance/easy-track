@@ -16,13 +16,12 @@ from utils import (
 from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
-    token="",
+    tokens=[],
     limit=0, 
     period=1,
     spent_amount=0,
     trusted_caller="",  
-    titles=[
-    ],
+    titles=[""],
     recipients=[],
 )
 
@@ -39,7 +38,7 @@ def main():
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
 
-    log.ok("Token", deploy_config.token)
+    log.ok("Tokens", deploy_config.tokens)
     log.ok("Limit", deploy_config.limit)
     log.ok("Period", deploy_config.period)
     log.ok("Spent amount", deploy_config.spent_amount)
@@ -59,9 +58,9 @@ def main():
 
     tx = allowed_recipients_builder.deployFullSetup(
         deploy_config.trusted_caller,
-        deploy_config.token,
         deploy_config.limit,
         deploy_config.period,
+        deploy_config.tokens,
         deploy_config.recipients,
         deploy_config.titles,
         deploy_config.spent_amount,
@@ -71,6 +70,9 @@ def main():
     allowed_recipients_registry_address = tx.events[
         "AllowedRecipientsRegistryDeployed"
     ]["allowedRecipientsRegistry"]
+    allowed_tokens_registry_address = tx.events[
+        "AllowedTokensRegistryDeployed"
+    ]["allowedTokensRegistry"]
     top_up_allowed_recipients_address = tx.events["TopUpAllowedRecipientsDeployed"][
         "topUpAllowedRecipients"
     ]
@@ -83,6 +85,7 @@ def main():
 
     log.ok("Allowed recipients easy track contracts have been deployed...")
     log.nb("Deployed AllowedRecipientsRegistry", allowed_recipients_registry_address)
+    log.nb("Deployed AllowedTokensRegistry", allowed_tokens_registry_address)
     log.nb("Deployed AddAllowedRecipient", add_allowed_recipient_address)
     log.nb("Deployed RemoveAllowedRecipient", remove_allowed_recipient_address)
     log.nb("Deployed TopUpAllowedRecipients", top_up_allowed_recipients_address)

@@ -7,6 +7,7 @@ import "./EVMScriptFactories/AddAllowedRecipient.sol";
 import "./EVMScriptFactories/RemoveAllowedRecipient.sol";
 import "./EVMScriptFactories/TopUpAllowedRecipients.sol";
 import "./AllowedRecipientsRegistry.sol";
+import "./AllowedTokensRegistry.sol";
 
 /// @author bulbozaur
 /// @notice Factory for Allowed Recipient Easy Track contracts
@@ -22,13 +23,21 @@ contract AllowedRecipientsFactory {
         IBokkyPooBahsDateTimeContract bokkyPooBahsDateTimeContract
     );
 
+    event AllowedTokensRegistryDeployed(
+        address indexed creator,
+        address indexed allowedTokensRegistry,
+        address _defaultAdmin,
+        address[] addTokenToAllowedListRoleHolders,
+        address[] removeTokenFromAllowedListRoleHolders
+    );
+
     event TopUpAllowedRecipientsDeployed(
         address indexed creator,
         address indexed topUpAllowedRecipients,
         address trustedCaller,
         address allowedRecipientsRegistry,
+        address allowedTokenssRegistry,
         address finance,
-        address token,
         address easyTrack
     );
 
@@ -48,12 +57,12 @@ contract AllowedRecipientsFactory {
 
     function deployAllowedRecipientsRegistry(
         address _defaultAdmin,
-        address[] memory _addRecipientToAllowedListRoleHolders,
-        address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateSpentAmountRoleHolders,
+        address[] calldata _addRecipientToAllowedListRoleHolders,
+        address[] calldata _removeRecipientFromAllowedListRoleHolders,
+        address[] calldata _setLimitParametersRoleHolders,
+        address[] calldata _updateSpentAmountRoleHolders,
         IBokkyPooBahsDateTimeContract _bokkyPooBahsDateTimeContract
-    ) public returns (AllowedRecipientsRegistry registry) {
+    ) external returns (AllowedRecipientsRegistry registry) {
         registry = new AllowedRecipientsRegistry(
             _defaultAdmin,
             _addRecipientToAllowedListRoleHolders,
@@ -75,18 +84,38 @@ contract AllowedRecipientsFactory {
         );
     }
 
+    function deployAllowedTokensRegistry(
+        address _defaultAdmin,
+        address[] calldata _addTokensToAllowedListRoleHolders,
+        address[] calldata _removeTokensFromAllowedListRoleHolders
+    ) external returns (AllowedTokensRegistry registry) {
+        registry = new AllowedTokensRegistry(
+            _defaultAdmin,
+            _addTokensToAllowedListRoleHolders,
+            _removeTokensFromAllowedListRoleHolders
+        );
+
+        emit AllowedTokensRegistryDeployed(
+            msg.sender,
+            address(registry),
+            _defaultAdmin,
+            _addTokensToAllowedListRoleHolders,
+            _removeTokensFromAllowedListRoleHolders
+        );
+    }
+
     function deployTopUpAllowedRecipients(
         address _trustedCaller,
         address _allowedRecipientsRegistry,
-        address _token,
+        address _allowedTokensRegistry,
         address _finance,
         address _easyTrack
-    ) public returns (TopUpAllowedRecipients topUpAllowedRecipients) {
+    ) external returns (TopUpAllowedRecipients topUpAllowedRecipients) {
         topUpAllowedRecipients = new TopUpAllowedRecipients(
             _trustedCaller,
             _allowedRecipientsRegistry,
+            _allowedTokensRegistry,
             _finance,
-            _token,
             _easyTrack
         );
 
@@ -95,8 +124,8 @@ contract AllowedRecipientsFactory {
             address(topUpAllowedRecipients),
             _trustedCaller,
             _allowedRecipientsRegistry,
+            _allowedTokensRegistry,
             _finance,
-            _token,
             _easyTrack
         );
 
@@ -104,7 +133,7 @@ contract AllowedRecipientsFactory {
     }
 
     function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
-        public
+        external
         returns (AddAllowedRecipient addAllowedRecipient)
     {
         addAllowedRecipient = new AddAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
@@ -120,7 +149,7 @@ contract AllowedRecipientsFactory {
     function deployRemoveAllowedRecipient(
         address _trustedCaller,
         address _allowedRecipientsRegistry
-    ) public returns (RemoveAllowedRecipient removeAllowedRecipient) {
+    ) external returns (RemoveAllowedRecipient removeAllowedRecipient) {
         removeAllowedRecipient = new RemoveAllowedRecipient(
             _trustedCaller,
             _allowedRecipientsRegistry

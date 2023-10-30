@@ -1,0 +1,18 @@
+{
+    "AllowedRecipientsBuilder": {
+        "contract": "AllowedRecipientsBuilder",
+        "address": "0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF",
+        "constructorArgs": [
+            "0xEe60C6ebC91237d334230b12263E26EE3b480ec4",
+            "0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c",
+            "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea",
+            "0xB9E5CBB9CA5b0d659238807E84D0176930753d86",
+            "0x75100bd564415731B5936A4A94D0dC29DdE5dB3C"
+        ]
+    },
+    "AllowedRecipientsFactory": {
+        "contract": "AllowedRecipientsFactory",
+        "address": "0xEe60C6ebC91237d334230b12263E26EE3b480ec4",
+        "constructorArgs": []
+    }
+}

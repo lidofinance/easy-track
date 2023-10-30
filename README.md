@@ -71,6 +71,12 @@ poetry run brownie networks import network-config.yaml True
 poetry shell
 ```
 
+This is a workaround related brownie deps pyyaml issue eth-brownie/brownie#1701:
+
+```bash
+poetry run pip install "cython<3.0" pyyaml==5.4.1 --no-build-isolation
+``````
+
 Compile the Smart Contracts:
 
 ```bash

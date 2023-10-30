@@ -37,6 +37,22 @@ def addresses(network=DEFAULT_NETWORK):
     )
 
 
+def external_contracts(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return {
+            "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "dai": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        }
+    if network == "goerli" or network == "goerli-fork":
+        return {
+            "usdc": "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
+            "dai": "0x56340274fB5a72af1A3C6609061c451De7961Bd4",
+        }
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+    )
+
+
 def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
@@ -48,7 +64,7 @@ def allowed_recipients_builder(network=DEFAULT_NETWORK):
         )
     if network == "goerli" or network == "goerli-fork":
         return brownie.AllowedRecipientsBuilder.at(
-            "0x1082512D1d60a0480445353eb55de451D261b684"
+            "0xC4573b7288c391d090F1b6e3343AE9782D4aF87d"
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""

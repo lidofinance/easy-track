@@ -1074,6 +1074,32 @@ def test_fail_if_update_spent_amount_when_no_period_duration_set(limits_checker)
         limits_checker.updateSpentAmount(123, {"from": update_spent_amount_role_holder})
 
 
+def test_fail_edge_case(limits_checker):
+    (
+        limits_checker,
+        set_parameters_role_holder,
+        update_spent_amount_role_holder,
+    ) = limits_checker
+    period_limit, period_duration = 10 * 10 ** 18, 1
+
+    limits_checker.setLimitParameters(
+        period_limit, period_duration, {"from": set_parameters_role_holder}
+    )
+
+    limits_checker.updateSpentAmount(9 * 10**18, {"from": update_spent_amount_role_holder})
+    assert limits_checker.isUnderSpendableBalance(1 * 10**18, 0)
+    assert not limits_checker.isUnderSpendableBalance(1 * 10**18 + 1, 0)
+
+    advance_chain_time_to_beginning_of_the_next_period(period_duration)
+
+    limits_checker.setLimitParameters(
+        10 * 10 ** 18, period_duration, {"from": set_parameters_role_holder}
+    )
+
+    assert limits_checker.isUnderSpendableBalance(1 * 10**18, 0)
+    assert not limits_checker.isUnderSpendableBalance(1 * 10**18 + 1, 0)
+
+
 @pytest.mark.parametrize(
     "inputs, period_duration, expected_result",
     [

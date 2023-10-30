@@ -3,31 +3,9 @@
 
 pragma solidity ^0.8.4;
 
-interface IEasyTrack {
-    function evmScriptExecutor() external view returns (address);
-}
-
-interface IAllowedRecipientsRegistry {
-    function addRecipient(address _recipient, string memory _title) external;
-
-    function renounceRole(bytes32 role, address account) external;
-
-    function isRecipientAllowed(address _recipient) external view returns (bool);
-
-    function setLimitParameters(uint256 _limit, uint256 _periodDurationMonths) external;
-
-    function getLimitParameters() external view returns (uint256, uint256);
-
-    function updateSpentAmount(uint256 _payoutAmount) external;
-
-    function spendableBalance() external view returns (uint256);
-
-    function hasRole(bytes32 role, address account) external view returns (bool);
-
-    function getAllowedRecipients() external view returns (address[] memory);
-
-    function bokkyPooBahsDateTimeContract() external view returns (address);
-}
+import "./interfaces/IAllowedRecipientsRegistry.sol";
+import "./interfaces/IAllowedTokensRegistry.sol";
+import "./interfaces/IEasyTrack.sol";
 
 interface ITopUpAllowedRecipients {
     function token() external view returns (address);
@@ -39,6 +17,8 @@ interface ITopUpAllowedRecipients {
     function trustedCaller() external view returns (address);
 
     function allowedRecipientsRegistry() external view returns (address);
+
+    function allowedTokensRegistry() external view returns (address);
 }
 
 interface IAddAllowedRecipient {
@@ -56,29 +36,34 @@ interface IRemoveAllowedRecipient {
 interface IAllowedRecipientsFactory {
     function deployAllowedRecipientsRegistry(
         address _admin,
-        address[] memory _addRecipientToAllowedListRoleHolders,
-        address[] memory _removeRecipientFromAllowedListRoleHolders,
-        address[] memory _setLimitParametersRoleHolders,
-        address[] memory _updateSpentAmountRoleHolders,
+        address[] calldata _addRecipientToAllowedListRoleHolders,
+        address[] calldata _removeRecipientFromAllowedListRoleHolders,
+        address[] calldata _setLimitParametersRoleHolders,
+        address[] calldata _updateSpentAmountRoleHolders,
         address bokkyPooBahsDateTimeContract
     ) external returns (IAllowedRecipientsRegistry);
+
+    function deployAllowedTokensRegistry(
+        address _defaultAdmin,
+        address[] calldata _addTokensToAllowedListRoleHolders,
+        address[] calldata _removeTokensFromAllowedListRoleHolders
+    ) external returns (IAllowedTokensRegistry registry);
 
     function deployTopUpAllowedRecipients(
         address _trustedCaller,
         address _allowedRecipientsRegistry,
-        address _token,
+        address _allowedTokensRegistry,
         address _finance,
-        IEasyTrack _easyTrack
-    ) external returns (ITopUpAllowedRecipients);
+        address _easyTrack
+    ) external returns (ITopUpAllowedRecipients topUpAllowedRecipients);
 
     function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
         external
         returns (IAddAllowedRecipient);
 
-    function deployRemoveAllowedRecipient(
-        address _trustedCaller,
-        address _allowedRecipientsRegistry
-    ) external returns (IRemoveAllowedRecipient);
+    function deployRemoveAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
+        external
+        returns (IRemoveAllowedRecipient);
 }
 
 contract AllowedRecipientsBuilder {
@@ -89,10 +74,11 @@ contract AllowedRecipientsBuilder {
     address public immutable bokkyPooBahsDateTimeContract;
     IAllowedRecipientsFactory public immutable factory;
 
-    bytes32 public constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
-        keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
+    bytes32 public constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
     bytes32 public constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
         keccak256("REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE");
+    bytes32 public constant ADD_TOKEN_TO_ALLOWED_LIST_ROLE = keccak256("ADD_TOKEN_TO_ALLOWED_LIST_ROLE");
+    bytes32 public constant REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE = keccak256("REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE");
     bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 public constant SET_PARAMETERS_ROLE = keccak256("SET_PARAMETERS_ROLE");
     bytes32 public constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
@@ -204,136 +190,108 @@ contract AllowedRecipientsBuilder {
         assert(!registry.hasRole(DEFAULT_ADMIN_ROLE, address(this)));
     }
 
+    function deployAllowedTokensRegistry(address[] calldata _tokens) public returns (IAllowedTokensRegistry registry) {
+        address[] memory addTokenRoleHolders = new address[](2);
+        address[] memory removeTokenRoleHolders = new address[](1);
+
+        addTokenRoleHolders[0] = admin;
+        addTokenRoleHolders[1] = address(this);
+
+        removeTokenRoleHolders[0] = admin;
+
+        registry = factory.deployAllowedTokensRegistry(admin, addTokenRoleHolders, removeTokenRoleHolders);
+
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            registry.addToken(_tokens[i]);
+        }
+
+        registry.renounceRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, address(this));
+
+        for (uint256 i = 0; i < _tokens.length; i++) {
+            assert(registry.isTokenAllowed(_tokens[i]));
+        }
+
+        assert(registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, admin));
+        assert(registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, admin));
+        assert(registry.hasRole(DEFAULT_ADMIN_ROLE, admin));
+
+        assert(!registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, address(this)));
+    }
+
     function deployTopUpAllowedRecipients(
         address _trustedCaller,
         address _allowedRecipientsRegistry,
-        address _token
+        address _allowedTokensRegistry
     ) public returns (ITopUpAllowedRecipients topUpAllowedRecipients) {
         topUpAllowedRecipients = factory.deployTopUpAllowedRecipients(
-            _trustedCaller,
-            _allowedRecipientsRegistry,
-            _token,
-            finance,
-            easyTrack
+            _trustedCaller, _allowedRecipientsRegistry, _allowedTokensRegistry, finance, address(easyTrack)
         );
 
-        assert(topUpAllowedRecipients.token() == _token);
         assert(topUpAllowedRecipients.finance() == finance);
         assert(topUpAllowedRecipients.easyTrack() == easyTrack);
         assert(topUpAllowedRecipients.trustedCaller() == _trustedCaller);
-        assert(
-            address(topUpAllowedRecipients.allowedRecipientsRegistry()) ==
-                _allowedRecipientsRegistry
-        );
+        assert(address(topUpAllowedRecipients.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
+        assert(address(topUpAllowedRecipients.allowedTokensRegistry()) == _allowedTokensRegistry);
     }
 
     function deployAddAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
         public
         returns (IAddAllowedRecipient addAllowedRecipient)
     {
-        addAllowedRecipient = factory.deployAddAllowedRecipient(
-            _trustedCaller,
-            _allowedRecipientsRegistry
-        );
+        addAllowedRecipient = factory.deployAddAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
 
         assert(addAllowedRecipient.trustedCaller() == _trustedCaller);
-        assert(
-            address(addAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry
-        );
+        assert(address(addAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
     }
 
-    function deployRemoveAllowedRecipient(
-        address _trustedCaller,
-        address _allowedRecipientsRegistry
-    ) public returns (IRemoveAllowedRecipient removeAllowedRecipient) {
-        removeAllowedRecipient = factory.deployRemoveAllowedRecipient(
-            _trustedCaller,
-            _allowedRecipientsRegistry
-        );
+    function deployRemoveAllowedRecipient(address _trustedCaller, address _allowedRecipientsRegistry)
+        public
+        returns (IRemoveAllowedRecipient removeAllowedRecipient)
+    {
+        removeAllowedRecipient = factory.deployRemoveAllowedRecipient(_trustedCaller, _allowedRecipientsRegistry);
 
         assert(removeAllowedRecipient.trustedCaller() == _trustedCaller);
-        assert(
-            address(removeAllowedRecipient.allowedRecipientsRegistry()) ==
-                _allowedRecipientsRegistry
-        );
+        assert(address(removeAllowedRecipient.allowedRecipientsRegistry()) == _allowedRecipientsRegistry);
     }
 
     function deployFullSetup(
         address _trustedCaller,
-        address _token,
         uint256 _limit,
         uint256 _periodDurationMonths,
-        address[] memory _recipients,
-        string[] memory _titles,
+        address[] calldata _tokens,
+        address[] calldata _recipients,
+        string[] calldata _titles,
         uint256 _spentAmount
-    )
-        public
-        returns (
-            IAllowedRecipientsRegistry allowedRecipientsRegistry,
-            ITopUpAllowedRecipients topUpAllowedRecipients,
-            IAddAllowedRecipient addAllowedRecipient,
-            IRemoveAllowedRecipient removeAllowedRecipient
-        )
-    {
-        allowedRecipientsRegistry = deployAllowedRecipientsRegistry(
-            _limit,
-            _periodDurationMonths,
-            _recipients,
-            _titles,
-            _spentAmount,
-            true
-        );
+    ) public {
+        IAllowedRecipientsRegistry allowedRecipientsRegistry =
+            deployAllowedRecipientsRegistry(_limit, _periodDurationMonths, _recipients, _titles, _spentAmount, true);
+        IAllowedTokensRegistry allowedTokensRegistry = deployAllowedTokensRegistry(_tokens);
 
-        topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _trustedCaller,
-            address(allowedRecipientsRegistry),
-            _token
-        );
+        deployTopUpAllowedRecipients(_trustedCaller, address(allowedRecipientsRegistry), address(allowedTokensRegistry));
 
-        addAllowedRecipient = deployAddAllowedRecipient(
-            _trustedCaller,
-            address(allowedRecipientsRegistry)
-        );
+        deployAddAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
 
-        removeAllowedRecipient = deployRemoveAllowedRecipient(
-            _trustedCaller,
-            address(allowedRecipientsRegistry)
-        );
+        deployRemoveAllowedRecipient(_trustedCaller, address(allowedRecipientsRegistry));
     }
 
     function deploySingleRecipientTopUpOnlySetup(
         address _recipient,
-        string memory _title,
-        address _token,
+        string calldata _title,
+        address[] calldata _tokens,
         uint256 _limit,
         uint256 _periodDurationMonths,
         uint256 _spentAmount
-    )
-        public
-        returns (
-            IAllowedRecipientsRegistry allowedRecipientsRegistry,
-            ITopUpAllowedRecipients topUpAllowedRecipients
-        )
-    {
+    ) public {
         address[] memory recipients = new address[](1);
         recipients[0] = _recipient;
 
         string[] memory titles = new string[](1);
         titles[0] = _title;
 
-        allowedRecipientsRegistry = deployAllowedRecipientsRegistry(
-            _limit,
-            _periodDurationMonths,
-            recipients,
-            titles,
-            _spentAmount,
-            false
-        );
+        IAllowedRecipientsRegistry allowedRecipientsRegistry =
+            deployAllowedRecipientsRegistry(_limit, _periodDurationMonths, recipients, titles, _spentAmount, false);
+        IAllowedTokensRegistry allowedTokensRegistry = deployAllowedTokensRegistry(_tokens);
 
-        topUpAllowedRecipients = deployTopUpAllowedRecipients(
-            _recipient,
-            address(allowedRecipientsRegistry),
-            _token
-        );
+        deployTopUpAllowedRecipients(_recipient, address(allowedRecipientsRegistry), address(allowedTokensRegistry));
     }
 }

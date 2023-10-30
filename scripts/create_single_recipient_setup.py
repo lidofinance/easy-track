@@ -11,11 +11,11 @@ from utils import lido, deployed_easy_track, log, deployment
 from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
-    period=0,
+    period=1,
     spent_amount=0,
     title="",
     limit=0,
-    token="",
+    tokens=[],
     trusted_caller="",
 )
 
@@ -32,7 +32,7 @@ def main():
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
 
-    log.ok("Token", deploy_config.token)
+    log.ok("Tokens", deploy_config.tokens)
     log.ok("Title", deploy_config.title)
     log.ok("Trusted caller", deploy_config.trusted_caller)
     log.ok("Limit", deploy_config.limit)
@@ -52,20 +52,22 @@ def main():
     tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
         deploy_config.trusted_caller,
         deploy_config.title,
-        deploy_config.token,
+        deploy_config.tokens,
         deploy_config.limit,
         deploy_config.period,
         deploy_config.spent_amount,
         tx_params,
     )
 
-    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"][
+    recipientsRegistryAddress = tx.events["AllowedRecipientsRegistryDeployed"][
         "allowedRecipientsRegistry"
     ]
+    tokensRegistryAddress = tx.events['AllowedTokensRegistryDeployed']['allowedTokensRegistry']
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
 
     log.ok("Allowed recipients easy track contracts have been deployed...")
-    log.nb("Deployed AllowedRecipientsRegistryDeployed", registryAddress)
+    log.nb("Deployed AllowedRecipientsRegistryDeployed", recipientsRegistryAddress)
+    log.nb("Deployed AllowedTokensRegistryDeployed", tokensRegistryAddress)
     log.nb("Deployed TopUpAllowedRecipientsDeployed", topUpAddress)
 
     log.br()
