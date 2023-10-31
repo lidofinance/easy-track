@@ -1,0 +1,7 @@
+{
+  "IncreaseNodeOperatorStakingLimitSandbox": {
+    "contract": "IncreaseNodeOperatorStakingLimit",
+    "address": "0xbD37e55748c6f4Ece637AeD3e278e7575346B587",
+    "constructorArgs": ["0xD6C2ce3BB8bea2832496Ac8b5144819719f343AC"]
+  }
+}
