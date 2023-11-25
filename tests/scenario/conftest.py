@@ -61,6 +61,41 @@ def easytrack_executor(et_contracts, stranger):
 
     return helper
 
+@pytest.fixture(scope="module")
+def easytrack_pair_executor_with_collision(et_contracts, stranger):
+    def helper(revert, motion_pair):
+        txs = []
+        assert len(motion_pair) == 2
+        for ind in [0, 1]:
+            (creator, factory, calldata) = motion_pair[ind]
+            txs.append(et_contracts.easy_track.createMotion(
+                factory,
+                calldata,
+                {"from": creator},
+            ))
+            print("creation costs: ", txs[ind].gas_used)
+
+        motions = et_contracts.easy_track.getMotions()
+        chain.sleep(72 * 60 * 60 + 100)
+
+        etx = et_contracts.easy_track.enactMotion(
+            motions[-2][0],
+            txs[-2].events["MotionCreated"]["_evmScriptCallData"],
+            {"from": stranger},
+        )
+        print("enactment costs: ", etx.gas_used)
+        try:
+            with revert:
+                etx = et_contracts.easy_track.enactMotion(
+                    motions[-1][0],
+                    txs[-1].events["MotionCreated"]["_evmScriptCallData"],
+                    {"from": stranger},
+                )
+                print("enactment costs: ", etx.gas_used)
+        except Exception as e:
+            print(e)
+    return helper
+
 
 @pytest.fixture(scope="session")
 def vote_id_from_env():
