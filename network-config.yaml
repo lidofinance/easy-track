@@ -4,7 +4,7 @@ development:
       accounts: 10
       evm_version: istanbul
       fork: mainnet
-      gas_limit: 12000000
+      gas_limit: 30000000
       mnemonic: brownie
       port: 8545
     host: http://127.0.0.1
@@ -16,7 +16,7 @@ development:
       accounts: 10
       chain_id: 5
       fork: goerli
-      gas_limit: 12000000
+      gas_limit: 30000000
       mnemonic: brownie
       port: 8545
     host: http://127.0.0.1

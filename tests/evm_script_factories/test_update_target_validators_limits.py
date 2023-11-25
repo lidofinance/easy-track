@@ -35,6 +35,18 @@ def test_create_evm_script_called_by_stranger(
         )
 
 
+def test_empty_calldata(owner, update_target_validator_limits_factory):
+    with reverts("EMPTY_CALLDATA"):
+        EMPTY_CALLDATA = (
+            "0x"
+            + encode_single(
+                "((uint256,bool,uint256)[])",
+                [[]],
+            ).hex()
+        )
+        update_target_validator_limits_factory.createEVMScript(owner, EMPTY_CALLDATA)
+
+
 def test_non_sorted_calldata(owner, update_target_validator_limits_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 

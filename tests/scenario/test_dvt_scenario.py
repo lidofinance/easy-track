@@ -84,6 +84,7 @@ def test_simple_dvt_scenario(
     set_vetted_validators_limit_factory,
     change_node_operator_manager_factory,
     update_tareget_validator_limits_factory,
+    increase_vetted_validators_limit_factory,
     stranger,
 ):
     # Grant roles
@@ -270,7 +271,7 @@ def test_simple_dvt_scenario(
         len(signing_keys["pubkeys"]),
         "0x" + "".join(signing_keys["pubkeys"]),
         "0x" + "".join(signing_keys["signatures"]),
-        {"from": no_5["rewardAddress"]},
+        {"from": clusters[5]["manager"]},
     )
 
     assert cluster["totalVettedValidators"] == 0
@@ -281,7 +282,7 @@ def test_simple_dvt_scenario(
         len(signing_keys["pubkeys"]),
         "0x" + "".join(signing_keys["pubkeys"]),
         "0x" + "".join(signing_keys["signatures"]),
-        {"from": no_5["rewardAddress"]},
+        {"from": clusters[5]["manager"]},
     )
 
     no_6_id = 6
@@ -291,7 +292,7 @@ def test_simple_dvt_scenario(
         len(signing_keys["pubkeys"]),
         "0x" + "".join(signing_keys["pubkeys"]),
         "0x" + "".join(signing_keys["signatures"]),
-        {"from": no_6["rewardAddress"]},
+        {"from": clusters[6]["manager"]},
     )
 
     set_vetted_validators_limit_calldata = (
@@ -308,6 +309,30 @@ def test_simple_dvt_scenario(
     assert cluster_5["totalVettedValidators"] == 4
     cluster_6 = simple_dvt.getNodeOperator(no_6_id, False)
     assert cluster_6["totalVettedValidators"] == 3
+
+    # Increase staking limit with cluster
+    simple_dvt.addSigningKeysOperatorBH(
+        no_5_id,
+        len(signing_keys["pubkeys"]),
+        "0x" + "".join(signing_keys["pubkeys"]),
+        "0x" + "".join(signing_keys["signatures"]),
+        {"from": clusters[5]["manager"]},
+    )
+
+
+    increase_vetted_validators_limit_calldata = (
+        "0x"
+        + encode_single("((uint256,uint256))", [(no_5_id, 6)]).hex()
+    )
+    easytrack_executor(
+        clusters[5]["manager"],
+        increase_vetted_validators_limit_factory,
+        increase_vetted_validators_limit_calldata,
+    )
+
+    cluster_5 = simple_dvt.getNodeOperator(no_5_id, False)
+    assert cluster_5["totalVettedValidators"] == 6
+
 
     # Update target validators limits
 

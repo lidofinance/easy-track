@@ -12,11 +12,13 @@ from brownie import (
     SetVettedValidatorsLimits,
     ChangeNodeOperatorManagers,
     UpdateTargetValidatorLimits,
+    IncreaseVettedValidatorsLimits
 )
 from utils import deployed_easy_track
 from utils.config import get_network_name
 
 ENV_VOTE_ID = "VOTE_ID"
+ENV_USE_DEPLOYED_CONTRACTS = "USE_DEPLOYED_CONTRACTS"
 
 
 @pytest.fixture(scope="session")
@@ -72,6 +74,11 @@ def vote_id_from_env():
 
 
 @pytest.fixture(scope="session")
+def use_deployed_contracts_from_env():
+    return True if os.getenv(ENV_USE_DEPLOYED_CONTRACTS) else False
+
+
+@pytest.fixture(scope="session")
 def deployed_artifact():
     network_name = get_network_name()
     file_name = f"deployed-{network_name}.json"
@@ -100,8 +107,9 @@ def add_node_operators_factory(
     acl,
     vote_id_from_env,
     deployed_artifact,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return AddNodeOperators.at(deployed_artifact["AddNodeOperators"]["address"])
 
     factory = AddNodeOperators.deploy(
@@ -135,9 +143,10 @@ def activate_node_operators_factory(
     acl,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
     print(vote_id_from_env)
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return ActivateNodeOperators.at(
             deployed_artifact["ActivateNodeOperators"]["address"]
         )
@@ -175,8 +184,9 @@ def deactivate_node_operators_factory(
     acl,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return DeactivateNodeOperators.at(
             deployed_artifact["DeactivateNodeOperators"]["address"]
         )
@@ -213,8 +223,9 @@ def set_node_operator_name_factory(
     deployer,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return SetNodeOperatorNames.at(
             deployed_artifact["SetNodeOperatorNames"]["address"]
         )
@@ -248,8 +259,9 @@ def set_node_operator_reward_address_factory(
     deployer,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return SetNodeOperatorRewardAddresses.at(
             deployed_artifact["SetNodeOperatorRewardAddresses"]["address"]
         )
@@ -283,8 +295,9 @@ def set_vetted_validators_limit_factory(
     commitee_multisig,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return SetVettedValidatorsLimits.at(
             deployed_artifact["SetVettedValidatorsLimits"]["address"]
         )
@@ -310,6 +323,41 @@ def set_vetted_validators_limit_factory(
 
 
 @pytest.fixture(scope="module")
+def increase_vetted_validators_limit_factory(
+    et_contracts,
+    voting,
+    simple_dvt,
+    deployer,
+    commitee_multisig,
+    deployed_artifact,
+    vote_id_from_env,
+    use_deployed_contracts_from_env,
+):
+    if vote_id_from_env or use_deployed_contracts_from_env:
+        return IncreaseVettedValidatorsLimits.at(
+            deployed_artifact["IncreaseVettedValidatorsLimits"]["address"]
+        )
+
+    factory = IncreaseVettedValidatorsLimits.deploy(
+        simple_dvt, {"from": deployer}
+    )
+    assert factory.nodeOperatorsRegistry() == simple_dvt
+
+    increase_vetted_validators_limit_permission = (
+        simple_dvt.address + simple_dvt.setNodeOperatorStakingLimit.signature[2:]
+    )
+    et_contracts.easy_track.addEVMScriptFactory(
+        factory,
+        increase_vetted_validators_limit_permission,
+        {"from": voting},
+    )
+    evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
+    assert evm_script_factories[-1] == factory
+
+    return factory
+
+
+@pytest.fixture(scope="module")
 def change_node_operator_manager_factory(
     et_contracts,
     voting,
@@ -319,8 +367,9 @@ def change_node_operator_manager_factory(
     acl,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return ChangeNodeOperatorManagers.at(
             deployed_artifact["ChangeNodeOperatorManagers"]["address"]
         )
@@ -358,8 +407,9 @@ def update_tareget_validator_limits_factory(
     commitee_multisig,
     deployed_artifact,
     vote_id_from_env,
+    use_deployed_contracts_from_env,
 ):
-    if vote_id_from_env:
+    if vote_id_from_env or use_deployed_contracts_from_env:
         return UpdateTargetValidatorLimits.at(
             deployed_artifact["UpdateTargetValidatorLimits"]["address"]
         )

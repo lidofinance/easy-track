@@ -13,7 +13,7 @@ if [[ "${TRACE-0}" == "1" ]]; then
   set -o xtrace
 fi
 
-envs=(REMOTE_RPC ETHERSCAN_TOKEN)
+envs=(REMOTE_RPC ETHERSCAN_TOKEN CONFIG ETHERSCAN_API)
 
 local_rpc_port=7776
 
@@ -51,18 +51,20 @@ _EOF_
 }
 
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract AddNodeOperators --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract AddNodeOperators --etherscan-api-url $ETHERSCAN_API --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract ActivateNodeOperators --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract ActivateNodeOperators --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract DeactivateNodeOperators --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract DeactivateNodeOperators --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract SetVettedValidatorsLimits --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract SetVettedValidatorsLimits --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract SetNodeOperatorNames --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract IncreaseVettedValidatorsLimits --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract SetNodeOperatorRewardAddresses --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract SetNodeOperatorNames --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract ChangeNodeOperatorManagers --etherscan-api-url https://api-holesky.etherscan.io/api --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract SetNodeOperatorRewardAddresses --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json ../deployed-holesky.json --contract UpdateTargetValidatorLimits --etherscan-api-url https://api-holesky.etherscan.io/api  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract ChangeNodeOperatorManagers --etherscan-api-url $ETHERSCAN_API --skip-compilation --local-ganache
+echo "=========================================================="
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract UpdateTargetValidatorLimits --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache

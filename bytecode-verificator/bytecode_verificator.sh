@@ -176,13 +176,10 @@ function check_compiler() {
   compilerSha256Sum=$($sha256sum "$solc")
   grep -q "$compilerSha256Sum" ./SHA256SUMS || { _err "\"$solc\" has unrecognized checksum (local)"; }
 
-  if [[ "$platform" == 'darwin' ]]; then
-    github_sha256=$(curl -sS https://binaries.soliditylang.org/macosx-amd64/list.json | jq -r ".builds | .[] | select(.version==\"$solc_version\").sha256")
-    [[ "$github_sha256  $solc" == "0x$compilerSha256Sum" ]] || { _err "$solc has unrecognized checksum (github)"; }
-  elif [[ $platform == 'linux' ]]; then
-    github_sha256=$(curl -sS https://binaries.soliditylang.org/linux-amd64/list.json | jq -r ".builds | .[] | select(.version==\"$solc_version\").sha256")
-    [[ "$github_sha256  $solc" == "0x$compilerSha256Sum" ]] || { _err "$solc has unrecognized checksum (github)"; }
-  fi
+  [[ $platform == "darwin" ]] && platform="macosx"
+
+  github_sha256=$(curl -sS https://binaries.soliditylang.org/$platform-amd64/list.json | jq -r ".builds | .[] | select(.version==\"$solc_version\").sha256")
+  [[ "$github_sha256  $solc" == "0x$compilerSha256Sum" ]] || { _err "$solc has unrecognized checksum (github)"; }
 
   checksum=$(echo -e "$compilerSha256Sum" | awk '{print $1;}')
   echo -e "Compiler checksum ${ORANGE}$checksum${GREEN} is correct${NC}"
@@ -194,7 +191,7 @@ function start_fork() {
     yarn ganache --chain.vmErrorsOnRPCResponse true
     --wallet.totalAccounts 10 --chain.chainId 1
     --fork.url ${remote_rpc_url}
-    --miner.blockGasLimit 92000000
+    --miner.blockGasLimit 30000000
     --server.host 127.0.0.1 --server.port ${local_rpc_port}
     --hardfork istanbul -d
 _EOF_
@@ -419,8 +416,16 @@ function compare_bytecode() {
   echo "Comparing remote and local bytecode"
   [[ "$local_code" == "$remote_code" ]] || {
     mkdir -p ./verificator_diffs
-    echo "$local_code" >./verificator_diffs/"$contract"_local.bin
-    echo "$remote_code" >./verificator_diffs/"$contract"_remote.bin
+
+    echo "" > ./verificator_diffs/"$contract"_local.bin;
+    while IFS='' read -r -d '' -n 2 char; do
+        echo -en "\x$char"  >> ./verificator_diffs/"$contract"_local.bin;
+    done < <(printf %s "$local_code")
+    echo "" > ./verificator_diffs/"$contract"_remote.bin;
+    while IFS='' read -r -d '' -n 2 char; do
+        echo -en "\x$char"  >> ./verificator_diffs/"$contract"_remote.bin;
+    done < <(printf %s "$remote_code")
+
     _err "local bytecode and remote bytecode is not equal. Bytecode saved in ./verificator_diffs/"
   }
   echo -e "${GREEN}Local bytecode matches with remote rpc${NC}"

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.6;
+pragma solidity 0.8.6;
 
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
@@ -24,6 +24,7 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
     string private constant ERROR_SAME_NAME = "SAME_NAME";
     string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
 
     // -------------
     // VARIABLES
@@ -97,6 +98,8 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(SetNameInput[] memory _decodedCallData) private view {
         uint256 maxNameLength = nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH();
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+
+        require(_decodedCallData.length > 0, ERROR_EMPTY_CALLDATA);
         require(
             _decodedCallData[_decodedCallData.length - 1].nodeOperatorId <
                 nodeOperatorsCount,

@@ -97,6 +97,8 @@ def test_simple_make_action(
     add_node_operators_factory,
     grant_roles,
     lido_contracts,
+    stranger,
+    change_node_operator_manager_factory,
 ):
     # Add clusters
     add_node_operators_calldata = (
@@ -152,49 +154,37 @@ def test_simple_make_action(
                 et_contracts.evm_script_executor.address,
                 et_contracts.evm_script_executor.setEasyTrack.encode_input(agent),
             ),
-            (
-                agent.address,
-                agent.forward.encode_input(
-                    encode_call_script(
-                        [
-                            (
-                                et_contracts.evm_script_executor.address,
-                                et_contracts.evm_script_executor.executeEVMScript.encode_input(
-                                    encode_call_script(
-                                        [
-                                            (
-                                                acl.address,
-                                                acl.setPermissionManager.encode_input(
-                                                    agent,
-                                                    simple_dvt,
-                                                    web3.keccak(
-                                                        text="MANAGE_SIGNING_KEYS"
-                                                    ).hex(),
-                                                ),
-                                            ),
-                                        ]
-                                    )
-                                ),
+            encode_agent_forward(
+                agent,
+                [
+                    encode_execute_evm_script(
+                        et_contracts.evm_script_executor,
+                        (
+                            acl.address,
+                            acl.setPermissionManager.encode_input(
+                                agent,
+                                simple_dvt,
+                                web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
                             ),
-                            (
-                                acl.address,
-                                acl.grantPermission.encode_input(
-                                    agent.address,
-                                    simple_dvt,
-                                    simple_dvt.MANAGE_SIGNING_KEYS(),
-                                ),
-                            ),
-                            (
-                                acl.address,
-                                acl.setPermissionManager.encode_input(
-                                    et_contracts.evm_script_executor,
-                                    simple_dvt,
-                                    web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-                                ),
-                            ),
-                        ]
-                    )
-                ),
+                        ),
+                    ),
+                    (
+                        acl.address,
+                        acl.grantPermission.encode_input(
+                            agent.address,
+                            simple_dvt,
+                            simple_dvt.MANAGE_SIGNING_KEYS(),
+                        ),
+                    ),
+                    (
+                        acl.address,
+                        acl.setPermissionManager.encode_input(
+                            et_contracts.evm_script_executor,
+                            simple_dvt,
+                            web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
+                        ),
+                    ),
+                ],
             ),
             (
                 et_contracts.evm_script_executor.address,
@@ -223,3 +213,54 @@ def test_simple_make_action(
     )
 
     assert et_contracts.evm_script_executor.easyTrack() == et_contracts.easy_track
+
+
+    # Transfer cluster manager
+
+
+    # add signing keys to node operator
+    no_5_id = 5
+    no_5 = simple_dvt.getNodeOperator(no_5_id, False)
+    change_node_operator_manager_calldata = (
+        "0x"
+        + encode_single(
+            "((uint256,address,address)[])",
+            [[(no_5_id, clusters[no_5_id]["manager"], stranger.address)]],
+        ).hex()
+    )
+
+    easytrack_executor(
+        commitee_multisig,
+        change_node_operator_manager_factory,
+        change_node_operator_manager_calldata,
+    )
+
+    # permission parameter
+    id8 = 0  # first arg
+    op8 = 1  # EQ
+    value240 = no_5_id
+    permission_param = convert.to_uint(
+        (id8 << 248) + (op8 << 240) + value240, "uint256"
+    )
+
+    assert not simple_dvt.canPerform(
+        clusters[no_5_id]["manager"],
+        simple_dvt.MANAGE_SIGNING_KEYS(),
+        [permission_param],
+    )
+    assert simple_dvt.canPerform(
+        stranger,
+        simple_dvt.MANAGE_SIGNING_KEYS(),
+        [permission_param],
+    )
+
+
+def encode_agent_forward(agent, scripts):
+    return (agent.address, agent.forward.encode_input(encode_call_script(scripts)))
+
+
+def encode_execute_evm_script(evm_script_executor, script):
+    return (
+        evm_script_executor.address,
+        evm_script_executor.executeEVMScript.encode_input(encode_call_script([script])),
+    )

@@ -11,6 +11,7 @@ from brownie import (
     SetNodeOperatorRewardAddresses,
     SetVettedValidatorsLimits,
     UpdateTargetValidatorLimits,
+    IncreaseVettedValidatorsLimits,
     web3,
 )
 
@@ -53,7 +54,6 @@ def main():
     log.ok("Deployer", deployer)
 
     log.br()
-
 
     log.ok("Simple DVT module address", simple_dvt)
     log.ok("ACL", acl)
@@ -113,6 +113,16 @@ def main():
         "constructorArgs": [trusted_caller, simple_dvt],
     }
 
+    # IncreaseVettedValidatorsLimits
+    increase_vetted_validators_limits = IncreaseVettedValidatorsLimits.deploy(
+        simple_dvt, tx_params
+    )
+    deployment_artifacts["IncreaseVettedValidatorsLimits"] = {
+        "contract": "IncreaseVettedValidatorsLimits",
+        "address": increase_vetted_validators_limits.address,
+        "constructorArgs": [trusted_caller, simple_dvt],
+    }
+
     # SetNodeOperatorNames
     set_node_operator_names = SetNodeOperatorNames.deploy(
         trusted_caller, simple_dvt, tx_params
@@ -157,6 +167,10 @@ def main():
     log.ok("Deployed ActivateNodeOperators", activate_node_operators.address)
     log.ok("Deployed DeactivateNodeOperators", deactivate_node_operators.address)
     log.ok("Deployed SetVettedValidatorsLimits", set_vetted_validators_limits.address)
+    log.ok(
+        "Deployed IncreaseVettedValidatorsLimits",
+        increase_vetted_validators_limits.address,
+    )
     log.ok("Deployed SetNodeOperatorNames", set_node_operator_names.address)
     log.ok(
         "Deployed SetNodeOperatorRewardAddresses",
@@ -181,10 +195,9 @@ def main():
     ActivateNodeOperators.publish_source(activate_node_operators)
     DeactivateNodeOperators.publish_source(deactivate_node_operators)
     SetVettedValidatorsLimits.publish_source(set_vetted_validators_limits)
+    IncreaseVettedValidatorsLimits.publish_source(increase_vetted_validators_limits)
     SetNodeOperatorNames.publish_source(set_node_operator_names)
-    SetNodeOperatorRewardAddresses.publish_source(
-        set_node_operator_reward
-    )
+    SetNodeOperatorRewardAddresses.publish_source(set_node_operator_reward)
     UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits)
     ChangeNodeOperatorManagers.publish_source(change_node_operator_manager)
 

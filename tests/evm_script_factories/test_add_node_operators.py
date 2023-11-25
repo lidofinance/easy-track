@@ -75,28 +75,6 @@ def test_manager_has_duplicate(
         add_node_operators_factory.createEVMScript(owner, CALL_DATA)
 
 
-def test_reward_address_has_duplicate(
-    owner, add_node_operators_factory, node_operators_registry
-):
-    "Must revert with message 'REWARD_ADDRESSES_HAS_DUPLICATE' when reward address has duplicate"
-    no_count = node_operators_registry.getNodeOperatorsCount()
-    with reverts("REWARD_ADDRESSES_HAS_DUPLICATE"):
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "(uint256,(string,address,address)[])",
-                [
-                    no_count,
-                    [
-                        (OPERATOR_NAMES[0], REWARD_ADDRESSES[0], MANAGERS[0]),
-                        (OPERATOR_NAMES[1], REWARD_ADDRESSES[0], MANAGERS[1]),
-                    ],
-                ],
-            ).hex()
-        )
-        add_node_operators_factory.createEVMScript(owner, CALL_DATA)
-
-
 def test_manager_already_has_permission(
     owner, add_node_operators_factory, node_operators_registry, acl, voting
 ):

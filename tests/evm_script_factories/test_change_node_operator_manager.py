@@ -57,6 +57,20 @@ def test_create_evm_script_called_by_stranger(
         )
 
 
+def test_empty_calldata(owner, change_node_operator_managers_factory):
+    with reverts("EMPTY_CALLDATA"):
+        EMPTY_CALLDATA = (
+            "0x"
+            + encode_single(
+                "((uint256,address,address)[])",
+                [[]],
+            ).hex()
+        )
+        change_node_operator_managers_factory.createEVMScript(
+            owner, EMPTY_CALLDATA
+        )
+
+
 def test_non_sorted_calldata(owner, change_node_operator_managers_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 
@@ -128,9 +142,7 @@ def test_duplicate_manager(owner, change_node_operator_managers_factory):
                 ],
             ).hex()
         )
-        change_node_operator_managers_factory.createEVMScript(
-            owner, CALL_DATA
-        )
+        change_node_operator_managers_factory.createEVMScript(owner, CALL_DATA)
 
 
 def test_manager_has_no_role(owner, change_node_operator_managers_factory):

@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2023 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
-pragma solidity ^0.8.6;
+pragma solidity 0.8.6;
 
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
@@ -44,6 +44,7 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant ERROR_MANAGER_HAS_NO_ROLE = "MANAGER_HAS_NO_ROLE";
     string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
+    string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
 
     // -------------
     // CONSTRUCTOR
@@ -119,6 +120,7 @@ contract DeactivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         DeactivateNodeOperatorInput[] memory _decodedCallData
     ) private view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+        require(_decodedCallData.length > 0, ERROR_EMPTY_CALLDATA);
         require(
             _decodedCallData[_decodedCallData.length - 1].nodeOperatorId <
                 nodeOperatorsCount,

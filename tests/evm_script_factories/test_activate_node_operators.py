@@ -44,6 +44,18 @@ def test_create_evm_script_called_by_stranger(
         activate_node_operators_factory.createEVMScript(stranger, EVM_SCRIPT_CALL_DATA)
 
 
+def test_empty_calldata(owner, activate_node_operators_factory):
+    with reverts("EMPTY_CALLDATA"):
+        EMPTY_CALLDATA = (
+            "0x"
+            + encode_single(
+                "((uint256,address)[])",
+                [[]],
+            ).hex()
+        )
+        activate_node_operators_factory.createEVMScript(owner, EMPTY_CALLDATA)
+
+
 def test_non_sorted_calldata(owner, activate_node_operators_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 
@@ -150,22 +162,22 @@ def test_manager_already_has_permission_for_node_operator(
         activate_node_operators_factory.createEVMScript(owner, CALL_DATA)
 
 
-def test_duplicate_manager(owner, activate_node_operators_factory):
-    "Must revert with message 'MANAGER_ADDRESSES_HAS_DUPLICATE' when new maanger has duplicates"
+def test_manager_already_has_permission_for_different_node_operator(
+    owner, activate_node_operators_factory, node_operators_registry, acl, voting
+):
+    "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when manager has MANAGE_SIGNING_KEYS role"
 
-    with reverts("MANAGER_ADDRESSES_HAS_DUPLICATE"):
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])",
-                [
-                    [
-                        (0, MANAGERS[1]),
-                        (1, MANAGERS[1]),
-                    ]
-                ],
-            ).hex()
-        )
+    acl.grantPermissionP(
+        MANAGERS[0],
+        node_operators_registry,
+        web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
+        [convert.to_uint((0 << 248) + (1 << 240) + 1, "uint256")],
+        {"from": voting},
+    )
+    CALL_DATA = (
+        "0x" + encode_single("((uint256,address)[])", [[(0, MANAGERS[0])]]).hex()
+    )
+    with reverts("MANAGER_ALREADY_HAS_ROLE"):
         activate_node_operators_factory.createEVMScript(owner, CALL_DATA)
 
 
