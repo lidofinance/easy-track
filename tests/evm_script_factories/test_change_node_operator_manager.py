@@ -66,9 +66,7 @@ def test_empty_calldata(owner, change_node_operator_managers_factory):
                 [[]],
             ).hex()
         )
-        change_node_operator_managers_factory.createEVMScript(
-            owner, EMPTY_CALLDATA
-        )
+        change_node_operator_managers_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_non_sorted_calldata(owner, change_node_operator_managers_factory):
@@ -199,6 +197,32 @@ def test_manager_has_role_for_another_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         [convert.to_uint((0 << 248) + (1 << 240) + operator + 1, "uint256")],
+        {"from": voting},
+    )
+
+    CALL_DATA = (
+        "0x"
+        + encode_single(
+            "((uint256,address,address)[])", [[(operator, manager, new_manager)]]
+        ).hex()
+    )
+    with reverts("OLD_MANAGER_HAS_NO_ROLE"):
+        change_node_operator_managers_factory.createEVMScript(owner, CALL_DATA)
+
+
+def test_old_manager_has_general_permission(
+    owner, change_node_operator_managers_factory, node_operators_registry, acl, voting
+):
+    "Must revert with message 'OLD_MANAGER_HAS_NO_ROLE' when manager has general MANAGE_SIGNING_KEYS role"
+
+    manager = "0x0000000000000000000000000000000000000001"
+    new_manager = "0x0000000000000000000000000000000000000005"
+    operator = 2
+
+    acl.grantPermission(
+        manager,
+        node_operators_registry,
+        web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         {"from": voting},
     )
 
