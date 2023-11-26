@@ -12,6 +12,19 @@ table = [
     for i in range(1, 5)
 ]
 
+signing_keys = {
+    "pubkeys": [
+        "8bb1db218877a42047b953bdc32573445a78d93383ef5fd08f79c066d4781961db4f5ab5a7cc0cf1e4cbcc23fd17f9d7",
+        "884b147305bcd9fce3a1cc12e8f893c6356c1780688286277656e1ba724a3fde49262c98503141c0925b344a8ccea9ca",
+        "952ff22cf4a5f9708d536acb2170f83c137301515df5829adc28c265373487937cc45e8f91743caba0b9ebd02b3b664f",
+    ],
+    "signatures": [
+        "ad17ef7cdf0c4917aaebc067a785b049d417dda5d4dd66395b21bbd50781d51e28ee750183eca3d32e1f57b324049a06135ad07d1aa243368bca9974e25233f050e0d6454894739f87faace698b90ea65ee4baba2758772e09fec4f1d8d35660",
+        "9794e7871dc766c2139f9476234bc29784e13b51e859445044d2a5a9df8bc072d9c51c51ee69490ce37bdfc7cf899af2166b0710d620a87398d5ec7da06c9f7eb27f1d729973efd60052dbd4cb7f43ff6b141af4d0a0a980b60f663f39bf7844",
+        "90111fb6944ff8b56eb0858c1deb91f41c8c631573f4c821663d7079e5e78903d67fa1c4a4ed358378f16a2b7ec524c5196b1a1eae35b01dca1df74535f45d6bd1960164a41425b2a289d4bb5c837049acf5871a0ed23598df42f6234276f6e2",
+    ],
+}
+
 no1 = 0
 no2 = 1
 no3 = 2
@@ -134,17 +147,30 @@ def prepare_set_node_operator_reward_address_calldata(operator, address):
     )
 
 
-# def prepare_update_tareget_validator_limits_calldata(id_operator, is_active,  limit):
-#     return (
-#         "0x"
-#         + encode_single(
-#             "((uint256,bool,uint256)[])",
-#             [
-#                 [(id_operator, is_active, limit)]
-#             ]
-#         ).hex()
-#     )
+def prepare_update_target_validator_limits_calldata(id_operator, is_active,  target_limits):
+    return (
+        "0x"
+        + encode_single(
+            "((uint256,bool,uint256)[])",
+            [[(id_operator, is_active, target_limits)]]
+        ).hex()
+    )
 
+
+def prepare_set_vetted_validators_limit_calldata(id_operator, vetted_limit):
+    return (
+        "0x"
+        + encode_single("((uint256,uint256)[])",
+            [[(id_operator, vetted_limit)]]).hex()
+    )
+
+
+def prepare_increase_vetted_validators_limit_calldata(id_operator, vetted_limit):
+    return (
+        "0x"
+        + encode_single("((uint256,uint256))",
+            [(id_operator, vetted_limit)]).hex()
+    )
 
 def test_simple_dvt_scenario(
         simple_dvt,
@@ -163,7 +189,7 @@ def test_simple_dvt_scenario(
         set_vetted_validators_limit_factory,
         change_node_operator_manager_factory,
         update_tareget_validator_limits_factory,
-        stranger,
+        increase_vetted_validators_limit_factory,
 ):
     # Grant roles
     acl.grantPermission(
@@ -372,6 +398,7 @@ def test_simple_dvt_scenario(
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
         ]
     )
+
     # 13) ChangeNodeOperatorManagers - ChangeNodeOperatorManagers -> MANAGER_ALREADY_HAS_ROLE
     # change no1 address3 manager4->2 name3 v
     # change no2 address2 manager1->2 name2 x
@@ -385,16 +412,53 @@ def test_simple_dvt_scenario(
         ]
     )
 
-    # # 14) UpdateTargetValidatorLimits - SetVettedValidatorsLimits
-    # # update no1 address3 manager4 name3 tl->true v
-    # # set    no1 address3 manager4 name3 vl->9    x
-    # update_tareget_validator_limits_calldata = prepare_update_tareget_validator_limits_calldata(no1, True, 8)
-    # set_vetted_validators_limit_calldata = prepare_change_node_operator_manager_calldata(no1, no2, no3)
-    #
-    # easytrack_pair_executor_with_collision(
-    #     reverts("case14"),
-    #     [
-    #         (commitee_multisig, update_tareget_validator_limits_factory, update_tareget_validator_limits_calldata),
-    #         (commitee_multisig, set_vetted_validators_limit_factory, set_vetted_validators_limit_calldata),
-    #     ]
-    # )
+    # addSigningKeysOperatorBH no1 address3 manager4 name3
+    simple_dvt.addSigningKeysOperatorBH(
+        no1,
+        len(signing_keys["pubkeys"]),
+        "0x" + "".join(signing_keys["pubkeys"]),
+        "0x" + "".join(signing_keys["signatures"]),
+        {"from": manager2},
+    )
+
+    # 14) DeactivateNodeOperators - IncreaseVettedValidatorsLimit -> STAKING_LIMIT_TOO_LOW
+    # set vetted      no1 address3 manager2 name3 vl->1 v
+    # increase vetted no1 address3 manager2 name3 vt->1 x
+    set_vetted_validators_limit_calldata = prepare_set_vetted_validators_limit_calldata(no1, 1)
+    increase_vetted_validators_limit_calldata = prepare_increase_vetted_validators_limit_calldata(no1, 1)
+
+    easytrack_pair_executor_with_collision(
+        reverts("STAKING_LIMIT_TOO_LOW"),
+        [
+            (commitee_multisig, set_vetted_validators_limit_factory, set_vetted_validators_limit_calldata),
+            (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata),
+        ]
+    )
+
+    # 15) IncreaseVettedValidatorsLimit - IncreaseVettedValidatorsLimit -> STAKING_LIMIT_TOO_LOW
+    # increase vetted no1 address3 manager2 name3 vl->2 v
+    # increase vetted no1 address3 manager2 name3 vt->2 x
+    increase_vetted_validators_limit_calldata1 = prepare_increase_vetted_validators_limit_calldata(no1, 2)
+    increase_vetted_validators_limit_calldata2 = prepare_increase_vetted_validators_limit_calldata(no1, 2)
+
+    easytrack_pair_executor_with_collision(
+        reverts("STAKING_LIMIT_TOO_LOW"),
+        [
+            (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata1),
+            (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata2),
+        ]
+    )
+
+    # 16) DeactivateNodeOperators - IncreaseVettedValidatorsLimit -> CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER
+    # deactivate      no1 address3 manager2 name3       v
+    # increase vetted no1 address3 manager2 name3 vt->3 x
+    deactivate_node_operator_calldata = prepare_deactivate_node_operator_calldata(no1, manager2)
+    increase_vetted_validators_limit_calldata = prepare_increase_vetted_validators_limit_calldata(no1, 3)
+
+    easytrack_pair_executor_with_collision(
+        reverts("CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER"),
+        [
+            (commitee_multisig, deactivate_node_operators_factory, deactivate_node_operator_calldata),
+            (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata),
+        ]
+    )
