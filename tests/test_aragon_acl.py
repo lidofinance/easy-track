@@ -13,18 +13,23 @@ def test_aragon_acl_grant_role(acl, voting, stranger):
 
 
 def test_aragon_acl_role_with_permission(acl, voting, stranger):
+    "Checks Aragon ACL permissions granting, overriding and show what could be checked to get current permissions state"
+
     permission = (0, 1, 3)
     permission_param = convert.to_uint(
         (permission[0] << 248) + (permission[1] << 240) + permission[2], "uint256"
     )
 
+    # Test stranger has no roles
     assert acl.hasPermission(stranger, voting, TEST_ROLE) == False
 
+    # Create and grant role with params (0, 1, 3)
     acl.createPermission(voting, voting, TEST_ROLE, voting, {"from": voting})
     acl.grantPermissionP(
         stranger, voting, TEST_ROLE, [permission_param], {"from": voting}
     )
 
+    # Test role (0, 1, 3)
     assert acl.hasPermission(stranger, voting, TEST_ROLE) == False
     assert (
         acl.hasPermission["address,address,bytes32,uint[]"](
@@ -34,7 +39,8 @@ def test_aragon_acl_role_with_permission(acl, voting, stranger):
     )
     assert acl.getPermissionParamsLength(stranger, voting, TEST_ROLE) == 1
     assert acl.getPermissionParam(stranger, voting, TEST_ROLE, 0) == permission
-
+    
+    # Revoke role (0, 1, 3)
     acl.revokePermission(stranger, voting, TEST_ROLE, {"from": voting})
 
     assert acl.hasPermission(stranger, voting, TEST_ROLE) == False
@@ -48,6 +54,7 @@ def test_aragon_acl_role_with_permission(acl, voting, stranger):
     with reverts():
         acl.getPermissionParam(stranger, voting, TEST_ROLE, 0)
 
+    #Grant role with params (0, 1, 4)
     new_permission = (0, 1, 4)
     new_permission_param = convert.to_uint(
         (new_permission[0] << 248) + (new_permission[1] << 240) + new_permission[2],
@@ -58,6 +65,7 @@ def test_aragon_acl_role_with_permission(acl, voting, stranger):
         stranger, voting, TEST_ROLE, [new_permission_param], {"from": voting}
     )
 
+    # Test role (0, 1, 4)
     assert acl.hasPermission(stranger, voting, TEST_ROLE) == False
     assert (
         acl.hasPermission["address,address,bytes32,uint[]"](
@@ -69,7 +77,7 @@ def test_aragon_acl_role_with_permission(acl, voting, stranger):
     assert acl.getPermissionParam(stranger, voting, TEST_ROLE, 0) == new_permission
 
 def test_aragon_acl_two_roles_with_different_params(acl, voting, stranger):
-
+    "Checks how granting different parameterized permissions overrides themselves"
     # Grant role with params (0, 1, 3)
     permission = (0, 1, 3)
     permission_param = convert.to_uint(
