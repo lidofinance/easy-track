@@ -1,8 +1,9 @@
 import pytest
 from eth_abi import encode_single
-from brownie import reverts, DeactivateNodeOperators, web3, convert
+from brownie import reverts, DeactivateNodeOperators, web3
 
 from utils.evm_script import encode_call_script
+from utils.permission_parameters import Op, Param, encode_permission_params
 
 MANAGERS = [
     "0x0000000000000000000000000000000000000001",
@@ -23,7 +24,7 @@ def deactivate_node_operators_factory(owner, node_operators_registry, acl, votin
             manager,
             node_operators_registry,
             web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-            [convert.to_uint((0 << 248) + (1 << 240) + id, "uint256")],
+            encode_permission_params([Param(0, Op.EQ, id)]),
             {"from": voting},
         )
     return DeactivateNodeOperators.deploy(
@@ -148,7 +149,7 @@ def test_manager_has_another_role_operator(
         manager,
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        [convert.to_uint((0 << 248) + (2 << 240) + operator, "uint256")],
+        encode_permission_params([Param(0, Op.NEQ, operator)]),
         {"from": voting},
     )
 
@@ -171,7 +172,7 @@ def test_manager_has_role_for_another_operator(
         manager,
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        [convert.to_uint((0 << 248) + (1 << 240) + operator + 1, "uint256")],
+        encode_permission_params([Param(0, Op.EQ, operator + 1)]),
         {"from": voting},
     )
 

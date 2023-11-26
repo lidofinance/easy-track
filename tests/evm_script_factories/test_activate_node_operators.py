@@ -1,6 +1,7 @@
 import pytest
 from eth_abi import encode_single
-from brownie import reverts, ActivateNodeOperators, web3, convert, ZERO_ADDRESS
+from brownie import reverts, ActivateNodeOperators, web3, ZERO_ADDRESS
+from utils.permission_parameters import Op, Param, encode_permission_params
 
 from utils.evm_script import encode_call_script
 
@@ -152,7 +153,7 @@ def test_manager_already_has_permission_for_node_operator(
         MANAGERS[0],
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        [convert.to_uint((0 << 248) + (1 << 240) + 0, "uint256")],
+        encode_permission_params([Param(0, Op.EQ, 0)]),
         {"from": voting},
     )
     CALL_DATA = (
@@ -171,7 +172,7 @@ def test_manager_already_has_permission_for_different_node_operator(
         MANAGERS[0],
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        [convert.to_uint((0 << 248) + (1 << 240) + 1, "uint256")],
+        encode_permission_params([Param(0, Op.EQ, 1)]),
         {"from": voting},
     )
     CALL_DATA = (
@@ -228,11 +229,7 @@ def test_create_evm_script(
                     input_param[1],
                     node_operators_registry,
                     web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-                    [
-                        convert.to_uint(
-                            (0 << 248) + (1 << 240) + input_param[0], "uint256"
-                        )
-                    ],
+                    encode_permission_params([Param(0, Op.EQ, input_param[0])]),
                 ),
             )
         )

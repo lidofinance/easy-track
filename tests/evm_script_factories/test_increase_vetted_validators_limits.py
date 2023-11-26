@@ -1,7 +1,8 @@
 import pytest
 from eth_abi import encode_single
-from brownie import reverts, IncreaseVettedValidatorsLimit, convert
+from brownie import reverts, IncreaseVettedValidatorsLimit
 
+from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.evm_script import encode_call_script
 
 
@@ -55,7 +56,7 @@ def test_create_evm_script_called_when_operator_disabled(
     increase_vetted_validators_limit_factory, agent, node_operators_registry
 ):
     "Must revert with message 'NODE_OPERATOR_DISABLED' if called when operator disabled"
-    
+
     node_operators_registry.deactivateNodeOperator(0, {"from": agent})
     no = node_operators_registry.getNodeOperator(0, True)
 
@@ -134,24 +135,20 @@ def test_create_evm_script_from_reward_address(
 
 
 def test_create_evm_script_from_manager(
-    increase_vetted_validators_limit_factory,
-    node_operators_registry,
-    acl,
-    voting
+    increase_vetted_validators_limit_factory, node_operators_registry, acl, voting
 ):
     "Must create correct EVMScript if all requirements are met"
     no_manager = "0x1f9090aae28b8a3dceadf281b0f12828e676c327"
 
     no = node_operators_registry.getNodeOperator(0, True)
-    # permission parameter
-    id8 = 0  # first arg
-    op8 = 1  # EQ
-    value240 = 0
-    permission_param = convert.to_uint(
-        (id8 << 248) + (op8 << 240) + value240, "uint256"
-    )
 
-    acl.grantPermissionP(no_manager, node_operators_registry, node_operators_registry.MANAGE_SIGNING_KEYS(), [permission_param], {"from": voting})
+    acl.grantPermissionP(
+        no_manager,
+        node_operators_registry,
+        node_operators_registry.MANAGE_SIGNING_KEYS(),
+        encode_permission_params([Param(0, Op.EQ, 0)]),
+        {"from": voting},
+    )
 
     node_operators_registry.addSigningKeysOperatorBH(
         0,
@@ -179,7 +176,6 @@ def test_create_evm_script_from_manager(
         ]
     )
     assert evm_script == expected_evm_script
-
 
 
 def test_decode_evm_script_call_data(

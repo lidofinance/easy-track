@@ -1,6 +1,7 @@
 import pytest
 from eth_abi import encode_single
-from brownie import web3, interface, convert
+from brownie import web3, interface
+from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.evm_script import encode_call_script
 
 clusters = [
@@ -128,20 +129,11 @@ def test_simple_make_action(
         assert cluster["totalExitedValidators"] == 0
         assert cluster["totalAddedValidators"] == 0
         assert cluster["totalDepositedValidators"] == 0
-
-        # manager permission parameter
-        id8 = 0  # first arg
-        op8 = 1  # EQ
-        value240 = cluster_index
-        permission_param = convert.to_uint(
-            (id8 << 248) + (op8 << 240) + value240, "uint256"
-        )
-
         assert (
             simple_dvt.canPerform(
                 clusters[cluster_index]["manager"],
                 simple_dvt.MANAGE_SIGNING_KEYS(),
-                [permission_param],
+                encode_permission_params([Param(0, Op.EQ, cluster_index)]),
             )
             == True
         )
@@ -235,23 +227,15 @@ def test_simple_make_action(
         change_node_operator_manager_calldata,
     )
 
-    # permission parameter
-    id8 = 0  # first arg
-    op8 = 1  # EQ
-    value240 = no_5_id
-    permission_param = convert.to_uint(
-        (id8 << 248) + (op8 << 240) + value240, "uint256"
-    )
-
     assert not simple_dvt.canPerform(
         clusters[no_5_id]["manager"],
         simple_dvt.MANAGE_SIGNING_KEYS(),
-        [permission_param],
+        encode_permission_params([Param(0, Op.EQ, no_5_id)]),
     )
     assert simple_dvt.canPerform(
         stranger,
         simple_dvt.MANAGE_SIGNING_KEYS(),
-        [permission_param],
+        encode_permission_params([Param(0, Op.EQ, no_5_id)]),
     )
 
 
