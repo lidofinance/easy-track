@@ -84,16 +84,14 @@ def easytrack_pair_executor_with_collision(et_contracts, stranger):
             {"from": stranger},
         )
         print("enactment costs: ", etx.gas_used)
-        try:
-            with revert:
-                etx = et_contracts.easy_track.enactMotion(
-                    motions[-1][0],
-                    txs[-1].events["MotionCreated"]["_evmScriptCallData"],
-                    {"from": stranger},
-                )
-                print("enactment costs: ", etx.gas_used)
-        except Exception as e:
-            print(e)
+
+        with revert:
+            etx = et_contracts.easy_track.enactMotion(
+                motions[-1][0],
+                txs[-1].events["MotionCreated"]["_evmScriptCallData"],
+                {"from": stranger},
+            )
+            print("enactment costs: ", etx.gas_used)
     return helper
 
 
