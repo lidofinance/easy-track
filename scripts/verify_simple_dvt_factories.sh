@@ -59,7 +59,7 @@ echo "=========================================================="
 echo "=========================================================="
 ./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract SetVettedValidatorsLimits --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
-./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract IncreaseVettedValidatorsLimits --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
+./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract IncreaseVettedValidatorsLimit --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="
 ./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract SetNodeOperatorNames --etherscan-api-url $ETHERSCAN_API  --skip-compilation --local-ganache
 echo "=========================================================="

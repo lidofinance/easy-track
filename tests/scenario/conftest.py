@@ -12,7 +12,7 @@ from brownie import (
     SetVettedValidatorsLimits,
     ChangeNodeOperatorManagers,
     UpdateTargetValidatorLimits,
-    IncreaseVettedValidatorsLimits
+    IncreaseVettedValidatorsLimit
 )
 from utils import deployed_easy_track
 from utils.config import get_network_name
@@ -369,11 +369,11 @@ def increase_vetted_validators_limit_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return IncreaseVettedValidatorsLimits.at(
-            deployed_artifact["IncreaseVettedValidatorsLimits"]["address"]
+        return IncreaseVettedValidatorsLimit.at(
+            deployed_artifact["IncreaseVettedValidatorsLimit"]["address"]
         )
 
-    factory = IncreaseVettedValidatorsLimits.deploy(
+    factory = IncreaseVettedValidatorsLimit.deploy(
         simple_dvt, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt

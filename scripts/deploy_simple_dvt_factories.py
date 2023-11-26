@@ -11,7 +11,7 @@ from brownie import (
     SetNodeOperatorRewardAddresses,
     SetVettedValidatorsLimits,
     UpdateTargetValidatorLimits,
-    IncreaseVettedValidatorsLimits,
+    IncreaseVettedValidatorsLimit,
     web3,
 )
 
@@ -113,12 +113,12 @@ def main():
         "constructorArgs": [trusted_caller, simple_dvt],
     }
 
-    # IncreaseVettedValidatorsLimits
-    increase_vetted_validators_limits = IncreaseVettedValidatorsLimits.deploy(
+    # IncreaseVettedValidatorsLimit
+    increase_vetted_validators_limits = IncreaseVettedValidatorsLimit.deploy(
         simple_dvt, tx_params
     )
-    deployment_artifacts["IncreaseVettedValidatorsLimits"] = {
-        "contract": "IncreaseVettedValidatorsLimits",
+    deployment_artifacts["IncreaseVettedValidatorsLimit"] = {
+        "contract": "IncreaseVettedValidatorsLimit",
         "address": increase_vetted_validators_limits.address,
         "constructorArgs": [trusted_caller, simple_dvt],
     }
@@ -168,7 +168,7 @@ def main():
     log.ok("Deployed DeactivateNodeOperators", deactivate_node_operators.address)
     log.ok("Deployed SetVettedValidatorsLimits", set_vetted_validators_limits.address)
     log.ok(
-        "Deployed IncreaseVettedValidatorsLimits",
+        "Deployed IncreaseVettedValidatorsLimit",
         increase_vetted_validators_limits.address,
     )
     log.ok("Deployed SetNodeOperatorNames", set_node_operator_names.address)
@@ -195,7 +195,7 @@ def main():
     ActivateNodeOperators.publish_source(activate_node_operators)
     DeactivateNodeOperators.publish_source(deactivate_node_operators)
     SetVettedValidatorsLimits.publish_source(set_vetted_validators_limits)
-    IncreaseVettedValidatorsLimits.publish_source(increase_vetted_validators_limits)
+    IncreaseVettedValidatorsLimit.publish_source(increase_vetted_validators_limits)
     SetNodeOperatorNames.publish_source(set_node_operator_names)
     SetNodeOperatorRewardAddresses.publish_source(set_node_operator_reward)
     UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits)

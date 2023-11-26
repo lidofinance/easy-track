@@ -33,7 +33,7 @@ interface INodeOperatorsRegistry {
 }
 
 /// @notice Creates EVMScript to increase staking limit for node operator
-contract IncreaseVettedValidatorsLimits is IEVMScriptFactory {
+contract IncreaseVettedValidatorsLimit is IEVMScriptFactory {
     struct VettedValidatorsLimitInput {
         uint256 nodeOperatorId;
         uint256 stakingLimit;
