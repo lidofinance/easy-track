@@ -356,8 +356,6 @@ def test_simple_dvt_scenario(
     assert no_5_summary["targetValidatorsCount"] == 1
     assert no_6_summary["targetValidatorsCount"] == 10
 
-    # Revoke MANAGE_SIGNING_KEYS role
-
     # Transfer cluster manager
     change_node_operator_manager_calldata = (
         "0x"

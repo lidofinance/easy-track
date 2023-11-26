@@ -101,16 +101,14 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
 
         require(_decodedCallData.length > 0, ERROR_EMPTY_CALLDATA);
         require(
-            _decodedCallData[_decodedCallData.length - 1].nodeOperatorId <
-                nodeOperatorsCount,
+            _decodedCallData[_decodedCallData.length - 1].nodeOperatorId < nodeOperatorsCount,
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
         for (uint256 i = 0; i < _decodedCallData.length; i++) {
             require(
                 i == 0 ||
-                    _decodedCallData[i].nodeOperatorId >
-                    _decodedCallData[i - 1].nodeOperatorId,
+                    _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
                 ERROR_NODE_OPERATORS_IS_NOT_SORTED
             );
             require(
@@ -131,6 +129,7 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
                 _decodedCallData[i].nodeOperatorId,
                 true
             );
+            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, true);
             nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, true);
             require(
                 keccak256(bytes(_decodedCallData[i].name)) != keccak256(bytes(name)),

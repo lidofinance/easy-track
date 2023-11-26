@@ -29,7 +29,8 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE =
         "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
-    string private constant ERROR_TARGET_LIMIT_GREATER_THEN_UINT64 = "TARGET_LIMIT_GREATER_THEN_UINT64";
+    string private constant ERROR_TARGET_LIMIT_GREATER_THEN_UINT64 =
+        "TARGET_LIMIT_GREATER_THEN_UINT64";
     string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
 
     // -------------
