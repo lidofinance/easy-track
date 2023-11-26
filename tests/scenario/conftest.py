@@ -92,6 +92,8 @@ def easytrack_pair_executor_with_collision(et_contracts, stranger):
                 {"from": stranger},
             )
             print("enactment costs: ", etx.gas_used)
+
+        et_contracts.easy_track.cancelMotion(motions[-1][0], {"from": creator})
     return helper
 
 
