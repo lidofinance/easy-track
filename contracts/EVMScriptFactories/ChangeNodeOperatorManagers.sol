@@ -78,14 +78,12 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             _evmScriptCallData
         );
 
-        address[] memory toAddresses = new address[](decodedCallData.length * 2);
         bytes4[] memory methodIds = new bytes4[](decodedCallData.length * 2);
         bytes[] memory encodedCalldata = new bytes[](decodedCallData.length * 2);
 
         _validateInputData(decodedCallData);
 
         for (uint256 i = 0; i < decodedCallData.length; ++i) {
-            toAddresses[i * 2] = address(acl);
             methodIds[i * 2] = REVOKE_PERMISSION_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(
                 decodedCallData[i].oldManagerAddress,
@@ -96,8 +94,6 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             // See https://legacy-docs.aragon.org/developers/tools/aragonos/reference-aragonos-3#parameter-interpretation for details
             uint256[] memory permissionParams = new uint256[](1);
             permissionParams[0] = (1 << 240) + decodedCallData[i].nodeOperatorId;
-
-            toAddresses[i * 2 + 1] = address(acl);
             methodIds[i * 2 + 1] = GRANT_PERMISSION_P_SELECTOR;
             encodedCalldata[i * 2 + 1] = abi.encode(
                 decodedCallData[i].newManagerAddress,
@@ -107,7 +103,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             );
         }
 
-        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
+        return EVMScriptCreator.createEVMScript(address(acl), methodIds, encodedCalldata);
     }
 
     /// @notice Decodes call data used by createEVMScript method
