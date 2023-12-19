@@ -64,7 +64,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
         bytes[] memory nodeOperatorRewardAddressesCalldata = new bytes[](decodedCallData.length);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             nodeOperatorRewardAddressesCalldata[i] = abi.encode(
                 decodedCallData[i].nodeOperatorId,
                 decodedCallData[i].rewardAddress
@@ -108,7 +108,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
-        for (uint256 i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,

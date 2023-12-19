@@ -71,7 +71,7 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
 
         bytes[] memory updateTargetLimitsCallData = new bytes[](decodedCallData.length);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             updateTargetLimitsCallData[i] = abi.encode(decodedCallData[i]);
         }
 
@@ -110,7 +110,7 @@ contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
-        for (uint256 i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,

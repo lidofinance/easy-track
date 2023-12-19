@@ -86,7 +86,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(nodeOperatorsCount, decodedCallData);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             toAddresses[i * 2] = address(nodeOperatorsRegistry);
             methodIds[i * 2] = ADD_NODE_OPERATOR_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(
@@ -160,11 +160,11 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
             ERROR_MAX_OPERATORS_COUNT_EXCEEDED
         );
 
-        for (uint256 i = 0; i < caldataLength; i++) {
+        for (uint256 i = 0; i < caldataLength; ++i) {
             address managerAddress = _nodeOperatorInputs[i].managerAddress;
             address rewardAddress = _nodeOperatorInputs[i].rewardAddress;
             string memory name = _nodeOperatorInputs[i].name;
-            for (uint256 testIndex = i + 1; testIndex < caldataLength; testIndex++) {
+            for (uint256 testIndex = i + 1; testIndex < caldataLength; ++testIndex) {
                 require(
                     managerAddress != _nodeOperatorInputs[testIndex].managerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE

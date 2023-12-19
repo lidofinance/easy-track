@@ -84,7 +84,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(decodedCallData);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             toAddresses[i * 2] = address(acl);
             methodIds[i * 2] = REVOKE_PERMISSION_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(
@@ -139,7 +139,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
-        for (uint256 i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
@@ -147,7 +147,7 @@ contract ChangeNodeOperatorManagers is TrustedCaller, IEVMScriptFactory {
             );
 
             address managerAddress = _decodedCallData[i].newManagerAddress;
-            for (uint256 testIndex = i + 1; testIndex < _decodedCallData.length; testIndex++) {
+            for (uint256 testIndex = i + 1; testIndex < _decodedCallData.length; ++testIndex) {
                 require(
                     managerAddress != _decodedCallData[testIndex].newManagerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
