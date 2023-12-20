@@ -31,6 +31,10 @@ class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
     titles: [str]
     recipients: [str]
 
+@dataclass
+class AllowedRecipientsManualSetupDeployConfig(AllowedRecipientsFullSetupDeployConfig):
+    grant_rights_to_executor: bool
+
 def deploy_easy_track(
     admin,
     governance_token,
