@@ -37,13 +37,6 @@ deploy_config = deployment.AllowedRecipientsMultipleTokensManualSetupDeployConfi
 registry_deploy_tx_hash = ""
 top_up_deploy_tx_hash = ""
 
-registry_deploy_tx_hash = (
-    "0x0d89ea3a7c0883d52574a409668858fb17877f221b539cc30a705fcd4471ede4"
-)
-top_up_deploy_tx_hash = (
-    "0x5ccf460ca3c87b327f0667f18872d0f4def4717a0128e541d2c30ee618225495"
-)
-
 
 def main():
     network_name = network.show_active()
