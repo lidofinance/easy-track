@@ -35,6 +35,18 @@ class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
 class AllowedRecipientsManualSetupDeployConfig(AllowedRecipientsFullSetupDeployConfig):
     grant_rights_to_executor: bool
 
+@dataclass
+class AllowedRecipientsMultipleTokensManualSetupDeployConfig:
+    limit: int
+    period: int
+    titles: [str]
+    recipients: [str]
+    spent_amount: int
+    trusted_caller: str
+    tokens_registry: str
+    grant_rights_to_executor: bool
+
+
 def deploy_easy_track(
     admin,
     governance_token,
