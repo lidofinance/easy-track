@@ -5,32 +5,7 @@ pragma solidity 0.8.6;
 
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-
-interface INodeOperatorsRegistry {
-    function getNodeOperator(
-        uint256 _id,
-        bool _fullInfo
-    )
-        external
-        view
-        returns (
-            bool active,
-            string memory name,
-            address rewardAddress,
-            uint64 stakingLimit,
-            uint64 stoppedValidators,
-            uint64 totalSigningKeys,
-            uint64 usedSigningKeys
-        );
-
-    function canPerform(
-        address _sender,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external view returns (bool);
-
-    function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external;
-}
+import "../interfaces/INodeOperatorsRegistry.sol";
 
 /// @notice Creates EVMScript to increase staking limit for node operator
 contract IncreaseVettedValidatorsLimit is IEVMScriptFactory {

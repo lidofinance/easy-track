@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to add new batch of node operators
@@ -33,8 +33,10 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
-    /// @notice Address of Argon ACL contract
+    /// @notice Address of Aragon ACL contract
     IACL public immutable acl;
+    /// @notice Address of Lido contract
+    address public immutable lido;
 
     // -------------
     // ERRORS
@@ -43,13 +45,13 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MANAGER_ALREADY_HAS_ROLE = "MANAGER_ALREADY_HAS_ROLE";
     string private constant ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE =
         "MANAGER_ADDRESSES_HAS_DUPLICATE";
-    string private constant ERROR_REWARD_ADDRESSES_HAS_DUPLICATE = "REWARD_ADDRESSES_HAS_DUPLICATE";
     string private constant ERROR_NODE_OPERATORS_COUNT_MISMATCH = "NODE_OPERATORS_COUNT_MISMATCH";
     string private constant ERROR_LIDO_REWARD_ADDRESS = "LIDO_REWARD_ADDRESS";
     string private constant ERROR_ZERO_REWARD_ADDRESS = "ZERO_REWARD_ADDRESS";
     string private constant ERROR_ZERO_MANAGER_ADDRESS = "ZERO_MANAGER_ADDRESS";
     string private constant ERROR_WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
     string private constant ERROR_MAX_OPERATORS_COUNT_EXCEEDED = "MAX_OPERATORS_COUNT_EXCEEDED";
+    string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
 
     // -------------
     // CONSTRUCTOR
@@ -62,6 +64,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
         acl = IACL(_acl);
+        lido = INodeOperatorsRegistry(_nodeOperatorsRegistry).getLocator().lido();
     }
 
     // -------------
@@ -86,7 +89,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(nodeOperatorsCount, decodedCallData);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             toAddresses[i * 2] = address(nodeOperatorsRegistry);
             methodIds[i * 2] = ADD_NODE_OPERATOR_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(
@@ -146,25 +149,26 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         uint256 _nodeOperatorsCount,
         AddNodeOperatorInput[] memory _nodeOperatorInputs
     ) private view {
-        address lido = nodeOperatorsRegistry.getLocator().lido();
         uint256 maxNameLength = nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH();
-        uint256 caldataLength = _nodeOperatorInputs.length;
+        uint256 calldataLength = _nodeOperatorInputs.length;
 
+        require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
+        
         require(
             nodeOperatorsRegistry.getNodeOperatorsCount() == _nodeOperatorsCount,
             ERROR_NODE_OPERATORS_COUNT_MISMATCH
         );
 
         require(
-            _nodeOperatorsCount + caldataLength <= nodeOperatorsRegistry.MAX_NODE_OPERATORS_COUNT(),
+            _nodeOperatorsCount + calldataLength <= nodeOperatorsRegistry.MAX_NODE_OPERATORS_COUNT(),
             ERROR_MAX_OPERATORS_COUNT_EXCEEDED
         );
 
-        for (uint256 i = 0; i < caldataLength; i++) {
+        for (uint256 i = 0; i < calldataLength; ++i) {
             address managerAddress = _nodeOperatorInputs[i].managerAddress;
             address rewardAddress = _nodeOperatorInputs[i].rewardAddress;
             string memory name = _nodeOperatorInputs[i].name;
-            for (uint256 testIndex = i + 1; testIndex < caldataLength; testIndex++) {
+            for (uint256 testIndex = i + 1; testIndex < calldataLength; ++testIndex) {
                 require(
                     managerAddress != _nodeOperatorInputs[testIndex].managerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE

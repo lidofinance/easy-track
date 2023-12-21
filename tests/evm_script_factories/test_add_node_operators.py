@@ -54,6 +54,19 @@ def test_node_operators_count(owner, add_node_operators_factory):
         add_node_operators_factory.createEVMScript(owner, CALL_DATA)
 
 
+def test_empty_calldata(owner, add_node_operators_factory, node_operators_registry):
+    no_count = node_operators_registry.getNodeOperatorsCount()
+    with reverts("EMPTY_CALLDATA"):
+        EMPTY_CALLDATA = (
+            "0x"
+            + encode_single(
+                "(uint256,(string,address,address)[])",
+                [0, []],
+            ).hex()
+        )
+        add_node_operators_factory.createEVMScript(owner, EMPTY_CALLDATA)
+
+
 def test_manager_has_duplicate(
     owner, add_node_operators_factory, node_operators_registry
 ):

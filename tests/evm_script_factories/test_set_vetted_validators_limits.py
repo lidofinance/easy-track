@@ -1,6 +1,6 @@
 import pytest
 from eth_abi import encode_single
-from brownie import reverts, SetVettedValidatorsLimits, ZERO_ADDRESS
+from brownie import reverts, SetVettedValidatorsLimits, web3
 
 from utils.evm_script import encode_call_script
 
@@ -61,6 +61,29 @@ def test_non_sorted_calldata(owner, set_vetted_validators_limits_factory):
         )
         set_vetted_validators_limits_factory.createEVMScript(
             owner, NON_SORTED_CALL_DATA
+        )
+
+
+
+def test_non_active_operator_calldata(owner, set_vetted_validators_limits_factory, node_operators_registry, voting, acl):
+    "Must revert with message 'NODE_OPERATOR_IS_NOT_ACTIVE' when operator isn't active"
+    acl.grantPermission(
+        voting,
+        node_operators_registry,
+        web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
+        {"from": voting},
+    )
+
+    input_params = [(0, 1), (1, 1)]
+    node_operators_registry.deactivateNodeOperator(0, {"from": voting})
+
+    with reverts("NODE_OPERATOR_IS_NOT_ACTIVE"):
+
+        EVM_SCRIPT_CALL_DATA = (
+            "0x" + encode_single("((uint256,uint256)[])", [input_params]).hex()
+        )
+        set_vetted_validators_limits_factory.createEVMScript(
+            owner, EVM_SCRIPT_CALL_DATA
         )
 
 

@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 
 /// @notice Creates EVMScript to set reward address of several node operators
 contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
@@ -33,6 +33,8 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
+    /// @notice Address of Lido contract
+    address public immutable lido;
 
     // -------------
     // CONSTRUCTOR
@@ -43,6 +45,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
         address _nodeOperatorsRegistry
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
+        lido = INodeOperatorsRegistry(_nodeOperatorsRegistry).getLocator().lido();
     }
 
     // -------------
@@ -64,7 +67,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
         bytes[] memory nodeOperatorRewardAddressesCalldata = new bytes[](decodedCallData.length);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             nodeOperatorRewardAddressesCalldata[i] = abi.encode(
                 decodedCallData[i].nodeOperatorId,
                 decodedCallData[i].rewardAddress
@@ -98,8 +101,6 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(SetRewardAddressInput[] memory _decodedCallData) private view {
-        address lido = nodeOperatorsRegistry.getLocator().lido();
-
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
         require(_decodedCallData.length > 0, ERROR_EMPTY_CALLDATA);
@@ -108,7 +109,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
-        for (uint256 i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
@@ -130,10 +131,6 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
                 false
             );            
             
-            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, false);
-
-            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, false);
-
             require(_decodedCallData[i].rewardAddress != rewardAddress, ERROR_SAME_REWARD_ADDRESS);
         }
     }

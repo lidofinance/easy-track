@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 
 /// @notice Creates EVMScript to set staking limit for node operators
 contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
@@ -24,6 +24,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
     string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
+    string private constant ERROR_NODE_OPERATOR_IS_NOT_ACTIVE = "NODE_OPERATOR_IS_NOT_ACTIVE";
 
     // -------------
     // VARIABLES
@@ -62,7 +63,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
 
         bytes[] memory setVettedValidatorsLimitsCalldata = new bytes[](decodedCallData.length);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             setVettedValidatorsLimitsCalldata[i] = abi.encode(
                 decodedCallData[i].nodeOperatorId,
                 decodedCallData[i].stakingLimit
@@ -104,7 +105,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
-        for (uint256 i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
@@ -112,7 +113,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
             );
 
             (
-                /* bool active */,
+                bool active,
                 /* string memory name */,
                 /* address rewardAddress */,
                 /* uint64 stakingLimit */,
@@ -127,6 +128,11 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
             require(
                 totalSigningKeys >= _decodedCallData[i].stakingLimit,
                 ERROR_NOT_ENOUGH_SIGNING_KEYS
+            );
+
+            require(
+                active == true,
+                ERROR_NODE_OPERATOR_IS_NOT_ACTIVE
             );
         }
     }

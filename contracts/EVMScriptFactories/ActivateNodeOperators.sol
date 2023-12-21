@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to activate several node operators
@@ -32,7 +32,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
-    /// @notice Address of Argon ACL contract
+    /// @notice Address of Aragon ACL contract
     IACL public immutable acl;
 
     // -------------
@@ -83,7 +83,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
         bytes4[] memory methodIds = new bytes4[](decodedCallData.length * 2);
         bytes[] memory encodedCalldata = new bytes[](decodedCallData.length * 2);
 
-        for (uint256 i = 0; i < decodedCallData.length; i++) {
+        for (uint256 i = 0; i < decodedCallData.length; ++i) {
             toAddresses[i * 2] = address(nodeOperatorsRegistry);
             methodIds[i * 2] = ACTIVATE_NODE_OPERATOR_SELECTOR;
             encodedCalldata[i * 2] = abi.encode(decodedCallData[i].nodeOperatorId);
@@ -132,7 +132,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
             ERROR_NODE_OPERATOR_INDEX_OUT_OF_RANGE
         );
 
-        for (uint256 i = 0; i < _decodedCallData.length; i++) {
+        for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i].nodeOperatorId > _decodedCallData[i - 1].nodeOperatorId,
@@ -147,7 +147,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
             require(_decodedCallData[i].managerAddress != address(0), ERROR_ZERO_MANAGER_ADDRESS);
 
             address managerAddress = _decodedCallData[i].managerAddress;
-            for (uint256 testIndex = i + 1; testIndex < _decodedCallData.length; testIndex++) {
+            for (uint256 testIndex = i + 1; testIndex < _decodedCallData.length; ++testIndex) {
                 require(
                     managerAddress != _decodedCallData[testIndex].managerAddress,
                     ERROR_MANAGER_ADDRESSES_HAS_DUPLICATE
