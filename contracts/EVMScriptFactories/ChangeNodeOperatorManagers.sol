@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to change signing keys manager for several node operators

@@ -5,7 +5,7 @@ pragma solidity 0.8.6;
 
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 
 /// @notice Creates EVMScript to increase staking limit for node operator
 contract IncreaseVettedValidatorsLimit is IEVMScriptFactory {

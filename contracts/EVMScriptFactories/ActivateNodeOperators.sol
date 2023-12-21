@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IACL.sol";
 
 /// @notice Creates EVMScript to activate several node operators
@@ -32,7 +32,7 @@ contract ActivateNodeOperators is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
-    /// @notice Address of Argon ACL contract
+    /// @notice Address of Aragon ACL contract
     IACL public immutable acl;
 
     // -------------

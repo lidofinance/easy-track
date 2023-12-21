@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/INodeOperatorRegestry.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 
 /// @notice Creates EVMScript to set name of several node operators
 contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
