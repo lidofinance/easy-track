@@ -24,6 +24,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
         "NODE_OPERATOR_INDEX_OUT_OF_RANGE";
     string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
     string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
+    string private constant ERROR_NODE_OPERATOR_IS_NOT_ACTIVE = "NODE_OPERATOR_IS_NOT_ACTIVE";
 
     // -------------
     // VARIABLES
@@ -112,7 +113,7 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
             );
 
             (
-                /* bool active */,
+                bool active,
                 /* string memory name */,
                 /* address rewardAddress */,
                 /* uint64 stakingLimit */,
@@ -127,6 +128,11 @@ contract SetVettedValidatorsLimits is TrustedCaller, IEVMScriptFactory {
             require(
                 totalSigningKeys >= _decodedCallData[i].stakingLimit,
                 ERROR_NOT_ENOUGH_SIGNING_KEYS
+            );
+
+            require(
+                active == true,
+                ERROR_NODE_OPERATOR_IS_NOT_ACTIVE
             );
         }
     }

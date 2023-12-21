@@ -51,6 +51,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_MANAGER_ADDRESS = "ZERO_MANAGER_ADDRESS";
     string private constant ERROR_WRONG_NAME_LENGTH = "WRONG_NAME_LENGTH";
     string private constant ERROR_MAX_OPERATORS_COUNT_EXCEEDED = "MAX_OPERATORS_COUNT_EXCEEDED";
+    string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
 
     // -------------
     // CONSTRUCTOR
@@ -151,6 +152,8 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         uint256 maxNameLength = nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH();
         uint256 calldataLength = _nodeOperatorInputs.length;
 
+        require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
+        
         require(
             nodeOperatorsRegistry.getNodeOperatorsCount() == _nodeOperatorsCount,
             ERROR_NODE_OPERATORS_COUNT_MISMATCH
