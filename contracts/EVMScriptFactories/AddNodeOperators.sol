@@ -35,6 +35,8 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
     /// @notice Address of Argon ACL contract
     IACL public immutable acl;
+    /// @notice Address of Lido contract
+    address public immutable lido;
 
     // -------------
     // ERRORS
@@ -62,6 +64,7 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
         acl = IACL(_acl);
+        lido = INodeOperatorsRegistry(_nodeOperatorsRegistry).getLocator().lido();
     }
 
     // -------------
@@ -146,7 +149,6 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
         uint256 _nodeOperatorsCount,
         AddNodeOperatorInput[] memory _nodeOperatorInputs
     ) private view {
-        address lido = nodeOperatorsRegistry.getLocator().lido();
         uint256 maxNameLength = nodeOperatorsRegistry.MAX_NODE_OPERATOR_NAME_LENGTH();
         uint256 caldataLength = _nodeOperatorInputs.length;
 

@@ -33,6 +33,8 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
+    /// @notice Address of Lido contract
+    address public immutable lido;
 
     // -------------
     // CONSTRUCTOR
@@ -43,6 +45,7 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
         address _nodeOperatorsRegistry
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
+        lido = INodeOperatorsRegistry(_nodeOperatorsRegistry).getLocator().lido();
     }
 
     // -------------
@@ -98,8 +101,6 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(SetRewardAddressInput[] memory _decodedCallData) private view {
-        address lido = nodeOperatorsRegistry.getLocator().lido();
-
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
         require(_decodedCallData.length > 0, ERROR_EMPTY_CALLDATA);
@@ -130,10 +131,6 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
                 false
             );            
             
-            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, false);
-
-            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, false);
-
             require(_decodedCallData[i].rewardAddress != rewardAddress, ERROR_SAME_REWARD_ADDRESS);
         }
     }

@@ -129,8 +129,7 @@ contract SetNodeOperatorNames is TrustedCaller, IEVMScriptFactory {
                 _decodedCallData[i].nodeOperatorId,
                 true
             );
-            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, true);
-            nodeOperatorsRegistry.getNodeOperator(_decodedCallData[i].nodeOperatorId, true);
+
             require(
                 keccak256(bytes(_decodedCallData[i].name)) != keccak256(bytes(name)),
                 ERROR_SAME_NAME
