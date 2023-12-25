@@ -19,7 +19,7 @@ def addresses(network=DEFAULT_NETWORK):
             ),
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
-            simple_dvt=None,
+            simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )

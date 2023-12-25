@@ -42,6 +42,7 @@ def main():
     trusted_caller = get_trusted_caller()
     simple_dvt = contracts.simple_dvt.address
     acl = contracts.aragon.acl.address
+    lido_address = contracts.steth.address
 
     log.br()
 
@@ -58,6 +59,7 @@ def main():
     log.ok("Simple DVT module address", simple_dvt)
     log.ok("ACL", acl)
     log.ok("Trusted caller", trusted_caller)
+    log.ok("Lido", lido_address)
 
     log.br()
 
@@ -75,12 +77,12 @@ def main():
 
     # AddNodeOperators
     add_node_operator = AddNodeOperators.deploy(
-        trusted_caller, simple_dvt, acl, tx_params
+        trusted_caller, simple_dvt, acl, lido_address, tx_params
     )
     deployment_artifacts["AddNodeOperators"] = {
         "contract": "AddNodeOperators",
         "address": add_node_operator.address,
-        "constructorArgs": [trusted_caller, simple_dvt, acl],
+        "constructorArgs": [trusted_caller, simple_dvt, acl, lido_address],
     }
 
     # ActivateNodeOperators
@@ -135,12 +137,12 @@ def main():
 
     # SetNodeOperatorRewardAddresses
     set_node_operator_reward = SetNodeOperatorRewardAddresses.deploy(
-        trusted_caller, simple_dvt, tx_params
+        trusted_caller, simple_dvt, lido_address, tx_params
     )
     deployment_artifacts["SetNodeOperatorRewardAddresses"] = {
         "contract": "SetNodeOperatorRewardAddresses",
         "address": set_node_operator_reward.address,
-        "constructorArgs": [trusted_caller, simple_dvt],
+        "constructorArgs": [trusted_caller, simple_dvt, lido_address],
     }
 
     # UpdateTargetValidatorLimits

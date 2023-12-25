@@ -11,9 +11,9 @@ NEW_REWARD_ADDRESSES = [
 
 
 @pytest.fixture(scope="module")
-def set_node_operator_reward_addresses_factory(owner, node_operators_registry):
+def set_node_operator_reward_addresses_factory(owner, node_operators_registry, steth):
     return SetNodeOperatorRewardAddresses.deploy(
-        owner, node_operators_registry, {"from": owner}
+        owner, node_operators_registry, steth, {"from": owner}
     )
 
 

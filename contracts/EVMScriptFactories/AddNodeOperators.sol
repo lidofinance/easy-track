@@ -60,11 +60,12 @@ contract AddNodeOperators is TrustedCaller, IEVMScriptFactory {
     constructor(
         address _trustedCaller,
         address _nodeOperatorsRegistry,
-        address _acl
+        address _acl,
+        address _lido
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
         acl = IACL(_acl);
-        lido = INodeOperatorsRegistry(_nodeOperatorsRegistry).getLocator().lido();
+        lido = _lido;
     }
 
     // -------------

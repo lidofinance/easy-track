@@ -22,8 +22,8 @@ MANAGERS = [
 
 
 @pytest.fixture(scope="module")
-def add_node_operators_factory(owner, node_operators_registry, acl):
-    return AddNodeOperators.deploy(owner, node_operators_registry, acl, {"from": owner})
+def add_node_operators_factory(owner, node_operators_registry, acl, steth):
+    return AddNodeOperators.deploy(owner, node_operators_registry, acl, steth, {"from": owner})
 
 
 def test_deploy(node_operators_registry, owner, acl, add_node_operators_factory):

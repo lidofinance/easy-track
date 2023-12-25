@@ -3,8 +3,6 @@
 
 pragma solidity ^0.8.4;
 
-import "./ILidoLocator.sol";
-
 /// @author bulbozaur
 interface INodeOperatorsRegistry {
     function activateNodeOperator(uint256 _nodeOperatorId) external;
@@ -23,8 +21,6 @@ interface INodeOperatorsRegistry {
     function MAX_NODE_OPERATOR_NAME_LENGTH() external view returns (uint256);
 
     function MAX_NODE_OPERATORS_COUNT() external view returns (uint256);
-
-    function getLocator() external view returns (ILidoLocator);
 
     function setNodeOperatorRewardAddress(uint256 _nodeOperatorId, address _rewardAddress) external;
 

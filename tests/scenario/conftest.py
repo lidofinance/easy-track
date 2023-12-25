@@ -143,12 +143,13 @@ def add_node_operators_factory(
     vote_id_from_env,
     deployed_artifact,
     use_deployed_contracts_from_env,
+    steth,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
         return AddNodeOperators.at(deployed_artifact["AddNodeOperators"]["address"])
 
     factory = AddNodeOperators.deploy(
-        commitee_multisig, simple_dvt, acl, {"from": deployer}
+        commitee_multisig, simple_dvt, acl, steth, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
@@ -295,6 +296,7 @@ def set_node_operator_reward_address_factory(
     deployed_artifact,
     vote_id_from_env,
     use_deployed_contracts_from_env,
+    steth,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
         return SetNodeOperatorRewardAddresses.at(
@@ -302,7 +304,7 @@ def set_node_operator_reward_address_factory(
         )
 
     factory = SetNodeOperatorRewardAddresses.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
+        commitee_multisig, simple_dvt, steth, {"from": deployer}
     )
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig

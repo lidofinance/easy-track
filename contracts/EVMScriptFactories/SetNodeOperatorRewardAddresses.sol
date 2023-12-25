@@ -42,10 +42,11 @@ contract SetNodeOperatorRewardAddresses is TrustedCaller, IEVMScriptFactory {
 
     constructor(
         address _trustedCaller,
-        address _nodeOperatorsRegistry
+        address _nodeOperatorsRegistry,
+        address _lido
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
-        lido = INodeOperatorsRegistry(_nodeOperatorsRegistry).getLocator().lido();
+        lido = _lido;
     }
 
     // -------------
