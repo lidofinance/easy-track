@@ -50,6 +50,8 @@ _EOF_
   sleep 10
 }
 
+start_fork
+
 echo "=========================================================="
 ./bytecode-verificator/bytecode_verificator.sh --solc-version 0.8.6 --remote-rpc-url $REMOTE_RPC --config-json $CONFIG --contract AddNodeOperators --etherscan-api-url $ETHERSCAN_API --local-ganache
 echo "=========================================================="
