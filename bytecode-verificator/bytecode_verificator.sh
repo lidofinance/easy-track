@@ -307,8 +307,8 @@ function endode_solidity_calldata_placeholder() {
 function compile_contract() {
   rm -rf "${PWD}/build"
   cd "${PWD}/.."
-  ./bytecode-verificator/"$solc" OpenZeppelin/openzeppelin-contracts@4.3.2/contracts=./node_modules/@openzeppelin/contracts-v4.3.2 contracts/**/*.sol contracts/*.sol -o ./bytecode-verificator/build --allow-paths "$PWD" --bin --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
-  ./bytecode-verificator/"$solc" OpenZeppelin/openzeppelin-contracts@4.3.2/contracts=./node_modules/@openzeppelin/contracts-v4.3.2 contracts/**/*.sol contracts/*.sol -o ./bytecode-verificator/build --allow-paths "$PWD" --abi --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
+  ./bytecode-verificator/"$solc" contracts/**/*.sol contracts/*.sol -o ./bytecode-verificator/build --allow-paths "$PWD" --bin --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
+  ./bytecode-verificator/"$solc" contracts/**/*.sol contracts/*.sol -o ./bytecode-verificator/build --allow-paths "$PWD" --abi --overwrite --optimize --optimize-runs 200 1>>./logs 2>&1
   cd - &>/dev/null
 }
 
