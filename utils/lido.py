@@ -18,6 +18,20 @@ def addresses(network=DEFAULT_NETWORK):
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
         )
+    if network == "holesky" or network == "holesky-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0xfd1E42595CeC3E83239bf8dFc535250e7F48E0bC",
+                agent="0xE92329EC7ddB11D25e25b3c21eeBf11f15eB325d",
+                voting="0xdA7d2573Df555002503F29aA4003e398d28cc00f",
+                finance="0xf0F281E5d7FBc54EAFcE0dA225CDbde04173AB16",
+                gov_token="0x14ae7daeecdf57034f3E9db8564e46Dba8D97344",
+                calls_script="0xAa8B4F258a4817bfb0058b861447878168ddf7B0",
+                token_manager="0xFaa1692c6eea8eeF534e7819749aD93a1420379A",
+            ),
+            steth="0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034",
+            node_operators_registry="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+        )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
             aragon=AragonSetup(
@@ -33,7 +47,7 @@ def addresses(network=DEFAULT_NETWORK):
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, goerli, goerli-fork"""
     )
 
 
@@ -46,12 +60,16 @@ def allowed_recipients_builder(network=DEFAULT_NETWORK):
         return brownie.AllowedRecipientsBuilder.at(
             "0x958e0D946D014F377421a53AB5f9180d4485e63B"
         )
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilder.at(
+            "0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e"
+        )
     if network == "goerli" or network == "goerli-fork":
         return brownie.AllowedRecipientsBuilder.at(
             "0x1082512D1d60a0480445353eb55de451D261b684"
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, goerli, goerli-fork"""
     )
 
 

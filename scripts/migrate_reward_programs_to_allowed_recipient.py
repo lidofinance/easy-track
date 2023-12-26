@@ -22,6 +22,9 @@ def main():
     if (not (network_name == "goerli" or network_name == "goerli-fork")):
         raise EnvironmentError("network is not supported")
 
+    if (not (network_name == "holesky" or network_name == "holesky-fork")):
+        raise EnvironmentError("network is not supported")
+
     recipients = [
         "0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E",
         "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
@@ -62,7 +65,7 @@ def main():
     log.ok("Limit", limit)
     log.ok("Period", period)
     log.ok("Spent amount", spent_amount)
-    
+
     log.ok("Aragon Finance", contracts.aragon.finance)
     log.ok("Aragon Agent", contracts.aragon.agent)
     log.ok("EasyTrack", easy_track)
@@ -76,7 +79,7 @@ def main():
         log.nb("Aborting")
         return
 
-    tx_params = { 
+    tx_params = {
         "from": deployer,
         "priority_fee": "2 gwei",
         "max_fee": "50 gwei"
@@ -84,10 +87,10 @@ def main():
 
     tx = allowed_recipients_builder.deployFullSetup(
         trusted_caller,
-        contracts.ldo, 
-        limit, 
+        contracts.ldo,
+        limit,
         period,
-        recipients, 
+        recipients,
         titles,
         spent_amount,
         tx_params
