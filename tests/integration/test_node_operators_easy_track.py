@@ -94,11 +94,10 @@ def test_node_operators_easy_track_happy_path(
         [
             (
                 acl.address,
-                acl.createPermission.encode_input(
+                acl.grantPermission.encode_input(
                     voting,
                     node_operators_registry,
-                    node_operators_registry.MANAGE_NODE_OPERATOR_ROLE(),
-                    voting,
+                    node_operators_registry.MANAGE_NODE_OPERATOR_ROLE()
                 )
             ),
             (
