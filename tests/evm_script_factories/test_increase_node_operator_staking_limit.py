@@ -37,7 +37,7 @@ def test_create_evm_script_new_staking_limit_too_low(
     node_operator, node_operators_registry_stub, increase_node_operator_staking_limit
 ):
     "Must revert with message: 'STAKING_LIMIT_TOO_LOW' if new staking limit"
-    "is less or equal than current stakin limit of node operator"
+    "is less or equal than current staking limit of node operator"
     node_operators_registry_stub.setStakingLimit(370)
     assert node_operators_registry_stub.stakingLimit() == 370
 

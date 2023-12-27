@@ -21,3 +21,7 @@ def encode_call_script(actions, spec_id=1):
         length = eth_abi.encode_single("uint32", len(calldata_bytes) // 2).hex()
         result += addr_bytes + length[56:] + calldata_bytes
     return result
+
+
+def encode_calldata(signature, values):
+    return "0x" + eth_abi.encode_single(signature, values).hex()
