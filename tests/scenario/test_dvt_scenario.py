@@ -329,7 +329,7 @@ def test_simple_dvt_scenario(
     update_tareget_validator_limits_calldata = (
         "0x"
         + encode_single(
-            "((uint256,bool,uint256)[])", [[(no_5_id, True, 1), (no_6_id, True, 10)]]
+            "((uint256,bool,uint256)[])", [[(no_5_id, 2, 1), (no_6_id, 1, 10)]]
         ).hex()
     )
     easytrack_executor(
@@ -341,8 +341,8 @@ def test_simple_dvt_scenario(
     no_5_summary = simple_dvt.getNodeOperatorSummary(no_5_id)
     no_6_summary = simple_dvt.getNodeOperatorSummary(no_6_id)
 
-    assert no_5_summary["isTargetLimitActive"] == True
-    assert no_6_summary["isTargetLimitActive"] == True
+    assert no_5_summary["targetLimitMode"] == 2
+    assert no_6_summary["targetLimitMode"] == 1
     assert no_5_summary["targetValidatorsCount"] == 1
     assert no_6_summary["targetValidatorsCount"] == 10
 

@@ -12,7 +12,7 @@ import "../interfaces/INodeOperatorsRegistry.sol";
 contract UpdateTargetValidatorLimits is TrustedCaller, IEVMScriptFactory {
     struct TargetValidatorsLimit {
         uint256 nodeOperatorId;
-        bool isTargetLimitActive;
+        uint256 targetLimitMode;
         uint256 targetLimit;
     }
 

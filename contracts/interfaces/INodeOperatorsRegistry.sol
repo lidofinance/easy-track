@@ -52,7 +52,7 @@ interface INodeOperatorsRegistry {
 
     function updateTargetValidatorsLimits(
         uint256 _nodeOperatorId,
-        bool _isTargetLimitActive,
+        uint256 _targetLimitMode,
         uint256 _targetLimit
     ) external;
 }
