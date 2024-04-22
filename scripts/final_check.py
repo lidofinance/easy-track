@@ -819,7 +819,7 @@ def add_new_node_operator(lido_contracts):
     )
     voting_id, _ = lido.create_voting(
         evm_script=add_node_operator_evm_script,
-        desciption="Add node operator to registry",
+        description="Add node operator to registry",
         tx_params={"from": lido_contracts.aragon.agent},
     )
     log.ok("  Voting was started. Voting id", voting_id)

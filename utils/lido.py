@@ -3,6 +3,7 @@ from utils import evm_script as evm_script_utils
 
 DEFAULT_NETWORK = "mainnet"
 
+
 def addresses(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return LidoAddressesSetup(
@@ -14,9 +15,13 @@ def addresses(network=DEFAULT_NETWORK):
                 gov_token="0x5a98fcbea516cf06857215779fd812ca3bef1b32",
                 calls_script="0x5cEb19e1890f677c3676d5ecDF7c501eBA01A054",
                 token_manager="0xf73a1260d222f447210581ddf212d915c09a3249",
+                kernel="0xb8FFC3Cd6e7Cf5a098A1c92F48009765B24088Dc",
             ),
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
+            simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
+            staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
+            locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -42,12 +47,34 @@ def addresses(network=DEFAULT_NETWORK):
                 gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
                 calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
                 token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
+                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
             ),
             steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
+            simple_dvt=None,
+            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
+            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
+        )
+    if network == "holesky" or network == "holesky-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0xfd1E42595CeC3E83239bf8dFc535250e7F48E0bC",
+                agent="0xE92329EC7ddB11D25e25b3c21eeBf11f15eB325d",
+                voting="0xdA7d2573Df555002503F29aA4003e398d28cc00f",
+                finance="0xf0F281E5d7FBc54EAFcE0dA225CDbde04173AB16",
+                gov_token="0x14ae7daeecdf57034f3E9db8564e46Dba8D97344",
+                calls_script="0xAa8B4F258a4817bfb0058b861447878168ddf7B0",
+                token_manager="0xFaa1692c6eea8eeF534e7819749aD93a1420379A",
+                kernel="0x3b03f75Ec541Ca11a223bB58621A3146246E1644",
+            ),
+            steth="0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034",
+            node_operators_registry="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+            simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
+            staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
+            locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
     )
 
 
@@ -84,13 +111,21 @@ class LidoContractsSetup:
             gov_token=interface.MiniMeToken(lido_addresses.aragon.gov_token),
             calls_script=interface.CallsScript(lido_addresses.aragon.calls_script),
             token_manager=interface.TokenManager(lido_addresses.aragon.token_manager),
+            kernel=interface.Kernel(lido_addresses.aragon.kernel),
         )
         self.steth = interface.Lido(lido_addresses.steth)
         self.node_operators_registry = interface.NodeOperatorsRegistry(
             lido_addresses.node_operators_registry
         )
+        self.simple_dvt = (
+            None
+            if not lido_addresses.simple_dvt
+            else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
+        )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
+        self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
+        self.locator = interface.LidoLocator(lido_addresses.locator)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -111,6 +146,7 @@ class LidoContractsSetup:
     def execute_voting(self, voting_id):
         voting = self.aragon.voting
         if voting.getVote(voting_id)["executed"]:
+            print(f"Voting {voting_id} already executed")
             return
         ldo_holders = [self.aragon.agent]
         for holder_addr in ldo_holders:
@@ -128,16 +164,27 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
+        self.simple_dvt = simple_dvt
         self.ldo = self.aragon.gov_token
+        self.staking_router = staking_router
+        self.locator = locator
 
 
 class AragonSetup:
     def __init__(
-        self, acl, agent, voting, finance, gov_token, calls_script, token_manager
+        self,
+        acl,
+        agent,
+        voting,
+        finance,
+        gov_token,
+        calls_script,
+        token_manager,
+        kernel,
     ):
         self.acl = acl
         self.agent = agent
@@ -146,6 +193,7 @@ class AragonSetup:
         self.gov_token = gov_token
         self.calls_script = calls_script
         self.token_manager = token_manager
+        self.kernel = kernel
 
 
 class Permissions:
@@ -210,6 +258,7 @@ class LidoPermissions:
         self.STAKING_PAUSE_ROLE = Permission(lido_app, "STAKING_PAUSE_ROLE")
         self.STAKING_CONTROL_ROLE = Permission(lido_app, "STAKING_CONTROL_ROLE")
 
+
 class NodeOperatorsRegistryPermissions:
     def __init__(self, node_operators_registry_app):
         self.STAKING_ROUTER_ROLE = Permission(
@@ -224,7 +273,6 @@ class NodeOperatorsRegistryPermissions:
         self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(
             node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE"
         )
-
 
 
 class TokenManagerPermissions:
