@@ -10,7 +10,7 @@ from brownie import (
 from utils.config import (
     get_network_name,
 )
-from utils import lido, deployed_easy_track, log, deployment
+from utils import lido, deployed_easy_track, deployed_date_time, log, deployment
 from hexbytes import HexBytes
 
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = (
@@ -52,6 +52,7 @@ def main():
 
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
+    date_time_contract = deployed_date_time.date_time_contract(network=network_name)
 
     evm_script_executor = et_contracts.evm_script_executor
 
@@ -97,6 +98,9 @@ def main():
         remove_allowed_recipient_address
     )
 
+    assert registry.bokkyPooBahsDateTimeContract() == date_time_contract
+    assert top_up_allowed_recipients.easyTrack() == et_contracts.easy_track
+    assert top_up_allowed_recipients.finance() == contracts.aragon.finance
     assert top_up_allowed_recipients.token() == deploy_config.token
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
     assert top_up_allowed_recipients.trustedCaller() == deploy_config.trusted_caller
