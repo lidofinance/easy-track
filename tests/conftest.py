@@ -307,7 +307,10 @@ def steth(lido_contracts):
 
 
 @pytest.fixture(scope="module")
-def node_operators_registry(lido_contracts):
+def node_operators_registry(lido_contracts, agent):
+    for i in range(10):
+        if (not lido_contracts.node_operators_registry.getNodeOperatorIsActive(i)):
+            lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
 
