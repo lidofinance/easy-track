@@ -27,7 +27,7 @@ jobs:
 
       - name: Run slither
         run: >
-          poetry run slither . --sarif results.sarif || true
+          poetry run slither . --sarif results.sarif --fail-none
 
       - name: Check results.sarif presence
         id: results
@@ -35,8 +35,8 @@ jobs:
         shell: bash
         run: >
           test -f results.sarif &&
-          echo '::set-output name=value::present' ||
-          echo '::set-output name=value::not'
+          echo 'value=present' >> $GITHUB_OUTPUT ||
+          echo 'value=not' >> $GITHUB_OUTPUT
 
       - name: Upload SARIF file
         uses: github/codeql-action/upload-sarif@v2
