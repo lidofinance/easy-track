@@ -12,7 +12,7 @@ from brownie import (
     SetVettedValidatorsLimits,
     ChangeNodeOperatorManagers,
     UpdateTargetValidatorLimits,
-    IncreaseVettedValidatorsLimit
+    IncreaseVettedValidatorsLimit,
 )
 from utils import deployed_easy_track
 from utils.config import get_network_name
@@ -61,6 +61,7 @@ def easytrack_executor(et_contracts, stranger):
 
     return helper
 
+
 @pytest.fixture(scope="module")
 def easytrack_pair_executor_with_collision(et_contracts, stranger):
     def helper(revert, motion_pair):
@@ -68,11 +69,13 @@ def easytrack_pair_executor_with_collision(et_contracts, stranger):
         assert len(motion_pair) == 2
         for ind in [0, 1]:
             (creator, factory, calldata) = motion_pair[ind]
-            txs.append(et_contracts.easy_track.createMotion(
-                factory,
-                calldata,
-                {"from": creator},
-            ))
+            txs.append(
+                et_contracts.easy_track.createMotion(
+                    factory,
+                    calldata,
+                    {"from": creator},
+                )
+            )
             print("creation costs: ", txs[ind].gas_used)
 
         motions = et_contracts.easy_track.getMotions()
@@ -94,6 +97,7 @@ def easytrack_pair_executor_with_collision(et_contracts, stranger):
             print("enactment costs: ", etx.gas_used)
 
         et_contracts.easy_track.cancelMotion(motions[-1][0], {"from": creator})
+
     return helper
 
 
@@ -148,9 +152,7 @@ def add_node_operators_factory(
     if vote_id_from_env or use_deployed_contracts_from_env:
         return AddNodeOperators.at(deployed_artifact["AddNodeOperators"]["address"])
 
-    factory = AddNodeOperators.deploy(
-        commitee_multisig, simple_dvt, acl, steth, {"from": deployer}
-    )
+    factory = AddNodeOperators.deploy(commitee_multisig, simple_dvt, acl, steth, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
@@ -160,9 +162,7 @@ def add_node_operators_factory(
         + acl.address[2:]
         + acl.grantPermissionP.signature[2:]
     )
-    et_contracts.easy_track.addEVMScriptFactory(
-        factory, add_node_operators_permissions, {"from": voting}
-    )
+    et_contracts.easy_track.addEVMScriptFactory(factory, add_node_operators_permissions, {"from": voting})
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
     assert evm_script_factories[-1] == factory
 
@@ -183,13 +183,9 @@ def activate_node_operators_factory(
 ):
     print(vote_id_from_env)
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return ActivateNodeOperators.at(
-            deployed_artifact["ActivateNodeOperators"]["address"]
-        )
+        return ActivateNodeOperators.at(deployed_artifact["ActivateNodeOperators"]["address"])
 
-    factory = ActivateNodeOperators.deploy(
-        commitee_multisig, simple_dvt, acl, {"from": deployer}
-    )
+    factory = ActivateNodeOperators.deploy(commitee_multisig, simple_dvt, acl, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
@@ -223,13 +219,9 @@ def deactivate_node_operators_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return DeactivateNodeOperators.at(
-            deployed_artifact["DeactivateNodeOperators"]["address"]
-        )
+        return DeactivateNodeOperators.at(deployed_artifact["DeactivateNodeOperators"]["address"])
 
-    factory = DeactivateNodeOperators.deploy(
-        commitee_multisig, simple_dvt, acl, {"from": deployer}
-    )
+    factory = DeactivateNodeOperators.deploy(commitee_multisig, simple_dvt, acl, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
@@ -262,19 +254,13 @@ def set_node_operator_name_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return SetNodeOperatorNames.at(
-            deployed_artifact["SetNodeOperatorNames"]["address"]
-        )
+        return SetNodeOperatorNames.at(deployed_artifact["SetNodeOperatorNames"]["address"])
 
-    factory = SetNodeOperatorNames.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
-    )
+    factory = SetNodeOperatorNames.deploy(commitee_multisig, simple_dvt, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
-    set_node_operator_name_permissions = (
-        simple_dvt.address + simple_dvt.setNodeOperatorName.signature[2:]
-    )
+    set_node_operator_name_permissions = simple_dvt.address + simple_dvt.setNodeOperatorName.signature[2:]
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
         set_node_operator_name_permissions,
@@ -299,19 +285,13 @@ def set_node_operator_reward_address_factory(
     steth,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return SetNodeOperatorRewardAddresses.at(
-            deployed_artifact["SetNodeOperatorRewardAddresses"]["address"]
-        )
+        return SetNodeOperatorRewardAddresses.at(deployed_artifact["SetNodeOperatorRewardAddresses"]["address"])
 
-    factory = SetNodeOperatorRewardAddresses.deploy(
-        commitee_multisig, simple_dvt, steth, {"from": deployer}
-    )
+    factory = SetNodeOperatorRewardAddresses.deploy(commitee_multisig, simple_dvt, steth, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
-    set_node_operator_name_permissions = (
-        simple_dvt.address + simple_dvt.setNodeOperatorRewardAddress.signature[2:]
-    )
+    set_node_operator_name_permissions = simple_dvt.address + simple_dvt.setNodeOperatorRewardAddress.signature[2:]
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
         set_node_operator_name_permissions,
@@ -335,19 +315,13 @@ def set_vetted_validators_limit_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return SetVettedValidatorsLimits.at(
-            deployed_artifact["SetVettedValidatorsLimits"]["address"]
-        )
+        return SetVettedValidatorsLimits.at(deployed_artifact["SetVettedValidatorsLimits"]["address"])
 
-    factory = SetVettedValidatorsLimits.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
-    )
+    factory = SetVettedValidatorsLimits.deploy(commitee_multisig, simple_dvt, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
-    set_vetted_validators_limit_permission = (
-        simple_dvt.address + simple_dvt.setNodeOperatorStakingLimit.signature[2:]
-    )
+    set_vetted_validators_limit_permission = simple_dvt.address + simple_dvt.setNodeOperatorStakingLimit.signature[2:]
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
         set_vetted_validators_limit_permission,
@@ -371,13 +345,9 @@ def increase_vetted_validators_limit_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return IncreaseVettedValidatorsLimit.at(
-            deployed_artifact["IncreaseVettedValidatorsLimit"]["address"]
-        )
+        return IncreaseVettedValidatorsLimit.at(deployed_artifact["IncreaseVettedValidatorsLimit"]["address"])
 
-    factory = IncreaseVettedValidatorsLimit.deploy(
-        simple_dvt, {"from": deployer}
-    )
+    factory = IncreaseVettedValidatorsLimit.deploy(simple_dvt, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
 
     increase_vetted_validators_limit_permission = (
@@ -407,22 +377,15 @@ def change_node_operator_manager_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return ChangeNodeOperatorManagers.at(
-            deployed_artifact["ChangeNodeOperatorManagers"]["address"]
-        )
+        return ChangeNodeOperatorManagers.at(deployed_artifact["ChangeNodeOperatorManagers"]["address"])
 
-    factory = ChangeNodeOperatorManagers.deploy(
-        commitee_multisig, simple_dvt, acl, {"from": deployer}
-    )
+    factory = ChangeNodeOperatorManagers.deploy(commitee_multisig, simple_dvt, acl, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
     assert factory.acl() == acl
 
     change_node_operator_manager_permission = (
-        acl.address
-        + acl.revokePermission.signature[2:]
-        + acl.address[2:]
-        + acl.grantPermissionP.signature[2:]
+        acl.address + acl.revokePermission.signature[2:] + acl.address[2:] + acl.grantPermissionP.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
@@ -447,13 +410,9 @@ def update_tareget_validator_limits_factory(
     use_deployed_contracts_from_env,
 ):
     if vote_id_from_env or use_deployed_contracts_from_env:
-        return UpdateTargetValidatorLimits.at(
-            deployed_artifact["UpdateTargetValidatorLimits"]["address"]
-        )
+        return UpdateTargetValidatorLimits.at(deployed_artifact["UpdateTargetValidatorLimits"]["address"])
 
-    factory = UpdateTargetValidatorLimits.deploy(
-        commitee_multisig, simple_dvt, {"from": deployer}
-    )
+    factory = UpdateTargetValidatorLimits.deploy(commitee_multisig, simple_dvt, {"from": deployer})
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 

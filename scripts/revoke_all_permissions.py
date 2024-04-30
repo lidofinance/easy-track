@@ -10,9 +10,7 @@ def main():
     lido_contracts = lido.contracts(network="mainnet")
     lido_permissions = lido_contracts.permissions()
     all_lido_permissions = lido_permissions.all()
-    granted_permissions = lido_permissions.filter_granted(
-        all_lido_permissions, evm_script_executor
-    )
+    granted_permissions = lido_permissions.filter_granted(all_lido_permissions, evm_script_executor)
 
     print("List of all lido permissions:")
     for permission in all_lido_permissions:
@@ -46,17 +44,13 @@ def main():
     print(f"Vote successfully started! Vote id: {vote_id}")
 
 
-def revoke_permissions(
-    lido_contracts, granted_permissions, evm_script_executor, tx_params
-):
+def revoke_permissions(lido_contracts, granted_permissions, evm_script_executor, tx_params):
     acl = lido_contracts.aragon.acl
     revoke_permissions_evmscript = encode_call_script(
         [
             (
                 acl.address,
-                acl.revokePermission.encode_input(
-                    evm_script_executor, permission.app, permission.role
-                ),
+                acl.revokePermission.encode_input(evm_script_executor, permission.app, permission.role),
             )
             for permission in granted_permissions
         ]

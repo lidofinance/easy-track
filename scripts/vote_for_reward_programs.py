@@ -2,10 +2,7 @@ from typing import Optional
 
 from brownie import chain, network
 
-from utils.vote_for_new_factories import (
-    FactoryToAdd,
-    create_voting_on_new_factories
-)
+from utils.vote_for_new_factories import FactoryToAdd, create_voting_on_new_factories
 
 from utils.config import (
     get_env,
@@ -14,24 +11,19 @@ from utils.config import (
     get_network_name,
 )
 
-from utils import (
-    lido,
-    deployed_easy_track,
-    log
-)
+from utils import lido, deployed_easy_track, log
+
 
 def create_permission(contract, method):
     return contract.address + getattr(contract, method).signature[2:]
 
-def start_vote(
-    network_name: str,
-    deployer: Optional[str]
-) -> int:
+
+def start_vote(network_name: str, deployer: Optional[str]) -> int:
     contracts = lido.contracts(network=network_name)
     et_contracts = deployed_easy_track.contracts(network=network_name)
 
-    tx_params = { "from": deployer }
-    if (get_is_live()):
+    tx_params = {"from": deployer}
+    if get_is_live():
         tx_params["priority_fee"] = "2 gwei"
         tx_params["max_fee"] = "300 gwei"
 
@@ -75,24 +67,16 @@ def start_vote(
     factories_to_add = [
         FactoryToAdd(
             factory=reward_programs.add_reward_program,
-            permissions=create_permission(
-                reward_programs.reward_programs_registry,
-                "addRewardProgram"
-            )
+            permissions=create_permission(reward_programs.reward_programs_registry, "addRewardProgram"),
         ),
         FactoryToAdd(
             factory=reward_programs.top_up_reward_programs,
-            permissions=create_permission(
-                contracts.aragon.finance,
-                "newImmediatePayment")
-            ),
+            permissions=create_permission(contracts.aragon.finance, "newImmediatePayment"),
+        ),
         FactoryToAdd(
             factory=reward_programs.remove_reward_program,
-            permissions=create_permission(
-                reward_programs.reward_programs_registry,
-                "removeRewardProgram"
-            )
-        )
+            permissions=create_permission(reward_programs.reward_programs_registry, "removeRewardProgram"),
+        ),
     ]
 
     vote_id = create_voting_on_new_factories(
@@ -100,10 +84,11 @@ def start_vote(
         factories_to_remove=factories_to_remove,
         factories_to_add=factories_to_add,
         network=network_name,
-        tx_params=tx_params
+        tx_params=tx_params,
     )
 
     return vote_id
+
 
 def main():
     network_name = get_network_name()
@@ -112,7 +97,7 @@ def main():
 
     vote_id = start_vote(network_name, deployer)
 
-    vote_id >= 0 and print(f'Vote successfully started! Vote id: {vote_id}.')
+    vote_id >= 0 and print(f"Vote successfully started! Vote id: {vote_id}.")
 
     print("Hit <Enter> to quit script")
     input()

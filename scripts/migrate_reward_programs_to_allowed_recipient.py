@@ -6,23 +6,18 @@ from utils.config import (
     prompt_bool,
     get_network_name,
 )
-from utils import (
-    lido,
-    deployed_easy_track,
-    log
-)
+from utils import lido, deployed_easy_track, log
 
-from brownie import (
-    AllowedRecipientsBuilder
-)
+from brownie import AllowedRecipientsBuilder
+
 
 def main():
     network_name = get_network_name()
 
-    if (not (network_name == "goerli" or network_name == "goerli-fork")):
+    if not (network_name == "goerli" or network_name == "goerli-fork"):
         raise EnvironmentError("network is not supported")
 
-    if (not (network_name == "holesky" or network_name == "holesky-fork")):
+    if not (network_name == "holesky" or network_name == "holesky-fork"):
         raise EnvironmentError("network is not supported")
 
     recipients = [
@@ -30,14 +25,14 @@ def main():
         "0x07fC01f46dC1348d7Ce43787b5Bbd52d8711a92D",
         "0xa5F1d7D49F581136Cf6e58B32cBE9a2039C48bA1",
         "0xDDFFac49946D1F6CE4d9CaF3B9C7d340d4848A1C",
-        "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97"
+        "0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97",
     ]
     titles = [
-        'Default Reward Program',
-        'Happy',
-        'Sergey\'2 #add RewardProgram',
-        'Jumpgate Test',
-        'tester',
+        "Default Reward Program",
+        "Happy",
+        "Sergey'2 #add RewardProgram",
+        "Jumpgate Test",
+        "tester",
     ]
     trusted_caller = "0x3eaE0B337413407FB3C65324735D797ddc7E071D"
     limit = 10_000 * 1e18
@@ -79,28 +74,16 @@ def main():
         log.nb("Aborting")
         return
 
-    tx_params = {
-        "from": deployer,
-        "priority_fee": "2 gwei",
-        "max_fee": "50 gwei"
-    }
+    tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
 
     tx = allowed_recipients_builder.deployFullSetup(
-        trusted_caller,
-        contracts.ldo,
-        limit,
-        period,
-        recipients,
-        titles,
-        spent_amount,
-        tx_params
+        trusted_caller, contracts.ldo, limit, period, recipients, titles, spent_amount, tx_params
     )
 
     registryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     addRecipientAddress = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
     removeAllowedRecipientAddress = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
-
 
     log.ok("Allowed recipients easy track contracts have been deployed...")
     log.nb("Deployed AllowedRecipientsRegistryDeployed", registryAddress)

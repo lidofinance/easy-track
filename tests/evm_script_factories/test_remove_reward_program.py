@@ -31,21 +31,15 @@ def test_create_evm_script_reward_program_already_added(
         )
 
 
-def test_create_evm_script(
-    owner, remove_reward_program, reward_programs_registry, evm_script_executor_stub
-):
+def test_create_evm_script(owner, remove_reward_program, reward_programs_registry, evm_script_executor_stub):
     "Must create correct EVMScript if all requirements are met"
-    reward_programs_registry.addRewardProgram(
-        REWARD_PROGRAM_ADDRESS, "", {"from": evm_script_executor_stub}
-    )
+    reward_programs_registry.addRewardProgram(REWARD_PROGRAM_ADDRESS, "", {"from": evm_script_executor_stub})
     evm_script = remove_reward_program.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
         [
             (
                 reward_programs_registry.address,
-                reward_programs_registry.removeRewardProgram.encode_input(
-                    REWARD_PROGRAM_ADDRESS
-                ),
+                reward_programs_registry.removeRewardProgram.encode_input(REWARD_PROGRAM_ADDRESS),
             )
         ]
     )
@@ -55,7 +49,4 @@ def test_create_evm_script(
 
 def test_decode_evm_script_call_data(remove_reward_program):
     "Must decode EVMScript call data correctly"
-    assert (
-        remove_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-        == REWARD_PROGRAM_ADDRESS
-    )
+    assert remove_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == REWARD_PROGRAM_ADDRESS

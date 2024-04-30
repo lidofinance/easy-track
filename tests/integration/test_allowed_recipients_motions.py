@@ -16,9 +16,7 @@ def test_add_recipient_motion(
 ):
     recipient = recipients[0]
 
-    allowed_recipients_count_before = len(
-        allowed_recipients_registry.getAllowedRecipients()
-    )
+    allowed_recipients_count_before = len(allowed_recipients_registry.getAllowedRecipients())
 
     motion_enactment_tx = add_allowed_recipient_by_motion(
         add_allowed_recipient_evm_script_factory, recipient.address, recipient.title
@@ -28,10 +26,7 @@ def test_add_recipient_motion(
         "RecipientAdded",
         {"_recipient": recipient.address, "_title": recipient.title},
     )
-    assert (
-        len(allowed_recipients_registry.getAllowedRecipients())
-        == allowed_recipients_count_before + 1
-    )
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == allowed_recipients_count_before + 1
 
 
 def test_add_multiple_recipients_by_concurrent_motions(
@@ -44,9 +39,7 @@ def test_add_multiple_recipients_by_concurrent_motions(
 ):
     first_recipient, second_recipient = recipients[:2]
 
-    allowed_recipients_count_before = len(
-        allowed_recipients_registry.getAllowedRecipients()
-    )
+    allowed_recipients_count_before = len(allowed_recipients_registry.getAllowedRecipients())
 
     first_motion_creation_tx = create_add_allowed_recipient_motion(
         add_allowed_recipient_evm_script_factory,
@@ -67,10 +60,7 @@ def test_add_multiple_recipients_by_concurrent_motions(
 
     assert allowed_recipients_registry.isRecipientAllowed(first_recipient.address)
     assert allowed_recipients_registry.isRecipientAllowed(second_recipient.address)
-    assert (
-        len(allowed_recipients_registry.getAllowedRecipients())
-        == allowed_recipients_count_before + 2
-    )
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == allowed_recipients_count_before + 2
 
 
 def test_fail_add_same_recipient_by_second_concurrent_motion(
@@ -132,9 +122,7 @@ def test_remove_recipient_motion(
 ):
     allowed_recipient = recipients[0]
 
-    allowed_recipients_count_before = len(
-        allowed_recipients_registry.getAllowedRecipients()
-    )
+    allowed_recipients_count_before = len(allowed_recipients_registry.getAllowedRecipients())
 
     add_allowed_recipient_by_motion(
         add_allowed_recipient_evm_script_factory,
@@ -152,10 +140,7 @@ def test_remove_recipient_motion(
         {"_recipient": allowed_recipient.address},
     )
 
-    assert (
-        len(allowed_recipients_registry.getAllowedRecipients())
-        == allowed_recipients_count_before
-    )
+    assert len(allowed_recipients_registry.getAllowedRecipients()) == allowed_recipients_count_before
 
 
 def test_fail_remove_recipient_if_empty_allowed_recipients_list(
@@ -167,16 +152,12 @@ def test_fail_remove_recipient_if_empty_allowed_recipients_list(
 
     allowed_recipients = allowed_recipients_registry.getAllowedRecipients()
     for allowed_recipient in allowed_recipients:
-        remove_allowed_recipient_by_motion(
-            remove_allowed_recipient_evm_script_factory, allowed_recipient
-        )
+        remove_allowed_recipient_by_motion(remove_allowed_recipient_evm_script_factory, allowed_recipient)
 
     assert len(allowed_recipients_registry.getAllowedRecipients()) == 0
 
     with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
-        remove_allowed_recipient_by_motion(
-            remove_allowed_recipient_evm_script_factory, recipients[0].address
-        )
+        remove_allowed_recipient_by_motion(remove_allowed_recipient_evm_script_factory, recipients[0].address)
 
 
 def test_fail_remove_recipient_if_it_is_not_allowed(
@@ -196,14 +177,10 @@ def test_fail_remove_recipient_if_it_is_not_allowed(
     )
 
     assert len(allowed_recipients_registry.getAllowedRecipients()) > 0
-    assert not allowed_recipients_registry.isRecipientAllowed(
-        not_allowed_recipient.address
-    )
+    assert not allowed_recipients_registry.isRecipientAllowed(not_allowed_recipient.address)
 
     with reverts("ALLOWED_RECIPIENT_NOT_FOUND"):
-        remove_allowed_recipient_by_motion(
-            remove_allowed_recipient_evm_script_factory, not_allowed_recipient.address
-        )
+        remove_allowed_recipient_by_motion(remove_allowed_recipient_evm_script_factory, not_allowed_recipient.address)
 
 
 def test_top_up_single_recipient(
@@ -223,11 +200,9 @@ def test_top_up_single_recipient(
     )
 
     top_up_recipient_addresses = [allowed_recipient.address]
-    top_up_amounts = [2 * 10 ** 18]
+    top_up_amounts = [2 * 10**18]
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -255,9 +230,7 @@ def test_top_up_single_recipient_several_times_in_period(
     top_up_recipient_addresses = [allowed_recipient.address]
     top_up_amounts = [int(allowed_recipients_limit_params.limit / 2)]
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -266,10 +239,7 @@ def test_top_up_single_recipient_several_times_in_period(
     )
 
     top_up_allowed_recipient_by_motion(
-        top_up_allowed_recipients_evm_script_factory,
-        top_up_recipient_addresses,
-        top_up_amounts,
-        sum(top_up_amounts)
+        top_up_allowed_recipients_evm_script_factory, top_up_recipient_addresses, top_up_amounts, sum(top_up_amounts)
     )
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
@@ -279,14 +249,12 @@ def test_top_up_single_recipient_several_times_in_period(
             [1],
         )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         top_up_recipient_addresses,
-        [allowed_recipients_limit_params.limit]
+        [allowed_recipients_limit_params.limit],
     )
 
 
@@ -311,11 +279,9 @@ def test_top_up_multiple_recipients(
         allowed_recipients[1].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
-    top_up_amounts = [2 * 10 ** 18, 1 * 10 ** 18]
+    top_up_amounts = [2 * 10**18, 1 * 10**18]
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -348,9 +314,7 @@ def test_top_up_motion_enacted_in_next_period(
 
     top_up_amounts = [int(3e18), int(90e18)]
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     motion_creation_tx = create_top_up_allowed_recipients_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -390,9 +354,7 @@ def test_top_up_motion_ended_and_enacted_in_next_period(
 
     top_up_amounts = [int(3e18), int(90e18)]
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
     test_helpers.advance_chain_time_to_n_seconds_before_current_period_end(
         allowed_recipients_limit_params.duration, easy_track.motionDuration() // 2
     )
@@ -437,9 +399,7 @@ def test_top_up_motion_enacted_in_second_next_period(
 
     top_up_amounts = [int(3e18), int(90e18)]
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     motion_creation_tx = create_top_up_allowed_recipients_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -461,14 +421,9 @@ def test_spendable_balance_is_renewed_in_next_period(
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
 ):
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
-    assert (
-        allowed_recipients_registry.spendableBalance()
-        == allowed_recipients_limit_params.limit
-    )
+    assert allowed_recipients_registry.spendableBalance() == allowed_recipients_limit_params.limit
 
     allowed_recipients = recipients[:2]
 
@@ -484,8 +439,8 @@ def test_spendable_balance_is_renewed_in_next_period(
     )
 
     top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.1) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.9) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.1) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.9) * 10**18,
     ]
 
     top_up_allowed_recipient_by_motion(
@@ -496,10 +451,7 @@ def test_spendable_balance_is_renewed_in_next_period(
 
     amount_spent = sum(top_up_amounts)
     assert allowed_recipients_registry.getPeriodState()[0] == amount_spent
-    assert (
-        allowed_recipients_registry.spendableBalance()
-        == allowed_recipients_limit_params.limit - amount_spent
-    )
+    assert allowed_recipients_registry.spendableBalance() == allowed_recipients_limit_params.limit - amount_spent
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
@@ -519,10 +471,7 @@ def test_spendable_balance_is_renewed_in_next_period(
         [allowed_recipients_limit_params.limit],
     )
 
-    assert (
-        allowed_recipients_registry.getPeriodState()[0]
-        == allowed_recipients_limit_params.limit
-    )
+    assert allowed_recipients_registry.getPeriodState()[0] == allowed_recipients_limit_params.limit
     assert allowed_recipients_registry.spendableBalance() == 0
 
 
@@ -537,9 +486,7 @@ def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
     top_up_allowed_recipients_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
 ):
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     allowed_recipients = recipients[:2]
 
@@ -563,9 +510,7 @@ def test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion(
         top_up_amounts,
     )
 
-    remove_allowed_recipient_by_motion(
-        remove_allowed_recipient_evm_script_factory, recipient_to_remove.address
-    )
+    remove_allowed_recipient_by_motion(remove_allowed_recipient_evm_script_factory, recipient_to_remove.address)
 
     with reverts("RECIPIENT_NOT_ALLOWED"):
         enact_top_up_allowed_recipient_motion_by_creation_tx(motion_creation_tx)
@@ -587,9 +532,7 @@ def test_fail_create_top_up_motion_if_exceeds_limit(
         allowed_recipient.title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         exceeded_top_up_amounts = [allowed_recipients_limit_params.limit + 1]
@@ -621,13 +564,11 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
         allowed_recipients[1].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     first_top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.4) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.6) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.4) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.6) * 10**18,
     ]
 
     assert sum(first_top_up_amounts) == allowed_recipients_limit_params.limit
@@ -669,23 +610,18 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
         allowed_recipients[1].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     first_top_up_amount = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.4) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.3) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.4) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.3) * 10**18,
     ]
     second_top_up_amount = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.3) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.2) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.3) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.2) * 10**18,
     ]
 
-    assert (
-        sum(first_top_up_amount + second_top_up_amount)
-        > allowed_recipients_limit_params.limit
-    )
+    assert sum(first_top_up_amount + second_top_up_amount) > allowed_recipients_limit_params.limit
     first_motion_creation_tx = create_top_up_allowed_recipients_motion(
         top_up_allowed_recipients_evm_script_factory,
         [r.address for r in allowed_recipients],
@@ -731,23 +667,18 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
         allowed_recipients[1].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     first_top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.03) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.9) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.03) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.9) * 10**18,
     ]
     second_top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.05) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.04) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.05) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.04) * 10**18,
     ]
 
-    assert (
-        sum(first_top_up_amounts + second_top_up_amounts)
-        > allowed_recipients_limit_params.limit
-    )
+    assert sum(first_top_up_amounts + second_top_up_amounts) > allowed_recipients_limit_params.limit
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -784,9 +715,7 @@ def test_fail_top_up_if_limit_decreased_while_motion_is_in_flight(
         allowed_recipients[0].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     top_up_amounts = [allowed_recipients_limit_params.limit]
     motion_creation_tx = create_top_up_allowed_recipients_motion(
@@ -824,9 +753,7 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
         allowed_recipients[0].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     top_up_amounts = [allowed_recipients_limit_params.limit]
     motion_creation_tx = create_top_up_allowed_recipients_motion(
@@ -870,13 +797,11 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
         allowed_recipients[1].title,
     )
 
-    test_helpers.advance_chain_time_to_beginning_of_the_next_period(
-        allowed_recipients_limit_params.duration
-    )
+    test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     first_top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.4) * 10 ** 18,
-        int(allowed_recipients_limit_params.limit // 10 ** 18 * 0.6) * 10 ** 18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.4) * 10**18,
+        int(allowed_recipients_limit_params.limit // 10**18 * 0.6) * 10**18,
     ]
     assert sum(first_top_up_amounts) == allowed_recipients_limit_params.limit
     second_top_up_amounts = [1, 1]
@@ -911,9 +836,7 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
     enact_motion_by_creation_tx(second_motion_creation_tx)
 
 
-@pytest.mark.parametrize(
-    "initial_period_duration,new_period_duration", [(3, 2), (3, 6), (12, 1), (1, 12)]
-)
+@pytest.mark.parametrize("initial_period_duration,new_period_duration", [(3, 2), (3, 6), (12, 1), (1, 12)])
 def test_top_up_spendable_renewal_if_period_duration_changed(
     recipients,
     allowed_recipients_registry,
@@ -926,7 +849,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     initial_period_duration: int,
     new_period_duration: int,
 ):
-    period_limit = 100 * 10 ** 18
+    period_limit = 100 * 10**18
     allowed_recipients = recipients[:1]
 
     add_allowed_recipient_by_motion(
@@ -941,9 +864,7 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     allowed_recipients_registry.setLimitParameters(
         period_limit, initial_period_duration, {"from": lido_contracts.aragon.agent}
     )
-    test_helpers.advance_chain_time_to_middle_of_the_next_period(
-        initial_period_duration
-    )
+    test_helpers.advance_chain_time_to_middle_of_the_next_period(initial_period_duration)
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
@@ -982,11 +903,9 @@ def test_top_up_spendable_renewal_if_period_duration_changed(
     )
 
 
-def test_set_limit_parameters_by_aragon_agent_via_voting(
-    lido_contracts, allowed_recipients_registry
-):
+def test_set_limit_parameters_by_aragon_agent_via_voting(lido_contracts, allowed_recipients_registry):
     """Do Aragon Agent to set limit parameters to the allowed recipients registry"""
-    period_limit, period_duration = 100 * 10 ** 18, 6
+    period_limit, period_duration = 100 * 10**18, 6
 
     set_limit_parameters_voting_id, _ = lido_contracts.create_voting(
         evm_script=evm_script.encode_call_script(

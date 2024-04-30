@@ -44,7 +44,7 @@ def main():
 
     tx_params = {
         "from": deployer,
-        "gas_price": "100 gwei"
+        "gas_price": "100 gwei",
         # "priority_fee": "4 gwei",
     }
 
@@ -80,11 +80,9 @@ def deploy_easy_tracks(
         aragon_calls_script=lido_contracts.aragon.calls_script,
         tx_params=tx_params,
     )
-    increase_node_operators_staking_limit = (
-        deployment.deploy_increase_node_operator_staking_limit(
-            node_operators_registry=lido_contracts.node_operators_registry,
-            tx_params=tx_params,
-        )
+    increase_node_operators_staking_limit = deployment.deploy_increase_node_operator_staking_limit(
+        node_operators_registry=lido_contracts.node_operators_registry,
+        tx_params=tx_params,
     )
     top_up_lego_program = deployment.deploy_top_up_lego_program(
         finance=lido_contracts.aragon.finance,

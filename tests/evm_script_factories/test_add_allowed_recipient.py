@@ -57,9 +57,8 @@ def test_revert_create_evm_script_with_empty_recipient_address(owner, add_allowe
     with reverts("RECIPIENT_ADDRESS_IS_ZERO_ADDRESS"):
         add_allowed_recipients.createEVMScript(owner, call_data, {"from": owner})
 
-def test_revert_recipient_already_added(
-    owner, stranger, add_allowed_recipients, allowed_recipients_registry
-):
+
+def test_revert_recipient_already_added(owner, stranger, add_allowed_recipients, allowed_recipients_registry):
     (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
     registry.addRecipient(stranger, "Stranger", {"from": add_recipient_role_holder})
     call_data = create_calldata(stranger.address)
@@ -76,14 +75,13 @@ def test_create_evm_script_correctly(owner, add_allowed_recipients, allowed_reci
         [
             (
                 registry.address,
-                registry.addRecipient.encode_input(
-                    owner, EVM_SCRIPT_CALLDATA_TITLE
-                ),
+                registry.addRecipient.encode_input(owner, EVM_SCRIPT_CALLDATA_TITLE),
             )
         ]
     )
 
     assert evm_script == expected_evm_script
+
 
 def test_decode_evm_script_calldata_correctly(owner, add_allowed_recipients):
     call_data = create_calldata(owner.address)
@@ -94,4 +92,4 @@ def test_decode_evm_script_calldata_correctly(owner, add_allowed_recipients):
 
 
 def create_calldata(recipient):
-    return encode_calldata(["address","string"], [recipient, EVM_SCRIPT_CALLDATA_TITLE])
+    return encode_calldata(["address", "string"], [recipient, EVM_SCRIPT_CALLDATA_TITLE])

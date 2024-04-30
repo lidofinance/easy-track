@@ -5,7 +5,7 @@ from utils.evm_script import encode_call_script
 
 NODE_OPERATOR_ID = 1
 STAKING_LIMIT = 350
-CALLDATA = encode(["uint256","uint256"], [NODE_OPERATOR_ID, STAKING_LIMIT])
+CALLDATA = encode(["uint256", "uint256"], [NODE_OPERATOR_ID, STAKING_LIMIT])
 
 
 def test_deploy(owner, node_operators_registry, IncreaseNodeOperatorStakingLimit):
@@ -14,9 +14,7 @@ def test_deploy(owner, node_operators_registry, IncreaseNodeOperatorStakingLimit
     assert contract.nodeOperatorsRegistry() == node_operators_registry
 
 
-def test_create_evm_script_different_reward_address(
-    owner, stranger, increase_node_operator_staking_limit
-):
+def test_create_evm_script_different_reward_address(owner, stranger, increase_node_operator_staking_limit):
     "Must revert with message 'CALLER_IS_NOT_NODE_OPERATOR'"
     "if creator address is not equal to rewardAddress of node operator"
     with reverts("CALLER_IS_NOT_NODE_OPERATOR"):
@@ -58,20 +56,14 @@ def test_create_evm_script_new_staking_limit_less_than_total_signing_keys(
         increase_node_operator_staking_limit.createEVMScript(node_operator, CALLDATA)
 
 
-def test_create_evm_script(
-    node_operator, node_operators_registry_stub, increase_node_operator_staking_limit
-):
+def test_create_evm_script(node_operator, node_operators_registry_stub, increase_node_operator_staking_limit):
     "Must create correct EVMScript if all requirements are met"
-    evm_script = increase_node_operator_staking_limit.createEVMScript(
-        node_operator, CALLDATA
-    )
+    evm_script = increase_node_operator_staking_limit.createEVMScript(node_operator, CALLDATA)
     expected_evm_script = encode_call_script(
         [
             (
                 node_operators_registry_stub.address,
-                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(
-                    NODE_OPERATOR_ID, STAKING_LIMIT
-                ),
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(NODE_OPERATOR_ID, STAKING_LIMIT),
             )
         ]
     )

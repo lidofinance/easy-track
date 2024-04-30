@@ -64,40 +64,26 @@ def test_reward_programs_easy_track(
     )
 
     # add TopUpRewardProgram EVM script factory to easy track
-    new_immediate_payment_permission = (
-        finance.address + finance.newImmediatePayment.signature[2:]
-    )
-    easy_track.addEVMScriptFactory(
-        top_up_reward_programs, new_immediate_payment_permission, {"from": deployer}
-    )
+    new_immediate_payment_permission = finance.address + finance.newImmediatePayment.signature[2:]
+    easy_track.addEVMScriptFactory(top_up_reward_programs, new_immediate_payment_permission, {"from": deployer})
 
     # deploy AddRewardProgram EVM script factory
-    add_reward_program = deployer.deploy(
-        AddRewardProgram, trusted_address, reward_programs_registry
-    )
+    add_reward_program = deployer.deploy(AddRewardProgram, trusted_address, reward_programs_registry)
 
     # add AddRewardProgram EVM script factory to easy track
     add_reward_program_permission = (
-        reward_programs_registry.address
-        + reward_programs_registry.addRewardProgram.signature[2:]
+        reward_programs_registry.address + reward_programs_registry.addRewardProgram.signature[2:]
     )
-    easy_track.addEVMScriptFactory(
-        add_reward_program, add_reward_program_permission, {"from": deployer}
-    )
+    easy_track.addEVMScriptFactory(add_reward_program, add_reward_program_permission, {"from": deployer})
 
     # deploy RemoveRewardProgram EVM script factory
-    remove_reward_program = deployer.deploy(
-        RemoveRewardProgram, trusted_address, reward_programs_registry
-    )
+    remove_reward_program = deployer.deploy(RemoveRewardProgram, trusted_address, reward_programs_registry)
 
     # add RemoveRewardProgram EVM script factory to easy track
     remove_reward_program_permission = (
-        reward_programs_registry.address
-        + reward_programs_registry.removeRewardProgram.signature[2:]
+        reward_programs_registry.address + reward_programs_registry.removeRewardProgram.signature[2:]
     )
-    easy_track.addEVMScriptFactory(
-        remove_reward_program, remove_reward_program_permission, {"from": deployer}
-    )
+    easy_track.addEVMScriptFactory(remove_reward_program, remove_reward_program_permission, {"from": deployer})
 
     # transfer admin role to voting
     easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), voting, {"from": deployer})
@@ -129,9 +115,7 @@ def test_reward_programs_easy_track(
     # create new motion to add reward program
     tx = easy_track.createMotion(
         add_reward_program,
-        evm_script.encode_calldata(
-            ["address","string"], [reward_program.address, reward_program_title]
-        ),
+        evm_script.encode_calldata(["address", "string"], [reward_program.address, reward_program_title]),
         {"from": trusted_address},
     )
 
@@ -154,9 +138,7 @@ def test_reward_programs_easy_track(
     # create new motion to top up reward program
     tx = easy_track.createMotion(
         top_up_reward_programs,
-        evm_script.encode_calldata(
-            ["address[]","uint256[]"], [[reward_program.address], [int(5e18)]]
-        ),
+        evm_script.encode_calldata(["address[]", "uint256[]"], [[reward_program.address], [int(5e18)]]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()

@@ -57,9 +57,7 @@ def main():
         tx_params,
     )
 
-    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"][
-        "allowedRecipientsRegistry"
-    ]
+    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
 
     log.ok("Allowed recipients easy track contracts have been deployed...")

@@ -7,17 +7,10 @@ from utils.config import (
     prompt_bool,
     get_network_name,
 )
-from utils import (
-    lido,
-    deployed_easy_track,
-    log,
-    deployed_date_time
-)
+from utils import lido, deployed_easy_track, log, deployed_date_time
 
-from brownie import (
-    AllowedRecipientsFactory,
-    AllowedRecipientsBuilder
-)
+from brownie import AllowedRecipientsFactory, AllowedRecipientsBuilder
+
 
 def main():
     network_name = get_network_name()
@@ -57,21 +50,14 @@ def main():
         log.nb("Aborting")
         return
 
-    tx_params = { 
-        "from": deployer,
-        "priority_fee": "2 gwei",
-        "max_fee": "50 gwei"
-    }
+    tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
 
-    (
-        allowed_recipients_factory,
-        allowed_recipients_builder
-    ) = deploy_factory_and_builder(
-        easy_track = easy_track,
-        finance = contracts.aragon.finance,
-        agent = contracts.aragon.agent,
-        bokky_poo_bahs_date_time_contract = bokky_poo_bahs_date_time_contract,
-        tx_params = tx_params,
+    (allowed_recipients_factory, allowed_recipients_builder) = deploy_factory_and_builder(
+        easy_track=easy_track,
+        finance=contracts.aragon.finance,
+        agent=contracts.aragon.agent,
+        bokky_poo_bahs_date_time_contract=bokky_poo_bahs_date_time_contract,
+        tx_params=tx_params,
     )
 
     log.br()
@@ -82,7 +68,7 @@ def main():
 
     log.br()
 
-    if (get_is_live() and get_env("FORCE_VERIFY", False)):
+    if get_is_live() and get_env("FORCE_VERIFY", False):
         log.ok("Trying to verify contracts...")
         AllowedRecipientsFactory.publish_source(allowed_recipients_factory)
         AllowedRecipientsBuilder.publish_source(allowed_recipients_builder)
@@ -99,15 +85,7 @@ def deploy_factory_and_builder(
     factory = AllowedRecipientsFactory.deploy(tx_params)
 
     builder = AllowedRecipientsBuilder.deploy(
-        factory,
-        agent,
-        easy_track,
-        finance,
-        bokky_poo_bahs_date_time_contract,
-        tx_params
+        factory, agent, easy_track, finance, bokky_poo_bahs_date_time_contract, tx_params
     )
 
-    return (
-        factory,
-        builder
-    )
+    return (factory, builder)

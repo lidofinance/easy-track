@@ -58,19 +58,12 @@ def test_set_objections_threshold_called_with_permissions(owner, motion_settings
     "Must update objections threshold when value is less or equal"
     "than MAX_OBJECTIONS_THRESHOLD and emits ObjectionsThresholdChanged(_newThreshold) event"
     new_objections_threshold = 2 * constants.DEFAULT_OBJECTIONS_THRESHOLD
-    assert (
-        motion_settings.objectionsThreshold() == constants.DEFAULT_OBJECTIONS_THRESHOLD
-    )
-    tx = motion_settings.setObjectionsThreshold(
-        new_objections_threshold, {"from": owner}
-    )
+    assert motion_settings.objectionsThreshold() == constants.DEFAULT_OBJECTIONS_THRESHOLD
+    tx = motion_settings.setObjectionsThreshold(new_objections_threshold, {"from": owner})
     assert motion_settings.objectionsThreshold() == new_objections_threshold
 
     assert len(tx.events) == 1
-    assert (
-        tx.events["ObjectionsThresholdChanged"]["_newThreshold"]
-        == new_objections_threshold
-    )
+    assert tx.events["ObjectionsThresholdChanged"]["_newThreshold"] == new_objections_threshold
 
 
 def test_set_objections_threshold_without_permissions(stranger, motion_settings):
@@ -85,9 +78,7 @@ def test_set_objections_threshold_called_with_too_large_value(owner, motion_sett
     "threshold is greater than MAX_OBJECTIONS_THRESHOLD"
     new_objections_threshold = 2 * motion_settings.MAX_OBJECTIONS_THRESHOLD()
     with reverts("VALUE_TOO_LARGE"):
-        motion_settings.setObjectionsThreshold(
-            new_objections_threshold, {"from": owner}
-        )
+        motion_settings.setObjectionsThreshold(new_objections_threshold, {"from": owner})
 
 
 def test_set_motions_limit_called_with_permissions(owner, motion_settings):
@@ -101,10 +92,7 @@ def test_set_motions_limit_called_with_permissions(owner, motion_settings):
     assert motion_settings.motionsCountLimit() == new_motions_limit
 
     assert len(tx.events) == 1
-    assert (
-        tx.events["MotionsCountLimitChanged"]["_newMotionsCountLimit"]
-        == new_motions_limit
-    )
+    assert tx.events["MotionsCountLimitChanged"]["_newMotionsCountLimit"] == new_motions_limit
 
 
 def test_set_motions_limit_called_without_permissions(stranger, motion_settings):

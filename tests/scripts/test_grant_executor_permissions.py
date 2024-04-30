@@ -27,13 +27,9 @@ def test_grant_executor_permissions(accounts):
     ]
 
     for permission in required_permissions:
-        assert not lido_contracts.aragon.acl.hasPermission(
-            evm_script_executor, permission.app, permission.role
-        )
+        assert not lido_contracts.aragon.acl.hasPermission(evm_script_executor, permission.app, permission.role)
 
-    lido_contracts.ldo.transfer(
-        deployer, 10 ** 18, {"from": lido_contracts.aragon.agent}
-    )
+    lido_contracts.ldo.transfer(deployer, 10**18, {"from": lido_contracts.aragon.agent})
     voting_id = grant_executor_permissions(
         lido_contracts=lido_contracts,
         evm_script_executor=evm_script_executor.address,
@@ -44,6 +40,4 @@ def test_grant_executor_permissions(accounts):
     lido_contracts.execute_voting(voting_id)
 
     for permission in required_permissions:
-        assert lido_contracts.aragon.acl.hasPermission(
-            evm_script_executor, permission.app, permission.role
-        )
+        assert lido_contracts.aragon.acl.hasPermission(evm_script_executor, permission.app, permission.role)

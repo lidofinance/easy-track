@@ -4,12 +4,7 @@ from utils.evm_script import encode_call_script
 
 REWARD_PROGRAM_ADDRESS = "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF"
 REWARD_PROGRAM_TITLE = "New Reward Program"
-EVM_SCRIPT_CALLDATA = (
-    "0x"
-    + encode(
-        ["address","string"], [REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE]
-    ).hex()
-)
+EVM_SCRIPT_CALLDATA = "0x" + encode(["address", "string"], [REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE]).hex()
 
 
 def test_deploy(owner, reward_programs_registry, AddRewardProgram):
@@ -49,9 +44,7 @@ def test_create_evm_script(owner, add_reward_program, reward_programs_registry):
         [
             (
                 reward_programs_registry.address,
-                reward_programs_registry.addRewardProgram.encode_input(
-                    REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE
-                ),
+                reward_programs_registry.addRewardProgram.encode_input(REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE),
             )
         ]
     )

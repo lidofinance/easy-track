@@ -25,9 +25,7 @@ def test_deploy_zero_allowed_recipient_registry(owner, RemoveAllowedRecipient):
     assert contract.allowedRecipientsRegistry() == ZERO_ADDRESS
 
 
-def test_create_evm_script_is_permissionless(
-    owner, stranger, remove_allowed_recipients, allowed_recipients_registry
-):
+def test_create_evm_script_is_permissionless(owner, stranger, remove_allowed_recipients, allowed_recipients_registry):
     (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
     registry.addRecipient(stranger, "Stranger", {"from": add_recipient_role_holder})
     call_data = create_calldata(stranger.address)
@@ -39,9 +37,7 @@ def test_decode_evm_script_calldata_is_permissionless(stranger, remove_allowed_r
     remove_allowed_recipients.decodeEVMScriptCallData(call_data, {"from": stranger})
 
 
-def test_only_trusted_caller_can_be_creator(
-    owner, stranger, remove_allowed_recipients, allowed_recipients_registry
-):
+def test_only_trusted_caller_can_be_creator(owner, stranger, remove_allowed_recipients, allowed_recipients_registry):
     (registry, _, add_recipient_role_holder, _, _, _) = allowed_recipients_registry
     registry.addRecipient(stranger, "Stranger", {"from": add_recipient_role_holder})
     call_data = create_calldata(stranger.address)

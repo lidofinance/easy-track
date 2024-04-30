@@ -34,9 +34,7 @@ def create_voting_on_new_factories(
         + [
             (
                 easy_track.address,
-                easy_track.addEVMScriptFactory.encode_input(
-                    elem.factory, elem.permissions
-                ),
+                easy_track.addEVMScriptFactory.encode_input(elem.factory, elem.permissions),
             )
             for elem in factories_to_add
         ]

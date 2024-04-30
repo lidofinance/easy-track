@@ -84,17 +84,11 @@ def contracts(network=DEFAULT_NETWORK):
 
 def allowed_recipients_builder(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
-        return brownie.AllowedRecipientsBuilder.at(
-            "0x958e0D946D014F377421a53AB5f9180d4485e63B"
-        )
+        return brownie.AllowedRecipientsBuilder.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
     if network == "holesky" or network == "holesky-fork":
-        return brownie.AllowedRecipientsBuilder.at(
-            "0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e"
-        )
+        return brownie.AllowedRecipientsBuilder.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
     if network == "goerli" or network == "goerli-fork":
-        return brownie.AllowedRecipientsBuilder.at(
-            "0x1082512D1d60a0480445353eb55de451D261b684"
-        )
+        return brownie.AllowedRecipientsBuilder.at("0x1082512D1d60a0480445353eb55de451D261b684")
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, goerli, goerli-fork"""
     )
@@ -114,13 +108,9 @@ class LidoContractsSetup:
             kernel=interface.Kernel(lido_addresses.aragon.kernel),
         )
         self.steth = interface.Lido(lido_addresses.steth)
-        self.node_operators_registry = interface.NodeOperatorsRegistry(
-            lido_addresses.node_operators_registry
-        )
+        self.node_operators_registry = interface.NodeOperatorsRegistry(lido_addresses.node_operators_registry)
         self.simple_dvt = (
-            None
-            if not lido_addresses.simple_dvt
-            else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
+            None if not lido_addresses.simple_dvt else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
         )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
@@ -202,9 +192,7 @@ class Permissions:
         self.finance = FinancePermissions(contracts.aragon.finance)
         self.agent = AgentPermissions(contracts.aragon.agent)
         self.lido = LidoPermissions(contracts.steth)
-        self.node_operators_registry = NodeOperatorsRegistryPermissions(
-            contracts.node_operators_registry
-        )
+        self.node_operators_registry = NodeOperatorsRegistryPermissions(contracts.node_operators_registry)
         self.token_manager = TokenManagerPermissions(contracts.aragon.token_manager)
         self.voting = VotingPermissions(contracts.aragon.voting)
 
@@ -237,15 +225,11 @@ class FinancePermissions:
 
 class AgentPermissions:
     def __init__(self, agent_app):
-        self.ADD_PROTECTED_TOKEN_ROLE = Permission(
-            agent_app, "ADD_PROTECTED_TOKEN_ROLE"
-        )
+        self.ADD_PROTECTED_TOKEN_ROLE = Permission(agent_app, "ADD_PROTECTED_TOKEN_ROLE")
         self.TRANSFER_ROLE = Permission(agent_app, "TRANSFER_ROLE")
         self.RUN_SCRIPT_ROLE = Permission(agent_app, "RUN_SCRIPT_ROLE")
         self.SAFE_EXECUTE_ROLE = Permission(agent_app, "SAFE_EXECUTE_ROLE")
-        self.REMOVE_PROTECTED_TOKEN_ROLE = Permission(
-            agent_app, "REMOVE_PROTECTED_TOKEN_ROLE"
-        )
+        self.REMOVE_PROTECTED_TOKEN_ROLE = Permission(agent_app, "REMOVE_PROTECTED_TOKEN_ROLE")
         self.DESIGNATE_SIGNER_ROLE = Permission(agent_app, "DESIGNATE_SIGNER_ROLE")
         self.EXECUTE_ROLE = Permission(agent_app, "EXECUTE_ROLE")
         self.ADD_PRESIGNED_HASH_ROLE = Permission(agent_app, "ADD_PRESIGNED_HASH_ROLE")
@@ -261,18 +245,10 @@ class LidoPermissions:
 
 class NodeOperatorsRegistryPermissions:
     def __init__(self, node_operators_registry_app):
-        self.STAKING_ROUTER_ROLE = Permission(
-            node_operators_registry_app, "STAKING_ROUTER_ROLE"
-        )
-        self.MANAGE_NODE_OPERATOR_ROLE = Permission(
-            node_operators_registry_app, "MANAGE_NODE_OPERATOR_ROLE"
-        )
-        self.MANAGE_SIGNING_KEYS = Permission(
-            node_operators_registry_app, "MANAGE_SIGNING_KEYS"
-        )
-        self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(
-            node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE"
-        )
+        self.STAKING_ROUTER_ROLE = Permission(node_operators_registry_app, "STAKING_ROUTER_ROLE")
+        self.MANAGE_NODE_OPERATOR_ROLE = Permission(node_operators_registry_app, "MANAGE_NODE_OPERATOR_ROLE")
+        self.MANAGE_SIGNING_KEYS = Permission(node_operators_registry_app, "MANAGE_SIGNING_KEYS")
+        self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE")
 
 
 class TokenManagerPermissions:
@@ -281,9 +257,7 @@ class TokenManagerPermissions:
         self.ASSIGN_ROLE = Permission(token_manager_app, "ASSIGN_ROLE")
         self.BURN_ROLE = Permission(token_manager_app, "BURN_ROLE")
         self.MINT_ROLE = Permission(token_manager_app, "MINT_ROLE")
-        self.REVOKE_VESTINGS_ROLE = Permission(
-            token_manager_app, "REVOKE_VESTINGS_ROLE"
-        )
+        self.REVOKE_VESTINGS_ROLE = Permission(token_manager_app, "REVOKE_VESTINGS_ROLE")
 
 
 class VotingPermissions:

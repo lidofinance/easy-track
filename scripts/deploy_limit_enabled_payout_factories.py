@@ -96,9 +96,7 @@ def main():
 
     if easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), contracts.aragon.voting):
         log.ok("Easy Track is under DAO Voting control")
-        log.ok(
-            "To finalize deploy, please create voting that adds factories to Easy Track"
-        )
+        log.ok("To finalize deploy, please create voting that adds factories to Easy Track")
     else:
         log.ok("Easy Track is under another account's control")
         log.ok("To finalize deploy, please manually add factories to Easy Track")
