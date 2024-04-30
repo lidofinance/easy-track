@@ -8,7 +8,7 @@ from brownie import (
     AddAllowedRecipient,
     RemoveAllowedRecipient,
 )
-from utils import deployment, evm_script, test_helpers
+from utils import deployment, test_helpers
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 

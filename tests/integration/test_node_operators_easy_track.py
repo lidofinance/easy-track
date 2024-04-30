@@ -2,7 +2,7 @@ import pytest
 import brownie
 
 import constants
-from utils import lido, evm_script
+from utils import evm_script
 
 
 @pytest.mark.skip_coverage

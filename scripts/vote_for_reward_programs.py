@@ -4,7 +4,6 @@ from brownie import chain, network
 
 from utils.vote_for_new_factories import (
     FactoryToAdd,
-    FactoryToRemove,
     create_voting_on_new_factories
 )
 

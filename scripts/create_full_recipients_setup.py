@@ -4,16 +4,13 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    get_network_name,
 )
 from utils import (
     log,
     lido,
     deployment,
-    deployed_easy_track,
 )
 
-from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
     token="",

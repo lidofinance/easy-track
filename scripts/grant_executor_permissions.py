@@ -1,5 +1,4 @@
 from utils import lido
-from brownie import network
 from utils.evm_script import encode_call_script
 from utils.config import get_env, get_is_live, get_deployer_account, prompt_bool
 

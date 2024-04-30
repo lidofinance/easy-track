@@ -19,13 +19,11 @@ from utils import deployed_date_time
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
     """Snapshot ganache at start of module."""
-    pass
 
 
 @pytest.fixture(autouse=True)
 def isolation(fn_isolation):
     """Snapshot ganache before every test function call."""
-    pass
 
 
 ##############

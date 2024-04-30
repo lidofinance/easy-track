@@ -4,11 +4,9 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    get_network_name,
 )
-from utils import lido, deployed_easy_track, log, deployment
+from utils import lido, log, deployment
 
-from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
     period=0,

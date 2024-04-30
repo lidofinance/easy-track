@@ -4,7 +4,6 @@ import brownie
 import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
-from collections import namedtuple
 from dataclasses import dataclass
 
 #####

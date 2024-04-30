@@ -1,6 +1,6 @@
 import brownie
 from scripts.deploy import deploy_easy_tracks
-from utils import lido, constants, deployment
+from utils import lido, constants
 
 
 def test_deploy_script(accounts):

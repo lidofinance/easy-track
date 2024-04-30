@@ -1,6 +1,6 @@
 import pytest
 
-from datetime import datetime, timezone, tzinfo
+from datetime import datetime, timezone
 from dateutil.relativedelta import relativedelta
 from brownie import interface
 from brownie.test import given, strategy

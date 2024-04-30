@@ -1,6 +1,4 @@
-from datetime import datetime
 
-from brownie.network import chain
 from brownie import accounts, reverts, ZERO_ADDRESS
 
 from utils.evm_script import encode_calldata, encode_call_script

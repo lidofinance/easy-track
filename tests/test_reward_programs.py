@@ -1,13 +1,10 @@
-import pytest
 import brownie
 import constants
 
 from brownie.network import chain
 from brownie import EasyTrack, EVMScriptExecutor, accounts
 
-from eth_abi import encode
 from utils.evm_script import encode_calldata, encode_call_script
-from utils.config import get_network_name
 from utils import lido
 
 

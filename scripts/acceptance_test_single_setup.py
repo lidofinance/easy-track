@@ -1,8 +1,5 @@
 from brownie import chain, network, AllowedRecipientsRegistry, TopUpAllowedRecipients
 
-from utils.config import (
-    get_network_name,
-)
 from utils import lido, deployed_easy_track, deployed_date_time, log, deployment
 from hexbytes import HexBytes
 

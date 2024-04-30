@@ -1,7 +1,6 @@
 import pytest
 from eth_abi import encode
 from brownie import reverts, web3, interface
-from utils.evm_script import encode_call_script
 
 table = [
     {

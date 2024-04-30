@@ -2,9 +2,8 @@ import pytest
 
 from brownie import reverts
 from brownie.network import chain
-from dataclasses import dataclass
 
-from utils import deployment, evm_script, test_helpers, lido, config
+from utils import evm_script, test_helpers
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 

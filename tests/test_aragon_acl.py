@@ -1,7 +1,7 @@
 from brownie import web3, reverts
 
 TEST_ROLE = web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex()
-from utils.permission_parameters import Op, Param, encode_permission_params
+from utils.permission_parameters import Op, Param
 
 
 def test_aragon_acl_grant_role(acl, voting, stranger):

@@ -5,7 +5,6 @@ from brownie.network import chain
 from brownie import accounts, reverts, ZERO_ADDRESS
 
 
-from utils.evm_script import encode_call_script
 
 from utils.test_helpers import (
     assert_single_event,
@@ -22,7 +21,6 @@ from utils.test_helpers import (
     REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE,
 )
 
-from utils.config import get_network_name
 
 from utils.test_helpers import get_timestamp_from_date
 
