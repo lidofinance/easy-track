@@ -79,5 +79,251 @@
     "name": "TopUpRewardPrograms",
     "address": "0x54058ee0E0c87Ad813C002262cD75B98A7F59218",
     "txHash": "0xdc88901783832ea7d78dcd0145030d9e7d1f45261b9dfe83fca541de056bb2e0"
+  },
+  {
+    "artifactPath": "build/contracts/AddNodeOperators.json",
+    "sourcePath": "contracts/EVMScriptFactories/AddNodeOperators.sol",
+    "name": "AddNodeOperators",
+    "address": "0xcAa3AF7460E83E665EEFeC73a7a542E5005C9639",
+    "txHash": "0xbb5dfa188b864b8fdb969bde660a02d219d454e2a5265bb89e3f3c7dfd3336cc"
+  },
+  {
+    "artifactPath": "build/contracts/ActivateNodeOperators.json",
+    "sourcePath": "contracts/EVMScriptFactories/ActivateNodeOperators.sol",
+    "name": "ActivateNodeOperators",
+    "address": "0xCBb418F6f9BFd3525CE6aADe8F74ECFEfe2DB5C8",
+    "txHash": "0x85d072e4171bcd62a185018e3463b544397dcba740816d089f48bd0745770dcd"
+  },
+  {
+    "artifactPath": "build/contracts/DeactivateNodeOperators.json",
+    "sourcePath": "contracts/EVMScriptFactories/DeactivateNodeOperators.sol",
+    "name": "DeactivateNodeOperators",
+    "address": "0x8B82C1546D47330335a48406cc3a50Da732672E7",
+    "txHash": "0x14e288e2c3830aaa8e06a2bd8ab2f85dcc6dcd84df88ad9e928f10ce8be8152c"
+  },
+  {
+    "artifactPath": "build/contracts/SetVettedValidatorsLimits.json",
+    "sourcePath": "contracts/EVMScriptFactories/SetVettedValidatorsLimits.sol",
+    "name": "SetVettedValidatorsLimits",
+    "address": "0xD75778b855886Fc5e1eA7D6bFADA9EB68b35C19D",
+    "txHash": "0xe8e6c5c7d3fd183d7513cf30425e1d6373cc1144fba019dab11ba5f83b23dec4"
+  },
+  {
+    "artifactPath": "build/contracts/SetNodeOperatorNames.json",
+    "sourcePath": "contracts/EVMScriptFactories/SetNodeOperatorNames.sol",
+    "name": "SetNodeOperatorNames",
+    "address": "0x7d509BFF310d9460b1F613e4e40d342201a83Ae4",
+    "txHash": "0x85c453fa256e4bc0378c2a2e8acf981f4ad136cbd9c3011a330addef9938e55d"
+  },
+  {
+    "artifactPath": "build/contracts/SetNodeOperatorRewardAddresses.json",
+    "sourcePath": "contracts/EVMScriptFactories/SetNodeOperatorRewardAddresses.sol",
+    "name": "SetNodeOperatorRewardAddresses",
+    "address": "0x589e298964b9181D9938B84bB034C3BB9024E2C0",
+    "txHash": "0xfe9faec5e6913ab05b3b6653535d861aa94c9cb60f69305394f8a195bf478deb"
+  },
+  {
+    "artifactPath": "build/contracts/UpdateTargetValidatorLimits.json",
+    "sourcePath": "contracts/EVMScriptFactories/UpdateTargetValidatorLimits.sol",
+    "name": "UpdateTargetValidatorLimits",
+    "address": "0x41CF3DbDc939c5115823Fba1432c4EC5E7bD226C",
+    "txHash": "0xbdc7864ef2fb24e7b5ce954c82f652c9cd2f9be8014deb17810ec6b3462628d1"
+  },
+  {
+    "artifactPath": "build/contracts/ChangeNodeOperatorManager.json",
+    "sourcePath": "contracts/EVMScriptFactories/ChangeNodeOperatorManager.sol",
+    "name": "ChangeNodeOperatorManager",
+    "address": "0xE31A0599A6772BCf9b2bFc9e25cf941e793c9a7D",
+    "txHash": "0x51e051105f14f5924089188994cb89acca6b78535efeb42c0c53171b22a36d97"
+  },
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsBuilder.json",
+    "sourcePath": "contracts/AllowedRecipientsBuilder.sol",
+    "name": "AllowedRecipientsBuilder (single token)",
+    "address": "0x958e0D946D014F377421a53AB5f9180d4485e63B",
+    "txHash": "0x9ed8b63f91519bc6362ebb4625a0845f69255227f47305712a31909787ea3067"
+  },
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsBuilder.json",
+    "sourcePath": "contracts/AllowedRecipientsBuilder.sol",
+    "name": "AllowedRecipientsBuilder (multi token)",
+    "address": "0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF",
+    "txHash": "0x0ebc3c7fb01bbc64591d97c0b57b1c3746b1f0c6403198df0798c7d5496336d1"
+  },
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsFactory.json",
+    "sourcePath": "contracts/AllowedRecipientsFactory.sol",
+    "name": "AllowedRecipientsFactory (single token)",
+    "address": "0x83E976758B7AB1bb676A4fEA073Fa0E2A807642B",
+    "txHash": "0xcf1309c337848d0e7fb58e5ece73749ca5dbc261b77d253e077aa006ff0434ec"
+  },
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsFactory.json",
+    "sourcePath": "contracts/AllowedRecipientsFactory.sol",
+    "name": "AllowedRecipientsFactory (multi token)",
+    "address": "0xEe60C6ebC91237d334230b12263E26EE3b480ec4",
+    "txHash": "0x9e1e54d9259ee76454a745aeb4ff44b35fb2cad4592bb289e38dbf75e27dfe5f"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry LOL (ex.reWARDS) stETH",
+    "address": "0x48c4929630099b217136b64089E8543dB0E5163a",
+    "txHash": "0xac7ccec0c11a204636ca2a660d73bfca772eaacd5d7076061b44d73324c509c8"
+  },
+  {
+    "artifactPath": "build/contracts/AddAllowedRecipient.json",
+    "sourcePath": "contracts/EVMScriptFactories/AddAllowedRecipient.sol",
+    "name": "AddAllowedRecipient LOL (ex.reWARDS) stETH",
+    "address": "0x935cb3366Faf2cFC415B2099d1F974Fd27202b77",
+    "txHash": "0xac7ccec0c11a204636ca2a660d73bfca772eaacd5d7076061b44d73324c509c8"
+  },
+  {
+    "artifactPath": "build/contracts/RemoveAllowedRecipient.json",
+    "sourcePath": "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol",
+    "name": "RemoveAllowedRecipient LOL (ex.reWARDS) stETH",
+    "address": "0x22010d1747CaFc370b1f1FBBa61022A313c5693b",
+    "txHash": "0xac7ccec0c11a204636ca2a660d73bfca772eaacd5d7076061b44d73324c509c8"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients LOL (ex.reWARDS) stETH",
+    "address": "0x1F2b79FE297B7098875930bBA6dd17068103897E",
+    "txHash": "0xac7ccec0c11a204636ca2a660d73bfca772eaacd5d7076061b44d73324c509c8"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry Rewards Share stETH",
+    "address": "0xdc7300622948a7AdaF339783F6991F9cdDD79776",
+    "txHash": "0x71527ca532b0664ad504c59b15fa5b0167788839cd59bd0aa8ba492afbedab41"
+  },
+  {
+    "artifactPath": "build/contracts/AddAllowedRecipient.json",
+    "sourcePath": "contracts/EVMScriptFactories/AddAllowedRecipient.sol",
+    "name": "AddAllowedRecipient Rewards Share stETH",
+    "address": "0x1F809D2cb72a5Ab13778811742050eDa876129b6",
+    "txHash": "0x71527ca532b0664ad504c59b15fa5b0167788839cd59bd0aa8ba492afbedab41"
+  },
+  {
+    "artifactPath": "build/contracts/RemoveAllowedRecipient.json",
+    "sourcePath": "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol",
+    "name": "RemoveAllowedRecipient Rewards Share stETH",
+    "address": "0xd30Dc38EdEfc21875257e8A3123503075226E14B",
+    "txHash": "0x71527ca532b0664ad504c59b15fa5b0167788839cd59bd0aa8ba492afbedab41"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients Rewards Share stETH",
+    "address": "0xbD08f9D6BF1D25Cc7407E4855dF1d46C2043B3Ea",
+    "txHash": "0x71527ca532b0664ad504c59b15fa5b0167788839cd59bd0aa8ba492afbedab41"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry Gas Supply stETH",
+    "address": "0x49d1363016aA899bba09ae972a1BF200dDf8C55F",
+    "txHash": "0x77e7bb75d64e9689ceba72233b612d65fe9b4000a408b5105addcd4e3257809a"
+  },
+  {
+    "artifactPath": "build/contracts/AddAllowedRecipient.json",
+    "sourcePath": "contracts/EVMScriptFactories/AddAllowedRecipient.sol",
+    "name": "AddAllowedRecipient Gas Supply stETH",
+    "address": "0x48c135Ff690C2Aa7F5B11C539104B5855A4f9252",
+    "txHash": "0x77e7bb75d64e9689ceba72233b612d65fe9b4000a408b5105addcd4e3257809a"
+  },
+  {
+    "artifactPath": "build/contracts/RemoveAllowedRecipient.json",
+    "sourcePath": "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol",
+    "name": "RemoveAllowedRecipient Gas Supply stETH",
+    "address": "0x7E8eFfAb3083fB26aCE6832bFcA4C377905F97d7",
+    "txHash": "0x77e7bb75d64e9689ceba72233b612d65fe9b4000a408b5105addcd4e3257809a"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients Gas Supply stETH",
+    "address": "0x200dA0b6a9905A377CF8D469664C65dB267009d1",
+    "txHash": "0x77e7bb75d64e9689ceba72233b612d65fe9b4000a408b5105addcd4e3257809a"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry LEGO LDO",
+    "address": "0x97615f72c3428A393d65A84A3ea6BBD9ad6C0D74",
+    "txHash": "0x97b0e1b31123310b72ccf6ac3f03ecff3b81b25c6c5425768c54384a1ed13e51"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients LEGO LDO",
+    "address": "0x00caAeF11EC545B192f16313F53912E453c91458",
+    "txHash": "0x97b0e1b31123310b72ccf6ac3f03ecff3b81b25c6c5425768c54384a1ed13e51"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry RCC stETH",
+    "address": "0xAAC4FcE2c5d55D1152512fe5FAA94DB267EE4863",
+    "txHash": "0xc95a28bb440d9a00819241c13b20195462dd836545e1921814581c7ce31d1eb4"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients RCC stETH",
+    "address": "0xcD42Eb8a5db5a80Dc8f643745528DD77cf4C7D35",
+    "txHash": "0xc95a28bb440d9a00819241c13b20195462dd836545e1921814581c7ce31d1eb4"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry PML stETH",
+    "address": "0x7b9B8d00f807663d46Fb07F87d61B79884BC335B",
+    "txHash": "0x5e33e5de2e6806d2cf7d546c5dcc42e870a51021385b82913f709ab9d45cbcc5"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients PML stETH",
+    "address": "0xc5527396DDC353BD05bBA578aDAa1f5b6c721136",
+    "txHash": "0x5e33e5de2e6806d2cf7d546c5dcc42e870a51021385b82913f709ab9d45cbcc5"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry ATC stETH",
+    "address": "0xd3950eB3d7A9B0aBf8515922c0d35D13e85a2c91",
+    "txHash": "0x82254bba8285a9b924b651a85c93573b7f72736b1974b4e74141653c24a0f7c3"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients ATC stETH",
+    "address": "0x87b02dF27cd6ec128532Add7C8BC19f62E6f1fB9",
+    "txHash": "0x82254bba8285a9b924b651a85c93573b7f72736b1974b4e74141653c24a0f7c3"
+  },
+
+  {
+    "artifactPath": "build/contracts/AllowedRecipientsRegistry.json",
+    "sourcePath": "contracts/AllowedRecipientsRegistry.sol",
+    "name": "AllowedRecipientsRegistry TRP LDO",
+    "address": "0x231Ac69A1A37649C6B06a71Ab32DdD92158C80b8",
+    "txHash": "0x9c11c1e1ea3738009dfe2be823f0264c4607a6b73e6ef5983d0c00670fe1b662"
+  },
+  {
+    "artifactPath": "build/contracts/TopUpAllowedRecipients.json",
+    "sourcePath": "contracts/EVMScriptFactories/TopUpAllowedRecipients.sol",
+    "name": "TopUpAllowedRecipients TRP LDO",
+    "address": "0xBd2b6dC189EefD51B273F5cb2d99BA1ce565fb8C",
+    "txHash": "0x9c11c1e1ea3738009dfe2be823f0264c4607a6b73e6ef5983d0c00670fe1b662"
   }
 ]
