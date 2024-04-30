@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import web3, interface
 from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.evm_script import encode_call_script
@@ -104,8 +104,8 @@ def test_simple_make_action(
     # Add clusters
     add_node_operators_calldata = (
         "0x"
-        + encode_single(
-            "(uint256,(string,address,address)[])",
+        + encode(
+            ["uint256","(string,address,address)[]"],
             [
                 0,
                 [
@@ -215,8 +215,8 @@ def test_simple_make_action(
     no_5 = simple_dvt.getNodeOperator(no_5_id, False)
     change_node_operator_manager_calldata = (
         "0x"
-        + encode_single(
-            "((uint256,address,address)[])",
+        + encode(
+            ["(uint256,address,address)[]"],
             [[(no_5_id, clusters[no_5_id]["manager"], stranger.address)]],
         ).hex()
     )

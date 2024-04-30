@@ -3,10 +3,8 @@ from brownie.network import chain
 from brownie import interface
 from typing import List
 
-from eth_abi import encode_single
+from eth_abi import encode
 from utils.evm_script import encode_call_script, encode_calldata
-
-from utils.config import get_network_name
 
 from utils import lido
 import constants
@@ -20,7 +18,7 @@ def add_recipient_by_motion(
 ):
     tx = easy_track.createMotion(
         add_recipient_factory,
-        encode_calldata("(address,string)", [recipient.address, recipient_title]),
+        encode_calldata(["address","string"], [recipient.address, recipient_title]),
         {"from": add_recipient_factory.trustedCaller()},
     )
 
@@ -36,7 +34,7 @@ def add_recipient_by_motion(
 def remove_recipient_by_motion(
     recipient, easy_track, remove_recipient_factory, allowed_recipients_registry
 ):
-    call_data = encode_single("(address)", [recipient.address])
+    call_data = encode(["address"], [recipient.address])
 
     tx = easy_track.createMotion(
         remove_recipient_factory,
@@ -87,7 +85,7 @@ def set_limit_parameters_by_aragon_voting(
 def create_top_up_motion(
     recipients: List[str], amounts: List[int], easy_track, top_up_factory
 ):
-    script_call_data = encode_single("(address[],uint256[])", [recipients, amounts])
+    script_call_data = encode(["address[]","uint256[]"], [recipients, amounts])
     tx = easy_track.createMotion(
         top_up_factory,
         script_call_data,

@@ -88,7 +88,7 @@ def test_lego_easy_track_happy_path(
     tx = easy_track.createMotion(
         top_up_lego_program,
         evm_script.encode_calldata(
-            "(address[],uint256[])",
+            ["address[]","uint256[]"],
             [
                 [ldo.address, steth.address, brownie.ZERO_ADDRESS],
                 [ldo_amount, steth_amount, eth_amount],

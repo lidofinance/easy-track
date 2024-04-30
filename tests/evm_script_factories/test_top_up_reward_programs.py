@@ -1,4 +1,4 @@
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import reverts
 
 from utils.evm_script import encode_call_script
@@ -156,4 +156,4 @@ def test_decode_evm_script_call_data(top_up_reward_programs):
 
 
 def encode_call_data(addresses, amounts):
-    return "0x" + encode_single("(address[],uint256[])", [addresses, amounts]).hex()
+    return "0x" + encode("(address[],uint256[])", [addresses, amounts]).hex()

@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from utils.evm_script import encode_call_script
 from brownie import reverts
 
@@ -202,15 +202,15 @@ def test_create_evm_script_many_addresses(
 
 
 def encode_remove_reward_program_calldata(reward_program):
-    return "0x" + encode_single("(address)", [reward_program]).hex()
+    return "0x" + encode(["address"], [reward_program]).hex()
 
 
 def encode_add_reward_program_calldata(reward_program, title):
-    return "0x" + encode_single("(address,string)", [reward_program, title]).hex()
+    return "0x" + encode(["address","string"], [reward_program, title]).hex()
 
 
 def encode_set_node_operator_staking_limit_calldata(node_operator_id, staking_limit):
     return (
         "0x"
-        + encode_single("(uint256,uint256)", [node_operator_id, staking_limit]).hex()
+        + encode(["uint256","uint256"], [node_operator_id, staking_limit]).hex()
     )

@@ -6,7 +6,7 @@ from brownie import accounts, reverts, ZERO_ADDRESS
 from utils.evm_script import encode_calldata, encode_call_script
 
 def make_call_data(recipients, amounts):
-    return encode_calldata("(address[],uint256[])", [recipients, amounts])
+    return encode_calldata(["address[]","uint256[]"], [recipients, amounts])
 
 
 def test_top_up_factory_initial_state(

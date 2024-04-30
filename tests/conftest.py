@@ -1,17 +1,13 @@
 import os
-from typing import Optional, NamedTuple, Any
+from typing import Optional
 
 import pytest
 import brownie
 from brownie import chain 
 
 import constants
-from utils.evm_script import encode_call_script, encode_calldata
 from utils.lido import contracts
-from utils.config import get_network_name
-from utils import test_helpers, deployed_date_time
-
-brownie.web3.enable_strict_bytes_type_checking()
+from utils import deployed_date_time
 
 ####################################
 # Brownie Blockchain State Snapshots

@@ -90,4 +90,4 @@ def test_decode_evm_script_calldata_correctly(owner, remove_allowed_recipients):
 
 
 def create_calldata(recipient):
-    return encode_calldata("(address)", [recipient])
+    return encode_calldata(["address"], [recipient])

@@ -5,15 +5,10 @@ import constants
 from brownie.network import chain
 from brownie import EasyTrack, EVMScriptExecutor, accounts
 
-from eth_abi import encode_single
-from utils.evm_script import encode_call_script
-
+from eth_abi import encode
+from utils.evm_script import encode_calldata, encode_call_script
 from utils.config import get_network_name
 from utils import lido
-
-
-def encode_calldata(signature, values):
-    return "0x" + encode_single(signature, values).hex()
 
 
 def create_permission(contract, method):
@@ -137,7 +132,7 @@ def test_reward_programs_easy_track(
     lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
     add_reward_program_calldata = encode_calldata(
-        "(address,string)", [reward_program.address, reward_program_title]
+        ["address","string"], [reward_program.address, reward_program_title]
     )
 
     tx = easy_track.createMotion(
@@ -163,7 +158,7 @@ def test_reward_programs_easy_track(
     # create new motion to top up reward program
     tx = easy_track.createMotion(
         top_up_reward_programs,
-        encode_single("(address[],uint256[])", [[reward_program.address], [int(5e18)]]),
+        encode_calldata(["address[]","uint256[]"], [[reward_program.address], [int(5e18)]]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -185,7 +180,7 @@ def test_reward_programs_easy_track(
     # create new motion to remove a reward program
     tx = easy_track.createMotion(
         remove_reward_program,
-        encode_single("(address)", [reward_program.address]),
+        encode_calldata(["address"], [reward_program.address]),
         {"from": trusted_address},
     )
 

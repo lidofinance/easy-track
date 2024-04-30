@@ -158,7 +158,7 @@ def test_node_operators_easy_track_happy_path(
     # create new motion to increase staking limit
     tx = easy_track.createMotion(
         increase_node_operator_staking_limit,
-        evm_script.encode_calldata("(uint256,uint256)", [new_node_operator_id, 3]),
+        evm_script.encode_calldata(["uint256","uint256"], [new_node_operator_id, 3]),
         {"from": node_operator["address"]},
     )
     motions = easy_track.getMotions()

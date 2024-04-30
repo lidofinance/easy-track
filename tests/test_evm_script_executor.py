@@ -1,5 +1,5 @@
 from brownie import reverts
-from eth_abi import encode_single
+from eth_abi import encode
 from utils.evm_script import encode_call_script
 import constants
 
@@ -46,7 +46,7 @@ def test_execute_evm_script_revert_msg(
                         increase_node_operator_staking_limit.address,
                         increase_node_operator_staking_limit.createEVMScript.encode_input(
                             node_operator,
-                            "0x" + encode_single("(uint256,uint256)", [1, 500]).hex(),
+                            "0x" + encode(["uint256","uint256"], [1, 500]).hex(),
                         ),
                     )
                 ]

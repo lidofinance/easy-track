@@ -1,8 +1,18 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import reverts, SetNodeOperatorNames
 
 from utils.evm_script import encode_call_script
+
+
+def create_calldata(data):
+    return (
+        "0x"
+        + encode(
+            ["(uint256,string)[]"],
+            [data],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -14,28 +24,19 @@ def set_node_operator_name_factory(owner, node_operators_registry):
 def test_deploy(node_operators_registry, owner, set_node_operator_name_factory):
     "Must deploy contract with correct data"
     assert set_node_operator_name_factory.trustedCaller() == owner
-    assert (
-        set_node_operator_name_factory.nodeOperatorsRegistry()
-        == node_operators_registry
-    )
+    assert set_node_operator_name_factory.nodeOperatorsRegistry() == node_operators_registry
 
 
 def test_create_evm_script_called_by_stranger(stranger, set_node_operator_name_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    EVM_SCRIPT_CALL_DATA = "0x"
+    EVM_SCRIPT_CALLDATA = "0x"
     with reverts("CALLER_IS_FORBIDDEN"):
-        set_node_operator_name_factory.createEVMScript(stranger, EVM_SCRIPT_CALL_DATA)
+        set_node_operator_name_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 
 def test_empty_calldata(owner, set_node_operator_name_factory):
     with reverts("EMPTY_CALLDATA"):
-        EMPTY_CALLDATA = (
-            "0x"
-            + encode_single(
-                "((uint256,string)[])",
-                [[]],
-            ).hex()
-        )
+        EMPTY_CALLDATA = create_calldata([])
         set_node_operator_name_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
@@ -44,58 +45,34 @@ def test_non_sorted_calldata(owner, set_node_operator_name_factory):
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
         print(12333)
-        NON_SORTED_CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,string)[])", [[(1, "New Name"), (0, "New Name")]]
-            ).hex()
-        )
-        set_node_operator_name_factory.createEVMScript(owner, NON_SORTED_CALL_DATA)
+        NON_SORTED_CALLDATA = create_calldata([(1, "New Name"), (0, "New Name")])
+        set_node_operator_name_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
-        NON_SORTED_CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,string)[])", [[(0, "New Name"), (0, "New Name")]]
-            ).hex()
-        )
-        set_node_operator_name_factory.createEVMScript(owner, NON_SORTED_CALL_DATA)
+        NON_SORTED_CALLDATA = create_calldata([(0, "New Name"), (0, "New Name")])
+        set_node_operator_name_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
 
-def test_operator_id_out_of_range(
-    owner, set_node_operator_name_factory, node_operators_registry
-):
+def test_operator_id_out_of_range(owner, set_node_operator_name_factory, node_operators_registry):
     "Must revert with message 'NODE_OPERATOR_INDEX_OUT_OF_RANGE' when operator id gt operators count"
 
     with reverts("NODE_OPERATOR_INDEX_OUT_OF_RANGE"):
         node_operators_count = node_operators_registry.getNodeOperatorsCount()
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,string)[])", [[(node_operators_count, "New Name")]]
-            ).hex()
-        )
-        set_node_operator_name_factory.createEVMScript(owner, CALL_DATA)
+        CALLDATA = create_calldata([(node_operators_count, "New Name")])
+        set_node_operator_name_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_name_invalid_length(
-    owner, set_node_operator_name_factory, node_operators_registry
-):
+def test_name_invalid_length(owner, set_node_operator_name_factory, node_operators_registry):
     "Must revert with message 'WRONG_NAME_LENGTH' when name length eq to 0 or gt max length"
 
     with reverts("WRONG_NAME_LENGTH"):
-        CALL_DATA = "0x" + encode_single("((uint256,string)[])", [[(0, "")]]).hex()
-        set_node_operator_name_factory.createEVMScript(owner, CALL_DATA)
+        CALLDATA = create_calldata([(0, "")])
+        set_node_operator_name_factory.createEVMScript(owner, CALLDATA)
 
     with reverts("WRONG_NAME_LENGTH"):
         max_length = node_operators_registry.MAX_NODE_OPERATOR_NAME_LENGTH()
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,string)[])", [[(0, "x" * (max_length + 1))]]
-            ).hex()
-        )
-        set_node_operator_name_factory.createEVMScript(owner, CALL_DATA)
+        CALLDATA = create_calldata([(0, "x" * (max_length + 1))])
+        set_node_operator_name_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_same_name(owner, set_node_operator_name_factory, node_operators_registry):
@@ -103,13 +80,8 @@ def test_same_name(owner, set_node_operator_name_factory, node_operators_registr
 
     with reverts("SAME_NAME"):
         node_operator = node_operators_registry.getNodeOperator(0, True)
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,string)[])", [[(0, node_operator["name"])]]
-            ).hex()
-        )
-        set_node_operator_name_factory.createEVMScript(owner, CALL_DATA)
+        CALLDATA = create_calldata([(0, node_operator["name"])])
+        set_node_operator_name_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_create_evm_script(
@@ -120,19 +92,13 @@ def test_create_evm_script(
     "Must create correct EVMScript if all requirements are met"
     input_params = [(0, "New name"), (1, "Another Name")]
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,string)[])", [input_params]).hex()
-    )
-    evm_script = set_node_operator_name_factory.createEVMScript(
-        owner, EVM_SCRIPT_CALL_DATA
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    evm_script = set_node_operator_name_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
         [
             (
                 node_operators_registry.address,
-                node_operators_registry.setNodeOperatorName.encode_input(
-                    input_param[0], input_param[1]
-                ),
+                node_operators_registry.setNodeOperatorName.encode_input(input_param[0], input_param[1]),
             )
             for input_param in input_params
         ]
@@ -140,16 +106,9 @@ def test_create_evm_script(
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(
-    node_operators_registry, set_node_operator_name_factory
-):
+def test_decode_evm_script_call_data(node_operators_registry, set_node_operator_name_factory):
     "Must decode EVMScript call data correctly"
     input_params = [(0, "New name"), (1, "Another Name")]
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,string)[])", [input_params]).hex()
-    )
-    assert (
-        set_node_operator_name_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALL_DATA)
-        == input_params
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    assert set_node_operator_name_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params

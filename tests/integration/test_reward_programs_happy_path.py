@@ -130,7 +130,7 @@ def test_reward_programs_easy_track(
     tx = easy_track.createMotion(
         add_reward_program,
         evm_script.encode_calldata(
-            "(address,string)", [reward_program.address, reward_program_title]
+            ["address","string"], [reward_program.address, reward_program_title]
         ),
         {"from": trusted_address},
     )
@@ -155,7 +155,7 @@ def test_reward_programs_easy_track(
     tx = easy_track.createMotion(
         top_up_reward_programs,
         evm_script.encode_calldata(
-            "(address[],uint256[])", [[reward_program.address], [int(5e18)]]
+            ["address[]","uint256[]"], [[reward_program.address], [int(5e18)]]
         ),
         {"from": trusted_address},
     )
@@ -178,7 +178,7 @@ def test_reward_programs_easy_track(
     # create new motion to remove reward program
     tx = easy_track.createMotion(
         remove_reward_program,
-        evm_script.encode_calldata("(address)", [reward_program.address]),
+        evm_script.encode_calldata(["address"], [reward_program.address]),
         {"from": trusted_address},
     )
 

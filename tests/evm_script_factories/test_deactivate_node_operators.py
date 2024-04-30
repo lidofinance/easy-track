@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import reverts, DeactivateNodeOperators, web3
 
 from utils.evm_script import encode_call_script
@@ -9,6 +9,16 @@ MANAGERS = [
     "0x0000000000000000000000000000000000000001",
     "0x0000000000000000000000000000000000000002",
 ]
+
+
+def create_calldata(data):
+    return (
+        "0x"
+        + encode(
+            ["(uint256,address)[]"],
+            [data],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -27,41 +37,26 @@ def deactivate_node_operators_factory(owner, node_operators_registry, acl, votin
             encode_permission_params([Param(0, Op.EQ, id)]),
             {"from": voting},
         )
-    return DeactivateNodeOperators.deploy(
-        owner, node_operators_registry, acl, {"from": owner}
-    )
+    return DeactivateNodeOperators.deploy(owner, node_operators_registry, acl, {"from": owner})
 
 
 def test_deploy(node_operators_registry, owner, acl, deactivate_node_operators_factory):
     "Must deploy contract with correct data"
     assert deactivate_node_operators_factory.trustedCaller() == owner
-    assert (
-        deactivate_node_operators_factory.nodeOperatorsRegistry()
-        == node_operators_registry
-    )
+    assert deactivate_node_operators_factory.nodeOperatorsRegistry() == node_operators_registry
     assert deactivate_node_operators_factory.acl() == acl
 
 
-def test_create_evm_script_called_by_stranger(
-    stranger, deactivate_node_operators_factory
-):
+def test_create_evm_script_called_by_stranger(stranger, deactivate_node_operators_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    EVM_SCRIPT_CALL_DATA = "0x"
+    EVM_SCRIPT_CALLDATA = "0x"
     with reverts("CALLER_IS_FORBIDDEN"):
-        deactivate_node_operators_factory.createEVMScript(
-            stranger, EVM_SCRIPT_CALL_DATA
-        )
+        deactivate_node_operators_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 
 def test_empty_calldata(owner, deactivate_node_operators_factory):
     with reverts("EMPTY_CALLDATA"):
-        EMPTY_CALLDATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])",
-                [[]],
-            ).hex()
-        )
+        EMPTY_CALLDATA = create_calldata([])
         deactivate_node_operators_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
@@ -69,72 +64,46 @@ def test_non_sorted_calldata(owner, deactivate_node_operators_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
-        NON_SORTED_CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])", [[(1, MANAGERS[1]), (0, MANAGERS[0])]]
-            ).hex()
-        )
-        deactivate_node_operators_factory.createEVMScript(owner, NON_SORTED_CALL_DATA)
+        NON_SORTED_CALLDATA = create_calldata([(1, MANAGERS[1]), (0, MANAGERS[0])])
+        deactivate_node_operators_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
-        NON_SORTED_CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])", [[(0, MANAGERS[0]), (0, MANAGERS[0])]]
-            ).hex()
-        )
-        deactivate_node_operators_factory.createEVMScript(owner, NON_SORTED_CALL_DATA)
+        NON_SORTED_CALLDATA = create_calldata([(0, MANAGERS[0]), (0, MANAGERS[0])])
+        deactivate_node_operators_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
 
-def test_operator_id_out_of_range(
-    owner, deactivate_node_operators_factory, node_operators_registry
-):
+def test_operator_id_out_of_range(owner, deactivate_node_operators_factory, node_operators_registry):
     "Must revert with message 'NODE_OPERATOR_INDEX_OUT_OF_RANGE' when operator id gt operators count"
 
     with reverts("NODE_OPERATOR_INDEX_OUT_OF_RANGE"):
         node_operators_count = node_operators_registry.getNodeOperatorsCount()
-        CALL_DATA = (
-            "0x"
-            + encode_single(
-                "((uint256,address)[])",
-                [
-                    [
-                        (
-                            node_operators_count,
-                            "0x0000000000000000000000000000000000000000",
-                        )
-                    ]
-                ],
-            ).hex()
+        CALLDATA = create_calldata(
+            [
+                (
+                    node_operators_count,
+                    "0x0000000000000000000000000000000000000000",
+                )
+            ]
         )
-        deactivate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+        deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_node_operator_invalid_state(
-    owner, deactivate_node_operators_factory, node_operators_registry, voting
-):
+def test_node_operator_invalid_state(owner, deactivate_node_operators_factory, node_operators_registry, voting):
     "Must revert with message 'WRONG_OPERATOR_ACTIVE_STATE' when operator already active"
 
     node_operators_registry.deactivateNodeOperator(0, {"from": voting})
 
     with reverts("WRONG_OPERATOR_ACTIVE_STATE"):
-        CALL_DATA = (
-            "0x" + encode_single("((uint256,address)[])", [[(0, MANAGERS[0])]]).hex()
-        )
-        deactivate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+        CALLDATA = create_calldata([(0, MANAGERS[0])])
+        deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_manager_has_no_role(
-    owner, deactivate_node_operators_factory, node_operators_registry, acl, voting
-):
+def test_manager_has_no_role(owner, deactivate_node_operators_factory, node_operators_registry, acl, voting):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has no MANAGE_SIGNING_KEYS role"
 
-    CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [[(2, MANAGERS[0])]]).hex()
-    )
+    CALLDATA = create_calldata([(2, MANAGERS[0])])
     with reverts("MANAGER_HAS_NO_ROLE"):
-        deactivate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+        deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_manager_has_another_role_operator(
@@ -153,11 +122,9 @@ def test_manager_has_another_role_operator(
         {"from": voting},
     )
 
-    CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [[(operator, manager)]]).hex()
-    )
+    CALLDATA = create_calldata([(operator, manager)])
     with reverts("MANAGER_HAS_NO_ROLE"):
-        deactivate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+        deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_manager_has_role_for_another_operator(
@@ -176,33 +143,23 @@ def test_manager_has_role_for_another_operator(
         {"from": voting},
     )
 
-    CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [[(operator, manager)]]).hex()
-    )
+    CALLDATA = create_calldata([(operator, manager)])
     with reverts("MANAGER_HAS_NO_ROLE"):
-        deactivate_node_operators_factory.createEVMScript(owner, CALL_DATA)
+        deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(
-    owner, deactivate_node_operators_factory, node_operators_registry, acl
-):
+def test_create_evm_script(owner, deactivate_node_operators_factory, node_operators_registry, acl):
     "Must create correct EVMScript if all requirements are met"
     input_params = [(id, manager) for id, manager in enumerate(MANAGERS)]
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [input_params]).hex()
-    )
-    evm_script = deactivate_node_operators_factory.createEVMScript(
-        owner, EVM_SCRIPT_CALL_DATA
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    evm_script = deactivate_node_operators_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     scripts = []
     for input_param in input_params:
         scripts.append(
             (
                 node_operators_registry.address,
-                node_operators_registry.deactivateNodeOperator.encode_input(
-                    input_param[0]
-                ),
+                node_operators_registry.deactivateNodeOperator.encode_input(input_param[0]),
             )
         )
         scripts.append(
@@ -220,16 +177,9 @@ def test_create_evm_script(
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(
-    node_operators_registry, deactivate_node_operators_factory
-):
+def test_decode_evm_script_call_data(node_operators_registry, deactivate_node_operators_factory):
     "Must decode EVMScript call data correctly"
     input_params = [(id, manager) for id, manager in enumerate(MANAGERS)]
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,address)[])", [input_params]).hex()
-    )
-    assert (
-        deactivate_node_operators_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALL_DATA)
-        == input_params
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    assert deactivate_node_operators_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params

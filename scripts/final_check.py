@@ -16,9 +16,9 @@ from brownie import (
     ZERO_ADDRESS,
 )
 from utils import lido, constants, log, mainnet_fork, evm_script
-from eth_abi import encode_single
 from scripts.grant_executor_permissions import grant_executor_permissions
 from brownie.network.account import PublicKeyAccount
+from utils.evm_script import encode_calldata
 
 
 def main():
@@ -470,7 +470,7 @@ def simulate_reward_program_addition(
     log.nb("Simulate reward program addition via EasyTrack")
     log.nb("")
     add_reward_program_calldata = encode_calldata(
-        "(address,string)", [reward_program_address, "Mock Reward Program"]
+        ["address","string"], [reward_program_address, "Mock Reward Program"]
     )
     log.ok("  Address of new reward program", reward_program_address)
     tx, motion = create_motion(
@@ -525,7 +525,7 @@ def simulate_reward_program_top_up(
     log.nb("")
     top_up_amount = Wei(200_000 * 10 ** 18)
     top_up_reward_program_calldata = encode_calldata(
-        "(address[],uint256[])",
+        ["address[]","uint256[]"],
         [[reward_program_address], [top_up_amount]],
     )
     log.ok("  Address of reward program to top up", reward_program_address)
@@ -586,7 +586,7 @@ def simulate_reward_program_removing(
     log.nb("Simulate reward program removing via EasyTrack")
     log.nb("")
     remove_reward_program_calldata = encode_calldata(
-        "(address)", [reward_program_address]
+        ["address"], [reward_program_address]
     )
     log.ok("  Address of reward program to remove", reward_program_address)
     assert_equals(
@@ -650,7 +650,7 @@ def simulate_lego_program_top_up(
     ]
     reward_amounts = [Wei(100 * 10 ** 18), Wei(200_000 * 10 ** 18), Wei(50 * 10 ** 18)]
     top_up_lego_program_calldata = encode_calldata(
-        "(address[],uint256[])", [reward_tokens, reward_amounts]
+        ["address[]","uint256[]"], [reward_tokens, reward_amounts]
     )
     log.ok("  Address of LEGO program", lego_committee_multisig)
     log.ok("  Tokens to transfer", reward_tokens)
@@ -732,7 +732,7 @@ def simulate_node_operator_increases_staking_limit(
     log.ok("New node operator staking limit to set", total_signing_keys)
 
     increase_staking_limit_calldata = encode_calldata(
-        "(uint256,uint256)", [node_operator_id, total_signing_keys]
+        ["uint256","uint256"], [node_operator_id, total_signing_keys]
     )
     tx, motion = create_motion(
         easy_track=easy_track,
@@ -959,7 +959,3 @@ def enact_motion(easy_track, motion_id, motion_calldata):
     log.ok("  Sending enactMotion transaction...")
     easy_track.enactMotion(motion_id, motion_calldata, {"from": accounts[2]})
     assert_equals("  Motion was enacted", len(easy_track.getMotions()) == 0, True)
-
-
-def encode_calldata(signature, values):
-    return "0x" + encode_single(signature, values).hex()

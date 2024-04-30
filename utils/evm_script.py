@@ -16,12 +16,12 @@ def strip_byte_prefix(hexstr):
 def encode_call_script(actions, spec_id=1):
     result = create_executor_id(spec_id)
     for to, calldata in actions:
-        addr_bytes = Web3.toBytes(hexstr=HexAddress(to)).hex()
+        addr_bytes = Web3.to_bytes(hexstr=HexAddress(to)).hex()
         calldata_bytes = strip_byte_prefix(calldata)
-        length = eth_abi.encode_single("uint32", len(calldata_bytes) // 2).hex()
+        length = eth_abi.encode(["uint32"], [len(calldata_bytes) // 2]).hex()
         result += addr_bytes + length[56:] + calldata_bytes
     return result
 
 
 def encode_calldata(signature, values):
-    return "0x" + eth_abi.encode_single(signature, values).hex()
+    return "0x" + eth_abi.encode(signature, values).hex()

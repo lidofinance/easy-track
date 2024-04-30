@@ -256,7 +256,7 @@ def add_allowed_recipient_by_motion(AllowedRecipientsRegistry, easy_track, stran
         tx = easy_track.createMotion(
             add_allowed_recipient_evm_script_factory,
             evm_script.encode_calldata(
-                "(address,string)", [recipient_address, recipient_title]
+                ["address","string"], [recipient_address, recipient_title]
             ),
             {"from": add_allowed_recipient_evm_script_factory.trustedCaller()},
         )
@@ -284,7 +284,7 @@ def remove_allowed_recipient_by_motion(AllowedRecipientsRegistry, easy_track, st
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             remove_allowed_recipient_evm_script_factory.allowedRecipientsRegistry()
         )
-        call_data = evm_script.encode_calldata("(address)", [recipient_address])
+        call_data = evm_script.encode_calldata(["address"], [recipient_address])
 
         tx = easy_track.createMotion(
             remove_allowed_recipient_evm_script_factory,
@@ -362,7 +362,7 @@ def create_add_allowed_recipient_motion(easy_track):
         return easy_track.createMotion(
             add_allowed_recipient_evm_script_factory,
             evm_script.encode_calldata(
-                "(address,string)", [recipient_address, recipient_title]
+                ["address","string"], [recipient_address, recipient_title]
             ),
             {"from": add_allowed_recipient_evm_script_factory.trustedCaller()},
         )
@@ -380,7 +380,7 @@ def create_top_up_allowed_recipients_motion(easy_track):
         return easy_track.createMotion(
             top_up_allowed_recipients_evm_script_factory,
             evm_script.encode_calldata(
-                "(address[],uint256[])", [recipient_addresses, top_up_amounts]
+                ["address[]","uint256[]"], [recipient_addresses, top_up_amounts]
             ),
             {"from": top_up_allowed_recipients_evm_script_factory.trustedCaller()},
         )

@@ -1,7 +1,7 @@
 from brownie import ZERO_ADDRESS, reverts
 from utils.evm_script import encode_calldata, encode_call_script
 
-EVM_SCRIPT_CALL_DATA_TITLE = "TITLE"
+EVM_SCRIPT_CALLDATA_TITLE = "TITLE"
 
 
 def test_deploy(owner, AddAllowedRecipient, allowed_recipients_registry):
@@ -77,7 +77,7 @@ def test_create_evm_script_correctly(owner, add_allowed_recipients, allowed_reci
             (
                 registry.address,
                 registry.addRecipient.encode_input(
-                    owner, EVM_SCRIPT_CALL_DATA_TITLE
+                    owner, EVM_SCRIPT_CALLDATA_TITLE
                 ),
             )
         ]
@@ -90,8 +90,8 @@ def test_decode_evm_script_calldata_correctly(owner, add_allowed_recipients):
 
     (address, title) = add_allowed_recipients.decodeEVMScriptCallData(call_data)
     assert address == owner.address
-    assert title == EVM_SCRIPT_CALL_DATA_TITLE
+    assert title == EVM_SCRIPT_CALLDATA_TITLE
 
 
 def create_calldata(recipient):
-    return encode_calldata("(address,string)", [recipient, EVM_SCRIPT_CALL_DATA_TITLE])
+    return encode_calldata(["address","string"], [recipient, EVM_SCRIPT_CALLDATA_TITLE])
