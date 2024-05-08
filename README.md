@@ -127,6 +127,11 @@ Script requires next ENV variables to be set:
 
 ## Tests
 
+Set infura project ID
+```bash
+export WEB3_INFURA_PROJECT_ID=<YOUR_PROJECT_ID>
+```
+
 The fastest way to run the tests is:
 
 ```bash
