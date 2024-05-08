@@ -14,6 +14,7 @@ eth-brownie = "1.20.2"
 
 [tool.poetry.group.dev.dependencies]
 slither-analyzer = "^0.10.2"
+python-dateutil = "^2.9.0.post0"
 
 [build-system]
 requires = ["poetry-core"]
