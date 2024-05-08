@@ -135,13 +135,13 @@ export WEB3_INFURA_PROJECT_ID=<YOUR_PROJECT_ID>
 The fastest way to run the tests is:
 
 ```bash
-brownie test
+brownie test --network mainnet-fork
 ```
 
 Run tests with coverage and gas profiling:
 
 ```bash
-brownie test --coverage --gas
+brownie test --network mainnet-fork --coverage --gas
 ```
 
 ### Coverage notes
