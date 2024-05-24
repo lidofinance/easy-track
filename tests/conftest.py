@@ -7,6 +7,7 @@ from brownie import chain
 
 import constants
 from utils.lido import contracts
+from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
 
 ####################################
@@ -81,6 +82,10 @@ def lego_program(accounts):
 @pytest.fixture(scope="module")
 def lido_contracts():
     return contracts(network=brownie.network.show_active())
+
+@pytest.fixture(scope="module")
+def csm_contracts():
+    return csm_contracts_(network=brownie.network.show_active())
 
 
 @pytest.fixture(scope="module")
@@ -301,6 +306,9 @@ def node_operators_registry(lido_contracts, agent):
             lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
+@pytest.fixture(scope="module")
+def cs_module(csm_contracts):
+    return csm_contracts.module
 
 @pytest.fixture(scope="module")
 def voting(lido_contracts):
