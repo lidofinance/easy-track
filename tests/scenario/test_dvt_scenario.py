@@ -3,6 +3,7 @@ from eth_abi import encode
 from brownie import web3, interface
 from utils.evm_script import encode_call_script
 from utils.permission_parameters import Op, Param, encode_permission_params
+from utils.test_helpers import set_account_balance
 
 clusters = [
     {
@@ -229,6 +230,7 @@ def test_simple_dvt_scenario(
     # add signing keys to node operator
     no_5_id = 5
     no_5 = simple_dvt.getNodeOperator(no_5_id, False)
+    set_account_balance(clusters[5]["manager"])
 
     simple_dvt.addSigningKeysOperatorBH(
         no_5_id,
@@ -251,6 +253,8 @@ def test_simple_dvt_scenario(
 
     no_6_id = 6
     no_6 = simple_dvt.getNodeOperator(no_6_id, False)
+    set_account_balance(clusters[6]["manager"])
+
     simple_dvt.addSigningKeysOperatorBH(
         no_6_id,
         len(signing_keys["pubkeys"]),

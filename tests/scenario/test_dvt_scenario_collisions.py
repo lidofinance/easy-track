@@ -2,6 +2,8 @@ import pytest
 from eth_abi import encode
 from brownie import reverts, web3, interface
 
+from utils.test_helpers import set_account_balance
+
 table = [
     {
         "address": "0x000000000000000000000000000000000000{:04}".format(i),
@@ -367,6 +369,7 @@ def test_simple_dvt_scenario(
     )
 
     # addSigningKeysOperatorBH no1 address3 manager4 name3
+    set_account_balance(manager2)
     simple_dvt.addSigningKeysOperatorBH(
         no1,
         len(signing_keys["pubkeys"]),

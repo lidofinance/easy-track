@@ -4,6 +4,7 @@ from brownie import reverts, IncreaseVettedValidatorsLimit
 
 from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.evm_script import encode_call_script
+from utils.test_helpers import set_account_balance
 
 
 signing_keys = {
@@ -111,6 +112,7 @@ def test_create_evm_script_from_reward_address(
 def test_create_evm_script_from_manager(increase_vetted_validators_limit_factory, node_operators_registry, acl, voting):
     "Must create correct EVMScript if all requirements are met"
     no_manager = "0x1f9090aae28b8a3dceadf281b0f12828e676c327"
+    set_account_balance(no_manager)
 
     no = node_operators_registry.getNodeOperator(0, True)
 
