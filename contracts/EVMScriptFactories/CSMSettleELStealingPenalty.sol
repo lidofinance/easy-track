@@ -21,7 +21,7 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID =
         "OUT_OF_RANGE_NODE_OPERATOR_ID";
     string private constant ERROR_NOT_SORTED_NODE_OPERATORS_IDS =
-        "ERROR_NOT_SORTED_NODE_OPERATORS_IDS";
+        "NOT_SORTED_NODE_OPERATORS_IDS";
 
     // -------------
     // VARIABLES

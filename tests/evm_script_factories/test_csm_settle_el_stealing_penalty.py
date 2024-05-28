@@ -41,11 +41,11 @@ def test_non_sorted_calldata(owner, csm_settle_el_stealing_penalty_factory):
     "Must revert with message 'ERROR_NOT_SORTED_NODE_OPERATORS_IDS' when operator ids isn't sorted"
 
     NON_SORTED_CALLDATA = create_calldata([OPERATORS[1], OPERATORS[0]])
-    with reverts("ERROR_NOT_SORTED_NODE_OPERATORS_IDS"):
+    with reverts("NOT_SORTED_NODE_OPERATORS_IDS"):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
     NON_SORTED_CALLDATA = create_calldata([OPERATORS[0], OPERATORS[0]])
-    with reverts("ERROR_NOT_SORTED_NODE_OPERATORS_IDS"):
+    with reverts("NOT_SORTED_NODE_OPERATORS_IDS"):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
 
