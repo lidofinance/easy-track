@@ -16,12 +16,12 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_NODE_OPERATORS_IDS_IS_EMPTY =
-        "NODE_OPERATORS_IDS_IS_EMPTY";
-    string private constant ERROR_NODE_OPERATOR_ID_IS_OUT_OF_RANGE =
-        "NODE_OPERATOR_ID_IS_OUT_OF_RANGE";
-    string private constant ERROR_NODE_OPERATORS_IDS_ARE_NOT_SORTED =
-        "NODE_OPERATORS_IDS_ARE_NOT_SORTED";
+    string private constant ERROR_EMPTY_NODE_OPERATORS_IDS =
+        "EMPTY_NODE_OPERATORS_IDS";
+    string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID =
+        "OUT_OF_RANGE_NODE_OPERATOR_ID";
+    string private constant ERROR_NOT_SORTED_NODE_OPERATORS_IDS =
+        "NOT_SORTED_NODE_OPERATORS_IDS";
 
     // -------------
     // VARIABLES
@@ -93,16 +93,16 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
         uint256[] memory _decodedCallData
     ) private view {
         uint256 nodeOperatorsCount = csm.getNodeOperatorsCount();
-        require(_decodedCallData.length > 0, ERROR_NODE_OPERATORS_IDS_IS_EMPTY);
+        require(_decodedCallData.length > 0, ERROR_EMPTY_NODE_OPERATORS_IDS);
         require(
             _decodedCallData[_decodedCallData.length - 1] < nodeOperatorsCount,
-            ERROR_NODE_OPERATOR_ID_IS_OUT_OF_RANGE
+            ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID
         );
         for (uint256 i = 0; i < _decodedCallData.length; ++i) {
             require(
                 i == 0 ||
                     _decodedCallData[i] > _decodedCallData[i - 1],
-                ERROR_NODE_OPERATORS_IDS_ARE_NOT_SORTED
+                ERROR_NOT_SORTED_NODE_OPERATORS_IDS
             );
         }
     }

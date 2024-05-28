@@ -33,28 +33,28 @@ def test_create_evm_script_called_by_stranger(stranger, csm_settle_el_stealing_p
 
 def test_empty_calldata(owner, csm_settle_el_stealing_penalty_factory):
     EMPTY_CALLDATA = create_calldata([])
-    with reverts("NODE_OPERATORS_IDS_IS_EMPTY"):
+    with reverts("EMPTY_NODE_OPERATORS_IDS"):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_non_sorted_calldata(owner, csm_settle_el_stealing_penalty_factory):
-    "Must revert with message 'NODE_OPERATORS_IDS_ARE_NOT_SORTED' when operator ids isn't sorted"
+    "Must revert with message 'ERROR_NOT_SORTED_NODE_OPERATORS_IDS' when operator ids isn't sorted"
 
     NON_SORTED_CALLDATA = create_calldata([OPERATORS[1], OPERATORS[0]])
-    with reverts("NODE_OPERATORS_IDS_ARE_NOT_SORTED"):
+    with reverts("NOT_SORTED_NODE_OPERATORS_IDS"):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
     NON_SORTED_CALLDATA = create_calldata([OPERATORS[0], OPERATORS[0]])
-    with reverts("NODE_OPERATORS_IDS_ARE_NOT_SORTED"):
+    with reverts("NOT_SORTED_NODE_OPERATORS_IDS"):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
 
 def test_operator_id_out_of_range(owner, csm_settle_el_stealing_penalty_factory, cs_module):
-    "Must revert with message 'NODE_OPERATOR_ID_IS_OUT_OF_RANGE' when operator id gt operators count"
+    "Must revert with message 'OUT_OF_RANGE_NODE_OPERATOR_ID' when operator id gt operators count"
 
     node_operators_count = cs_module.getNodeOperatorsCount()
     CALLDATA = create_calldata([node_operators_count])
-    with reverts("NODE_OPERATOR_ID_IS_OUT_OF_RANGE"):
+    with reverts("OUT_OF_RANGE_NODE_OPERATOR_ID"):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, CALLDATA)
 
 

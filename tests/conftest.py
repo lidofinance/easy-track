@@ -103,6 +103,10 @@ def lido_contracts():
 def csm_contracts():
     return csm_contracts_(network=brownie.network.show_active())
 
+@pytest.fixture(scope="module")
+def csm_contracts():
+    return csm_contracts_(network=brownie.network.show_active())
+
 
 @pytest.fixture(scope="module")
 def motion_settings(owner, MotionSettings):
