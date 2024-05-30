@@ -23,20 +23,6 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
-    if network == "holesky" or network == "holesky-fork":
-        return LidoAddressesSetup(
-            aragon=AragonSetup(
-                acl="0xfd1E42595CeC3E83239bf8dFc535250e7F48E0bC",
-                agent="0xE92329EC7ddB11D25e25b3c21eeBf11f15eB325d",
-                voting="0xdA7d2573Df555002503F29aA4003e398d28cc00f",
-                finance="0xf0F281E5d7FBc54EAFcE0dA225CDbde04173AB16",
-                gov_token="0x14ae7daeecdf57034f3E9db8564e46Dba8D97344",
-                calls_script="0xAa8B4F258a4817bfb0058b861447878168ddf7B0",
-                token_manager="0xFaa1692c6eea8eeF534e7819749aD93a1420379A",
-            ),
-            steth="0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034",
-            node_operators_registry="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
-        )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
             aragon=AragonSetup(

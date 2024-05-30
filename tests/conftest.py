@@ -3,12 +3,14 @@ from typing import Optional
 
 import pytest
 import brownie
-from brownie import chain
+from brownie import chain, history, network
+from brownie import web3
 
 import constants
-from utils.lido import contracts
+from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
+from utils.test_helpers import set_account_balance
 
 ####################################
 # Brownie Blockchain State Snapshots
@@ -16,6 +18,10 @@ from utils import deployed_date_time
 
 # autouse, so enabled by default for all test modules in this directory
 
+@pytest.fixture(scope="module", autouse=True)
+def gas():
+    """Set gas estimates for all tests."""
+    network.gas_price("auto")
 
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
@@ -81,7 +87,21 @@ def lego_program(accounts):
 
 @pytest.fixture(scope="module")
 def lido_contracts():
-    return contracts(network=brownie.network.show_active())
+    contracts = lido_contracts_(network=brownie.network.show_active())
+    # Set balances for contracts due to london hardfork changes in gas calculation: gasPrice=0 is not supported anymore
+    set_account_balance(contracts.lido_addresses.aragon.acl)
+    set_account_balance(contracts.lido_addresses.aragon.agent)
+    set_account_balance(contracts.lido_addresses.aragon.voting)
+    set_account_balance(contracts.lido_addresses.aragon.finance)
+    set_account_balance(contracts.lido_addresses.aragon.gov_token)
+    set_account_balance(contracts.lido_addresses.aragon.calls_script)
+    set_account_balance(contracts.lido_addresses.aragon.token_manager)
+    set_account_balance(contracts.lido_addresses.aragon.kernel)
+    return contracts
+
+@pytest.fixture(scope="module")
+def csm_contracts():
+    return csm_contracts_(network=brownie.network.show_active())
 
 @pytest.fixture(scope="module")
 def csm_contracts():
@@ -116,12 +136,16 @@ def easy_track(owner, ldo, voting, EasyTrack, EVMScriptExecutor, calls_script):
     )
     evm_script_executor = owner.deploy(EVMScriptExecutor, calls_script, contract)
     contract.setEVMScriptExecutor(evm_script_executor, {"from": voting})
+    set_account_balance(evm_script_executor.address)
+    set_account_balance(contract.address)
     return contract
 
 
 @pytest.fixture(scope="module")
 def evm_script_executor(owner, easy_track, calls_script, EVMScriptExecutor):
-    return EVMScriptExecutor.at(easy_track.evmScriptExecutor())
+    evm_script_executor = EVMScriptExecutor.at(easy_track.evmScriptExecutor())
+    set_account_balance(evm_script_executor.address)
+    return evm_script_executor
 
 
 @pytest.fixture(scope="module")
@@ -208,7 +232,9 @@ def evm_script_factory_stub(owner, EVMScriptFactoryStub):
 
 @pytest.fixture(scope="module")
 def evm_script_executor_stub(owner, EVMScriptExecutorStub):
-    return owner.deploy(EVMScriptExecutorStub)
+    contract = owner.deploy(EVMScriptExecutorStub)
+    set_account_balance(contract.address)
+    return contract
 
 
 @pytest.fixture(scope="module")
@@ -280,7 +306,7 @@ def top_up_allowed_recipients(
     trusted_caller = accounts[4]
 
     top_up_factory = owner.deploy(TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track)
-
+    set_account_balance(top_up_factory.address)
     return top_up_factory
 
 

@@ -13,7 +13,7 @@ development:
   - cmd: ./ganache.sh
     cmd_settings:
       accounts: 10
-      evm_version: istanbul
+      evm_version: shanghai
       fork: mainnet
       gas_limit: 30000000
       mnemonic: brownie
@@ -26,6 +26,7 @@ development:
     cmd_settings:
       accounts: 10
       chain_id: 5
+      evm_version: shanghai
       fork: goerli
       gas_limit: 30000000
       mnemonic: brownie
@@ -37,6 +38,7 @@ development:
     cmd_settings:
       accounts: 10
       chain_id: 17000
+      evm_version: shanghai
       fork: $HOLESKY_RPC_URL
       gas_limit: 12000000
       mnemonic: brownie
@@ -44,3 +46,15 @@ development:
     host: http://127.0.0.1
     id: holesky-fork
     name: holesky-fork
+  - cmd: ./ganache.sh
+    cmd_settings:
+      accounts: 10
+      chain_id: 17000
+      evm_version: shanghai
+      fork: $HOLESKY_RPC_URL
+      gas_limit: 12000000000
+      mnemonic: brownie
+      port: 8545
+    host: http://127.0.0.1
+    id: holesky-devnet0-fork
+    name: holesky-devnet0-fork
