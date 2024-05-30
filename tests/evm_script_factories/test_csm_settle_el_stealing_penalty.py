@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, CSMSettleElStealingPenalty, web3
+from brownie import reverts, CSMSettleElStealingPenalty, web3, history # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 from utils.permission_parameters import Op, Param, encode_permission_params
@@ -33,20 +33,8 @@ def test_create_evm_script_called_by_stranger(stranger, csm_settle_el_stealing_p
 
 def test_empty_calldata(owner, csm_settle_el_stealing_penalty_factory):
     EMPTY_CALLDATA = create_calldata([])
-    with reverts("EMPTY_NODE_OPERATORS_IDS"):
+    with reverts('EMPTY_NODE_OPERATORS_IDS'):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, EMPTY_CALLDATA)
-
-
-def test_non_sorted_calldata(owner, csm_settle_el_stealing_penalty_factory):
-    "Must revert with message 'ERROR_NOT_SORTED_NODE_OPERATORS_IDS' when operator ids isn't sorted"
-
-    NON_SORTED_CALLDATA = create_calldata([OPERATORS[1], OPERATORS[0]])
-    with reverts("NOT_SORTED_NODE_OPERATORS_IDS"):
-        csm_settle_el_stealing_penalty_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
-
-    NON_SORTED_CALLDATA = create_calldata([OPERATORS[0], OPERATORS[0]])
-    with reverts("NOT_SORTED_NODE_OPERATORS_IDS"):
-        csm_settle_el_stealing_penalty_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
 
 def test_operator_id_out_of_range(owner, csm_settle_el_stealing_penalty_factory, cs_module):
@@ -54,9 +42,8 @@ def test_operator_id_out_of_range(owner, csm_settle_el_stealing_penalty_factory,
 
     node_operators_count = cs_module.getNodeOperatorsCount()
     CALLDATA = create_calldata([node_operators_count])
-    with reverts("OUT_OF_RANGE_NODE_OPERATOR_ID"):
+    with reverts('OUT_OF_RANGE_NODE_OPERATOR_ID'):
         csm_settle_el_stealing_penalty_factory.createEVMScript(owner, CALLDATA)
-
 
 def test_create_evm_script(owner, csm_settle_el_stealing_penalty_factory, cs_module):
     "Must create correct EVMScript if all requirements are met"
