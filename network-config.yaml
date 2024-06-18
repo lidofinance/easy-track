@@ -56,5 +56,5 @@ development:
       mnemonic: brownie
       port: 8545
     host: http://127.0.0.1
-    id: holesky-devnet0-fork
-    name: holesky-devnet0-fork
+    id: holesky-devnet-fork
+    name: holesky-devnet-fork
