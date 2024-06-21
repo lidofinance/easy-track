@@ -99,9 +99,6 @@ def lido_contracts():
     set_account_balance(contracts.lido_addresses.aragon.kernel)
     return contracts
 
-@pytest.fixture(scope="module")
-def csm_contracts():
-    return csm_contracts_(network=brownie.network.show_active())
 
 @pytest.fixture(scope="module")
 def csm_contracts():
