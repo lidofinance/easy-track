@@ -9,9 +9,9 @@ def addresses(network=DEFAULT_NETWORK):
         raise NotImplementedError("Mainnet addresses do not exist yet")
     if network == "holesky" or network == "holesky-fork":
         raise NotImplementedError("Holesky addresses do not exist yet")
-    if network == "holesky-devnet0" or network == "holesky-devnet0-fork":
+    if network == "holesky-devnet" or network == "holesky-devnet-fork":
         return CSMAddressesSetup(
-            module="0xddB08564C699D5392a9E9a3C8E2Ab9D7C1949CB6",
+            module="0x26aBc20a47f7e8991F1d26Bf0fC2bE8f24E9eF2A",
         )
     raise NameError(
         f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, holesky-devnet0, holesky-devnet0-fork"
