@@ -42,7 +42,7 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to settle EL stealing penalty for a specific node operators on CSM
+    /// @notice Creates EVMScript to settle EL stealing penalty for the specific node operators on CSM
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
