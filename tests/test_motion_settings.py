@@ -1,5 +1,5 @@
 from brownie import reverts
-from utils.test_helpers import access_controll_revert_message
+from utils.test_helpers import access_revert_message
 import constants
 
 
@@ -43,7 +43,7 @@ def test_set_motion_duration_called_with_permissions(owner, motion_settings):
 def test_set_motion_duration_called_without_permissions(stranger, motion_settings):
     "Must revert with correct Access Control message"
     "if called by address without 'DEFAULT_ADMIN_ROLE'"
-    with reverts(access_controll_revert_message(stranger)):
+    with reverts(access_revert_message(stranger)):
         motion_settings.setMotionDuration(0, {"from": stranger})
 
 
@@ -76,7 +76,7 @@ def test_set_objections_threshold_called_with_permissions(owner, motion_settings
 def test_set_objections_threshold_without_permissions(stranger, motion_settings):
     "Must revert with correct Access Control message"
     "if called by address without 'DEFAULT_ADMIN_ROLE'"
-    with reverts(access_controll_revert_message(stranger)):
+    with reverts(access_revert_message(stranger)):
         motion_settings.setObjectionsThreshold(0, {"from": stranger})
 
 
@@ -110,7 +110,7 @@ def test_set_motions_limit_called_with_permissions(owner, motion_settings):
 def test_set_motions_limit_called_without_permissions(stranger, motion_settings):
     "Must revert with correct Access Control message"
     "if called by address without 'DEFAULT_ADMIN_ROLE'"
-    with reverts(access_controll_revert_message(stranger)):
+    with reverts(access_revert_message(stranger)):
         motion_settings.setMotionsCountLimit(0, {"from": stranger})
 
 

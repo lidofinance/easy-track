@@ -1,4 +1,5 @@
 from utils import lido
+from brownie import network
 from utils.evm_script import encode_call_script
 from utils.config import get_env, get_is_live, get_deployer_account, prompt_bool
 
@@ -8,7 +9,7 @@ def main():
     evm_script_executor = get_env("EVM_SCRIPT_EXECUTOR")
 
     lido_contracts = lido.contracts(network="mainnet")
-    lido_permissions = lido.permissions(contracts=lido_contracts)
+    lido_permissions = lido_contracts.permissions()
 
     required_permissions = [
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
@@ -50,7 +51,7 @@ def main():
         # "priority_fee": "4 gwei",
     }
     vote_id = grant_executor_permissions(
-        acl=acl,
+        lido_contracts == lido_contracts,
         evm_script_executor=evm_script_executor,
         permissions_to_grant=permissions_to_grant,
         tx_params=tx_params,
@@ -63,8 +64,9 @@ def get_permissions_to_grant(permissions, granted_permissions):
 
 
 def grant_executor_permissions(
-    acl, evm_script_executor, permissions_to_grant, tx_params
+    lido_contracts, evm_script_executor, permissions_to_grant, tx_params
 ):
+    acl = lido_contracts.aragon.acl
     grant_permissions_evmscript = encode_call_script(
         [
             (
@@ -77,7 +79,7 @@ def grant_executor_permissions(
         ]
     )
 
-    vote_id, _ = lido.create_voting(
+    vote_id, _ = lido_contracts.create_voting(
         evm_script=grant_permissions_evmscript,
         description="Grant permissions to {evm_script_executor}",
         tx_params=tx_params,

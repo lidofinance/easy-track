@@ -1,3 +1,4 @@
+import brownie
 from scripts.deploy import deploy_easy_tracks
 from utils import lido, constants, deployment
 
@@ -8,7 +9,7 @@ def test_deploy_script(accounts):
     lego_committee_multisig = accounts[2]
     reward_programs_multisig = accounts[3]
     pause_address = accounts[4]
-    lido_contracts = lido.contracts(network="mainnet")
+    lido_contracts = lido.contracts(network=brownie.network.show_active())
     (
         easy_track,
         evm_script_executor,
