@@ -51,8 +51,27 @@ def addresses(network="mainnet"):
                 reward_programs_registry="0x4CB0c9987fd670069e4b24c653981E86b261A2ca",
             ),
         )
+    if network == "holesky" or network == "holesky-fork":
+        return EasyTrackSetup(
+            easy_track="0x1763b9ED3586B08AE796c7787811a2E1bc16163a",
+            evm_script_executor="0x2819B65021E13CEEB9AC33E77DB32c7e64e7520D",
+            increase_node_operator_staking_limit="0x18Ff3bD97739bf910cDCDb8d138976c6afDB4449",
+            top_up_lego_program=None,
+            reward_programs=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+            referral_partners=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+        )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, goerli."""
+        f"""Unknown network "{network}". Supported networks: mainnet, goerli, holesky."""
     )
 
 
