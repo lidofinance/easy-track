@@ -1,0 +1,18 @@
+{
+    "contracts": {
+       "TBD":"TBD"
+    },
+    "explorer_hostname": "api-holesky.etherscan.io",
+    "github_repo": {
+        "url": "https://github.com/lidofinance/easy-track",
+        "commit": "TBD",
+        "relative_root": ""
+    },
+    "dependencies": {
+        "@openzeppelin/contracts-v4.3.2": {
+            "url": "https://github.com/OpenZeppelin/openzeppelin-contracts",
+            "commit": "0c4de6721d9668d7b5b2c5a9400fd0b2a5e8de90",
+            "relative_root": "contracts"
+        }
+    }
+}

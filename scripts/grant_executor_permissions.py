@@ -8,7 +8,7 @@ def main():
     evm_script_executor = get_env("EVM_SCRIPT_EXECUTOR")
 
     lido_contracts = lido.contracts(network="mainnet")
-    lido_permissions = lido.permissions(contracts=lido_contracts)
+    lido_permissions = lido_contracts.permissions()
 
     required_permissions = [
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
@@ -17,9 +17,7 @@ def main():
 
     acl = lido_contracts.aragon.acl
 
-    granted_permissions = lido_permissions.filter_granted(
-        permissions=required_permissions, address=evm_script_executor
-    )
+    granted_permissions = lido_permissions.filter_granted(permissions=required_permissions, address=evm_script_executor)
 
     permissions_to_grant = list(set(required_permissions) - set(granted_permissions))
 
@@ -46,11 +44,11 @@ def main():
 
     tx_params = {
         "from": deployer,
-        "gas_price": "100 gwei"
+        "gas_price": "100 gwei",
         # "priority_fee": "4 gwei",
     }
     vote_id = grant_executor_permissions(
-        acl=acl,
+        lido_contracts == lido_contracts,
         evm_script_executor=evm_script_executor,
         permissions_to_grant=permissions_to_grant,
         tx_params=tx_params,
@@ -62,22 +60,19 @@ def get_permissions_to_grant(permissions, granted_permissions):
     return list(set(permissions) - set(granted_permissions))
 
 
-def grant_executor_permissions(
-    acl, evm_script_executor, permissions_to_grant, tx_params
-):
+def grant_executor_permissions(lido_contracts, evm_script_executor, permissions_to_grant, tx_params):
+    acl = lido_contracts.aragon.acl
     grant_permissions_evmscript = encode_call_script(
         [
             (
                 acl.address,
-                acl.grantPermission.encode_input(
-                    evm_script_executor, permission.app, permission.role
-                ),
+                acl.grantPermission.encode_input(evm_script_executor, permission.app, permission.role),
             )
             for permission in permissions_to_grant
         ]
     )
 
-    vote_id, _ = lido.create_voting(
+    vote_id, _ = lido_contracts.create_voting(
         evm_script=grant_permissions_evmscript,
         description="Grant permissions to {evm_script_executor}",
         tx_params=tx_params,

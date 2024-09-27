@@ -296,11 +296,11 @@ Contains method to execute EVMScripts. Inherits from OpenZeppelin's `Ownable` co
 ```
 EVM_SCRIPT       -> SPEC_ID | SPEC_ID EVM_SCRIPTS_LIST
 EVM_SCRIPTS_LIST -> EVM_SCRIPT_ITEM | EVM_SCRIPTS_LIST
-EVM_SCRIPT_ITEM  -> ADDRESS CALL_DATA_LENGTH CALL_DATA
+EVM_SCRIPT_ITEM  -> ADDRESS CALLDATA_LENGTH CALLDATA
 SPEC_ID          -> uint32
 ADDRESS          -> address
-CALL_DATA_LENGTH -> uint32
-CALL_DATA        -> bytes of length CALL_DATA_LENGTH
+CALLDATA_LENGTH -> uint32
+CALLDATA        -> bytes of length CALLDATA_LENGTH
 ```
 
 ### Methods

@@ -7,9 +7,7 @@ from brownie import chain
 
 import constants
 from utils.lido import contracts
-from utils import test_helpers
-
-brownie.web3.enable_strict_bytes_type_checking()
+from utils import deployed_date_time
 
 ####################################
 # Brownie Blockchain State Snapshots
@@ -21,13 +19,11 @@ brownie.web3.enable_strict_bytes_type_checking()
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
     """Snapshot ganache at start of module."""
-    pass
 
 
 @pytest.fixture(autouse=True)
 def isolation(fn_isolation):
     """Snapshot ganache before every test function call."""
-    pass
 
 
 ##############
@@ -84,8 +80,7 @@ def lego_program(accounts):
 
 @pytest.fixture(scope="module")
 def lido_contracts():
-    # Have this as a fixture to cache the result.
-    return contracts()
+    return contracts(network=brownie.network.show_active())
 
 
 @pytest.fixture(scope="module")
@@ -105,7 +100,7 @@ def evm_script_factories_registry(owner, EVMScriptFactoriesRegistry):
 
 
 @pytest.fixture(scope="module")
-def easy_track(owner, ldo, voting, evm_script_executor_stub, EasyTrack):
+def easy_track(owner, ldo, voting, EasyTrack, EVMScriptExecutor, calls_script):
     contract = owner.deploy(
         EasyTrack,
         ldo,
@@ -114,19 +109,18 @@ def easy_track(owner, ldo, voting, evm_script_executor_stub, EasyTrack):
         constants.MAX_MOTIONS_LIMIT,
         constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
-    contract.setEVMScriptExecutor(evm_script_executor_stub, {"from": voting})
+    evm_script_executor = owner.deploy(EVMScriptExecutor, calls_script, contract)
+    contract.setEVMScriptExecutor(evm_script_executor, {"from": voting})
     return contract
 
 
 @pytest.fixture(scope="module")
 def evm_script_executor(owner, easy_track, calls_script, EVMScriptExecutor):
-    return owner.deploy(EVMScriptExecutor, calls_script, easy_track)
+    return EVMScriptExecutor.at(easy_track.evmScriptExecutor())
 
 
 @pytest.fixture(scope="module")
-def reward_programs_registry(
-    owner, voting, evm_script_executor_stub, RewardProgramsRegistry
-):
+def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProgramsRegistry):
     return owner.deploy(
         RewardProgramsRegistry,
         voting,
@@ -141,9 +135,7 @@ def reward_programs_registry(
 
 
 @pytest.fixture(scope="module")
-def increase_node_operator_staking_limit(
-    owner, node_operators_registry_stub, IncreaseNodeOperatorStakingLimit
-):
+def increase_node_operator_staking_limit(owner, node_operators_registry_stub, IncreaseNodeOperatorStakingLimit):
     return owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry_stub)
 
 
@@ -151,21 +143,32 @@ def increase_node_operator_staking_limit(
 def add_reward_program(owner, reward_programs_registry, AddRewardProgram):
     return owner.deploy(AddRewardProgram, owner, reward_programs_registry)
 
+
 @pytest.fixture(scope="module")
 def remove_reward_program(owner, reward_programs_registry, RemoveRewardProgram):
     return owner.deploy(RemoveRewardProgram, owner, reward_programs_registry)
 
+
 @pytest.fixture(scope="module")
-def top_up_reward_programs(
-    owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms
-):
-    return owner.deploy(
-        TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo
-    )
+def top_up_reward_programs(owner, finance, ldo, reward_programs_registry, TopUpRewardPrograms):
+    return owner.deploy(TopUpRewardPrograms, owner, reward_programs_registry, finance, ldo)
+
 
 @pytest.fixture(scope="module")
 def top_up_lego_program(owner, finance, lego_program, TopUpLegoProgram):
     return owner.deploy(TopUpLegoProgram, owner, finance, lego_program)
+
+
+@pytest.fixture(scope="module")
+def add_allowed_recipients(owner, allowed_recipients_registry, AddAllowedRecipient):
+    (registry, _, _, _, _, _) = allowed_recipients_registry
+    return owner.deploy(AddAllowedRecipient, owner, registry)
+
+
+@pytest.fixture(scope="module")
+def remove_allowed_recipients(owner, allowed_recipients_registry, RemoveAllowedRecipient):
+    (registry, _, _, _, _, _) = allowed_recipients_registry
+    return owner.deploy(RemoveAllowedRecipient, owner, registry)
 
 
 ############
@@ -203,6 +206,79 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     return owner.deploy(EVMScriptExecutorStub)
 
 
+@pytest.fixture(scope="module")
+def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):
+    set_parameters_role_holder = accounts[8]
+    update_spent_amount_role_holder = accounts[9]
+    limits_checker = owner.deploy(
+        LimitsChecker,
+        [set_parameters_role_holder],
+        [update_spent_amount_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+    return (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder)
+
+
+@pytest.fixture(scope="module")
+def limits_checker_with_private_method_exposed(
+    owner, accounts, LimitsCheckerWithPrivateViewsExposed, bokkyPooBahsDateTimeContract
+):
+    set_parameters_role_holder = accounts[8]
+    update_spent_amount_role_holder = accounts[9]
+    limits_checker = owner.deploy(
+        LimitsCheckerWithPrivateViewsExposed,
+        [set_parameters_role_holder],
+        [update_spent_amount_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+    return (limits_checker, set_parameters_role_holder, update_spent_amount_role_holder)
+
+
+@pytest.fixture(scope="module")
+def allowed_recipients_registry(AllowedRecipientsRegistry, bokkyPooBahsDateTimeContract, owner, accounts):
+    add_recipient_role_holder = accounts[6]
+    remove_recipient_role_holder = accounts[7]
+    set_limit_role_holder = accounts[8]
+    update_spent_role_holder = accounts[9]
+
+    registry = owner.deploy(
+        AllowedRecipientsRegistry,
+        owner,
+        [add_recipient_role_holder],
+        [remove_recipient_role_holder],
+        [set_limit_role_holder],
+        [update_spent_role_holder],
+        bokkyPooBahsDateTimeContract,
+    )
+
+    return (
+        registry,
+        owner,
+        add_recipient_role_holder,
+        remove_recipient_role_holder,
+        set_limit_role_holder,
+        update_spent_role_holder,
+    )
+
+
+@pytest.fixture(scope="module")
+def top_up_allowed_recipients(
+    allowed_recipients_registry,
+    accounts,
+    finance,
+    ldo,
+    easy_track,
+    TopUpAllowedRecipients,
+):
+    (registry, owner, _, _, _, _) = allowed_recipients_registry
+
+    trusted_caller = accounts[4]
+
+    top_up_factory = owner.deploy(TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track)
+
+    return top_up_factory
+
+
 ##########
 # INTERFACES
 ##########
@@ -219,7 +295,10 @@ def steth(lido_contracts):
 
 
 @pytest.fixture(scope="module")
-def node_operators_registry(lido_contracts):
+def node_operators_registry(lido_contracts, agent):
+    for i in range(10):
+        if not lido_contracts.node_operators_registry.getNodeOperatorIsActive(i):
+            lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
 
@@ -251,6 +330,21 @@ def acl(lido_contracts):
 @pytest.fixture(scope="module")
 def calls_script(lido_contracts):
     return lido_contracts.aragon.calls_script
+
+
+@pytest.fixture(scope="module")
+def kernel(lido_contracts):
+    return lido_contracts.aragon.kernel
+
+
+@pytest.fixture(scope="module")
+def staking_router(lido_contracts):
+    return lido_contracts.staking_router
+
+
+@pytest.fixture(scope="module")
+def locator(lido_contracts):
+    return lido_contracts.locator
 
 
 #########################
@@ -285,41 +379,47 @@ def fund_with_ldo(ldo, agent):
 
     return method
 
+
 class Helpers:
     @staticmethod
-    def execute_vote(accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup='0.1 ether'):
+    def execute_vote(accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup="0.1 ether"):
         if dao_voting.getVote(vote_id)[0]:
             for holder_addr in ldo_vote_executors_for_tests:
-                print('voting from acct:', holder_addr)
+                print("voting from acct:", holder_addr)
                 accounts[0].transfer(holder_addr, topup)
                 account = accounts.at(holder_addr, force=True)
-                dao_voting.vote(vote_id, True, False, {'from': account})
+                dao_voting.vote(vote_id, True, False, {"from": account})
 
         # wait for the vote to end
         chain.sleep(3 * 60 * 60 * 24)
         chain.mine()
 
         assert dao_voting.canExecute(vote_id)
-        tx = dao_voting.executeVote(vote_id, {'from': accounts[0]})
+        tx = dao_voting.executeVote(vote_id, {"from": accounts[0]})
 
-        print(f'vote #{vote_id} executed')
+        print(f"vote #{vote_id} executed")
         return tx
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def helpers():
     return Helpers
 
 
-@pytest.fixture(scope='module')
+@pytest.fixture(scope="module")
 def vote_id_from_env() -> Optional[int]:
     _env_name = "OMNIBUS_VOTE_ID"
     if os.getenv(_env_name):
         try:
             vote_id = int(os.getenv(_env_name))
-            print(f'OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}')
+            print(f"OMNIBUS_VOTE_ID env var is set, using existing vote #{vote_id}")
             return vote_id
         except:
             pass
 
     return None
+
+
+@pytest.fixture(scope="module")
+def bokkyPooBahsDateTimeContract():
+    return deployed_date_time.date_time_contract(network=brownie.network.show_active())

@@ -1,0 +1,49 @@
+name: Slither Analysis
+
+on:
+  push:
+    branches:    
+      - '*' 
+  pull_request:
+    branches: [develop, master]
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10.6"
+    
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+    
+      - name: Install poetry requirements
+        run: >
+          curl -sSL https://install.python-poetry.org | python - &&
+          poetry install
+
+      - name: Run slither
+        run: >
+          poetry run slither . --sarif results.sarif --fail-none --compile-force-framework foundry
+
+      - name: Check results.sarif presence
+        id: results
+        if: always()
+        shell: bash
+        run: >
+          test -f results.sarif &&
+          echo 'value=present' >> $GITHUB_OUTPUT ||
+          echo 'value=not' >> $GITHUB_OUTPUT
+
+      - name: Upload SARIF file
+        uses: github/codeql-action/upload-sarif@v2
+        if: ${{ always() && steps.results.outputs.value == 'present' }}
+        with:
+          sarif_file: results.sarif

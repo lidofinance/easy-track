@@ -1,3 +1,4 @@
+from brownie import network
 from scripts.revoke_all_permissions import revoke_permissions
 from scripts.grant_executor_permissions import grant_executor_permissions
 from scripts.deploy import deploy_easy_tracks
@@ -5,7 +6,7 @@ from utils import lido
 
 
 def test_revoke_permissions(accounts):
-    lido_contracts = lido.contracts(network="mainnet")
+    lido_contracts = lido.contracts(network=network.show_active())
     deployer = accounts[0]
     lego_program_vault = accounts[1]
     lego_committee_multisig = accounts[2]
@@ -20,28 +21,24 @@ def test_revoke_permissions(accounts):
         tx_params={"from": deployer},
     )[1]
 
-    lido_permissions = lido.permissions(contracts=lido_contracts)
+    lido_permissions = lido_contracts.permissions
 
     permissions = [
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
         lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
     ]
-    lido_contracts.ldo.transfer(
-        deployer, 10 ** 18, {"from": lido_contracts.aragon.agent}
-    )
+    lido_contracts.ldo.transfer(deployer, 10**18, {"from": lido_contracts.aragon.agent})
     voting_id = grant_executor_permissions(
-        acl=lido_contracts.aragon.acl,
+        lido_contracts=lido_contracts,
         evm_script_executor=evm_script_executor.address,
         permissions_to_grant=permissions,
         tx_params={"from": deployer},
     )
 
-    lido.execute_voting(voting_id)
+    lido_contracts.execute_voting(voting_id)
 
     for permission in permissions:
-        assert lido_contracts.aragon.acl.hasPermission(
-            evm_script_executor, permission.app, permission.role
-        )
+        assert lido_contracts.aragon.acl.hasPermission(evm_script_executor, permission.app, permission.role)
 
     voting_id = revoke_permissions(
         lido_contracts=lido_contracts,
@@ -50,9 +47,7 @@ def test_revoke_permissions(accounts):
         tx_params={"from": deployer},
     )
 
-    lido.execute_voting(voting_id)
+    lido_contracts.execute_voting(voting_id)
 
     for permission in lido_permissions.all():
-        assert not lido_contracts.aragon.acl.hasPermission(
-            evm_script_executor, permission.app, permission.role
-        )
+        assert not lido_contracts.aragon.acl.hasPermission(evm_script_executor, permission.app, permission.role)

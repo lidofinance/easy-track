@@ -5,28 +5,19 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    network_name
+    get_network_name,
 )
-from utils import (
-    deployment,
-    lido,
-    deployed_easy_track,
-    log
-)
+from utils import deployment, lido, deployed_easy_track, log
 
-from brownie import (
-    RewardProgramsRegistry,
-    AddRewardProgram,
-    RemoveRewardProgram,
-    TopUpRewardPrograms
-)
+from brownie import RewardProgramsRegistry, AddRewardProgram, RemoveRewardProgram, TopUpRewardPrograms
+
 
 def main():
-    netname = "goerli" if network_name().split('-')[0] == "goerli" else "mainnet"
+    network_name = get_network_name()
 
-    contracts = lido.contracts(network=netname)
-    et_contracts = deployed_easy_track.contracts(network=netname)
-    deployer = get_deployer_account(get_is_live(), network=netname)
+    contracts = lido.contracts(network=network_name)
+    et_contracts = deployed_easy_track.contracts(network=network_name)
+    deployer = get_deployer_account(get_is_live(), network=network_name)
 
     easy_track = et_contracts.easy_track
     evm_script_executor = et_contracts.evm_script_executor
@@ -37,7 +28,7 @@ def main():
     log.br()
 
     log.nb("Current network", network.show_active(), color_hl=log.color_magenta)
-    log.nb("Using deployed addresses for", netname, color_hl=log.color_yellow)
+    log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
     log.ok("Governance Token", contracts.ldo)
@@ -58,21 +49,18 @@ def main():
         log.nb("Aborting")
         return
 
-    tx_params = { "from": deployer }
-    if (get_is_live()):
+    tx_params = {"from": deployer}
+    if get_is_live():
         tx_params["priority_fee"] = "2 gwei"
         tx_params["max_fee"] = "300 gwei"
 
-    (
-        reward_programs_registry,
-        add_reward_program,
-        remove_reward_program,
-        top_up_reward_programs
-    ) = deploy_reward_programs_contracts(
-        evm_script_executor=evm_script_executor,
-        lido_contracts=contracts,
-        reward_programs_multisig=reward_programs_multisig,
-        tx_params=tx_params,
+    (reward_programs_registry, add_reward_program, remove_reward_program, top_up_reward_programs) = (
+        deploy_reward_programs_contracts(
+            evm_script_executor=evm_script_executor,
+            lido_contracts=contracts,
+            reward_programs_multisig=reward_programs_multisig,
+            tx_params=tx_params,
+        )
     )
 
     log.br()
@@ -85,7 +73,7 @@ def main():
 
     log.br()
 
-    if (get_is_live() and get_env("FORCE_VERIFY", False)):
+    if get_is_live() and get_env("FORCE_VERIFY", False):
         log.ok("Trying to verify contracts...")
         RewardProgramsRegistry.publish_source(reward_programs_registry)
         AddRewardProgram.publish_source(add_reward_program)
@@ -108,7 +96,7 @@ def main():
             remove_reward_program=remove_reward_program,
             top_up_reward_programs=top_up_reward_programs,
             reward_programs_registry=reward_programs_registry,
-            lido_contracts=contracts
+            lido_contracts=contracts,
         )
     elif easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), contracts.aragon.voting):
         log.ok("Easy Track is under DAO Voting control")
@@ -150,9 +138,4 @@ def deploy_reward_programs_contracts(
         tx_params=tx_params,
     )
 
-    return (
-        reward_programs_registry,
-        add_reward_program,
-        remove_reward_program,
-        top_up_reward_programs
-    )
+    return (reward_programs_registry, add_reward_program, remove_reward_program, top_up_reward_programs)
