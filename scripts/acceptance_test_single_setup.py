@@ -30,7 +30,7 @@ deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
     spent_amount=0,
     title="",
     limit=0,
-    tokens=[],
+    tokens=(),
     trusted_caller="",
 )
 
