@@ -4,25 +4,21 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    get_network_name,
 )
 from utils import (
     log,
     lido,
     deployment,
-    deployed_easy_track,
 )
 
-from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
     token="",
-    limit=0, 
+    limit=0,
     period=1,
     spent_amount=0,
-    trusted_caller="",  
-    titles=[
-    ],
+    trusted_caller="",
+    titles=[],
     recipients=[],
 )
 
@@ -68,18 +64,10 @@ def main():
         tx_params,
     )
 
-    allowed_recipients_registry_address = tx.events[
-        "AllowedRecipientsRegistryDeployed"
-    ]["allowedRecipientsRegistry"]
-    top_up_allowed_recipients_address = tx.events["TopUpAllowedRecipientsDeployed"][
-        "topUpAllowedRecipients"
-    ]
-    add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"][
-        "addAllowedRecipient"
-    ]
-    remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"][
-        "removeAllowedRecipient"
-    ]
+    allowed_recipients_registry_address = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+    top_up_allowed_recipients_address = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
+    add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
+    remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
 
     log.ok("Allowed recipients easy track contracts have been deployed...")
     log.nb("Deployed AllowedRecipientsRegistry", allowed_recipients_registry_address)

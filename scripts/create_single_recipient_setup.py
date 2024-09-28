@@ -4,11 +4,9 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    get_network_name,
 )
-from utils import lido, deployed_easy_track, log, deployment
+from utils import lido, log, deployment
 
-from brownie import AllowedRecipientsBuilder
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
     period=0,
@@ -59,9 +57,7 @@ def main():
         tx_params,
     )
 
-    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"][
-        "allowedRecipientsRegistry"
-    ]
+    registryAddress = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     topUpAddress = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
 
     log.ok("Allowed recipients easy track contracts have been deployed...")

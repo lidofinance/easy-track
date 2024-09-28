@@ -8,7 +8,7 @@ from brownie import (
     AddAllowedRecipient,
     RemoveAllowedRecipient,
 )
-from utils import deployment, evm_script, test_helpers
+from utils import deployment, test_helpers
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
@@ -58,26 +58,18 @@ def single_recipient_top_up_only_setup(
     )
 
     allowed_recipients_registry = AllowedRecipientsRegistry.at(
-        deploy_tx.events["AllowedRecipientsRegistryDeployed"][
-            "allowedRecipientsRegistry"
-        ]
+        deploy_tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     )
     top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
         deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
     easy_track.addEVMScriptFactory(
         top_up_allowed_recipients_evm_script_factory,
-        deployment.create_permission(
-            lido_contracts.aragon.finance, "newImmediatePayment"
-        )
-        + deployment.create_permission(
-            allowed_recipients_registry, "updateSpentAmount"
-        )[2:],
+        deployment.create_permission(lido_contracts.aragon.finance, "newImmediatePayment")
+        + deployment.create_permission(allowed_recipients_registry, "updateSpentAmount")[2:],
         {"from": lido_contracts.aragon.voting},
     )
-    return SingleRecipientTopUpOnlySetup(
-        allowed_recipients_registry, top_up_allowed_recipients_evm_script_factory
-    )
+    return SingleRecipientTopUpOnlySetup(allowed_recipients_registry, top_up_allowed_recipients_evm_script_factory)
 
 
 @pytest.fixture(scope="module")
@@ -105,9 +97,7 @@ def full_setup(
     )
 
     allowed_recipients_registry = AllowedRecipientsRegistry.at(
-        deploy_tx.events["AllowedRecipientsRegistryDeployed"][
-            "allowedRecipientsRegistry"
-        ]
+        deploy_tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
     )
 
     add_allowed_recipient_evm_script_factory = AddAllowedRecipient.at(
@@ -134,12 +124,8 @@ def full_setup(
     )
     easy_track.addEVMScriptFactory(
         top_up_allowed_recipients_evm_script_factory,
-        deployment.create_permission(
-            lido_contracts.aragon.finance, "newImmediatePayment"
-        )
-        + deployment.create_permission(
-            allowed_recipients_registry, "updateSpentAmount"
-        )[2:],
+        deployment.create_permission(lido_contracts.aragon.finance, "newImmediatePayment")
+        + deployment.create_permission(allowed_recipients_registry, "updateSpentAmount")[2:],
         {"from": lido_contracts.aragon.voting},
     )
 
@@ -160,16 +146,14 @@ def test_single_recipient_top_up_only_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 50 * 10 ** 18
-    second_top_up_amount = 100 * 10 ** 18
+    first_top_up_amount = 50 * 10**18
+    second_top_up_amount = 100 * 10**18
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
     )
 
-    allowed_recipients_registry = (
-        single_recipient_top_up_only_setup.allowed_recipients_registry
-    )
+    allowed_recipients_registry = single_recipient_top_up_only_setup.allowed_recipients_registry
     top_up_allowed_recipients_evm_script_factory = (
         single_recipient_top_up_only_setup.top_up_allowed_recipients_evm_script_factory
     )
@@ -185,9 +169,7 @@ def test_single_recipient_top_up_only_setup_happy_path(
     # Validate Aragon Agent can remove recipient
     assert allowed_recipients_registry.isRecipientAllowed(allowed_recipient.address)
 
-    allowed_recipients_registry.removeRecipient(
-        allowed_recipient.address, {"from": lido_contracts.aragon.agent}
-    )
+    allowed_recipients_registry.removeRecipient(allowed_recipient.address, {"from": lido_contracts.aragon.agent})
 
     assert not allowed_recipients_registry.isRecipientAllowed(allowed_recipient.address)
 
@@ -218,15 +200,11 @@ def test_single_recipient_top_up_only_setup_happy_path(
             allowed_recipients_registry.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE(),
         )
     ):
-        allowed_recipients_registry.removeRecipient(
-            new_recipient.address, {"from": evm_script_executor}
-        )
+        allowed_recipients_registry.removeRecipient(new_recipient.address, {"from": evm_script_executor})
 
     # wait next period
 
-    chain.sleep(
-        allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH
-    )
+    chain.sleep(allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH)
 
     # Top up newly added recipient
 
@@ -255,17 +233,15 @@ def test_full_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 50 * 10 ** 18
-    second_top_up_amount = 100 * 10 ** 18
+    first_top_up_amount = 50 * 10**18
+    second_top_up_amount = 100 * 10**18
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
     )
 
     # Add allowed recipient by motion
-    add_allowed_recipient_evm_script_factory = (
-        full_setup.add_allowed_recipient_evm_script_factory
-    )
+    add_allowed_recipient_evm_script_factory = full_setup.add_allowed_recipient_evm_script_factory
     add_allowed_recipient_by_motion(
         add_allowed_recipient_evm_script_factory,
         allowed_recipient.address,
@@ -273,9 +249,7 @@ def test_full_setup_happy_path(
     )
 
     # Top up allowed recipient by motion
-    top_up_allowed_recipients_evm_script_factory = (
-        full_setup.top_up_allowed_recipients_evm_script_factory
-    )
+    top_up_allowed_recipients_evm_script_factory = full_setup.top_up_allowed_recipients_evm_script_factory
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         [allowed_recipient.address],
@@ -283,12 +257,8 @@ def test_full_setup_happy_path(
     )
 
     # Remove allowed recipient by motion
-    remove_allowed_recipient_evm_script_factory = (
-        full_setup.remove_allowed_recipient_evm_script_factory
-    )
-    remove_allowed_recipient_by_motion(
-        remove_allowed_recipient_evm_script_factory, allowed_recipient.address
-    )
+    remove_allowed_recipient_evm_script_factory = full_setup.remove_allowed_recipient_evm_script_factory
+    remove_allowed_recipient_by_motion(remove_allowed_recipient_evm_script_factory, allowed_recipient.address)
 
     # Aragon's Agent can add new recipients
     allowed_recipients_registry = full_setup.allowed_recipients_registry
@@ -302,14 +272,10 @@ def test_full_setup_happy_path(
     assert allowed_recipients_registry.isRecipientAllowed(new_recipient.address)
 
     # Wait for next period
-    chain.sleep(
-        allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH
-    )
+    chain.sleep(allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH)
 
     # Top up newly allowed recipient by motion
-    top_up_allowed_recipients_evm_script_factory = (
-        full_setup.top_up_allowed_recipients_evm_script_factory
-    )
+    top_up_allowed_recipients_evm_script_factory = full_setup.top_up_allowed_recipients_evm_script_factory
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         [new_recipient.address],

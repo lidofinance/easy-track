@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import web3, interface
 from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.evm_script import encode_call_script
@@ -27,23 +27,15 @@ def simple_dvt(
     nor_proxy = interface.AragonAppProxy(node_operators_registry)
     module_name = "simple-dvt-registry"
     name = web3.keccak(text=module_name).hex()
-    simple_DVT_tx = kernel.newAppInstance(
-        name, nor_proxy.implementation(), {"from": voting}
-    )
+    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": voting})
 
-    simple_dvt_contract = interface.NodeOperatorsRegistry(
-        simple_DVT_tx.new_contracts[0]
-    )
+    simple_dvt_contract = interface.NodeOperatorsRegistry(simple_DVT_tx.new_contracts[0])
 
     simple_dvt_contract.initialize(locator, "0x01", 0, {"from": voting})
 
-    staking_router.grantRole(
-        web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent}
-    )
+    staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
-    staking_router.addStakingModule(
-        "Simple DVT", simple_dvt_contract, 10_000, 500, 500, {"from": agent}
-    )
+    staking_router.addStakingModule("Simple DVT", simple_dvt_contract, 10_000, 500, 500, {"from": agent})
 
     acl.createPermission(
         agent,
@@ -104,21 +96,16 @@ def test_simple_make_action(
     # Add clusters
     add_node_operators_calldata = (
         "0x"
-        + encode_single(
-            "(uint256,(string,address,address)[])",
+        + encode(
+            ["uint256", "(string,address,address)[]"],
             [
                 0,
-                [
-                    (cluster["name"], cluster["address"], cluster["manager"])
-                    for cluster in clusters
-                ],
+                [(cluster["name"], cluster["address"], cluster["manager"]) for cluster in clusters],
             ],
         ).hex()
     )
 
-    easytrack_executor(
-        commitee_multisig, add_node_operators_factory, add_node_operators_calldata
-    )
+    easytrack_executor(commitee_multisig, add_node_operators_factory, add_node_operators_calldata)
 
     for cluster_index in range(len(clusters)):
         cluster = simple_dvt.getNodeOperator(cluster_index, True)
@@ -180,9 +167,7 @@ def test_simple_make_action(
             ),
             (
                 et_contracts.evm_script_executor.address,
-                et_contracts.evm_script_executor.setEasyTrack.encode_input(
-                    et_contracts.easy_track
-                ),
+                et_contracts.evm_script_executor.setEasyTrack.encode_input(et_contracts.easy_track),
             ),
         ]
     )
@@ -195,28 +180,21 @@ def test_simple_make_action(
 
     lido_contracts.execute_voting(voting_id)
 
-    assert (
-        acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS())
-        == et_contracts.evm_script_executor
-    )
+    assert acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == et_contracts.evm_script_executor
 
-    assert (
-        acl.hasPermission(agent, simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == True
-    )
+    assert acl.hasPermission(agent, simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == True
 
     assert et_contracts.evm_script_executor.easyTrack() == et_contracts.easy_track
 
-
     # Transfer cluster manager
-
 
     # add signing keys to node operator
     no_5_id = 5
     no_5 = simple_dvt.getNodeOperator(no_5_id, False)
     change_node_operator_manager_calldata = (
         "0x"
-        + encode_single(
-            "((uint256,address,address)[])",
+        + encode(
+            ["(uint256,address,address)[]"],
             [[(no_5_id, clusters[no_5_id]["manager"], stranger.address)]],
         ).hex()
     )

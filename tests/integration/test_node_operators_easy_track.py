@@ -2,7 +2,7 @@ import pytest
 import brownie
 
 import constants
-from utils import lido, evm_script
+from utils import evm_script
 
 
 @pytest.mark.skip_coverage
@@ -42,18 +42,11 @@ def test_node_operators_easy_track_happy_path(
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
 
     # deploy IncreaseNodeOperatorStakingLimit EVM script factory
-    increase_node_operator_staking_limit = deployer.deploy(
-        IncreaseNodeOperatorStakingLimit, node_operators_registry
-    )
+    increase_node_operator_staking_limit = deployer.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry)
 
     # add IncreaseNodeOperatorStakingLimit to registry
-    permissions = (
-        node_operators_registry.address
-        + node_operators_registry.setNodeOperatorStakingLimit.signature[2:]
-    )
-    easy_track.addEVMScriptFactory(
-        increase_node_operator_staking_limit, permissions, {"from": deployer}
-    )
+    permissions = node_operators_registry.address + node_operators_registry.setNodeOperatorStakingLimit.signature[2:]
+    easy_track.addEVMScriptFactory(increase_node_operator_staking_limit, permissions, {"from": deployer})
     evm_script_factories = easy_track.getEVMScriptFactories()
     assert len(evm_script_factories) == 1
     assert evm_script_factories[0] == increase_node_operator_staking_limit
@@ -95,15 +88,13 @@ def test_node_operators_easy_track_happy_path(
             (
                 acl.address,
                 acl.grantPermission.encode_input(
-                    voting,
-                    node_operators_registry,
-                    node_operators_registry.MANAGE_NODE_OPERATOR_ROLE()
-                )
+                    voting, node_operators_registry, node_operators_registry.MANAGE_NODE_OPERATOR_ROLE()
+                ),
             ),
             (
                 node_operators_registry.address,
                 add_node_operator_calldata,
-            )
+            ),
         ]
     )
 
@@ -118,9 +109,7 @@ def test_node_operators_easy_track_happy_path(
 
     # validate new node operator id
     new_node_operator_id = node_operators_registry.getNodeOperatorsCount() - 1
-    new_node_operator = node_operators_registry.getNodeOperator(
-        new_node_operator_id, True
-    )
+    new_node_operator = node_operators_registry.getNodeOperator(new_node_operator_id, True)
     assert new_node_operator[0]  # active
     assert new_node_operator[1] == node_operator["name"]  # name
     assert new_node_operator[2] == node_operator["address"]  # rewardAddress
@@ -149,16 +138,14 @@ def test_node_operators_easy_track_happy_path(
     )
 
     # validate that signing keys have been added
-    new_node_operator = node_operators_registry.getNodeOperator(
-        new_node_operator_id, True
-    )
+    new_node_operator = node_operators_registry.getNodeOperator(new_node_operator_id, True)
     assert new_node_operator[5] == len(signing_keys["pubkeys"])  # totalSigningKeys
     assert new_node_operator[6] == 0  # usedSigningKeys
 
     # create new motion to increase staking limit
     tx = easy_track.createMotion(
         increase_node_operator_staking_limit,
-        evm_script.encode_calldata("(uint256,uint256)", [new_node_operator_id, 3]),
+        evm_script.encode_calldata(["uint256", "uint256"], [new_node_operator_id, 3]),
         {"from": node_operator["address"]},
     )
     motions = easy_track.getMotions()
@@ -175,7 +162,5 @@ def test_node_operators_easy_track_happy_path(
     # validate that motion was executed correctly
     motions = easy_track.getMotions()
     assert len(motions) == 0
-    new_node_operator = node_operators_registry.getNodeOperator(
-        new_node_operator_id, True
-    )
+    new_node_operator = node_operators_registry.getNodeOperator(new_node_operator_id, True)
     assert new_node_operator[3] == 3  # stakingLimit

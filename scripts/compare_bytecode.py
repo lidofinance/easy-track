@@ -10,11 +10,7 @@ format_line_length = max(line_length, 40)
 def compare(orig_address, comparing_address):
     orig_code = web3.eth.get_code(orig_address).hex()[2:]
     comparing_code = web3.eth.get_code(comparing_address).hex()[2:]
-    print(
-        "          {0:<{2}}    {1:<{2}}\n".format(
-            orig_address, comparing_address, format_line_length
-        )
-    )
+    print("          {0:<{2}}    {1:<{2}}\n".format(orig_address, comparing_address, format_line_length))
 
     for i in range(max(len(orig_code), len(comparing_code)) // line_length + 1):
         code_line = orig_code[i * line_length : (i + 1) * line_length]
@@ -22,9 +18,7 @@ def compare(orig_address, comparing_address):
         is_equal = code_line == comparing_code_line
         if is_equal:
             print(
-                "{0:>5}     {1:<{4}} {2:<4} {3:<{4}}".format(
-                    i, code_line, "", comparing_code_line, format_line_length
-                )
+                "{0:>5}     {1:<{4}} {2:<4} {3:<{4}}".format(i, code_line, "", comparing_code_line, format_line_length)
             )
         else:
             color_flag = False
@@ -49,9 +43,7 @@ def compare(orig_address, comparing_address):
             log_comparing_code = log_comparing_code + log_color_default
 
             print(
-                "{0:>5}     {1:<{4}} {2:<4} {3:<{4}}".format(
-                    i, log_code, "neq", log_comparing_code, format_line_length
-                )
+                "{0:>5}     {1:<{4}} {2:<4} {3:<{4}}".format(i, log_code, "neq", log_comparing_code, format_line_length)
             )
     print(
         f"\n\nBytecode at addresses {orig_address} and {comparing_address} is {'NOT' if orig_code != comparing_code else ''} equal\n\n"

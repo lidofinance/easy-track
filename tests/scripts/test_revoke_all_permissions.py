@@ -27,9 +27,7 @@ def test_revoke_permissions(accounts):
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
         lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
     ]
-    lido_contracts.ldo.transfer(
-        deployer, 10 ** 18, {"from": lido_contracts.aragon.agent}
-    )
+    lido_contracts.ldo.transfer(deployer, 10**18, {"from": lido_contracts.aragon.agent})
     voting_id = grant_executor_permissions(
         lido_contracts=lido_contracts,
         evm_script_executor=evm_script_executor.address,
@@ -40,9 +38,7 @@ def test_revoke_permissions(accounts):
     lido_contracts.execute_voting(voting_id)
 
     for permission in permissions:
-        assert lido_contracts.aragon.acl.hasPermission(
-            evm_script_executor, permission.app, permission.role
-        )
+        assert lido_contracts.aragon.acl.hasPermission(evm_script_executor, permission.app, permission.role)
 
     voting_id = revoke_permissions(
         lido_contracts=lido_contracts,
@@ -54,6 +50,4 @@ def test_revoke_permissions(accounts):
     lido_contracts.execute_voting(voting_id)
 
     for permission in lido_permissions.all():
-        assert not lido_contracts.aragon.acl.hasPermission(
-            evm_script_executor, permission.app, permission.role
-        )
+        assert not lido_contracts.aragon.acl.hasPermission(evm_script_executor, permission.app, permission.role)

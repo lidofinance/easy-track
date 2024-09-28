@@ -2,7 +2,7 @@ import pytest
 import brownie
 
 import constants
-from utils import evm_script, lido, config
+from utils import evm_script
 
 
 @pytest.mark.skip_coverage
@@ -36,9 +36,7 @@ def test_lego_easy_track_happy_path(
     )
 
     # deploy evm script executor
-    evm_script_executor = deployer.deploy(
-        EVMScriptExecutor, lido_contracts.aragon.calls_script, easy_track
-    )
+    evm_script_executor = deployer.deploy(EVMScriptExecutor, lido_contracts.aragon.calls_script, easy_track)
     evm_script_executor.transferOwnership(voting, {"from": deployer})
     assert evm_script_executor.owner() == voting
 
@@ -46,17 +44,11 @@ def test_lego_easy_track_happy_path(
     easy_track.setEVMScriptExecutor(evm_script_executor, {"from": deployer})
 
     # deploy TopUpLegoProgram EVM script factory
-    top_up_lego_program = deployer.deploy(
-        TopUpLegoProgram, trusted_address, finance, lego_program
-    )
+    top_up_lego_program = deployer.deploy(TopUpLegoProgram, trusted_address, finance, lego_program)
 
     # add TopUpLegoProgram evm script to registry
-    new_immediate_payment_permission = (
-        finance.address + finance.newImmediatePayment.signature[2:]
-    )
-    easy_track.addEVMScriptFactory(
-        top_up_lego_program, new_immediate_payment_permission, {"from": deployer}
-    )
+    new_immediate_payment_permission = finance.address + finance.newImmediatePayment.signature[2:]
+    easy_track.addEVMScriptFactory(top_up_lego_program, new_immediate_payment_permission, {"from": deployer})
     evm_script_factories = easy_track.getEVMScriptFactories()
     assert len(evm_script_factories) == 1
     assert evm_script_factories[0] == top_up_lego_program
@@ -83,12 +75,12 @@ def test_lego_easy_track_happy_path(
     lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
     # create new motion to make transfers to lego programs
-    ldo_amount, steth_amount, eth_amount = 10 ** 18, 2 * 10 ** 18, 3 * 10 ** 18
+    ldo_amount, steth_amount, eth_amount = 10**18, 2 * 10**18, 3 * 10**18
 
     tx = easy_track.createMotion(
         top_up_lego_program,
         evm_script.encode_calldata(
-            "(address[],uint256[])",
+            ["address[]", "uint256[]"],
             [
                 [ldo.address, steth.address, brownie.ZERO_ADDRESS],
                 [ldo_amount, steth_amount, eth_amount],
@@ -110,9 +102,7 @@ def test_lego_easy_track_happy_path(
     steth.approve(agent, "2.1 ether", {"from": deployer})
     agent.deposit(steth, steth_amount, {"from": deployer})
 
-    agent.deposit(
-        brownie.ZERO_ADDRESS, eth_amount, {"from": deployer, "value": eth_amount}
-    )
+    agent.deposit(brownie.ZERO_ADDRESS, eth_amount, {"from": deployer, "value": eth_amount})
 
     # validate agent app has enough tokens
     assert agent.balance(ldo) >= ldo_amount

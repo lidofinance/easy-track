@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import reverts, IncreaseVettedValidatorsLimit
 
 from utils.permission_parameters import Op, Param, encode_permission_params
@@ -20,36 +20,31 @@ signing_keys = {
 }
 
 
+def create_calldata(data):
+    return (
+        "0x"
+        + encode(
+            ["(uint256,uint256)"],
+            [data],
+        ).hex()
+    )
+
+
 @pytest.fixture(scope="module")
 def increase_vetted_validators_limit_factory(owner, node_operators_registry):
-    return IncreaseVettedValidatorsLimit.deploy(
-        node_operators_registry, {"from": owner}
-    )
+    return IncreaseVettedValidatorsLimit.deploy(node_operators_registry, {"from": owner})
 
 
 def test_deploy(node_operators_registry, increase_vetted_validators_limit_factory):
     "Must deploy contract with correct data"
-    assert (
-        increase_vetted_validators_limit_factory.nodeOperatorsRegistry()
-        == node_operators_registry
-    )
+    assert increase_vetted_validators_limit_factory.nodeOperatorsRegistry() == node_operators_registry
 
 
-def test_create_evm_script_called_by_stranger(
-    stranger, increase_vetted_validators_limit_factory
-):
+def test_create_evm_script_called_by_stranger(stranger, increase_vetted_validators_limit_factory):
     "Must revert with message 'CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER' if creator isn't node operators reward address or manager"
-    EVM_SCRIPT_CALL_DATA = (
-        "0x"
-        + encode_single(
-            "((uint256,uint256))",
-            [(0, 1)],
-        ).hex()
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata((0, 1))
     with reverts("CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER"):
-        increase_vetted_validators_limit_factory.createEVMScript(
-            stranger, EVM_SCRIPT_CALL_DATA
-        )
+        increase_vetted_validators_limit_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 
 def test_create_evm_script_called_when_operator_disabled(
@@ -60,43 +55,28 @@ def test_create_evm_script_called_when_operator_disabled(
     node_operators_registry.deactivateNodeOperator(0, {"from": agent})
     no = node_operators_registry.getNodeOperator(0, True)
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x"
-        + encode_single(
-            "((uint256,uint256))",
-            [(0, 1)],
-        ).hex()
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata((0, 1))
+
     with reverts("NODE_OPERATOR_DISABLED"):
-        increase_vetted_validators_limit_factory.createEVMScript(
-            no["rewardAddress"], EVM_SCRIPT_CALL_DATA
-        )
+        increase_vetted_validators_limit_factory.createEVMScript(no["rewardAddress"], EVM_SCRIPT_CALLDATA)
 
 
-def test_revert_on_not_enough_signing_keys(
-    increase_vetted_validators_limit_factory, node_operators_registry
-):
+def test_revert_on_not_enough_signing_keys(increase_vetted_validators_limit_factory, node_operators_registry):
     "Must revert with message 'NOT_ENOUGH_SIGNING_KEYS' when node operator has not enough keys"
     no = node_operators_registry.getNodeOperator(0, True)
 
     with reverts("NOT_ENOUGH_SIGNING_KEYS"):
-        CALL_DATA = "0x" + encode_single("((uint256,uint256))", [(0, 100000)]).hex()
-        increase_vetted_validators_limit_factory.createEVMScript(
-            no["rewardAddress"], CALL_DATA
-        )
+        CALLDATA = create_calldata((0, 100000))
+        increase_vetted_validators_limit_factory.createEVMScript(no["rewardAddress"], CALLDATA)
 
 
-def test_revert_on_new_value_is_too_low(
-    increase_vetted_validators_limit_factory, node_operators_registry
-):
+def test_revert_on_new_value_is_too_low(increase_vetted_validators_limit_factory, node_operators_registry):
     "Must revert with message 'STAKING_LIMIT_TOO_LOW' when new value is too low"
     no = node_operators_registry.getNodeOperator(0, True)
 
     with reverts("STAKING_LIMIT_TOO_LOW"):
-        CALL_DATA = "0x" + encode_single("((uint256,uint256))", [(0, 0)]).hex()
-        increase_vetted_validators_limit_factory.createEVMScript(
-            no["rewardAddress"], CALL_DATA
-        )
+        CALLDATA = create_calldata((0, 0))
+        increase_vetted_validators_limit_factory.createEVMScript(no["rewardAddress"], CALLDATA)
 
 
 def test_create_evm_script_from_reward_address(
@@ -115,28 +95,20 @@ def test_create_evm_script_from_reward_address(
     )
     input_params = (0, no["totalVettedValidators"] + len(signing_keys["pubkeys"]))
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,uint256))", [input_params]).hex()
-    )
-    evm_script = increase_vetted_validators_limit_factory.createEVMScript(
-        no["rewardAddress"], EVM_SCRIPT_CALL_DATA
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    evm_script = increase_vetted_validators_limit_factory.createEVMScript(no["rewardAddress"], EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
         [
             (
                 node_operators_registry.address,
-                node_operators_registry.setNodeOperatorStakingLimit.encode_input(
-                    input_params[0], input_params[1]
-                ),
+                node_operators_registry.setNodeOperatorStakingLimit.encode_input(input_params[0], input_params[1]),
             )
         ]
     )
     assert evm_script == expected_evm_script
 
 
-def test_create_evm_script_from_manager(
-    increase_vetted_validators_limit_factory, node_operators_registry, acl, voting
-):
+def test_create_evm_script_from_manager(increase_vetted_validators_limit_factory, node_operators_registry, acl, voting):
     "Must create correct EVMScript if all requirements are met"
     no_manager = "0x1f9090aae28b8a3dceadf281b0f12828e676c327"
 
@@ -159,37 +131,22 @@ def test_create_evm_script_from_manager(
     )
     input_params = (0, no["totalVettedValidators"] + len(signing_keys["pubkeys"]))
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,uint256))", [input_params]).hex()
-    )
-    evm_script = increase_vetted_validators_limit_factory.createEVMScript(
-        no_manager, EVM_SCRIPT_CALL_DATA
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    evm_script = increase_vetted_validators_limit_factory.createEVMScript(no_manager, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
         [
             (
                 node_operators_registry.address,
-                node_operators_registry.setNodeOperatorStakingLimit.encode_input(
-                    input_params[0], input_params[1]
-                ),
+                node_operators_registry.setNodeOperatorStakingLimit.encode_input(input_params[0], input_params[1]),
             )
         ]
     )
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(
-    node_operators_registry, increase_vetted_validators_limit_factory
-):
+def test_decode_evm_script_call_data(node_operators_registry, increase_vetted_validators_limit_factory):
     "Must decode EVMScript call data correctly"
     input_params = (0, 1)
 
-    EVM_SCRIPT_CALL_DATA = (
-        "0x" + encode_single("((uint256,uint256))", [input_params]).hex()
-    )
-    assert (
-        increase_vetted_validators_limit_factory.decodeEVMScriptCallData(
-            EVM_SCRIPT_CALL_DATA
-        )
-        == input_params
-    )
+    EVM_SCRIPT_CALLDATA = create_calldata(input_params)
+    assert increase_vetted_validators_limit_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params

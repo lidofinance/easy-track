@@ -1,17 +1,13 @@
 import os
-from typing import Optional, NamedTuple, Any
+from typing import Optional
 
 import pytest
 import brownie
-from brownie import chain 
+from brownie import chain
 
 import constants
-from utils.evm_script import encode_call_script, encode_calldata
 from utils.lido import contracts
-from utils.config import get_network_name
-from utils import test_helpers, deployed_date_time
-
-brownie.web3.enable_strict_bytes_type_checking()
+from utils import deployed_date_time
 
 ####################################
 # Brownie Blockchain State Snapshots
@@ -23,13 +19,11 @@ brownie.web3.enable_strict_bytes_type_checking()
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
     """Snapshot ganache at start of module."""
-    pass
 
 
 @pytest.fixture(autouse=True)
 def isolation(fn_isolation):
     """Snapshot ganache before every test function call."""
-    pass
 
 
 ##############
@@ -141,9 +135,7 @@ def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProg
 
 
 @pytest.fixture(scope="module")
-def increase_node_operator_staking_limit(
-    owner, node_operators_registry_stub, IncreaseNodeOperatorStakingLimit
-):
+def increase_node_operator_staking_limit(owner, node_operators_registry_stub, IncreaseNodeOperatorStakingLimit):
     return owner.deploy(IncreaseNodeOperatorStakingLimit, node_operators_registry_stub)
 
 
@@ -243,9 +235,7 @@ def limits_checker_with_private_method_exposed(
 
 
 @pytest.fixture(scope="module")
-def allowed_recipients_registry(
-    AllowedRecipientsRegistry, bokkyPooBahsDateTimeContract, owner, accounts
-):
+def allowed_recipients_registry(AllowedRecipientsRegistry, bokkyPooBahsDateTimeContract, owner, accounts):
     add_recipient_role_holder = accounts[6]
     remove_recipient_role_holder = accounts[7]
     set_limit_role_holder = accounts[8]
@@ -284,9 +274,7 @@ def top_up_allowed_recipients(
 
     trusted_caller = accounts[4]
 
-    top_up_factory = owner.deploy(
-        TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track
-    )
+    top_up_factory = owner.deploy(TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track)
 
     return top_up_factory
 
@@ -307,7 +295,10 @@ def steth(lido_contracts):
 
 
 @pytest.fixture(scope="module")
-def node_operators_registry(lido_contracts):
+def node_operators_registry(lido_contracts, agent):
+    for i in range(10):
+        if not lido_contracts.node_operators_registry.getNodeOperatorIsActive(i):
+            lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
 
@@ -391,9 +382,7 @@ def fund_with_ldo(ldo, agent):
 
 class Helpers:
     @staticmethod
-    def execute_vote(
-        accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup="0.1 ether"
-    ):
+    def execute_vote(accounts, vote_id, dao_voting, ldo_vote_executors_for_tests, topup="0.1 ether"):
         if dao_voting.getVote(vote_id)[0]:
             for holder_addr in ldo_vote_executors_for_tests:
                 print("voting from acct:", holder_addr)

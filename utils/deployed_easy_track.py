@@ -32,6 +32,25 @@ def addresses(network="mainnet"):
                 reward_programs_registry="0xfCaD241D9D2A2766979A2de208E8210eDf7b7D4F",
             ),
         )
+    if network == "holesky" or network == "holesky-fork":
+        return EasyTrackSetup(
+            easy_track="0x1763b9ED3586B08AE796c7787811a2E1bc16163a",
+            evm_script_executor="0x2819B65021E13CEEB9AC33E77DB32c7e64e7520D",
+            increase_node_operator_staking_limit=None,
+            top_up_lego_program=None,
+            reward_programs=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+            referral_partners=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+        )
     if network == "goerli" or network == "goerli-fork":
         return EasyTrackSetup(
             easy_track="0xAf072C8D368E4DD4A9d4fF6A76693887d6ae92Af",
@@ -48,30 +67,9 @@ def addresses(network="mainnet"):
                 remove_reward_program="0x2A0c343087c6cFB721fFa20608A6eD0473C71275",
                 top_up_reward_programs="0xB1E898faC74c377bEF16712Ba1CD4738606c19Ee",
                 reward_programs_registry="0x4CB0c9987fd670069e4b24c653981E86b261A2ca",
-            )
-        )
-    if network == "holesky" or network == "holesky-fork":
-        return EasyTrackSetup(
-            easy_track="0x1763b9ED3586B08AE796c7787811a2E1bc16163a",
-            evm_script_executor="0x2819B65021E13CEEB9AC33E77DB32c7e64e7520D",
-            increase_node_operator_staking_limit="0x18Ff3bD97739bf910cDCDb8d138976c6afDB4449",
-            top_up_lego_program=None,
-            reward_programs=RewardPrograms(
-                add_reward_program=None,
-                remove_reward_program=None,
-                top_up_reward_programs=None,
-                reward_programs_registry=None,
             ),
-            referral_partners=RewardPrograms(
-                add_reward_program=None,
-                remove_reward_program=None,
-                top_up_reward_programs=None,
-                reward_programs_registry=None,
-            )
         )
-    raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, goerli, holesky."""
-    )
+    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, goerli, holesky.""")
 
 
 def contract_or_none(contract: Contract, addr: Optional[str]) -> Optional[Contract]:
@@ -84,20 +82,14 @@ def contracts(network="mainnet"):
     network_addresses = addresses(network)
     return EasyTrackSetup(
         easy_track=contract_or_none(EasyTrack, network_addresses.easy_track),
-        evm_script_executor=contract_or_none(
-            EVMScriptExecutor, network_addresses.evm_script_executor
-        ),
+        evm_script_executor=contract_or_none(EVMScriptExecutor, network_addresses.evm_script_executor),
         increase_node_operator_staking_limit=contract_or_none(
             IncreaseNodeOperatorStakingLimit,
             network_addresses.increase_node_operator_staking_limit,
         ),
-        top_up_lego_program=contract_or_none(
-            TopUpLegoProgram, network_addresses.top_up_lego_program
-        ),
+        top_up_lego_program=contract_or_none(TopUpLegoProgram, network_addresses.top_up_lego_program),
         reward_programs=RewardPrograms(
-            add_reward_program=contract_or_none(
-                AddRewardProgram, network_addresses.reward_programs.add_reward_program
-            ),
+            add_reward_program=contract_or_none(AddRewardProgram, network_addresses.reward_programs.add_reward_program),
             remove_reward_program=contract_or_none(
                 RemoveRewardProgram,
                 network_addresses.reward_programs.remove_reward_program,

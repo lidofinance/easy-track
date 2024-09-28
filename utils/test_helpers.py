@@ -10,12 +10,8 @@ UNPAUSE_ROLE = "0x265b220c5a8891efdd9e1b1b7fa72f257bd5169f8d87e319cf3dad6ff52b94
 DEFAULT_ADMIN_ROLE = "0x0000000000000000000000000000000000000000000000000000000000000000"
 SET_PARAMETERS_ROLE = "0x260b83d52a26066d8e9db550fa70395df5f3f064b50ff9d8a94267d9f1fe1967"
 UPDATE_SPENT_AMOUNT_ROLE = "0xc5260260446719a726d11a6faece21d19daa48b4cbcca118345832d4cb71df99"
-ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = (
-    "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
-)
-REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = (
-    "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
-)
+ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
+REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
 PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
 
 
@@ -59,11 +55,7 @@ def get_date_in_next_period(any_point_in_this_month: datetime, period_duration_m
 
     next_day = min(any_point_in_this_month.day, 28)
 
-    return any_point_in_this_month.replace(
-        year=next_year,
-        month=next_month,
-        day=next_day
-    )
+    return any_point_in_this_month.replace(year=next_year, month=next_month, day=next_day)
 
 
 def get_next_month_start_timestamp(any_point_in_this_month: datetime, num_months: int):
@@ -168,9 +160,7 @@ def calc_period_range(period_duration: int, now_timestamp: int):
     )
 
 
-def advance_chain_time_to_n_seconds_before_current_period_end(
-    period_duration: int, seconds_before: int
-):
+def advance_chain_time_to_n_seconds_before_current_period_end(period_duration: int, seconds_before: int):
     chain_now = chain.time()
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
     seconds_till_period_end = first_second_of_next_period - 1 - chain_now

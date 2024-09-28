@@ -7,6 +7,7 @@ See https://hack.aragon.org/docs/aragonos-ref#parameter-interpretation for detai
 NB! Constants MUST be equal to ones in deployed Lido ACL contract
 https://etherscan.io/address/0x9f3b9198911054b122fdb865f8a5ac516201c339#code
 """
+
 from dataclasses import dataclass
 from enum import Enum, IntEnum
 from typing import Union, List

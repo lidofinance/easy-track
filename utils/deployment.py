@@ -14,6 +14,7 @@ from brownie import (
     AllowedRecipientsRegistry,
 )
 
+
 @dataclass
 class AllowedRecipientsDeployConfig:
     token: str
@@ -22,14 +23,17 @@ class AllowedRecipientsDeployConfig:
     spent_amount: int
     trusted_caller: str
 
+
 @dataclass
 class AllowedRecipientsSingleRecipientSetupDeployConfig(AllowedRecipientsDeployConfig):
     title: str
+
 
 @dataclass
 class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
     titles: [str]
     recipients: [str]
+
 
 def deploy_easy_track(
     admin,
@@ -49,12 +53,8 @@ def deploy_easy_track(
     )
 
 
-def deploy_evm_script_executor(
-    aragon_voting, easy_track, aragon_calls_script, tx_params
-):
-    evm_script_executor = EVMScriptExecutor.deploy(
-        aragon_calls_script, easy_track, tx_params
-    )
+def deploy_evm_script_executor(aragon_voting, easy_track, aragon_calls_script, tx_params):
+    evm_script_executor = EVMScriptExecutor.deploy(aragon_calls_script, easy_track, tx_params)
     evm_script_executor.transferOwnership(aragon_voting, tx_params)
     easy_track.setEVMScriptExecutor(evm_script_executor, tx_params)
     return evm_script_executor
@@ -66,9 +66,7 @@ def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
     )
 
 
-def deploy_allowed_recipients_registry(
-    voting, evm_script_executor, date_time_contract, tx_params
-):
+def deploy_allowed_recipients_registry(voting, evm_script_executor, date_time_contract, tx_params):
     return AllowedRecipientsRegistry.deploy(
         voting,
         [voting, evm_script_executor],
@@ -84,28 +82,16 @@ def deploy_increase_node_operator_staking_limit(node_operators_registry, tx_para
     return IncreaseNodeOperatorStakingLimit.deploy(node_operators_registry, tx_params)
 
 
-def deploy_top_up_lego_program(
-    finance, lego_program, lego_committee_multisig, tx_params
-):
-    return TopUpLegoProgram.deploy(
-        lego_committee_multisig, finance, lego_program, tx_params
-    )
+def deploy_top_up_lego_program(finance, lego_program, lego_committee_multisig, tx_params):
+    return TopUpLegoProgram.deploy(lego_committee_multisig, finance, lego_program, tx_params)
 
 
-def deploy_add_reward_program(
-    reward_programs_registry, reward_programs_multisig, tx_params
-):
-    return AddRewardProgram.deploy(
-        reward_programs_multisig, reward_programs_registry, tx_params
-    )
+def deploy_add_reward_program(reward_programs_registry, reward_programs_multisig, tx_params):
+    return AddRewardProgram.deploy(reward_programs_multisig, reward_programs_registry, tx_params)
 
 
-def deploy_remove_reward_program(
-    reward_programs_registry, reward_programs_multisig, tx_params
-):
-    return RemoveRewardProgram.deploy(
-        reward_programs_multisig, reward_programs_registry, tx_params
-    )
+def deploy_remove_reward_program(reward_programs_registry, reward_programs_multisig, tx_params):
+    return RemoveRewardProgram.deploy(reward_programs_multisig, reward_programs_registry, tx_params)
 
 
 def deploy_top_up_reward_programs(
@@ -124,20 +110,12 @@ def deploy_top_up_reward_programs(
     )
 
 
-def deploy_add_allowed_recipient(
-    allowed_recipients_registry, committee_multisig, tx_params
-):
-    return AddAllowedRecipient.deploy(
-        committee_multisig, allowed_recipients_registry, tx_params
-    )
+def deploy_add_allowed_recipient(allowed_recipients_registry, committee_multisig, tx_params):
+    return AddAllowedRecipient.deploy(committee_multisig, allowed_recipients_registry, tx_params)
 
 
-def deploy_remove_allowed_recipient(
-    allowed_recipients_registry, committee_multisig, tx_params
-):
-    return RemoveAllowedRecipient.deploy(
-        committee_multisig, allowed_recipients_registry, tx_params
-    )
+def deploy_remove_allowed_recipient(allowed_recipients_registry, committee_multisig, tx_params):
+    return RemoveAllowedRecipient.deploy(committee_multisig, allowed_recipients_registry, tx_params)
 
 
 def deploy_top_up_allowed_recipients(
@@ -178,9 +156,7 @@ def add_evm_script_factories(
 ):
     easy_track.addEVMScriptFactory(
         increase_node_operator_staking_limit,
-        create_permission(
-            lido_contracts.node_operators_registry, "setNodeOperatorStakingLimit"
-        ),
+        create_permission(lido_contracts.node_operators_registry, "setNodeOperatorStakingLimit"),
         tx_params,
     )
     easy_track.addEVMScriptFactory(
@@ -236,9 +212,7 @@ def attach_evm_script_allowed_recipients_factories(
 ):
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
-    update_limit_permission = create_permission(
-        allowed_recipients_registry, "updateSpentAmount"
-    )
+    update_limit_permission = create_permission(allowed_recipients_registry, "updateSpentAmount")
     permissions = new_immediate_payment_permission + update_limit_permission[2:]
 
     easy_track.addEVMScriptFactory(

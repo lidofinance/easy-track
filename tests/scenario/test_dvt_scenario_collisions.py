@@ -1,7 +1,6 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import reverts, web3, interface
-from utils.evm_script import encode_call_script
 
 table = [
     {
@@ -45,36 +44,29 @@ address2 = table[no2]["address"]
 address3 = table[no3]["address"]
 address4 = table[no4]["address"]
 
+
 @pytest.fixture(scope="module")
 def simple_dvt(
-        node_operators_registry,
-        kernel,
-        voting,
-        locator,
-        staking_router,
-        agent,
-        acl,
+    node_operators_registry,
+    kernel,
+    voting,
+    locator,
+    staking_router,
+    agent,
+    acl,
 ):
     nor_proxy = interface.AragonAppProxy(node_operators_registry)
     module_name = "simple-dvt-registry"
     name = web3.keccak(text=module_name).hex()
-    simple_DVT_tx = kernel.newAppInstance(
-        name, nor_proxy.implementation(), {"from": voting}
-    )
+    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": voting})
 
-    simple_dvt_contract = interface.NodeOperatorsRegistry(
-        simple_DVT_tx.new_contracts[0]
-    )
+    simple_dvt_contract = interface.NodeOperatorsRegistry(simple_DVT_tx.new_contracts[0])
 
     simple_dvt_contract.initialize(locator, "0x01", 0, {"from": voting})
 
-    staking_router.grantRole(
-        web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent}
-    )
+    staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
-    staking_router.addStakingModule(
-        "Simple DVT", simple_dvt_contract, 10_000, 500, 500, {"from": agent}
-    )
+    staking_router.addStakingModule("Simple DVT", simple_dvt_contract, 10_000, 500, 500, {"from": agent})
 
     acl.createPermission(
         agent,
@@ -90,106 +82,69 @@ def simple_dvt(
 def prepare_add_node_operator_calldata(count, name, address, manager):
     return (
         "0x"
-        + encode_single(
-            "(uint256,(string,address,address)[])",
+        + encode(
+            ["uint256", "(string,address,address)[]"],
             [count, [(name, address, manager)]],
         ).hex()
     )
 
 
 def prepare_deactivate_node_operator_calldata(operator, manager):
-    return (
-        "0x"
-        + encode_single(
-            "((uint256,address)[])",
-            [[(operator, manager)]]
-        ).hex()
-    )
+    return "0x" + encode(["(uint256,address)[]"], [[(operator, manager)]]).hex()
 
 
 def prepare_activate_node_operator_calldata(operator, manager):
-    return (
-        "0x"
-        + encode_single(
-            "((uint256,address)[])",
-            [[(operator, manager)]]
-        ).hex()
-    )
+    return "0x" + encode(["(uint256,address)[]"], [[(operator, manager)]]).hex()
 
 
 def prepare_change_node_operator_manager_calldata(operator, old_manager, new_manager):
     return (
         "0x"
-        + encode_single(
-            "((uint256,address,address)[])",
+        + encode(
+            ["(uint256,address,address)[]"],
             [[(operator, old_manager, new_manager)]],
         ).hex()
     )
 
 
 def prepare_set_node_operator_name_calldata(operator, name):
-    return (
-        "0x"
-        + encode_single(
-            "((uint256,string)[])",
-            [[(operator, name)]]
-        ).hex()
-    )
+    return "0x" + encode(["(uint256,string)[]"], [[(operator, name)]]).hex()
 
 
 def prepare_set_node_operator_reward_address_calldata(operator, address):
-    return (
-        "0x"
-        + encode_single(
-            "((uint256,address)[])",
-            [[(operator, address)]]
-        ).hex()
-    )
+    return "0x" + encode(["(uint256,address)[]"], [[(operator, address)]]).hex()
 
 
-def prepare_update_target_validator_limits_calldata(id_operator, is_active,  target_limits):
-    return (
-        "0x"
-        + encode_single(
-            "((uint256,bool,uint256)[])",
-            [[(id_operator, is_active, target_limits)]]
-        ).hex()
-    )
+def prepare_update_target_validator_limits_calldata(id_operator, is_active, target_limits):
+    return "0x" + encode(["(uint256,bool,uint256)[]"], [[(id_operator, is_active, target_limits)]]).hex()
 
 
 def prepare_set_vetted_validators_limit_calldata(id_operator, vetted_limit):
-    return (
-        "0x"
-        + encode_single("((uint256,uint256)[])",
-            [[(id_operator, vetted_limit)]]).hex()
-    )
+    return "0x" + encode(["(uint256,uint256)[]"], [[(id_operator, vetted_limit)]]).hex()
 
 
 def prepare_increase_vetted_validators_limit_calldata(id_operator, vetted_limit):
-    return (
-        "0x"
-        + encode_single("((uint256,uint256))",
-            [(id_operator, vetted_limit)]).hex()
-    )
+    return "0x" + encode(["(uint256,uint256)"], [(id_operator, vetted_limit)]).hex()
+
 
 def test_simple_dvt_scenario(
-        simple_dvt,
-        voting,
-        commitee_multisig,
-        et_contracts,
-        acl,
-        agent,
-        easytrack_executor,
-        easytrack_pair_executor_with_collision,
-        add_node_operators_factory,
-        activate_node_operators_factory,
-        deactivate_node_operators_factory,
-        set_node_operator_name_factory,
-        set_node_operator_reward_address_factory,
-        set_vetted_validators_limit_factory,
-        change_node_operator_manager_factory,
-        update_tareget_validator_limits_factory,
-        increase_vetted_validators_limit_factory,
+    simple_dvt,
+    voting,
+    commitee_multisig,
+    et_contracts,
+    acl,
+    agent,
+    easytrack_executor,
+    easytrack_pair_executor_with_collision,
+    add_node_operators_factory,
+    activate_node_operators_factory,
+    deactivate_node_operators_factory,
+    set_node_operator_name_factory,
+    set_node_operator_reward_address_factory,
+    set_vetted_validators_limit_factory,
+    change_node_operator_manager_factory,
+    update_tareget_validator_limits_factory,
+    increase_vetted_validators_limit_factory,
 ):
     # Grant roles
     acl.grantPermission(
@@ -230,7 +185,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, add_node_operators_factory, add_node_operator_calldata),
             (commitee_multisig, add_node_operators_factory, add_node_operator_calldata),
-        ]
+        ],
     )
 
     # -) deactivate no1
@@ -253,7 +208,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, activate_node_operators_factory, activate_node_operators_calldata),
             (commitee_multisig, add_node_operators_factory, add_node_operator_calldata),
-        ]
+        ],
     )
 
     # 3) ChangeNodeOperatorManagers - AddNodeOperators -> MANAGER_ALREADY_HAS_ROLE
@@ -267,8 +222,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
             (commitee_multisig, add_node_operators_factory, add_node_operator_calldata),
-
-        ]
+        ],
     )
 
     # 4) DeactivateNodeOperators - DeactivateNodeOperators
@@ -280,7 +234,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, deactivate_node_operators_factory, deactivate_node_operator_calldata),
             (commitee_multisig, deactivate_node_operators_factory, deactivate_node_operator_calldata),
-        ]
+        ],
     )
 
     # 5) DeactivateNodeOperators - DeactivateNodeOperators -> WRONG_OPERATOR_ACTIVE_STATE
@@ -294,7 +248,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, add_node_operators_factory, add_node_operator_calldata),
             (commitee_multisig, activate_node_operators_factory, activate_node_operators_calldata),
-        ]
+        ],
     )
 
     # 6) ActivateNodeOperators - ActivateNodeOperators -> WRONG_OPERATOR_ACTIVE_STATE
@@ -307,7 +261,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, activate_node_operators_factory, activate_node_operators_calldata),
             (commitee_multisig, activate_node_operators_factory, activate_node_operators_calldata),
-        ]
+        ],
     )
 
     # -) deactivate no2
@@ -330,7 +284,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
             (commitee_multisig, activate_node_operators_factory, activate_node_operators_calldata),
-        ]
+        ],
     )
 
     # 8) SetNodeOperatorNames - SetNodeOperatorNames -> SAME_NAME
@@ -343,7 +297,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, set_node_operator_name_factory, set_node_operator_name_calldata),
             (commitee_multisig, set_node_operator_name_factory, set_node_operator_name_calldata),
-        ]
+        ],
     )
 
     # 9) SetNodeOperatorRewardAddresses- SetNodeOperatorRewardAddresses -> SAME_REWARD_ADDRESS
@@ -356,7 +310,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, set_node_operator_reward_address_factory, set_node_operator_reward_address_calldata),
             (commitee_multisig, set_node_operator_reward_address_factory, set_node_operator_reward_address_calldata),
-        ]
+        ],
     )
 
     # 10) AddNodeOperators - ChangeNodeOperatorManagers -> MANAGER_ALREADY_HAS_ROLE
@@ -370,7 +324,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, add_node_operators_factory, add_node_operator_calldata),
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
-        ]
+        ],
     )
 
     # 11) ActivateNodeOperators - ChangeNodeOperatorManagers -> MANAGER_ALREADY_HAS_ROLE
@@ -384,7 +338,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, activate_node_operators_factory, activate_node_operators_calldata),
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
-        ]
+        ],
     )
 
     # 12) ChangeNodeOperatorManagers - ChangeNodeOperatorManagers -> OLD_MANAGER_HAS_NO_ROLE
@@ -396,7 +350,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata),
-        ]
+        ],
     )
 
     # 13) ChangeNodeOperatorManagers - ChangeNodeOperatorManagers -> MANAGER_ALREADY_HAS_ROLE
@@ -409,7 +363,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata1),
             (commitee_multisig, change_node_operator_manager_factory, change_node_operator_manager_calldata2),
-        ]
+        ],
     )
 
     # addSigningKeysOperatorBH no1 address3 manager4 name3
@@ -432,7 +386,7 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, set_vetted_validators_limit_factory, set_vetted_validators_limit_calldata),
             (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata),
-        ]
+        ],
     )
 
     # 15) IncreaseVettedValidatorsLimit - IncreaseVettedValidatorsLimit -> STAKING_LIMIT_TOO_LOW
@@ -446,7 +400,7 @@ def test_simple_dvt_scenario(
         [
             (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata1),
             (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata2),
-        ]
+        ],
     )
 
     # 16) DeactivateNodeOperators - IncreaseVettedValidatorsLimit -> CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER
@@ -460,5 +414,5 @@ def test_simple_dvt_scenario(
         [
             (commitee_multisig, deactivate_node_operators_factory, deactivate_node_operator_calldata),
             (manager2, increase_vetted_validators_limit_factory, increase_vetted_validators_limit_calldata),
-        ]
+        ],
     )

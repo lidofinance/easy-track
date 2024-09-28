@@ -4,5 +4,5 @@ def date_time_contract(network: str = "mainnet") -> str:
     if network == "goerli" or network == "goerli-fork":
         return "0xb1e4de1092D0D32613e4BbFBf4D68650862f43A6"
     if network == "holesky" or network == "holesky-fork":
-        return "0x8809f6174182D22983DCCA1c48e2da3b9593736c"
+        return "0xd6237FecDF9C1D9b023A5205C17549E3037EeEec"
     raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, goerli, holesky.""")

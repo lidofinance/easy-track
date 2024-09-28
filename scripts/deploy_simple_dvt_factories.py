@@ -76,9 +76,7 @@ def main():
     deployment_artifacts = {}
 
     # AddNodeOperators
-    add_node_operator = AddNodeOperators.deploy(
-        trusted_caller, simple_dvt, acl, lido_address, tx_params
-    )
+    add_node_operator = AddNodeOperators.deploy(trusted_caller, simple_dvt, acl, lido_address, tx_params)
     deployment_artifacts["AddNodeOperators"] = {
         "contract": "AddNodeOperators",
         "address": add_node_operator.address,
@@ -86,9 +84,7 @@ def main():
     }
 
     # ActivateNodeOperators
-    activate_node_operators = ActivateNodeOperators.deploy(
-        trusted_caller, simple_dvt, acl, tx_params
-    )
+    activate_node_operators = ActivateNodeOperators.deploy(trusted_caller, simple_dvt, acl, tx_params)
     deployment_artifacts["ActivateNodeOperators"] = {
         "contract": "ActivateNodeOperators",
         "address": activate_node_operators.address,
@@ -96,9 +92,7 @@ def main():
     }
 
     # DeactivateNodeOperators
-    deactivate_node_operators = DeactivateNodeOperators.deploy(
-        trusted_caller, simple_dvt, acl, tx_params
-    )
+    deactivate_node_operators = DeactivateNodeOperators.deploy(trusted_caller, simple_dvt, acl, tx_params)
     deployment_artifacts["DeactivateNodeOperators"] = {
         "contract": "DeactivateNodeOperators",
         "address": deactivate_node_operators.address,
@@ -106,9 +100,7 @@ def main():
     }
 
     # SetVettedValidatorsLimits
-    set_vetted_validators_limits = SetVettedValidatorsLimits.deploy(
-        trusted_caller, simple_dvt, tx_params
-    )
+    set_vetted_validators_limits = SetVettedValidatorsLimits.deploy(trusted_caller, simple_dvt, tx_params)
     deployment_artifacts["SetVettedValidatorsLimits"] = {
         "contract": "SetVettedValidatorsLimits",
         "address": set_vetted_validators_limits.address,
@@ -116,9 +108,7 @@ def main():
     }
 
     # IncreaseVettedValidatorsLimit
-    increase_vetted_validators_limits = IncreaseVettedValidatorsLimit.deploy(
-        simple_dvt, tx_params
-    )
+    increase_vetted_validators_limits = IncreaseVettedValidatorsLimit.deploy(simple_dvt, tx_params)
     deployment_artifacts["IncreaseVettedValidatorsLimit"] = {
         "contract": "IncreaseVettedValidatorsLimit",
         "address": increase_vetted_validators_limits.address,
@@ -126,9 +116,7 @@ def main():
     }
 
     # SetNodeOperatorNames
-    set_node_operator_names = SetNodeOperatorNames.deploy(
-        trusted_caller, simple_dvt, tx_params
-    )
+    set_node_operator_names = SetNodeOperatorNames.deploy(trusted_caller, simple_dvt, tx_params)
     deployment_artifacts["SetNodeOperatorNames"] = {
         "contract": "SetNodeOperatorNames",
         "address": set_node_operator_names.address,
@@ -146,9 +134,7 @@ def main():
     }
 
     # UpdateTargetValidatorLimits
-    update_tareget_validator_limits = UpdateTargetValidatorLimits.deploy(
-        trusted_caller, simple_dvt, tx_params
-    )
+    update_tareget_validator_limits = UpdateTargetValidatorLimits.deploy(trusted_caller, simple_dvt, tx_params)
     deployment_artifacts["UpdateTargetValidatorLimits"] = {
         "contract": "UpdateTargetValidatorLimits",
         "address": update_tareget_validator_limits.address,
@@ -156,9 +142,7 @@ def main():
     }
 
     # ChangeNodeOperatorManagers
-    change_node_operator_manager = ChangeNodeOperatorManagers.deploy(
-        trusted_caller, simple_dvt, acl, tx_params
-    )
+    change_node_operator_manager = ChangeNodeOperatorManagers.deploy(trusted_caller, simple_dvt, acl, tx_params)
     deployment_artifacts["ChangeNodeOperatorManagers"] = {
         "contract": "ChangeNodeOperatorManagers",
         "address": change_node_operator_manager.address,
@@ -178,9 +162,7 @@ def main():
         "Deployed SetNodeOperatorRewardAddresses",
         set_node_operator_reward.address,
     )
-    log.ok(
-        "Deployed UpdateTargetValidatorLimits", update_tareget_validator_limits.address
-    )
+    log.ok("Deployed UpdateTargetValidatorLimits", update_tareget_validator_limits.address)
     log.ok("Deployed ChangeNodeOperatorManagers", change_node_operator_manager.address)
 
     log.br()

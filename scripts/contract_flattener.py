@@ -7,9 +7,7 @@ from brownie import (
     RemoveAllowedRecipient,
 )
 
-IMPORT_PATTERN = re.compile(
-    r"(?<=\n)?import(?P<prefix>.*)(?P<quote>[\"'])(?P<path>.*)(?P=quote)(?P<suffix>.*)(?=\n)"
-)
+IMPORT_PATTERN = re.compile(r"(?<=\n)?import(?P<prefix>.*)(?P<quote>[\"'])(?P<path>.*)(?P=quote)(?P<suffix>.*)(?=\n)")
 PRAGMA_PATTERN = re.compile(r"^pragma.*;$", re.MULTILINE)
 LICENSE_PATTERN = re.compile(r"^// SPDX-License-Identifier: (.*)$", re.MULTILINE)
 

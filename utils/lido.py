@@ -23,24 +23,6 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
-    if network == "goerli" or network == "goerli-fork":
-        return LidoAddressesSetup(
-            aragon=AragonSetup(
-                acl="0xb3cf58412a00282934d3c3e73f49347567516e98",
-                agent="0x4333218072d5d7008546737786663c38b4d561a4",
-                voting="0xbc0B67b4553f4CF52a913DE9A6eD0057E2E758Db",
-                finance="0x75c7b1d23f1cad7fb4d60281d7069e46440bc179",
-                gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
-                calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
-                token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
-                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
-            ),
-            steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
-            node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
-            simple_dvt=None,
-            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
-            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
-        )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
             aragon=AragonSetup(
@@ -59,6 +41,24 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
         )
+    if network == "goerli" or network == "goerli-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0xb3cf58412a00282934d3c3e73f49347567516e98",
+                agent="0x4333218072d5d7008546737786663c38b4d561a4",
+                voting="0xbc0B67b4553f4CF52a913DE9A6eD0057E2E758Db",
+                finance="0x75c7b1d23f1cad7fb4d60281d7069e46440bc179",
+                gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
+                calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
+                token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
+                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
+            ),
+            steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
+            node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
+            simple_dvt=None,
+            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
+            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
+        )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
     )
@@ -70,15 +70,13 @@ def contracts(network=DEFAULT_NETWORK):
 
 def allowed_recipients_builder(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
-        return brownie.AllowedRecipientsBuilder.at(
-            "0x958e0D946D014F377421a53AB5f9180d4485e63B"
-        )
+        return brownie.AllowedRecipientsBuilder.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilder.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
     if network == "goerli" or network == "goerli-fork":
-        return brownie.AllowedRecipientsBuilder.at(
-            "0x1082512D1d60a0480445353eb55de451D261b684"
-        )
+        return brownie.AllowedRecipientsBuilder.at("0x1082512D1d60a0480445353eb55de451D261b684")
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, goerli, goerli-fork"""
     )
 
 
@@ -96,13 +94,9 @@ class LidoContractsSetup:
             kernel=interface.Kernel(lido_addresses.aragon.kernel),
         )
         self.steth = interface.Lido(lido_addresses.steth)
-        self.node_operators_registry = interface.NodeOperatorsRegistry(
-            lido_addresses.node_operators_registry
-        )
+        self.node_operators_registry = interface.NodeOperatorsRegistry(lido_addresses.node_operators_registry)
         self.simple_dvt = (
-            None
-            if not lido_addresses.simple_dvt
-            else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
+            None if not lido_addresses.simple_dvt else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
         )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
@@ -184,9 +178,7 @@ class Permissions:
         self.finance = FinancePermissions(contracts.aragon.finance)
         self.agent = AgentPermissions(contracts.aragon.agent)
         self.lido = LidoPermissions(contracts.steth)
-        self.node_operators_registry = NodeOperatorsRegistryPermissions(
-            contracts.node_operators_registry
-        )
+        self.node_operators_registry = NodeOperatorsRegistryPermissions(contracts.node_operators_registry)
         self.token_manager = TokenManagerPermissions(contracts.aragon.token_manager)
         self.voting = VotingPermissions(contracts.aragon.voting)
 
@@ -219,15 +211,11 @@ class FinancePermissions:
 
 class AgentPermissions:
     def __init__(self, agent_app):
-        self.ADD_PROTECTED_TOKEN_ROLE = Permission(
-            agent_app, "ADD_PROTECTED_TOKEN_ROLE"
-        )
+        self.ADD_PROTECTED_TOKEN_ROLE = Permission(agent_app, "ADD_PROTECTED_TOKEN_ROLE")
         self.TRANSFER_ROLE = Permission(agent_app, "TRANSFER_ROLE")
         self.RUN_SCRIPT_ROLE = Permission(agent_app, "RUN_SCRIPT_ROLE")
         self.SAFE_EXECUTE_ROLE = Permission(agent_app, "SAFE_EXECUTE_ROLE")
-        self.REMOVE_PROTECTED_TOKEN_ROLE = Permission(
-            agent_app, "REMOVE_PROTECTED_TOKEN_ROLE"
-        )
+        self.REMOVE_PROTECTED_TOKEN_ROLE = Permission(agent_app, "REMOVE_PROTECTED_TOKEN_ROLE")
         self.DESIGNATE_SIGNER_ROLE = Permission(agent_app, "DESIGNATE_SIGNER_ROLE")
         self.EXECUTE_ROLE = Permission(agent_app, "EXECUTE_ROLE")
         self.ADD_PRESIGNED_HASH_ROLE = Permission(agent_app, "ADD_PRESIGNED_HASH_ROLE")
@@ -243,18 +231,10 @@ class LidoPermissions:
 
 class NodeOperatorsRegistryPermissions:
     def __init__(self, node_operators_registry_app):
-        self.STAKING_ROUTER_ROLE = Permission(
-            node_operators_registry_app, "STAKING_ROUTER_ROLE"
-        )
-        self.MANAGE_NODE_OPERATOR_ROLE = Permission(
-            node_operators_registry_app, "MANAGE_NODE_OPERATOR_ROLE"
-        )
-        self.MANAGE_SIGNING_KEYS = Permission(
-            node_operators_registry_app, "MANAGE_SIGNING_KEYS"
-        )
-        self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(
-            node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE"
-        )
+        self.STAKING_ROUTER_ROLE = Permission(node_operators_registry_app, "STAKING_ROUTER_ROLE")
+        self.MANAGE_NODE_OPERATOR_ROLE = Permission(node_operators_registry_app, "MANAGE_NODE_OPERATOR_ROLE")
+        self.MANAGE_SIGNING_KEYS = Permission(node_operators_registry_app, "MANAGE_SIGNING_KEYS")
+        self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE")
 
 
 class TokenManagerPermissions:
@@ -263,9 +243,7 @@ class TokenManagerPermissions:
         self.ASSIGN_ROLE = Permission(token_manager_app, "ASSIGN_ROLE")
         self.BURN_ROLE = Permission(token_manager_app, "BURN_ROLE")
         self.MINT_ROLE = Permission(token_manager_app, "MINT_ROLE")
-        self.REVOKE_VESTINGS_ROLE = Permission(
-            token_manager_app, "REVOKE_VESTINGS_ROLE"
-        )
+        self.REVOKE_VESTINGS_ROLE = Permission(token_manager_app, "REVOKE_VESTINGS_ROLE")
 
 
 class VotingPermissions:

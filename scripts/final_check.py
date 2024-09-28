@@ -16,16 +16,14 @@ from brownie import (
     ZERO_ADDRESS,
 )
 from utils import lido, constants, log, mainnet_fork, evm_script
-from eth_abi import encode_single
 from scripts.grant_executor_permissions import grant_executor_permissions
 from brownie.network.account import PublicKeyAccount
+from utils.evm_script import encode_calldata
 
 
 def main():
     grant_permissions_voting_id = (
-        os.environ["GRANT_PERMISSIONS_VOTING_ID"]
-        if "GRANT_PERMISSIONS_VOTING_ID" in os.environ
-        else None
+        os.environ["GRANT_PERMISSIONS_VOTING_ID"] if "GRANT_PERMISSIONS_VOTING_ID" in os.environ else None
     )
     deployer = "0x2a61d3ba5030Ef471C74f612962c7367ECa3a62d"
     lego_committee_multisig = "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
@@ -35,27 +33,15 @@ def main():
     lido_contracts = lido.contracts(network="mainnet")
 
     easy_track = EasyTrack.at("0xF0211b7660680B49De1A7E9f25C65660F0a13Fea")
-    evm_script_executor = EVMScriptExecutor.at(
-        "0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977"
-    )
+    evm_script_executor = EVMScriptExecutor.at("0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977")
     increase_node_operators_staking_limit = IncreaseNodeOperatorStakingLimit.at(
         "0xFeBd8FAC16De88206d4b18764e826AF38546AfE0"
     )
-    top_up_lego_program = TopUpLegoProgram.at(
-        "0x648C8Be548F43eca4e482C0801Ebccccfb944931"
-    )
-    reward_programs_registry = RewardProgramsRegistry.at(
-        "0x3129c041b372ee93a5a8756dc4ec6f154d85bc9a"
-    )
-    add_reward_program = AddRewardProgram.at(
-        "0x9D15032b91d01d5c1D940eb919461426AB0dD4e3"
-    )
-    remove_reward_program = RemoveRewardProgram.at(
-        "0xc21e5e72Ffc223f02fC410aAedE3084a63963932"
-    )
-    top_up_reward_programs = TopUpRewardPrograms.at(
-        "0x77781A93C4824d2299a38AC8bBB11eb3cd6Bc3B7"
-    )
+    top_up_lego_program = TopUpLegoProgram.at("0x648C8Be548F43eca4e482C0801Ebccccfb944931")
+    reward_programs_registry = RewardProgramsRegistry.at("0x3129c041b372ee93a5a8756dc4ec6f154d85bc9a")
+    add_reward_program = AddRewardProgram.at("0x9D15032b91d01d5c1D940eb919461426AB0dD4e3")
+    remove_reward_program = RemoveRewardProgram.at("0xc21e5e72Ffc223f02fC410aAedE3084a63963932")
+    top_up_reward_programs = TopUpRewardPrograms.at("0x77781A93C4824d2299a38AC8bBB11eb3cd6Bc3B7")
 
     log.ok("LEGO Program Multisig", lego_committee_multisig)
     log.ok("Reward Programs Multisig", reward_programs_multisig)
@@ -169,17 +155,11 @@ def main():
         )
 
 
-def validate_easy_track_setup(
-    easy_track, evm_script_executor, lido_contracts, pause_address, deployer
-):
+def validate_easy_track_setup(easy_track, evm_script_executor, lido_contracts, pause_address, deployer):
     voting = lido_contracts.aragon.voting
     log.nb("EasyTrack", easy_track)
-    assert_equals(
-        "  governanceToken:", easy_track.governanceToken(), lido_contracts.ldo
-    )
-    assert_equals(
-        "  evmScriptExecutor", easy_track.evmScriptExecutor(), evm_script_executor
-    )
+    assert_equals("  governanceToken:", easy_track.governanceToken(), lido_contracts.ldo)
+    assert_equals("  evmScriptExecutor", easy_track.evmScriptExecutor(), evm_script_executor)
     assert_equals(
         "  motionDuration",
         easy_track.motionDuration(),
@@ -260,9 +240,7 @@ def validate_evm_script_executor_setup(evm_script_executor, easy_track, lido_con
     print()
 
 
-def validate_increase_node_operator_staking_limit_setup(
-    increase_node_operators_staking_limit, lido_contracts
-):
+def validate_increase_node_operator_staking_limit_setup(increase_node_operators_staking_limit, lido_contracts):
     log.nb("IncreaseNodeOperatorsStakingLimit", increase_node_operators_staking_limit)
     assert_equals(
         "  nodeOperatorsRegistry:",
@@ -272,16 +250,10 @@ def validate_increase_node_operator_staking_limit_setup(
     print()
 
 
-def validate_top_up_lego_program_setup(
-    top_up_lego_program, lido_contracts, lego_committee_multisig
-):
+def validate_top_up_lego_program_setup(top_up_lego_program, lido_contracts, lego_committee_multisig):
     log.nb("TopUpLegoProgram", top_up_lego_program)
-    assert_equals(
-        "  finance", top_up_lego_program.finance(), lido_contracts.aragon.finance
-    )
-    assert_equals(
-        "  legoProgram", top_up_lego_program.legoProgram(), lego_committee_multisig
-    )
+    assert_equals("  finance", top_up_lego_program.finance(), lido_contracts.aragon.finance)
+    assert_equals("  legoProgram", top_up_lego_program.legoProgram(), lego_committee_multisig)
     assert_equals(
         "  trustedCaller",
         top_up_lego_program.trustedCaller(),
@@ -290,51 +262,37 @@ def validate_top_up_lego_program_setup(
     print()
 
 
-def validate_reward_programs_registry_setup(
-    reward_programs_registry, deployer, evm_script_executor, lido_contracts
-):
+def validate_reward_programs_registry_setup(reward_programs_registry, deployer, evm_script_executor, lido_contracts):
     voting = lido_contracts.aragon.voting
     log.nb("RewardProgramsRegistry", reward_programs_registry)
     assert_equals(
         f"  voting ({voting}) has DEFAULT_ADMIN_ROLE",
-        reward_programs_registry.hasRole(
-            reward_programs_registry.DEFAULT_ADMIN_ROLE(), voting
-        ),
+        reward_programs_registry.hasRole(reward_programs_registry.DEFAULT_ADMIN_ROLE(), voting),
         True,
     )
     assert_equals(
         f"  deployer ({deployer}) has no DEFAULT_ADMIN role",
-        not reward_programs_registry.hasRole(
-            reward_programs_registry.DEFAULT_ADMIN_ROLE(), deployer
-        ),
+        not reward_programs_registry.hasRole(reward_programs_registry.DEFAULT_ADMIN_ROLE(), deployer),
         True,
     )
     assert_equals(
         f"  deployer ({deployer}) has no ADD_REWARD_PROGRAM_ROLE role",
-        not reward_programs_registry.hasRole(
-            reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), deployer
-        ),
+        not reward_programs_registry.hasRole(reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), deployer),
         True,
     )
     assert_equals(
         f"  deployer ({deployer}) has no REMOVE_REWARD_PROGRAM_ROLE role",
-        not reward_programs_registry.hasRole(
-            reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), deployer
-        ),
+        not reward_programs_registry.hasRole(reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), deployer),
         True,
     )
     assert_equals(
         f"  voting ({voting}) has ADD_REWARD_PROGRAM_ROLE",
-        reward_programs_registry.hasRole(
-            reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), voting
-        ),
+        reward_programs_registry.hasRole(reward_programs_registry.ADD_REWARD_PROGRAM_ROLE(), voting),
         True,
     )
     assert_equals(
         f"  voting ({voting}) has REMOVE_REWARD_PROGRAM_ROLE",
-        reward_programs_registry.hasRole(
-            reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), voting
-        ),
+        reward_programs_registry.hasRole(reward_programs_registry.REMOVE_REWARD_PROGRAM_ROLE(), voting),
         True,
     )
     assert_equals(
@@ -356,9 +314,7 @@ def validate_reward_programs_registry_setup(
     print()
 
 
-def validate_add_reward_program_setup(
-    add_reward_program, reward_programs_multisig, reward_programs_registry
-):
+def validate_add_reward_program_setup(add_reward_program, reward_programs_multisig, reward_programs_registry):
     log.nb("AddRewardProgram", add_reward_program)
     assert_equals(
         "  trustedCaller",
@@ -373,9 +329,7 @@ def validate_add_reward_program_setup(
     print()
 
 
-def validate_remove_reward_program(
-    remove_reward_program, reward_programs_multisig, reward_programs_registry
-):
+def validate_remove_reward_program(remove_reward_program, reward_programs_multisig, reward_programs_registry):
     log.nb("RemoveRewardProgram", remove_reward_program)
     assert_equals(
         "  trustedCaller",
@@ -402,12 +356,8 @@ def validate_top_up_reward_programs(
         top_up_reward_programs.trustedCaller(),
         reward_programs_multisig,
     )
-    assert_equals(
-        "  finance", top_up_reward_programs.finance(), lido_contracts.aragon.finance
-    )
-    assert_equals(
-        "  rewardToken", top_up_reward_programs.rewardToken(), lido_contracts.ldo
-    )
+    assert_equals("  finance", top_up_reward_programs.finance(), lido_contracts.aragon.finance)
+    assert_equals("  rewardToken", top_up_reward_programs.rewardToken(), lido_contracts.ldo)
     assert_equals(
         "  rewardProgramsRegistry",
         top_up_reward_programs.rewardProgramsRegistry(),
@@ -470,7 +420,7 @@ def simulate_reward_program_addition(
     log.nb("Simulate reward program addition via EasyTrack")
     log.nb("")
     add_reward_program_calldata = encode_calldata(
-        "(address,string)", [reward_program_address, "Mock Reward Program"]
+        ["address", "string"], [reward_program_address, "Mock Reward Program"]
     )
     log.ok("  Address of new reward program", reward_program_address)
     tx, motion = create_motion(
@@ -479,9 +429,7 @@ def simulate_reward_program_addition(
         calldata=add_reward_program_calldata,
         creator=reward_programs_multisig,
     )
-    expected_evm_script = add_reward_program.createEVMScript(
-        reward_programs_multisig, add_reward_program_calldata
-    )
+    expected_evm_script = add_reward_program.createEVMScript(reward_programs_multisig, add_reward_program_calldata)
     assert_motion_created_event(
         tx=tx,
         creator=reward_programs_multisig,
@@ -523,9 +471,9 @@ def simulate_reward_program_top_up(
     log.nb("")
     log.nb("Simulate reward program top up via EasyTrack")
     log.nb("")
-    top_up_amount = Wei(200_000 * 10 ** 18)
+    top_up_amount = Wei(200_000 * 10**18)
     top_up_reward_program_calldata = encode_calldata(
-        "(address[],uint256[])",
+        ["address[]", "uint256[]"],
         [[reward_program_address], [top_up_amount]],
     )
     log.ok("  Address of reward program to top up", reward_program_address)
@@ -585,9 +533,7 @@ def simulate_reward_program_removing(
     log.nb("")
     log.nb("Simulate reward program removing via EasyTrack")
     log.nb("")
-    remove_reward_program_calldata = encode_calldata(
-        "(address)", [reward_program_address]
-    )
+    remove_reward_program_calldata = encode_calldata(["address"], [reward_program_address])
     log.ok("  Address of reward program to remove", reward_program_address)
     assert_equals(
         "  Reward program listed in reward programs registry",
@@ -648,10 +594,8 @@ def simulate_lego_program_top_up(
         lido_contracts.ldo.address,
         lido_contracts.steth.address,
     ]
-    reward_amounts = [Wei(100 * 10 ** 18), Wei(200_000 * 10 ** 18), Wei(50 * 10 ** 18)]
-    top_up_lego_program_calldata = encode_calldata(
-        "(address[],uint256[])", [reward_tokens, reward_amounts]
-    )
+    reward_amounts = [Wei(100 * 10**18), Wei(200_000 * 10**18), Wei(50 * 10**18)]
+    top_up_lego_program_calldata = encode_calldata(["address[]", "uint256[]"], [reward_tokens, reward_amounts])
     log.ok("  Address of LEGO program", lego_committee_multisig)
     log.ok("  Tokens to transfer", reward_tokens)
     log.ok("  Amount of tokens to transfer", reward_amounts)
@@ -668,9 +612,7 @@ def simulate_lego_program_top_up(
         calldata=top_up_lego_program_calldata,
         creator=lego_committee_multisig,
     )
-    expected_evm_script = top_up_lego_program.createEVMScript(
-        lego_committee_multisig, top_up_lego_program_calldata
-    )
+    expected_evm_script = top_up_lego_program.createEVMScript(lego_committee_multisig, top_up_lego_program_calldata)
     assert_motion_created_event(
         tx=tx,
         creator=lego_committee_multisig,
@@ -731,9 +673,7 @@ def simulate_node_operator_increases_staking_limit(
     log.ok("Node operator total signing keys", total_signing_keys)
     log.ok("New node operator staking limit to set", total_signing_keys)
 
-    increase_staking_limit_calldata = encode_calldata(
-        "(uint256,uint256)", [node_operator_id, total_signing_keys]
-    )
+    increase_staking_limit_calldata = encode_calldata(["uint256", "uint256"], [node_operator_id, total_signing_keys])
     tx, motion = create_motion(
         easy_track=easy_track,
         evm_script_factory=increase_node_operator_staking_limit,
@@ -765,9 +705,7 @@ def simulate_node_operator_increases_staking_limit(
         motion_id=motion[0],
         motion_calldata=increase_staking_limit_calldata,
     )
-    node_operator = lido_contracts.node_operators_registry.getNodeOperator(
-        node_operator_id, True
-    )
+    node_operator = lido_contracts.node_operators_registry.getNodeOperator(node_operator_id, True)
     assert_equals("  New node operator staking limit after", node_operator[3], 3)
     print()
 
@@ -787,9 +725,7 @@ def simulate_unpause_by_voting(easy_track, pause_multisig, lido_contracts):
     log.nb("Simulate unpausing via Aragon voting")
     log.nb("")
     assert_equals("  EasyTrack is still paused", easy_track.paused(), True)
-    unpause_evm_scirpt = evm_script.encode_call_script(
-        [(easy_track.address, easy_track.unpause.encode_input())]
-    )
+    unpause_evm_scirpt = evm_script.encode_call_script([(easy_track.address, easy_track.unpause.encode_input())])
     voting_id, _ = lido.create_voting(
         evm_script=unpause_evm_scirpt,
         description="Unpause EasyTracks",
@@ -828,9 +764,7 @@ def add_new_node_operator(lido_contracts):
 
     # validate new node operator id
     new_node_operator_id = node_operators_registry.getActiveNodeOperatorsCount() - 1
-    new_node_operator = node_operators_registry.getNodeOperator(
-        new_node_operator_id, True
-    )
+    new_node_operator = node_operators_registry.getNodeOperator(new_node_operator_id, True)
     assert new_node_operator[0]  # active
     assert new_node_operator[1] == node_operator["name"]  # name
     assert new_node_operator[2] == node_operator["address"]  # rewardAddress
@@ -859,9 +793,7 @@ def add_new_node_operator(lido_contracts):
     )
 
     # validate that signing keys have been added
-    new_node_operator = node_operators_registry.getNodeOperator(
-        new_node_operator_id, True
-    )
+    new_node_operator = node_operators_registry.getNodeOperator(new_node_operator_id, True)
     assert new_node_operator[5] == len(signing_keys["pubkeys"])  # totalSigningKeys
     assert new_node_operator[6] == 0  # usedSigningKeys
     return (
@@ -883,13 +815,9 @@ def wait_before_enact(motion):
     )
 
 
-def assert_motion_created_event(
-    tx, creator, evm_script_factory, evm_script_calldata, evm_script
-):
+def assert_motion_created_event(tx, creator, evm_script_factory, evm_script_calldata, evm_script):
     assert_equals("  MotionCreated Event Fired", "MotionCreated" in tx.events, True)
-    assert_equals(
-        "    MotionCreated._creator", tx.events["MotionCreated"]["_creator"], creator
-    )
+    assert_equals("    MotionCreated._creator", tx.events["MotionCreated"]["_creator"], creator)
     assert_equals(
         "    MotionCreated._evmScriptFactory",
         tx.events["MotionCreated"]["_evmScriptFactory"],
@@ -949,9 +877,7 @@ def create_motion(easy_track, evm_script_factory, calldata, creator):
     log.ok("  Sending createMotion transaction...")
     tx = easy_track.createMotion(evm_script_factory, calldata, {"from": creator})
     motions = easy_track.getMotions()
-    assert_equals(
-        "  New motion was created", len(motions) == count_of_motions_before + 1, True
-    )
+    assert_equals("  New motion was created", len(motions) == count_of_motions_before + 1, True)
     return tx, motions[0]
 
 
@@ -959,7 +885,3 @@ def enact_motion(easy_track, motion_id, motion_calldata):
     log.ok("  Sending enactMotion transaction...")
     easy_track.enactMotion(motion_id, motion_calldata, {"from": accounts[2]})
     assert_equals("  Motion was enacted", len(easy_track.getMotions()) == 0, True)
-
-
-def encode_calldata(signature, values):
-    return "0x" + encode_single(signature, values).hex()

@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import web3, interface
 from utils.evm_script import encode_call_script
 from utils.permission_parameters import Op, Param, encode_permission_params
@@ -120,8 +120,8 @@ def test_simple_dvt_scenario(
     # Add clusters
     add_node_operators_calldata = (
         "0x"
-        + encode_single(
-            "(uint256,(string,address,address)[])",
+        + encode(
+            ["uint256", "(string,address,address)[]"],
             [
                 0,
                 [
@@ -165,8 +165,7 @@ def test_simple_dvt_scenario(
         )
 
     deactivate_node_operators_calldata = (
-        "0x"
-        + encode_single("((uint256,address)[])", [deactivate_node_operators_data]).hex()
+        "0x" + encode(["(uint256,address)[]"], [deactivate_node_operators_data]).hex()
     )
 
     easytrack_executor(
@@ -178,7 +177,6 @@ def test_simple_dvt_scenario(
     for cluster_index in range(2, 5):
         cluster = simple_dvt.getNodeOperator(cluster_index, True)
         assert cluster["active"] == False
-
 
         assert (
             simple_dvt.canPerform(
@@ -199,8 +197,7 @@ def test_simple_dvt_scenario(
         )
 
     activate_node_operators_calldata = (
-        "0x"
-        + encode_single("((uint256,address)[])", [activate_node_operators_data]).hex()
+        "0x" + encode(["(uint256,address)[]"], [activate_node_operators_data]).hex()
     )
 
     easytrack_executor(
@@ -225,7 +222,7 @@ def test_simple_dvt_scenario(
     # Set name of node operator
 
     set_node_operator_name_calldata = (
-        "0x" + encode_single("((uint256,string)[])", [[(6, "New Name")]]).hex()
+        "0x" + encode(["(uint256,string)[]"], [[(6, "New Name")]]).hex()
     )
 
     easytrack_executor(
@@ -240,7 +237,7 @@ def test_simple_dvt_scenario(
     # Set reward address of node operator
     new_reward_address = "0x000000000000000000000000000000000000dEaD"
     set_node_operator_reward_address_calldata = (
-        "0x" + encode_single("((uint256,address)[])", [[(6, new_reward_address)]]).hex()
+        "0x" + encode(["(uint256,address)[]"], [[(6, new_reward_address)]]).hex()
     )
 
     easytrack_executor(
@@ -286,8 +283,7 @@ def test_simple_dvt_scenario(
     )
 
     set_vetted_validators_limit_calldata = (
-        "0x"
-        + encode_single("((uint256,uint256)[])", [[(no_5_id, 4), (no_6_id, 3)]]).hex()
+        "0x" + encode(["(uint256,uint256)[]"], [[(no_5_id, 4), (no_6_id, 3)]]).hex()
     )
     easytrack_executor(
         commitee_multisig,
@@ -309,10 +305,8 @@ def test_simple_dvt_scenario(
         {"from": clusters[5]["manager"]},
     )
 
-
     increase_vetted_validators_limit_calldata = (
-        "0x"
-        + encode_single("((uint256,uint256))", [(no_5_id, 6)]).hex()
+        "0x" + encode(["(uint256,uint256)"], [(no_5_id, 6)]).hex()
     )
     easytrack_executor(
         clusters[5]["manager"],
@@ -322,7 +316,6 @@ def test_simple_dvt_scenario(
 
     cluster_5 = simple_dvt.getNodeOperator(no_5_id, False)
     assert cluster_5["totalVettedValidators"] == 6
-
 
     # Update target validators limits
 
@@ -349,8 +342,8 @@ def test_simple_dvt_scenario(
     # Transfer cluster manager
     change_node_operator_manager_calldata = (
         "0x"
-        + encode_single(
-            "((uint256,address,address)[])",
+        + encode(
+            ["(uint256,address,address)[]"],
             [[(no_5_id, clusters[no_5_id]["manager"], stranger.address)]],
         ).hex()
     )
@@ -365,13 +358,11 @@ def test_simple_dvt_scenario(
         clusters[no_5_id]["manager"],
         simple_dvt.MANAGE_SIGNING_KEYS(),
         encode_permission_params([Param(0, Op.EQ, no_5_id)]),
-
     )
     assert simple_dvt.canPerform(
         stranger,
         simple_dvt.MANAGE_SIGNING_KEYS(),
         encode_permission_params([Param(0, Op.EQ, no_5_id)]),
-
     )
 
     # Renounce MANAGE_SIGNING_KEYS role manager

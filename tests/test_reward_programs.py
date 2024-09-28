@@ -1,19 +1,11 @@
-import pytest
 import brownie
 import constants
 
 from brownie.network import chain
 from brownie import EasyTrack, EVMScriptExecutor, accounts
 
-from eth_abi import encode_single
-from utils.evm_script import encode_call_script
-
-from utils.config import get_network_name
+from utils.evm_script import encode_calldata, encode_call_script
 from utils import lido
-
-
-def encode_calldata(signature, values):
-    return "0x" + encode_single(signature, values).hex()
 
 
 def create_permission(contract, method):
@@ -76,36 +68,22 @@ def test_reward_programs_easy_track(
     # add TopUpRewardPrograms EVM script factory to easy track
     new_immediate_payment_permission = create_permission(finance, "newImmediatePayment")
 
-    easy_track.addEVMScriptFactory(
-        top_up_reward_programs, new_immediate_payment_permission, {"from": deployer}
-    )
+    easy_track.addEVMScriptFactory(top_up_reward_programs, new_immediate_payment_permission, {"from": deployer})
 
     # deploy AddRewardProgram EVM script factory
-    add_reward_program = deployer.deploy(
-        AddRewardProgram, trusted_address, reward_programs_registry
-    )
+    add_reward_program = deployer.deploy(AddRewardProgram, trusted_address, reward_programs_registry)
 
     # add AddRewardProgram EVM script factory to easy track
-    add_reward_program_permission = create_permission(
-        reward_programs_registry, "addRewardProgram"
-    )
+    add_reward_program_permission = create_permission(reward_programs_registry, "addRewardProgram")
 
-    easy_track.addEVMScriptFactory(
-        add_reward_program, add_reward_program_permission, {"from": deployer}
-    )
+    easy_track.addEVMScriptFactory(add_reward_program, add_reward_program_permission, {"from": deployer})
 
     # deploy RemoveRewardProgram EVM script factory
-    remove_reward_program = deployer.deploy(
-        RemoveRewardProgram, trusted_address, reward_programs_registry
-    )
+    remove_reward_program = deployer.deploy(RemoveRewardProgram, trusted_address, reward_programs_registry)
 
     # add RemoveRewardProgram EVM script factory to easy track
-    remove_reward_program_permission = create_permission(
-        reward_programs_registry, "removeRewardProgram"
-    )
-    easy_track.addEVMScriptFactory(
-        remove_reward_program, remove_reward_program_permission, {"from": deployer}
-    )
+    remove_reward_program_permission = create_permission(reward_programs_registry, "removeRewardProgram")
+    easy_track.addEVMScriptFactory(remove_reward_program, remove_reward_program_permission, {"from": deployer})
 
     # transfer admin role to voting
     easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), voting, {"from": deployer})
@@ -136,13 +114,9 @@ def test_reward_programs_easy_track(
     # execute voting to add permissions to EVM script executor to create payments
     lido_contracts.execute_voting(add_create_payments_permissions_voting_id)
 
-    add_reward_program_calldata = encode_calldata(
-        "(address,string)", [reward_program.address, reward_program_title]
-    )
+    add_reward_program_calldata = encode_calldata(["address", "string"], [reward_program.address, reward_program_title])
 
-    tx = easy_track.createMotion(
-        add_reward_program, add_reward_program_calldata, {"from": trusted_address}
-    )
+    tx = easy_track.createMotion(add_reward_program, add_reward_program_calldata, {"from": trusted_address})
 
     motions = easy_track.getMotions()
     assert len(motions) == 1
@@ -163,7 +137,7 @@ def test_reward_programs_easy_track(
     # create new motion to top up reward program
     tx = easy_track.createMotion(
         top_up_reward_programs,
-        encode_single("(address[],uint256[])", [[reward_program.address], [int(5e18)]]),
+        encode_calldata(["address[]", "uint256[]"], [[reward_program.address], [int(5e18)]]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -185,7 +159,7 @@ def test_reward_programs_easy_track(
     # create new motion to remove a reward program
     tx = easy_track.createMotion(
         remove_reward_program,
-        encode_single("(address)", [reward_program.address]),
+        encode_calldata(["address"], [reward_program.address]),
         {"from": trusted_address},
     )
 

@@ -62,10 +62,6 @@ git clone https://github.com/lidofinance/easy-track
 cd easy-track
 yarn install
 
-# in case of pyyaml installation issue, it should be installed manually
-# see issue for details https://github.com/yaml/pyyaml/issues/601
-poetry run pip install "cython<3.0" pyyaml==5.4.1 --no-build-isolation
-
 poetry install
 poetry run brownie networks import network-config.yaml True
 poetry shell
@@ -131,16 +127,21 @@ Script requires next ENV variables to be set:
 
 ## Tests
 
+Set infura project ID
+```bash
+export WEB3_INFURA_PROJECT_ID=<YOUR_PROJECT_ID>
+```
+
 The fastest way to run the tests is:
 
 ```bash
-brownie test
+brownie test --network mainnet-fork
 ```
 
 Run tests with coverage and gas profiling:
 
 ```bash
-brownie test --coverage --gas
+brownie test --network mainnet-fork --coverage --gas
 ```
 
 ### Coverage notes

@@ -9,9 +9,7 @@ def valid_permissions(request):
     """Returns a valid permissions value."""
     zero_permission = to_bytes(ZERO_ADDRESS + "aabbccdd", "bytes")
     deadbeef_permission = b"\xde\xad\xbe\xef" * 6
-    feedface_permission = bytes.fromhex("feedface") * 5 + bytes.fromhex(
-        "baddcafe"
-    )  # different bytes for the selector
+    feedface_permission = bytes.fromhex("feedface") * 5 + bytes.fromhex("baddcafe")  # different bytes for the selector
 
     assert len(deadbeef_permission) == 24
 
@@ -47,20 +45,14 @@ def create_permission():
 
 
 @pytest.fixture(scope="module")
-def node_operators_registry_stub_permissions(
-    create_permission, node_operators_registry_stub
-):
+def node_operators_registry_stub_permissions(create_permission, node_operators_registry_stub):
     def method(method_names):
         permissions = {
             "setNodeOperatorStakingLimit": create_permission(
                 node_operators_registry_stub, "setNodeOperatorStakingLimit"
             ),
-            "getNodeOperator": create_permission(
-                node_operators_registry_stub, "getNodeOperator"
-            ),
-            "setRewardAddress": create_permission(
-                node_operators_registry_stub, "setRewardAddress"
-            ),
+            "getNodeOperator": create_permission(node_operators_registry_stub, "getNodeOperator"),
+            "setRewardAddress": create_permission(node_operators_registry_stub, "setRewardAddress"),
         }
         result = "0x"
         for method_name in method_names:
@@ -76,9 +68,7 @@ def node_operators_registry_stub_calldata(accounts, node_operators_registry_stub
         calldata = {
             "setNodeOperatorStakingLimit": (
                 node_operators_registry_stub.address,
-                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(
-                    1, 200
-                ),
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(1, 200),
             ),
             "getNodeOperator": (
                 node_operators_registry_stub.address,
@@ -104,24 +94,16 @@ def permissions_with_not_allowed_calldata(
     node_operators_registry_stub_calldata,
 ):
     has_all_except_one_permission = (
-        node_operators_registry_stub_permissions(
-            ["getNodeOperator", "setRewardAddress"]
-        ),
-        node_operators_registry_stub_calldata(
-            ["setNodeOperatorStakingLimit", "getNodeOperator", "getNodeOperator"]
-        ),
+        node_operators_registry_stub_permissions(["getNodeOperator", "setRewardAddress"]),
+        node_operators_registry_stub_calldata(["setNodeOperatorStakingLimit", "getNodeOperator", "getNodeOperator"]),
     )
     has_no_required_permission_one_call = (
-        node_operators_registry_stub_permissions(
-            ["getNodeOperator", "setRewardAddress"]
-        ),
+        node_operators_registry_stub_permissions(["getNodeOperator", "setRewardAddress"]),
         node_operators_registry_stub_calldata(["setNodeOperatorStakingLimit"]),
     )
     has_no_required_permission_many_calls = (
         node_operators_registry_stub_permissions(["getNodeOperator"]),
-        node_operators_registry_stub_calldata(
-            ["setRewardAddress", "setNodeOperatorStakingLimit"]
-        ),
+        node_operators_registry_stub_calldata(["setRewardAddress", "setNodeOperatorStakingLimit"]),
     )
     test_cases = [
         has_all_except_one_permission,
@@ -142,9 +124,7 @@ def permissions_with_allowed_calldata(
     )
     many_permissions_many_evm_scripts = (
         all_permissions,
-        node_operators_registry_stub_calldata(
-            ["setNodeOperatorStakingLimit", "setRewardAddress"]
-        ),
+        node_operators_registry_stub_calldata(["setNodeOperatorStakingLimit", "setRewardAddress"]),
     )
     many_permissions_one_evm_script = (
         all_permissions,
@@ -177,17 +157,11 @@ def test_can_execute_evm_script_wrong_permissions_length(
     assert not evm_script_permissions_wrapper.canExecuteEVMScript("0x0011223344", b"")
 
 
-def test_can_execute_evm_script_evm_script_too_short(
-    evm_script_permissions_wrapper, valid_permissions
-):
-    assert not evm_script_permissions_wrapper.canExecuteEVMScript(
-        valid_permissions, b""
-    )
+def test_can_execute_evm_script_evm_script_too_short(evm_script_permissions_wrapper, valid_permissions):
+    assert not evm_script_permissions_wrapper.canExecuteEVMScript(valid_permissions, b"")
 
 
-def test_can_execute_evm_script_has_permissions(
-    evm_script_permissions_wrapper, permissions_with_allowed_calldata
-):
+def test_can_execute_evm_script_has_permissions(evm_script_permissions_wrapper, permissions_with_allowed_calldata):
     permission, calldata = permissions_with_allowed_calldata
     assert evm_script_permissions_wrapper.canExecuteEVMScript(permission, calldata)
 
@@ -203,7 +177,5 @@ def test_is_valid_permissions_valid(evm_script_permissions_wrapper, valid_permis
     assert evm_script_permissions_wrapper.isValidPermissions(valid_permissions)
 
 
-def test_is_valid_permissions_invalid(
-    evm_script_permissions_wrapper, invalid_permissions
-):
+def test_is_valid_permissions_invalid(evm_script_permissions_wrapper, invalid_permissions):
     assert not evm_script_permissions_wrapper.isValidPermissions(invalid_permissions)
