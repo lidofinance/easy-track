@@ -9,7 +9,7 @@ def create_calldata(data):
     return (
         "0x"
         + encode(
-            ["(uint256,bool,uint256)[]"],
+            ["(uint256,uint256,uint256)[]"],
             [data],
         ).hex()
     )
@@ -44,11 +44,11 @@ def test_non_sorted_calldata(owner, update_target_validator_limits_factory):
     "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids isn't sorted"
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
-        NON_SORTED_CALLDATA = create_calldata([(1, True, 1), (0, False, 2)])
+        NON_SORTED_CALLDATA = create_calldata([(1, 1, 1), (0, 0, 2)])
         update_target_validator_limits_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
     with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
-        NON_SORTED_CALLDATA = create_calldata([(0, True, 1), (0, True, 2)])
+        NON_SORTED_CALLDATA = create_calldata([(0, 1, 1), (0, 1, 2)])
         update_target_validator_limits_factory.createEVMScript(owner, NON_SORTED_CALLDATA)
 
 
@@ -57,7 +57,7 @@ def test_operator_id_out_of_range(owner, update_target_validator_limits_factory,
 
     with reverts("NODE_OPERATOR_INDEX_OUT_OF_RANGE"):
         node_operators_count = node_operators_registry.getNodeOperatorsCount()
-        CALLDATA = create_calldata([(node_operators_count, True, 1)])
+        CALLDATA = create_calldata([(node_operators_count, 1, 1)])
         update_target_validator_limits_factory.createEVMScript(owner, CALLDATA)
 
 
@@ -68,7 +68,7 @@ def test_create_evm_script(
 ):
     "Must create correct EVMScript if all requirements are met"
 
-    input_params = [(0, True, 1), (1, True, 1)]
+    input_params = [(0, 1, 1), (1, 1, 1)]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params)
     evm_script = update_target_validator_limits_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -76,7 +76,7 @@ def test_create_evm_script(
         [
             (
                 node_operators_registry.address,
-                node_operators_registry.updateTargetValidatorsLimits.encode_input(
+                node_operators_registry.updateTargetValidatorsLimits['uint256,uint256,uint256'].encode_input(
                     input_param[0], input_param[1], input_param[2]
                 ),
             )
@@ -88,7 +88,7 @@ def test_create_evm_script(
 
 def test_decode_evm_script_call_data(node_operators_registry, update_target_validator_limits_factory):
     "Must decode EVMScript call data correctly"
-    input_params = [(0, True, 1), (1, True, 1)]
+    input_params = [(0, 1, 1), (1, 1, 1)]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params)
     assert update_target_validator_limits_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params

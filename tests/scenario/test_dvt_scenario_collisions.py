@@ -115,8 +115,8 @@ def prepare_set_node_operator_reward_address_calldata(operator, address):
     return "0x" + encode(["(uint256,address)[]"], [[(operator, address)]]).hex()
 
 
-def prepare_update_target_validator_limits_calldata(id_operator, is_active, target_limits):
-    return "0x" + encode(["(uint256,bool,uint256)[]"], [[(id_operator, is_active, target_limits)]]).hex()
+def prepare_update_target_validator_limits_calldata(id_operator, limit_mode, target_limits):
+    return "0x" + encode(["(uint256,uint256,uint256)[]"], [[(id_operator, limit_mode, target_limits)]]).hex()
 
 
 def prepare_set_vetted_validators_limit_calldata(id_operator, vetted_limit):
@@ -143,7 +143,6 @@ def test_simple_dvt_scenario(
     set_node_operator_reward_address_factory,
     set_vetted_validators_limit_factory,
     change_node_operator_manager_factory,
-    update_tareget_validator_limits_factory,
     increase_vetted_validators_limit_factory,
 ):
     # Grant roles

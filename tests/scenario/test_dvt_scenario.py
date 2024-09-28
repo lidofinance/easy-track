@@ -84,7 +84,7 @@ def test_simple_dvt_scenario(
     set_node_operator_reward_address_factory,
     set_vetted_validators_limit_factory,
     change_node_operator_manager_factory,
-    update_tareget_validator_limits_factory,
+    update_target_validator_limits_factory,
     increase_vetted_validators_limit_factory,
     stranger,
 ):
@@ -319,16 +319,16 @@ def test_simple_dvt_scenario(
 
     # Update target validators limits
 
-    update_tareget_validator_limits_calldata = (
+    update_target_validator_limits_calldata = (
         "0x"
-        + encode_single(
-            "((uint256,bool,uint256)[])", [[(no_5_id, 2, 1), (no_6_id, 1, 10)]]
+        + encode(
+            ["(uint256,uint256,uint256)[]"], [[(no_5_id, 2, 1), (no_6_id, 1, 10)]]
         ).hex()
     )
     easytrack_executor(
         commitee_multisig,
-        update_tareget_validator_limits_factory,
-        update_tareget_validator_limits_calldata,
+        update_target_validator_limits_factory,
+        update_target_validator_limits_calldata,
     )
 
     no_5_summary = simple_dvt.getNodeOperatorSummary(no_5_id)
