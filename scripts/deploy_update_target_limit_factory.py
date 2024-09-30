@@ -17,7 +17,7 @@ def get_trusted_caller():
         raise EnvironmentError("Please set TRUSTED_CALLER env variable")
     trusted_caller = os.environ["TRUSTED_CALLER"]
 
-    assert web3.is_address(trusted_caller), "Trusted caller address is not valid"
+    assert web3.isAddress(trusted_caller), "Trusted caller address is not valid"
 
     return trusted_caller
 
