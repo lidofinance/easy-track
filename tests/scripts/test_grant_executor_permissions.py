@@ -1,7 +1,5 @@
-import brownie
 from scripts.grant_executor_permissions import grant_executor_permissions
 from scripts.deploy import deploy_easy_tracks
-from utils import lido
 
 
 def test_grant_executor_permissions(accounts, lido_contracts):

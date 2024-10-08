@@ -1,8 +1,6 @@
-from brownie import network
 from scripts.revoke_all_permissions import revoke_permissions
 from scripts.grant_executor_permissions import grant_executor_permissions
 from scripts.deploy import deploy_easy_tracks
-from utils import lido
 
 
 def test_revoke_permissions(accounts, lido_contracts):
