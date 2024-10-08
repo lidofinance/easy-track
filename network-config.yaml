@@ -40,21 +40,9 @@ development:
       chain_id: 17000
       evm_version: shanghai
       fork: $HOLESKY_RPC_URL
-      gas_limit: 12000000
+      gas_limit: 30000000
       mnemonic: brownie
       port: 8545
     host: http://127.0.0.1
     id: holesky-fork
     name: holesky-fork
-  - cmd: ./ganache.sh
-    cmd_settings:
-      accounts: 10
-      chain_id: 17000
-      evm_version: shanghai
-      fork: $HOLESKY_RPC_URL
-      gas_limit: 12000000000
-      mnemonic: brownie
-      port: 8545
-    host: http://127.0.0.1
-    id: holesky-devnet-fork
-    name: holesky-devnet-fork

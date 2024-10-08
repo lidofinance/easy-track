@@ -11,12 +11,8 @@ def addresses(network=DEFAULT_NETWORK):
         return CSMAddressesSetup(
             module="0x4562c3e63c2e586cD1651B958C22F88135aCAd4f",
         )
-    if network == "holesky-devnet" or network == "holesky-devnet-fork":
-        return CSMAddressesSetup(
-            module="0x26aBc20a47f7e8991F1d26Bf0fC2bE8f24E9eF2A",
-        )
     raise NameError(
-        f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, holesky-devnet, holesky-devnet-fork"
+        f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"
     )
 
 
