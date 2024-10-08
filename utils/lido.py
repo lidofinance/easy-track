@@ -23,24 +23,6 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
-    if network == "goerli" or network == "goerli-fork":
-        return LidoAddressesSetup(
-            aragon=AragonSetup(
-                acl="0xb3cf58412a00282934d3c3e73f49347567516e98",
-                agent="0x4333218072d5d7008546737786663c38b4d561a4",
-                voting="0xbc0B67b4553f4CF52a913DE9A6eD0057E2E758Db",
-                finance="0x75c7b1d23f1cad7fb4d60281d7069e46440bc179",
-                gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
-                calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
-                token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
-                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
-            ),
-            steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
-            node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
-            simple_dvt=None,
-            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
-            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
-        )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
             aragon=AragonSetup(
@@ -58,6 +40,24 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
+        )
+    if network == "goerli" or network == "goerli-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0xb3cf58412a00282934d3c3e73f49347567516e98",
+                agent="0x4333218072d5d7008546737786663c38b4d561a4",
+                voting="0xbc0B67b4553f4CF52a913DE9A6eD0057E2E758Db",
+                finance="0x75c7b1d23f1cad7fb4d60281d7069e46440bc179",
+                gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
+                calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
+                token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
+                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
+            ),
+            steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
+            node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
+            simple_dvt=None,
+            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
+            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""

@@ -27,6 +27,11 @@ ldo_vote_executors_for_tests = {
         "0x4333218072d5d7008546737786663c38b4d561a4",
         "0xfda7e01b2718c511bf016030010572e833c7ae6a",
     ],
+    "holesky": [
+        "0xaa6bfBCD634EE744CB8FE522b29ADD23124593D3",
+        "0xba59a84c6440e8cccfdb5448877e26f1a431fc8b",
+        "0x1d835790d93a28fb30d998c0cb27426e5d2d7c8c",
+    ],
 }
 
 
