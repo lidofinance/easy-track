@@ -6,7 +6,9 @@ DEFAULT_NETWORK = "mainnet"
 
 def addresses(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
-        raise NotImplementedError("Mainnet addresses do not exist yet")
+        return CSMAddressesSetup(
+            module="0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F",
+        )
     if network == "holesky" or network == "holesky-fork":
         return CSMAddressesSetup(
             module="0x4562c3e63c2e586cD1651B958C22F88135aCAd4f",
