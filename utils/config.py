@@ -23,9 +23,9 @@ def get_is_live():
 
 
 def get_deployer_account(is_live, network="mainnet"):
-    contracts = lido.contracts(network=network)
     if not is_live:
         deployer = accounts[0]
+        contracts = lido.contracts(network=network)
         contracts.ldo.transfer(deployer, 10**18, {"from": contracts.aragon.agent})
         return deployer
     if "DEPLOYER" not in os.environ:

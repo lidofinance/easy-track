@@ -87,11 +87,6 @@ def load_deployed_contract(deployed_contracts):
 
 
 @pytest.fixture(scope="module")
-def lido_contracts():
-    return lido.contracts(network=brownie.network.show_active())
-
-
-@pytest.fixture(scope="module")
 def easy_track(
     EasyTrack,
     EVMScriptExecutor,

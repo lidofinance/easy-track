@@ -1,12 +1,9 @@
-from brownie import network
 from scripts.revoke_all_permissions import revoke_permissions
 from scripts.grant_executor_permissions import grant_executor_permissions
 from scripts.deploy import deploy_easy_tracks
-from utils import lido
 
 
-def test_revoke_permissions(accounts):
-    lido_contracts = lido.contracts(network=network.show_active())
+def test_revoke_permissions(accounts, lido_contracts):
     deployer = accounts[0]
     lego_program_vault = accounts[1]
     lego_committee_multisig = accounts[2]

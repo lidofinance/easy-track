@@ -61,7 +61,7 @@
     },
     "UpdateTargetValidatorLimits": {
       "contract": "UpdateTargetValidatorLimits",
-      "address": "0x41CF3DbDc939c5115823Fba1432c4EC5E7bD226C",
+      "address": "0x161a4552a625844c822954c5acbac928ee0f399b",
       "constructorArgs": [
         "0x08637515E85A4633E23dfc7861e2A9f53af640f7",
         "0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433"

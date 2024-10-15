@@ -134,10 +134,10 @@ def main():
     }
 
     # UpdateTargetValidatorLimits
-    update_tareget_validator_limits = UpdateTargetValidatorLimits.deploy(trusted_caller, simple_dvt, tx_params)
+    update_target_validator_limits = UpdateTargetValidatorLimits.deploy(trusted_caller, simple_dvt, tx_params)
     deployment_artifacts["UpdateTargetValidatorLimits"] = {
         "contract": "UpdateTargetValidatorLimits",
-        "address": update_tareget_validator_limits.address,
+        "address": update_target_validator_limits.address,
         "constructorArgs": [trusted_caller, simple_dvt],
     }
 
@@ -162,12 +162,12 @@ def main():
         "Deployed SetNodeOperatorRewardAddresses",
         set_node_operator_reward.address,
     )
-    log.ok("Deployed UpdateTargetValidatorLimits", update_tareget_validator_limits.address)
+    log.ok("Deployed UpdateTargetValidatorLimits", update_target_validator_limits.address)
     log.ok("Deployed ChangeNodeOperatorManagers", change_node_operator_manager.address)
 
     log.br()
     log.nb("All factories have been deployed.")
-    log.nb("Saving atrifacts...")
+    log.nb("Saving artifacts...")
 
     with open(f"deployed-{network_name}.json", "w") as outfile:
         json.dump(deployment_artifacts, outfile)
@@ -182,7 +182,7 @@ def main():
     IncreaseVettedValidatorsLimit.publish_source(increase_vetted_validators_limits)
     SetNodeOperatorNames.publish_source(set_node_operator_names)
     SetNodeOperatorRewardAddresses.publish_source(set_node_operator_reward)
-    UpdateTargetValidatorLimits.publish_source(update_tareget_validator_limits)
+    UpdateTargetValidatorLimits.publish_source(update_target_validator_limits)
     ChangeNodeOperatorManagers.publish_source(change_node_operator_manager)
 
     log.br()

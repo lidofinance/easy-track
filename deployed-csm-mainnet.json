@@ -1,0 +1,10 @@
+{
+  "CSMSettleElStealingPenalty": {
+    "contract": "CSMSettleElStealingPenalty",
+    "address": "0xF6B6E7997338C48Ea3a8BCfa4BB64a315fDa76f4",
+    "constructorArgs": [
+      "0xC52fC3081123073078698F1EAc2f1Dc7Bd71880f",
+      "0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F"
+    ]
+  }
+}
