@@ -76,21 +76,23 @@ def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
 
-def allowed_recipients_builder(network=DEFAULT_NETWORK):
+def allowed_recipients_builder(network=DEFAULT_NETWORK): # AllowedRecipientsBuilder (multi token)
     if network == "mainnet" or network == "mainnet-fork":
         return brownie.AllowedRecipientsBuilder.at(
-            "0x958e0D946D014F377421a53AB5f9180d4485e63B"
+            "0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF"
         )
+    '''
     if network == "goerli" or network == "goerli-fork":
         return brownie.AllowedRecipientsBuilder.at(
             "0xC4573b7288c391d090F1b6e3343AE9782D4aF87d"
         )
+    '''
     if network == "holesky" or network == "holesky-fork":
         return brownie.AllowedRecipientsBuilder.at(
-            "0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e"
+            "0x983dF2EA3A7Dce9D60bD06f5C5dCc44a138eBA89"
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesy-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesy-fork"""
     )
 
 

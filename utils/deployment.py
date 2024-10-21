@@ -17,10 +17,12 @@ from brownie import (
 @dataclass
 class AllowedRecipientsDeployConfig:
     tokens: [str]
+    tokens_registry: str
     limit: int
     period: int
     spent_amount: int
     trusted_caller: str
+    grant_rights: bool
 
 @dataclass
 class AllowedRecipientsSingleRecipientSetupDeployConfig(AllowedRecipientsDeployConfig):

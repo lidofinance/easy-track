@@ -6,6 +6,7 @@ import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC20/extensions/IERC20Metadata.sol";
 
 contract AllowedTokensRegistry is AccessControl {
+
     // -------------
     // EVENTS
     // -------------
