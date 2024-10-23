@@ -15,15 +15,39 @@ from utils import (
 
 from brownie import AllowedRecipientsBuilder
 
+'''
+Please fill out deploy_config before running the script.
+
+A. If you want a new token registry to be created when the script is executed:
+- fill the "tokens" parameter in the deploy_config with a list of tokens to be added to the registry, 
+- leave the "tokens_registry" parameter empty
+
+    Example:
+    tokens=["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551"],
+    tokens_registry = "",
+   
+B. If you prefer to use an existing token registry when the script is executed:
+- fill the "tokens_registry" parameter in the deploy_config with the address of the token registry that should be used,
+- leave the "tokens" parameter empty.
+
+    Example:
+    tokens=[],
+    tokens_registry = "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666",
+    
+The "token" parameter of the deploy_config is used primarily to verify the method of contracts deployment. 
+Please make sure you have filled it out correctly!
+
+'''
+
 deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
-    tokens=[], # "0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551"
-    tokens_registry = "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666", # "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    tokens=[],
+    tokens_registry = "",
     limit=0, 
     period=1,
     spent_amount=0,
-    titles=["QA & DAO-ops ms", "QA testnet EOA"], #
-    recipients=["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"],
-    trusted_caller="0x96d2Ff1C4D30f592B91fd731E218247689a76915",
+    titles=["", ""],
+    recipients=["", ""],
+    trusted_caller="",
     grant_rights = False,
 )
 
