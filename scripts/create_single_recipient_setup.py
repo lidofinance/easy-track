@@ -33,7 +33,6 @@ B. If you prefer to use an existing token registry when the script is executed:
 
 The "tokens_registry" parameter of the deploy_config is used primarily to verify the method of contracts deployment. 
 Please make sure you have filled deploy_config correctly.
-
 '''
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
