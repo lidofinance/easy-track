@@ -32,8 +32,22 @@ def addresses(network=DEFAULT_NETWORK):
             steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
             node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
         )
+    if network == "holesky" or network == "holesky-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0xfd1E42595CeC3E83239bf8dFc535250e7F48E0bC",
+                agent="0xE92329EC7ddB11D25e25b3c21eeBf11f15eB325d",
+                voting="0xdA7d2573Df555002503F29aA4003e398d28cc00f",
+                finance="0xf0F281E5d7FBc54EAFcE0dA225CDbde04173AB16",
+                gov_token="0x14ae7daeecdf57034f3E9db8564e46Dba8D97344",
+                calls_script="0xAa8B4F258a4817bfb0058b861447878168ddf7B0",
+                token_manager="0xFaa1692c6eea8eeF534e7819749aD93a1420379A",
+            ),
+            steth="0x3F1c547b21f65e10480dE3ad8E19fAAC46C95034",
+            node_operators_registry="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+        )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
     )
 
 
@@ -48,28 +62,44 @@ def external_contracts(network=DEFAULT_NETWORK):
             "usdc": "0xD87Ba7A50B2E7E660f678A895E4B72E7CB4CCd9C",
             "dai": "0x56340274fB5a72af1A3C6609061c451De7961Bd4",
         }
+    if network == "holesky" or network == "holesky-fork":
+        return {
+            "usdc": "0x9715b2786f1053294fc8952df923b95cab9aac42",
+            "dai": "0x2eb8e9198e647f80ccf62a5e291bcd4a5a3ca68c",
+            "usdt": "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551",
+        }
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
     )
 
 
 def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
+'''
+This brunch is designed for factories deployment using AllowedRecipientsBuilder (multi token) contract.
+In other branches of the project, a AllowedRecipientsBuilder (single token) version of the contract may be used as a contract for deployment.
+If it is necessary to merge branches, this conflict must be resolved.
+'''
 
 def allowed_recipients_builder(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return brownie.AllowedRecipientsBuilder.at(
-            "0x958e0D946D014F377421a53AB5f9180d4485e63B"
+            "0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF" # AllowedRecipientsBuilder (multi token), mainnet
         )
+    '''
     if network == "goerli" or network == "goerli-fork":
         return brownie.AllowedRecipientsBuilder.at(
             "0xC4573b7288c391d090F1b6e3343AE9782D4aF87d"
         )
+    '''
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilder.at(
+            "0x983dF2EA3A7Dce9D60bD06f5C5dCc44a138eBA89" # AllowedRecipientsBuilder (multi token), holesky
+        )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesy-fork"""
     )
-
 
 class LidoContractsSetup:
     def __init__(self, interface, lido_addresses):

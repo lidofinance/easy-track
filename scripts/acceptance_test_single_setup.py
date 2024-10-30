@@ -26,12 +26,13 @@ REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a
 
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
-    period=1,
-    spent_amount=0,
-    title="",
-    limit=0,
-    tokens=[],
-    trusted_caller="",
+    tokens=["", ""], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens_registry="", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    limit=0, # budget amount, ex. 1_000_000 * 10 ** 18,
+    period=1, # budget period duration in month, ex. 3
+    spent_amount=0, # budget already spent, ex. 0
+    title="", # only recipient's / trusted caller's title, ex. "LEGO LDO funder",
+    trusted_caller="", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
 )
 
 deployment_tx_hash = ""
