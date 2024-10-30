@@ -121,7 +121,7 @@ def main():
             [deploy_config.trusted_caller],
             [deploy_config.title],
             deploy_config.spent_amount,
-            deploy_config.grant_rights,
+            False,
             tx_params,
         )
 
