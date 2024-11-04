@@ -66,6 +66,7 @@ def external_contracts(network=DEFAULT_NETWORK):
         return {
             "usdc": "0x9715b2786f1053294fc8952df923b95cab9aac42",
             "dai": "0x2eb8e9198e647f80ccf62a5e291bcd4a5a3ca68c",
+            "usdt": "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551",
         }
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
@@ -75,24 +76,30 @@ def external_contracts(network=DEFAULT_NETWORK):
 def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
+'''
+This brunch is designed for factories deployment using AllowedRecipientsBuilder (multi token) contract.
+In other branches of the project, a AllowedRecipientsBuilder (single token) version of the contract may be used as a contract for deployment.
+If it is necessary to merge branches, this conflict must be resolved.
+'''
 
 def allowed_recipients_builder(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return brownie.AllowedRecipientsBuilder.at(
-            "0x958e0D946D014F377421a53AB5f9180d4485e63B"
+            "0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF" # AllowedRecipientsBuilder (multi token), mainnet
         )
+    '''
     if network == "goerli" or network == "goerli-fork":
         return brownie.AllowedRecipientsBuilder.at(
             "0xC4573b7288c391d090F1b6e3343AE9782D4aF87d"
         )
+    '''
     if network == "holesky" or network == "holesky-fork":
         return brownie.AllowedRecipientsBuilder.at(
-            "0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e"
+            "0x983dF2EA3A7Dce9D60bD06f5C5dCc44a138eBA89" # AllowedRecipientsBuilder (multi token), holesky
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesy-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesy-fork"""
     )
-
 
 class LidoContractsSetup:
     def __init__(self, interface, lido_addresses):

@@ -25,13 +25,15 @@ GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
 deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
-    tokens=[],
-    limit=0,
-    period=1,
-    spent_amount=0,
-    trusted_caller="",
-    titles=[],
-    recipients=[],
+    tokens=["", ""],  # the list of tokens in which transfers can be made,  ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens_registry="",  # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    limit=0,  # budget amount, ex. 1_000_000 * 10 ** 18,
+    period=1,  # budget period duration in month, ex. 3
+    spent_amount=0, # budget already spent, ex. 0
+    titles=["", ""], # allowed recipients titles, ex. ["LEGO LDO funder", "LEGO Stables funder"]
+    recipients=["", ""], # allowed recipients addresses, ex. ["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"]
+    trusted_caller="", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
+    grant_rights = False, # permissions to execute AddAllowedRecipient / RemoveAllowedRecipient methods on behalf of trusted_caller
 )
 
 deployment_tx_hash = ""

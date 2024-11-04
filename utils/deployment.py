@@ -17,6 +17,7 @@ from brownie import (
 @dataclass
 class AllowedRecipientsDeployConfig:
     tokens: [str]
+    tokens_registry: str
     limit: int
     period: int
     spent_amount: int
@@ -30,6 +31,7 @@ class AllowedRecipientsSingleRecipientSetupDeployConfig(AllowedRecipientsDeployC
 class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
     titles: [str]
     recipients: [str]
+    grant_rights: bool
 
 def deploy_easy_track(
     admin,
