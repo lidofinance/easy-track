@@ -2,6 +2,8 @@ import pytest
 from eth_abi import encode
 from brownie import reverts, web3, interface
 
+from utils.test_helpers import set_account_balance
+
 table = [
     {
         "address": "0x000000000000000000000000000000000000{:04}".format(i),
@@ -66,7 +68,7 @@ def simple_dvt(
 
     staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
-    staking_router.addStakingModule("Simple DVT", simple_dvt_contract, 10_000, 500, 500, {"from": agent})
+    staking_router.addStakingModule("Simple DVT", simple_dvt_contract, 10_000, 10_000, 500, 500, 150, 25, {"from": agent})
 
     acl.createPermission(
         agent,
@@ -115,8 +117,8 @@ def prepare_set_node_operator_reward_address_calldata(operator, address):
     return "0x" + encode(["(uint256,address)[]"], [[(operator, address)]]).hex()
 
 
-def prepare_update_target_validator_limits_calldata(id_operator, is_active, target_limits):
-    return "0x" + encode(["(uint256,bool,uint256)[]"], [[(id_operator, is_active, target_limits)]]).hex()
+def prepare_update_target_validator_limits_calldata(id_operator, limit_mode, target_limits):
+    return "0x" + encode(["(uint256,uint256,uint256)[]"], [[(id_operator, limit_mode, target_limits)]]).hex()
 
 
 def prepare_set_vetted_validators_limit_calldata(id_operator, vetted_limit):
@@ -143,7 +145,6 @@ def test_simple_dvt_scenario(
     set_node_operator_reward_address_factory,
     set_vetted_validators_limit_factory,
     change_node_operator_manager_factory,
-    update_tareget_validator_limits_factory,
     increase_vetted_validators_limit_factory,
 ):
     # Grant roles
@@ -367,6 +368,7 @@ def test_simple_dvt_scenario(
     )
 
     # addSigningKeysOperatorBH no1 address3 manager4 name3
+    set_account_balance(manager2)
     simple_dvt.addSigningKeysOperatorBH(
         no1,
         len(signing_keys["pubkeys"]),

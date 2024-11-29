@@ -3,6 +3,7 @@ from eth_abi import encode
 from brownie import web3, interface
 from utils.evm_script import encode_call_script
 from utils.permission_parameters import Op, Param, encode_permission_params
+from utils.test_helpers import set_account_balance
 
 clusters = [
     {
@@ -40,15 +41,23 @@ def simple_dvt(
     nor_proxy = interface.AragonAppProxy(node_operators_registry)
     module_name = "simple-dvt-registry"
     name = web3.keccak(text=module_name).hex()
-    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": voting})
+    simple_DVT_tx = kernel.newAppInstance(
+        name, nor_proxy.implementation(), {"from": voting}
+    )
 
-    simple_dvt_contract = interface.NodeOperatorsRegistry(simple_DVT_tx.new_contracts[0])
+    simple_dvt_contract = interface.NodeOperatorsRegistry(
+        simple_DVT_tx.new_contracts[0]
+    )
 
     simple_dvt_contract.initialize(locator, "0x01", 0, {"from": voting})
 
-    staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
+    staking_router.grantRole(
+        web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent}
+    )
 
-    staking_router.addStakingModule("Simple DVT", simple_dvt_contract, 10_000, 500, 500, {"from": agent})
+    staking_router.addStakingModule(
+        "Simple DVT", simple_dvt_contract, 10_000, 10_000, 500, 500, 150, 25, {"from": agent}
+    )
 
     acl.createPermission(
         agent,
@@ -76,7 +85,7 @@ def test_simple_dvt_scenario(
     set_node_operator_reward_address_factory,
     set_vetted_validators_limit_factory,
     change_node_operator_manager_factory,
-    update_tareget_validator_limits_factory,
+    update_target_validator_limits_factory,
     increase_vetted_validators_limit_factory,
     stranger,
 ):
@@ -116,12 +125,17 @@ def test_simple_dvt_scenario(
             ["uint256", "(string,address,address)[]"],
             [
                 0,
-                [(cluster["name"], cluster["address"], cluster["manager"]) for cluster in clusters],
+                [
+                    (cluster["name"], cluster["address"], cluster["manager"])
+                    for cluster in clusters
+                ],
             ],
         ).hex()
     )
 
-    easytrack_executor(commitee_multisig, add_node_operators_factory, add_node_operators_calldata)
+    easytrack_executor(
+        commitee_multisig, add_node_operators_factory, add_node_operators_calldata
+    )
 
     for cluster_index in range(len(clusters)):
         cluster = simple_dvt.getNodeOperator(cluster_index, True)
@@ -147,9 +161,13 @@ def test_simple_dvt_scenario(
     deactivate_node_operators_data = []
 
     for cluster_index in range(2, 5):
-        deactivate_node_operators_data.append((cluster_index, clusters[cluster_index]["manager"]))
+        deactivate_node_operators_data.append(
+            (cluster_index, clusters[cluster_index]["manager"])
+        )
 
-    deactivate_node_operators_calldata = "0x" + encode(["(uint256,address)[]"], [deactivate_node_operators_data]).hex()
+    deactivate_node_operators_calldata = (
+        "0x" + encode(["(uint256,address)[]"], [deactivate_node_operators_data]).hex()
+    )
 
     easytrack_executor(
         commitee_multisig,
@@ -175,9 +193,13 @@ def test_simple_dvt_scenario(
     activate_node_operators_data = []
 
     for cluster_index in range(2, 5):
-        activate_node_operators_data.append((cluster_index, clusters[cluster_index]["manager"]))
+        activate_node_operators_data.append(
+            (cluster_index, clusters[cluster_index]["manager"])
+        )
 
-    activate_node_operators_calldata = "0x" + encode(["(uint256,address)[]"], [activate_node_operators_data]).hex()
+    activate_node_operators_calldata = (
+        "0x" + encode(["(uint256,address)[]"], [activate_node_operators_data]).hex()
+    )
 
     easytrack_executor(
         commitee_multisig,
@@ -200,7 +222,9 @@ def test_simple_dvt_scenario(
 
     # Set name of node operator
 
-    set_node_operator_name_calldata = "0x" + encode(["(uint256,string)[]"], [[(6, "New Name")]]).hex()
+    set_node_operator_name_calldata = (
+        "0x" + encode(["(uint256,string)[]"], [[(6, "New Name")]]).hex()
+    )
 
     easytrack_executor(
         commitee_multisig,
@@ -229,6 +253,7 @@ def test_simple_dvt_scenario(
     # add signing keys to node operator
     no_5_id = 5
     no_5 = simple_dvt.getNodeOperator(no_5_id, False)
+    set_account_balance(clusters[5]["manager"])
 
     simple_dvt.addSigningKeysOperatorBH(
         no_5_id,
@@ -251,6 +276,8 @@ def test_simple_dvt_scenario(
 
     no_6_id = 6
     no_6 = simple_dvt.getNodeOperator(no_6_id, False)
+    set_account_balance(clusters[6]["manager"])
+
     simple_dvt.addSigningKeysOperatorBH(
         no_6_id,
         len(signing_keys["pubkeys"]),
@@ -259,7 +286,9 @@ def test_simple_dvt_scenario(
         {"from": clusters[6]["manager"]},
     )
 
-    set_vetted_validators_limit_calldata = "0x" + encode(["(uint256,uint256)[]"], [[(no_5_id, 4), (no_6_id, 3)]]).hex()
+    set_vetted_validators_limit_calldata = (
+        "0x" + encode(["(uint256,uint256)[]"], [[(no_5_id, 4), (no_6_id, 3)]]).hex()
+    )
     easytrack_executor(
         commitee_multisig,
         set_vetted_validators_limit_factory,
@@ -280,7 +309,9 @@ def test_simple_dvt_scenario(
         {"from": clusters[5]["manager"]},
     )
 
-    increase_vetted_validators_limit_calldata = "0x" + encode(["(uint256,uint256)"], [(no_5_id, 6)]).hex()
+    increase_vetted_validators_limit_calldata = (
+        "0x" + encode(["(uint256,uint256)"], [(no_5_id, 6)]).hex()
+    )
     easytrack_executor(
         clusters[5]["manager"],
         increase_vetted_validators_limit_factory,
@@ -292,20 +323,23 @@ def test_simple_dvt_scenario(
 
     # Update target validators limits
 
-    update_tareget_validator_limits_calldata = (
-        "0x" + encode(["(uint256,bool,uint256)[]"], [[(no_5_id, True, 1), (no_6_id, True, 10)]]).hex()
+    update_target_validator_limits_calldata = (
+        "0x"
+        + encode(
+            ["(uint256,uint256,uint256)[]"], [[(no_5_id, 2, 1), (no_6_id, 1, 10)]]
+        ).hex()
     )
     easytrack_executor(
         commitee_multisig,
-        update_tareget_validator_limits_factory,
-        update_tareget_validator_limits_calldata,
+        update_target_validator_limits_factory,
+        update_target_validator_limits_calldata,
     )
 
     no_5_summary = simple_dvt.getNodeOperatorSummary(no_5_id)
     no_6_summary = simple_dvt.getNodeOperatorSummary(no_6_id)
 
-    assert no_5_summary["isTargetLimitActive"] == True
-    assert no_6_summary["isTargetLimitActive"] == True
+    assert no_5_summary["targetLimitMode"] == 2
+    assert no_6_summary["targetLimitMode"] == 1
     assert no_5_summary["targetValidatorsCount"] == 1
     assert no_6_summary["targetValidatorsCount"] == 10
 
@@ -341,19 +375,21 @@ def test_simple_dvt_scenario(
         agent, simple_dvt, web3.keccak(text="MANAGE_SIGNING_KEYS").hex()
     )
 
-    set_permission_manager_calldata = et_contracts.evm_script_executor.executeEVMScript.encode_input(
-        encode_call_script(
-            [
-                (
-                    acl.address,
-                    acl.setPermissionManager.encode_input(
-                        agent,
-                        simple_dvt,
-                        web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-                    ),
-                )
-            ]
-        ),
+    set_permission_manager_calldata = (
+        et_contracts.evm_script_executor.executeEVMScript.encode_input(
+            encode_call_script(
+                [
+                    (
+                        acl.address,
+                        acl.setPermissionManager.encode_input(
+                            agent,
+                            simple_dvt,
+                            web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
+                        ),
+                    )
+                ]
+            ),
+        )
     )
 
     et_contracts.evm_script_executor.setEasyTrack(agent, {"from": voting})
@@ -363,6 +399,10 @@ def test_simple_dvt_scenario(
         set_permission_manager_calldata,
         {"from": voting},
     )
-    et_contracts.evm_script_executor.setEasyTrack(et_contracts.easy_track, {"from": voting})
+    et_contracts.evm_script_executor.setEasyTrack(
+        et_contracts.easy_track, {"from": voting}
+    )
 
-    assert acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == agent
+    assert (
+        acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == agent
+    )

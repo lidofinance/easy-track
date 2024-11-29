@@ -399,7 +399,7 @@ def change_node_operator_manager_factory(
 
 
 @pytest.fixture(scope="module")
-def update_tareget_validator_limits_factory(
+def update_target_validator_limits_factory(
     et_contracts,
     voting,
     simple_dvt,
@@ -416,12 +416,12 @@ def update_tareget_validator_limits_factory(
     assert factory.nodeOperatorsRegistry() == simple_dvt
     assert factory.trustedCaller() == commitee_multisig
 
-    update_tareget_validators_limits_permission = (
-        simple_dvt.address + simple_dvt.updateTargetValidatorsLimits.signature[2:]
+    update_target_validators_limits_permission = (
+        simple_dvt.address + simple_dvt.updateTargetValidatorsLimits['uint256,uint256,uint256'].signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory,
-        update_tareget_validators_limits_permission,
+        update_target_validators_limits_permission,
         {"from": voting},
     )
     evm_script_factories = et_contracts.easy_track.getEVMScriptFactories()
