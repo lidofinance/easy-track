@@ -749,3 +749,14 @@ def allowed_recipients_limit_params(registries):
 @pytest.fixture(scope="module")
 def bokky_poo_bahs_date_time_contract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def ensure_agent_dai_balance(dai, interface, lido_contracts):
+    dai_ward = brownie.accounts.at("0x9759A6Ac90977b93B58547b4A71c78317f391A28", force=True)
+    def _ensure_agent_dai_balance(requested_balance_dai):
+        agent_balance = interface.ERC20(dai).balanceOf(lido_contracts.aragon.agent)
+        if agent_balance < requested_balance_dai * 10**18:
+            interface.Dai(dai).mint(lido_contracts.aragon.agent, requested_balance_dai * 10**18 - agent_balance, {"from": dai_ward})
+        assert interface.ERC20(dai).balanceOf(lido_contracts.aragon.agent) >= requested_balance_dai, "Error when trying to mint DAI for agent"
+    return _ensure_agent_dai_balance
