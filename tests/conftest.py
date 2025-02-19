@@ -377,6 +377,14 @@ def staking_router(lido_contracts):
 def locator(lido_contracts):
     return lido_contracts.locator
 
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list(lido_contracts, owner):
+    manager = lido_contracts.mev_boost_list.get_manager()
+    if manager != owner:
+        list_owner = lido_contracts.mev_boost_list.get_owner()
+        lido_contracts.mev_boost_list.set_manager(owner, {"from": list_owner})
+    return lido_contracts.mev_boost_list
+
 
 #########################
 # State Changing Fixtures
