@@ -69,14 +69,17 @@ contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
             AddMEVBoostRelayInput[] memory decodedCallData
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        address[] memory toAddresses = new address[](decodedCallData.length);
-        bytes4[] memory methodIds = new bytes4[](decodedCallData.length);
-        bytes[] memory encodedCalldata = new bytes[](decodedCallData.length);
+        uint256 decodedCalldataLength = decodedCallData.length;
+        address relayAllowedListAddress = address(mevBoostRelayAllowedList);
+
+        address[] memory toAddresses = new address[](decodedCalldataLength);
+        bytes4[] memory methodIds = new bytes4[](decodedCalldataLength);
+        bytes[] memory encodedCalldata = new bytes[](decodedCalldataLength);
 
         _validateInputData(relaysCount, decodedCallData);
 
-        for (uint256 i = 0; i < decodedCallData.length; ++i) {
-            toAddresses[i] = address(mevBoostRelayAllowedList);
+        for (uint256 i; i < decodedCalldataLength; ) {
+            toAddresses[i] = relayAllowedListAddress;
             methodIds[i] = ADD_RELAY_SELECTOR;
             encodedCalldata[i] = abi.encode(
                 decodedCallData[i].uri,
@@ -84,6 +87,10 @@ contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
                 decodedCallData[i].is_mandatory,
                 decodedCallData[i].description
             );
+
+            unchecked {
+                ++i;
+            }
         }
 
         return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
@@ -124,11 +131,15 @@ contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
 
         require(_relaysCount + calldataLength <= MAX_NUM_RELAYS, ERROR_MAX_NUM_RELAYS_EXCEEDED);
 
-        for (uint256 i = 0; i < calldataLength; ++i) {
+        for (uint256 i; i < calldataLength; ) {
             string memory uri = _relayInputs[i].uri;
             require(bytes(uri).length > 0, ERROR_EMPTY_RELAY_URI);
 
             require(isRelayUriAvailable(uri), ERROR_RELAY_URI_ALREADY_EXISTS);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 

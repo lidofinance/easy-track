@@ -57,16 +57,23 @@ contract RemoveMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
         string[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        address[] memory toAddresses = new address[](decodedCallData.length);
-        bytes4[] memory methodIds = new bytes4[](decodedCallData.length);
-        bytes[] memory encodedCalldata = new bytes[](decodedCallData.length);
+        uint256 decodedCallDataLength = decodedCallData.length;
+        address mevBoostRelayAllowedListAddress = address(mevBoostRelayAllowedList);
+
+        address[] memory toAddresses = new address[](decodedCallDataLength);
+        bytes4[] memory methodIds = new bytes4[](decodedCallDataLength);
+        bytes[] memory encodedCalldata = new bytes[](decodedCallDataLength);
 
         _validateInputData(decodedCallData);
 
-        for (uint256 i = 0; i < decodedCallData.length; ++i) {
-            toAddresses[i] = address(mevBoostRelayAllowedList);
+        for (uint256 i; i < decodedCallDataLength; ) {
+            toAddresses[i] = mevBoostRelayAllowedListAddress;
             methodIds[i] = REMOVE_RELAY_SELECTOR;
             encodedCalldata[i] = abi.encode(decodedCallData[i]);
+
+            unchecked {
+                ++i;
+            }
         }
 
         return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
@@ -100,11 +107,15 @@ contract RemoveMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
             ERROR_RELAYS_COUNT_MISMATCH
         );
 
-        for (uint256 i = 0; i < calldataLength; ++i) {
+        for (uint256 i; i < calldataLength; ) {
             string memory uri = _relayUris[i];
             require(bytes(uri).length > 0, ERROR_EMPTY_RELAY_URI);
 
             require(isRelayUriPresented(uri), ERROR_NO_RELAY_WITH_GIVEN_URI);
+
+            unchecked {
+                ++i;
+            }
         }
     }
 
