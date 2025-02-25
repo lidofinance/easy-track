@@ -58,16 +58,13 @@ contract RemoveMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
         string[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
         uint256 decodedCallDataLength = decodedCallData.length;
-        address mevBoostRelayAllowedListAddress = address(mevBoostRelayAllowedList);
 
-        address[] memory toAddresses = new address[](decodedCallDataLength);
         bytes4[] memory methodIds = new bytes4[](decodedCallDataLength);
         bytes[] memory encodedCalldata = new bytes[](decodedCallDataLength);
 
         _validateInputData(decodedCallData);
 
         for (uint256 i; i < decodedCallDataLength; ) {
-            toAddresses[i] = mevBoostRelayAllowedListAddress;
             methodIds[i] = REMOVE_RELAY_SELECTOR;
             encodedCalldata[i] = abi.encode(decodedCallData[i]);
 
@@ -76,7 +73,12 @@ contract RemoveMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
             }
         }
 
-        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
+        return
+            EVMScriptCreator.createEVMScript(
+                address(mevBoostRelayAllowedList),
+                methodIds,
+                encodedCalldata
+            );
     }
 
     /// @notice Decodes call data used by createEVMScript method

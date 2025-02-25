@@ -31,7 +31,9 @@ contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
+    /// @dev limits the number of relays in the registry based on the value from the MEVBoostRelayAllowedList
     uint256 private constant MAX_NUM_RELAYS = 40;
+    /// @dev selector for the add_relay method in the MEVBoostRelayAllowedList
     bytes4 private constant ADD_RELAY_SELECTOR =
         bytes4(keccak256("add_relay(string,string,bool,string)"));
 
@@ -70,16 +72,13 @@ contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         uint256 decodedCalldataLength = decodedCallData.length;
-        address relayAllowedListAddress = address(mevBoostRelayAllowedList);
 
-        address[] memory toAddresses = new address[](decodedCalldataLength);
         bytes4[] memory methodIds = new bytes4[](decodedCalldataLength);
         bytes[] memory encodedCalldata = new bytes[](decodedCalldataLength);
 
         _validateInputData(relaysCount, decodedCallData);
 
         for (uint256 i; i < decodedCalldataLength; ) {
-            toAddresses[i] = relayAllowedListAddress;
             methodIds[i] = ADD_RELAY_SELECTOR;
             encodedCalldata[i] = abi.encode(
                 decodedCallData[i].uri,
@@ -93,7 +92,12 @@ contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
             }
         }
 
-        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, encodedCalldata);
+        return
+            EVMScriptCreator.createEVMScript(
+                address(mevBoostRelayAllowedList),
+                methodIds,
+                encodedCalldata
+            );
     }
 
     /// @notice Decodes call data used by createEVMScript method
