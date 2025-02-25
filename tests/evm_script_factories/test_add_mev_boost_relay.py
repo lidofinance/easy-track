@@ -162,4 +162,3 @@ def test_decode_evm_script_call_data(mev_boost_relay_allowed_list, add_mev_boost
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params)
     assert add_mev_boost_relay_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params
-
