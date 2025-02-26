@@ -26,7 +26,6 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
 
     string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
     string private constant ERROR_RELAYS_COUNT_MISMATCH = "RELAYS_COUNT_MISMATCH";
-    string private constant ERROR_MAX_NUM_RELAYS_EXCEEDED = "MAX_NUM_RELAYS_EXCEEDED";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_RELAY_NOT_FOUND = "RELAY_NOT_FOUND";
     string private constant ERROR_RELAY_URI_DUPLICATE = "RELAY_URI_HAS_A_DUPLICATE";
@@ -70,17 +69,16 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        (
-            uint256 relaysCount,
-            EditMEVBoostRelayInput[] memory decodedCallData
-        ) = _decodeEVMScriptCallData(_evmScriptCallData);
+        EditMEVBoostRelayInput[] memory decodedCallData = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
 
         uint256 calldataLength = decodedCallData.length;
 
-        // validate that the call data is not empty and that the relays count matches the allowed list
+        // validate that the call data is not empty and that the updated relays count does not exceed the allowed list count
         require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
         require(
-            mevBoostRelayAllowedList.get_relays_amount() == relaysCount,
+            mevBoostRelayAllowedList.get_relays_amount() >= calldataLength,
             ERROR_RELAYS_COUNT_MISMATCH
         );
 
@@ -123,11 +121,10 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded relays count and new data: (uint256, AddMEVBoostRelayInput[])
-    /// @return relaysCount current number of relays in allowed list
     /// @return relays EditMEVBoostRelayInput[]
     function decodeEVMScriptCallData(
         bytes calldata _evmScriptCallData
-    ) external pure returns (uint256 relaysCount, EditMEVBoostRelayInput[] memory relays) {
+    ) external pure returns (EditMEVBoostRelayInput[] memory relays) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -137,8 +134,8 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (uint256 relaysCount, EditMEVBoostRelayInput[] memory relays) {
-        (relaysCount, relays) = abi.decode(_evmScriptCallData, (uint256, EditMEVBoostRelayInput[]));
+    ) private pure returns (EditMEVBoostRelayInput[] memory relays) {
+        relays = abi.decode(_evmScriptCallData, (EditMEVBoostRelayInput[]));
     }
 
     function _validateRelayURI(
