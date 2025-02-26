@@ -93,7 +93,7 @@ contract RemoveMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     /// @param _evmScriptCallData Encoded relay URIs: string[]
     /// @return relayUris string[]
     function decodeEVMScriptCallData(
-        bytes memory _evmScriptCallData
+        bytes calldata _evmScriptCallData
     ) external pure returns (string[] memory relayUris) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }

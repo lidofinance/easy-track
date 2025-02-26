@@ -7,21 +7,25 @@ from utils.evm_script import encode_call_script
 RELAY_URIS = [
     "https://relay1.example.com",
     "https://relay2.example.com",
+    "https://relay3.example.com",
 ]
 
 OPERATORS = [
     "Operator 1",
     "Operator 2",
+    "Operator 3",
 ]
 
 IS_MANDATORY = [
     True,
     False,
+    True,
 ]
 
 DESCRIPTIONS = [
     "First relay description",
     "Second relay description",
+    "Third relay description",
 ]
 
 def create_calldata(data):
@@ -48,14 +52,14 @@ def test_create_evm_script_called_by_stranger(stranger, add_mev_boost_relay_fact
     with reverts("CALLER_IS_FORBIDDEN"):
         add_mev_boost_relay_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
-def test_relays_count(owner, add_mev_boost_relay_factory):
+def test_relays_count_mismatch(owner, add_mev_boost_relay_factory):
     "Must revert with message 'RELAYS_COUNT_MISMATCH' when relays count passed wrong"
     with reverts("RELAYS_COUNT_MISMATCH"):
         CALLDATA = create_calldata(
             [0, [(RELAY_URIS[0], OPERATORS[0], IS_MANDATORY[0], DESCRIPTIONS[0])]],
         )
         add_mev_boost_relay_factory.createEVMScript(owner, CALLDATA)
-
+        
 def test_empty_calldata(owner, add_mev_boost_relay_factory, mev_boost_relay_allowed_list):
     relays_count = mev_boost_relay_allowed_list.get_relays_amount()
     with reverts("EMPTY_CALLDATA"):
@@ -149,6 +153,36 @@ def test_create_evm_script(owner, add_mev_boost_relay_factory, mev_boost_relay_a
     expected_evm_script = encode_call_script(scripts)
     assert evm_script == expected_evm_script
 
+def test_cannot_batch_create_evm_scripts_with_error( owner, add_mev_boost_relay_factory, mev_boost_relay_allowed_list):
+    "Must revert with message 'RELAY_URI_ALREADY_EXISTS' when uri of one of the relays already exists in allowed list"
+
+    # First add a relay
+    mev_boost_relay_allowed_list.add_relay(
+        RELAY_URIS[1],
+        OPERATORS[1],
+        IS_MANDATORY[1],
+        DESCRIPTIONS[1],
+        {"from": owner}
+    )
+
+    added_relay = mev_boost_relay_allowed_list.get_relay_by_uri(RELAY_URIS[0])
+    assert added_relay[0] == RELAY_URIS[0]
+    relays_count = mev_boost_relay_allowed_list.get_relays_amount()
+
+    # Try to add the same URI again
+    with reverts("RELAY_URI_ALREADY_EXISTS"):
+        CALLDATA = create_calldata(
+            [
+                relays_count,
+                [
+                    (RELAY_URIS[0], OPERATORS[0], IS_MANDATORY[0], DESCRIPTIONS[0]),
+                    (RELAY_URIS[1], OPERATORS[1], IS_MANDATORY[1], DESCRIPTIONS[1]),
+                    (RELAY_URIS[2], OPERATORS[2], IS_MANDATORY[2], DESCRIPTIONS[2]),
+                ],
+            ]
+        )
+        add_mev_boost_relay_factory.batchCreateEVMScripts(owner, [CALLDATA, CALLDATA])
+
 def test_decode_evm_script_call_data(mev_boost_relay_allowed_list, add_mev_boost_relay_factory):
     "Must decode EVMScript call data correctly"
     relays_count = mev_boost_relay_allowed_list.get_relays_amount()
@@ -162,3 +196,21 @@ def test_decode_evm_script_call_data(mev_boost_relay_allowed_list, add_mev_boost
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params)
     assert add_mev_boost_relay_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params
+
+def test_cannot_add_relays_with_duplicate_uri(
+    owner, add_mev_boost_relay_factory, mev_boost_relay_allowed_list
+):
+    "Must revert with message 'RELAY_URI_HAS_A_DUPLICATE' when trying to add two relays with the same URI"
+    relays_count = mev_boost_relay_allowed_list.get_relays_amount()
+
+    assert relays_count == 0
+
+    # Create array of 2 relay inputs with the same URI
+    inputs = [
+        (RELAY_URIS[0], OPERATORS[0], IS_MANDATORY[0], DESCRIPTIONS[0]),
+        (RELAY_URIS[0], OPERATORS[1], IS_MANDATORY[1], DESCRIPTIONS[1]),
+    ]
+
+    with reverts("RELAY_URI_HAS_A_DUPLICATE"):
+        CALLDATA = create_calldata([relays_count, inputs])
+        add_mev_boost_relay_factory.createEVMScript(owner, CALLDATA)

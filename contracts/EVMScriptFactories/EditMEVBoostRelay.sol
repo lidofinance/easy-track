@@ -29,6 +29,7 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MAX_NUM_RELAYS_EXCEEDED = "MAX_NUM_RELAYS_EXCEEDED";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_RELAY_NOT_FOUND = "RELAY_NOT_FOUND";
+    string private constant ERROR_RELAY_URI_DUPLICATE = "RELAY_URI_HAS_A_DUPLICATE";
 
     // -------------
     // CONSTANTS
@@ -125,7 +126,7 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     /// @return relaysCount current number of relays in allowed list
     /// @return relays EditMEVBoostRelayInput[]
     function decodeEVMScriptCallData(
-        bytes memory _evmScriptCallData
+        bytes calldata _evmScriptCallData
     ) external pure returns (uint256 relaysCount, EditMEVBoostRelayInput[] memory relays) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -140,9 +141,26 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
         (relaysCount, relays) = abi.decode(_evmScriptCallData, (uint256, EditMEVBoostRelayInput[]));
     }
 
-    function _validateRelayURI(string memory _relayInputURI) private view {
+    function _validateRelayURI(
+        string memory _relayInputURI,
+        uint256 _currentIndex,
+        EditMEVBoostRelayInput[] memory _relays
+    ) private view {
         require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
         require(relayURIExists(_relayInputURI), ERROR_RELAY_NOT_FOUND);
+
+        // check for duplicates in the input data array, starting from the current index for efficiency
+        // if a duplicate is found, it will throw an exception
+        for (uint256 i = _currentIndex; i < _relays.length; ) {
+            require(
+                keccak256(bytes(_relays[i].uri)) != keccak256(bytes(_relayInputURI)),
+                ERROR_RELAY_URI_DUPLICATE
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function relayURIExists(string memory _uri) private view returns (bool) {

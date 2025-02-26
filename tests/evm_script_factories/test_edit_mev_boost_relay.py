@@ -232,3 +232,38 @@ def test_decode_evm_script_call_data_multiple_relays(edit_mev_boost_relay_factor
         relays_count,
         input_params,
     )
+
+def test_cannot_edit_multiple_relays_with_error(owner, edit_mev_boost_relay_factory, mev_boost_relay_allowed_list):
+    "Must revert with message 'RELAY_NOT_FOUND' when one of relays not found"
+    relays_count = mev_boost_relay_allowed_list.get_relays_amount()
+    with reverts("RELAY_NOT_FOUND"):
+        CALLDATA = create_calldata(
+            [
+                relays_count,
+                [
+                    (RELAY_URIS[0], OPERATORS[0], IS_MANDATORY[0], DESCRIPTIONS[0]),
+                    (RELAY_URIS[1], OPERATORS[1], IS_MANDATORY[1], DESCRIPTIONS[1]),
+                    (RELAY_URIS[2], OPERATORS[2], IS_MANDATORY[2], DESCRIPTIONS[2]),
+                    ("https://relay4.example.com", "Operator 4", True, "Fourth relay description"),
+                ],
+            ]
+        )
+        edit_mev_boost_relay_factory.createEVMScript(owner, CALLDATA)
+
+def test_cannot_edit_relays_with_duplicate_uri(
+    owner, edit_mev_boost_relay_factory, mev_boost_relay_allowed_list
+):    
+    "Must revert with message 'RELAY_URI_HAS_A_DUPLICATE' when trying to add two relays with the same URI"
+    relays_count = mev_boost_relay_allowed_list.get_relays_amount()
+
+    assert relays_count == 0
+
+    # Create array of 2 relay inputs with the same URI
+    inputs = [
+        (RELAY_URIS[0], OPERATORS[0], IS_MANDATORY[0], DESCRIPTIONS[0]),
+        (RELAY_URIS[0], OPERATORS[1], IS_MANDATORY[1], DESCRIPTIONS[1]),
+    ]
+
+    with reverts("RELAY_URI_HAS_A_DUPLICATE"):
+        CALLDATA = create_calldata([relays_count, inputs])
+        edit_mev_boost_relay_factory.createEVMScript(owner, CALLDATA)
