@@ -8,9 +8,9 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMEVBoostRelayAllowedList.sol";
 
-/// @author katamarinaki
+/// @author katamarinaki, swissarmytowel
 /// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
-contract AddMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
+contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     /// @notice Input data for createEVMScript method to add new MEV boost relay, has the same structure as Relay struct in MEVBoostRelayAllowedList
     struct AddMEVBoostRelayInput {
         string uri;

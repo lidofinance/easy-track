@@ -10,7 +10,7 @@ import "../interfaces/IMEVBoostRelayAllowedList.sol";
 
 /// @author swissarmytowel
 /// @notice Creates EVMScript to edit MEV boost relays in the MEV Boost Relay allow list by the URI
-contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
+contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     struct EditMEVBoostRelayInput {
         // key to identify the relay
         string uri;
@@ -64,7 +64,7 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to edit a MEV boost relay in the MEV Boost relay allow list by the URI
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, AddMEVBoostRelayInput[])
+    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, EditMEVBoostRelayInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -120,7 +120,7 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, AddMEVBoostRelayInput[])
+    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, EditMEVBoostRelayInput[])
     /// @return relays EditMEVBoostRelayInput[]
     function decodeEVMScriptCallData(
         bytes calldata _evmScriptCallData
