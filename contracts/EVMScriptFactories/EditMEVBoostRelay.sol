@@ -34,10 +34,10 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
-    /// @dev selector for the add_relay method in the MEVBoostRelayAllowedList
+    /// @notice selector for the add_relay method in the MEVBoostRelayAllowedList
     bytes4 private constant ADD_RELAY_SELECTOR =
         bytes4(keccak256("add_relay(string,string,bool,string)"));
-    /// @dev selector for the remove_relay method in the MEVBoostRelayAllowedList
+    /// @notice selector for the remove_relay method in the MEVBoostRelayAllowedList
     bytes4 private constant REMOVE_RELAY_SELECTOR = bytes4(keccak256("remove_relay(string)"));
 
     // -------------
@@ -64,7 +64,7 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to edit a MEV boost relay in the MEV Boost relay allow list by the URI
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: EditMEVBoostRelayInput[]
+    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, AddMEVBoostRelayInput[])
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -74,17 +74,24 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
             EditMEVBoostRelayInput[] memory decodedCallData
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        uint256 decodedCalldataLength = decodedCallData.length;
+        uint256 calldataLength = decodedCallData.length;
 
-        bytes4[] memory methodIds = new bytes4[](decodedCalldataLength * 2);
-        bytes[] memory encodedCalldata = new bytes[](decodedCalldataLength * 2);
+        // validate that the call data is not empty and that the relays count matches the allowed list
+        require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
+        require(
+            mevBoostRelayAllowedList.get_relays_amount() == relaysCount,
+            ERROR_RELAYS_COUNT_MISMATCH
+        );
 
-        _validateInputData(relaysCount, decodedCallData);
+        // allocate 2x the length of the decoded call data for the methodIds and encodedCalldata arrays
+        // as each relay edit requires two relay calls (remove and add)
+        bytes4[] memory methodIds = new bytes4[](calldataLength * 2);
+        bytes[] memory encodedCalldata = new bytes[](calldataLength * 2);
 
         // iterate over the decoded call data and create the methodIds and encodedCalldata
         // allow list does not allow edits, so they are achieved by stacking remove and add relay calls on i and i + 1 positions
         // of the methodIds and encodedCalldata arrays respectively
-        for (uint256 i; i < decodedCalldataLength; ) {
+        for (uint256 i; i < calldataLength; ) {
             uint256 index = i * 2;
 
             // remove relay by uri from the registry
@@ -114,7 +121,7 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded (uint256, EditMEVBoostRelayInput[])
+    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, AddMEVBoostRelayInput[])
     /// @return relaysCount current number of relays in allowed list
     /// @return relays EditMEVBoostRelayInput[]
     function decodeEVMScriptCallData(
@@ -133,34 +140,13 @@ contract EditMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
         (relaysCount, relays) = abi.decode(_evmScriptCallData, (uint256, EditMEVBoostRelayInput[]));
     }
 
-    function _validateInputData(
-        uint256 _relaysCount,
-        EditMEVBoostRelayInput[] memory _relayInputs
-    ) private view {
-        uint256 calldataLength = _relayInputs.length;
-
-        require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
-
-        require(
-            mevBoostRelayAllowedList.get_relays_amount() == _relaysCount,
-            ERROR_RELAYS_COUNT_MISMATCH
-        );
-
-        for (uint256 i; i < calldataLength; ) {
-            string memory uri = _relayInputs[i].uri;
-            require(bytes(uri).length > 0, ERROR_EMPTY_RELAY_URI);
-
-            // check if relay with the given uri exists, if not, the relay cannot be edited
-            require(relayURIExists(uri), ERROR_RELAY_NOT_FOUND);
-
-            unchecked {
-                ++i;
-            }
-        }
+    function _validateRelayURI(string memory _relayInputURI) private view {
+        require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
+        require(relayURIExists(_relayInputURI), ERROR_RELAY_NOT_FOUND);
     }
 
-    function relayURIExists(string memory uri) private view returns (bool) {
-        try mevBoostRelayAllowedList.get_relay_by_uri(uri) returns (
+    function relayURIExists(string memory _uri) private view returns (bool) {
+        try mevBoostRelayAllowedList.get_relay_by_uri(_uri) returns (
             IMEVBoostRelayAllowedList.Relay memory
         ) {
             return true;
