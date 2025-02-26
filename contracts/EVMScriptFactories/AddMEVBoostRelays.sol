@@ -133,7 +133,7 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         AddMEVBoostRelayInput[] memory _relays
     ) private view {
         require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
-        require(isRelayUriAvailable(_relayInputURI), ERROR_RELAY_URI_ALREADY_EXISTS);
+        require(_isRelayUriAvailable(_relayInputURI), ERROR_RELAY_URI_ALREADY_EXISTS);
 
         // check for duplicates in the input data array, starting from the current index for efficiency
         // if a duplicate is found, it will throw an exception
@@ -149,7 +149,7 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         }
     }
 
-    function isRelayUriAvailable(string memory _uri) private view returns (bool) {
+    function _isRelayUriAvailable(string memory _uri) private view returns (bool) {
         // if relay with given uri does not exist, it will throw an exception
         try mevBoostRelayAllowedList.get_relay_by_uri(_uri) returns (
             IMEVBoostRelayAllowedList.Relay memory
