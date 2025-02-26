@@ -8,9 +8,9 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMEVBoostRelayAllowedList.sol";
 
-/// @author katamarinaki
+/// @author katamarinaki, swissarmytowel
 /// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
-contract RemoveMEVBoostRelay is TrustedCaller, IEVMScriptFactory {
+contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
