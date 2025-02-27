@@ -8,7 +8,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMEVBoostRelayAllowedList.sol";
 
-/// @author swissarmytowel
+/// @author katamarinaki, swissarmytowel
 /// @notice Creates EVMScript to edit MEV boost relays in the MEV Boost Relay allow list by the URI
 contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     struct EditMEVBoostRelayInput {
@@ -28,7 +28,7 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_RELAYS_COUNT_MISMATCH = "RELAYS_COUNT_MISMATCH";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_RELAY_NOT_FOUND = "RELAY_NOT_FOUND";
-    string private constant ERROR_RELAY_URI_DUPLICATE = "RELAY_URI_HAS_A_DUPLICATE";
+    string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
 
     // -------------
     // CONSTANTS
@@ -91,6 +91,8 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         // allow list does not allow edits, so they are achieved by stacking remove and add relay calls on i and i + 1 positions
         // of the methodIds and encodedCalldata arrays respectively
         for (uint256 i; i < calldataLength; ) {
+            _validateRelayURI(decodedCallData[i].uri, i, decodedCallData);
+
             uint256 index = i * 2;
 
             // remove relay by uri from the registry
@@ -148,7 +150,7 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
         // check for duplicates in the input data array, starting from the current index for efficiency
         // if a duplicate is found, it will throw an exception
-        for (uint256 i = _currentIndex; i < _relays.length; ) {
+        for (uint256 i = _currentIndex + 1; i < _relays.length; ) {
             require(
                 keccak256(bytes(_relays[i].uri)) != keccak256(bytes(_relayInputURI)),
                 ERROR_RELAY_URI_DUPLICATE

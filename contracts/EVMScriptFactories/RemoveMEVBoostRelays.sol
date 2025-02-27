@@ -16,7 +16,8 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
-    string private constant ERROR_RELAYS_COUNT_MISMATCH = "RELAYS_COUNT_MISMATCH";
+    string private constant ERROR_REMOVING_MORE_RELAYS_THAN_AVAILABLE =
+        "REMOVING_MORE_RELAYS_THAN_AVAILABLE";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_NO_RELAY_WITH_GIVEN_URI = "NO_RELAY_WITH_GIVEN_URI";
 
@@ -64,7 +65,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
         require(
             mevBoostRelayAllowedList.get_relays_amount() >= calldataLength,
-            ERROR_RELAYS_COUNT_MISMATCH
+            ERROR_REMOVING_MORE_RELAYS_THAN_AVAILABLE
         );
 
         bytes4[] memory methodIds = new bytes4[](calldataLength);

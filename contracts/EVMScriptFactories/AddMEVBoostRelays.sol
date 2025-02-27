@@ -26,7 +26,7 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MAX_NUM_RELAYS_EXCEEDED = "MAX_NUM_RELAYS_EXCEEDED";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_RELAY_URI_ALREADY_EXISTS = "RELAY_URI_ALREADY_EXISTS";
-    string private constant ERROR_RELAY_URI_DUPLICATE = "RELAY_URI_HAS_A_DUPLICATE";
+    string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
 
     // -------------
     // CONSTANTS
@@ -137,7 +137,7 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
         // check for duplicates in the input data array, starting from the current index for efficiency
         // if a duplicate is found, it will throw an exception
-        for (uint256 i = _currentIndex; i < _relays.length; ) {
+        for (uint256 i = _currentIndex + 1; i < _relays.length; ) {
             require(
                 keccak256(bytes(_relays[i].uri)) != keccak256(bytes(_relayInputURI)),
                 ERROR_RELAY_URI_DUPLICATE
