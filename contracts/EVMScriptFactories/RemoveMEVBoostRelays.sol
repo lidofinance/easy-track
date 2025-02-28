@@ -9,7 +9,7 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMEVBoostRelayAllowedList.sol";
 
 /// @author katamarinaki, swissarmytowel
-/// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
+/// @notice Creates EVMScript to remove a MEV boost relay from the MEV Boost relay allow list
 contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -51,7 +51,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
+    /// @notice Creates EVMScript to remove a MEV boost relay from MEV Boost relay allow list
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded relay URIs: string[]
     function createEVMScript(
@@ -62,7 +62,8 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
         uint256 calldataLength = decodedCallData.length;
 
-        // validate that the call data is not empty and that the relays count does not exceed the allowed list
+        // validate that the call data is not empty and that the relays count
+        // does not exceed the relays amount in the allowed list
         require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
         require(
             mevBoostRelayAllowedList.get_relays_amount() >= calldataLength,
