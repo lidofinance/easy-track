@@ -188,7 +188,7 @@ def test_cannot_add_relay_uri_already_exists(owner, add_mev_boost_relays_factory
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([RELAY_FIXTURES[0]]))
 
 
-def test_cannot_add_relays_with_duplicate_uri(owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_cannot_add_relays_with_duplicate_uri(owner, add_mev_boost_relays_factory):
     "Must revert with message 'DUPLICATE_RELAY_URI' when trying to add two relays with the same URI"
     fixture = RELAY_FIXTURES[0]
     second_fixture = RELAY_FIXTURES[1]

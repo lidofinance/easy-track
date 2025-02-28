@@ -20,6 +20,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         "REMOVING_MORE_RELAYS_THAN_AVAILABLE";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_NO_RELAY_WITH_GIVEN_URI = "NO_RELAY_WITH_GIVEN_URI";
+    string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
 
     // -------------
     // CONSTANTS
@@ -72,7 +73,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         bytes[] memory encodedCalldata = new bytes[](calldataLength);
 
         for (uint256 i; i < calldataLength; ) {
-            _validateRelayURI(decodedCallData[i]);
+            _validateRelayURI(decodedCallData[i], i, decodedCallData);
 
             methodIds[i] = REMOVE_RELAY_SELECTOR;
             encodedCalldata[i] = abi.encode(decodedCallData[i]);
@@ -109,9 +110,26 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         (relayUris) = abi.decode(_evmScriptCallData, (string[]));
     }
 
-    function _validateRelayURI(string memory _relayURI) private view {
-        require(bytes(_relayURI).length > 0, ERROR_EMPTY_RELAY_URI);
-        require(_relayURIExists(_relayURI), ERROR_NO_RELAY_WITH_GIVEN_URI);
+    function _validateRelayURI(
+        string memory _relayInputURI,
+        uint256 _currentIndex,
+        string[] memory _relays
+    ) private view {
+        require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
+        require(_relayURIExists(_relayInputURI), ERROR_NO_RELAY_WITH_GIVEN_URI);
+
+        // check for duplicates in the input data array, starting from the current index for efficiency
+        // if a duplicate is found, it will throw an exception
+        for (uint256 i = _currentIndex + 1; i < _relays.length; ) {
+            require(
+                keccak256(bytes(_relays[i])) != keccak256(bytes(_relayInputURI)),
+                ERROR_RELAY_URI_DUPLICATE
+            );
+
+            unchecked {
+                ++i;
+            }
+        }
     }
 
     function _relayURIExists(string memory _uri) private view returns (bool) {

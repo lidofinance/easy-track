@@ -214,3 +214,21 @@ def test_cannot_remove_relay_uri_not_in_list(owner, remove_mev_boost_relays_fact
     # Try to remove a relay that doesn't exist
     with reverts("NO_RELAY_WITH_GIVEN_URI"):
         remove_mev_boost_relays_factory.createEVMScript(owner, create_calldata([get_relay_fixture_uri(0)]))
+
+
+def test_cannot_remove_relays_with_duplicate_uri(owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+    "Must revert with message 'DUPLICATE_RELAY_URI' when trying to remove two relays with the same URI"
+
+    # Add a relay
+    mev_boost_relay_allowed_list.add_relay(*RELAY_FIXTURES[0], {"from": owner})
+
+    with reverts("DUPLICATE_RELAY_URI"):
+        remove_mev_boost_relays_factory.createEVMScript(
+            owner,
+            create_calldata(
+                [
+                    get_relay_fixture_uri(0),
+                    get_relay_fixture_uri(0),
+                ]
+            ),
+        )
