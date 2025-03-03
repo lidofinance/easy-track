@@ -19,7 +19,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_REMOVING_MORE_RELAYS_THAN_AVAILABLE =
         "REMOVING_MORE_RELAYS_THAN_AVAILABLE";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
-    string private constant ERROR_NO_RELAY_WITH_GIVEN_URI = "NO_RELAY_WITH_GIVEN_URI";
+    string private constant ERROR_RELAY_NOT_FOUND = "RELAY_NOT_FOUND";
     string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
 
     // -------------
@@ -117,7 +117,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         string[] memory _relays
     ) private view {
         require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
-        require(_relayURIExists(_relayInputURI), ERROR_NO_RELAY_WITH_GIVEN_URI);
+        require(_relayURIExists(_relayInputURI), ERROR_RELAY_NOT_FOUND);
 
         // check for duplicates in the input data array, starting from the current index for efficiency
         // if a duplicate is found, it will throw an exception

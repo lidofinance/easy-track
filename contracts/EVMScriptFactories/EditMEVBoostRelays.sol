@@ -11,15 +11,6 @@ import "../interfaces/IMEVBoostRelayAllowedList.sol";
 /// @author katamarinaki, swissarmytowel
 /// @notice Creates EVMScript to edit MEV boost relays in the MEV Boost Relay allow list by the URI
 contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
-    struct EditMEVBoostRelayInput {
-        // key to identify the relay
-        string uri;
-        // relay parameters
-        string operator;
-        bool is_mandatory;
-        string description;
-    }
-
     // -------------
     // ERRORS
     // -------------
@@ -64,12 +55,12 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to edit a MEV boost relay in the MEV Boost relay allow list by the URI
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, EditMEVBoostRelayInput[])
+    /// @param _evmScriptCallData Encoded relays count and new data: IMEVBoostRelayAllowedList.Relay[]
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        EditMEVBoostRelayInput[] memory decodedCallData = _decodeEVMScriptCallData(
+        IMEVBoostRelayAllowedList.Relay[] memory decodedCallData = _decodeEVMScriptCallData(
             _evmScriptCallData
         );
 
@@ -122,11 +113,11 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded relays count and new data: (uint256, EditMEVBoostRelayInput[])
-    /// @return relays EditMEVBoostRelayInput[]
+    /// @param _evmScriptCallData Encoded relays count and new data: IMEVBoostRelayAllowedList.Relay[]
+    /// @return relays IMEVBoostRelayAllowedList.Relay[]
     function decodeEVMScriptCallData(
         bytes calldata _evmScriptCallData
-    ) external pure returns (EditMEVBoostRelayInput[] memory relays) {
+    ) external pure returns (IMEVBoostRelayAllowedList.Relay[] memory relays) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -136,14 +127,14 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (EditMEVBoostRelayInput[] memory relays) {
-        relays = abi.decode(_evmScriptCallData, (EditMEVBoostRelayInput[]));
+    ) private pure returns (IMEVBoostRelayAllowedList.Relay[] memory relays) {
+        relays = abi.decode(_evmScriptCallData, (IMEVBoostRelayAllowedList.Relay[]));
     }
 
     function _validateRelayURI(
         string memory _relayInputURI,
         uint256 _currentIndex,
-        EditMEVBoostRelayInput[] memory _relays
+        IMEVBoostRelayAllowedList.Relay[] memory _relays
     ) private view {
         require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
         require(_relayURIExists(_relayInputURI), ERROR_RELAY_NOT_FOUND);

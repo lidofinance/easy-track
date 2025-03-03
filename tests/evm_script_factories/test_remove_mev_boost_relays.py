@@ -210,9 +210,9 @@ def test_cannot_remove_more_than_max(
 
 
 def test_cannot_remove_relay_uri_not_in_list(owner, remove_mev_boost_relays_factory):
-    "Must revert with message 'RELAY_URI_NOT_IN_LIST' when trying to remove relay that doesn't exist"
+    "Must revert with message 'RELAY_NOT_FOUND' when trying to remove relay that doesn't exist"
     # Try to remove a relay that doesn't exist
-    with reverts("NO_RELAY_WITH_GIVEN_URI"):
+    with reverts("RELAY_NOT_FOUND"):
         remove_mev_boost_relays_factory.createEVMScript(owner, create_calldata([get_relay_fixture_uri(0)]))
 
 
