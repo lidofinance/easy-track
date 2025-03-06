@@ -187,13 +187,13 @@ def test_cannot_edit_relay_with_duplicate_uri(owner, edit_mev_boost_relays_facto
 
 
 def test_cannot_edit_more_relays_than_present(owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list):
-    "Must revert with message 'RELAYS_COUNT_MISMATCH' when trying to add more relays than MAX_RELAY_COUNT"
+    "Must revert with message 'RELAY_NOT_FOUND' when trying to add more relays than MAX_RELAY_COUNT"
     current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
 
     # Ensure that the current relay count is within the allowed range
     assert current_relay_count > 0 and current_relay_count < MAX_RELAY_COUNT
 
-    with reverts("RELAYS_COUNT_MISMATCH"):
+    with reverts("RELAY_NOT_FOUND"):
         edit_mev_boost_relays_factory.createEVMScript(
             owner,
             create_calldata(

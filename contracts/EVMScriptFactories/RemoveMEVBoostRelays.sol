@@ -62,13 +62,8 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
         uint256 calldataLength = decodedCallData.length;
 
-        // validate that the call data is not empty and that the relays count
-        // does not exceed the relays amount in the allowed list
+        // validate that the call data is not empty, we do not need to check for the relay count as it will be checked on URI exists step
         require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
-        require(
-            mevBoostRelayAllowedList.get_relays_amount() >= calldataLength,
-            ERROR_REMOVING_MORE_RELAYS_THAN_AVAILABLE
-        );
 
         bytes4[] memory methodIds = new bytes4[](calldataLength);
         bytes[] memory encodedCalldata = new bytes[](calldataLength);

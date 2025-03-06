@@ -183,7 +183,7 @@ def test_cannot_remove_relay_with_empty_relay_uri(owner, remove_mev_boost_relays
 
 
 def test_cannot_remove_more_than_available(owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list):
-    "Must revert with message 'REMOVING_MORE_RELAYS_THAN_AVAILABLE' when trying to remove more relays than exist"
+    "Must revert with message 'RELAY_NOT_FOUND' when trying to remove more relays than exist"
     current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
 
     # Create array of URIs that is larger than the current relay count
@@ -191,7 +191,7 @@ def test_cannot_remove_more_than_available(owner, remove_mev_boost_relays_factor
     for i in range(current_relay_count + 1):  # One more than exists
         uris_to_remove.append(f"https://relay{i}.example.com")
 
-    with reverts("REMOVING_MORE_RELAYS_THAN_AVAILABLE"):
+    with reverts("RELAY_NOT_FOUND"):
         remove_mev_boost_relays_factory.createEVMScript(owner, create_calldata(uris_to_remove))
 
 
@@ -199,13 +199,13 @@ def test_cannot_remove_more_than_max(
     owner,
     remove_mev_boost_relays_factory,
 ):
-    "Must revert with message 'REMOVING_MORE_RELAYS_THAN_AVAILABLE' when trying to remove more relays than allowed"
+    "Must revert with message 'RELAY_NOT_FOUND' when trying to remove more relays than allowed"
     # Create array of URIs that is larger than the max relay count
     uris_to_remove = []
     for i in range(MAX_RELAY_COUNT + 1):  # One more than allowed
         uris_to_remove.append(f"https://relay{i}.example.com")
 
-    with reverts("REMOVING_MORE_RELAYS_THAN_AVAILABLE"):
+    with reverts("RELAY_NOT_FOUND"):
         remove_mev_boost_relays_factory.createEVMScript(owner, create_calldata(uris_to_remove))
 
 

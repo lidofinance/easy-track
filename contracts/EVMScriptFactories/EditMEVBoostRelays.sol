@@ -16,7 +16,6 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
-    string private constant ERROR_RELAYS_COUNT_MISMATCH = "RELAYS_COUNT_MISMATCH";
     string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
     string private constant ERROR_RELAY_NOT_FOUND = "RELAY_NOT_FOUND";
     string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
@@ -66,12 +65,8 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
         uint256 calldataLength = decodedCallData.length;
 
-        // validate that the call data is not empty and that the updated relays count does not exceed the allowed list count
+        // validate that the call data is not empty, we do not need to check for the relay count as it will be checked on URI exists step
         require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
-        require(
-            mevBoostRelayAllowedList.get_relays_amount() >= calldataLength,
-            ERROR_RELAYS_COUNT_MISMATCH
-        );
 
         // allocate 2x the length of the decoded call data for the methodIds and encodedCalldata arrays
         // as each relay edit requires two relay calls (remove and add)
