@@ -871,7 +871,7 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
     enact_top_up_allowed_recipient_motion_by_creation_tx,
     ensure_agent_dai_balance
 ):
-    ensure_agent_dai_balance(20_000_000)
+    ensure_agent_dai_balance(40_000_000)
 
     allowed_recipients = recipients[:2]
 

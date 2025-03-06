@@ -26,16 +26,15 @@ REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a
 
 
 deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
-    tokens=["", ""], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
-    tokens_registry="", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
-    limit=0, # budget amount, ex. 1_000_000 * 10 ** 18,
-    period=1, # budget period duration in month, ex. 3
-    spent_amount=0, # budget already spent, ex. 0
-    title="", # only recipient's / trusted caller's title, ex. "LEGO LDO funder",
-    trusted_caller="", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
+    tokens = ["", "", ""], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens_registry = "", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    limit = , # budget amount, ex. 1_000_000 * 10 ** 18,
+    period = , # budget period duration in month, ex. 3
+    spent_amount = , # budget already spent, ex. 0
+    title = "", # only recipient's / trusted caller's title, ex. "LEGO LDO funder",
+    trusted_caller = "", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
 )
 
-deployment_tx_hash = ""
 recipients_registry_deploy_tx_hash = ""
 tokens_registry_deploy_tx_hash = ""
 top_up_allowed_recipients_deploy_tx_hash = ""
@@ -45,13 +44,13 @@ def main():
     network_name = network.show_active()
 
     recipients_registry_deploy_tx = chain.get_transaction(
-        recipients_registry_deploy_tx_hash or deployment_tx_hash
+        recipients_registry_deploy_tx_hash
     )
     tokens_registry_deploy_tx = chain.get_transaction(
-        tokens_registry_deploy_tx_hash or deployment_tx_hash
+        tokens_registry_deploy_tx_hash
     )
     top_up_deploy_tx = chain.get_transaction(
-        top_up_allowed_recipients_deploy_tx_hash or deployment_tx_hash
+        top_up_allowed_recipients_deploy_tx_hash
     )
 
     contracts = lido.contracts(network=network_name)
@@ -70,7 +69,9 @@ def main():
     ]["topUpAllowedRecipients"]
     log.br()
 
-    log.nb("tx of creation", deployment_tx_hash)
+    log.nb("RecipientsRegistry, tx of creation", recipients_registry_deploy_tx_hash)
+    log.nb("TokensRegistry, tx of creation", tokens_registry_deploy_tx_hash)
+    log.nb("TopUpAllowedRecipients, tx of creation", top_up_allowed_recipients_deploy_tx_hash)
 
     log.br()
 
