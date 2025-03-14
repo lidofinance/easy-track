@@ -13,9 +13,7 @@ interface IMEVBoostRelayAllowedList {
     }
 
     // View Functions
-    function get_relays_amount() external view returns (uint256);
-
-    function get_relay_by_uri(string memory relay_uri) external view returns (Relay memory);
+    function get_relays() external view returns (Relay[] memory);
 
     // State-Changing Functions
     function add_relay(

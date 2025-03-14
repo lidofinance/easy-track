@@ -7,6 +7,7 @@ import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMEVBoostRelayAllowedList.sol";
+import "../libraries/MEVBoostRelaysInputUtils.sol";
 
 /// @author katamarinaki, swissarmytowel
 /// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
@@ -15,19 +16,16 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
     string private constant ERROR_MAX_NUM_RELAYS_EXCEEDED = "MAX_NUM_RELAYS_EXCEEDED";
-    string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
-    string private constant ERROR_RELAY_URI_ALREADY_EXISTS = "RELAY_URI_ALREADY_EXISTS";
-    string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
 
     // -------------
     // CONSTANTS
     // -------------
 
-    /// @notice limits the number of relays in the registry based on the value from the MEVBoostRelayAllowedList
+    /// @notice Limit on the number of relays in the registry based on the value from the MEVBoostRelayAllowedList
     uint256 private constant MAX_NUM_RELAYS = 40;
-    /// @notice selector for the add_relay method in the MEVBoostRelayAllowedList
+
+    /// @notice Selector for the add_relay method in the MEVBoostRelayAllowedList
     bytes4 private constant ADD_RELAY_SELECTOR =
         bytes4(keccak256("add_relay(string,string,bool,string)"));
 
@@ -53,39 +51,37 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
+    /// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allowed list
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded relays count and new data: IMEVBoostRelayAllowedList.Relay[]
+    /// @param _evmScriptCallData Encoded relays data: IMEVBoostRelayAllowedList.Relay[]
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        IMEVBoostRelayAllowedList.Relay[] memory decodedCallData = _decodeEVMScriptCallData(
-            _evmScriptCallData
-        );
+        // Decode the input data to get the relays to add
+        IMEVBoostRelayAllowedList.Relay[] memory _relaysToAdd = MEVBoostRelaysInputUtils
+            .decodeCallDataWithRelayStructs(_evmScriptCallData);
+        // Get the current list of allowed relays from the MEVBoostRelayAllowedList contract
+        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays = mevBoostRelayAllowedList
+            .get_relays();
 
-        uint256 calldataLength = decodedCallData.length;
-
-        // validate input data
-        require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
         require(
-            mevBoostRelayAllowedList.get_relays_amount() + calldataLength <= MAX_NUM_RELAYS,
+            _currentAllowedRelays.length + _relaysToAdd.length <= MAX_NUM_RELAYS,
             ERROR_MAX_NUM_RELAYS_EXCEEDED
         );
 
-        bytes4[] memory methodIds = new bytes4[](calldataLength);
-        bytes[] memory encodedCalldata = new bytes[](calldataLength);
+        // Validate the input data before creating EVMScript to add new relays. The relay URIs MUST NOT be already in the list.
+        MEVBoostRelaysInputUtils.validateRelays(_relaysToAdd, _currentAllowedRelays, false);
 
-        for (uint256 i; i < calldataLength; ) {
-            _validateRelayURI(decodedCallData[i].uri, i, decodedCallData);
+        uint256 newRelaysCount = _relaysToAdd.length;
+        bytes[] memory encodedCalldata = new bytes[](newRelaysCount);
 
-            // check duplicates
-            methodIds[i] = ADD_RELAY_SELECTOR;
+        for (uint256 i; i < newRelaysCount; ) {
             encodedCalldata[i] = abi.encode(
-                decodedCallData[i].uri,
-                decodedCallData[i].operator,
-                decodedCallData[i].is_mandatory,
-                decodedCallData[i].description
+                _relaysToAdd[i].uri,
+                _relaysToAdd[i].operator,
+                _relaysToAdd[i].is_mandatory,
+                _relaysToAdd[i].description
             );
 
             unchecked {
@@ -96,60 +92,17 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(mevBoostRelayAllowedList),
-                methodIds,
+                ADD_RELAY_SELECTOR,
                 encodedCalldata
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded relays count and new data: IMEVBoostRelayAllowedList.Relay[]
+    /// @param _evmScriptCallData Encoded relays data: IMEVBoostRelayAllowedList.Relay[]
     /// @return relays IMEVBoostRelayAllowedList.Relay[]
     function decodeEVMScriptCallData(
         bytes calldata _evmScriptCallData
     ) external pure returns (IMEVBoostRelayAllowedList.Relay[] memory relays) {
-        return _decodeEVMScriptCallData(_evmScriptCallData);
-    }
-
-    // ------------------
-    // PRIVATE METHODS
-    // ------------------
-
-    function _decodeEVMScriptCallData(
-        bytes memory _evmScriptCallData
-    ) private pure returns (IMEVBoostRelayAllowedList.Relay[] memory relays) {
-        relays = abi.decode(_evmScriptCallData, (IMEVBoostRelayAllowedList.Relay[]));
-    }
-
-    function _validateRelayURI(
-        string memory _relayInputURI,
-        uint256 _currentIndex,
-        IMEVBoostRelayAllowedList.Relay[] memory _relays
-    ) private view {
-        require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
-        require(_isRelayUriAvailable(_relayInputURI), ERROR_RELAY_URI_ALREADY_EXISTS);
-
-        // check for duplicates in the input data array, starting from the current index for efficiency
-        // if a duplicate is found, it will throw an exception
-        for (uint256 i = _currentIndex + 1; i < _relays.length; ) {
-            require(
-                keccak256(bytes(_relays[i].uri)) != keccak256(bytes(_relayInputURI)),
-                ERROR_RELAY_URI_DUPLICATE
-            );
-
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    function _isRelayUriAvailable(string memory _uri) private view returns (bool) {
-        // if relay with given uri does not exist, it will throw an exception
-        try mevBoostRelayAllowedList.get_relay_by_uri(_uri) returns (
-            IMEVBoostRelayAllowedList.Relay memory
-        ) {
-            return false;
-        } catch {
-            return true;
-        }
+        return MEVBoostRelaysInputUtils.decodeCallDataWithRelayStructs(_evmScriptCallData);
     }
 }

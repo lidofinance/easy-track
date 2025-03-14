@@ -171,8 +171,8 @@ def test_cannot_create_evm_script_called_by_stranger(stranger, remove_mev_boost_
 
 
 def test_cannot_remove_relay_with_empty_calldata(owner, remove_mev_boost_relays_factory):
-    "Must revert with message 'EMPTY_CALLDATA' when no URIs provided"
-    with reverts("EMPTY_CALLDATA"):
+    "Must revert with message 'EMPTY_RELAYS_ARRAY' when no URIs provided"
+    with reverts("EMPTY_RELAYS_ARRAY"):
         remove_mev_boost_relays_factory.createEVMScript(owner, create_calldata([]))
 
 

@@ -4,6 +4,7 @@ from brownie import reverts, AddMEVBoostRelays
 
 from utils.evm_script import encode_call_script
 
+MAX_STRING_LENGTH = 1024
 MAX_RELAY_COUNT = 40
 RELAY_FIXTURES = [
     # uri, operator, is_mandatory, description
@@ -143,8 +144,8 @@ def test_cannot_create_evm_script_called_by_stranger(stranger, add_mev_boost_rel
 
 
 def test_cannot_add_relay_with_empty_calldata(owner, add_mev_boost_relays_factory):
-    "Must revert with message 'EMPTY_CALLDATA' when no сalldata provided"
-    with reverts("EMPTY_CALLDATA"):
+    "Must revert with message 'EMPTY_RELAYS_ARRAY' when no сalldata provided"
+    with reverts("EMPTY_RELAYS_ARRAY"):
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([]))
 
 
@@ -201,3 +202,87 @@ def test_cannot_add_relays_with_duplicate_uri(owner, add_mev_boost_relays_factor
 
     with reverts("DUPLICATE_RELAY_URI"):
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata(inputs))
+
+
+def test_can_add_relay_with_max_uri_length(owner, add_mev_boost_relays_factory):
+    "Must add relay with URI length"
+    uri = "a" * MAX_STRING_LENGTH
+
+    calldata = create_calldata([(uri, "operator", True, "description")])
+    evm_script = add_mev_boost_relays_factory.createEVMScript(owner, calldata)
+
+    expected_evm_script = encode_call_script(
+        [
+            (
+                add_mev_boost_relays_factory.address,
+                add_mev_boost_relays_factory.add_relay.encode_input(uri, "operator", True, "description"),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
+    add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([(uri, "operator", True, "description")]))
+
+
+def test_can_add_relay_with_max_string_length_description(owner, add_mev_boost_relays_factory):
+    "Must add relay with description length"
+    description = "a" * MAX_STRING_LENGTH
+
+    calldata = create_calldata([("uri", "operator", True, description)])
+    evm_script = add_mev_boost_relays_factory.createEVMScript(owner, calldata)
+
+    expected_evm_script = encode_call_script(
+        [
+            (
+                add_mev_boost_relays_factory.address,
+                add_mev_boost_relays_factory.add_relay.encode_input("uri", "operator", True, description),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
+    add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", "operator", True, description)]))
+
+
+def test_can_add_relay_with_max_string_length_operator(owner, add_mev_boost_relays_factory):
+    "Must add relay with operator length"
+    operator = "a" * MAX_STRING_LENGTH
+
+    calldata = create_calldata([("uri", operator, True, "description")])
+    evm_script = add_mev_boost_relays_factory.createEVMScript(owner, calldata)
+
+    expected_evm_script = encode_call_script(
+        [
+            (
+                add_mev_boost_relays_factory.address,
+                add_mev_boost_relays_factory.add_relay.encode_input("uri", operator, True, "description"),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
+    add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", operator, True, "description")]))
+
+
+def test_cannot_add_relay_with_over_max_string_length_description(owner, add_mev_boost_relays_factory):
+    "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when description is longer than 255 characters"
+    description = "a" * (MAX_STRING_LENGTH + 1)
+
+    with reverts("MAX_STRING_LENGTH_EXCEEDED"):
+        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", "operator", True, description)]))
+
+
+def test_cannot_add_relay_with_over_max_string_length_operator(owner, add_mev_boost_relays_factory):
+    "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when operator is longer than 255 characters"
+    operator = "a" * (MAX_STRING_LENGTH + 1)
+
+    with reverts("MAX_STRING_LENGTH_EXCEEDED"):
+        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", operator, True, "description")]))
+
+
+def test_cannot_add_relay_with_over_max_uri_length(owner, add_mev_boost_relays_factory):
+    "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when uri is longer than 255 characters"
+    uri = "a" * (MAX_STRING_LENGTH + 1)
+
+    with reverts("MAX_STRING_LENGTH_EXCEEDED"):
+        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([(uri, "operator", True, "description")]))

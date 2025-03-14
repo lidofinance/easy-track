@@ -18,10 +18,12 @@ from utils.test_helpers import set_account_balance
 
 # autouse, so enabled by default for all test modules in this directory
 
+
 @pytest.fixture(scope="module", autouse=True)
 def gas():
     """Set gas estimates for all tests."""
     network.gas_price("auto")
+
 
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
@@ -218,6 +220,11 @@ def bytes_utils_wrapper(accounts, BytesUtilsWrapper):
 
 
 @pytest.fixture(scope="module")
+def mev_boost_relay_input_utils_wrapper(owner, MEVBoostRelayInputUtils):
+    return owner.deploy(MEVBoostRelayInputUtils)
+
+
+@pytest.fixture(scope="module")
 def node_operators_registry_stub(owner, node_operator, NodeOperatorsRegistryStub):
     return owner.deploy(NodeOperatorsRegistryStub, node_operator)
 
@@ -329,9 +336,11 @@ def node_operators_registry(lido_contracts, agent):
             lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
+
 @pytest.fixture(scope="module")
 def cs_module(csm_contracts):
     return csm_contracts.module
+
 
 @pytest.fixture(scope="module")
 def voting(lido_contracts):
@@ -376,6 +385,7 @@ def staking_router(lido_contracts):
 @pytest.fixture(scope="module")
 def locator(lido_contracts):
     return lido_contracts.locator
+
 
 @pytest.fixture(scope="module")
 def mev_boost_relay_allowed_list(lido_contracts, owner):

@@ -7,26 +7,16 @@ import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMEVBoostRelayAllowedList.sol";
+import "../libraries/MEVBoostRelaysInputUtils.sol";
 
 /// @author katamarinaki, swissarmytowel
 /// @notice Creates EVMScript to remove a MEV boost relay from the MEV Boost relay allow list
 contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
-    // ERRORS
-    // -------------
-
-    string private constant ERROR_EMPTY_CALLDATA = "EMPTY_CALLDATA";
-    string private constant ERROR_REMOVING_MORE_RELAYS_THAN_AVAILABLE =
-        "REMOVING_MORE_RELAYS_THAN_AVAILABLE";
-    string private constant ERROR_EMPTY_RELAY_URI = "EMPTY_RELAY_URI";
-    string private constant ERROR_RELAY_NOT_FOUND = "RELAY_NOT_FOUND";
-    string private constant ERROR_RELAY_URI_DUPLICATE = "DUPLICATE_RELAY_URI";
-
-    // -------------
     // CONSTANTS
     // -------------
 
-    /// @notice selector for the remove_relay method in the MEVBoostRelayAllowedList
+    /// @notice Selector for the remove_relay method in the MEVBoostRelayAllowedList
     bytes4 private constant REMOVE_RELAY_SELECTOR = bytes4(keccak256("remove_relay(string)"));
 
     // -------------
@@ -58,21 +48,22 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        string[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
+        // Decode the input data to get the relays to remove
+        string[] memory _relayURIsToRemove = MEVBoostRelaysInputUtils.decodeCallDataWithRelayURIs(
+            _evmScriptCallData
+        );
+        // Get the current list of allowed relays from the MEVBoostRelayAllowedList contract
+        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays = mevBoostRelayAllowedList
+            .get_relays();
 
-        uint256 calldataLength = decodedCallData.length;
+        // Validate input data before creating EVMScript to remove relays.  The relay URIs MUST be already in the list.
+        MEVBoostRelaysInputUtils.validateRelays(_relayURIsToRemove, _currentAllowedRelays, true);
 
-        // validate that the call data is not empty, we do not need to check for the relay count as it will be checked on URI exists step
-        require(calldataLength > 0, ERROR_EMPTY_CALLDATA);
+        uint256 removeRelaysCount = _relayURIsToRemove.length;
+        bytes[] memory encodedCalldata = new bytes[](removeRelaysCount);
 
-        bytes4[] memory methodIds = new bytes4[](calldataLength);
-        bytes[] memory encodedCalldata = new bytes[](calldataLength);
-
-        for (uint256 i; i < calldataLength; ) {
-            _validateRelayURI(decodedCallData[i], i, decodedCallData);
-
-            methodIds[i] = REMOVE_RELAY_SELECTOR;
-            encodedCalldata[i] = abi.encode(decodedCallData[i]);
+        for (uint256 i; i < removeRelaysCount; ) {
+            encodedCalldata[i] = abi.encode(_relayURIsToRemove[i]);
 
             unchecked {
                 ++i;
@@ -82,7 +73,7 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(mevBoostRelayAllowedList),
-                methodIds,
+                REMOVE_RELAY_SELECTOR,
                 encodedCalldata
             );
     }
@@ -93,49 +84,6 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     function decodeEVMScriptCallData(
         bytes calldata _evmScriptCallData
     ) external pure returns (string[] memory relayUris) {
-        return _decodeEVMScriptCallData(_evmScriptCallData);
-    }
-
-    // ------------------
-    // PRIVATE METHODS
-    // ------------------
-
-    function _decodeEVMScriptCallData(
-        bytes memory _evmScriptCallData
-    ) private pure returns (string[] memory relayUris) {
-        (relayUris) = abi.decode(_evmScriptCallData, (string[]));
-    }
-
-    function _validateRelayURI(
-        string memory _relayInputURI,
-        uint256 _currentIndex,
-        string[] memory _relays
-    ) private view {
-        require(bytes(_relayInputURI).length > 0, ERROR_EMPTY_RELAY_URI);
-        require(_relayURIExists(_relayInputURI), ERROR_RELAY_NOT_FOUND);
-
-        // check for duplicates in the input data array, starting from the current index for efficiency
-        // if a duplicate is found, it will throw an exception
-        for (uint256 i = _currentIndex + 1; i < _relays.length; ) {
-            require(
-                keccak256(bytes(_relays[i])) != keccak256(bytes(_relayInputURI)),
-                ERROR_RELAY_URI_DUPLICATE
-            );
-
-            unchecked {
-                ++i;
-            }
-        }
-    }
-
-    function _relayURIExists(string memory _uri) private view returns (bool) {
-        // if relay with given uri does not exist, it will throw an exception
-        try mevBoostRelayAllowedList.get_relay_by_uri(_uri) returns (
-            IMEVBoostRelayAllowedList.Relay memory
-        ) {
-            return true;
-        } catch {
-            return false;
-        }
+        return MEVBoostRelaysInputUtils.decodeCallDataWithRelayURIs(_evmScriptCallData);
     }
 }

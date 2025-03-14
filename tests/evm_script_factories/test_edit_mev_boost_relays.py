@@ -4,6 +4,7 @@ from brownie import reverts, EditMEVBoostRelays
 
 from utils.evm_script import encode_call_script
 
+MAX_STRING_LENGTH = 1024
 MAX_RELAY_COUNT = 40
 RELAY_FIXTURES = [
     # uri, operator, is_mandatory, description
@@ -139,8 +140,64 @@ def test_edit_max_num_relays(owner, edit_mev_boost_relays_factory, mev_boost_rel
     assert evm_script == expected_evm_script
 
 
+def test_can_edit_relay_and_set_description_to_empty(
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list
+):
+    "Must edit relay with empty description"
+    input_params = [RELAY_FIXTURES[0][:3] + ("",)]
+    mev_boost_relay_allowed_list.add_relay(*RELAY_FIXTURES[0], {"from": owner})
+
+    calldata = create_calldata(input_params)
+    direct_allow_list_calldata = [
+        (
+            mev_boost_relay_allowed_list.address,
+            mev_boost_relay_allowed_list.remove_relay.encode_input(
+                get_relay_fixture_uri(0),
+            ),
+        ),
+        (
+            mev_boost_relay_allowed_list.address,
+            mev_boost_relay_allowed_list.add_relay.encode_input(
+                *input_params[0],
+            ),
+        ),
+    ]
+
+    evm_script = edit_mev_boost_relays_factory.createEVMScript(owner, calldata)
+    expected_evm_script = encode_call_script(direct_allow_list_calldata)
+
+    assert evm_script == expected_evm_script
+
+
+def test_can_edit_relay_and_set_operator_to_empty(owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+    "Must edit relay with empty operator"
+    input_params = [("",) + RELAY_FIXTURES[0][1:]]
+    mev_boost_relay_allowed_list.add_relay(*RELAY_FIXTURES[0], {"from": owner})
+
+    calldata = create_calldata(input_params)
+    direct_allow_list_calldata = [
+        (
+            mev_boost_relay_allowed_list.address,
+            mev_boost_relay_allowed_list.remove_relay.encode_input(
+                get_relay_fixture_uri(0),
+            ),
+        ),
+        (
+            mev_boost_relay_allowed_list.address,
+            mev_boost_relay_allowed_list.add_relay.encode_input(
+                *input_params[0],
+            ),
+        ),
+    ]
+
+    evm_script = edit_mev_boost_relays_factory.createEVMScript(owner, calldata)
+    expected_evm_script = encode_call_script(direct_allow_list_calldata)
+
+    assert evm_script == expected_evm_script
+
+
 def test_cannot_decode_evm_script_call_data_with_empty_calldata(edit_mev_boost_relays_factory):
-    "Must revert with message 'EMPTY_CALLDATA' when calldata is empty"
+    "Must revert with message 'EMPTY_RELAYS_ARRAY' when calldata is empty"
     with reverts():
         edit_mev_boost_relays_factory.decodeEVMScriptCallData("0x")
 
@@ -152,8 +209,8 @@ def test_cannot_create_evm_script_called_by_stranger(stranger, edit_mev_boost_re
 
 
 def test_cannot_edit_relay_with_empty_calldata(owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list):
-    "Must revert with message 'EMPTY_CALLDATA' when calldata is empty"
-    with reverts("EMPTY_CALLDATA"):
+    "Must revert with message 'EMPTY_RELAYS_ARRAY' when calldata is empty"
+    with reverts("EMPTY_RELAYS_ARRAY"):
         edit_mev_boost_relays_factory.createEVMScript(owner, create_calldata([]))
 
 
@@ -225,4 +282,36 @@ def test_cannot_edit_relay_not_in_allow_list_with_multiple_relays(
         edit_mev_boost_relays_factory.createEVMScript(
             owner,
             create_calldata(RELAY_FIXTURES[:2]),
+        )
+
+
+def test_cannot_edit_relay_with_operator_over_max_string_length(
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list
+):
+    "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when operator is over max string length"
+    with reverts("MAX_STRING_LENGTH_EXCEEDED"):
+        edit_mev_boost_relays_factory.createEVMScript(
+            owner,
+            create_calldata(
+                [
+                    (f"uri{i}", "o" * (MAX_STRING_LENGTH + 1), True, f"description{i}")
+                    for i in range(get_max_relay_count(mev_boost_relay_allowed_list))
+                ]
+            ),
+        )
+
+
+def test_cannot_edit_relay_with_description_over_max_string_length(
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list
+):
+    "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when description is over max string length"
+    with reverts("MAX_STRING_LENGTH_EXCEEDED"):
+        edit_mev_boost_relays_factory.createEVMScript(
+            owner,
+            create_calldata(
+                [
+                    (f"uri{i}", f"operator{i}", True, "d" * (MAX_STRING_LENGTH + 1))
+                    for i in range(get_max_relay_count(mev_boost_relay_allowed_list))
+                ]
+            ),
         )
