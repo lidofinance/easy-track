@@ -4,28 +4,15 @@ from brownie import reverts, AddMEVBoostRelays
 
 from utils.evm_script import encode_call_script
 
-MAX_STRING_LENGTH = 1024
-MAX_RELAY_COUNT = 40
-RELAY_FIXTURES = [
-    # uri, operator, is_mandatory, description
-    ("https://relay1.example.com", "Operator 1", True, "First relay description"),
-    ("https://relay2.example.com", "Operator 2", False, "Second relay description"),
-    ("https://relay3.example.com", "Operator 3", True, "Third relay description"),
-]
-
 
 def create_calldata(data):
     return "0x" + encode(["(string,string,bool,string)[]"], [data]).hex()
 
 
-def get_relay_fixture_uri(index):
-    return RELAY_FIXTURES[index][0]
-
-
-def get_max_relay_count(mev_boost_relay_allowed_list):
+def get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config):
     current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
 
-    return MAX_RELAY_COUNT - current_relay_count
+    return mev_boost_relay_test_config["max_num_relays"] - current_relay_count
 
 
 @pytest.fixture(scope="module")
@@ -39,29 +26,29 @@ def test_deploy(mev_boost_relay_allowed_list, owner, add_mev_boost_relays_factor
     assert add_mev_boost_relays_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
 
 
-def test_decode_evm_script_call_data_with_single_relay(add_mev_boost_relays_factory):
+def test_decode_evm_script_call_data_with_single_relay(add_mev_boost_relays_factory, mev_boost_relay_test_config):
     "Must decode EVMScript call data correctly when adding a single relay"
-    input_params = [RELAY_FIXTURES[0]]
+    input_params = [mev_boost_relay_test_config["relays"][0]]
     calldata = create_calldata(input_params)
 
     assert add_mev_boost_relays_factory.decodeEVMScriptCallData(calldata) == input_params
 
 
-def test_decode_evm_script_call_data_multiple_relays(add_mev_boost_relays_factory):
+def test_decode_evm_script_call_data_multiple_relays(add_mev_boost_relays_factory, mev_boost_relay_test_config):
     "Must decode EVMScript call data correctly"
     input_params = [
-        RELAY_FIXTURES[0],
-        RELAY_FIXTURES[1],
+        mev_boost_relay_test_config["relays"][0],
+        mev_boost_relay_test_config["relays"][1],
     ]
     calldata = create_calldata(input_params)
 
     assert add_mev_boost_relays_factory.decodeEVMScriptCallData(calldata) == input_params
 
 
-def test_decode_evm_script_call_data_with_max_relays(add_mev_boost_relays_factory):
+def test_decode_evm_script_call_data_with_max_relays(add_mev_boost_relays_factory, mev_boost_relay_test_config):
     "Must decode EVMScript call data correctly when adding the maximum number of relays"
     input_params = []
-    for i in range(MAX_RELAY_COUNT):
+    for i in range(mev_boost_relay_test_config["max_num_relays"]):
         input_params.append((f"uri{i}", f"operator{i}", True, f"description{i}"))
 
     calldata = create_calldata(input_params)
@@ -75,15 +62,19 @@ def test_decode_evm_script_call_data_with_empty_calldata(add_mev_boost_relays_fa
         add_mev_boost_relays_factory.decodeEVMScriptCallData("0x")
 
 
-def test_create_evm_script_with_one_relay(owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_create_evm_script_with_one_relay(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must create correct EVMScript when adding one relay"
-    evm_script = add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([RELAY_FIXTURES[0]]))
+    evm_script = add_mev_boost_relays_factory.createEVMScript(
+        owner, create_calldata([mev_boost_relay_test_config["relays"][0]])
+    )
 
     direct_allow_list_calldata = [
         (
             mev_boost_relay_allowed_list.address,
             mev_boost_relay_allowed_list.add_relay.encode_input(
-                *RELAY_FIXTURES[0],
+                *mev_boost_relay_test_config["relays"][0],
             ),
         )
     ]
@@ -92,20 +83,22 @@ def test_create_evm_script_with_one_relay(owner, add_mev_boost_relays_factory, m
     assert evm_script == expected_evm_script
 
 
-def test_create_evm_script_with_multiple_relays(owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_create_evm_script_with_multiple_relays(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must create correct EVMScript when adding multiple relays"
     evm_script = add_mev_boost_relays_factory.createEVMScript(
         owner,
-        create_calldata(RELAY_FIXTURES),
+        create_calldata(mev_boost_relay_test_config["relays"]),
     )
 
     direct_allow_list_calldata = []
-    for i in range(len(RELAY_FIXTURES)):
+    for i in range(len(mev_boost_relay_test_config["relays"])):
         direct_allow_list_calldata.append(
             (
                 mev_boost_relay_allowed_list.address,
                 mev_boost_relay_allowed_list.add_relay.encode_input(
-                    *RELAY_FIXTURES[i],
+                    *mev_boost_relay_test_config["relays"][i],
                 ),
             )
         )
@@ -114,13 +107,15 @@ def test_create_evm_script_with_multiple_relays(owner, add_mev_boost_relays_fact
     assert evm_script == expected_evm_script
 
 
-def test_add_max_num_relays(owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_add_max_num_relays(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must add the last relay if the number of relays is less than MAX_NUM_RELAYS"
     inputs = []
     direct_allow_list_calldata = []
 
     # create array of relays to reach the limit
-    for i in range(get_max_relay_count(mev_boost_relay_allowed_list)):
+    for i in range(get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config)):
         relay = (f"uri{i}", f"operator{i}", True, f"description{i}")
         inputs.append(relay)
         direct_allow_list_calldata.append(
@@ -155,44 +150,48 @@ def test_cannot_add_relay_with_empty_relay_uri(owner, add_mev_boost_relays_facto
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("", "operator", True, "description")]))
 
 
-def test_cannot_add_more_relays_than_allowed(owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_cannot_add_more_relays_than_allowed(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must revert with message 'MAX_NUM_RELAYS_EXCEEDED' when too many relays are being added"
     # create array of relays to reach the limit
-    for i in range(get_max_relay_count(mev_boost_relay_allowed_list)):
+    for i in range(get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config)):
         mev_boost_relay_allowed_list.add_relay(f"uri{i}", f"operator{i}", True, f"description{i}", {"from": owner})
 
     with reverts("MAX_NUM_RELAYS_EXCEEDED"):
-        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([RELAY_FIXTURES[0]]))
+        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([mev_boost_relay_test_config["relays"][0]]))
 
 
-def test_cannot_batch_add_more_relays_than_allowed(owner, add_mev_boost_relays_factory):
+def test_cannot_batch_add_more_relays_than_allowed(owner, add_mev_boost_relays_factory, mev_boost_relay_test_config):
     "Must revert with message 'MAX_NUM_RELAYS_EXCEEDED' when too many relays are being added"
     # Create array of 41 relay inputs (exceeding MAX_NUM_RELAYS of 40)
     inputs = []
-    for i in range(MAX_RELAY_COUNT + 1):
+    for i in range(mev_boost_relay_test_config["max_num_relays"] + 1):
         inputs.append((f"uri{i}", f"operator{i}", True, f"description{i}"))
 
     with reverts("MAX_NUM_RELAYS_EXCEEDED"):
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata(inputs))
 
 
-def test_cannot_add_relay_uri_already_exists(owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_cannot_add_relay_uri_already_exists(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must revert with message 'RELAY_URI_ALREADY_EXISTS' when uri already exists in allowed list"
     # First add a relay
-    mev_boost_relay_allowed_list.add_relay(*RELAY_FIXTURES[0], {"from": owner})
+    mev_boost_relay_allowed_list.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
 
-    added_relay = mev_boost_relay_allowed_list.get_relay_by_uri(get_relay_fixture_uri(0))
-    assert added_relay[0] == get_relay_fixture_uri(0)
+    added_relay = mev_boost_relay_allowed_list.get_relay_by_uri(mev_boost_relay_test_config["relays"][0][0])
+    assert added_relay[0] == mev_boost_relay_test_config["relays"][0][0]
 
     # Try to add the same URI again
     with reverts("RELAY_URI_ALREADY_EXISTS"):
-        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([RELAY_FIXTURES[0]]))
+        add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([mev_boost_relay_test_config["relays"][0]]))
 
 
-def test_cannot_add_relays_with_duplicate_uri(owner, add_mev_boost_relays_factory):
+def test_cannot_add_relays_with_duplicate_uri(owner, add_mev_boost_relays_factory, mev_boost_relay_test_config):
     "Must revert with message 'DUPLICATE_RELAY_URI' when trying to add two relays with the same URI"
-    fixture = RELAY_FIXTURES[0]
-    second_fixture = RELAY_FIXTURES[1]
+    fixture = mev_boost_relay_test_config["relays"][0]
+    second_fixture = mev_boost_relay_test_config["relays"][1]
 
     # Create array of 2 relay inputs with the same URI
     inputs = [
@@ -204,9 +203,11 @@ def test_cannot_add_relays_with_duplicate_uri(owner, add_mev_boost_relays_factor
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata(inputs))
 
 
-def test_can_add_relay_with_max_uri_length(owner, add_mev_boost_relays_factory):
+def test_can_add_relay_with_max_uri_length(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must add relay with URI length"
-    uri = "a" * MAX_STRING_LENGTH
+    uri = "a" * mev_boost_relay_test_config["max_string_length"]
 
     calldata = create_calldata([(uri, "operator", True, "description")])
     evm_script = add_mev_boost_relays_factory.createEVMScript(owner, calldata)
@@ -214,8 +215,8 @@ def test_can_add_relay_with_max_uri_length(owner, add_mev_boost_relays_factory):
     expected_evm_script = encode_call_script(
         [
             (
-                add_mev_boost_relays_factory.address,
-                add_mev_boost_relays_factory.add_relay.encode_input(uri, "operator", True, "description"),
+                mev_boost_relay_allowed_list.address,
+                mev_boost_relay_allowed_list.add_relay.encode_input(uri, "operator", True, "description"),
             )
         ]
     )
@@ -224,9 +225,11 @@ def test_can_add_relay_with_max_uri_length(owner, add_mev_boost_relays_factory):
     add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([(uri, "operator", True, "description")]))
 
 
-def test_can_add_relay_with_max_string_length_description(owner, add_mev_boost_relays_factory):
+def test_can_add_relay_with_max_string_length_description(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must add relay with description length"
-    description = "a" * MAX_STRING_LENGTH
+    description = "a" * mev_boost_relay_test_config["max_string_length"]
 
     calldata = create_calldata([("uri", "operator", True, description)])
     evm_script = add_mev_boost_relays_factory.createEVMScript(owner, calldata)
@@ -234,8 +237,8 @@ def test_can_add_relay_with_max_string_length_description(owner, add_mev_boost_r
     expected_evm_script = encode_call_script(
         [
             (
-                add_mev_boost_relays_factory.address,
-                add_mev_boost_relays_factory.add_relay.encode_input("uri", "operator", True, description),
+                mev_boost_relay_allowed_list.address,
+                mev_boost_relay_allowed_list.add_relay.encode_input("uri", "operator", True, description),
             )
         ]
     )
@@ -244,9 +247,11 @@ def test_can_add_relay_with_max_string_length_description(owner, add_mev_boost_r
     add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", "operator", True, description)]))
 
 
-def test_can_add_relay_with_max_string_length_operator(owner, add_mev_boost_relays_factory):
+def test_can_add_relay_with_max_string_length_operator(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+):
     "Must add relay with operator length"
-    operator = "a" * MAX_STRING_LENGTH
+    operator = "a" * mev_boost_relay_test_config["max_string_length"]
 
     calldata = create_calldata([("uri", operator, True, "description")])
     evm_script = add_mev_boost_relays_factory.createEVMScript(owner, calldata)
@@ -254,8 +259,8 @@ def test_can_add_relay_with_max_string_length_operator(owner, add_mev_boost_rela
     expected_evm_script = encode_call_script(
         [
             (
-                add_mev_boost_relays_factory.address,
-                add_mev_boost_relays_factory.add_relay.encode_input("uri", operator, True, "description"),
+                mev_boost_relay_allowed_list.address,
+                mev_boost_relay_allowed_list.add_relay.encode_input("uri", operator, True, "description"),
             )
         ]
     )
@@ -264,25 +269,29 @@ def test_can_add_relay_with_max_string_length_operator(owner, add_mev_boost_rela
     add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", operator, True, "description")]))
 
 
-def test_cannot_add_relay_with_over_max_string_length_description(owner, add_mev_boost_relays_factory):
+def test_cannot_add_relay_with_over_max_string_length_description(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_test_config
+):
     "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when description is longer than 255 characters"
-    description = "a" * (MAX_STRING_LENGTH + 1)
+    description = "a" * (mev_boost_relay_test_config["max_string_length"] + 1)
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", "operator", True, description)]))
 
 
-def test_cannot_add_relay_with_over_max_string_length_operator(owner, add_mev_boost_relays_factory):
+def test_cannot_add_relay_with_over_max_string_length_operator(
+    owner, add_mev_boost_relays_factory, mev_boost_relay_test_config
+):
     "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when operator is longer than 255 characters"
-    operator = "a" * (MAX_STRING_LENGTH + 1)
+    operator = "a" * (mev_boost_relay_test_config["max_string_length"] + 1)
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([("uri", operator, True, "description")]))
 
 
-def test_cannot_add_relay_with_over_max_uri_length(owner, add_mev_boost_relays_factory):
+def test_cannot_add_relay_with_over_max_uri_length(owner, add_mev_boost_relays_factory, mev_boost_relay_test_config):
     "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when uri is longer than 255 characters"
-    uri = "a" * (MAX_STRING_LENGTH + 1)
+    uri = "a" * (mev_boost_relay_test_config["max_string_length"] + 1)
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
         add_mev_boost_relays_factory.createEVMScript(owner, create_calldata([(uri, "operator", True, "description")]))

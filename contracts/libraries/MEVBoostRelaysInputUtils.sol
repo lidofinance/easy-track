@@ -21,6 +21,8 @@ library MEVBoostRelaysInputUtils {
     // -------------
     // CONSTANTS
     // -------------
+
+    /// @notice Maximum length of a string defined in the MEVBoostRelayAllowedList contract
     uint256 private constant MAX_STRING_LENGTH = 1024;
 
     // ========================================================

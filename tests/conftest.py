@@ -472,3 +472,17 @@ def vote_id_from_env() -> Optional[int]:
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_test_config():
+    return {
+        "relays": [
+            # uri, operator, is_mandatory, description
+            ("https://relay1.example.com", "Operator 1", True, "First relay description"),
+            ("https://relay2.example.com", "Operator 2", False, "Second relay description"),
+            ("https://relay3.example.com", "Operator 3", True, "Third relay description"),
+        ],
+        "max_num_relays": 40,
+        "max_string_length": 1024,
+    }
