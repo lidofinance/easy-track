@@ -1,8 +1,7 @@
 import pytest
 import brownie
 
-import constants
-from utils import evm_script, log
+from utils.evm_script import encode_call_script, encode_calldata
 
 
 @pytest.fixture(scope="module")
@@ -12,26 +11,32 @@ def trusted_address(accounts):
 
 def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track):
     evm_executor = easy_track.evmScriptExecutor()
-    mev_boost_relay_allowed_list.set_manager(evm_executor, {"from": lido_contracts.aragon.agent.address})
+    agent = lido_contracts.aragon.agent
 
-    # # create voting to grant permissions to EVM script executor to create new payments
-    # set_evm_script_executor_manager_id, _ = lido_contracts.create_voting(
-    #     evm_script=evm_script.encode_call_script(
-    #         [
-    #             (
-    #                 mev_boost_relay_allowed_list.address,
-    #                 mev_boost_relay_allowed_list.set_manager.encode_input(
-    #                     evm_executor,
-    #                 ),
-    #             ),
-    #         ]
-    #     ),
-    #     description="Grant permissions to EVMScriptExecutor to manage MEV Boost Relay Allowed List",
-    #     tx_params={"from": lido_contracts.aragon.agent},
-    # )
+    vote_id, _ = lido_contracts.create_voting(
+        evm_script=encode_call_script(
+            [
+                (
+                    agent.address,
+                    agent.forward.encode_input(
+                        encode_call_script(
+                            [
+                                (
+                                    mev_boost_relay_allowed_list.address,
+                                    mev_boost_relay_allowed_list.set_manager.encode_input(evm_executor),
+                                )
+                            ]
+                        ),
+                    ),
+                )
+            ]
+        ),
+        description="Set manager for MEV Boost Relay Allowed List to EVMScriptExecutor",
+        tx_params={"from": agent.address},
+    )
 
-    # # execute voting to add permissions to EVM script executor to create payments
-    # lido_contracts.execute_voting(set_evm_script_executor_manager_id)
+    # execute vote
+    lido_contracts.execute_voting(vote_id)
 
 
 # helper function to setup evm script factory
@@ -80,7 +85,7 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
         # create motion to add relays
         tx = easy_track.createMotion(
             add_relays_script_factory.address,
-            evm_script.encode_calldata(
+            encode_calldata(
                 ["(string,string,bool,string)[]"],
                 [relays],
             ),
@@ -163,7 +168,7 @@ def test_remove_mev_boost_relays_allowed_list_happy_path(
         # create motion to remove relays
         tx = easy_track.createMotion(
             remove_relays_script_factory.address,
-            evm_script.encode_calldata(
+            encode_calldata(
                 ["string[]"],
                 [[relay[0] for relay in relays]],
             ),
@@ -250,7 +255,7 @@ def test_edit_mev_boost_relays_allowed_list_happy_path(
         # create motion to edit relays
         tx = easy_track.createMotion(
             edit_relays_script_factory.address,
-            evm_script.encode_calldata(
+            encode_calldata(
                 ["(string,string,bool,string)[]"],
                 [modified_relays],
             ),

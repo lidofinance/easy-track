@@ -5,14 +5,14 @@ pragma solidity 0.8.6;
 
 import "../libraries/MEVBoostRelaysInputUtils.sol";
 
-contract MEVBoostRelaysInputUtilsStub {
+contract MEVBoostRelaysInputUtilsWrapper {
     function decodeCallDataWithRelayStructs(
         bytes memory _evmScriptCallData
     ) external pure returns (IMEVBoostRelayAllowedList.Relay[] memory) {
         return MEVBoostRelaysInputUtils.decodeCallDataWithRelayStructs(_evmScriptCallData);
     }
 
-    function decodeRelayStructCallData(
+    function decodeCallDataWithRelayURIs(
         bytes memory _relayData
     ) external pure returns (string[] memory) {
         return MEVBoostRelaysInputUtils.decodeCallDataWithRelayURIs(_relayData);

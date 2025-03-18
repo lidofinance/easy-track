@@ -220,8 +220,8 @@ def bytes_utils_wrapper(accounts, BytesUtilsWrapper):
 
 
 @pytest.fixture(scope="module")
-def mev_boost_relay_input_utils_wrapper(owner, MEVBoostRelayInputUtils):
-    return owner.deploy(MEVBoostRelayInputUtils)
+def mev_boost_relay_input_utils_wrapper(owner, MEVBoostRelaysInputUtilsWrapper):
+    return owner.deploy(MEVBoostRelaysInputUtilsWrapper)
 
 
 @pytest.fixture(scope="module")
