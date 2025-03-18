@@ -1,0 +1,28 @@
+{
+  "EasyTrack": {
+    "contract": "EasyTrack",
+    "address": "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+    "constructorArgs": [
+      "0xEf2573966D009CcEA0Fc74451dee2193564198dc",
+      "0xBE2fD5a6Ce6460EB5e9aCC5d486697aE6402fdd2",
+      600,
+      24,
+      500
+    ]
+  },
+  "EVMScriptExecutor": {
+    "contract": "EVMScriptExecutor",
+    "address": "0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
+    "constructorArgs": [
+      "0xfB3cB48d81eC8c7f2013a8dc9fA46D2D48112c3A",
+      "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a"
+    ]
+  },
+  "IncreaseNodeOperatorStakingLimit": {
+    "contract": "IncreaseNodeOperatorStakingLimit",
+    "address": "0x0f121e4069e17a2Dc5bAbF39d769313a1e20f323",
+    "constructorArgs": [
+      "0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5"
+    ]
+  }
+}
