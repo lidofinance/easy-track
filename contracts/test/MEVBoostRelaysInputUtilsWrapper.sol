@@ -21,16 +21,20 @@ contract MEVBoostRelaysInputUtilsWrapper {
     function validateRelays(
         string[] memory _relayURIs,
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _shouldExist
+        bool _expectExistence
     ) external pure {
-        MEVBoostRelaysInputUtils.validateRelays(_relayURIs, _currentAllowedRelays, _shouldExist);
+        MEVBoostRelaysInputUtils.validateRelays(
+            _relayURIs,
+            _currentAllowedRelays,
+            _expectExistence
+        );
     }
 
     function validateRelays(
         IMEVBoostRelayAllowedList.Relay[] memory _relays,
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _shouldExist
+        bool _expectExistence
     ) external pure {
-        MEVBoostRelaysInputUtils.validateRelays(_relays, _currentAllowedRelays, _shouldExist);
+        MEVBoostRelaysInputUtils.validateRelays(_relays, _currentAllowedRelays, _expectExistence);
     }
 }

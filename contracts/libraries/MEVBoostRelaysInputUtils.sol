@@ -32,11 +32,13 @@ library MEVBoostRelaysInputUtils {
     /// @notice Validates an array of relay structs
     /// @param _relays Array of Relay structs to validate
     /// @param _currentAllowedRelays Current list of allowed relays from the MEVBoostRelayAllowedList contract
-    /// @param _shouldExist Whether the relay URIs should exist or not in the current relay list
+    /// @param _expectExistence Switches the expected existence of the relay URIs in the current relay list
+    ///                         if true, the relay URIs should exist in the current relay list and will revert otherwise
+    ///                         if false, the relay URIs should NOT exist in the current relay list and will revert otherwise
     function validateRelays(
         IMEVBoostRelayAllowedList.Relay[] memory _relays,
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _shouldExist
+        bool _expectExistence
     ) internal pure {
         require(_relays.length > 0, ERROR_EMPTY_RELAYS_ARRAY);
 
@@ -46,7 +48,11 @@ library MEVBoostRelaysInputUtils {
             // Validate the Relay parameters: URI, operator, and description
             _validateRelayParameters(_relays[i]);
             _validateNoDuplicateInput(i, _relays);
-            _validateRelayUriPresence(bytes(_relays[i].uri), _currentAllowedRelays, _shouldExist);
+            _validateRelayUriPresence(
+                bytes(_relays[i].uri),
+                _currentAllowedRelays,
+                _expectExistence
+            );
 
             unchecked {
                 ++i;
@@ -57,11 +63,13 @@ library MEVBoostRelaysInputUtils {
     /// @notice Validates an array of relays by their URI strings
     /// @param _relayURIs Array of Relay URI strings to validate
     /// @param _currentAllowedRelays Current list of allowed relays from the MEVBoostRelayAllowedList contract
-    /// @param _shouldExist Whether the relay URIs should exist or not in the current relay list
+    /// @param _expectExistence Switches the expected existence of the relay URIs in the current relay list
+    ///                         if true, the relay URIs should exist in the current relay list and will revert otherwise
+    ///                         if false, the relay URIs should NOT exist in the current relay list and will revert otherwise
     function validateRelays(
         string[] memory _relayURIs,
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _shouldExist
+        bool _expectExistence
     ) internal pure {
         require(_relayURIs.length > 0, ERROR_EMPTY_RELAYS_ARRAY);
 
@@ -73,7 +81,7 @@ library MEVBoostRelaysInputUtils {
             // Validate the URI length and presence
             _validateUriString(uri);
             _validateNoDuplicateInput(i, _relayURIs);
-            _validateRelayUriPresence(uri, _currentAllowedRelays, _shouldExist);
+            _validateRelayUriPresence(uri, _currentAllowedRelays, _expectExistence);
 
             unchecked {
                 ++i;
@@ -122,7 +130,7 @@ library MEVBoostRelaysInputUtils {
     function _validateRelayUriPresence(
         bytes memory _uri,
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _shouldExist
+        bool _expectExistence
     ) private pure {
         bool exists;
         uint256 currentAllowedRelaysLength = _currentAllowedRelays.length;
@@ -139,7 +147,7 @@ library MEVBoostRelaysInputUtils {
             }
         }
 
-        if (_shouldExist) {
+        if (_expectExistence) {
             require(exists, ERROR_RELAY_NOT_FOUND);
         } else {
             require(!exists, ERROR_RELAY_URI_ALREADY_EXISTS);
