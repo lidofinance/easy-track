@@ -20,14 +20,14 @@ def get_relay_fixture_uri(i, mev_boost_relay_test_config):
 
 
 @pytest.fixture(scope="module")
-def remove_mev_boost_relays_factory(owner, mev_boost_relay_allowed_list):
-    return RemoveMEVBoostRelays.deploy(owner, mev_boost_relay_allowed_list, {"from": owner})
+def remove_mev_boost_relays_factory(owner, mev_boost_relay_allowed_list_stub):
+    return RemoveMEVBoostRelays.deploy(owner, mev_boost_relay_allowed_list_stub, {"from": owner})
 
 
-def test_deploy(mev_boost_relay_allowed_list, owner, remove_mev_boost_relays_factory):
+def test_deploy(mev_boost_relay_allowed_list_stub, owner, remove_mev_boost_relays_factory):
     "Must deploy contract with correct data"
     assert remove_mev_boost_relays_factory.trustedCaller() == owner
-    assert remove_mev_boost_relays_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
+    assert remove_mev_boost_relays_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list_stub
 
 
 def test_decode_evm_script_call_data_with_single_relay(remove_mev_boost_relays_factory, mev_boost_relay_test_config):
@@ -60,17 +60,18 @@ def test_decode_evm_script_call_data_with_max_relays(remove_mev_boost_relays_fac
 
 
 def test_decode_evm_script_call_data_with_empty_calldata(remove_mev_boost_relays_factory):
-    "Must decode EVMScript call data correctly when removing max relays"
+    "Must revert on decoding EVMScript call data with empty calldata"
     with reverts():
         remove_mev_boost_relays_factory.decodeEVMScriptCallData("0x")
 
 
 def test_remove_relay(
-    owner, remove_mev_boost_relays_factory, mev_boost_relay_test_config, mev_boost_relay_allowed_list
+    owner, remove_mev_boost_relays_factory, mev_boost_relay_test_config, mev_boost_relay_allowed_list_stub
 ):
     "Must remove relay if it exists"
     # First add a relay that we'll then remove
-    mev_boost_relay_allowed_list.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+    mev_boost_relay_allowed_list_stub.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+    assert mev_boost_relay_allowed_list_stub.get_relays_amount() == 1
 
     # Create script to remove the relay
     evm_script = remove_mev_boost_relays_factory.createEVMScript(
@@ -81,8 +82,8 @@ def test_remove_relay(
     expected_evm_script = encode_call_script(
         [
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.remove_relay.encode_input(
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
                     get_relay_fixture_uri(0, mev_boost_relay_test_config)
                 ),
             )
@@ -91,16 +92,19 @@ def test_remove_relay(
     assert evm_script == expected_evm_script
 
 
-def test_remove_multiple_relays(owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_remove_multiple_relays(owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub):
     "Must remove all relays if they exist"
     # First add relays that we'll then remove
     inputs = []
     direct_allow_list_calldata = []
 
+    # Add a relay that we'll keep for better semantics in tests as we're not removing all relays
+    mev_boost_relay_allowed_list_stub.add_relay("uri0", "operator0", True, "description0", {"from": owner})
+
     for i in range(4):
         relay_uri = f"uri{i}"
 
-        mev_boost_relay_allowed_list.add_relay(
+        mev_boost_relay_allowed_list_stub.add_relay(
             relay_uri,
             f"operator{i}",
             True,
@@ -111,12 +115,14 @@ def test_remove_multiple_relays(owner, remove_mev_boost_relays_factory, mev_boos
         inputs.append(relay_uri)
         direct_allow_list_calldata.append(
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.remove_relay.encode_input(
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
                     relay_uri,
                 ),
             )
         )
+
+    assert mev_boost_relay_allowed_list_stub.get_relays_amount() == len(inputs) + 1
 
     calldata = create_calldata(inputs)
     evm_script = remove_mev_boost_relays_factory.createEVMScript(owner, calldata)
@@ -126,20 +132,20 @@ def test_remove_multiple_relays(owner, remove_mev_boost_relays_factory, mev_boos
 
 
 def test_remove_max_num_relays(
-    owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
     "Must remove max relays if they exist"
     # First add relays that we'll then remove
     inputs = []
     direct_allow_list_calldata = []
 
-    current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
+    current_relay_count = mev_boost_relay_allowed_list_stub.get_relays_amount()
     max_count = mev_boost_relay_test_config["max_num_relays"] - current_relay_count
 
     for i in range(max_count):
         relay_uri = f"uri{i}"
 
-        mev_boost_relay_allowed_list.add_relay(
+        mev_boost_relay_allowed_list_stub.add_relay(
             relay_uri,
             f"operator{i}",
             True,
@@ -150,12 +156,52 @@ def test_remove_max_num_relays(
         inputs.append(relay_uri)
         direct_allow_list_calldata.append(
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.remove_relay.encode_input(
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
                     relay_uri,
                 ),
             )
         )
+
+    assert mev_boost_relay_allowed_list_stub.get_relays_amount() == max_count
+
+    calldata = create_calldata(inputs)
+    evm_script = remove_mev_boost_relays_factory.createEVMScript(owner, calldata)
+
+    expected_evm_script = encode_call_script(direct_allow_list_calldata)
+    assert evm_script == expected_evm_script
+
+
+def test_can_remove_all_relays_in_allow_list(
+    owner, remove_mev_boost_relays_factory, mev_boost_relay_test_config, mev_boost_relay_allowed_list_stub
+):
+    "Must remove all relays in the allow list"
+    # First add relays that we'll then remove
+    inputs = []
+    direct_allow_list_calldata = []
+
+    for i in range(len(mev_boost_relay_test_config["relays"])):
+        relay_uri = get_relay_fixture_uri(i, mev_boost_relay_test_config)
+
+        mev_boost_relay_allowed_list_stub.add_relay(
+            relay_uri,
+            f"operator{i}",
+            True,
+            f"description{i}",
+            {"from": owner},
+        )
+
+        inputs.append(relay_uri)
+        direct_allow_list_calldata.append(
+            (
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
+                    relay_uri,
+                ),
+            )
+        )
+
+    assert mev_boost_relay_allowed_list_stub.get_relays_amount() == len(mev_boost_relay_test_config["relays"])
 
     calldata = create_calldata(inputs)
     evm_script = remove_mev_boost_relays_factory.createEVMScript(owner, calldata)
@@ -182,9 +228,11 @@ def test_cannot_remove_relay_with_empty_relay_uri(owner, remove_mev_boost_relays
         remove_mev_boost_relays_factory.createEVMScript(owner, create_calldata([""]))
 
 
-def test_cannot_remove_more_than_available(owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list):
+def test_cannot_edit_multiple_relays_when_last_not_in_allow_list(
+    owner, remove_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub
+):
     "Must revert with message 'RELAY_NOT_FOUND' when trying to remove more relays than exist"
-    current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
+    current_relay_count = mev_boost_relay_allowed_list_stub.get_relays_amount()
 
     # Create array of URIs that is larger than the current relay count
     uris_to_remove = []
@@ -216,12 +264,14 @@ def test_cannot_remove_relay_uri_not_in_list(owner, remove_mev_boost_relays_fact
 
 
 def test_cannot_remove_relays_with_duplicate_uri(
-    owner, remove_mev_boost_relays_factory, mev_boost_relay_test_config, mev_boost_relay_allowed_list
+    owner, remove_mev_boost_relays_factory, mev_boost_relay_test_config, mev_boost_relay_allowed_list_stub
 ):
     "Must revert with message 'DUPLICATE_RELAY_URI' when trying to remove two relays with the same URI"
 
     # Add a relay
-    mev_boost_relay_allowed_list.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+    mev_boost_relay_allowed_list_stub.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+
+    assert mev_boost_relay_allowed_list_stub.get_relays_amount() == 1
 
     with reverts("DUPLICATE_RELAY_URI"):
         remove_mev_boost_relays_factory.createEVMScript(

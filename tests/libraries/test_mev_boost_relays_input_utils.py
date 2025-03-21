@@ -3,11 +3,6 @@ import pytest
 from eth_abi import encode
 from brownie import reverts
 
-## Constants
-
-RELAY_STRUCTS_PARAMS = "tuple[],tuple[],bool"
-RELAY_URIS_PARAMS = "string[],tuple[],bool"
-
 
 def create_struct_calldata(data):
     return "0x" + encode(["(string,string,bool,string)[]"], [data]).hex()
@@ -30,9 +25,7 @@ def test_validate_structs_passes_when_relay_found_as_expected(
     allowed_relays = mev_boost_relay_test_config["relays"]
     relay_input = [allowed_relays[0]]
 
-    mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-        relay_input, allowed_relays, True, {"from": stranger}
-    )
+    mev_boost_relay_input_utils_wrapper.validateRelays(relay_input, allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_reverts_when_relay_not_found_expected(
@@ -44,9 +37,7 @@ def test_validate_structs_reverts_when_relay_not_found_expected(
     relay_input = [new_relay]
 
     with reverts("RELAY_NOT_FOUND"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            relay_input, allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays(relay_input, allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_passes_when_relay_absent_as_expected(
@@ -56,9 +47,7 @@ def test_validate_structs_passes_when_relay_absent_as_expected(
     allowed_relays = mev_boost_relay_test_config["relays"]
     new_relay = ("https://relay4.example.com", "Operator 4", True, "Fourth relay description")
 
-    mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-        [new_relay], allowed_relays, False, {"from": stranger}
-    )
+    mev_boost_relay_input_utils_wrapper.validateRelays([new_relay], allowed_relays, False, {"from": stranger})
 
 
 def test_validate_structs_reverts_when_relay_present_unexpected(
@@ -69,9 +58,7 @@ def test_validate_structs_reverts_when_relay_present_unexpected(
     relay_input = [allowed_relays[0]]
 
     with reverts("RELAY_URI_ALREADY_EXISTS"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            relay_input, allowed_relays, False, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays(relay_input, allowed_relays, False, {"from": stranger})
 
 
 def test_validate_structs_reverts_on_empty_array(
@@ -81,9 +68,7 @@ def test_validate_structs_reverts_on_empty_array(
     allowed_relays = mev_boost_relay_test_config["relays"]
 
     with reverts("EMPTY_RELAYS_ARRAY"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            [], allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays([], allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_reverts_on_empty_uri(
@@ -94,9 +79,7 @@ def test_validate_structs_reverts_on_empty_uri(
     new_relay = ("", "Operator 1", True, "Description 1")
 
     with reverts("EMPTY_RELAY_URI"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            [new_relay], allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays([new_relay], allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_reverts_on_uri_exceeding_max_length(
@@ -109,9 +92,7 @@ def test_validate_structs_reverts_on_uri_exceeding_max_length(
     new_relay = (long_uri, "Operator 1", True, "Description 1")
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            [new_relay], allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays([new_relay], allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_reverts_on_operator_exceeding_max_length(
@@ -124,9 +105,7 @@ def test_validate_structs_reverts_on_operator_exceeding_max_length(
     new_relay = ("https://example.com", long_operator, True, "Description 1")
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            [new_relay], allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays([new_relay], allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_reverts_on_description_exceeding_max_length(
@@ -139,9 +118,7 @@ def test_validate_structs_reverts_on_description_exceeding_max_length(
     new_relay = ("https://example.com", "Operator 1", True, long_description)
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            [new_relay], allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays([new_relay], allowed_relays, True, {"from": stranger})
 
 
 def test_validate_structs_reverts_on_duplicate_uris(
@@ -153,9 +130,7 @@ def test_validate_structs_reverts_on_duplicate_uris(
     relay_input = [duplicate_relay, duplicate_relay]
 
     with reverts("DUPLICATE_RELAY_URI"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_STRUCTS_PARAMS](
-            relay_input, allowed_relays, True, {"from": stranger}
-        )
+        mev_boost_relay_input_utils_wrapper.validateRelays(relay_input, allowed_relays, True, {"from": stranger})
 
 
 # Relay URI String Array Validation Tests
@@ -165,43 +140,22 @@ def test_validate_uris_passes_when_relay_found_as_expected(
     "Must pass when a relay URI is found in the allowed list and it is expected to be present"
     relay_input = [allowed_uris[0]]
 
-    mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-        relay_input, mev_boost_relay_test_config["relays"], True, {"from": stranger}
+    mev_boost_relay_input_utils_wrapper.validateRelayURIs(
+        relay_input, mev_boost_relay_test_config["relays"], {"from": stranger}
     )
 
 
 def test_validate_uris_reverts_when_relay_not_found_expected(
-    mev_boost_relay_input_utils_wrapper, allowed_uris, stranger, mev_boost_relay_test_config
+    mev_boost_relay_input_utils_wrapper, stranger, mev_boost_relay_test_config
 ):
     "Must revert when a relay URI is not found in the allowed list but is expected to be present"
     relay_input = ["https://nonexistent.example.com"]
 
+    assert relay_input[0] not in [relay[0] for relay in mev_boost_relay_test_config["relays"]]
+
     with reverts("RELAY_NOT_FOUND"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-            relay_input, mev_boost_relay_test_config["relays"], True, {"from": stranger}
-        )
-
-
-def test_validate_uris_passes_when_relay_absent_as_expected(
-    mev_boost_relay_input_utils_wrapper, allowed_uris, stranger, mev_boost_relay_test_config
-):
-    "Must pass when a relay URI is absent from the allowed list and it is expected not to be present"
-    relay_input = ["https://relay4.example.com"]
-
-    mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-        relay_input, mev_boost_relay_test_config["relays"], False, {"from": stranger}
-    )
-
-
-def test_validate_uris_reverts_when_relay_present_unexpected(
-    mev_boost_relay_input_utils_wrapper, allowed_uris, stranger, mev_boost_relay_test_config
-):
-    "Must revert when a relay URI is present in the allowed list but is expected not to be present"
-    relay_input = [allowed_uris[0]]
-
-    with reverts("RELAY_URI_ALREADY_EXISTS"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-            relay_input, mev_boost_relay_test_config["relays"], False, {"from": stranger}
+        mev_boost_relay_input_utils_wrapper.validateRelayURIs(
+            relay_input, mev_boost_relay_test_config["relays"], {"from": stranger}
         )
 
 
@@ -211,8 +165,8 @@ def test_validate_uris_reverts_on_empty_array(
     "Must revert when the relay URI array is empty"
 
     with reverts("EMPTY_RELAYS_ARRAY"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-            [], mev_boost_relay_test_config["relays"], True, {"from": stranger}
+        mev_boost_relay_input_utils_wrapper.validateRelayURIs(
+            [], mev_boost_relay_test_config["relays"], {"from": stranger}
         )
 
 
@@ -223,8 +177,8 @@ def test_validate_uris_reverts_on_empty_string(
     relay_input = [""]
 
     with reverts("EMPTY_RELAY_URI"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-            relay_input, mev_boost_relay_test_config["relays"], True, {"from": stranger}
+        mev_boost_relay_input_utils_wrapper.validateRelayURIs(
+            relay_input, mev_boost_relay_test_config["relays"], {"from": stranger}
         )
 
 
@@ -237,8 +191,8 @@ def test_validate_uris_reverts_on_uri_exceeding_max_length(
     relay_input = [long_uri]
 
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-            relay_input, mev_boost_relay_test_config["relays"], True, {"from": stranger}
+        mev_boost_relay_input_utils_wrapper.validateRelayURIs(
+            relay_input, mev_boost_relay_test_config["relays"], {"from": stranger}
         )
 
 
@@ -250,8 +204,8 @@ def test_validate_uris_reverts_on_duplicate_entries(
     relay_input = [duplicate_uri, duplicate_uri]
 
     with reverts("DUPLICATE_RELAY_URI"):
-        mev_boost_relay_input_utils_wrapper.validateRelays[RELAY_URIS_PARAMS](
-            relay_input, mev_boost_relay_test_config["relays"], True, {"from": stranger}
+        mev_boost_relay_input_utils_wrapper.validateRelayURIs(
+            relay_input, mev_boost_relay_test_config["relays"], {"from": stranger}
         )
 
 

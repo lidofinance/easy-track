@@ -9,21 +9,15 @@ def create_calldata(data):
     return "0x" + encode(["(string,string,bool,string)[]"], [data]).hex()
 
 
-def get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config):
-    current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
-
-    return mev_boost_relay_test_config["max_num_relays"] - current_relay_count
-
-
 @pytest.fixture(scope="module")
-def edit_mev_boost_relays_factory(owner, mev_boost_relay_allowed_list):
-    return EditMEVBoostRelays.deploy(owner, mev_boost_relay_allowed_list, {"from": owner})
+def edit_mev_boost_relays_factory(owner, mev_boost_relay_allowed_list_stub):
+    return EditMEVBoostRelays.deploy(owner, mev_boost_relay_allowed_list_stub, {"from": owner})
 
 
-def test_deploy(mev_boost_relay_allowed_list, owner, edit_mev_boost_relays_factory):
+def test_deploy(mev_boost_relay_allowed_list_stub, owner, edit_mev_boost_relays_factory):
     "Must deploy contract with correct data"
     assert edit_mev_boost_relays_factory.trustedCaller() == owner
-    assert edit_mev_boost_relays_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
+    assert edit_mev_boost_relays_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list_stub
 
 
 def test_decode_evm_script_call_data_single_relay(edit_mev_boost_relays_factory, mev_boost_relay_test_config):
@@ -43,24 +37,24 @@ def test_decode_evm_script_call_data_multiple_relays(edit_mev_boost_relays_facto
 
 
 def test_edit_single_relay(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
-    "Must edit single relay"
+    "Must create correct EVMScript to edit single relay"
     input_params = [mev_boost_relay_test_config["relays"][0]]
 
-    mev_boost_relay_allowed_list.add_relay(*input_params[0], {"from": owner})
+    mev_boost_relay_allowed_list_stub.add_relay(*input_params[0], {"from": owner})
 
     calldata = create_calldata(input_params)
     direct_allow_list_calldata = [
         (
-            mev_boost_relay_allowed_list.address,
-            mev_boost_relay_allowed_list.remove_relay.encode_input(
+            mev_boost_relay_allowed_list_stub.address,
+            mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
                 mev_boost_relay_test_config["relays"][0][0],
             ),
         ),
         (
-            mev_boost_relay_allowed_list.address,
-            mev_boost_relay_allowed_list.add_relay.encode_input(
+            mev_boost_relay_allowed_list_stub.address,
+            mev_boost_relay_allowed_list_stub.add_relay.encode_input(
                 *input_params[0],
             ),
         ),
@@ -73,23 +67,23 @@ def test_edit_single_relay(
 
 
 def test_edit_multiple_relays(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
-    "Must edit multiple relays"
+    "Must create correct EVMScript to edit multiple relays"
     calldata = create_calldata(mev_boost_relay_test_config["relays"])
     direct_allow_list_calldata = []
 
     for relay in mev_boost_relay_test_config["relays"]:
-        mev_boost_relay_allowed_list.add_relay(*relay, {"from": owner})
+        mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
 
         direct_allow_list_calldata += [
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.remove_relay.encode_input(relay[0]),
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.remove_relay.encode_input(relay[0]),
             ),
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.add_relay.encode_input(
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.add_relay.encode_input(
                     *relay,
                 ),
             ),
@@ -102,27 +96,27 @@ def test_edit_multiple_relays(
 
 
 def test_edit_max_num_relays(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
-    "Must add the last relay if the number of relays is less than MAX_NUM_RELAYS"
+    "Must create correct EVMScript to edit maximum number of relays at once"
 
     inputs = []
     direct_allow_list_calldata = []
 
-    for i in range(get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config)):
+    for i in range(mev_boost_relay_test_config["max_num_relays"]):
         relay = (f"uri{i}", f"operator{i}", True, f"description{i}")
 
-        mev_boost_relay_allowed_list.add_relay(*relay, {"from": owner})
+        mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
 
         inputs.append(relay)
         direct_allow_list_calldata += [
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.remove_relay.encode_input(relay[0]),
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.remove_relay.encode_input(relay[0]),
             ),
             (
-                mev_boost_relay_allowed_list.address,
-                mev_boost_relay_allowed_list.add_relay.encode_input(
+                mev_boost_relay_allowed_list_stub.address,
+                mev_boost_relay_allowed_list_stub.add_relay.encode_input(
                     *relay,
                 ),
             ),
@@ -136,23 +130,30 @@ def test_edit_max_num_relays(
 
 
 def test_can_edit_relay_and_set_description_to_empty(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
-    "Must edit relay with empty description"
-    input_params = [mev_boost_relay_test_config["relays"][0][:3] + ("",)]
-    mev_boost_relay_allowed_list.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+    "Must create correct EVMScript to edit relay with empty description"
+    input_params = [
+        (
+            mev_boost_relay_test_config["relays"][0][0],
+            mev_boost_relay_test_config["relays"][0][1],
+            mev_boost_relay_test_config["relays"][0][2],
+            "",
+        )
+    ]
+    mev_boost_relay_allowed_list_stub.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
 
     calldata = create_calldata(input_params)
     direct_allow_list_calldata = [
         (
-            mev_boost_relay_allowed_list.address,
-            mev_boost_relay_allowed_list.remove_relay.encode_input(
+            mev_boost_relay_allowed_list_stub.address,
+            mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
                 mev_boost_relay_test_config["relays"][0][0],
             ),
         ),
         (
-            mev_boost_relay_allowed_list.address,
-            mev_boost_relay_allowed_list.add_relay.encode_input(
+            mev_boost_relay_allowed_list_stub.address,
+            mev_boost_relay_allowed_list_stub.add_relay.encode_input(
                 *input_params[0],
             ),
         ),
@@ -165,9 +166,9 @@ def test_can_edit_relay_and_set_description_to_empty(
 
 
 def test_can_edit_relay_and_set_operator_to_empty(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
-    "Must edit relay with empty operator"
+    "Must create correct EVMScript to edit relay with empty operator"
     input_params = [
         (
             mev_boost_relay_test_config["relays"][0][0],
@@ -177,19 +178,19 @@ def test_can_edit_relay_and_set_operator_to_empty(
         )
     ]
 
-    mev_boost_relay_allowed_list.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+    mev_boost_relay_allowed_list_stub.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
 
     calldata = create_calldata(input_params)
     direct_allow_list_calldata = [
         (
-            mev_boost_relay_allowed_list.address,
-            mev_boost_relay_allowed_list.remove_relay.encode_input(
+            mev_boost_relay_allowed_list_stub.address,
+            mev_boost_relay_allowed_list_stub.remove_relay.encode_input(
                 mev_boost_relay_test_config["relays"][0][0],
             ),
         ),
         (
-            mev_boost_relay_allowed_list.address,
-            mev_boost_relay_allowed_list.add_relay.encode_input(
+            mev_boost_relay_allowed_list_stub.address,
+            mev_boost_relay_allowed_list_stub.add_relay.encode_input(
                 *input_params[0],
             ),
         ),
@@ -233,7 +234,7 @@ def test_cannot_edit_relay_with_empty_uri(owner, edit_mev_boost_relays_factory):
 
 
 def test_cannot_edit_relay_with_duplicate_uri(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
     "Must revert with message 'DUPLICATE_RELAY_URI' when uri is duplicated"
     relays = [
@@ -241,32 +242,12 @@ def test_cannot_edit_relay_with_duplicate_uri(
         (mev_boost_relay_test_config["relays"][0][0], "operator 2", False, "description 2"),
     ]
 
-    mev_boost_relay_allowed_list.add_relay(*relays[0], {"from": owner})
+    mev_boost_relay_allowed_list_stub.add_relay(*relays[0], {"from": owner})
 
     with reverts("DUPLICATE_RELAY_URI"):
         edit_mev_boost_relays_factory.createEVMScript(
             owner,
             create_calldata(relays),
-        )
-
-
-def test_cannot_edit_more_relays_than_present(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
-):
-    "Must revert with message 'RELAY_NOT_FOUND' when trying to add more relays than MAX_NUM_RELAYS"
-    current_relay_count = mev_boost_relay_allowed_list.get_relays_amount()
-
-    # Ensure that the current relay count is within the allowed range
-    assert current_relay_count > 0 and current_relay_count < mev_boost_relay_test_config["max_num_relays"]
-
-    with reverts("RELAY_NOT_FOUND"):
-        edit_mev_boost_relays_factory.createEVMScript(
-            owner,
-            create_calldata(
-                # here it doesn't matter that URI doesn't exist in the allow list, we're testing the count mismatch here only
-                # checks for URI existence in the allow list are covered in other tests
-                [(f"uri{i}", f"operator{i}", True, f"description{i}") for i in range(current_relay_count + 1)]
-            ),
         )
 
 
@@ -280,11 +261,11 @@ def test_cannot_edit_relay_not_in_allow_list(owner, edit_mev_boost_relays_factor
 
 
 def test_cannot_edit_relay_not_in_allow_list_with_multiple_relays(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
 ):
     "Must revert with message 'RELAY_NOT_FOUND' when relay is not in the allow list"
     # Add one relay to the allow list
-    mev_boost_relay_allowed_list.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
+    mev_boost_relay_allowed_list_stub.add_relay(*mev_boost_relay_test_config["relays"][0], {"from": owner})
 
     # Try to edit two relays, one of them is not in the allow list
     with reverts("RELAY_NOT_FOUND"):
@@ -294,8 +275,46 @@ def test_cannot_edit_relay_not_in_allow_list_with_multiple_relays(
         )
 
 
+def test_cannot_edit_multiple_relays_when_last_not_in_allow_list(
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list_stub, mev_boost_relay_test_config
+):
+    "Must revert with message 'RELAY_NOT_FOUND' with multiple relays when the last one is not in the allow list"
+    # Add all relays except the last one to the allow list, then try to edit all of them
+    for relay in mev_boost_relay_test_config["relays"][:-1]:
+        mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
+
+    assert mev_boost_relay_allowed_list_stub.get_relays_amount() == len(mev_boost_relay_test_config["relays"]) - 1
+
+    with reverts("RELAY_NOT_FOUND"):
+        edit_mev_boost_relays_factory.createEVMScript(
+            owner,
+            create_calldata(mev_boost_relay_test_config["relays"]),
+        )
+
+
+def test_cannot_edit_relay_with_uri_over_max_string_length(
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_test_config
+):
+    "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when uri is over max string length"
+    with reverts("MAX_STRING_LENGTH_EXCEEDED"):
+        edit_mev_boost_relays_factory.createEVMScript(
+            owner,
+            create_calldata(
+                [
+                    (
+                        "u" * (mev_boost_relay_test_config["max_string_length"] + 1),
+                        f"operator{i}",
+                        True,
+                        f"description{i}",
+                    )
+                    for i in range(mev_boost_relay_test_config["max_num_relays"])
+                ]
+            ),
+        )
+
+
 def test_cannot_edit_relay_with_operator_over_max_string_length(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_test_config
 ):
     "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when operator is over max string length"
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
@@ -304,14 +323,14 @@ def test_cannot_edit_relay_with_operator_over_max_string_length(
             create_calldata(
                 [
                     (f"uri{i}", "o" * (mev_boost_relay_test_config["max_string_length"] + 1), True, f"description{i}")
-                    for i in range(get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config))
+                    for i in range(mev_boost_relay_test_config["max_num_relays"])
                 ]
             ),
         )
 
 
 def test_cannot_edit_relay_with_description_over_max_string_length(
-    owner, edit_mev_boost_relays_factory, mev_boost_relay_allowed_list, mev_boost_relay_test_config
+    owner, edit_mev_boost_relays_factory, mev_boost_relay_test_config
 ):
     "Must revert with message 'MAX_STRING_LENGTH_EXCEEDED' when description is over max string length"
     with reverts("MAX_STRING_LENGTH_EXCEEDED"):
@@ -320,7 +339,7 @@ def test_cannot_edit_relay_with_description_over_max_string_length(
             create_calldata(
                 [
                     (f"uri{i}", f"operator{i}", True, "d" * (mev_boost_relay_test_config["max_string_length"] + 1))
-                    for i in range(get_max_relay_count(mev_boost_relay_allowed_list, mev_boost_relay_test_config))
+                    for i in range(mev_boost_relay_test_config["max_num_relays"])
                 ]
             ),
         )

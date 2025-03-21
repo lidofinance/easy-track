@@ -45,20 +45,19 @@ contract EditMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     /// @notice Creates EVMScript to edit a MEV boost relay in the MEV Boost relay allow list by the URI
+    /// @dev Edit operation is achieved by removing the updated relay from the list and adding it back with the new parameters
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded relays data: IMEVBoostRelayAllowedList.Relay[]
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        // Decode the input data to get the relays to edit
         IMEVBoostRelayAllowedList.Relay[] memory _relaysToEdit = MEVBoostRelaysInputUtils
             .decodeCallDataWithRelayStructs(_evmScriptCallData);
-        // Get the current list of allowed relays from the MEVBoostRelayAllowedList contract
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays = mevBoostRelayAllowedList
             .get_relays();
 
-        // Validate input data before creating EVMScript to edit relays.  The relay URIs MUST be already in the list.
+        // Validate input data before creating EVMScript to edit relays. The relay URIs MUST be already in the list.
         MEVBoostRelaysInputUtils.validateRelays(_relaysToEdit, _currentAllowedRelays, true);
 
         // Allocate 2x the length of the decoded call data for the methodIds and encodedCalldata arrays

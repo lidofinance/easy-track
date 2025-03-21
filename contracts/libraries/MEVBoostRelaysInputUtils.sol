@@ -40,19 +40,38 @@ library MEVBoostRelaysInputUtils {
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
         bool _expectExistence
     ) internal pure {
-        require(_relays.length > 0, ERROR_EMPTY_RELAYS_ARRAY);
-
         uint256 relaysCount = _relays.length;
 
+        require(relaysCount > 0, ERROR_EMPTY_RELAYS_ARRAY);
+
         for (uint256 i; i < relaysCount; ) {
+            IMEVBoostRelayAllowedList.Relay memory relay = _relays[i];
             // Validate the Relay parameters: URI, operator, and description
-            _validateRelayParameters(_relays[i]);
-            _validateNoDuplicateInput(i, _relays);
-            _validateRelayUriPresence(
-                bytes(_relays[i].uri),
-                _currentAllowedRelays,
-                _expectExistence
+            uint256 relayURILength = bytes(relay.uri).length;
+
+            require(relayURILength > 0, ERROR_EMPTY_RELAY_URI);
+            require(relayURILength <= MAX_STRING_LENGTH, ERROR_MAX_STRING_LENGTH_EXCEEDED);
+            require(
+                bytes(relay.operator).length <= MAX_STRING_LENGTH,
+                ERROR_MAX_STRING_LENGTH_EXCEEDED
             );
+            require(
+                bytes(relay.description).length <= MAX_STRING_LENGTH,
+                ERROR_MAX_STRING_LENGTH_EXCEEDED
+            );
+
+            _validateNoDuplicateInputFromIndex(i, _relays);
+
+            bool relayExistsInList = _isRelayURIContained(
+                bytes(_relays[i].uri),
+                _currentAllowedRelays
+            );
+
+            if (_expectExistence) {
+                require(relayExistsInList, ERROR_RELAY_NOT_FOUND);
+            } else {
+                require(!relayExistsInList, ERROR_RELAY_URI_ALREADY_EXISTS);
+            }
 
             unchecked {
                 ++i;
@@ -63,13 +82,9 @@ library MEVBoostRelaysInputUtils {
     /// @notice Validates an array of relays by their URI strings
     /// @param _relayURIs Array of Relay URI strings to validate
     /// @param _currentAllowedRelays Current list of allowed relays from the MEVBoostRelayAllowedList contract
-    /// @param _expectExistence Switches the expected existence of the relay URIs in the current relay list
-    ///                         if true, the relay URIs should exist in the current relay list and will revert otherwise
-    ///                         if false, the relay URIs should NOT exist in the current relay list and will revert otherwise
-    function validateRelays(
+    function validateRelayURIs(
         string[] memory _relayURIs,
-        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _expectExistence
+        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays
     ) internal pure {
         require(_relayURIs.length > 0, ERROR_EMPTY_RELAYS_ARRAY);
 
@@ -79,9 +94,14 @@ library MEVBoostRelaysInputUtils {
             bytes memory uri = bytes(_relayURIs[i]);
 
             // Validate the URI length and presence
-            _validateUriString(uri);
-            _validateNoDuplicateInput(i, _relayURIs);
-            _validateRelayUriPresence(uri, _currentAllowedRelays, _expectExistence);
+            require(uri.length > 0, ERROR_EMPTY_RELAY_URI);
+            require(uri.length <= MAX_STRING_LENGTH, ERROR_MAX_STRING_LENGTH_EXCEEDED);
+
+            _validateNoDuplicateInputFromIndex(i, _relayURIs);
+
+            bool relayExistsInList = _isRelayURIContained(uri, _currentAllowedRelays);
+            // This validation is only used for removing relays, so the relay should exist in the list
+            require(relayExistsInList, ERROR_RELAY_NOT_FOUND);
 
             unchecked {
                 ++i;
@@ -111,28 +131,11 @@ library MEVBoostRelaysInputUtils {
     // Private Helper Functions
     // ========================================================
 
-    /// @dev Validates Relay parameters: URI, operator, and description
-    function _validateRelayParameters(IMEVBoostRelayAllowedList.Relay memory _relay) private pure {
-        _validateUriString(bytes(_relay.uri));
-
-        _validateStringLengthLimit(bytes(_relay.operator));
-        _validateStringLengthLimit(bytes(_relay.description));
-    }
-
-    /// @dev Validates the URI length and presence
-    function _validateUriString(bytes memory _uri) private pure {
-        require(_uri.length > 0, ERROR_EMPTY_RELAY_URI);
-
-        _validateStringLengthLimit(_uri);
-    }
-
     /// @dev Asserts that a relay URI exists or not in the current relay list according to the expected condition
-    function _validateRelayUriPresence(
+    function _isRelayURIContained(
         bytes memory _uri,
-        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _expectExistence
-    ) private pure {
-        bool exists;
+        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays
+    ) private pure returns (bool exists) {
         uint256 currentAllowedRelaysLength = _currentAllowedRelays.length;
         bytes32 uriHash = keccak256(_uri);
 
@@ -146,24 +149,18 @@ library MEVBoostRelaysInputUtils {
                 ++j;
             }
         }
-
-        if (_expectExistence) {
-            require(exists, ERROR_RELAY_NOT_FOUND);
-        } else {
-            require(!exists, ERROR_RELAY_URI_ALREADY_EXISTS);
-        }
     }
 
     /// @dev Checks for duplicate URIs in a string array of URIs
     ///      Starts checking from the current relay index to optimize gas usage
-    function _validateNoDuplicateInput(
+    function _validateNoDuplicateInputFromIndex(
         uint256 _currentRelayIndex,
         string[] memory _relayURIs
     ) private pure {
-        bytes32 currentUriHash = keccak256(bytes(_relayURIs[_currentRelayIndex]));
+        bytes32 currentURIHash = keccak256(bytes(_relayURIs[_currentRelayIndex]));
 
         for (uint256 i = _currentRelayIndex + 1; i < _relayURIs.length; ) {
-            require(keccak256(bytes(_relayURIs[i])) != currentUriHash, ERROR_DUPLICATE_RELAY_URI);
+            require(keccak256(bytes(_relayURIs[i])) != currentURIHash, ERROR_DUPLICATE_RELAY_URI);
 
             unchecked {
                 ++i;
@@ -173,23 +170,18 @@ library MEVBoostRelaysInputUtils {
 
     /// @dev Checks for duplicate URIs in a Relay struct array
     ///      Starts checking from the current relay index to optimize gas usage
-    function _validateNoDuplicateInput(
+    function _validateNoDuplicateInputFromIndex(
         uint256 _currentRelayIndex,
         IMEVBoostRelayAllowedList.Relay[] memory _relays
     ) private pure {
-        bytes32 currentUriHash = keccak256(bytes(_relays[_currentRelayIndex].uri));
+        bytes32 currentURIHash = keccak256(bytes(_relays[_currentRelayIndex].uri));
 
         for (uint256 i = _currentRelayIndex + 1; i < _relays.length; ) {
-            require(keccak256(bytes(_relays[i].uri)) != currentUriHash, ERROR_DUPLICATE_RELAY_URI);
+            require(keccak256(bytes(_relays[i].uri)) != currentURIHash, ERROR_DUPLICATE_RELAY_URI);
 
             unchecked {
                 ++i;
             }
         }
-    }
-
-    /// @dev Validates the length of a string does not exceed the maximum allowed
-    function _validateStringLengthLimit(bytes memory _string) private pure {
-        require(_string.length <= MAX_STRING_LENGTH, ERROR_MAX_STRING_LENGTH_EXCEEDED);
     }
 }

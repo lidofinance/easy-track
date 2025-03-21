@@ -48,16 +48,14 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        // Decode the input data to get the relays to remove
         string[] memory _relayURIsToRemove = MEVBoostRelaysInputUtils.decodeCallDataWithRelayURIs(
             _evmScriptCallData
         );
-        // Get the current list of allowed relays from the MEVBoostRelayAllowedList contract
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays = mevBoostRelayAllowedList
             .get_relays();
 
-        // Validate input data before creating EVMScript to remove relays.  The relay URIs MUST be already in the list.
-        MEVBoostRelaysInputUtils.validateRelays(_relayURIsToRemove, _currentAllowedRelays, true);
+        // Validate input data before creating EVMScript to remove relays. The relay URIs MUST be already in the list.
+        MEVBoostRelaysInputUtils.validateRelayURIs(_relayURIsToRemove, _currentAllowedRelays);
 
         uint256 removeRelaysCount = _relayURIsToRemove.length;
         bytes[] memory encodedCalldata = new bytes[](removeRelaysCount);
@@ -80,10 +78,10 @@ contract RemoveMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded relay URIs: string[]
-    /// @return relayUris string[]
+    /// @return relayURIs string[]
     function decodeEVMScriptCallData(
         bytes calldata _evmScriptCallData
-    ) external pure returns (string[] memory relayUris) {
+    ) external pure returns (string[] memory relayURIs) {
         return MEVBoostRelaysInputUtils.decodeCallDataWithRelayURIs(_evmScriptCallData);
     }
 }

@@ -127,10 +127,6 @@ def deploy_rmc_factories(
     log.br()
     log.ok(f"All MEV Boost Relay factories have been deployed. Publishing...")
 
-    AddMEVBoostRelays.publish_source(add_mev_boost_relay)
-    RemoveMEVBoostRelays.publish_source(remove_mev_boost_relay)
-    EditMEVBoostRelays.publish_source(edit_mev_boost_relay)
-
     log.br()
     log.ok("All MEV Boost Relay factories have been verified and published. Saving artifacts...")
 
@@ -139,3 +135,7 @@ def deploy_rmc_factories(
 
     log.br()
     log.ok("Deployment artifacts have been saved to", filename)
+
+    AddMEVBoostRelays.publish_source(add_mev_boost_relay)
+    RemoveMEVBoostRelays.publish_source(remove_mev_boost_relay)
+    EditMEVBoostRelays.publish_source(edit_mev_boost_relay)

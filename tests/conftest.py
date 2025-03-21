@@ -242,6 +242,13 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 
 @pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list_stub(owner, agent, MEVBoostRelayAllowedListStub):
+    # set agent as the owner of the list and owner as the manager for the ease of testing purposes
+    # in actual deployment, the owner should be the EVM script executor
+    return owner.deploy(MEVBoostRelayAllowedListStub, agent, owner)
+
+
+@pytest.fixture(scope="module")
 def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):
     set_parameters_role_holder = accounts[8]
     update_spent_amount_role_holder = accounts[9]

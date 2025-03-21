@@ -10,7 +10,7 @@ import "../interfaces/IMEVBoostRelayAllowedList.sol";
 import "../libraries/MEVBoostRelaysInputUtils.sol";
 
 /// @author katamarinaki, swissarmytowel
-/// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allow list
+/// @notice Creates EVMScript to add new MEV boost relay to MEV Boost relay allowed list
 contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -58,10 +58,8 @@ contract AddMEVBoostRelays is TrustedCaller, IEVMScriptFactory {
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        // Decode the input data to get the relays to add
         IMEVBoostRelayAllowedList.Relay[] memory _relaysToAdd = MEVBoostRelaysInputUtils
             .decodeCallDataWithRelayStructs(_evmScriptCallData);
-        // Get the current list of allowed relays from the MEVBoostRelayAllowedList contract
         IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays = mevBoostRelayAllowedList
             .get_relays();
 

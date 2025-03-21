@@ -18,16 +18,11 @@ contract MEVBoostRelaysInputUtilsWrapper {
         return MEVBoostRelaysInputUtils.decodeCallDataWithRelayURIs(_relayData);
     }
 
-    function validateRelays(
+    function validateRelayURIs(
         string[] memory _relayURIs,
-        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays,
-        bool _expectExistence
+        IMEVBoostRelayAllowedList.Relay[] memory _currentAllowedRelays
     ) external pure {
-        MEVBoostRelaysInputUtils.validateRelays(
-            _relayURIs,
-            _currentAllowedRelays,
-            _expectExistence
-        );
+        MEVBoostRelaysInputUtils.validateRelayURIs(_relayURIs, _currentAllowedRelays);
     }
 
     function validateRelays(
