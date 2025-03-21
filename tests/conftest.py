@@ -447,7 +447,7 @@ class Helpers:
                 dao_voting.vote(vote_id, True, False, {"from": account})
 
         # wait for the vote to end
-        chain.sleep(3 * 60 * 60 * 24)
+        chain.sleep(dao_voting.voteTime())
         chain.mine()
 
         assert dao_voting.canExecute(vote_id)
