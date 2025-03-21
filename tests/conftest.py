@@ -18,10 +18,12 @@ from utils.test_helpers import set_account_balance
 
 # autouse, so enabled by default for all test modules in this directory
 
+
 @pytest.fixture(scope="module", autouse=True)
 def gas():
     """Set gas estimates for all tests."""
     network.gas_price("auto")
+
 
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
@@ -329,9 +331,11 @@ def node_operators_registry(lido_contracts, agent):
             lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
+
 @pytest.fixture(scope="module")
 def cs_module(csm_contracts):
     return csm_contracts.module
+
 
 @pytest.fixture(scope="module")
 def voting(lido_contracts):
@@ -422,7 +426,7 @@ class Helpers:
                 dao_voting.vote(vote_id, True, False, {"from": account})
 
         # wait for the vote to end
-        chain.sleep(3 * 60 * 60 * 24)
+        chain.sleep(dao_voting.voteTime())
         chain.mine()
 
         assert dao_voting.canExecute(vote_id)

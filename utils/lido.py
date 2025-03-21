@@ -133,7 +133,7 @@ class LidoContractsSetup:
             account = brownie.accounts.at(holder_addr, force=True)
             voting.vote(voting_id, True, False, {"from": account})
 
-        brownie.chain.sleep(3 * 60 * 60 * 24)
+        brownie.chain.sleep(self.aragon.voting.voteTime())
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
         voting.executeVote(voting_id, {"from": brownie.accounts[0]})
