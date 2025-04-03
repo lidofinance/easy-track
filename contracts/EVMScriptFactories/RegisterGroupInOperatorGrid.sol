@@ -17,8 +17,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     error GroupExists();
-    error ZeroGroupId();
-    error ZeroShareLimit();
+    error ZeroNodeOperator();
 
     // -------------
     // VARIABLES
@@ -32,7 +31,6 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     constructor(address _trustedCaller, address _operatorGrid)
-    // TODO - is trusted caller needed here?
         TrustedCaller(_trustedCaller)
     {
         operatorGrid = IOperatorGrid(_operatorGrid);
@@ -44,7 +42,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to register a group in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: uint256 groupId, uint256 shareLimit
+    /// @param _evmScriptCallData Encoded: address nodeOperator, uint256 shareLimit
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -52,9 +50,9 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (uint256 groupId, uint256 shareLimit) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address nodeOperator,) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(groupId, shareLimit);
+        _validateInputData(nodeOperator);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -65,12 +63,12 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: uint256 groupId, uint256 shareLimit
-    /// @return Group ID and share limit which should be added to operator grid
+    /// @param _evmScriptCallData Encoded: address nodeOperator, uint256 shareLimit
+    /// @return Node operator address and share limit which should be added to operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (uint256, uint256)
+        returns (address, uint256)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -82,21 +80,17 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (uint256, uint256)
+        returns (address, uint256)
     {
-        return abi.decode(_evmScriptCallData, (uint256, uint256));
+        return abi.decode(_evmScriptCallData, (address, uint256));
     }
 
     function _validateInputData(
-        uint256 groupId,
-        uint256 shareLimit
+        address nodeOperator
     ) private view {
-        if (groupId == 0) revert ZeroGroupId();
-        if (shareLimit == 0) revert ZeroShareLimit();
+        if (nodeOperator == address(0)) revert ZeroNodeOperator();
 
-        Group memory group = operatorGrid.group(groupId);
-        if (group.id > 0) revert GroupExists();
-
-        // TODO - add check for share limit
+        IOperatorGrid.Group memory group = operatorGrid.group(nodeOperator);
+        if (group.operator != address(0)) revert GroupExists();
     }
 }

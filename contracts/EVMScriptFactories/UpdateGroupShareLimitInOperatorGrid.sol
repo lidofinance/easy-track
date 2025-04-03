@@ -17,6 +17,7 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
     // -------------
 
     error GroupNotExists();
+    error ZeroNodeOperator();
 
     // -------------
     // VARIABLES
@@ -41,7 +42,7 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
 
     /// @notice Creates EVMScript to update group share limit in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: uint256 groupId, uint256 newShareLimit
+    /// @param _evmScriptCallData Encoded: address nodeOperator, uint256 newShareLimit
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -49,9 +50,9 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (uint256 groupId, uint256 newShareLimit) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address nodeOperator,) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(groupId);
+        _validateInputData(nodeOperator);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -62,12 +63,12 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: uint256 groupId, uint256 newShareLimit
-    /// @return Group ID and new share limit which should be updated in operator grid
+    /// @param _evmScriptCallData Encoded: address nodeOperator, uint256 newShareLimit
+    /// @return Node operator address and new share limit which should be updated in operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (uint256, uint256)
+        returns (address, uint256)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -79,14 +80,15 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (uint256, uint256)
+        returns (address, uint256)
     {
-        return abi.decode(_evmScriptCallData, (uint256, uint256));
+        return abi.decode(_evmScriptCallData, (address, uint256));
     }
 
-    function _validateInputData(uint256 groupId) private view {
-        IOperatorGrid.Group memory group = operatorGrid.group(groupId);
-        if (group.id == 0) revert GroupNotExists();
-        // TODO - add check for new share limit
+    function _validateInputData(address nodeOperator) private view {
+        if (nodeOperator == address(0)) revert ZeroNodeOperator();
+
+        IOperatorGrid.Group memory group = operatorGrid.group(nodeOperator);
+        if (group.operator == address(0)) revert GroupNotExists();
     }
 } 

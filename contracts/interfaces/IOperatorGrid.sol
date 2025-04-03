@@ -9,11 +9,11 @@ interface IOperatorGrid {
     //            STRUCTS
     // -----------------------------
     struct Group {
-        uint256 id;
         uint96 shareLimit;
         uint96 mintedShares;
-        uint256[] tiers;
-        uint256 tiersCount;
+        address operator;
+        uint256[] tiersId;
+        uint256[] vaultsIndex;
     }
 
     struct Tier {
@@ -24,44 +24,30 @@ interface IOperatorGrid {
         uint16 treasuryFeeBP;
     }
 
-    struct NodeOperator {
-        uint256 groupId;
-        uint256[] vaults;
-        uint256 vaultsCount;
-    }
-
     struct Vault {
         uint256 groupIndex;
-        uint256 tierIndex;
-        uint96 mintedShares;
+        uint256 tierId;
+    }
+
+    struct TierParams {
+        uint256 shareLimit;
+        uint256 reserveRatioBP;
+        uint256 rebalanceThresholdBP;
+        uint256 treasuryFeeBP;
     }
 
     // -----------------------------
     //            FUNCTIONS
     // -----------------------------
-    function registerGroup(uint256 groupId, uint256 shareLimit) external;
-    function updateGroupShareLimit(uint256 groupId, uint256 newShareLimit) external;
-    function registerTier(
-        uint256 groupId,
-        uint256 tierId,
-        uint256 shareLimit,
-        uint256 reserveRatioBP,
-        uint256 rebalanceThresholdBP,
-        uint256 treasuryFeeBP
-    ) external;
-    function registerOperator(address _operator, uint256 _groupId) external;
+    function registerGroup(address nodeOperator, uint256 shareLimit) external;
+    function updateGroupShareLimit(address nodeOperator, uint256 newShareLimit) external;
+    function registerTiers(
+        address nodeOperator,
+        TierParams[] calldata tiers
+    ) external returns (uint256 tierId);
+
     // view functions
-    // TODO - remove redundant functions
     function groupCount() external view returns (uint256);
     function groupByIndex(uint256 _index) external view returns (Group memory);
-    function group(uint256 _groupId) external view returns (Group memory);
-    function nodeOperatorCount() external view returns (uint256);
-    function nodeOperatorByIndex(uint256 _index) external view returns (NodeOperator memory);
-    function nodeOperator(address _nodeOperator) external view returns (NodeOperator memory);
-    function getVaultLimits(address vaultAddr) external view returns (
-        uint256 shareLimit,
-        uint256 reserveRatioBP,
-        uint256 rebalanceThresholdBP,
-        uint256 treasuryFeeBP
-    );
+    function group(address _nodeOperator) external view returns (Group memory);
 }

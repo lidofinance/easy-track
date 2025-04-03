@@ -9,17 +9,16 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IOperatorGrid.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to register an operator in OperatorGrid
-contract RegisterOperatorInOperatorGrid is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to register multiple tiers in OperatorGrid
+contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERRORS
     // -------------
 
     error GroupNotExists();
-    error OperatorExists();
-    error ZeroOperatorAddress();
-    error ZeroGroupId();
+    error ZeroNodeOperator();
+    error EmptyTiersArray();
 
     // -------------
     // VARIABLES
@@ -42,9 +41,9 @@ contract RegisterOperatorInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to register an operator in OperatorGrid
+    /// @notice Creates EVMScript to register multiple tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address operator, uint256 groupId
+    /// @param _evmScriptCallData Encoded: address nodeOperator, IOperatorGrid.TierParams[] tiers
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -52,25 +51,25 @@ contract RegisterOperatorInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address operatorAddr, uint256 groupId) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address nodeOperator, IOperatorGrid.TierParams[] memory tiers) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(operatorAddr, groupId);
+        _validateInputData(nodeOperator, tiers);
 
         return
             EVMScriptCreator.createEVMScript(
                 address(operatorGrid),
-                IOperatorGrid.registerOperator.selector,
+                IOperatorGrid.registerTiers.selector,
                 _evmScriptCallData
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address operator, uint256 groupId
-    /// @return Operator address and group ID which should be added to operator grid
+    /// @param _evmScriptCallData Encoded: address nodeOperator, IOperatorGrid.TierParams[] tiers
+    /// @return Node operator address and array of tier parameters which should be added to operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address, uint256)
+        returns (address, IOperatorGrid.TierParams[] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -82,18 +81,16 @@ contract RegisterOperatorInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address, uint256)
+        returns (address, IOperatorGrid.TierParams[] memory)
     {
-        return abi.decode(_evmScriptCallData, (address, uint256));
+        return abi.decode(_evmScriptCallData, (address, IOperatorGrid.TierParams[]));
     }
 
-    function _validateInputData(address operatorAddr, uint256 groupId) private view {
-        if (operatorAddr == address(0)) revert ZeroOperatorAddress();
-        if (groupId == 0) revert ZeroGroupId();
-        
-        IOperatorGrid.Group memory group = operatorGrid.group(groupId);
-        if (group.id == 0) revert GroupNotExists();
-        
-        // TODO - add check for operator existence
+    function _validateInputData(address nodeOperator, IOperatorGrid.TierParams[] memory tiers) private view {
+        if (nodeOperator == address(0)) revert ZeroNodeOperator();
+        if (tiers.length == 0) revert EmptyTiersArray();
+
+        IOperatorGrid.Group memory group = operatorGrid.group(nodeOperator);
+        if (group.operator == address(0)) revert GroupNotExists();
     }
 } 
