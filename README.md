@@ -73,6 +73,12 @@ Compile the Smart Contracts:
 brownie compile # add `--size` to see contract compiled sizes
 ```
 
+To run scripts that require EVM script decoding, tests with contract name resolution via Etherscan or contract source code verification in deploy scripts, you must provide an Etherscan API token. Use the following command:
+
+```bash
+export ETHERSCAN_TOKEN=<etherscan_api_key>
+```
+
 ## Scripts
 
 ### `deploy.py`
