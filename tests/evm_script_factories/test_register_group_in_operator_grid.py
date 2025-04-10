@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, RegisterGroupInOperatorGrid, ZERO_ADDRESS, OperatorGridMock # type: ignore
+from brownie import reverts, RegisterGroupInOperatorGrid, ZERO_ADDRESS, OperatorGridStub # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,20 +7,20 @@ def create_calldata(operator, share_limit):
     return encode_calldata(["address", "uint256"], [operator, share_limit])
 
 @pytest.fixture(scope="module")
-def operator_grid(owner):
-    return OperatorGridMock.deploy(owner, {"from": owner})
+def operator_grid_stub(owner):
+    return OperatorGridStub.deploy(owner, {"from": owner})
 
 @pytest.fixture(scope="module")
-def register_group_in_operator_grid_factory(owner, operator_grid):
-    factory = RegisterGroupInOperatorGrid.deploy(owner, operator_grid, {"from": owner})
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), factory, {"from": owner})
+def register_group_in_operator_grid_factory(owner, operator_grid_stub):
+    factory = RegisterGroupInOperatorGrid.deploy(owner, operator_grid_stub, {"from": owner})
+    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
     return factory
 
 
-def test_deploy(owner, operator_grid, register_group_in_operator_grid_factory):
+def test_deploy(owner, operator_grid_stub, register_group_in_operator_grid_factory):
     "Must deploy contract with correct data"
     assert register_group_in_operator_grid_factory.trustedCaller() == owner
-    assert register_group_in_operator_grid_factory.operatorGrid() == operator_grid
+    assert register_group_in_operator_grid_factory.operatorGrid() == operator_grid_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, register_group_in_operator_grid_factory):
@@ -30,27 +30,27 @@ def test_create_evm_script_called_by_stranger(stranger, register_group_in_operat
         register_group_in_operator_grid_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 
-def test_empty_calldata(owner, register_group_in_operator_grid_factory):
+def test_zero_nodeoperator_address(owner, register_group_in_operator_grid_factory):
     EMPTY_CALLDATA = create_calldata(ZERO_ADDRESS,0)
     with reverts('ZeroNodeOperator: '):
         register_group_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
-def test_group_exists(owner, stranger, register_group_in_operator_grid_factory, operator_grid):
-    operator_grid.registerGroup(stranger, 0, {"from": owner})
+def test_group_exists(owner, stranger, register_group_in_operator_grid_factory, operator_grid_stub):
+    operator_grid_stub.registerGroup(stranger, 0, {"from": owner})
     CALLDATA = create_calldata(stranger.address, 0)
     with reverts('GroupExists: '):
         register_group_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(owner, stranger, register_group_in_operator_grid_factory, operator_grid):
+def test_create_evm_script(owner, stranger, register_group_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
     input_params = [stranger.address, 0]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
     evm_script = register_group_in_operator_grid_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
-        [(operator_grid.address, operator_grid.registerGroup.encode_input(input_params[0], input_params[1]))]
+        [(operator_grid_stub.address, operator_grid_stub.registerGroup.encode_input(input_params[0], input_params[1]))]
     )
 
     assert evm_script == expected_evm_script
@@ -62,3 +62,7 @@ def test_decode_evm_script_call_data(stranger, register_group_in_operator_grid_f
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
     assert register_group_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params
+
+def test_cannot_add_group_with_wrong_calldata_length(owner, register_group_in_operator_grid_factory):
+    with reverts("WrongCalldataLength: 1"):
+        register_group_in_operator_grid_factory.createEVMScript(owner, "0x00")

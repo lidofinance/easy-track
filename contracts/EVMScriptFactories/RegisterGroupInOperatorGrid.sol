@@ -18,6 +18,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     error GroupExists();
     error ZeroNodeOperator();
+    error WrongCalldataLength(uint256 length);
 
     // -------------
     // VARIABLES
@@ -81,7 +82,8 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         private
         pure
         returns (address, uint256)
-    {
+    {   
+        if (_evmScriptCallData.length != 64) revert WrongCalldataLength(_evmScriptCallData.length);
         return abi.decode(_evmScriptCallData, (address, uint256));
     }
 

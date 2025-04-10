@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS, OperatorGridMock # type: ignore
+from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS, OperatorGridStub # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,20 +7,20 @@ def create_calldata(operator, tiers):
     return encode_calldata(["address", "(uint256,uint256,uint256,uint256)[]"], [operator, tiers])
 
 @pytest.fixture(scope="module")
-def operator_grid(owner):
-    return OperatorGridMock.deploy(owner, {"from": owner})
+def operator_grid_stub(owner):
+    return OperatorGridStub.deploy(owner, {"from": owner})
 
 @pytest.fixture(scope="module")
-def register_tiers_in_operator_grid_factory(owner, operator_grid):
-    factory = RegisterTiersInOperatorGrid.deploy(owner, operator_grid, {"from": owner})
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), factory, {"from": owner})
+def register_tiers_in_operator_grid_factory(owner, operator_grid_stub):
+    factory = RegisterTiersInOperatorGrid.deploy(owner, operator_grid_stub, {"from": owner})
+    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
     return factory
 
 
-def test_deploy(owner, operator_grid, register_tiers_in_operator_grid_factory):
+def test_deploy(owner, operator_grid_stub, register_tiers_in_operator_grid_factory):
     "Must deploy contract with correct data"
     assert register_tiers_in_operator_grid_factory.trustedCaller() == owner
-    assert register_tiers_in_operator_grid_factory.operatorGrid() == operator_grid
+    assert register_tiers_in_operator_grid_factory.operatorGrid() == operator_grid_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, register_tiers_in_operator_grid_factory):
@@ -36,8 +36,8 @@ def test_empty_calldata(owner, register_tiers_in_operator_grid_factory):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
-def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid):
-    operator_grid.registerGroup(stranger, 1000, {"from": owner})
+def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
+    operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
     CALLDATA = create_calldata(stranger.address, [])
     with reverts('EmptyTiersArray: '):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
@@ -50,16 +50,16 @@ def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_facto
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid):
+def test_create_evm_script(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
-    operator_grid.registerGroup(stranger, 1000, {"from": owner})
+    operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
     tiers = [(1000, 100, 200, 300)]
     input_params = [stranger.address, tiers]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
     evm_script = register_tiers_in_operator_grid_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
-        [(operator_grid.address, operator_grid.registerTiers.encode_input(input_params[0], input_params[1]))]
+        [(operator_grid_stub.address, operator_grid_stub.registerTiers.encode_input(input_params[0], input_params[1]))]
     )
 
     assert evm_script == expected_evm_script

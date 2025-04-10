@@ -12,7 +12,7 @@ struct TierParams {
     uint256 treasuryFeeBP;
 }
 
-contract OperatorGridMock is AccessControl {
+contract OperatorGridStub is AccessControl {
 
     bytes32 public constant REGISTRY_ROLE = keccak256("vaults.OperatorsGrid.Registry");
 

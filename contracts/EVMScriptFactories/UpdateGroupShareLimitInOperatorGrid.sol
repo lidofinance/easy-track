@@ -18,6 +18,7 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
 
     error GroupNotExists();
     error ZeroNodeOperator();
+    error WrongCalldataLength(uint256 length);
 
     // -------------
     // VARIABLES
@@ -82,6 +83,7 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
         pure
         returns (address, uint256)
     {
+        if (_evmScriptCallData.length != 64) revert WrongCalldataLength(_evmScriptCallData.length);
         return abi.decode(_evmScriptCallData, (address, uint256));
     }
 
