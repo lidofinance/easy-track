@@ -1,13 +1,9 @@
 import pytest
-from brownie import reverts, UpdateGroupShareLimitInOperatorGrid, ZERO_ADDRESS, OperatorGridStub # type: ignore
+from brownie import reverts, UpdateGroupShareLimitInOperatorGrid, ZERO_ADDRESS # type: ignore
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operator, new_share_limit):
     return encode_calldata(["address", "uint256"], [operator, new_share_limit])
-
-@pytest.fixture(scope="module")
-def operator_grid_stub(owner):
-    return OperatorGridStub.deploy(owner, {"from": owner})
 
 @pytest.fixture(scope="module")
 def update_group_share_limit_in_operator_grid_factory(owner, operator_grid_stub):

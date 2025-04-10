@@ -235,6 +235,10 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     set_account_balance(contract.address)
     return contract
 
+@pytest.fixture(scope="module")
+def operator_grid_stub(owner, OperatorGridStub):
+    # set owner as the owner of the grid for the ease of testing purposes
+    return owner.deploy(OperatorGridStub, owner)
 
 @pytest.fixture(scope="module")
 def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):

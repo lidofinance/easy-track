@@ -1,14 +1,10 @@
 import pytest
-from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS, OperatorGridStub # type: ignore
+from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operator, tiers):
     return encode_calldata(["address", "(uint256,uint256,uint256,uint256)[]"], [operator, tiers])
-
-@pytest.fixture(scope="module")
-def operator_grid_stub(owner):
-    return OperatorGridStub.deploy(owner, {"from": owner})
 
 @pytest.fixture(scope="module")
 def register_tiers_in_operator_grid_factory(owner, operator_grid_stub):
