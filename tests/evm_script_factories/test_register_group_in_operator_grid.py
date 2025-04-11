@@ -27,12 +27,14 @@ def test_create_evm_script_called_by_stranger(stranger, register_group_in_operat
 
 
 def test_zero_nodeoperator_address(owner, register_group_in_operator_grid_factory):
+    "Must revert with message 'ZeroNodeOperator: ' if operator is zero address"
     EMPTY_CALLDATA = create_calldata(ZERO_ADDRESS,0)
     with reverts('ZeroNodeOperator: '):
         register_group_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_group_exists(owner, stranger, register_group_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'GroupExists: ' if group already exists"
     operator_grid_stub.registerGroup(stranger, 0, {"from": owner})
     CALLDATA = create_calldata(stranger.address, 0)
     with reverts('GroupExists: '):
@@ -60,5 +62,6 @@ def test_decode_evm_script_call_data(stranger, register_group_in_operator_grid_f
     assert register_group_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params
 
 def test_cannot_add_group_with_wrong_calldata_length(owner, register_group_in_operator_grid_factory):
+    "Must revert with message 'WrongCalldataLength: ' if calldata length is wrong"
     with reverts("WrongCalldataLength: 1"):
         register_group_in_operator_grid_factory.createEVMScript(owner, "0x00")

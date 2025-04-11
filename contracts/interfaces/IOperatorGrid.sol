@@ -49,4 +49,5 @@ interface IOperatorGrid {
     // view functions
     function groupByIndex(uint256 _index) external view returns (Group memory);
     function group(address _nodeOperator) external view returns (Group memory);
+    function getTiers() external view returns (Tier[] memory);
 }

@@ -1,7 +1,7 @@
 import pytest
 import brownie
 
-from utils.evm_script import encode_call_script, encode_calldata
+from utils.evm_script import encode_calldata
 
 MOTION_BUFFER_TIME = 100
 
@@ -11,19 +11,22 @@ def trusted_address(accounts):
     return accounts[7]
 
 
-def setup_script_executor(owner, operator_grid_stub, easy_track):
-    # TODO - use real address of operator grid when it will be deployed
+# TODO - use real address of operator grid when it will be deployed
+@pytest.fixture(scope="module", autouse=True)
+def operator_grid(owner, OperatorGridStub, easy_track):
+    operator_grid = owner.deploy(OperatorGridStub, owner)
     evm_executor = easy_track.evmScriptExecutor()
-    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), evm_executor, {"from": owner})
-    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), owner, {"from": owner})
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), evm_executor, {"from": owner})
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": owner})
+    return operator_grid
 
 
 def setup_evm_script_factory(
-    factory, permissions, easy_track, trusted_address, voting, deployer, operator_grid_stub
+    factory, permissions, easy_track, trusted_address, voting, deployer, operator_grid
 ):
-    factory_instance = deployer.deploy(factory, trusted_address, operator_grid_stub)
+    factory_instance = deployer.deploy(factory, trusted_address, operator_grid)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.operatorGrid() == operator_grid_stub
+    assert factory_instance.operatorGrid() == operator_grid
 
     num_factories_before = len(easy_track.getEVMScriptFactories())
     easy_track.addEVMScriptFactory(factory_instance, permissions, {"from": voting})
@@ -49,7 +52,7 @@ def execute_motion(easy_track, motion_transaction, stranger):
 
 def create_enact_and_check_register_group_motion(
     easy_track,
-    operator_grid_stub,
+    operator_grid,
     stranger,
     trusted_address,
     register_group_factory,
@@ -64,13 +67,13 @@ def create_enact_and_check_register_group_motion(
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    group = operator_grid_stub.group(operator_address)
+    group = operator_grid.group(operator_address)
     assert group[0] == 0 # shareLimit
     assert group[2] == brownie.ZERO_ADDRESS # operator
 
     execute_motion(easy_track, motion_transaction, stranger)
 
-    group = operator_grid_stub.group(operator_address)
+    group = operator_grid.group(operator_address)
     assert group[0] == share_limit # shareLimit
     assert group[2] == operator_address # operator
 
@@ -78,7 +81,7 @@ def create_enact_and_check_register_group_motion(
 def create_enact_and_check_update_share_limit_motion(
     owner,
     easy_track,
-    operator_grid_stub,
+    operator_grid,
     stranger,
     trusted_address,
     update_share_limit_factory,
@@ -86,10 +89,10 @@ def create_enact_and_check_update_share_limit_motion(
     new_share_limit,
 ):
     # First register the group to update
-    operator_grid_stub.registerGroup(operator_address, new_share_limit*2, {"from": owner})
+    operator_grid.registerGroup(operator_address, new_share_limit*2, {"from": owner})
     
     # Check initial state
-    group = operator_grid_stub.group(operator_address)
+    group = operator_grid.group(operator_address)
     assert group[0] == new_share_limit*2  # shareLimit
     
     # Create and execute motion to update share limit
@@ -104,7 +107,7 @@ def create_enact_and_check_update_share_limit_motion(
     execute_motion(easy_track, motion_transaction, stranger)
 
     # Check final state
-    group = operator_grid_stub.group(operator_address)
+    group = operator_grid.group(operator_address)
     assert group[0] == new_share_limit  # shareLimit
     assert group[2] == operator_address  # operator
 
@@ -112,7 +115,7 @@ def create_enact_and_check_update_share_limit_motion(
 def create_enact_and_check_register_tiers_motion(
     owner,
     easy_track,
-    operator_grid_stub,
+    operator_grid,
     stranger,
     trusted_address,
     register_tiers_factory,
@@ -120,10 +123,10 @@ def create_enact_and_check_register_tiers_motion(
     tiers_params,
 ):
     # First register the group to add tiers to
-    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    operator_grid.registerGroup(operator_address, 1000, {"from": owner})
     
     # Check initial state - no tiers
-    group = operator_grid_stub.group(operator_address)
+    group = operator_grid.group(operator_address)
     assert len(group[3]) == 0  # tiersId array should be empty
     
     # Create and execute motion to register tiers
@@ -138,24 +141,29 @@ def create_enact_and_check_register_tiers_motion(
     execute_motion(easy_track, motion_transaction, stranger)
 
     # Check final state - tiers should be registered
-    group = operator_grid_stub.group(operator_address)
+    group = operator_grid.group(operator_address)
     assert len(group[3]) == len(tiers_params)  # tiersId array should have the same length as tiers_params
+
+    # Check tier details
+    tiers = operator_grid.getTiers()
+    for i, tier in enumerate(tiers_params):
+        assert tiers[i+1][0] == tier[0]  # shareLimit
+        assert tiers[i+1][2] == tier[1]  # reserveRatioBP
+        assert tiers[i+1][3] == tier[2]  # rebalanceThresholdBP
+        assert tiers[i+1][4] == tier[3]  # treasuryFeeBP
 
 
 @pytest.mark.skip_coverage
-def test_add_mev_boost_relays_allowed_list_happy_path(
-    owner,
+def test_register_group_happy_path(
     RegisterGroupInOperatorGrid,
     easy_track,
     trusted_address,
     voting,
     deployer,
     stranger,
-    operator_grid_stub,
+    operator_grid,
 ):
-    setup_script_executor(owner, operator_grid_stub, easy_track)
-
-    permission = operator_grid_stub.address + operator_grid_stub.registerGroup.signature[2:]
+    permission = operator_grid.address + operator_grid.registerGroup.signature[2:]
     register_group_factory = setup_evm_script_factory(
         RegisterGroupInOperatorGrid,
         permission,
@@ -163,12 +171,12 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid_stub,
+        operator_grid,
     )
 
     create_enact_and_check_register_group_motion(
         easy_track,
-        operator_grid_stub,
+        operator_grid,
         stranger,
         trusted_address,
         register_group_factory,
@@ -186,11 +194,9 @@ def test_update_group_share_limit_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid_stub,
+    operator_grid,
 ):
-    setup_script_executor(owner, operator_grid_stub, easy_track)
-
-    permission = operator_grid_stub.address + operator_grid_stub.updateGroupShareLimit.signature[2:]
+    permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
     update_share_limit_factory = setup_evm_script_factory(
         UpdateGroupShareLimitInOperatorGrid,
         permission,
@@ -198,13 +204,13 @@ def test_update_group_share_limit_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid_stub,
+        operator_grid,
     )
 
     create_enact_and_check_update_share_limit_motion(
         owner,
         easy_track,
-        operator_grid_stub,
+        operator_grid,
         stranger,
         trusted_address,
         update_share_limit_factory,
@@ -222,11 +228,9 @@ def test_register_tiers_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid_stub,
+    operator_grid,
 ):
-    setup_script_executor(owner, operator_grid_stub, easy_track)
-
-    permission = operator_grid_stub.address + operator_grid_stub.registerTiers.signature[2:]
+    permission = operator_grid.address + operator_grid.registerTiers.signature[2:]
     register_tiers_factory = setup_evm_script_factory(
         RegisterTiersInOperatorGrid,
         permission,
@@ -234,7 +238,7 @@ def test_register_tiers_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid_stub,
+        operator_grid,
     )
 
     # Define tier parameters
@@ -246,7 +250,7 @@ def test_register_tiers_happy_path(
     create_enact_and_check_register_tiers_motion(
         owner,
         easy_track,
-        operator_grid_stub,
+        operator_grid,
         stranger,
         trusted_address,
         register_tiers_factory,
