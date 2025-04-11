@@ -179,7 +179,7 @@ def create_enact_and_check_edit_motion(
         assert original_relay not in relays_after
         relay_from_list = mev_boost_relay_allowed_list.get_relay_by_uri(original_relay[0])
         assert relay_from_list == updated_relay
-        mev_boost_relay_allowed_list.remove_relay(original_relay[0], {"from": lido_contracts.aragon.agent.address})
+        # mev_boost_relay_allowed_list.remove_relay(original_relay[0], {"from": lido_contracts.aragon.agent.address})
 
 
 @pytest.mark.skip_coverage
@@ -427,3 +427,64 @@ def test_edit_mev_boost_relays_allowed_list_happy_path(
         mev_boost_relay_test_config["relays"],
         modified_relays,
     )
+
+
+@pytest.mark.skip_coverage
+def test_edit_mev_boost_relays_allowed_list_full_list_happy_path(
+    EditMEVBoostRelays,
+    easy_track,
+    trusted_address,
+    voting,
+    deployer,
+    stranger,
+    lido_contracts,
+    mev_boost_relay_allowed_list,
+    mev_boost_relay_test_config,
+):
+    setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track)
+
+    relays_input = list(mev_boost_relay_allowed_list.get_relays())
+    for relay in relays_input:
+        mev_boost_relay_allowed_list.remove_relay(relay[0], {"from": lido_contracts.aragon.agent.address})
+
+    items_count = 40
+    for i in range(items_count):
+        mev_boost_relay_allowed_list.add_relay(*(f"uri{i}", f"op{i}", True, f"desc{i}"), {"from": lido_contracts.aragon.agent.address})
+
+    assert len(mev_boost_relay_allowed_list.get_relays()) == items_count
+
+    edit_relay_permission = (
+        mev_boost_relay_allowed_list.address
+        + mev_boost_relay_allowed_list.add_relay.signature[2:]
+        + mev_boost_relay_allowed_list.address[2:]
+        + mev_boost_relay_allowed_list.remove_relay.signature[2:]
+    )
+    edit_mev_boost_relays_factory = setup_evm_script_factory(
+        EditMEVBoostRelays,
+        edit_relay_permission,
+        easy_track,
+        trusted_address,
+        voting,
+        deployer,
+        mev_boost_relay_allowed_list,
+    )
+
+    relays_input = list(mev_boost_relay_allowed_list.get_relays())
+    modified_relays = [
+        (relay[0], f"op {i} updated", not relay[2], relay[3])
+        for i, relay in enumerate(relays_input)
+    ]
+
+    create_enact_and_check_edit_motion(
+        lido_contracts,
+        easy_track,
+        mev_boost_relay_allowed_list,
+        stranger,
+        trusted_address,
+        edit_mev_boost_relays_factory,
+        relays_input,
+        modified_relays,
+    )
+
+    assert len(relays_input) == items_count
+    assert len(modified_relays) == items_count

@@ -201,4 +201,4 @@ def get_timestamp_from_date(year, month, day, hour=0, min=0, sec=0):
     return datetime(year, month, day, hour, min, sec, tzinfo=timezone.utc).timestamp()
 
 def set_account_balance(address, amount=1 * 10 ** 18):
-    web3.provider.make_request("evm_setAccountBalance", [address, amount])
+    web3.provider.make_request("anvil_setBalance", [address, amount])
