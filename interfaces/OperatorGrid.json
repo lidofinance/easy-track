@@ -1,0 +1,1350 @@
+{
+  "abi": [
+    {
+      "inputs": [],
+      "name": "getTiers",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint96",
+              "name": "shareLimit",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint96",
+              "name": "mintedShares",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint16",
+              "name": "reserveRatioBP",
+              "type": "uint16"
+            },
+            {
+              "internalType": "uint16",
+              "name": "rebalanceThresholdBP",
+              "type": "uint16"
+            },
+            {
+              "internalType": "uint16",
+              "name": "treasuryFeeBP",
+              "type": "uint16"
+            }
+          ],
+          "internalType": "struct IOperatorGrid.Tier[]",
+          "name": "",
+          "type": "tuple[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_nodeOperator",
+          "type": "address"
+        }
+      ],
+      "name": "group",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint96",
+              "name": "shareLimit",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint96",
+              "name": "mintedShares",
+              "type": "uint96"
+            },
+            {
+              "internalType": "address",
+              "name": "operator",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "tiersId",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "vaultsIndex",
+              "type": "uint256[]"
+            }
+          ],
+          "internalType": "struct IOperatorGrid.Group",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "_index",
+          "type": "uint256"
+        }
+      ],
+      "name": "groupByIndex",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint96",
+              "name": "shareLimit",
+              "type": "uint96"
+            },
+            {
+              "internalType": "uint96",
+              "name": "mintedShares",
+              "type": "uint96"
+            },
+            {
+              "internalType": "address",
+              "name": "operator",
+              "type": "address"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "tiersId",
+              "type": "uint256[]"
+            },
+            {
+              "internalType": "uint256[]",
+              "name": "vaultsIndex",
+              "type": "uint256[]"
+            }
+          ],
+          "internalType": "struct IOperatorGrid.Group",
+          "name": "",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "nodeOperator",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "shareLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "registerGroup",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "nodeOperator",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "shareLimit",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "reserveRatioBP",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "rebalanceThresholdBP",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "treasuryFeeBP",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct IOperatorGrid.TierParams[]",
+          "name": "tiers",
+          "type": "tuple[]"
+        }
+      ],
+      "name": "registerTiers",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "tierId",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "nodeOperator",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "newShareLimit",
+          "type": "uint256"
+        }
+      ],
+      "name": "updateGroupShareLimit",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    }
+  ],
+  "allSourcePaths": {
+    "5": "contracts/interfaces/IOperatorGrid.sol"
+  },
+  "ast": {
+    "absolutePath": "contracts/interfaces/IOperatorGrid.sol",
+    "exportedSymbols": {
+      "IOperatorGrid": [
+        579
+      ]
+    },
+    "id": 580,
+    "license": "GPL-3.0",
+    "nodeType": "SourceUnit",
+    "nodes": [
+      {
+        "id": 491,
+        "literals": [
+          "solidity",
+          "0.8",
+          ".6"
+        ],
+        "nodeType": "PragmaDirective",
+        "src": "90:22:5"
+      },
+      {
+        "abstract": false,
+        "baseContracts": [],
+        "contractDependencies": [],
+        "contractKind": "interface",
+        "documentation": {
+          "id": 492,
+          "nodeType": "StructuredDocumentation",
+          "src": "114:42:5",
+          "text": "@title Lido's Operator Grid interface"
+        },
+        "fullyImplemented": false,
+        "id": 579,
+        "linearizedBaseContracts": [
+          579
+        ],
+        "name": "IOperatorGrid",
+        "nameLocation": "166:13:5",
+        "nodeType": "ContractDefinition",
+        "nodes": [
+          {
+            "canonicalName": "IOperatorGrid.Group",
+            "id": 505,
+            "members": [
+              {
+                "constant": false,
+                "id": 494,
+                "mutability": "mutable",
+                "name": "shareLimit",
+                "nameLocation": "316:10:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 505,
+                "src": "309:17:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint96",
+                  "typeString": "uint96"
+                },
+                "typeName": {
+                  "id": 493,
+                  "name": "uint96",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "309:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint96",
+                    "typeString": "uint96"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 496,
+                "mutability": "mutable",
+                "name": "mintedShares",
+                "nameLocation": "343:12:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 505,
+                "src": "336:19:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint96",
+                  "typeString": "uint96"
+                },
+                "typeName": {
+                  "id": 495,
+                  "name": "uint96",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "336:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint96",
+                    "typeString": "uint96"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 498,
+                "mutability": "mutable",
+                "name": "operator",
+                "nameLocation": "373:8:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 505,
+                "src": "365:16:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_address",
+                  "typeString": "address"
+                },
+                "typeName": {
+                  "id": 497,
+                  "name": "address",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "365:7:5",
+                  "stateMutability": "nonpayable",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 501,
+                "mutability": "mutable",
+                "name": "tiersId",
+                "nameLocation": "401:7:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 505,
+                "src": "391:17:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                  "typeString": "uint256[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 499,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "391:7:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 500,
+                  "nodeType": "ArrayTypeName",
+                  "src": "391:9:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                    "typeString": "uint256[]"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 504,
+                "mutability": "mutable",
+                "name": "vaultsIndex",
+                "nameLocation": "428:11:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 505,
+                "src": "418:21:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                  "typeString": "uint256[]"
+                },
+                "typeName": {
+                  "baseType": {
+                    "id": 502,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "418:7:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "id": 503,
+                  "nodeType": "ArrayTypeName",
+                  "src": "418:9:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_uint256_$dyn_storage_ptr",
+                    "typeString": "uint256[]"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "name": "Group",
+            "nameLocation": "293:5:5",
+            "nodeType": "StructDefinition",
+            "scope": 579,
+            "src": "286:160:5",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "IOperatorGrid.Tier",
+            "id": 516,
+            "members": [
+              {
+                "constant": false,
+                "id": 507,
+                "mutability": "mutable",
+                "name": "shareLimit",
+                "nameLocation": "481:10:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 516,
+                "src": "474:17:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint96",
+                  "typeString": "uint96"
+                },
+                "typeName": {
+                  "id": 506,
+                  "name": "uint96",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "474:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint96",
+                    "typeString": "uint96"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 509,
+                "mutability": "mutable",
+                "name": "mintedShares",
+                "nameLocation": "508:12:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 516,
+                "src": "501:19:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint96",
+                  "typeString": "uint96"
+                },
+                "typeName": {
+                  "id": 508,
+                  "name": "uint96",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "501:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint96",
+                    "typeString": "uint96"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 511,
+                "mutability": "mutable",
+                "name": "reserveRatioBP",
+                "nameLocation": "537:14:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 516,
+                "src": "530:21:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint16",
+                  "typeString": "uint16"
+                },
+                "typeName": {
+                  "id": 510,
+                  "name": "uint16",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "530:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint16",
+                    "typeString": "uint16"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 513,
+                "mutability": "mutable",
+                "name": "rebalanceThresholdBP",
+                "nameLocation": "568:20:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 516,
+                "src": "561:27:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint16",
+                  "typeString": "uint16"
+                },
+                "typeName": {
+                  "id": 512,
+                  "name": "uint16",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "561:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint16",
+                    "typeString": "uint16"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 515,
+                "mutability": "mutable",
+                "name": "treasuryFeeBP",
+                "nameLocation": "605:13:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 516,
+                "src": "598:20:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint16",
+                  "typeString": "uint16"
+                },
+                "typeName": {
+                  "id": 514,
+                  "name": "uint16",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "598:6:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint16",
+                    "typeString": "uint16"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "name": "Tier",
+            "nameLocation": "459:4:5",
+            "nodeType": "StructDefinition",
+            "scope": 579,
+            "src": "452:173:5",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "IOperatorGrid.Vault",
+            "id": 521,
+            "members": [
+              {
+                "constant": false,
+                "id": 518,
+                "mutability": "mutable",
+                "name": "groupIndex",
+                "nameLocation": "662:10:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 521,
+                "src": "654:18:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 517,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "654:7:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 520,
+                "mutability": "mutable",
+                "name": "tierId",
+                "nameLocation": "690:6:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 521,
+                "src": "682:14:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 519,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "682:7:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "name": "Vault",
+            "nameLocation": "638:5:5",
+            "nodeType": "StructDefinition",
+            "scope": 579,
+            "src": "631:72:5",
+            "visibility": "public"
+          },
+          {
+            "canonicalName": "IOperatorGrid.TierParams",
+            "id": 530,
+            "members": [
+              {
+                "constant": false,
+                "id": 523,
+                "mutability": "mutable",
+                "name": "shareLimit",
+                "nameLocation": "745:10:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 530,
+                "src": "737:18:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 522,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "737:7:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 525,
+                "mutability": "mutable",
+                "name": "reserveRatioBP",
+                "nameLocation": "773:14:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 530,
+                "src": "765:22:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 524,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "765:7:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 527,
+                "mutability": "mutable",
+                "name": "rebalanceThresholdBP",
+                "nameLocation": "805:20:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 530,
+                "src": "797:28:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 526,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "797:7:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              },
+              {
+                "constant": false,
+                "id": 529,
+                "mutability": "mutable",
+                "name": "treasuryFeeBP",
+                "nameLocation": "843:13:5",
+                "nodeType": "VariableDeclaration",
+                "scope": 530,
+                "src": "835:21:5",
+                "stateVariable": false,
+                "storageLocation": "default",
+                "typeDescriptions": {
+                  "typeIdentifier": "t_uint256",
+                  "typeString": "uint256"
+                },
+                "typeName": {
+                  "id": 528,
+                  "name": "uint256",
+                  "nodeType": "ElementaryTypeName",
+                  "src": "835:7:5",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  }
+                },
+                "visibility": "internal"
+              }
+            ],
+            "name": "TierParams",
+            "nameLocation": "716:10:5",
+            "nodeType": "StructDefinition",
+            "scope": 579,
+            "src": "709:154:5",
+            "visibility": "public"
+          },
+          {
+            "functionSelector": "e37a7c0b",
+            "id": 537,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "registerGroup",
+            "nameLocation": "980:13:5",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 535,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 532,
+                  "mutability": "mutable",
+                  "name": "nodeOperator",
+                  "nameLocation": "1002:12:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 537,
+                  "src": "994:20:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 531,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "994:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 534,
+                  "mutability": "mutable",
+                  "name": "shareLimit",
+                  "nameLocation": "1024:10:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 537,
+                  "src": "1016:18:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 533,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1016:7:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "993:42:5"
+            },
+            "returnParameters": {
+              "id": 536,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1044:0:5"
+            },
+            "scope": 579,
+            "src": "971:74:5",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "functionSelector": "e52b6085",
+            "id": 544,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "updateGroupShareLimit",
+            "nameLocation": "1059:21:5",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 542,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 539,
+                  "mutability": "mutable",
+                  "name": "nodeOperator",
+                  "nameLocation": "1089:12:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 544,
+                  "src": "1081:20:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 538,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1081:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 541,
+                  "mutability": "mutable",
+                  "name": "newShareLimit",
+                  "nameLocation": "1111:13:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 544,
+                  "src": "1103:21:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 540,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1103:7:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1080:45:5"
+            },
+            "returnParameters": {
+              "id": 543,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1134:0:5"
+            },
+            "scope": 579,
+            "src": "1050:85:5",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "functionSelector": "e4c4266a",
+            "id": 555,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "registerTiers",
+            "nameLocation": "1149:13:5",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 551,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 546,
+                  "mutability": "mutable",
+                  "name": "nodeOperator",
+                  "nameLocation": "1180:12:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 555,
+                  "src": "1172:20:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 545,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1172:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                },
+                {
+                  "constant": false,
+                  "id": 550,
+                  "mutability": "mutable",
+                  "name": "tiers",
+                  "nameLocation": "1224:5:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 555,
+                  "src": "1202:27:5",
+                  "stateVariable": false,
+                  "storageLocation": "calldata",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_TierParams_$530_calldata_ptr_$dyn_calldata_ptr",
+                    "typeString": "struct IOperatorGrid.TierParams[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 548,
+                      "nodeType": "UserDefinedTypeName",
+                      "pathNode": {
+                        "id": 547,
+                        "name": "TierParams",
+                        "nodeType": "IdentifierPath",
+                        "referencedDeclaration": 530,
+                        "src": "1202:10:5"
+                      },
+                      "referencedDeclaration": 530,
+                      "src": "1202:10:5",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_TierParams_$530_storage_ptr",
+                        "typeString": "struct IOperatorGrid.TierParams"
+                      }
+                    },
+                    "id": 549,
+                    "nodeType": "ArrayTypeName",
+                    "src": "1202:12:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_TierParams_$530_storage_$dyn_storage_ptr",
+                      "typeString": "struct IOperatorGrid.TierParams[]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1162:73:5"
+            },
+            "returnParameters": {
+              "id": 554,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 553,
+                  "mutability": "mutable",
+                  "name": "tierId",
+                  "nameLocation": "1262:6:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 555,
+                  "src": "1254:14:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 552,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1254:7:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1253:16:5"
+            },
+            "scope": 579,
+            "src": "1140:130:5",
+            "stateMutability": "nonpayable",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "functionSelector": "b454f56f",
+            "id": 563,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "groupByIndex",
+            "nameLocation": "1307:12:5",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 558,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 557,
+                  "mutability": "mutable",
+                  "name": "_index",
+                  "nameLocation": "1328:6:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 563,
+                  "src": "1320:14:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_uint256",
+                    "typeString": "uint256"
+                  },
+                  "typeName": {
+                    "id": 556,
+                    "name": "uint256",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1320:7:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_uint256",
+                      "typeString": "uint256"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1319:16:5"
+            },
+            "returnParameters": {
+              "id": 562,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 561,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 563,
+                  "src": "1359:12:5",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_Group_$505_memory_ptr",
+                    "typeString": "struct IOperatorGrid.Group"
+                  },
+                  "typeName": {
+                    "id": 560,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 559,
+                      "name": "Group",
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 505,
+                      "src": "1359:5:5"
+                    },
+                    "referencedDeclaration": 505,
+                    "src": "1359:5:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Group_$505_storage_ptr",
+                      "typeString": "struct IOperatorGrid.Group"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1358:14:5"
+            },
+            "scope": 579,
+            "src": "1298:75:5",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "functionSelector": "7b5cf44f",
+            "id": 571,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "group",
+            "nameLocation": "1387:5:5",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 566,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 565,
+                  "mutability": "mutable",
+                  "name": "_nodeOperator",
+                  "nameLocation": "1401:13:5",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 571,
+                  "src": "1393:21:5",
+                  "stateVariable": false,
+                  "storageLocation": "default",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_address",
+                    "typeString": "address"
+                  },
+                  "typeName": {
+                    "id": 564,
+                    "name": "address",
+                    "nodeType": "ElementaryTypeName",
+                    "src": "1393:7:5",
+                    "stateMutability": "nonpayable",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_address",
+                      "typeString": "address"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1392:23:5"
+            },
+            "returnParameters": {
+              "id": 570,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 569,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 571,
+                  "src": "1439:12:5",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_struct$_Group_$505_memory_ptr",
+                    "typeString": "struct IOperatorGrid.Group"
+                  },
+                  "typeName": {
+                    "id": 568,
+                    "nodeType": "UserDefinedTypeName",
+                    "pathNode": {
+                      "id": 567,
+                      "name": "Group",
+                      "nodeType": "IdentifierPath",
+                      "referencedDeclaration": 505,
+                      "src": "1439:5:5"
+                    },
+                    "referencedDeclaration": 505,
+                    "src": "1439:5:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_struct$_Group_$505_storage_ptr",
+                      "typeString": "struct IOperatorGrid.Group"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1438:14:5"
+            },
+            "scope": 579,
+            "src": "1378:75:5",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          },
+          {
+            "functionSelector": "de170570",
+            "id": 578,
+            "implemented": false,
+            "kind": "function",
+            "modifiers": [],
+            "name": "getTiers",
+            "nameLocation": "1467:8:5",
+            "nodeType": "FunctionDefinition",
+            "parameters": {
+              "id": 572,
+              "nodeType": "ParameterList",
+              "parameters": [],
+              "src": "1475:2:5"
+            },
+            "returnParameters": {
+              "id": 577,
+              "nodeType": "ParameterList",
+              "parameters": [
+                {
+                  "constant": false,
+                  "id": 576,
+                  "mutability": "mutable",
+                  "name": "",
+                  "nameLocation": "-1:-1:-1",
+                  "nodeType": "VariableDeclaration",
+                  "scope": 578,
+                  "src": "1501:13:5",
+                  "stateVariable": false,
+                  "storageLocation": "memory",
+                  "typeDescriptions": {
+                    "typeIdentifier": "t_array$_t_struct$_Tier_$516_memory_ptr_$dyn_memory_ptr",
+                    "typeString": "struct IOperatorGrid.Tier[]"
+                  },
+                  "typeName": {
+                    "baseType": {
+                      "id": 574,
+                      "nodeType": "UserDefinedTypeName",
+                      "pathNode": {
+                        "id": 573,
+                        "name": "Tier",
+                        "nodeType": "IdentifierPath",
+                        "referencedDeclaration": 516,
+                        "src": "1501:4:5"
+                      },
+                      "referencedDeclaration": 516,
+                      "src": "1501:4:5",
+                      "typeDescriptions": {
+                        "typeIdentifier": "t_struct$_Tier_$516_storage_ptr",
+                        "typeString": "struct IOperatorGrid.Tier"
+                      }
+                    },
+                    "id": 575,
+                    "nodeType": "ArrayTypeName",
+                    "src": "1501:6:5",
+                    "typeDescriptions": {
+                      "typeIdentifier": "t_array$_t_struct$_Tier_$516_storage_$dyn_storage_ptr",
+                      "typeString": "struct IOperatorGrid.Tier[]"
+                    }
+                  },
+                  "visibility": "internal"
+                }
+              ],
+              "src": "1500:15:5"
+            },
+            "scope": 579,
+            "src": "1458:58:5",
+            "stateMutability": "view",
+            "virtual": false,
+            "visibility": "external"
+          }
+        ],
+        "scope": 580,
+        "src": "156:1362:5",
+        "usedErrors": []
+      }
+    ],
+    "src": "90:1429:5"
+  },
+  "bytecode": "",
+  "bytecodeSha1": "da39a3ee5e6b4b0d3255bfef95601890afd80709",
+  "compiler": {
+    "evm_version": "istanbul",
+    "optimizer": {
+      "enabled": true,
+      "runs": 200
+    },
+    "version": "0.8.6+commit.11564f7e"
+  },
+  "contractName": "IOperatorGrid",
+  "coverageMap": {
+    "branches": {},
+    "statements": {}
+  },
+  "dependencies": [],
+  "deployedBytecode": "",
+  "deployedSourceMap": "",
+  "language": "Solidity",
+  "natspec": {
+    "kind": "dev",
+    "methods": {},
+    "title": "Lido's Operator Grid interface",
+    "version": 1
+  },
+  "offset": [
+    156,
+    1518
+  ],
+  "opcodes": "",
+  "pcMap": {},
+  "sha1": "18f0bd7154f0e0159e3faf31490ff369c76a56bb",
+  "source": "// SPDX-FileCopyrightText: 2025 Lido <info@lido.fi>\n// SPDX-License-Identifier: GPL-3.0\n\n pragma solidity 0.8.6;\n\n/// @title Lido's Operator Grid interface\ninterface IOperatorGrid {\n    // -----------------------------\n    //            STRUCTS\n    // -----------------------------\n    struct Group {\n        uint96 shareLimit;\n        uint96 mintedShares;\n        address operator;\n        uint256[] tiersId;\n        uint256[] vaultsIndex;\n    }\n\n    struct Tier {\n        uint96 shareLimit;\n        uint96 mintedShares;\n        uint16 reserveRatioBP;\n        uint16 rebalanceThresholdBP;\n        uint16 treasuryFeeBP;\n    }\n\n    struct Vault {\n        uint256 groupIndex;\n        uint256 tierId;\n    }\n\n    struct TierParams {\n        uint256 shareLimit;\n        uint256 reserveRatioBP;\n        uint256 rebalanceThresholdBP;\n        uint256 treasuryFeeBP;\n    }\n\n    // -----------------------------\n    //            FUNCTIONS\n    // -----------------------------\n    function registerGroup(address nodeOperator, uint256 shareLimit) external;\n    function updateGroupShareLimit(address nodeOperator, uint256 newShareLimit) external;\n    function registerTiers(\n        address nodeOperator,\n        TierParams[] calldata tiers\n    ) external returns (uint256 tierId);\n\n    // view functions\n    function groupByIndex(uint256 _index) external view returns (Group memory);\n    function group(address _nodeOperator) external view returns (Group memory);\n    function getTiers() external view returns (Tier[] memory);\n}\n",
+  "sourceMap": "",
+  "sourcePath": "contracts/interfaces/IOperatorGrid.sol",
+  "type": "interface"
+}
