@@ -22,7 +22,7 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
-            operator_grid="0x0000000000000000000000000000000000000000", # TODO: add operator grid mainnet address
+            operator_grid="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add operator grid mainnet address
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -41,7 +41,6 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
-            operator_grid="0x0000000000000000000000000000000000000000", # TODO: add operator grid holesky address
         )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
