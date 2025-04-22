@@ -9,15 +9,14 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IOperatorGrid.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to update group share limit in OperatorGrid
-contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to alter a tier in OperatorGrid
+contract AlterTierInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERRORS
     // -------------
 
-    error GroupNotExists();
-    error ZeroNodeOperator();
+    error TierNotExists();
     error WrongCalldataLength(uint256 length);
 
     // -------------
@@ -41,9 +40,9 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to update group share limit in OperatorGrid
+    /// @notice Creates EVMScript to alter a tier in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
+    /// @param _evmScriptCallData Encoded: uint256 _tierId, IOperatorGrid.TierParams _tierParams
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -51,25 +50,25 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address _nodeOperator,) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (uint256 _tierId, IOperatorGrid.TierParams memory _tierParams) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(_nodeOperator);
+        _validateInputData(_tierId);
 
         return
             EVMScriptCreator.createEVMScript(
                 address(operatorGrid),
-                IOperatorGrid.updateGroupShareLimit.selector,
+                IOperatorGrid.alterTier.selector,
                 _evmScriptCallData
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
-    /// @return Node operator address and new share limit which should be updated in operator grid
+    /// @param _evmScriptCallData Encoded: uint256 _tierId, IOperatorGrid.TierParams _tierParams
+    /// @return Tier ID and tier parameters which should be updated in operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address, uint256)
+        returns (uint256, IOperatorGrid.TierParams memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -81,16 +80,14 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address, uint256)
+        returns (uint256, IOperatorGrid.TierParams memory)
     {
-        if (_evmScriptCallData.length != 64) revert WrongCalldataLength(_evmScriptCallData.length);
-        return abi.decode(_evmScriptCallData, (address, uint256));
+        if (_evmScriptCallData.length != 160) revert WrongCalldataLength(_evmScriptCallData.length);
+        return abi.decode(_evmScriptCallData, (uint256, IOperatorGrid.TierParams));
     }
 
-    function _validateInputData(address _nodeOperator) private view {
-        if (_nodeOperator == address(0)) revert ZeroNodeOperator();
-
-        IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
-        if (group.operator == address(0)) revert GroupNotExists();
+    function _validateInputData(uint256 _tierId) private view {
+        IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierId);
+        if (tier.operator == address(0)) revert TierNotExists();
     }
 } 

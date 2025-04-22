@@ -60,6 +60,7 @@ def test_decode_evm_script_call_data(stranger, update_group_share_limit_in_opera
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
     assert update_group_share_limit_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == input_params
 
+
 def test_cannot_update_share_limit_with_wrong_calldata_length(owner, update_group_share_limit_in_operator_grid_factory):
     "Must revert with message 'WrongCalldataLength' if calldata length is incorrect"
     with reverts("WrongCalldataLength: 1"):

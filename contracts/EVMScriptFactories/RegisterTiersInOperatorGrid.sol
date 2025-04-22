@@ -43,7 +43,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to register multiple tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address nodeOperator, IOperatorGrid.TierParams[] tiers
+    /// @param _evmScriptCallData Encoded: address _nodeOperator, IOperatorGrid.TierParams[] _tiers
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -51,9 +51,9 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address nodeOperator, IOperatorGrid.TierParams[] memory tiers) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address _nodeOperator, IOperatorGrid.TierParams[] memory _tiers) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(nodeOperator, tiers);
+        _validateInputData(_nodeOperator, _tiers);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -64,7 +64,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address nodeOperator, IOperatorGrid.TierParams[] tiers
+    /// @param _evmScriptCallData Encoded: address _nodeOperator, IOperatorGrid.TierParams[] _tiers
     /// @return Node operator address and array of tier parameters which should be added to operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
@@ -86,11 +86,11 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         return abi.decode(_evmScriptCallData, (address, IOperatorGrid.TierParams[]));
     }
 
-    function _validateInputData(address nodeOperator, IOperatorGrid.TierParams[] memory tiers) private view {
-        if (nodeOperator == address(0)) revert ZeroNodeOperator();
-        if (tiers.length == 0) revert EmptyTiersArray();
+    function _validateInputData(address _nodeOperator, IOperatorGrid.TierParams[] memory _tiers) private view {
+        if (_nodeOperator == address(0)) revert ZeroNodeOperator();
+        if (_tiers.length == 0) revert EmptyTiersArray();
 
-        IOperatorGrid.Group memory group = operatorGrid.group(nodeOperator);
+        IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
         if (group.operator == address(0)) revert GroupNotExists();
     }
 } 

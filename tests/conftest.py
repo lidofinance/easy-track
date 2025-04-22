@@ -238,7 +238,8 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 @pytest.fixture(scope="module")
 def operator_grid_stub(owner, OperatorGridStub):
     # set owner as the owner of the grid for the ease of testing purposes
-    return owner.deploy(OperatorGridStub, owner)
+    default_tier_params = (1000, 200, 100, 50) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
+    return owner.deploy(OperatorGridStub, owner, default_tier_params)
 
 @pytest.fixture(scope="module")
 def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):

@@ -43,7 +43,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to register a group in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address nodeOperator, uint256 shareLimit
+    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -51,9 +51,9 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address nodeOperator,) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address _nodeOperator,) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(nodeOperator);
+        _validateInputData(_nodeOperator);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -64,7 +64,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address nodeOperator, uint256 shareLimit
+    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
     /// @return Node operator address and share limit which should be added to operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
@@ -88,11 +88,11 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(
-        address nodeOperator
+        address _nodeOperator
     ) private view {
-        if (nodeOperator == address(0)) revert ZeroNodeOperator();
+        if (_nodeOperator == address(0)) revert ZeroNodeOperator();
 
-        IOperatorGrid.Group memory group = operatorGrid.group(nodeOperator);
+        IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
         if (group.operator != address(0)) revert GroupExists();
     }
 }

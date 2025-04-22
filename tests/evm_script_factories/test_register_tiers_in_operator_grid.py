@@ -1,6 +1,5 @@
 import pytest
 from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS # type: ignore
-
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operator, tiers):
@@ -43,7 +42,7 @@ def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_fact
 
 def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_factory):
     "Must revert with message 'GroupNotExists: ' if group doesn't exist"
-    tiers = [(1000, 100, 200, 300)]
+    tiers = [(1000, 200, 100, 50)]
     CALLDATA = create_calldata(stranger.address, tiers)
     with reverts('GroupNotExists: '):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
@@ -52,7 +51,7 @@ def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_facto
 def test_create_evm_script(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
-    tiers = [(1000, 100, 200, 300)]
+    tiers = [(1000, 200, 100, 50)]
     input_params = [stranger.address, tiers]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
@@ -66,7 +65,7 @@ def test_create_evm_script(owner, stranger, register_tiers_in_operator_grid_fact
 
 def test_decode_evm_script_call_data(stranger, register_tiers_in_operator_grid_factory):
     "Must decode EVMScript call data correctly"
-    tiers = [(1000, 100, 200, 300)]
+    tiers = [(1000, 200, 100, 50)]
     input_params = [stranger.address, tiers]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
@@ -77,5 +76,5 @@ def test_decode_evm_script_call_data(stranger, register_tiers_in_operator_grid_f
     for i in range(len(input_params[1])):
         assert decoded_params[1][i][0] == input_params[1][i][0]  # shareLimit
         assert decoded_params[1][i][1] == input_params[1][i][1]  # reserveRatioBP
-        assert decoded_params[1][i][2] == input_params[1][i][2]  # rebalanceThresholdBP
+        assert decoded_params[1][i][2] == input_params[1][i][2]  # forcedRebalanceThresholdBP
         assert decoded_params[1][i][3] == input_params[1][i][3]  # treasuryFeeBP

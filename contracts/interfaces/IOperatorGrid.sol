@@ -9,45 +9,66 @@ interface IOperatorGrid {
     //            STRUCTS
     // -----------------------------
     struct Group {
-        uint96 shareLimit;
-        uint96 mintedShares;
         address operator;
-        uint256[] tiersId;
-        uint256[] vaultsIndex;
+        uint96 shareLimit;
+        uint96 liabilityShares;
+        uint128[] tierIds;
     }
 
     struct Tier {
+        address operator;
         uint96 shareLimit;
-        uint96 mintedShares;
+        uint96 liabilityShares;
         uint16 reserveRatioBP;
-        uint16 rebalanceThresholdBP;
+        uint16 forcedRebalanceThresholdBP;
         uint16 treasuryFeeBP;
-    }
-
-    struct Vault {
-        uint256 groupIndex;
-        uint256 tierId;
     }
 
     struct TierParams {
         uint256 shareLimit;
         uint256 reserveRatioBP;
-        uint256 rebalanceThresholdBP;
+        uint256 forcedRebalanceThresholdBP;
         uint256 treasuryFeeBP;
     }
 
     // -----------------------------
     //            FUNCTIONS
     // -----------------------------
-    function registerGroup(address nodeOperator, uint256 shareLimit) external;
-    function updateGroupShareLimit(address nodeOperator, uint256 newShareLimit) external;
-    function registerTiers(
-        address nodeOperator,
-        TierParams[] calldata tiers
-    ) external returns (uint256 tierId);
+    
+    /// @notice Registers a new group
+    /// @param _nodeOperator address of the node operator
+    /// @param _shareLimit Maximum share limit for the group
+    function registerGroup(address _nodeOperator, uint256 _shareLimit) external;
 
-    // view functions
-    function groupByIndex(uint256 _index) external view returns (Group memory);
+    /// @notice Updates the share limit of a group
+    /// @param _nodeOperator address of the node operator
+    /// @param _shareLimit New share limit value
+    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external;
+
+    /// @notice Registers a new tier
+    /// @param _nodeOperator address of the node operator
+    /// @param _tiers array of tiers to register
+    function registerTiers(
+        address _nodeOperator,
+        TierParams[] calldata _tiers
+    ) external;
+
+    /// @notice Alters a tier
+    /// @param _tierId id of the tier
+    /// @param _tierParams new tier params
+    function alterTier(uint256 _tierId, TierParams calldata _tierParams) external;
+
+    // -----------------------------
+    //            VIEW FUNCTIONS
+    // -----------------------------
+
+    /// @notice Returns a group by node operator address
+    /// @param _nodeOperator address of the node operator
+    /// @return Group
     function group(address _nodeOperator) external view returns (Group memory);
-    function getTiers() external view returns (Tier[] memory);
+
+    /// @notice Returns a tier by ID
+    /// @param _tierId id of the tier
+    /// @return Tier
+    function tier(uint256 _tierId) external view returns (Tier memory);
 }
