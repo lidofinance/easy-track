@@ -7,6 +7,7 @@ from brownie import (
     RegisterGroupInOperatorGrid,
     UpdateGroupShareLimitInOperatorGrid,
     RegisterTiersInOperatorGrid,
+    AlterTierInOperatorGrid,
     web3,
 )
 
@@ -122,6 +123,20 @@ def deploy_operator_grid_factories(
 
     log.ok("Deployed RegisterTiersInOperatorGrid", register_tiers_in_operator_grid.address)
 
+    # AlterTierInOperatorGrid
+    alter_tier_in_operator_grid = AlterTierInOperatorGrid.deploy(
+        trusted_caller,
+        operator_grid,
+        tx_params,
+    )
+    deployment_artifacts["AlterTierInOperatorGrid"] = {
+        "contract": "AlterTierInOperatorGrid",
+        "address": alter_tier_in_operator_grid.address,
+        "constructorArgs": [trusted_caller, operator_grid],
+    }
+
+    log.ok("Deployed AlterTierInOperatorGrid", alter_tier_in_operator_grid.address)
+
     log.br()
     log.ok(f"All Operator Grid factories have been deployed. Saving artifacts...")
 
@@ -136,6 +151,7 @@ def deploy_operator_grid_factories(
     RegisterGroupInOperatorGrid.publish_source(register_group_in_operator_grid)
     UpdateGroupShareLimitInOperatorGrid.publish_source(update_group_share_limit_in_operator_grid)
     RegisterTiersInOperatorGrid.publish_source(register_tiers_in_operator_grid)
+    AlterTierInOperatorGrid.publish_source(alter_tier_in_operator_grid)
 
     log.br()
     log.ok("All Operator Grid factories have been verified and published.")

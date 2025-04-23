@@ -1,42 +1,42 @@
 [
   {
-    "inputs": [],
-    "name": "getTiers",
-    "outputs": [
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tierId",
+        "type": "uint256"
+      },
       {
         "components": [
           {
-            "internalType": "uint96",
+            "internalType": "uint256",
             "name": "shareLimit",
-            "type": "uint96"
+            "type": "uint256"
           },
           {
-            "internalType": "uint96",
-            "name": "mintedShares",
-            "type": "uint96"
-          },
-          {
-            "internalType": "uint16",
+            "internalType": "uint256",
             "name": "reserveRatioBP",
-            "type": "uint16"
+            "type": "uint256"
           },
           {
-            "internalType": "uint16",
-            "name": "rebalanceThresholdBP",
-            "type": "uint16"
+            "internalType": "uint256",
+            "name": "forcedRebalanceThresholdBP",
+            "type": "uint256"
           },
           {
-            "internalType": "uint16",
+            "internalType": "uint256",
             "name": "treasuryFeeBP",
-            "type": "uint16"
+            "type": "uint256"
           }
         ],
-        "internalType": "struct IOperatorGrid.Tier[]",
-        "name": "",
-        "type": "tuple[]"
+        "internalType": "struct IOperatorGrid.TierParams",
+        "name": "_tierParams",
+        "type": "tuple"
       }
     ],
-    "stateMutability": "view",
+    "name": "alterTier",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -52,51 +52,10 @@
       {
         "components": [
           {
-            "internalType": "uint96",
-            "name": "shareLimit",
-            "type": "uint96"
-          },
-          {
-            "internalType": "uint96",
-            "name": "mintedShares",
-            "type": "uint96"
-          },
-          {
             "internalType": "address",
             "name": "operator",
             "type": "address"
           },
-          {
-            "internalType": "uint256[]",
-            "name": "tiersId",
-            "type": "uint256[]"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "vaultsIndex",
-            "type": "uint256[]"
-          }
-        ],
-        "internalType": "struct IOperatorGrid.Group",
-        "name": "",
-        "type": "tuple"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "uint256",
-        "name": "_index",
-        "type": "uint256"
-      }
-    ],
-    "name": "groupByIndex",
-    "outputs": [
-      {
-        "components": [
           {
             "internalType": "uint96",
             "name": "shareLimit",
@@ -104,23 +63,13 @@
           },
           {
             "internalType": "uint96",
-            "name": "mintedShares",
+            "name": "liabilityShares",
             "type": "uint96"
           },
           {
-            "internalType": "address",
-            "name": "operator",
-            "type": "address"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "tiersId",
-            "type": "uint256[]"
-          },
-          {
-            "internalType": "uint256[]",
-            "name": "vaultsIndex",
-            "type": "uint256[]"
+            "internalType": "uint128[]",
+            "name": "tierIds",
+            "type": "uint128[]"
           }
         ],
         "internalType": "struct IOperatorGrid.Group",
@@ -135,12 +84,12 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "nodeOperator",
+        "name": "_nodeOperator",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "shareLimit",
+        "name": "_shareLimit",
         "type": "uint256"
       }
     ],
@@ -153,7 +102,7 @@
     "inputs": [
       {
         "internalType": "address",
-        "name": "nodeOperator",
+        "name": "_nodeOperator",
         "type": "address"
       },
       {
@@ -170,7 +119,7 @@
           },
           {
             "internalType": "uint256",
-            "name": "rebalanceThresholdBP",
+            "name": "forcedRebalanceThresholdBP",
             "type": "uint256"
           },
           {
@@ -180,31 +129,76 @@
           }
         ],
         "internalType": "struct IOperatorGrid.TierParams[]",
-        "name": "tiers",
+        "name": "_tiers",
         "type": "tuple[]"
       }
     ],
     "name": "registerTiers",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "tierId",
-        "type": "uint256"
-      }
-    ],
+    "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
   },
   {
     "inputs": [
       {
+        "internalType": "uint256",
+        "name": "_tierId",
+        "type": "uint256"
+      }
+    ],
+    "name": "tier",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "operator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint96",
+            "name": "shareLimit",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "liabilityShares",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint16",
+            "name": "reserveRatioBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "forcedRebalanceThresholdBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "treasuryFeeBP",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct IOperatorGrid.Tier",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
         "internalType": "address",
-        "name": "nodeOperator",
+        "name": "_nodeOperator",
         "type": "address"
       },
       {
         "internalType": "uint256",
-        "name": "newShareLimit",
+        "name": "_shareLimit",
         "type": "uint256"
       }
     ],
