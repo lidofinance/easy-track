@@ -59,24 +59,35 @@ def create_enact_and_check_register_group_motion(
     register_group_factory,
     operator_address,
     share_limit,
+    tiers_params,
 ):
     motion_transaction = easy_track.createMotion(
         register_group_factory.address,
-        encode_calldata(["address", "uint256"], [operator_address, share_limit]),
+        encode_calldata(["address", "uint256", "(uint256,uint256,uint256,uint256)[]"], [operator_address, share_limit, tiers_params]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
     group = operator_grid.group(operator_address)
-    assert group[0] == brownie.ZERO_ADDRESS # operator
-    assert group[1] == 0 # shareLimit
+    assert group[0] == brownie.ZERO_ADDRESS  # operator
+    assert group[1] == 0  # shareLimit
+    assert len(group[3]) == 0  # tiersId array should be empty
 
     execute_motion(easy_track, motion_transaction, stranger)
 
     group = operator_grid.group(operator_address)
-    assert group[0] == operator_address # operator
-    assert group[1] == share_limit # shareLimit
+    assert group[0] == operator_address  # operator
+    assert group[1] == share_limit  # shareLimit
+    assert len(group[3]) == len(tiers_params)  # tiersId array should have the same length as tiers_params
+
+    # Check tier details
+    for i, tier_id in enumerate(group[3]):
+        tier = operator_grid.tier(tier_id)
+        assert tier[1] == tiers_params[i][0]  # shareLimit
+        assert tier[3] == tiers_params[i][1]  # reserveRatioBP
+        assert tier[4] == tiers_params[i][2]  # forcedRebalanceThresholdBP
+        assert tier[5] == tiers_params[i][3]  # treasuryFeeBP
 
 
 def create_enact_and_check_update_share_limit_motion(
@@ -206,7 +217,7 @@ def test_register_group_happy_path(
     stranger,
     operator_grid,
 ):
-    permission = operator_grid.address + operator_grid.registerGroup.signature[2:]
+    permission = operator_grid.address + operator_grid.registerGroup.signature[2:] + operator_grid.address[2:] + operator_grid.registerTiers.signature[2:]
     register_group_factory = setup_evm_script_factory(
         RegisterGroupInOperatorGrid,
         permission,
@@ -217,6 +228,12 @@ def test_register_group_happy_path(
         operator_grid,
     )
 
+    # Define tier parameters
+    tiers_params = [
+        (500, 200, 100, 50),  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
+        (300, 150, 75, 25),
+    ]
+
     create_enact_and_check_register_group_motion(
         easy_track,
         operator_grid,
@@ -225,6 +242,7 @@ def test_register_group_happy_path(
         register_group_factory,
         "0x0000000000000000000000000000000000000001",
         1000,
+        tiers_params,
     )
 
 

@@ -9,7 +9,7 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IOperatorGrid.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to register a group in OperatorGrid
+/// @notice Creates EVMScript to register a group and its tiers in OperatorGrid
 contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
@@ -19,6 +19,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     error GroupExists();
     error ZeroNodeOperator();
     error WrongCalldataLength(uint256 length);
+    error EmptyTiersArray();
 
     // -------------
     // VARIABLES
@@ -41,9 +42,9 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to register a group in OperatorGrid
+    /// @notice Creates EVMScript to register a group and its tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
+    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit, IOperatorGrid.TierParams[] _tiers
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -51,25 +52,35 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address _nodeOperator,) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address _nodeOperator, uint256 _shareLimit, IOperatorGrid.TierParams[] memory _tiers) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(_nodeOperator);
+        _validateInputData(_nodeOperator, _tiers);
+        
+        // Create method selectors
+        bytes4[] memory methodIds = new bytes4[](2);
+        methodIds[0] = IOperatorGrid.registerGroup.selector;
+        methodIds[1] = IOperatorGrid.registerTiers.selector;
+
+        // Create calldata for both registerGroup and registerTiers calls
+        bytes[] memory calldataArray = new bytes[](2);
+        calldataArray[0] = abi.encode(_nodeOperator, _shareLimit);
+        calldataArray[1] = abi.encode(_nodeOperator, _tiers);
 
         return
             EVMScriptCreator.createEVMScript(
                 address(operatorGrid),
-                IOperatorGrid.registerGroup.selector,
-                _evmScriptCallData
+                methodIds,
+                calldataArray
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
-    /// @return Node operator address and share limit which should be added to operator grid
+    /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit, IOperatorGrid.TierParams[] _tiers
+    /// @return Node operator address, share limit and array of tier parameters which should be added to operator grid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address, uint256)
+        returns (address, uint256, IOperatorGrid.TierParams[] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -81,16 +92,17 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address, uint256)
-    {   
-        if (_evmScriptCallData.length != 64) revert WrongCalldataLength(_evmScriptCallData.length);
-        return abi.decode(_evmScriptCallData, (address, uint256));
+        returns (address, uint256, IOperatorGrid.TierParams[] memory)
+    {
+        return abi.decode(_evmScriptCallData, (address, uint256, IOperatorGrid.TierParams[]));
     }
 
     function _validateInputData(
-        address _nodeOperator
+        address _nodeOperator,
+        IOperatorGrid.TierParams[] memory _tiers
     ) private view {
         if (_nodeOperator == address(0)) revert ZeroNodeOperator();
+        if (_tiers.length == 0) revert EmptyTiersArray();
 
         IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
         if (group.operator != address(0)) revert GroupExists();
