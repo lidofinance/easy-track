@@ -102,5 +102,37 @@
             "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             "0x78780e70Eae33e2935814a327f7dB6c01136cc62"
         ]
-    }
+    },
+    "AllowedRecipientsBuilder_single_token": {
+        "contract": "AllowedRecipientsBuilder",
+        "address": "0xC20129f1dd4DFeD023a6d6A8de9d54A7b61af5CC",
+        "constructorArgs": [
+            "0xFdf256eED0ec8B782065E2aCDb975071033A6110",
+            "0x0534aA41907c9631fae990960bCC72d75fA7cfeD",
+            "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+            "0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b", 
+            "0xd1df0cf660d531fad9eaabd3e7b4e8881e28ae2f"
+        ]
+    },
+    "AllowedRecipientsFactory_single_token": {
+        "contract": "AllowedRecipientsFactory",
+        "address": "0xFdf256eED0ec8B782065E2aCDb975071033A6110",
+        "constructorArgs": []
+    },
+    "AllowedRecipientsBuilder_multi_token": {
+        "contract": "AllowedRecipientsBuilder",
+        "address": "0xf5436129Cf9d8fa2a1cb6e591347155276550635",
+        "constructorArgs": [
+            "0x08c48Fef9Cadca882E27d2325D1785858D5c1aE3",
+            "0x0534aA41907c9631fae990960bCC72d75fA7cfeD",
+            "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+            "0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b", 
+            "0xd1df0cf660d531fad9eaabd3e7b4e8881e28ae2f"
+        ]
+    },
+    "AllowedRecipientsFactory_multi_token": {
+        "contract": "AllowedRecipientsFactory",
+        "address": "0x08c48Fef9Cadca882E27d2325D1785858D5c1aE3",
+        "constructorArgs": []
+    },
 }
