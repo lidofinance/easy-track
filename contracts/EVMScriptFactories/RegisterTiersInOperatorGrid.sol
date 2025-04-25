@@ -57,7 +57,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: address _nodeOperator, IOperatorGrid.TierParams[] _tiers
-    /// @return Node operator address and array of tier parameters which should be added to operator grid
+    /// @return Node operator address and array of tier parameters which should be added to OperatorGrid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

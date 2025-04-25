@@ -57,7 +57,7 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit
-    /// @return Node operator address and new share limit which should be updated in operator grid
+    /// @return Node operator address and new share limit which should be updated in OperatorGrid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

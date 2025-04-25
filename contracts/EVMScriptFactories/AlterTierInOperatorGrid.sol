@@ -57,7 +57,7 @@ contract AlterTierInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: uint256 _tierId, IOperatorGrid.TierParams _tierParams
-    /// @return Tier ID and tier parameters which should be updated in operator grid
+    /// @return Tier ID and tier parameters which should be updated in OperatorGrid
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

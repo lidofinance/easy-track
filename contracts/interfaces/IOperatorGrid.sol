@@ -3,7 +3,7 @@
 
  pragma solidity 0.8.6;
 
-/// @title Lido's Operator Grid interface
+/// @title Lido's OperatorGrid interface
 interface IOperatorGrid {
     // -----------------------------
     //            STRUCTS
