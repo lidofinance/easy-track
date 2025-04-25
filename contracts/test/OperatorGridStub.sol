@@ -176,6 +176,12 @@ contract OperatorGridStub is AccessControl {
         return $.tiers[_tierId];
     }
 
+    /// @notice Returns the number of tiers
+    /// @return Number of tiers
+    function tiersCount() external view returns (uint256) {
+        return _getStorage().tiers.length;
+    }
+
     /// @notice Alters a tier
     /// @dev We do not enforce to update old vaults with the new tier params, only new ones.
     /// @param _tierId id of the tier

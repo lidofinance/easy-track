@@ -80,7 +80,7 @@ contract AlterTierInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(uint256 _tierId) private view {
-        IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierId);
-        require(tier.operator != address(0), "Tier not exists");
+        uint256 _tiersCount = operatorGrid.tiersCount();
+        require(_tierId < _tiersCount, "Tier not exists");
     }
 } 

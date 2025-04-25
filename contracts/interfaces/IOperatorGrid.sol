@@ -71,4 +71,8 @@ interface IOperatorGrid {
     /// @param _tierId id of the tier
     /// @return Tier
     function tier(uint256 _tierId) external view returns (Tier memory);
+
+    /// @notice Returns the number of tiers
+    /// @return Number of tiers
+    function tiersCount() external view returns (uint256);
 }
