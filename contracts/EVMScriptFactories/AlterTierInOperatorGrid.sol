@@ -75,7 +75,6 @@ contract AlterTierInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         pure
         returns (uint256, IOperatorGrid.TierParams memory)
     {
-        require(_evmScriptCallData.length == 160, "Wrong calldata length");
         return abi.decode(_evmScriptCallData, (uint256, IOperatorGrid.TierParams));
     }
 

@@ -75,7 +75,6 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
         pure
         returns (address, uint256)
     {
-        require(_evmScriptCallData.length == 64, "Wrong calldata length");
         return abi.decode(_evmScriptCallData, (address, uint256));
     }
 

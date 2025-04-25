@@ -62,6 +62,6 @@ def test_decode_evm_script_call_data(stranger, update_group_share_limit_in_opera
 
 
 def test_cannot_update_share_limit_with_wrong_calldata_length(owner, update_group_share_limit_in_operator_grid_factory):
-    "Must revert with message 'Wrong calldata length' if calldata length is incorrect"
-    with reverts("Wrong calldata length"):
+    "Must revert if calldata length is incorrect"
+    with reverts():
         update_group_share_limit_in_operator_grid_factory.createEVMScript(owner, "0x00")

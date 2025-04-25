@@ -34,8 +34,8 @@ def test_tier_not_exists(owner, alter_tier_in_operator_grid_factory):
 
 
 def test_wrong_calldata_length(owner, alter_tier_in_operator_grid_factory):
-    "Must revert with message 'Wrong calldata length' if calldata length is wrong"
-    with reverts("Wrong calldata length"):
+    "Must revert if calldata length is wrong"
+    with reverts():
         alter_tier_in_operator_grid_factory.createEVMScript(owner, "0x00")
 
 
