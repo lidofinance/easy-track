@@ -13,13 +13,6 @@ import "../interfaces/IOperatorGrid.sol";
 contract AlterTierInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
-    // ERRORS
-    // -------------
-
-    error TierNotExists();
-    error WrongCalldataLength(uint256 length);
-
-    // -------------
     // VARIABLES
     // -------------
 
@@ -82,12 +75,12 @@ contract AlterTierInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         pure
         returns (uint256, IOperatorGrid.TierParams memory)
     {
-        if (_evmScriptCallData.length != 160) revert WrongCalldataLength(_evmScriptCallData.length);
+        require(_evmScriptCallData.length == 160, "Wrong calldata length");
         return abi.decode(_evmScriptCallData, (uint256, IOperatorGrid.TierParams));
     }
 
     function _validateInputData(uint256 _tierId) private view {
         IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierId);
-        if (tier.operator == address(0)) revert TierNotExists();
+        require(tier.operator != address(0), "Tier not exists");
     }
 } 

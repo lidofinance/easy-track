@@ -13,15 +13,6 @@ import "../interfaces/IOperatorGrid.sol";
 contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
-    // ERRORS
-    // -------------
-
-    error GroupExists();
-    error ZeroNodeOperator();
-    error WrongCalldataLength(uint256 length);
-    error EmptyTiersArray();
-
-    // -------------
     // VARIABLES
     // -------------
 
@@ -101,10 +92,10 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         address _nodeOperator,
         IOperatorGrid.TierParams[] memory _tiers
     ) private view {
-        if (_nodeOperator == address(0)) revert ZeroNodeOperator();
-        if (_tiers.length == 0) revert EmptyTiersArray();
+        require(_nodeOperator != address(0), "Zero node operator");
+        require(_tiers.length > 0, "Empty tiers array");
 
         IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
-        if (group.operator != address(0)) revert GroupExists();
+        require(group.operator == address(0), "Group exists");
     }
 }

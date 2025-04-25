@@ -26,16 +26,16 @@ def test_create_evm_script_called_by_stranger(stranger, update_group_share_limit
 
 
 def test_empty_calldata(owner, update_group_share_limit_in_operator_grid_factory):
-    "Must revert with message 'ZeroNodeOperator: ' if operator is zero address"
+    "Must revert with message 'Zero node operator' if operator is zero address"
     EMPTY_CALLDATA = create_calldata(ZERO_ADDRESS, 1000)
-    with reverts('ZeroNodeOperator: '):
+    with reverts('Zero node operator'):
         update_group_share_limit_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_group_not_exists(owner, stranger, update_group_share_limit_in_operator_grid_factory):
-    "Must revert with message 'GroupNotExists: ' if group doesn't exist"
+    "Must revert with message 'Group not exists' if group doesn't exist"
     CALLDATA = create_calldata(stranger.address, 1000)
-    with reverts('GroupNotExists: '):
+    with reverts('Group not exists'):
         update_group_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
@@ -62,6 +62,6 @@ def test_decode_evm_script_call_data(stranger, update_group_share_limit_in_opera
 
 
 def test_cannot_update_share_limit_with_wrong_calldata_length(owner, update_group_share_limit_in_operator_grid_factory):
-    "Must revert with message 'WrongCalldataLength' if calldata length is incorrect"
-    with reverts("WrongCalldataLength: 1"):
+    "Must revert with message 'Wrong calldata length' if calldata length is incorrect"
+    with reverts("Wrong calldata length"):
         update_group_share_limit_in_operator_grid_factory.createEVMScript(owner, "0x00")

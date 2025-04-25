@@ -26,25 +26,25 @@ def test_create_evm_script_called_by_stranger(stranger, register_tiers_in_operat
 
 
 def test_zero_nodeoperator_address(owner, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'ZeroNodeOperator: ' if operator is zero address"
+    "Must revert with message 'Zero node operator' if operator is zero address"
     EMPTY_CALLDATA = create_calldata(ZERO_ADDRESS, [])
-    with reverts('ZeroNodeOperator: '):
+    with reverts('Zero node operator'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'EmptyTiersArray: ' if tiers array is empty"
+    "Must revert with message 'Empty tiers array' if tiers array is empty"
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
     CALLDATA = create_calldata(stranger.address, [])
-    with reverts('EmptyTiersArray: '):
+    with reverts('Empty tiers array'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'GroupNotExists: ' if group doesn't exist"
+    "Must revert with message 'Group not exists' if group doesn't exist"
     tiers = [(1000, 200, 100, 50)]
     CALLDATA = create_calldata(stranger.address, tiers)
-    with reverts('GroupNotExists: '):
+    with reverts('Group not exists'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 

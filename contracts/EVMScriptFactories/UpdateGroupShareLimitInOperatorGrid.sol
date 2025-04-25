@@ -13,14 +13,6 @@ import "../interfaces/IOperatorGrid.sol";
 contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
-    // ERRORS
-    // -------------
-
-    error GroupNotExists();
-    error ZeroNodeOperator();
-    error WrongCalldataLength(uint256 length);
-
-    // -------------
     // VARIABLES
     // -------------
 
@@ -83,14 +75,14 @@ contract UpdateGroupShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory
         pure
         returns (address, uint256)
     {
-        if (_evmScriptCallData.length != 64) revert WrongCalldataLength(_evmScriptCallData.length);
+        require(_evmScriptCallData.length == 64, "Wrong calldata length");
         return abi.decode(_evmScriptCallData, (address, uint256));
     }
 
     function _validateInputData(address _nodeOperator) private view {
-        if (_nodeOperator == address(0)) revert ZeroNodeOperator();
+        require(_nodeOperator != address(0), "Zero node operator");
 
         IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
-        if (group.operator == address(0)) revert GroupNotExists();
+        require(group.operator != address(0), "Group not exists");
     }
 } 

@@ -26,16 +26,16 @@ def test_create_evm_script_called_by_stranger(stranger, alter_tier_in_operator_g
 
 
 def test_tier_not_exists(owner, alter_tier_in_operator_grid_factory):
-    "Must revert with message 'TierNotExists: ' if tier doesn't exist"
+    "Must revert with message 'Tier not exists' if tier doesn't exist"
     tier_params = (1000, 200, 100, 50)  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
     CALLDATA = create_calldata(1, tier_params)  # Using tier ID 1 which doesn't exist
-    with reverts('TierNotExists: '):
+    with reverts('Tier not exists'):
         alter_tier_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_wrong_calldata_length(owner, alter_tier_in_operator_grid_factory):
-    "Must revert with message 'WrongCalldataLength: ' if calldata length is wrong"
-    with reverts("WrongCalldataLength: 1"):
+    "Must revert with message 'Wrong calldata length' if calldata length is wrong"
+    with reverts("Wrong calldata length"):
         alter_tier_in_operator_grid_factory.createEVMScript(owner, "0x00")
 
 
