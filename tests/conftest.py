@@ -387,6 +387,11 @@ def locator(lido_contracts):
     return lido_contracts.locator
 
 
+@pytest.fixture(scope="module")
+def operator_grid(lido_contracts):
+    return lido_contracts.operator_grid
+
+
 #########################
 # State Changing Fixtures
 #########################

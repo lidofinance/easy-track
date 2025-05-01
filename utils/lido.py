@@ -60,8 +60,27 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
             locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
         )
+    if network == "hoodi" or network == "hoodi-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0x428d6E1C384B743b1D6bed40b3a01F5357Ec24A9",
+                agent="0x2cE254Fd852d6B5023b1B2355ae96A8d752a47cf",
+                voting="0xd401Bf29751aE77cF5A479b22fbAaB30cD027dD6",
+                finance="0x973bD4e3F387F1BBF1576c5B12101450328F067f",
+                gov_token="0x0E9Fa6947804c5573796aE211898f7a652e58d1f",
+                calls_script="0x207474d0f0Ba51A28ce911C2e77d6c93e231E8FD",
+                token_manager="0x32Ea1c8Df51BCAd93309DB159E54415951782992",
+                kernel="0xf5591B4CA4De7f3e339248bbA35b0A02Ef9939c2",
+            ),
+            steth="0x04d160820C0f2E2C693D9Eb26078189D10A1a3e1",
+            node_operators_registry="0x94bd69Be2711205F4eBAA084c34cEf29E24A8E59",
+            simple_dvt="0x90106946d5525003385310D8e3e123cA6CFCf5Cd",
+            staking_router="0xf320D34b55E89826631C2bb1b3c5b50932cCaB3C",
+            locator="0xbE861866E2Ca8f401e2b51b2cFb36A61B0Bf6840",
+            operator_grid="0xccb86588b776743CCCB6572D2a6eAFd466012191",
+        )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork, hoodi, hoodi-fork"""
     )
 
 

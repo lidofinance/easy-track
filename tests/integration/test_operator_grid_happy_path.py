@@ -11,15 +11,10 @@ def trusted_address(accounts):
     return accounts[7]
 
 
-# TODO - use real address of operator grid when it will be deployed
-@pytest.fixture(scope="module", autouse=True)
-def operator_grid(owner, OperatorGridStub, easy_track):
-    default_tier_params = (1000, 200, 100, 50) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
-    operator_grid = owner.deploy(OperatorGridStub, owner, default_tier_params)
+def setup_operator_grid(owner, operator_grid, easy_track, agent):
     evm_executor = easy_track.evmScriptExecutor()
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), evm_executor, {"from": owner})
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": owner})
-    return operator_grid
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), evm_executor, {"from": agent})
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
 
 
 def setup_evm_script_factory(
@@ -209,6 +204,7 @@ def create_enact_and_check_alter_tier_motion(
 
 @pytest.mark.skip_coverage
 def test_register_group_happy_path(
+    owner,
     RegisterGroupInOperatorGrid,
     easy_track,
     trusted_address,
@@ -216,7 +212,10 @@ def test_register_group_happy_path(
     deployer,
     stranger,
     operator_grid,
+    agent,
 ):
+    setup_operator_grid(owner, operator_grid, easy_track, agent)
+
     permission = operator_grid.address + operator_grid.registerGroup.signature[2:] + operator_grid.address[2:] + operator_grid.registerTiers.signature[2:]
     register_group_factory = setup_evm_script_factory(
         RegisterGroupInOperatorGrid,
@@ -256,7 +255,10 @@ def test_update_group_share_limit_happy_path(
     deployer,
     stranger,
     operator_grid,
+    agent,
 ):
+    setup_operator_grid(owner, operator_grid, easy_track, agent)
+
     permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
     update_share_limit_factory = setup_evm_script_factory(
         UpdateGroupShareLimitInOperatorGrid,
@@ -290,7 +292,10 @@ def test_register_tiers_happy_path(
     deployer,
     stranger,
     operator_grid,
+    agent,
 ):
+    setup_operator_grid(owner, operator_grid, easy_track, agent)
+
     permission = operator_grid.address + operator_grid.registerTiers.signature[2:]
     register_tiers_factory = setup_evm_script_factory(
         RegisterTiersInOperatorGrid,
@@ -321,6 +326,7 @@ def test_register_tiers_happy_path(
 
 
 @pytest.mark.skip_coverage
+@pytest.mark.skip(reason="operatorGrid.tiersCount() logic is not implemented yet") # TODO
 def test_alter_tier_happy_path(
     owner,
     AlterTierInOperatorGrid,
@@ -330,7 +336,10 @@ def test_alter_tier_happy_path(
     deployer,
     stranger,
     operator_grid,
+    agent,
 ):
+    setup_operator_grid(owner, operator_grid, easy_track, agent)
+
     permission = operator_grid.address + operator_grid.alterTier.signature[2:]
     alter_tier_factory = setup_evm_script_factory(
         AlterTierInOperatorGrid,
