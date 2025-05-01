@@ -242,6 +242,10 @@ def operator_grid_stub(owner, OperatorGridStub):
     return owner.deploy(OperatorGridStub, owner, default_tier_params)
 
 @pytest.fixture(scope="module")
+def vault_hub_stub(owner, VaultHubStub):
+    return owner.deploy(VaultHubStub, owner)
+
+@pytest.fixture(scope="module")
 def limits_checker(owner, accounts, LimitsChecker, bokkyPooBahsDateTimeContract):
     set_parameters_role_holder = accounts[8]
     update_spent_amount_role_holder = accounts[9]
