@@ -333,7 +333,7 @@ def top_up_allowed_recipients_evm_script_factory(
 @pytest.fixture(scope="module")
 def rmc_factories_multisig():
     network_name = get_network_name()
-    if network_name == "hardhat":
+    if network_name == "mainnet" or network_name == "mainnet-fork":
         return "0x98be4a407Bff0c125e25fBE9Eb1165504349c37d"
     else:
         return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"  # QA multisig
@@ -355,7 +355,6 @@ def add_mev_boost_relays_evm_script_factory(
         else None
     )
 
-    trusted_caller = rmc_factories_multisig
     if evm_script_factory is None:
         evm_script_factory = deployer.deploy(AddMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
 
@@ -386,6 +385,7 @@ def add_mev_boost_relays_evm_script_factory(
 def remove_mev_boost_relays_evm_script_factory(
     RemoveMEVBoostRelays,
     rmc_factories_multisig,
+    deployed_artifact,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -427,6 +427,7 @@ def remove_mev_boost_relays_evm_script_factory(
 def edit_mev_boost_relays_evm_script_factory(
     EditMEVBoostRelays,
     rmc_factories_multisig,
+    deployed_artifact,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
