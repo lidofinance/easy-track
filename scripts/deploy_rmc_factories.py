@@ -24,7 +24,7 @@ def get_trusted_caller():
         raise EnvironmentError("Please set TRUSTED_CALLER env variable")
     trusted_caller = os.environ["TRUSTED_CALLER"]
 
-    assert web3.isAddress(trusted_caller), "Trusted caller address is not valid"
+    assert web3.is_address(trusted_caller), "Trusted caller address is not valid"
 
     return trusted_caller
 
@@ -36,7 +36,6 @@ def main():
     deployer = get_deployer_account(get_is_live(), network=network_name)
     trusted_caller = get_trusted_caller()
 
-    evm_script_executor = addresses.evm_script_executor
     mev_boost_allow_list = addresses.mev_boost_list
 
     log.br()
@@ -49,7 +48,6 @@ def main():
     log.br()
 
     log.nb("Deployed MEV Boost Relay Allowed List", mev_boost_allow_list)
-    log.nb("Deployed EVMScript Executor", evm_script_executor)
 
     log.br()
 

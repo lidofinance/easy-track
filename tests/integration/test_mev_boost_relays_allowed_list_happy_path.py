@@ -1,14 +1,10 @@
+import brownie.network
 import pytest
 import brownie
 
 from utils.evm_script import encode_call_script, encode_calldata
 
 MOTION_BUFFER_TIME = 100
-
-
-@pytest.fixture(scope="module")
-def trusted_address(accounts):
-    return accounts[7]
 
 
 def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track):
@@ -61,14 +57,14 @@ def create_enact_and_check_add_motion(
     easy_track,
     mev_boost_relay_allowed_list,
     stranger,
-    trusted_address,
+    rmc_factories_multisig,
     add_relays_script_factory,
     relays,
 ):
     motion_transaction = easy_track.createMotion(
         add_relays_script_factory.address,
         encode_calldata(["(string,string,bool,string)[]"], [relays]),
-        {"from": trusted_address},
+        {"from": rmc_factories_multisig},
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
@@ -92,7 +88,7 @@ def create_enact_and_check_remove_motion(
     easy_track,
     mev_boost_relay_allowed_list,
     stranger,
-    trusted_address,
+    rmc_factories_multisig,
     remove_relays_script_factory,
     relays,
 ):
@@ -106,7 +102,7 @@ def create_enact_and_check_remove_motion(
     motion_transaction = easy_track.createMotion(
         remove_relays_script_factory.address,
         encode_calldata(["string[]"], [[relay[0] for relay in relays]]),
-        {"from": trusted_address},
+        {"from": rmc_factories_multisig},
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
@@ -128,7 +124,7 @@ def create_enact_and_check_edit_motion(
     easy_track,
     mev_boost_relay_allowed_list,
     stranger,
-    trusted_address,
+    rmc_factories_multisig,
     edit_relays_script_factory,
     relays,
     modified_relays,
@@ -147,7 +143,7 @@ def create_enact_and_check_edit_motion(
     motion_transaction = easy_track.createMotion(
         edit_relays_script_factory.address,
         encode_calldata(["(string,string,bool,string)[]"], [modified_relays]),
-        {"from": trusted_address},
+        {"from": rmc_factories_multisig},
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
@@ -169,7 +165,7 @@ def create_enact_and_check_edit_motion(
 def test_add_mev_boost_relays_allowed_list_happy_path(
     add_mev_boost_relays_evm_script_factory,
     easy_track,
-    trusted_address,
+    rmc_factories_multisig,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -187,7 +183,7 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         add_mev_boost_relays_evm_script_factory,
         [mev_boost_relay_test_config["relays"][0]],
     )
@@ -197,7 +193,7 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         add_mev_boost_relays_evm_script_factory,
         mev_boost_relay_test_config["relays"],
     )
@@ -207,7 +203,7 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
 def test_add_mev_boost_relays_allowed_list_full_list_happy_path(
     add_mev_boost_relays_evm_script_factory,
     easy_track,
-    trusted_address,
+    rmc_factories_multisig,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -230,7 +226,7 @@ def test_add_mev_boost_relays_allowed_list_full_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         add_mev_boost_relays_evm_script_factory,
         relays_input,
     )
@@ -240,7 +236,7 @@ def test_add_mev_boost_relays_allowed_list_full_list_happy_path(
 def test_remove_mev_boost_relays_allowed_list_happy_path(
     remove_mev_boost_relays_evm_script_factory,
     easy_track,
-    trusted_address,
+    rmc_factories_multisig,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -253,7 +249,7 @@ def test_remove_mev_boost_relays_allowed_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         remove_mev_boost_relays_evm_script_factory,
         [mev_boost_relay_test_config["relays"][0]],
     )
@@ -263,7 +259,7 @@ def test_remove_mev_boost_relays_allowed_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         remove_mev_boost_relays_evm_script_factory,
         mev_boost_relay_test_config["relays"],
     )
@@ -273,7 +269,7 @@ def test_remove_mev_boost_relays_allowed_list_happy_path(
 def test_remove_mev_boost_relays_allowed_list_full_list_happy_path(
     remove_mev_boost_relays_evm_script_factory,
     easy_track,
-    trusted_address,
+    rmc_factories_multisig,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -293,7 +289,7 @@ def test_remove_mev_boost_relays_allowed_list_full_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         remove_mev_boost_relays_evm_script_factory,
         relays_input,
     )
@@ -303,7 +299,7 @@ def test_remove_mev_boost_relays_allowed_list_full_list_happy_path(
 def test_edit_mev_boost_relays_allowed_list_happy_path(
     edit_mev_boost_relays_evm_script_factory,
     easy_track,
-    trusted_address,
+    rmc_factories_multisig,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -321,7 +317,7 @@ def test_edit_mev_boost_relays_allowed_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         edit_mev_boost_relays_evm_script_factory,
         [mev_boost_relay_test_config["relays"][0]],
         [modified_relays[0]],
@@ -332,7 +328,7 @@ def test_edit_mev_boost_relays_allowed_list_happy_path(
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
-        trusted_address,
+        rmc_factories_multisig,
         edit_mev_boost_relays_evm_script_factory,
         mev_boost_relay_test_config["relays"],
         modified_relays,

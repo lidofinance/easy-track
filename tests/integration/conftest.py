@@ -1,9 +1,11 @@
 import pytest
 import brownie
+import json
 
 import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
+from utils.config import get_network_name
 from dataclasses import dataclass
 
 #####
@@ -47,6 +49,18 @@ def recipients(accounts):
         Recipient(address=accounts[8].address, title="recipient#2"),
         Recipient(address=accounts[9].address, title="recipient#3"),
     ]
+
+
+@pytest.fixture(scope="session")
+def deployed_artifact():
+    network_name = get_network_name()
+    file_name = f"deployed-{network_name}.json"
+
+    try:
+        f = open(file_name)
+        return json.load(f)
+    except:
+        pass
 
 
 #####
@@ -317,23 +331,35 @@ def top_up_allowed_recipients_evm_script_factory(
 
 
 @pytest.fixture(scope="module")
+def rmc_factories_multisig():
+    network_name = get_network_name()
+    if network_name == "hardhat":
+        return "0x98be4a407Bff0c125e25fBE9Eb1165504349c37d"
+    else:
+        return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"  # QA multisig
+
+
+@pytest.fixture(scope="module")
 def add_mev_boost_relays_evm_script_factory(
-    accounts,
     AddMEVBoostRelays,
+    rmc_factories_multisig,
+    deployed_artifact,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
-    load_deployed_contract,
     deployer,
 ):
-    evm_script_factory = load_deployed_contract("AddMEVBoostRelays")
+    evm_script_factory = (
+        AddMEVBoostRelays.at(deployed_artifact["AddMEVBoostRelays"]["address"])
+        if "AddMEVBoostRelays" in deployed_artifact
+        else None
+    )
 
-    trusted_caller = accounts[7]
-
+    trusted_caller = rmc_factories_multisig
     if evm_script_factory is None:
-        evm_script_factory = deployer.deploy(AddMEVBoostRelays, trusted_caller, mev_boost_relay_allowed_list)
+        evm_script_factory = deployer.deploy(AddMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
 
-    assert evm_script_factory.trustedCaller() == trusted_caller
+    assert evm_script_factory.trustedCaller() == rmc_factories_multisig
     assert evm_script_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
 
     if not easy_track.isEVMScriptFactory(evm_script_factory):
@@ -358,22 +384,23 @@ def add_mev_boost_relays_evm_script_factory(
 
 @pytest.fixture(scope="module")
 def remove_mev_boost_relays_evm_script_factory(
-    accounts,
     RemoveMEVBoostRelays,
+    rmc_factories_multisig,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
-    load_deployed_contract,
     deployer,
 ):
-    evm_script_factory = load_deployed_contract("RemoveMEVBoostRelays")
-
-    trusted_caller = accounts[7]
+    evm_script_factory = (
+        RemoveMEVBoostRelays.at(deployed_artifact["RemoveMEVBoostRelays"]["address"])
+        if "RemoveMEVBoostRelays" in deployed_artifact
+        else None
+    )
 
     if evm_script_factory is None:
-        evm_script_factory = deployer.deploy(RemoveMEVBoostRelays, trusted_caller, mev_boost_relay_allowed_list)
+        evm_script_factory = deployer.deploy(RemoveMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
 
-    assert evm_script_factory.trustedCaller() == trusted_caller
+    assert evm_script_factory.trustedCaller() == rmc_factories_multisig
     assert evm_script_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
 
     if not easy_track.isEVMScriptFactory(evm_script_factory):
@@ -398,21 +425,23 @@ def remove_mev_boost_relays_evm_script_factory(
 
 @pytest.fixture(scope="module")
 def edit_mev_boost_relays_evm_script_factory(
-    accounts,
     EditMEVBoostRelays,
+    rmc_factories_multisig,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
-    load_deployed_contract,
     deployer,
 ):
-    evm_script_factory = load_deployed_contract("EditMEVBoostRelays")
+    evm_script_factory = (
+        EditMEVBoostRelays.at(deployed_artifact["EditMEVBoostRelays"]["address"])
+        if "EditMEVBoostRelays" in deployed_artifact
+        else None
+    )
 
-    trusted_caller = accounts[7]
     if evm_script_factory is None:
-        evm_script_factory = deployer.deploy(EditMEVBoostRelays, trusted_caller, mev_boost_relay_allowed_list)
+        evm_script_factory = deployer.deploy(EditMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
 
-    assert evm_script_factory.trustedCaller() == trusted_caller
+    assert evm_script_factory.trustedCaller() == rmc_factories_multisig
     assert evm_script_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
 
     if not easy_track.isEVMScriptFactory(evm_script_factory):

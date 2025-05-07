@@ -1,0 +1,26 @@
+{
+  "AddMEVBoostRelays": {
+    "contract": "AddMEVBoostRelays",
+    "address": "0xF02DbeaA1Bbc90226CaB995db4C190DbE25983af",
+    "constructorArgs": [
+      "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
+      "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
+    ]
+  },
+  "RemoveMEVBoostRelays": {
+    "contract": "RemoveMEVBoostRelays",
+    "address": "0x7FCc2901C6C3D62784cB178B14d44445B038f736",
+    "constructorArgs": [
+      "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
+      "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
+    ]
+  },
+  "EditMEVBoostRelays": {
+    "contract": "EditMEVBoostRelays",
+    "address": "0x27A99a7104190DdA297B222104A6C70A4Ca5A17e",
+    "constructorArgs": [
+      "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
+      "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
+    ]
+  }
+}
