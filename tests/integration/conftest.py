@@ -316,6 +316,129 @@ def top_up_allowed_recipients_evm_script_factory(
     return evm_script_factory
 
 
+@pytest.fixture(scope="module")
+def add_mev_boost_relays_evm_script_factory(
+    accounts,
+    AddMEVBoostRelays,
+    easy_track,
+    lido_contracts,
+    mev_boost_relay_allowed_list,
+    load_deployed_contract,
+    deployer,
+):
+    evm_script_factory = load_deployed_contract("AddMEVBoostRelays")
+
+    trusted_caller = accounts[7]
+
+    if evm_script_factory is None:
+        evm_script_factory = deployer.deploy(AddMEVBoostRelays, trusted_caller, mev_boost_relay_allowed_list)
+
+    assert evm_script_factory.trustedCaller() == trusted_caller
+    assert evm_script_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
+
+    if not easy_track.isEVMScriptFactory(evm_script_factory):
+        num_factories_before = len(easy_track.getEVMScriptFactories())
+        permission = mev_boost_relay_allowed_list.address + mev_boost_relay_allowed_list.add_relay.signature[2:]
+
+        easy_track.addEVMScriptFactory(
+            evm_script_factory,
+            permission,
+            {"from": lido_contracts.aragon.voting},
+        )
+        evm_script_factories = easy_track.getEVMScriptFactories()
+
+        # Check that the factory is added to the EasyTrack
+        assert len(evm_script_factories) == num_factories_before + 1
+        assert evm_script_factory in evm_script_factories
+
+        log.ok(f"EVM Script Factory AddMEVBoostRelays({evm_script_factory}) was added to EasyTrack")
+
+    return evm_script_factory
+
+
+@pytest.fixture(scope="module")
+def remove_mev_boost_relays_evm_script_factory(
+    accounts,
+    RemoveMEVBoostRelays,
+    easy_track,
+    lido_contracts,
+    mev_boost_relay_allowed_list,
+    load_deployed_contract,
+    deployer,
+):
+    evm_script_factory = load_deployed_contract("RemoveMEVBoostRelays")
+
+    trusted_caller = accounts[7]
+
+    if evm_script_factory is None:
+        evm_script_factory = deployer.deploy(RemoveMEVBoostRelays, trusted_caller, mev_boost_relay_allowed_list)
+
+    assert evm_script_factory.trustedCaller() == trusted_caller
+    assert evm_script_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
+
+    if not easy_track.isEVMScriptFactory(evm_script_factory):
+        num_factories_before = len(easy_track.getEVMScriptFactories())
+        permission = mev_boost_relay_allowed_list.address + mev_boost_relay_allowed_list.remove_relay.signature[2:]
+
+        easy_track.addEVMScriptFactory(
+            evm_script_factory,
+            permission,
+            {"from": lido_contracts.aragon.voting},
+        )
+        evm_script_factories = easy_track.getEVMScriptFactories()
+
+        # Check that the factory is added to the EasyTrack
+        assert len(evm_script_factories) == num_factories_before + 1
+        assert evm_script_factory in evm_script_factories
+
+        log.ok(f"EVM Script Factory RemoveMEVBoostRelays({evm_script_factory}) was added to EasyTrack")
+
+    return evm_script_factory
+
+
+@pytest.fixture(scope="module")
+def edit_mev_boost_relays_evm_script_factory(
+    accounts,
+    EditMEVBoostRelays,
+    easy_track,
+    lido_contracts,
+    mev_boost_relay_allowed_list,
+    load_deployed_contract,
+    deployer,
+):
+    evm_script_factory = load_deployed_contract("EditMEVBoostRelays")
+
+    trusted_caller = accounts[7]
+    if evm_script_factory is None:
+        evm_script_factory = deployer.deploy(EditMEVBoostRelays, trusted_caller, mev_boost_relay_allowed_list)
+
+    assert evm_script_factory.trustedCaller() == trusted_caller
+    assert evm_script_factory.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
+
+    if not easy_track.isEVMScriptFactory(evm_script_factory):
+        num_factories_before = len(easy_track.getEVMScriptFactories())
+        permission = (
+            mev_boost_relay_allowed_list.address
+            + mev_boost_relay_allowed_list.add_relay.signature[2:]
+            + mev_boost_relay_allowed_list.address[2:]
+            + mev_boost_relay_allowed_list.remove_relay.signature[2:]
+        )
+        easy_track.addEVMScriptFactory(
+            evm_script_factory,
+            permission,
+            {"from": lido_contracts.aragon.voting},
+        )
+
+        evm_script_factories = easy_track.getEVMScriptFactories()
+        # Check that the factory is added to the EasyTrack
+        assert len(evm_script_factories) == num_factories_before + 1
+        assert evm_script_factory in evm_script_factories
+
+        log.ok(f"EVM Script Factory EditMEVBoostRelays({evm_script_factory}) was added to EasyTrack")
+
+    return evm_script_factory
+
+
 ####
 # ALLOWED RECIPIENTS FIXTURES
 ####

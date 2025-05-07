@@ -44,23 +44,6 @@ def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_tra
     lido_contracts.execute_voting(vote_id)
 
 
-def setup_evm_script_factory(
-    factory, permissions, easy_track, trusted_address, voting, deployer, mev_boost_relay_allowed_list
-):
-    factory_instance = deployer.deploy(factory, trusted_address, mev_boost_relay_allowed_list)
-    assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.mevBoostRelayAllowedList() == mev_boost_relay_allowed_list
-
-    num_factories_before = len(easy_track.getEVMScriptFactories())
-    easy_track.addEVMScriptFactory(factory_instance, permissions, {"from": voting})
-    evm_script_factories = easy_track.getEVMScriptFactories()
-
-    assert len(evm_script_factories) == num_factories_before + 1
-    assert evm_script_factories[0] == factory_instance
-
-    return factory_instance
-
-
 def execute_motion(easy_track, motion_transaction, stranger):
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
     motions = easy_track.getMotions()
@@ -184,11 +167,9 @@ def create_enact_and_check_edit_motion(
 
 @pytest.mark.skip_coverage
 def test_add_mev_boost_relays_allowed_list_happy_path(
-    AddMEVBoostRelays,
+    add_mev_boost_relays_evm_script_factory,
     easy_track,
     trusted_address,
-    voting,
-    deployer,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -201,24 +182,13 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
             relay_uri = mev_boost_relay_allowed_list.get_relays()[i][0]
             mev_boost_relay_allowed_list.remove_relay(relay_uri, {"from": lido_contracts.aragon.agent.address})
 
-    add_relay_permission = mev_boost_relay_allowed_list.address + mev_boost_relay_allowed_list.add_relay.signature[2:]
-    add_mev_boost_relays_factory = setup_evm_script_factory(
-        AddMEVBoostRelays,
-        add_relay_permission,
-        easy_track,
-        trusted_address,
-        voting,
-        deployer,
-        mev_boost_relay_allowed_list,
-    )
-
     create_enact_and_check_add_motion(
         lido_contracts,
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        add_mev_boost_relays_factory,
+        add_mev_boost_relays_evm_script_factory,
         [mev_boost_relay_test_config["relays"][0]],
     )
 
@@ -228,34 +198,22 @@ def test_add_mev_boost_relays_allowed_list_happy_path(
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        add_mev_boost_relays_factory,
+        add_mev_boost_relays_evm_script_factory,
         mev_boost_relay_test_config["relays"],
     )
 
 
 @pytest.mark.skip_coverage
 def test_add_mev_boost_relays_allowed_list_full_list_happy_path(
-    AddMEVBoostRelays,
+    add_mev_boost_relays_evm_script_factory,
     easy_track,
     trusted_address,
-    voting,
-    deployer,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
     mev_boost_relay_test_config,
 ):
     setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track)
-    add_relay_permission = mev_boost_relay_allowed_list.address + mev_boost_relay_allowed_list.add_relay.signature[2:]
-    add_mev_boost_relays_factory = setup_evm_script_factory(
-        AddMEVBoostRelays,
-        add_relay_permission,
-        easy_track,
-        trusted_address,
-        voting,
-        deployer,
-        mev_boost_relay_allowed_list,
-    )
 
     relays_input = list(mev_boost_relay_allowed_list.get_relays())
     for relay in relays_input:
@@ -273,18 +231,16 @@ def test_add_mev_boost_relays_allowed_list_full_list_happy_path(
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        add_mev_boost_relays_factory,
+        add_mev_boost_relays_evm_script_factory,
         relays_input,
     )
 
 
 @pytest.mark.skip_coverage
 def test_remove_mev_boost_relays_allowed_list_happy_path(
-    RemoveMEVBoostRelays,
+    remove_mev_boost_relays_evm_script_factory,
     easy_track,
     trusted_address,
-    voting,
-    deployer,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
@@ -292,26 +248,13 @@ def test_remove_mev_boost_relays_allowed_list_happy_path(
 ):
     setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track)
 
-    remove_relay_permission = (
-        mev_boost_relay_allowed_list.address + mev_boost_relay_allowed_list.remove_relay.signature[2:]
-    )
-    remove_mev_boost_relays_factory = setup_evm_script_factory(
-        RemoveMEVBoostRelays,
-        remove_relay_permission,
-        easy_track,
-        trusted_address,
-        voting,
-        deployer,
-        mev_boost_relay_allowed_list,
-    )
-
     create_enact_and_check_remove_motion(
         lido_contracts,
         easy_track,
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        remove_mev_boost_relays_factory,
+        remove_mev_boost_relays_evm_script_factory,
         [mev_boost_relay_test_config["relays"][0]],
     )
 
@@ -321,37 +264,22 @@ def test_remove_mev_boost_relays_allowed_list_happy_path(
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        remove_mev_boost_relays_factory,
+        remove_mev_boost_relays_evm_script_factory,
         mev_boost_relay_test_config["relays"],
     )
 
 
 @pytest.mark.skip_coverage
 def test_remove_mev_boost_relays_allowed_list_full_list_happy_path(
-    RemoveMEVBoostRelays,
+    remove_mev_boost_relays_evm_script_factory,
     easy_track,
     trusted_address,
-    voting,
-    deployer,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
     mev_boost_relay_test_config,
 ):
     setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track)
-
-    remove_relay_permission = (
-        mev_boost_relay_allowed_list.address + mev_boost_relay_allowed_list.remove_relay.signature[2:]
-    )
-    remove_mev_boost_relays_factory = setup_evm_script_factory(
-        RemoveMEVBoostRelays,
-        remove_relay_permission,
-        easy_track,
-        trusted_address,
-        voting,
-        deployer,
-        mev_boost_relay_allowed_list,
-    )
 
     relays_input = list(mev_boost_relay_allowed_list.get_relays())
     current_relays_count = len(relays_input)
@@ -366,40 +294,22 @@ def test_remove_mev_boost_relays_allowed_list_full_list_happy_path(
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        remove_mev_boost_relays_factory,
+        remove_mev_boost_relays_evm_script_factory,
         relays_input,
     )
 
 
 @pytest.mark.skip_coverage
 def test_edit_mev_boost_relays_allowed_list_happy_path(
-    EditMEVBoostRelays,
+    edit_mev_boost_relays_evm_script_factory,
     easy_track,
     trusted_address,
-    voting,
-    deployer,
     stranger,
     lido_contracts,
     mev_boost_relay_allowed_list,
     mev_boost_relay_test_config,
 ):
     setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track)
-
-    edit_relay_permission = (
-        mev_boost_relay_allowed_list.address
-        + mev_boost_relay_allowed_list.add_relay.signature[2:]
-        + mev_boost_relay_allowed_list.address[2:]
-        + mev_boost_relay_allowed_list.remove_relay.signature[2:]
-    )
-    edit_mev_boost_relays_factory = setup_evm_script_factory(
-        EditMEVBoostRelays,
-        edit_relay_permission,
-        easy_track,
-        trusted_address,
-        voting,
-        deployer,
-        mev_boost_relay_allowed_list,
-    )
 
     modified_relays = [
         (relay[0], f"op {i} updated", not relay[2], relay[3])
@@ -412,7 +322,7 @@ def test_edit_mev_boost_relays_allowed_list_happy_path(
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        edit_mev_boost_relays_factory,
+        edit_mev_boost_relays_evm_script_factory,
         [mev_boost_relay_test_config["relays"][0]],
         [modified_relays[0]],
     )
@@ -423,7 +333,7 @@ def test_edit_mev_boost_relays_allowed_list_happy_path(
         mev_boost_relay_allowed_list,
         stranger,
         trusted_address,
-        edit_mev_boost_relays_factory,
+        edit_mev_boost_relays_evm_script_factory,
         mev_boost_relay_test_config["relays"],
         modified_relays,
     )
