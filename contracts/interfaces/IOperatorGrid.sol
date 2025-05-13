@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2025 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
- pragma solidity 0.8.6;
+pragma solidity 0.8.6;
 
 /// @title Lido's OperatorGrid interface
 interface IOperatorGrid {
@@ -21,14 +21,18 @@ interface IOperatorGrid {
         uint96 liabilityShares;
         uint16 reserveRatioBP;
         uint16 forcedRebalanceThresholdBP;
-        uint16 treasuryFeeBP;
+        uint16 infraFeeBP;
+        uint16 liquidityFeeBP;
+        uint16 reservationFeeBP;
     }
 
     struct TierParams {
         uint256 shareLimit;
         uint256 reserveRatioBP;
         uint256 forcedRebalanceThresholdBP;
-        uint256 treasuryFeeBP;
+        uint256 infraFeeBP;
+        uint256 liquidityFeeBP;
+        uint256 reservationFeeBP;
     }
 
     // -----------------------------
@@ -40,10 +44,10 @@ interface IOperatorGrid {
     /// @param _shareLimit Maximum share limit for the group
     function registerGroup(address _nodeOperator, uint256 _shareLimit) external;
 
-    /// @notice Updates the share limit of a group
-    /// @param _nodeOperator address of the node operator
-    /// @param _shareLimit New share limit value
-    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external;
+    /// @notice Updates the share limits of multiple groups
+    /// @param _nodeOperators addresses of the node operators
+    /// @param _shareLimits New share limit values
+    function updateGroupsShareLimit(address[] calldata _nodeOperators, uint256[] calldata _shareLimits) external;
 
     /// @notice Registers a new tier
     /// @param _nodeOperator address of the node operator
@@ -53,10 +57,10 @@ interface IOperatorGrid {
         TierParams[] calldata _tiers
     ) external;
 
-    /// @notice Alters a tier
-    /// @param _tierId id of the tier
-    /// @param _tierParams new tier params
-    function alterTier(uint256 _tierId, TierParams calldata _tierParams) external;
+    /// @notice Alters multiple tiers
+    /// @param _tierIds array of tier ids to alter
+    /// @param _tierParams array of new tier params
+    function alterTiers(uint256[] calldata _tierIds, TierParams[] calldata _tierParams) external;
 
     // -----------------------------
     //            VIEW FUNCTIONS

@@ -9,7 +9,9 @@ struct TierParams {
     uint256 shareLimit;
     uint256 reserveRatioBP;
     uint256 forcedRebalanceThresholdBP;
-    uint256 treasuryFeeBP;
+    uint256 infraFeeBP;
+    uint256 liquidityFeeBP;
+    uint256 reservationFeeBP;
 }
 
 contract OperatorGridStub is AccessControl {
@@ -31,7 +33,9 @@ contract OperatorGridStub is AccessControl {
         uint96 liabilityShares;
         uint16 reserveRatioBP;
         uint16 forcedRebalanceThresholdBP;
-        uint16 treasuryFeeBP;
+        uint16 infraFeeBP;
+        uint16 liquidityFeeBP;
+        uint16 reservationFeeBP;
     }
 
     struct VaultTier {
@@ -61,7 +65,9 @@ contract OperatorGridStub is AccessControl {
                 shareLimit: uint96(_defaultTierParams.shareLimit),
                 reserveRatioBP: uint16(_defaultTierParams.reserveRatioBP),
                 forcedRebalanceThresholdBP: uint16(_defaultTierParams.forcedRebalanceThresholdBP),
-                treasuryFeeBP: uint16(_defaultTierParams.treasuryFeeBP),
+                infraFeeBP: uint16(_defaultTierParams.infraFeeBP),
+                liquidityFeeBP: uint16(_defaultTierParams.liquidityFeeBP),
+                reservationFeeBP: uint16(_defaultTierParams.reservationFeeBP),
                 liabilityShares: 0
             })
         );
@@ -81,11 +87,18 @@ contract OperatorGridStub is AccessControl {
         $.nodeOperators.push(_nodeOperator);
     }
 
-    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external onlyRole(REGISTRY_ROLE) {
-        require(_nodeOperator != address(0), "Zero node operator address");
+    function updateGroupsShareLimit(address[] calldata _nodeOperators, uint256[] calldata _shareLimits) external onlyRole(REGISTRY_ROLE) {
+        require(_nodeOperators.length == _shareLimits.length, "Array length mismatch");
+        
         ERC7201Storage storage $ = _getStorage();
-        require($.groups[_nodeOperator].operator != address(0), "Group does not exist");
-        $.groups[_nodeOperator].shareLimit = uint96(_shareLimit);
+        uint256 length = _nodeOperators.length;
+        
+        for (uint256 i = 0; i < length; i++) {
+            require(_nodeOperators[i] != address(0), "Zero node operator address");
+            require($.groups[_nodeOperators[i]].operator != address(0), "Group does not exist");
+            
+            $.groups[_nodeOperators[i]].shareLimit = uint96(_shareLimits[i]);
+        }
     }
 
     function group(address _nodeOperator) external view returns (Group memory) {
@@ -103,14 +116,23 @@ contract OperatorGridStub is AccessControl {
         uint128 tierId = uint128($.tiers.length);
         uint256 length = _tiers.length;
         for (uint256 i = 0; i < length; i++) {
-            _validateParams(tierId, _tiers[i].reserveRatioBP, _tiers[i].forcedRebalanceThresholdBP, _tiers[i].treasuryFeeBP);
+            _validateParams(
+                tierId, 
+                _tiers[i].reserveRatioBP, 
+                _tiers[i].forcedRebalanceThresholdBP, 
+                _tiers[i].infraFeeBP, 
+                _tiers[i].liquidityFeeBP, 
+                _tiers[i].reservationFeeBP
+            );
 
             Tier memory tier_ = Tier({
                 operator: _nodeOperator,
                 shareLimit: uint96(_tiers[i].shareLimit),
                 reserveRatioBP: uint16(_tiers[i].reserveRatioBP),
                 forcedRebalanceThresholdBP: uint16(_tiers[i].forcedRebalanceThresholdBP),
-                treasuryFeeBP: uint16(_tiers[i].treasuryFeeBP),
+                infraFeeBP: uint16(_tiers[i].infraFeeBP),
+                liquidityFeeBP: uint16(_tiers[i].liquidityFeeBP),
+                reservationFeeBP: uint16(_tiers[i].reservationFeeBP),
                 liabilityShares: 0
             });
             $.tiers.push(tier_);
@@ -129,30 +151,49 @@ contract OperatorGridStub is AccessControl {
         return _getStorage().tiers.length;
     }
 
-    function alterTier(uint256 _tierId, TierParams calldata _tierParams) external onlyRole(REGISTRY_ROLE) {
+    function alterTiers(uint256[] calldata _tierIds, TierParams[] calldata _tierParams) external onlyRole(REGISTRY_ROLE) {
+        require(_tierIds.length == _tierParams.length, "Array length mismatch");
+        
         ERC7201Storage storage $ = _getStorage();
-        require(_tierId < $.tiers.length, "Tier does not exist");
+        uint256 length = _tierIds.length;
+        
+        for (uint256 i = 0; i < length; i++) {
+            require(_tierIds[i] < $.tiers.length, "Tier does not exist");
 
-        _validateParams(_tierId, _tierParams.reserveRatioBP, _tierParams.forcedRebalanceThresholdBP, _tierParams.treasuryFeeBP);
+            _validateParams(
+                _tierIds[i],
+                _tierParams[i].reserveRatioBP,
+                _tierParams[i].forcedRebalanceThresholdBP,
+                _tierParams[i].infraFeeBP,
+                _tierParams[i].liquidityFeeBP,
+                _tierParams[i].reservationFeeBP
+            );
 
-        Tier storage tier_ = $.tiers[_tierId];
-        tier_.shareLimit = uint96(_tierParams.shareLimit);
-        tier_.reserveRatioBP = uint16(_tierParams.reserveRatioBP);
-        tier_.forcedRebalanceThresholdBP = uint16(_tierParams.forcedRebalanceThresholdBP);
-        tier_.treasuryFeeBP = uint16(_tierParams.treasuryFeeBP);
+            Tier storage tier_ = $.tiers[_tierIds[i]];
+            tier_.shareLimit = uint96(_tierParams[i].shareLimit);
+            tier_.reserveRatioBP = uint16(_tierParams[i].reserveRatioBP);
+            tier_.forcedRebalanceThresholdBP = uint16(_tierParams[i].forcedRebalanceThresholdBP);
+            tier_.infraFeeBP = uint16(_tierParams[i].infraFeeBP);
+            tier_.liquidityFeeBP = uint16(_tierParams[i].liquidityFeeBP);
+            tier_.reservationFeeBP = uint16(_tierParams[i].reservationFeeBP);
+        }
     }
 
     function _validateParams(
       uint256 _tierId,
       uint256 _reserveRatioBP,
       uint256 _forcedRebalanceThresholdBP,
-      uint256 _treasuryFeeBP
+      uint256 _infraFeeBP,
+      uint256 _liquidityFeeBP,
+      uint256 _reservationFeeBP
     ) internal pure {
         require(_reserveRatioBP != 0, "Zero reserve ratio");
         require(_reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
         require(_forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
         require(_forcedRebalanceThresholdBP <= _reserveRatioBP, "Forced rebalance threshold too high");
-        require(_treasuryFeeBP <= TOTAL_BASIS_POINTS, "Treasury fee too high");
+        require(_infraFeeBP <= TOTAL_BASIS_POINTS, "Infra fee too high");
+        require(_liquidityFeeBP <= TOTAL_BASIS_POINTS, "Liquidity fee too high");
+        require(_reservationFeeBP <= TOTAL_BASIS_POINTS, "Reservation fee too high");
     }
 
     function _getStorage() private pure returns (ERC7201Storage storage $) {

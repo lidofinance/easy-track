@@ -12,7 +12,9 @@ contract VaultHubStub is AccessControl {
         uint96 shareLimit;
         uint16 reserveRatioBP;
         uint16 forcedRebalanceThresholdBP;
-        uint16 treasuryFeeBP;
+        uint16 infraFeeBP;
+        uint16 liquidityFeeBP;
+        uint16 reservationFeeBP;
         bool pendingDisconnect;
         uint96 feeSharesCharged;
     }
@@ -36,9 +38,11 @@ contract VaultHubStub is AccessControl {
             1000, // shareLimit
             100, // reserveRatioBP
             50, // forcedRebalanceThresholdBP
-            2000, // treasuryFeeBP
+            1000, // infraFeeBP
+            500, // liquidityFeeBP
+            500, // reservationFeeBP
             false, // pendingDisconnect
-            0
+            0 // feeSharesCharged
         );
     }
 
@@ -46,16 +50,27 @@ contract VaultHubStub is AccessControl {
         return sockets[_vault];
     }
 
-    function updateShareLimit(address _vault, uint256 _shareLimit) external onlyRole(VAULT_MASTER_ROLE) {
-        sockets[_vault].shareLimit = uint96(_shareLimit);
-        emit ShareLimitUpdated(_vault, _shareLimit);
+    function updateShareLimits(address[] calldata _vaults, uint256[] calldata _shareLimits) external onlyRole(VAULT_MASTER_ROLE) {
+        for (uint256 i = 0; i < _vaults.length; i++) {
+            sockets[_vaults[i]].shareLimit = uint96(_shareLimits[i]);
+            emit ShareLimitUpdated(_vaults[i], _shareLimits[i]);
+        }
     }
 
-    function updateTreasuryFeeBP(address _vault, uint256 _treasuryFeeBP) external onlyRole(VAULT_MASTER_ROLE) {
-        sockets[_vault].treasuryFeeBP = uint16(_treasuryFeeBP);
-        emit TreasuryFeeBPUpdated(_vault, _treasuryFeeBP);
+    function updateVaultsFees(
+        address[] calldata _vaults,
+        uint256[] calldata _infraFeesBP,
+        uint256[] calldata _liquidityFeesBP,
+        uint256[] calldata _reservationFeesBP
+    ) external onlyRole(VAULT_MASTER_ROLE) {
+        for (uint256 i = 0; i < _vaults.length; i++) {
+            sockets[_vaults[i]].infraFeeBP = uint16(_infraFeesBP[i]);
+            sockets[_vaults[i]].liquidityFeeBP = uint16(_liquidityFeesBP[i]);
+            sockets[_vaults[i]].reservationFeeBP = uint16(_reservationFeesBP[i]);
+            emit VaultFeesUpdated(_vaults[i], _infraFeesBP[i], _liquidityFeesBP[i], _reservationFeesBP[i]);
+        }
     }
 
     event ShareLimitUpdated(address indexed vault, uint256 newShareLimit);
-    event TreasuryFeeBPUpdated(address indexed vault, uint256 newTreasuryFeeBP);
+    event VaultFeesUpdated(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
 }

@@ -4,7 +4,7 @@ from brownie import reverts, RegisterGroupInOperatorGrid, ZERO_ADDRESS # type: i
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operator, share_limit, tiers):
-    return encode_calldata(["address", "uint256", "(uint256,uint256,uint256,uint256)[]"], [operator, share_limit, tiers])
+    return encode_calldata(["address", "uint256", "(uint256,uint256,uint256,uint256,uint256,uint256)[]"], [operator, share_limit, tiers])
 
 @pytest.fixture(scope="module")
 def register_group_in_operator_grid_factory(owner, operator_grid_stub):
@@ -36,7 +36,7 @@ def test_zero_nodeoperator_address(owner, register_group_in_operator_grid_factor
 def test_group_exists(owner, stranger, register_group_in_operator_grid_factory, operator_grid_stub):
     "Must revert with message 'Group exists' if group already exists"
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
-    CALLDATA = create_calldata(stranger.address, 1000, [(1000, 200, 100, 50)])
+    CALLDATA = create_calldata(stranger.address, 1000, [(1000, 200, 100, 50, 40, 10)])
     with reverts('Group exists'):
         register_group_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
@@ -50,7 +50,7 @@ def test_empty_tiers_array(owner, register_group_in_operator_grid_factory):
 
 def test_create_evm_script(owner, stranger, register_group_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
-    tiers = [(1000, 200, 100, 50)]  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
+    tiers = [(1000, 200, 100, 50, 40, 10)]  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
     input_params = [stranger.address, 1000, tiers]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1], input_params[2])
@@ -70,7 +70,7 @@ def test_create_evm_script(owner, stranger, register_group_in_operator_grid_fact
 
 def test_decode_evm_script_call_data(stranger, register_group_in_operator_grid_factory):
     "Must decode EVMScript call data correctly"
-    tiers = [(1000, 200, 100, 50)]  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
+    tiers = [(1000, 200, 100, 50, 40, 10)]  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
     input_params = [stranger.address, 1000, tiers]
 
     EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1], input_params[2])
@@ -83,4 +83,6 @@ def test_decode_evm_script_call_data(stranger, register_group_in_operator_grid_f
         assert decoded_params[2][i][0] == input_params[2][i][0]  # shareLimit
         assert decoded_params[2][i][1] == input_params[2][i][1]  # reserveRatioBP
         assert decoded_params[2][i][2] == input_params[2][i][2]  # forcedRebalanceThresholdBP
-        assert decoded_params[2][i][3] == input_params[2][i][3]  # treasuryFeeBP
+        assert decoded_params[2][i][3] == input_params[2][i][3]  # infraFeeBP
+        assert decoded_params[2][i][4] == input_params[2][i][4]  # liquidityFeeBP
+        assert decoded_params[2][i][5] == input_params[2][i][5]  # reservationFeeBP

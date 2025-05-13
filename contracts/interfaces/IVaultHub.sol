@@ -10,7 +10,9 @@ interface IVaultHub {
         uint96 shareLimit;
         uint16 reserveRatioBP;
         uint16 forcedRebalanceThresholdBP;
-        uint16 treasuryFeeBP;
+        uint16 infraFeeBP;
+        uint16 liquidityFeeBP;
+        uint16 reservationFeeBP;
         bool pendingDisconnect;
         uint96 feeSharesCharged;
     }
@@ -24,15 +26,22 @@ interface IVaultHub {
     /// @return The VaultSocket struct containing vault configuration and state
     function vaultSocket(address _vault) external view returns (VaultSocket memory);
 
-    /// @notice Updates the share limit for a specific vault
-    /// @param _vault The address of the vault to update
-    /// @param _shareLimit The new share limit value
-    function updateShareLimit(address _vault, uint256 _shareLimit) external;
+    /// @notice updates share limits for multiple vaults at once
+    /// @param _vaults array of vault addresses
+    /// @param _shareLimits array of new share limits
+    function updateShareLimits(address[] calldata _vaults, uint256[] calldata _shareLimits) external;
 
-    /// @notice Updates the treasury fee basis points for a specific vault
-    /// @param _vault The address of the vault to update
-    /// @param _treasuryFeeBP The new treasury fee basis points value
-    function updateTreasuryFeeBP(address _vault, uint256 _treasuryFeeBP) external;
+    /// @notice updates fees for multiple vaults at once
+    /// @param _vaults array of vault addresses
+    /// @param _infraFeesBP array of new infra fees
+    /// @param _liquidityFeesBP array of new liquidity fees
+    /// @param _reservationFeesBP array of new reservation fees
+    function updateVaultsFees(
+        address[] calldata _vaults,
+        uint256[] calldata _infraFeesBP,
+        uint256[] calldata _liquidityFeesBP,
+        uint256[] calldata _reservationFeesBP
+    ) external;
 
     /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
     /// @param _vault vault address

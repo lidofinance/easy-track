@@ -11,10 +11,21 @@ def trusted_address(accounts):
     return accounts[7]
 
 
+# TODO: use real address of operator grid when it will be deployed - remove this fixture and uncomment the setup_operator_grid function
+@pytest.fixture(scope="module", autouse=True)
+def operator_grid(owner, OperatorGridStub, easy_track):
+    default_tier_params = (1000, 200, 100, 50, 40, 10) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
+    operator_grid = owner.deploy(OperatorGridStub, owner, default_tier_params)
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), easy_track.evmScriptExecutor(), {"from": owner})
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": owner})
+    return operator_grid
+
+
 def setup_operator_grid(owner, operator_grid, easy_track, agent):
     evm_executor = easy_track.evmScriptExecutor()
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), evm_executor, {"from": agent})
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
+    # TODO: uncomment this once the operator grid is deployed
+    # operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), evm_executor, {"from": agent})
+    # operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
 
 
 def setup_evm_script_factory(
@@ -58,7 +69,7 @@ def create_enact_and_check_register_group_motion(
 ):
     motion_transaction = easy_track.createMotion(
         register_group_factory.address,
-        encode_calldata(["address", "uint256", "(uint256,uint256,uint256,uint256)[]"], [operator_address, share_limit, tiers_params]),
+        encode_calldata(["address", "uint256", "(uint256,uint256,uint256,uint256,uint256,uint256)[]"], [operator_address, share_limit, tiers_params]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -82,30 +93,35 @@ def create_enact_and_check_register_group_motion(
         assert tier[1] == tiers_params[i][0]  # shareLimit
         assert tier[3] == tiers_params[i][1]  # reserveRatioBP
         assert tier[4] == tiers_params[i][2]  # forcedRebalanceThresholdBP
-        assert tier[5] == tiers_params[i][3]  # treasuryFeeBP
+        assert tier[5] == tiers_params[i][3]  # infraFeeBP
+        assert tier[6] == tiers_params[i][4]  # liquidityFeeBP
+        assert tier[7] == tiers_params[i][5]  # reservationFeeBP
 
 
-def create_enact_and_check_update_share_limit_motion(
+def create_enact_and_check_update_share_limits_motion(
     owner,
     easy_track,
     operator_grid,
     stranger,
     trusted_address,
-    update_share_limit_factory,
-    operator_address,
-    new_share_limit,
+    update_share_limits_factory,
+    operator_addresses,
+    new_share_limits,
 ):
     # First register the group to update
-    operator_grid.registerGroup(operator_address, new_share_limit*2, {"from": owner})
+    for i, operator_address in enumerate(operator_addresses):
+        operator_grid.registerGroup(operator_address, new_share_limits[i]*2, {"from": owner})
     
     # Check initial state
-    group = operator_grid.group(operator_address)
-    assert group[1] == new_share_limit*2  # shareLimit
+    for i, operator_address in enumerate(operator_addresses):
+        group = operator_grid.group(operator_address)
+        assert group[0] == operator_address  # operator
+        assert group[1] == new_share_limits[i]*2  # shareLimit
     
     # Create and execute motion to update share limit
     motion_transaction = easy_track.createMotion(
-        update_share_limit_factory.address,
-        encode_calldata(["address", "uint256"], [operator_address, new_share_limit]),
+        update_share_limits_factory.address,
+        encode_calldata(["address[]", "uint256[]"], [operator_addresses, new_share_limits]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -114,9 +130,10 @@ def create_enact_and_check_update_share_limit_motion(
     execute_motion(easy_track, motion_transaction, stranger)
 
     # Check final state
-    group = operator_grid.group(operator_address)
-    assert group[0] == operator_address  # operator
-    assert group[1] == new_share_limit  # shareLimit
+    for i, operator_address in enumerate(operator_addresses):
+        group = operator_grid.group(operator_address)
+        assert group[0] == operator_address  # operator
+        assert group[1] == new_share_limits[i] # shareLimit
 
 
 def create_enact_and_check_register_tiers_motion(
@@ -139,7 +156,7 @@ def create_enact_and_check_register_tiers_motion(
     # Create and execute motion to register tiers
     motion_transaction = easy_track.createMotion(
         register_tiers_factory.address,
-        encode_calldata(["address", "(uint256,uint256,uint256,uint256)[]"], [operator_address, tiers_params]),
+        encode_calldata(["address", "(uint256,uint256,uint256,uint256,uint256,uint256)[]"], [operator_address, tiers_params]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -157,36 +174,41 @@ def create_enact_and_check_register_tiers_motion(
         assert tier[1] == _tier[0]  # shareLimit
         assert tier[3] == _tier[1]  # reserveRatioBP
         assert tier[4] == _tier[2]  # forcedRebalanceThresholdBP
-        assert tier[5] == _tier[3]  # treasuryFeeBP
+        assert tier[5] == _tier[3]  # infraFeeBP
+        assert tier[6] == _tier[4]  # liquidityFeeBP
+        assert tier[7] == _tier[5]  # reservationFeeBP
 
 
-def create_enact_and_check_alter_tier_motion(
+def create_enact_and_check_alter_tiers_motion(
     owner,
     easy_track,
     operator_grid,
     stranger,
     trusted_address,
-    alter_tier_factory,
-    tier_id,
+    alter_tiers_factory,
+    tier_ids,
     new_tier_params,
 ):
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid.registerGroup(operator_address, 1000, {"from": owner})
-    initial_tier_params = [(1000, 200, 100, 50)]
+    initial_tier_params = [(1000, 200, 100, 50, 40, 10), (1000, 200, 100, 50, 40, 10)]
     operator_grid.registerTiers(operator_address, initial_tier_params, {"from": owner})
 
     # Check initial state
-    tier = operator_grid.tier(tier_id)
-    assert tier[1] == initial_tier_params[0][0]  # shareLimit
-    assert tier[3] == initial_tier_params[0][1]  # reserveRatioBP
-    assert tier[4] == initial_tier_params[0][2]  # forcedRebalanceThresholdBP
-    assert tier[5] == initial_tier_params[0][3]  # treasuryFeeBP
+    for i, tier_id in enumerate(tier_ids):
+        tier = operator_grid.tier(tier_id)
+        assert tier[1] == initial_tier_params[i][0]  # shareLimit
+        assert tier[3] == initial_tier_params[i][1]  # reserveRatioBP
+        assert tier[4] == initial_tier_params[i][2]  # forcedRebalanceThresholdBP
+        assert tier[5] == initial_tier_params[i][3]  # infraFeeBP
+        assert tier[6] == initial_tier_params[i][4]  # liquidityFeeBP
+        assert tier[7] == initial_tier_params[i][5]  # reservationFeeBP
 
     # Create and execute motion to alter tier
     motion_transaction = easy_track.createMotion(
-        alter_tier_factory.address,
-        encode_calldata(["uint256", "(uint256,uint256,uint256,uint256)"], [tier_id, new_tier_params]),
+        alter_tiers_factory.address,
+        encode_calldata(["uint256[]", "(uint256,uint256,uint256,uint256,uint256,uint256)[]"], [tier_ids, new_tier_params]),
         {"from": trusted_address},
     )
     motions = easy_track.getMotions()
@@ -195,12 +217,14 @@ def create_enact_and_check_alter_tier_motion(
     execute_motion(easy_track, motion_transaction, stranger)
 
     # Check final state
-    tier = operator_grid.tier(tier_id)
-    assert tier[1] == new_tier_params[0]  # shareLimit
-    assert tier[3] == new_tier_params[1]  # reserveRatioBP
-    assert tier[4] == new_tier_params[2]  # forcedRebalanceThresholdBP
-    assert tier[5] == new_tier_params[3]  # treasuryFeeBP
-
+    for i, tier_id in enumerate(tier_ids):
+        tier = operator_grid.tier(tier_id)
+        assert tier[1] == new_tier_params[i][0]  # shareLimit
+        assert tier[3] == new_tier_params[i][1]  # reserveRatioBP
+        assert tier[4] == new_tier_params[i][2]  # forcedRebalanceThresholdBP
+        assert tier[5] == new_tier_params[i][3]  # infraFeeBP
+        assert tier[6] == new_tier_params[i][4]  # liquidityFeeBP
+        assert tier[7] == new_tier_params[i][5]  # reservationFeeBP
 
 @pytest.mark.skip_coverage
 def test_register_group_happy_path(
@@ -229,8 +253,8 @@ def test_register_group_happy_path(
 
     # Define tier parameters
     tiers_params = [
-        (500, 200, 100, 50),  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
-        (300, 150, 75, 25),
+        (500, 200, 100, 50, 40, 10),  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
+        (300, 150, 75, 25, 20, 5),
     ]
 
     create_enact_and_check_register_group_motion(
@@ -246,9 +270,9 @@ def test_register_group_happy_path(
 
 
 @pytest.mark.skip_coverage
-def test_update_group_share_limit_happy_path(
+def test_update_groups_share_limit_happy_path(
     owner,
-    UpdateGroupShareLimitInOperatorGrid,
+    UpdateGroupsShareLimitInOperatorGrid,
     easy_track,
     trusted_address,
     voting,
@@ -259,9 +283,9 @@ def test_update_group_share_limit_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
-    permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
-    update_share_limit_factory = setup_evm_script_factory(
-        UpdateGroupShareLimitInOperatorGrid,
+    permission = operator_grid.address + operator_grid.updateGroupsShareLimit.signature[2:]
+    update_share_limits_factory = setup_evm_script_factory(
+        UpdateGroupsShareLimitInOperatorGrid,
         permission,
         easy_track,
         trusted_address,
@@ -270,15 +294,15 @@ def test_update_group_share_limit_happy_path(
         operator_grid,
     )
 
-    create_enact_and_check_update_share_limit_motion(
+    create_enact_and_check_update_share_limits_motion(
         owner,
         easy_track,
         operator_grid,
         stranger,
         trusted_address,
-        update_share_limit_factory,
-        "0x0000000000000000000000000000000000000001",
-        2000,
+        update_share_limits_factory,
+        ["0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002"],
+        [2000, 3000],
     )
 
 
@@ -309,8 +333,8 @@ def test_register_tiers_happy_path(
 
     # Define tier parameters
     tiers_params = [
-        (500, 200, 100, 50),  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
-        (300, 150, 75, 25),
+        (500, 200, 100, 50, 40, 10),  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
+        (300, 150, 75, 25, 20, 5),
     ]
 
     create_enact_and_check_register_tiers_motion(
@@ -326,10 +350,9 @@ def test_register_tiers_happy_path(
 
 
 @pytest.mark.skip_coverage
-@pytest.mark.skip(reason="operatorGrid.tiersCount() logic is not implemented yet") # TODO
-def test_alter_tier_happy_path(
+def test_alter_tiers_happy_path(
     owner,
-    AlterTierInOperatorGrid,
+    AlterTiersInOperatorGrid,
     easy_track,
     trusted_address,
     voting,
@@ -340,9 +363,9 @@ def test_alter_tier_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
-    permission = operator_grid.address + operator_grid.alterTier.signature[2:]
-    alter_tier_factory = setup_evm_script_factory(
-        AlterTierInOperatorGrid,
+    permission = operator_grid.address + operator_grid.alterTiers.signature[2:]
+    alter_tiers_factory = setup_evm_script_factory(
+        AlterTiersInOperatorGrid,
         permission,
         easy_track,
         trusted_address,
@@ -352,15 +375,15 @@ def test_alter_tier_happy_path(
     )
 
     # Define new tier parameters
-    new_tier_params = (2000, 300, 150, 75)  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, treasuryFeeBP)
+    new_tier_params = [(2000, 300, 150, 75, 60, 20), (3000, 400, 200, 100, 80, 30)]  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
 
-    create_enact_and_check_alter_tier_motion(
+    create_enact_and_check_alter_tiers_motion(
         owner,
         easy_track,
         operator_grid,
         stranger,
         trusted_address,
-        alter_tier_factory,
-        1,  # tier ID to alter
+        alter_tiers_factory,
+        [1, 2],  # tier IDs to alter
         new_tier_params,
     )

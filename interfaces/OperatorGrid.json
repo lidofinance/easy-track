@@ -2,9 +2,9 @@
   {
     "inputs": [
       {
-        "internalType": "uint256",
-        "name": "_tierId",
-        "type": "uint256"
+        "internalType": "uint256[]",
+        "name": "_tierIds",
+        "type": "uint256[]"
       },
       {
         "components": [
@@ -25,16 +25,26 @@
           },
           {
             "internalType": "uint256",
-            "name": "treasuryFeeBP",
+            "name": "infraFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "liquidityFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reservationFeeBP",
             "type": "uint256"
           }
         ],
-        "internalType": "struct IOperatorGrid.TierParams",
+        "internalType": "struct IOperatorGrid.TierParams[]",
         "name": "_tierParams",
-        "type": "tuple"
+        "type": "tuple[]"
       }
     ],
-    "name": "alterTier",
+    "name": "alterTiers",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -124,7 +134,17 @@
           },
           {
             "internalType": "uint256",
-            "name": "treasuryFeeBP",
+            "name": "infraFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "liquidityFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reservationFeeBP",
             "type": "uint256"
           }
         ],
@@ -177,7 +197,17 @@
           },
           {
             "internalType": "uint16",
-            "name": "treasuryFeeBP",
+            "name": "infraFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "liquidityFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "reservationFeeBP",
             "type": "uint16"
           }
         ],
@@ -205,48 +235,17 @@
   {
     "inputs": [
       {
-        "internalType": "address",
-        "name": "_nodeOperator",
-        "type": "address"
+        "internalType": "address[]",
+        "name": "_nodeOperators",
+        "type": "address[]"
       },
       {
-        "internalType": "uint256",
-        "name": "_shareLimit",
-        "type": "uint256"
+        "internalType": "uint256[]",
+        "name": "_shareLimits",
+        "type": "uint256[]"
       }
     ],
-    "name": "updateGroupShareLimit",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "REGISTRY_ROLE",
-    "outputs": [
-      {
-        "internalType": "bytes32",
-        "name": "",
-        "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "bytes32",
-        "name": "role",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "grantRole",
+    "name": "updateGroupsShareLimit",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
