@@ -36,7 +36,7 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _shareLimits
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -58,7 +58,7 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _shareLimits
     /// @return Vault addresses and new share limit values
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (address[] memory, uint256[] memory)

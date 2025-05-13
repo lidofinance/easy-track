@@ -36,7 +36,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Creates EVMScript to alter tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: uint256[] _tierIds, IOperatorGrid.TierParams[] _tierParams
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -58,7 +58,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: uint256[] _tierIds, IOperatorGrid.TierParams[] _tierParams
     /// @return Tier IDs and tier parameters which should be updated in OperatorGrid
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (uint256[] memory, IOperatorGrid.TierParams[] memory)

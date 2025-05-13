@@ -36,7 +36,7 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
     /// @notice Creates EVMScript to update group share limits in OperatorGrid
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address[] _nodeOperators, uint256[] _shareLimits
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -58,7 +58,7 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: address[] _nodeOperators, uint256[] _shareLimits
     /// @return Node operator addresses and new share limits which should be updated in OperatorGrid
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (address[] memory, uint256[] memory)

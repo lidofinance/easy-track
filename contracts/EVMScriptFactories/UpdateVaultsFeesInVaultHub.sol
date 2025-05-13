@@ -36,7 +36,7 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @notice Creates EVMScript to update fees for multiple vaults in VaultHub
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _infraFeesBP, uint256[] _liquidityFeesBP, uint256[] _reservationFeesBP
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -63,7 +63,7 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _infraFeesBP, uint256[] _liquidityFeesBP, uint256[] _reservationFeesBP
     /// @return Vault addresses and new fee values in basis points
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (address[] memory, uint256[] memory, uint256[] memory, uint256[] memory)

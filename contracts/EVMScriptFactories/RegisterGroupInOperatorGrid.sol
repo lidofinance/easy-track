@@ -36,7 +36,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Creates EVMScript to register a group and its tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit, IOperatorGrid.TierParams[] _tiers
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -68,7 +68,7 @@ contract RegisterGroupInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: address _nodeOperator, uint256 _shareLimit, IOperatorGrid.TierParams[] _tiers
     /// @return NodeOperator address, group share limit and array of tier parameters which should be added to OperatorGrid
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (address, uint256, IOperatorGrid.TierParams[] memory)
