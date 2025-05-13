@@ -79,4 +79,4 @@ def test_decode_evm_script_call_data(accounts, update_share_limits_factory):
     assert len(decoded_share_limits) == len(share_limits)
     for i in range(len(vaults)):
         assert decoded_vaults[i] == vaults[i]
-        assert decoded_share_limits[i] == share_limits[i] 
+        assert decoded_share_limits[i] == share_limits[i]

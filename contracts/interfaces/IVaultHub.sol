@@ -46,4 +46,4 @@ interface IVaultHub {
     /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
     /// @param _vault vault address
     function connectVault(address _vault) external;
-} 
+}

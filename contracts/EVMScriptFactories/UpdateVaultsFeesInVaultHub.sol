@@ -107,4 +107,4 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(socket.vault != address(0), "Vault not registered");
         }
     }
-} 
+}

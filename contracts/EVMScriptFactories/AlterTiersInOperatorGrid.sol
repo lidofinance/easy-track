@@ -87,4 +87,4 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             require(_tierIds[i] < _tiersCount, "Tier not exists");
         }
     }
-} 
+}

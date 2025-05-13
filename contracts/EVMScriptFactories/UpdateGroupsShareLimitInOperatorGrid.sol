@@ -89,4 +89,4 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
             require(group.operator != address(0), "Group not exists");
         }
     }
-} 
+}

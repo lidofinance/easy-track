@@ -139,4 +139,4 @@ def test_decode_evm_script_call_data(accounts, update_vaults_fees_factory):
     assert decoded_params[0] == vaults  # vaults
     assert decoded_params[1] == infra_fees  # infraFeesBP
     assert decoded_params[2] == liquidity_fees  # liquidityFeesBP
-    assert decoded_params[3] == reservation_fees  # reservationFeesBP 
+    assert decoded_params[3] == reservation_fees  # reservationFeesBP

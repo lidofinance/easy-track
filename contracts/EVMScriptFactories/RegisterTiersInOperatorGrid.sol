@@ -85,4 +85,4 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperator);
         require(group.operator != address(0), "Group not exists");
     }
-} 
+}
