@@ -396,6 +396,11 @@ def operator_grid(lido_contracts):
     return lido_contracts.operator_grid
 
 
+@pytest.fixture(scope="module")
+def vault_hub(lido_contracts):
+    return lido_contracts.vault_hub
+
+
 #########################
 # State Changing Fixtures
 #########################

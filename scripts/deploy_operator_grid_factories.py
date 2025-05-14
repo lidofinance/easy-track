@@ -5,9 +5,9 @@ from brownie import (
     chain,
     network,
     RegisterGroupInOperatorGrid,
-    UpdateGroupShareLimitInOperatorGrid,
+    UpdateGroupsShareLimitInOperatorGrid,
     RegisterTiersInOperatorGrid,
-    AlterTierInOperatorGrid,
+    AlterTiersInOperatorGrid,
     web3,
 )
 
@@ -25,7 +25,7 @@ def get_trusted_caller():
         raise EnvironmentError("Please set TRUSTED_CALLER env variable")
     trusted_caller = os.environ["TRUSTED_CALLER"]
 
-    assert web3.isAddress(trusted_caller), "Trusted caller address is not valid"
+    assert web3.is_address(trusted_caller), "Trusted caller address is not valid"
 
     return trusted_caller
 
@@ -37,7 +37,6 @@ def main():
     deployer = get_deployer_account(get_is_live(), network=network_name)
     trusted_caller = get_trusted_caller()
 
-    evm_script_executor = addresses.evm_script_executor
     operator_grid = addresses.operator_grid
 
     log.br()
@@ -50,7 +49,6 @@ def main():
     log.br()
 
     log.nb("Deployed Operator Grid", operator_grid)
-    log.nb("Deployed EVMScript Executor", evm_script_executor)
 
     log.br()
 
@@ -95,19 +93,19 @@ def deploy_operator_grid_factories(
 
     log.ok("Deployed RegisterGroupInOperatorGrid", register_group_in_operator_grid.address)
 
-    # UpdateGroupShareLimitInOperatorGrid
-    update_group_share_limit_in_operator_grid = UpdateGroupShareLimitInOperatorGrid.deploy(
+    # UpdateGroupsShareLimitInOperatorGrid
+    update_group_share_limit_in_operator_grid = UpdateGroupsShareLimitInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
         tx_params,
     )
-    deployment_artifacts["UpdateGroupShareLimitInOperatorGrid"] = {
-        "contract": "UpdateGroupShareLimitInOperatorGrid",
+    deployment_artifacts["UpdateGroupsShareLimitInOperatorGrid"] = {
+        "contract": "UpdateGroupsShareLimitInOperatorGrid",
         "address": update_group_share_limit_in_operator_grid.address,
         "constructorArgs": [trusted_caller, operator_grid],
     }
 
-    log.ok("Deployed UpdateGroupShareLimitInOperatorGrid", update_group_share_limit_in_operator_grid.address)
+    log.ok("Deployed UpdateGroupsShareLimitInOperatorGrid", update_group_share_limit_in_operator_grid.address)
 
     # RegisterTiersInOperatorGrid
     register_tiers_in_operator_grid = RegisterTiersInOperatorGrid.deploy(
@@ -123,19 +121,19 @@ def deploy_operator_grid_factories(
 
     log.ok("Deployed RegisterTiersInOperatorGrid", register_tiers_in_operator_grid.address)
 
-    # AlterTierInOperatorGrid
-    alter_tier_in_operator_grid = AlterTierInOperatorGrid.deploy(
+    # AlterTiersInOperatorGrid
+    alter_tier_in_operator_grid = AlterTiersInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
         tx_params,
     )
-    deployment_artifacts["AlterTierInOperatorGrid"] = {
-        "contract": "AlterTierInOperatorGrid",
+    deployment_artifacts["AlterTiersInOperatorGrid"] = {
+        "contract": "AlterTiersInOperatorGrid",
         "address": alter_tier_in_operator_grid.address,
         "constructorArgs": [trusted_caller, operator_grid],
     }
 
-    log.ok("Deployed AlterTierInOperatorGrid", alter_tier_in_operator_grid.address)
+    log.ok("Deployed AlterTiersInOperatorGrid", alter_tier_in_operator_grid.address)
 
     log.br()
     log.ok(f"All Operator Grid factories have been deployed. Saving artifacts...")
@@ -146,12 +144,12 @@ def deploy_operator_grid_factories(
         json.dump(deployment_artifacts, outfile)
 
     log.br()
-    log.ok("Deployment artifacts have been saved to", filename, " Publishing...")
+    log.ok("Deployment artifacts have been saved to", filename)
 
     RegisterGroupInOperatorGrid.publish_source(register_group_in_operator_grid)
-    UpdateGroupShareLimitInOperatorGrid.publish_source(update_group_share_limit_in_operator_grid)
+    UpdateGroupsShareLimitInOperatorGrid.publish_source(update_group_share_limit_in_operator_grid)
     RegisterTiersInOperatorGrid.publish_source(register_tiers_in_operator_grid)
-    AlterTierInOperatorGrid.publish_source(alter_tier_in_operator_grid)
+    AlterTiersInOperatorGrid.publish_source(alter_tier_in_operator_grid)
 
     log.br()
     log.ok("All Operator Grid factories have been verified and published.")

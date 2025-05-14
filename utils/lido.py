@@ -23,6 +23,7 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             operator_grid="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add operator grid mainnet address
+            vault_hub="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add vault hub mainnet address
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -78,6 +79,7 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xf320D34b55E89826631C2bb1b3c5b50932cCaB3C",
             locator="0xbE861866E2Ca8f401e2b51b2cFb36A61B0Bf6840",
             operator_grid="0xccb86588b776743CCCB6572D2a6eAFd466012191",
+            vault_hub="0xDfA0B34F28b1b6735d2df150a99048139302a80E",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork, hoodi, hoodi-fork"""
@@ -123,6 +125,7 @@ class LidoContractsSetup:
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
         self.operator_grid = interface.OperatorGrid(lido_addresses.operator_grid)
+        self.vault_hub = interface.VaultHub(lido_addresses.vault_hub)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -161,7 +164,7 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, operator_grid):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, operator_grid, vault_hub):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
@@ -170,7 +173,7 @@ class LidoAddressesSetup:
         self.staking_router = staking_router
         self.locator = locator
         self.operator_grid = operator_grid
-
+        self.vault_hub = vault_hub
 class AragonSetup:
     def __init__(
         self,
