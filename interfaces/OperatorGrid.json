@@ -235,17 +235,17 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_nodeOperators",
-        "type": "address[]"
+        "internalType": "address",
+        "name": "_nodeOperator",
+        "type": "address"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_shareLimits",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_shareLimit",
+        "type": "uint256"
       }
     ],
-    "name": "updateGroupsShareLimit",
+    "name": "updateGroupShareLimit",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

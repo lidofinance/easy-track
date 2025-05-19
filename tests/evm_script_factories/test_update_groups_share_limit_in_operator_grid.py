@@ -67,9 +67,15 @@ def test_create_evm_script(owner, accounts, update_groups_share_limit_in_operato
 
     EVM_SCRIPT_CALLDATA = create_calldata(operators, share_limits)
     evm_script = update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
-    expected_evm_script = encode_call_script(
-        [(operator_grid_stub.address, operator_grid_stub.updateGroupsShareLimit.encode_input(operators, share_limits))]
-    )
+
+    # Create expected EVMScript with individual calls for each operator
+    expected_calls = []
+    for i in range(len(operators)):
+        expected_calls.append((
+            operator_grid_stub.address,
+            operator_grid_stub.updateGroupShareLimit.encode_input(operators[i], share_limits[i])
+        ))
+    expected_evm_script = encode_call_script(expected_calls)
 
     assert evm_script == expected_evm_script
 

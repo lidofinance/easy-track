@@ -4,16 +4,25 @@
 pragma solidity 0.8.6;
 
 interface IVaultHub {
-    struct VaultSocket {
-        address vault;
-        uint96 liabilityShares;
+    struct VaultConnection {
+        address owner;
         uint96 shareLimit;
+        uint96 vaultIndex;
+        bool pendingDisconnect;
         uint16 reserveRatioBP;
         uint16 forcedRebalanceThresholdBP;
         uint16 infraFeeBP;
         uint16 liquidityFeeBP;
         uint16 reservationFeeBP;
-        bool pendingDisconnect;
+    }
+
+    struct VaultRecord {
+        uint128 totalValue;
+        int128 inOutDelta;
+        uint128 locked;
+        uint96 liabilityShares;
+        uint64 reportTimestamp;
+        int128 reportInOutDelta;
         uint96 feeSharesCharged;
     }
 
@@ -21,26 +30,31 @@ interface IVaultHub {
     /// @return The bytes32 role identifier for vault master
     function VAULT_MASTER_ROLE() external view returns (bytes32);
 
-    /// @notice Returns the vault socket information for a given vault address
+    /// @notice Returns the vault connection information for a given vault address
     /// @param _vault The address of the vault to query
-    /// @return The VaultSocket struct containing vault configuration and state
-    function vaultSocket(address _vault) external view returns (VaultSocket memory);
+    /// @return The VaultConnection struct containing vault configuration
+    function vaultConnection(address _vault) external view returns (VaultConnection memory);
 
-    /// @notice updates share limits for multiple vaults at once
-    /// @param _vaults array of vault addresses
-    /// @param _shareLimits array of new share limits
-    function updateShareLimits(address[] calldata _vaults, uint256[] calldata _shareLimits) external;
+    /// @notice Returns the vault record information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultRecord struct containing vault state
+    function vaultRecord(address _vault) external view returns (VaultRecord memory);
 
-    /// @notice updates fees for multiple vaults at once
-    /// @param _vaults array of vault addresses
-    /// @param _infraFeesBP array of new infra fees
-    /// @param _liquidityFeesBP array of new liquidity fees
-    /// @param _reservationFeesBP array of new reservation fees
-    function updateVaultsFees(
-        address[] calldata _vaults,
-        uint256[] calldata _infraFeesBP,
-        uint256[] calldata _liquidityFeesBP,
-        uint256[] calldata _reservationFeesBP
+    /// @notice updates share limit for the vault
+    /// @param _vault vault address
+    /// @param _shareLimit new share limit
+    function updateShareLimit(address _vault, uint256 _shareLimit) external;
+
+    /// @notice updates fees for the vault
+    /// @param _vault vault address
+    /// @param _infraFeeBP new infra fee in basis points
+    /// @param _liquidityFeeBP new liquidity fee in basis points
+    /// @param _reservationFeeBP new reservation fee in basis points
+    function updateVaultFees(
+        address _vault,
+        uint256 _infraFeeBP,
+        uint256 _liquidityFeeBP,
+        uint256 _reservationFeeBP
     ) external;
 
     /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid

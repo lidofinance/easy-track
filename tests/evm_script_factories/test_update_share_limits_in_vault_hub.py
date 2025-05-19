@@ -47,6 +47,16 @@ def test_vault_not_registered(owner, stranger, accounts, update_share_limits_fac
     with reverts('Vault not registered'):
         update_share_limits_factory.createEVMScript(owner, CALLDATA)
 
+def test_share_limit_greater_than_current(owner, stranger, update_share_limits_factory, vault_hub_stub):
+    "Must revert if new share limit is greater than current limit"
+    # Register vault first
+    vault_hub_stub.connectVault(stranger)
+    
+    # Current share limit is 1000, try to set to 2000
+    CALLDATA = create_calldata([stranger.address], [2000])
+    with reverts('Share limit is greater than the current limit'):
+        update_share_limits_factory.createEVMScript(owner, CALLDATA)
+
 def test_create_evm_script(owner, accounts, update_share_limits_factory, vault_hub_stub):
     "Must create correct EVMScript if all requirements are met"
     # Register vaults first
@@ -56,15 +66,19 @@ def test_create_evm_script(owner, accounts, update_share_limits_factory, vault_h
     vault_hub_stub.connectVault(vault2)
     
     vaults = [vault1.address, vault2.address]
-    share_limits = [2000, 3000]
+    share_limits = [500, 500]  # Using values less than current limit (1000)
+    
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, share_limits)
     evm_script = update_share_limits_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
-    # Create expected EVMScript
-    update_share_limits_calldata = vault_hub_stub.updateShareLimits.encode_input(vaults, share_limits)
-    expected_evm_script = encode_call_script([
-        (vault_hub_stub.address, update_share_limits_calldata)
-    ])
+    # Create expected EVMScript with individual calls for each vault
+    expected_calls = []
+    for i in range(len(vaults)):
+        expected_calls.append((
+            vault_hub_stub.address,
+            vault_hub_stub.updateShareLimit.encode_input(vaults[i], share_limits[i])
+        ))
+    expected_evm_script = encode_call_script(expected_calls)
 
     assert evm_script == expected_evm_script
 

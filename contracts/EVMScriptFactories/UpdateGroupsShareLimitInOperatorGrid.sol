@@ -47,12 +47,17 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
 
         _validateInputData(_nodeOperators, _shareLimits);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(operatorGrid),
-                IOperatorGrid.updateGroupsShareLimit.selector,
-                _evmScriptCallData
-            );
+        address[] memory toAddresses = new address[](_nodeOperators.length);
+        bytes4[] memory methodIds = new bytes4[](_nodeOperators.length);
+        bytes[] memory calldataArray = new bytes[](_nodeOperators.length);
+
+        for (uint256 i = 0; i < _nodeOperators.length; i++) {
+            toAddresses[i] = address(operatorGrid);
+            methodIds[i] = IOperatorGrid.updateGroupShareLimit.selector;
+            calldataArray[i] = abi.encode(_nodeOperators[i], _shareLimits[i]);
+        }
+
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method

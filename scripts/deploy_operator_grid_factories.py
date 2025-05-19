@@ -4,7 +4,7 @@ import os
 from brownie import (
     chain,
     network,
-    RegisterGroupInOperatorGrid,
+    RegisterGroupsInOperatorGrid,
     UpdateGroupsShareLimitInOperatorGrid,
     RegisterTiersInOperatorGrid,
     AlterTiersInOperatorGrid,
@@ -79,33 +79,33 @@ def deploy_operator_grid_factories(
 ):
     deployment_artifacts = {}
 
-    # RegisterGroupInOperatorGrid
-    register_group_in_operator_grid = RegisterGroupInOperatorGrid.deploy(
+    # RegisterGroupsInOperatorGrid
+    register_groups_in_operator_grid = RegisterGroupsInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
         tx_params,
     )
-    deployment_artifacts["RegisterGroupInOperatorGrid"] = {
-        "contract": "RegisterGroupInOperatorGrid",
-        "address": register_group_in_operator_grid.address,
+    deployment_artifacts["RegisterGroupsInOperatorGrid"] = {
+        "contract": "RegisterGroupsInOperatorGrid",
+        "address": register_groups_in_operator_grid.address,
         "constructorArgs": [trusted_caller, operator_grid],
     }
 
-    log.ok("Deployed RegisterGroupInOperatorGrid", register_group_in_operator_grid.address)
+    log.ok("Deployed RegisterGroupsInOperatorGrid", register_groups_in_operator_grid.address)
 
     # UpdateGroupsShareLimitInOperatorGrid
-    update_group_share_limit_in_operator_grid = UpdateGroupsShareLimitInOperatorGrid.deploy(
+    update_groups_share_limit_in_operator_grid = UpdateGroupsShareLimitInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
         tx_params,
     )
     deployment_artifacts["UpdateGroupsShareLimitInOperatorGrid"] = {
         "contract": "UpdateGroupsShareLimitInOperatorGrid",
-        "address": update_group_share_limit_in_operator_grid.address,
+        "address": update_groups_share_limit_in_operator_grid.address,
         "constructorArgs": [trusted_caller, operator_grid],
     }
 
-    log.ok("Deployed UpdateGroupsShareLimitInOperatorGrid", update_group_share_limit_in_operator_grid.address)
+    log.ok("Deployed UpdateGroupsShareLimitInOperatorGrid", update_groups_share_limit_in_operator_grid.address)
 
     # RegisterTiersInOperatorGrid
     register_tiers_in_operator_grid = RegisterTiersInOperatorGrid.deploy(
@@ -122,18 +122,18 @@ def deploy_operator_grid_factories(
     log.ok("Deployed RegisterTiersInOperatorGrid", register_tiers_in_operator_grid.address)
 
     # AlterTiersInOperatorGrid
-    alter_tier_in_operator_grid = AlterTiersInOperatorGrid.deploy(
+    alter_tiers_in_operator_grid = AlterTiersInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
         tx_params,
     )
     deployment_artifacts["AlterTiersInOperatorGrid"] = {
         "contract": "AlterTiersInOperatorGrid",
-        "address": alter_tier_in_operator_grid.address,
+        "address": alter_tiers_in_operator_grid.address,
         "constructorArgs": [trusted_caller, operator_grid],
     }
 
-    log.ok("Deployed AlterTiersInOperatorGrid", alter_tier_in_operator_grid.address)
+    log.ok("Deployed AlterTiersInOperatorGrid", alter_tiers_in_operator_grid.address)
 
     log.br()
     log.ok(f"All Operator Grid factories have been deployed. Saving artifacts...")
@@ -146,10 +146,10 @@ def deploy_operator_grid_factories(
     log.br()
     log.ok("Deployment artifacts have been saved to", filename)
 
-    RegisterGroupInOperatorGrid.publish_source(register_group_in_operator_grid)
-    UpdateGroupsShareLimitInOperatorGrid.publish_source(update_group_share_limit_in_operator_grid)
+    RegisterGroupsInOperatorGrid.publish_source(register_groups_in_operator_grid)
+    UpdateGroupsShareLimitInOperatorGrid.publish_source(update_groups_share_limit_in_operator_grid)
     RegisterTiersInOperatorGrid.publish_source(register_tiers_in_operator_grid)
-    AlterTiersInOperatorGrid.publish_source(alter_tier_in_operator_grid)
+    AlterTiersInOperatorGrid.publish_source(alter_tiers_in_operator_grid)
 
     log.br()
     log.ok("All Operator Grid factories have been verified and published.")

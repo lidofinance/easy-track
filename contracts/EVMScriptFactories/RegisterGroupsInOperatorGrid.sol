@@ -1,0 +1,118 @@
+// SPDX-FileCopyrightText: 2025 Lido <info@lido.fi>
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity 0.8.6;
+
+import "../TrustedCaller.sol";
+import "../libraries/EVMScriptCreator.sol";
+import "../interfaces/IEVMScriptFactory.sol";
+import "../interfaces/IOperatorGrid.sol";
+
+/// @author dry914
+/// @notice Creates EVMScript to register a group and its tiers in OperatorGrid
+contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
+
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Address of OperatorGrid
+    IOperatorGrid public immutable operatorGrid;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
+
+    constructor(address _trustedCaller, address _operatorGrid)
+        TrustedCaller(_trustedCaller)
+    {
+        operatorGrid = IOperatorGrid(_operatorGrid);
+    }
+
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Creates EVMScript to register multiple groups and their tiers in OperatorGrid
+    /// @param _creator Address who creates EVMScript
+    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, IOperatorGrid.TierParams[][] _tiers)
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
+        external
+        view
+        override
+        onlyTrustedCaller(_creator)
+        returns (bytes memory)
+    {
+        (
+            address[] memory _nodeOperators,
+            uint256[] memory _shareLimits,
+            IOperatorGrid.TierParams[][] memory _tiers
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
+
+        _validateInputData(_nodeOperators, _shareLimits, _tiers);
+        
+        // Each group requires 2 calls (registerGroup and registerTiers)
+        uint256 totalCalls = _nodeOperators.length * 2;
+        address[] memory toAddresses = new address[](totalCalls);
+        bytes4[] memory methodIds = new bytes4[](totalCalls);
+        bytes[] memory calldataArray = new bytes[](totalCalls);
+
+        for (uint256 i = 0; i < _nodeOperators.length; i++) {
+            // Register group
+            toAddresses[i * 2] = address(operatorGrid);
+            methodIds[i * 2] = IOperatorGrid.registerGroup.selector;
+            calldataArray[i * 2] = abi.encode(_nodeOperators[i], _shareLimits[i]);
+
+            // Register tiers
+            toAddresses[i * 2 + 1] = address(operatorGrid);
+            methodIds[i * 2 + 1] = IOperatorGrid.registerTiers.selector;
+            calldataArray[i * 2 + 1] = abi.encode(_nodeOperators[i], _tiers[i]);
+        }
+
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
+    }
+
+    /// @notice Decodes call data used by createEVMScript method
+    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, IOperatorGrid.TierParams[][] _tiers)
+    /// @return NodeOperator addresses, group share limits and arrays of tier parameters
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
+        external
+        pure
+        returns (address[] memory, uint256[] memory, IOperatorGrid.TierParams[][] memory)
+    {
+        return _decodeEVMScriptCallData(_evmScriptCallData);
+    }
+
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
+
+    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        private
+        pure
+        returns (address[] memory, uint256[] memory, IOperatorGrid.TierParams[][] memory)
+    {
+        return abi.decode(_evmScriptCallData, (address[], uint256[], IOperatorGrid.TierParams[][]));
+    }
+
+    function _validateInputData(
+        address[] memory _nodeOperators,
+        uint256[] memory _shareLimits,
+        IOperatorGrid.TierParams[][] memory _tiers
+    ) private view {
+        require(_nodeOperators.length > 0, "Empty node operators array");
+        require(
+            _nodeOperators.length == _shareLimits.length &&
+            _nodeOperators.length == _tiers.length,
+            "Array length mismatch"
+        );
+
+        for (uint256 i = 0; i < _nodeOperators.length; i++) {
+            require(_nodeOperators[i] != address(0), "Zero node operator");
+            require(_tiers[i].length > 0, "Empty tiers array");
+
+            IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
+            require(group.operator == address(0), "Group exists");
+        }
+    }
+}

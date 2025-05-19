@@ -87,18 +87,12 @@ contract OperatorGridStub is AccessControl {
         $.nodeOperators.push(_nodeOperator);
     }
 
-    function updateGroupsShareLimit(address[] calldata _nodeOperators, uint256[] calldata _shareLimits) external onlyRole(REGISTRY_ROLE) {
-        require(_nodeOperators.length == _shareLimits.length, "Array length mismatch");
-        
+    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external onlyRole(REGISTRY_ROLE) {
+        require(_nodeOperator != address(0), "Zero node operator address");
         ERC7201Storage storage $ = _getStorage();
-        uint256 length = _nodeOperators.length;
+        require($.groups[_nodeOperator].operator != address(0), "Group does not exist");
         
-        for (uint256 i = 0; i < length; i++) {
-            require(_nodeOperators[i] != address(0), "Zero node operator address");
-            require($.groups[_nodeOperators[i]].operator != address(0), "Group does not exist");
-            
-            $.groups[_nodeOperators[i]].shareLimit = uint96(_shareLimits[i]);
-        }
+        $.groups[_nodeOperator].shareLimit = uint96(_shareLimit);
     }
 
     function group(address _nodeOperator) external view returns (Group memory) {

@@ -28,17 +28,17 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_vaults",
-        "type": "address[]"
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_shareLimits",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_shareLimit",
+        "type": "uint256"
       }
     ],
-    "name": "updateShareLimits",
+    "name": "updateShareLimit",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -46,27 +46,27 @@
   {
     "inputs": [
       {
-        "internalType": "address[]",
-        "name": "_vaults",
-        "type": "address[]"
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_infraFeesBP",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_infraFeeBP",
+        "type": "uint256"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_liquidityFeesBP",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_liquidityFeeBP",
+        "type": "uint256"
       },
       {
-        "internalType": "uint256[]",
-        "name": "_reservationFeesBP",
-        "type": "uint256[]"
+        "internalType": "uint256",
+        "name": "_reservationFeeBP",
+        "type": "uint256"
       }
     ],
-    "name": "updateVaultsFees",
+    "name": "updateVaultFees",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -79,24 +79,29 @@
         "type": "address"
       }
     ],
-    "name": "vaultSocket",
+    "name": "vaultConnection",
     "outputs": [
       {
         "components": [
           {
             "internalType": "address",
-            "name": "vault",
+            "name": "owner",
             "type": "address"
-          },
-          {
-            "internalType": "uint96",
-            "name": "liabilityShares",
-            "type": "uint96"
           },
           {
             "internalType": "uint96",
             "name": "shareLimit",
             "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "vaultIndex",
+            "type": "uint96"
+          },
+          {
+            "internalType": "bool",
+            "name": "pendingDisconnect",
+            "type": "bool"
           },
           {
             "internalType": "uint16",
@@ -122,11 +127,57 @@
             "internalType": "uint16",
             "name": "reservationFeeBP",
             "type": "uint16"
+          }
+        ],
+        "internalType": "struct IVaultHub.VaultConnection",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      }
+    ],
+    "name": "vaultRecord",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint128",
+            "name": "totalValue",
+            "type": "uint128"
           },
           {
-            "internalType": "bool",
-            "name": "pendingDisconnect",
-            "type": "bool"
+            "internalType": "int128",
+            "name": "inOutDelta",
+            "type": "int128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "locked",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint96",
+            "name": "liabilityShares",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint64",
+            "name": "reportTimestamp",
+            "type": "uint64"
+          },
+          {
+            "internalType": "int128",
+            "name": "reportInOutDelta",
+            "type": "int128"
           },
           {
             "internalType": "uint96",
@@ -134,7 +185,7 @@
             "type": "uint96"
           }
         ],
-        "internalType": "struct IVaultHub.VaultSocket",
+        "internalType": "struct IVaultHub.VaultRecord",
         "name": "",
         "type": "tuple"
       }

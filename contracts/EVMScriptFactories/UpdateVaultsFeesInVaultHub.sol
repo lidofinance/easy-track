@@ -52,12 +52,22 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _infraFeesBP, _liquidityFeesBP, _reservationFeesBP);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(vaultHub),
-                IVaultHub.updateVaultsFees.selector,
-                _evmScriptCallData
+        address[] memory toAddresses = new address[](_vaults.length);
+        bytes4[] memory methodIds = new bytes4[](_vaults.length);
+        bytes[] memory calldataArray = new bytes[](_vaults.length);
+
+        for (uint256 i = 0; i < _vaults.length; i++) {
+            toAddresses[i] = address(vaultHub);
+            methodIds[i] = IVaultHub.updateVaultFees.selector;
+            calldataArray[i] = abi.encode(
+                _vaults[i],
+                _infraFeesBP[i],
+                _liquidityFeesBP[i],
+                _reservationFeesBP[i]
             );
+        }
+
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method
@@ -103,8 +113,8 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(_liquidityFeesBP[i] <= 10000, "Liquidity fee BP exceeds 100%");
             require(_reservationFeesBP[i] <= 10000, "Reservation fee BP exceeds 100%");
             
-            IVaultHub.VaultSocket memory socket = vaultHub.vaultSocket(_vaults[i]);
-            require(socket.vault != address(0), "Vault not registered");
+            IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vaults[i]);
+            require(connection.owner != address(0), "Vault not registered");
         }
     }
 }

@@ -47,12 +47,17 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _shareLimits);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(vaultHub),
-                IVaultHub.updateShareLimits.selector,
-                _evmScriptCallData
-            );
+        address[] memory toAddresses = new address[](_vaults.length);
+        bytes4[] memory methodIds = new bytes4[](_vaults.length);
+        bytes[] memory calldataArray = new bytes[](_vaults.length);
+
+        for (uint256 i = 0; i < _vaults.length; i++) {
+            toAddresses[i] = address(vaultHub);
+            methodIds[i] = IVaultHub.updateShareLimit.selector;
+            calldataArray[i] = abi.encode(_vaults[i], _shareLimits[i]);
+        }
+
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method
@@ -87,9 +92,10 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), "Zero vault address");
-            
-            IVaultHub.VaultSocket memory socket = vaultHub.vaultSocket(_vaults[i]);
-            require(socket.vault != address(0), "Vault not registered");
+
+            IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vaults[i]);
+            require(connection.owner != address(0), "Vault not registered");
+            require(_shareLimits[i] <= connection.shareLimit, "Share limit is greater than the current limit");
         }
     }
 }

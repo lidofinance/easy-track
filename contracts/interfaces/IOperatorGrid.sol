@@ -44,10 +44,10 @@ interface IOperatorGrid {
     /// @param _shareLimit Maximum share limit for the group
     function registerGroup(address _nodeOperator, uint256 _shareLimit) external;
 
-    /// @notice Updates the share limits of multiple groups
-    /// @param _nodeOperators addresses of the node operators
-    /// @param _shareLimits New share limit values
-    function updateGroupsShareLimit(address[] calldata _nodeOperators, uint256[] calldata _shareLimits) external;
+    /// @notice Updates the share limit of a group
+    /// @param _nodeOperator address of the node operator
+    /// @param _shareLimit New share limit value
+    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external;
 
     /// @notice Registers a new tier
     /// @param _nodeOperator address of the node operator

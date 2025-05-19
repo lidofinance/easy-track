@@ -94,11 +94,19 @@ def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_fact
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
     evm_script = update_vaults_fees_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
-    # Create expected EVMScript
-    update_fees_calldata = vault_hub_stub.updateVaultsFees.encode_input(vaults, infra_fees, liquidity_fees, reservation_fees)
-    expected_evm_script = encode_call_script([
-        (vault_hub_stub.address, update_fees_calldata)
-    ])
+    # Create expected EVMScript with individual call
+    expected_calls = []
+    for i in range(len(vaults)):
+        expected_calls.append((
+            vault_hub_stub.address,
+            vault_hub_stub.updateVaultFees.encode_input(
+                vaults[i],
+                infra_fees[i],
+                liquidity_fees[i],
+                reservation_fees[i]
+            )
+        ))
+    expected_evm_script = encode_call_script(expected_calls)
 
     assert evm_script == expected_evm_script
 
@@ -118,11 +126,19 @@ def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_f
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
     evm_script = update_vaults_fees_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
-    # Create expected EVMScript
-    update_fees_calldata = vault_hub_stub.updateVaultsFees.encode_input(vaults, infra_fees, liquidity_fees, reservation_fees)
-    expected_evm_script = encode_call_script([
-        (vault_hub_stub.address, update_fees_calldata)
-    ])
+    # Create expected EVMScript with individual calls for each vault
+    expected_calls = []
+    for i in range(len(vaults)):
+        expected_calls.append((
+            vault_hub_stub.address,
+            vault_hub_stub.updateVaultFees.encode_input(
+                vaults[i],
+                infra_fees[i],
+                liquidity_fees[i],
+                reservation_fees[i]
+            )
+        ))
+    expected_evm_script = encode_call_script(expected_calls)
 
     assert evm_script == expected_evm_script
 
@@ -134,9 +150,15 @@ def test_decode_evm_script_call_data(accounts, update_vaults_fees_factory):
     reservation_fees = [1000, 500]
     
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
-    decoded_params = update_vaults_fees_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
+    decoded_vaults, decoded_infra_fees, decoded_liquidity_fees, decoded_reservation_fees = update_vaults_fees_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
     
-    assert decoded_params[0] == vaults  # vaults
-    assert decoded_params[1] == infra_fees  # infraFeesBP
-    assert decoded_params[2] == liquidity_fees  # liquidityFeesBP
-    assert decoded_params[3] == reservation_fees  # reservationFeesBP
+    assert len(decoded_vaults) == len(vaults)
+    assert len(decoded_infra_fees) == len(infra_fees)
+    assert len(decoded_liquidity_fees) == len(liquidity_fees)
+    assert len(decoded_reservation_fees) == len(reservation_fees)
+    
+    for i in range(len(vaults)):
+        assert decoded_vaults[i] == vaults[i]
+        assert decoded_infra_fees[i] == infra_fees[i]
+        assert decoded_liquidity_fees[i] == liquidity_fees[i]
+        assert decoded_reservation_fees[i] == reservation_fees[i]

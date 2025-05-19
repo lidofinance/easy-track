@@ -2,8 +2,8 @@ import pytest
 from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS # type: ignore
 from utils.evm_script import encode_call_script, encode_calldata
 
-def create_calldata(operator, tiers):
-    return encode_calldata(["address", "(uint256,uint256,uint256,uint256,uint256,uint256)[]"], [operator, tiers])
+def create_calldata(operators, tiers):
+    return encode_calldata(["address[]", "(uint256,uint256,uint256,uint256,uint256,uint256)[][]"], [operators, tiers])
 
 @pytest.fixture(scope="module")
 def register_tiers_in_operator_grid_factory(owner, operator_grid_stub):
@@ -25,58 +25,94 @@ def test_create_evm_script_called_by_stranger(stranger, register_tiers_in_operat
         register_tiers_in_operator_grid_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 
-def test_zero_nodeoperator_address(owner, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'Zero node operator' if operator is zero address"
-    EMPTY_CALLDATA = create_calldata(ZERO_ADDRESS, [])
-    with reverts('Zero node operator'):
+def test_empty_node_operators_array(owner, register_tiers_in_operator_grid_factory):
+    "Must revert with message 'Empty node operators array' if operators array is empty"
+    EMPTY_CALLDATA = create_calldata([], [[]])
+    with reverts('Empty node operators array'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
+def test_array_length_mismatch(owner, stranger, register_tiers_in_operator_grid_factory):
+    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    CALLDATA = create_calldata([stranger.address], [[], []])
+    with reverts('Array length mismatch'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_zero_node_operator(owner, stranger, register_tiers_in_operator_grid_factory):
+    "Must revert with message 'Zero node operator' if any operator is zero address"
+    CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]])
+    with reverts('Zero node operator'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
 def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Empty tiers array' if tiers array is empty"
+    "Must revert with message 'Empty tiers array' if any tiers array is empty"
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
-    CALLDATA = create_calldata(stranger.address, [])
+    CALLDATA = create_calldata([stranger.address], [[]])
     with reverts('Empty tiers array'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'Group not exists' if group doesn't exist"
+    "Must revert with message 'Group not exists' if any group doesn't exist"
     tiers = [(1000, 200, 100, 50, 40, 10)]
-    CALLDATA = create_calldata(stranger.address, tiers)
+    CALLDATA = create_calldata([stranger.address], [tiers])
     with reverts('Group not exists'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_create_evm_script(owner, accounts, register_tiers_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
-    operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
-    tiers = [(1000, 200, 100, 50, 40, 10)]
-    input_params = [stranger.address, tiers]
+    operator1 = accounts[5]
+    operator2 = accounts[6]
+    
+    # Register operators
+    operator_grid_stub.registerGroup(operator1, 1000, {"from": owner})
+    operator_grid_stub.registerGroup(operator2, 1500, {"from": owner})
+    
+    operators = [operator1.address, operator2.address]
+    tiers = [
+        [(1000, 200, 100, 50, 40, 10)],  # Tiers for operator1
+        [(2000, 300, 150, 75, 60, 20)]   # Tiers for operator2
+    ]
 
-    EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
+    EVM_SCRIPT_CALLDATA = create_calldata(operators, tiers)
     evm_script = register_tiers_in_operator_grid_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
-    expected_evm_script = encode_call_script(
-        [(operator_grid_stub.address, operator_grid_stub.registerTiers.encode_input(input_params[0], input_params[1]))]
-    )
+
+    # Create expected EVMScript with individual calls for each operator
+    expected_calls = []
+    for i in range(len(operators)):
+        expected_calls.append((
+            operator_grid_stub.address,
+            operator_grid_stub.registerTiers.encode_input(operators[i], tiers[i])
+        ))
+    expected_evm_script = encode_call_script(expected_calls)
 
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(stranger, register_tiers_in_operator_grid_factory):
+def test_decode_evm_script_call_data(accounts, register_tiers_in_operator_grid_factory):
     "Must decode EVMScript call data correctly"
-    tiers = [(1000, 200, 100, 50, 40, 10)]
-    input_params = [stranger.address, tiers]
+    operators = [accounts[5].address, accounts[6].address]
+    tiers = [
+        [(1000, 200, 100, 50, 40, 10)],
+        [(2000, 300, 150, 75, 60, 20)]
+    ]
 
-    EVM_SCRIPT_CALLDATA = create_calldata(input_params[0], input_params[1])
-    decoded_params = register_tiers_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
+    EVM_SCRIPT_CALLDATA = create_calldata(operators, tiers)
+    decoded_operators, decoded_tiers = register_tiers_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
     
-    assert decoded_params[0] == input_params[0]
-    assert len(decoded_params[1]) == len(input_params[1])
-    for i in range(len(input_params[1])):
-        assert decoded_params[1][i][0] == input_params[1][i][0]  # shareLimit
-        assert decoded_params[1][i][1] == input_params[1][i][1]  # reserveRatioBP
-        assert decoded_params[1][i][2] == input_params[1][i][2]  # forcedRebalanceThresholdBP
-        assert decoded_params[1][i][3] == input_params[1][i][3]  # infraFeeBP
-        assert decoded_params[1][i][4] == input_params[1][i][4]  # liquidityFeeBP
-        assert decoded_params[1][i][5] == input_params[1][i][5]  # reservationFeeBP
+    assert len(decoded_operators) == len(operators)
+    assert len(decoded_tiers) == len(tiers)
+    
+    for i in range(len(operators)):
+        assert decoded_operators[i] == operators[i]
+        assert len(decoded_tiers[i]) == len(tiers[i])
+        for j in range(len(tiers[i])):
+            assert decoded_tiers[i][j][0] == tiers[i][j][0]  # shareLimit
+            assert decoded_tiers[i][j][1] == tiers[i][j][1]  # reserveRatioBP
+            assert decoded_tiers[i][j][2] == tiers[i][j][2]  # forcedRebalanceThresholdBP
+            assert decoded_tiers[i][j][3] == tiers[i][j][3]  # infraFeeBP
+            assert decoded_tiers[i][j][4] == tiers[i][j][4]  # liquidityFeeBP
+            assert decoded_tiers[i][j][5] == tiers[i][j][5]  # reservationFeeBP

@@ -64,9 +64,9 @@ def create_enact_and_check_update_share_limits_motion(
     
     # Check initial state
     for i, vault_address in enumerate(vault_addresses):
-        socket = vault_hub.vaultSocket(vault_address)
-        assert socket[0] == vault_address  # vault
-        assert socket[2] == 1000  # shareLimit (default from VaultHubStub)
+        connection = vault_hub.vaultConnection(vault_address)
+        assert connection[0] == owner  # owner
+        assert connection[1] == 1000  # shareLimit (default from VaultHubStub)
     
     # Create and execute motion to update share limit
     motion_transaction = easy_track.createMotion(
@@ -81,9 +81,9 @@ def create_enact_and_check_update_share_limits_motion(
 
     # Check final state
     for i, vault_address in enumerate(vault_addresses):
-        socket = vault_hub.vaultSocket(vault_address)
-        assert socket[0] == vault_address  # vault
-        assert socket[2] == new_share_limits[i]  # shareLimit
+        connection = vault_hub.vaultConnection(vault_address)
+        assert connection[0] == owner  # owner
+        assert connection[1] == new_share_limits[i]  # shareLimit
 
 
 def create_enact_and_check_update_vaults_fees_motion(
@@ -104,11 +104,11 @@ def create_enact_and_check_update_vaults_fees_motion(
     
     # Check initial state
     for vault_address in vault_addresses:
-        socket = vault_hub.vaultSocket(vault_address)
-        assert socket[0] == vault_address  # vault
-        assert socket[5] == 1000  # infraFeeBP (default from VaultHubStub)
-        assert socket[6] == 500   # liquidityFeeBP (default from VaultHubStub)
-        assert socket[7] == 500   # reservationFeeBP (default from VaultHubStub)
+        connection = vault_hub.vaultConnection(vault_address)
+        assert connection[0] == owner  # owner
+        assert connection[6] == 1000  # infraFeeBP (default from VaultHubStub)
+        assert connection[7] == 500   # liquidityFeeBP (default from VaultHubStub)
+        assert connection[8] == 500   # reservationFeeBP (default from VaultHubStub)
     
     # Create and execute motion to update fees
     motion_transaction = easy_track.createMotion(
@@ -126,11 +126,11 @@ def create_enact_and_check_update_vaults_fees_motion(
 
     # Check final state
     for i, vault_address in enumerate(vault_addresses):
-        socket = vault_hub.vaultSocket(vault_address)
-        assert socket[0] == vault_address  # vault
-        assert socket[5] == infra_fees_bp[i]  # infraFeeBP
-        assert socket[6] == liquidity_fees_bp[i]  # liquidityFeeBP
-        assert socket[7] == reservation_fees_bp[i]  # reservationFeeBP
+        connection = vault_hub.vaultConnection(vault_address)
+        assert connection[0] == owner  # owner
+        assert connection[6] == infra_fees_bp[i]  # infraFeeBP
+        assert connection[7] == liquidity_fees_bp[i]  # liquidityFeeBP
+        assert connection[8] == reservation_fees_bp[i]  # reservationFeeBP
 
 
 @pytest.mark.skip_coverage
@@ -144,7 +144,7 @@ def test_update_share_limits_happy_path(
     stranger,
     vault_hub,
 ):
-    permission = vault_hub.address + vault_hub.updateShareLimits.signature[2:]
+    permission = vault_hub.address + vault_hub.updateShareLimit.signature[2:]
     update_share_limits_factory = setup_evm_script_factory(
         UpdateShareLimitsInVaultHub,
         permission,
@@ -163,7 +163,7 @@ def test_update_share_limits_happy_path(
         trusted_address,
         update_share_limits_factory,
         ["0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002"],
-        [2000, 3000],
+        [500, 500],  # Using values less than current limit (1000)
     )
 
 
@@ -178,7 +178,7 @@ def test_update_vaults_fees_happy_path(
     stranger,
     vault_hub,
 ):
-    permission = vault_hub.address + vault_hub.updateVaultsFees.signature[2:]
+    permission = vault_hub.address + vault_hub.updateVaultFees.signature[2:]
     update_vaults_fees_factory = setup_evm_script_factory(
         UpdateVaultsFeesInVaultHub,
         permission,
