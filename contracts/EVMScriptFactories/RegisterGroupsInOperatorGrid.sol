@@ -53,23 +53,21 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         
         // Each group requires 2 calls (registerGroup and registerTiers)
         uint256 totalCalls = _nodeOperators.length * 2;
-        address[] memory toAddresses = new address[](totalCalls);
+        address toAddress = address(operatorGrid);
         bytes4[] memory methodIds = new bytes4[](totalCalls);
         bytes[] memory calldataArray = new bytes[](totalCalls);
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             // Register group
-            toAddresses[i * 2] = address(operatorGrid);
             methodIds[i * 2] = IOperatorGrid.registerGroup.selector;
             calldataArray[i * 2] = abi.encode(_nodeOperators[i], _shareLimits[i]);
 
             // Register tiers
-            toAddresses[i * 2 + 1] = address(operatorGrid);
             methodIds[i * 2 + 1] = IOperatorGrid.registerTiers.selector;
             calldataArray[i * 2 + 1] = abi.encode(_nodeOperators[i], _tiers[i]);
         }
 
-        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
+        return EVMScriptCreator.createEVMScript(toAddress, methodIds, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method

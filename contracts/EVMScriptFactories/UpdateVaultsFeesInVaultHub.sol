@@ -52,13 +52,11 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _infraFeesBP, _liquidityFeesBP, _reservationFeesBP);
 
-        address[] memory toAddresses = new address[](_vaults.length);
-        bytes4[] memory methodIds = new bytes4[](_vaults.length);
+        address toAddress = address(vaultHub);
+        bytes4 methodId = IVaultHub.updateVaultFees.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
-            toAddresses[i] = address(vaultHub);
-            methodIds[i] = IVaultHub.updateVaultFees.selector;
             calldataArray[i] = abi.encode(
                 _vaults[i],
                 _infraFeesBP[i],
@@ -67,7 +65,7 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             );
         }
 
-        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
+        return EVMScriptCreator.createEVMScript(toAddress, methodId, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method

@@ -19,13 +19,16 @@ contract VaultHubStub is AccessControl {
     }
 
     struct VaultRecord {
-        uint128 totalValue;
-        int128 inOutDelta;
+        Report report;
         uint128 locked;
         uint96 liabilityShares;
         uint64 reportTimestamp;
-        int128 reportInOutDelta;
-        uint96 feeSharesCharged;
+        int128 inOutDelta;
+    }
+
+    struct Report {
+        uint128 totalValue;
+        int128 inOutDelta;
     }
 
     mapping(address => VaultConnection) connections;
@@ -33,37 +36,35 @@ contract VaultHubStub is AccessControl {
 
     uint96 public vaultIndex = 1;
 
-    bytes32 public constant VAULT_MASTER_ROLE = keccak256("Vaults.VaultHub.VaultMasterRole");
+    bytes32 public constant VAULT_MASTER_ROLE = keccak256("vaults.VaultHub.VaultMasterRole");
+    bytes32 public constant WITHDRAWAL_EXECUTOR_ROLE = keccak256("vaults.VaultHub.WithdrawalExecutorRole");
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(VAULT_MASTER_ROLE, _admin);
+        _setupRole(WITHDRAWAL_EXECUTOR_ROLE, _admin);
     }
 
-    /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
-    /// @param _vault vault address
     function connectVault(address _vault) external {
         connections[_vault] = VaultConnection(
-            msg.sender, // owner
-            1000, // shareLimit
-            vaultIndex++, // vaultIndex
-            false, // pendingDisconnect
-            100, // reserveRatioBP
-            50, // forcedRebalanceThresholdBP
-            1000, // infraFeeBP
-            500, // liquidityFeeBP
-            500 // reservationFeeBP
+            msg.sender,
+            1000,
+            vaultIndex++,
+            false,
+            100,
+            50,
+            1000,
+            500,
+            500
         );
 
         records[_vault] = VaultRecord(
-            0, // totalValue
-            0, // inOutDelta
-            0, // locked
-            0, // liabilityShares
-            uint64(block.timestamp), // reportTimestamp
-            0, // reportInOutDelta
-            0 // feeSharesCharged
+            Report(0, 0),
+            0,
+            0,
+            uint64(block.timestamp),
+            0
         );
     }
 
@@ -92,6 +93,15 @@ contract VaultHubStub is AccessControl {
         emit VaultFeesUpdated(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
     }
 
+    function forceValidatorExits(
+        address _vault,
+        bytes calldata _pubkeys,
+        address _refundRecipient
+    ) external payable onlyRole(WITHDRAWAL_EXECUTOR_ROLE) {
+        emit ValidatorExitsForced(_vault, _pubkeys, _refundRecipient);
+    }
+
     event ShareLimitUpdated(address indexed vault, uint256 newShareLimit);
     event VaultFeesUpdated(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
+    event ValidatorExitsForced(address indexed vault, bytes pubkeys, address refundRecipient);
 }

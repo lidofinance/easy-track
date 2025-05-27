@@ -9,8 +9,8 @@ import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IVaultHub.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
-contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
+contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // VARIABLES
@@ -33,9 +33,9 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
-    /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _shareLimits
+    /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
+    /// @param _creator Address who creates EVMScript and will receive refunds
+    /// @param _evmScriptCallData Encoded: address[] _vaults, bytes[] _pubkeys
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -43,28 +43,35 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address[] memory _vaults, uint256[] memory _shareLimits) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (
+            address[] memory _vaults,
+            bytes[] memory _pubkeys
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(_vaults, _shareLimits);
+        _validateInputData(_vaults, _pubkeys);
 
         address toAddress = address(vaultHub);
-        bytes4 methodId = IVaultHub.updateShareLimit.selector;
+        bytes4 methodId = IVaultHub.forceValidatorExits.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
-            calldataArray[i] = abi.encode(_vaults[i], _shareLimits[i]);
+            calldataArray[i] = abi.encode(
+                _vaults[i],
+                _pubkeys[i],
+                _creator
+            );
         }
 
         return EVMScriptCreator.createEVMScript(toAddress, methodId, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _shareLimits
-    /// @return Vault addresses and new share limit values
+    /// @param _evmScriptCallData Encoded: address[] _vaults, bytes[] _pubkeys
+    /// @return Vault addresses and validator pubkeys
     function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
-        returns (address[] memory, uint256[] memory)
+        returns (address[] memory, bytes[] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -76,24 +83,24 @@ contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address[] memory, uint256[] memory)
+        returns (address[] memory, bytes[] memory)
     {
-        return abi.decode(_evmScriptCallData, (address[], uint256[]));
+        return abi.decode(_evmScriptCallData, (address[], bytes[]));
     }
 
     function _validateInputData(
         address[] memory _vaults,
-        uint256[] memory _shareLimits
+        bytes[] memory _pubkeys
     ) private view {
         require(_vaults.length > 0, "Empty vaults array");
-        require(_vaults.length == _shareLimits.length, "Array length mismatch");
+        require(_vaults.length == _pubkeys.length, "Array length mismatch");
         
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), "Zero vault address");
+            require(_pubkeys[i].length > 0, "Empty pubkeys");
 
             IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vaults[i]);
             require(connection.owner != address(0), "Vault not registered");
-            require(_shareLimits[i] <= connection.shareLimit, "Share limit is greater than the current limit");
         }
     }
 }

@@ -47,17 +47,15 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_nodeOperators, _tiers);
 
-        address[] memory toAddresses = new address[](_nodeOperators.length);
-        bytes4[] memory methodIds = new bytes4[](_nodeOperators.length);
+        address toAddress = address(operatorGrid);
+        bytes4 methodId = IOperatorGrid.registerTiers.selector;
         bytes[] memory calldataArray = new bytes[](_nodeOperators.length);
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
-            toAddresses[i] = address(operatorGrid);
-            methodIds[i] = IOperatorGrid.registerTiers.selector;
             calldataArray[i] = abi.encode(_nodeOperators[i], _tiers[i]);
         }
 
-        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, calldataArray);
+        return EVMScriptCreator.createEVMScript(toAddress, methodId, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method
