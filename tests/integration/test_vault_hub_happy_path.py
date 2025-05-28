@@ -2,6 +2,7 @@ import pytest
 import brownie
 
 from utils.evm_script import encode_calldata
+from utils.test_helpers import assert_event_exists
 
 MOTION_BUFFER_TIME = 100
 
@@ -19,12 +20,32 @@ def vault_hub(owner, VaultHubStub, easy_track):
     return vault_hub
 
 
+@pytest.fixture(scope="module")
+def paymaster(owner, vault_hub, ForceValidatorExitPaymaster, easy_track):
+    paymaster = owner.deploy(ForceValidatorExitPaymaster, owner, vault_hub, easy_track.evmScriptExecutor())
+    # send 10 ETH to paymaster
+    owner.transfer(paymaster, 10 * 10 ** 18)
+    vault_hub.grantRole(vault_hub.WITHDRAWAL_EXECUTOR_ROLE(), paymaster, {"from": owner})
+    return paymaster
+
+
+@pytest.fixture(scope="module")
+def vaults(owner, StakingVaultStub):
+    vaults = [owner.deploy(StakingVaultStub).address for _ in range(2)]
+    return vaults
+
+
 def setup_evm_script_factory(
-    factory, permissions, easy_track, trusted_address, voting, deployer, vault_hub
+    factory, permissions, easy_track, trusted_address, voting, deployer, vault_hub, paymaster=None
 ):
-    factory_instance = deployer.deploy(factory, trusted_address, vault_hub)
-    assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHub() == vault_hub
+    if paymaster is not None:
+        factory_instance = deployer.deploy(factory, trusted_address, paymaster)
+        assert factory_instance.trustedCaller() == trusted_address
+        assert factory_instance.paymaster() == paymaster
+    else:
+        factory_instance = deployer.deploy(factory, trusted_address, vault_hub)
+        assert factory_instance.trustedCaller() == trusted_address
+        assert factory_instance.vaultHub() == vault_hub
 
     num_factories_before = len(easy_track.getEVMScriptFactories())
     easy_track.addEVMScriptFactory(factory_instance, permissions, {"from": voting})
@@ -40,12 +61,13 @@ def execute_motion(easy_track, motion_transaction, stranger):
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
     motions = easy_track.getMotions()
     assert len(motions) == 1
-    easy_track.enactMotion(
+    tx = easy_track.enactMotion(
         motions[0][0],
         motion_transaction.events["MotionCreated"]["_evmScriptCallData"],
         {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
+    return tx
 
 
 def create_enact_and_check_update_share_limits_motion(
@@ -133,6 +155,39 @@ def create_enact_and_check_update_vaults_fees_motion(
         assert connection[8] == reservation_fees_bp[i]  # reservationFeeBP
 
 
+def create_enact_and_check_force_validator_exits_motion(
+    owner,
+    easy_track,
+    vault_hub,
+    stranger,
+    trusted_address,
+    force_validator_exits_factory,
+    vault_addresses,
+    pubkeys,
+    paymaster,
+):
+    # First register the vaults to update
+    for vault_address in vault_addresses:
+        vault_hub.connectVault(vault_address, {"from": owner})
+    
+    # Create and execute motion to force validator exits
+    motion_transaction = easy_track.createMotion(
+        force_validator_exits_factory.address,
+        encode_calldata(["address[]", "bytes[]"], [vault_addresses, pubkeys]),
+        {"from": trusted_address},
+    )
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+    
+    tx = execute_motion(easy_track, motion_transaction, stranger)
+
+    assert len(tx.events["ValidatorExitsForced"]) == len(vault_addresses)
+    for i, event in enumerate(tx.events["ValidatorExitsForced"]):
+        assert event["vault"] == vault_addresses[i]
+        assert event["pubkeys"] == "0x" + pubkeys[i].hex()
+        assert event["refundRecipient"] == paymaster.address
+
+
 @pytest.mark.skip_coverage
 def test_update_share_limits_happy_path(
     owner,
@@ -200,4 +255,42 @@ def test_update_vaults_fees_happy_path(
         [800, 900],  # infra fees BP
         [300, 400],  # liquidity fees BP
         [200, 300],  # reservation fees BP
+    )
+
+
+@pytest.mark.skip_coverage
+def test_force_validator_exits_happy_path(
+    owner,
+    ForceValidatorExitsInVaultHub,
+    easy_track,
+    trusted_address,
+    voting,
+    deployer,
+    stranger,
+    vault_hub,
+    paymaster,
+    vaults,
+):
+    permission = paymaster.address + paymaster.forceValidatorExits.signature[2:]
+    force_validator_exits_factory = setup_evm_script_factory(
+        ForceValidatorExitsInVaultHub,
+        permission,
+        easy_track,
+        trusted_address,
+        voting,
+        deployer,
+        vault_hub,
+        paymaster,
+    )
+
+    create_enact_and_check_force_validator_exits_motion(
+        owner,
+        easy_track,
+        vault_hub,
+        stranger,
+        trusted_address,
+        force_validator_exits_factory,
+        vaults,
+        [b"01" * 48, b"02" * 48],  # 48 bytes per pubkey
+        paymaster,
     )
