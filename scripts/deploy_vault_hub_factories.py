@@ -6,6 +6,8 @@ from brownie import (
     network,
     UpdateShareLimitsInVaultHub,
     UpdateVaultsFeesInVaultHub,
+    ForceValidatorExitsInVaultHub,
+    ForceValidatorExitPaymaster,
     web3,
 )
 
@@ -36,6 +38,7 @@ def main():
     trusted_caller = get_trusted_caller()
 
     vault_hub = addresses.vault_hub
+    evmScriptExecutor = addresses.evm_script_executor
 
     log.br()
 
@@ -65,6 +68,7 @@ def main():
         network_name,
         trusted_caller,
         vault_hub,
+        evmScriptExecutor,
         tx_params,
     )
 
@@ -73,6 +77,7 @@ def deploy_vault_hub_factories(
     network_name,
     trusted_caller,
     vault_hub,
+    evmScriptExecutor,
     tx_params,
 ):
     deployment_artifacts = {}
@@ -105,6 +110,34 @@ def deploy_vault_hub_factories(
 
     log.ok("Deployed UpdateVaultsFeesInVaultHub", update_vaults_fees_in_vault_hub.address)
 
+    # ForceValidatorExitsInVaultHub
+    paymaster = ForceValidatorExitPaymaster.deploy(
+        trusted_caller,
+        vault_hub,
+        evmScriptExecutor,
+        tx_params,
+    )
+    deployment_artifacts["ForceValidatorExitPaymaster"] = {
+        "contract": "ForceValidatorExitPaymaster",
+        "address": paymaster.address,
+        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
+    }
+
+    log.ok("Deployed ForceValidatorExitPaymaster", paymaster.address)
+
+    force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
+        trusted_caller,
+        paymaster.address,
+        tx_params,
+    )
+    deployment_artifacts["ForceValidatorExitsInVaultHub"] = {
+        "contract": "ForceValidatorExitsInVaultHub",
+        "address": force_validator_exits_in_vault_hub.address,
+        "constructorArgs": [trusted_caller, paymaster.address],
+    }
+
+    log.ok("Deployed ForceValidatorExitsInVaultHub", force_validator_exits_in_vault_hub.address)
+
     log.br()
     log.ok(f"All Vault Hub factories have been deployed. Saving artifacts...")
 
@@ -118,6 +151,8 @@ def deploy_vault_hub_factories(
 
     UpdateShareLimitsInVaultHub.publish_source(update_share_limits_in_vault_hub)
     UpdateVaultsFeesInVaultHub.publish_source(update_vaults_fees_in_vault_hub)
+    ForceValidatorExitPaymaster.publish_source(paymaster)
+    ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)
 
     log.br()
     log.ok("All Vault Hub factories have been verified and published.") 

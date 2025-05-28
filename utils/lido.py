@@ -24,6 +24,7 @@ def addresses(network=DEFAULT_NETWORK):
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             operator_grid="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add operator grid mainnet address
             vault_hub="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add vault hub mainnet address
+            evm_script_executor="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add evm script executor mainnet address
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -80,6 +81,7 @@ def addresses(network=DEFAULT_NETWORK):
             locator="0xbE861866E2Ca8f401e2b51b2cFb36A61B0Bf6840",
             operator_grid="0xccb86588b776743CCCB6572D2a6eAFd466012191",
             vault_hub="0xDfA0B34F28b1b6735d2df150a99048139302a80E",
+            evm_script_executor="0x0b6de69562CADa4dBFdCA7e448fdc71D3542A590",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork, hoodi, hoodi-fork"""
@@ -164,7 +166,7 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, operator_grid, vault_hub):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, operator_grid, vault_hub, evm_script_executor):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
@@ -174,6 +176,9 @@ class LidoAddressesSetup:
         self.locator = locator
         self.operator_grid = operator_grid
         self.vault_hub = vault_hub
+        self.evm_script_executor = evm_script_executor
+
+
 class AragonSetup:
     def __init__(
         self,
