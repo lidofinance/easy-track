@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/IVaultHub.sol";
+import "./ForceValidatorExitPaymaster.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
@@ -16,17 +16,20 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
+    /// @notice The length of the public key in bytes
+    uint256 private constant PUBLIC_KEY_LENGTH = 48;
+
     /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
+    ForceValidatorExitPaymaster public immutable paymaster;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub)
+    constructor(address _trustedCaller, address payable _paymaster)
         TrustedCaller(_trustedCaller)
     {
-        vaultHub = IVaultHub(_vaultHub);
+        paymaster = ForceValidatorExitPaymaster(_paymaster);
     }
 
     // -------------
@@ -50,15 +53,14 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _pubkeys);
 
-        address toAddress = address(vaultHub);
-        bytes4 methodId = IVaultHub.forceValidatorExits.selector;
+        address toAddress = address(paymaster);
+        bytes4 methodId = ForceValidatorExitPaymaster.forceValidatorExits.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
             calldataArray[i] = abi.encode(
                 _vaults[i],
-                _pubkeys[i],
-                _creator
+                _pubkeys[i]
             );
         }
 
@@ -98,9 +100,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), "Zero vault address");
             require(_pubkeys[i].length > 0, "Empty pubkeys");
-
-            IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vaults[i]);
-            require(connection.owner != address(0), "Vault not registered");
+            require(_pubkeys[i].length % PUBLIC_KEY_LENGTH == 0, "Invalid pubkeys length");
         }
     }
 }
