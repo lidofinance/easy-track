@@ -100,3 +100,108 @@ def test_decode_evm_script_call_data(alter_tiers_in_operator_grid_factory):
         assert decoded_tier_params[i][3] == tier_params[i][3]  # infraFeeBP
         assert decoded_tier_params[i][4] == tier_params[i][4]  # liquidityFeeBP
         assert decoded_tier_params[i][5] == tier_params[i][5]  # reservationFeeBP
+
+
+def test_zero_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Zero reserve ratio' if reserve ratio is zero"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 0, 100, 50, 40, 10)]  # reserveRatioBP = 0
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Zero reserve ratio"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Reserve ratio too high' if reserve ratio exceeds 100%"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 10001, 100, 50, 40, 10)]  # reserveRatioBP > 10000
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Reserve ratio too high"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_zero_forced_rebalance_threshold(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Zero forced rebalance threshold' if forced rebalance threshold is zero"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 200, 0, 50, 40, 10)]  # forcedRebalanceThresholdBP = 0
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Zero forced rebalance threshold"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Forced rebalance threshold too high' if forced rebalance threshold exceeds reserve ratio"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 200, 300, 50, 40, 10)]  # forcedRebalanceThresholdBP > reserveRatioBP
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Forced rebalance threshold too high"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Infra fee too high' if infra fee exceeds 100%"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 200, 100, 10001, 40, 10)]  # infraFeeBP > 10000
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Infra fee too high"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Liquidity fee too high' if liquidity fee exceeds 100%"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 200, 100, 50, 10001, 10)]  # liquidityFeeBP > 10000
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Liquidity fee too high"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Reservation fee too high' if reservation fee exceeds 100%"
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [0]
+    tier_params = [(1000, 200, 100, 50, 40, 10001)]  # reservationFeeBP > 10000
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("Reservation fee too high"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)

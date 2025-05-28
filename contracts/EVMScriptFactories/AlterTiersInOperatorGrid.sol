@@ -13,6 +13,12 @@ import "../interfaces/IOperatorGrid.sol";
 contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 internal constant TOTAL_BASIS_POINTS = 100_00;
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -85,6 +91,17 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         uint256 _tiersCount = operatorGrid.tiersCount();
         for (uint256 i = 0; i < _tierIds.length; i++) {
             require(_tierIds[i] < _tiersCount, "Tier not exists");
+
+            // Validate tier parameters
+            require(_tierParams[i].reserveRatioBP != 0, "Zero reserve ratio");
+            require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
+
+            require(_tierParams[i].forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
+            require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, "Forced rebalance threshold too high");
+
+            require(_tierParams[i].infraFeeBP <= TOTAL_BASIS_POINTS, "Infra fee too high");
+            require(_tierParams[i].liquidityFeeBP <= TOTAL_BASIS_POINTS, "Liquidity fee too high");
+            require(_tierParams[i].reservationFeeBP <= TOTAL_BASIS_POINTS, "Reservation fee too high");
         }
     }
 }

@@ -13,6 +13,19 @@
     "type": "function"
   },
   {
+    "inputs": [],
+    "name": "WITHDRAWAL_EXECUTOR_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "address",
@@ -23,6 +36,29 @@
     "name": "connectVault",
     "outputs": [],
     "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_pubkeys",
+        "type": "bytes"
+      },
+      {
+        "internalType": "address",
+        "name": "_refundRecipient",
+        "type": "address"
+      }
+    ],
+    "name": "forceValidatorExits",
+    "outputs": [],
+    "stateMutability": "payable",
     "type": "function"
   },
   {
@@ -150,14 +186,21 @@
       {
         "components": [
           {
-            "internalType": "uint128",
-            "name": "totalValue",
-            "type": "uint128"
-          },
-          {
-            "internalType": "int128",
-            "name": "inOutDelta",
-            "type": "int128"
+            "components": [
+              {
+                "internalType": "uint128",
+                "name": "totalValue",
+                "type": "uint128"
+              },
+              {
+                "internalType": "int128",
+                "name": "inOutDelta",
+                "type": "int128"
+              }
+            ],
+            "internalType": "struct IVaultHub.Report",
+            "name": "report",
+            "type": "tuple"
           },
           {
             "internalType": "uint128",
@@ -176,13 +219,8 @@
           },
           {
             "internalType": "int128",
-            "name": "reportInOutDelta",
+            "name": "inOutDelta",
             "type": "int128"
-          },
-          {
-            "internalType": "uint96",
-            "name": "feeSharesCharged",
-            "type": "uint96"
           }
         ],
         "internalType": "struct IVaultHub.VaultRecord",
