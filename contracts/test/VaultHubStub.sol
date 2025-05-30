@@ -37,13 +37,13 @@ contract VaultHubStub is AccessControl {
     uint96 public vaultIndex = 1;
 
     bytes32 public constant VAULT_MASTER_ROLE = keccak256("vaults.VaultHub.VaultMasterRole");
-    bytes32 public constant WITHDRAWAL_EXECUTOR_ROLE = keccak256("vaults.VaultHub.WithdrawalExecutorRole");
+    bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(VAULT_MASTER_ROLE, _admin);
-        _setupRole(WITHDRAWAL_EXECUTOR_ROLE, _admin);
+        _setupRole(VALIDATOR_EXIT_ROLE, _admin);
     }
 
     function connectVault(address _vault) external {
@@ -101,7 +101,7 @@ contract VaultHubStub is AccessControl {
         address _vault,
         bytes calldata _pubkeys,
         address _refundRecipient
-    ) external payable onlyRole(WITHDRAWAL_EXECUTOR_ROLE) {
+    ) external payable onlyRole(VALIDATOR_EXIT_ROLE) {
         // First vault is special and will revert
         if (connections[_vault].vaultIndex == 1) {
             revert("Special vault revert 1");

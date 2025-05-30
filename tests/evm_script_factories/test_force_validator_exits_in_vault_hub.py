@@ -91,3 +91,34 @@ def test_decode_evm_script_call_data(accounts, force_validator_exits_factory):
     for i in range(len(vaults)):
         assert decoded_vaults[i] == vaults[i]
         assert decoded_pubkeys[i] == "0x" + pubkeys[i].hex()
+
+def test_withdraw_eth_called_by_stranger(stranger, adapter):
+    "Must revert with message 'CALLER_IS_FORBIDDEN' if caller isn't trustedCaller"
+    with reverts("CALLER_IS_FORBIDDEN"):
+        adapter.withdrawETH({"from": stranger})
+
+def test_withdraw_eth_no_balance(owner, adapter):
+    "Must revert with message 'No ETH to withdraw' if contract has no ETH balance"
+    with reverts("No ETH to withdraw"):
+        adapter.withdrawETH({"from": owner})
+
+def test_withdraw_eth_success(owner, adapter):
+    "Must successfully withdraw ETH to trusted caller"
+    # Send some ETH to the adapter
+    owner.transfer(adapter, "1 ether")
+    
+    # Get initial balances
+    initial_owner_balance = owner.balance()
+    initial_adapter_balance = adapter.balance()
+    
+    # Withdraw ETH
+    tx = adapter.withdrawETH({"from": owner})
+    
+    # Check final balances
+    assert adapter.balance() == 0, "Adapter should have 0 ETH after withdrawal"
+    # Account for gas costs in the owner's final balance
+    gas_cost = tx.gas_used * tx.gas_price
+    assert owner.balance() == initial_owner_balance + initial_adapter_balance - gas_cost, "Owner should receive all ETH minus gas costs"
+    
+    # Check event
+    assert len(tx.events) == 0, "No events should be emitted"

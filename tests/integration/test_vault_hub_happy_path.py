@@ -25,7 +25,7 @@ def adapter(owner, vault_hub, ForceValidatorExitAdapter, easy_track):
     adapter = owner.deploy(ForceValidatorExitAdapter, owner, vault_hub, easy_track.evmScriptExecutor())
     # send 10 ETH to adapter
     owner.transfer(adapter, 10 * 10 ** 18)
-    vault_hub.grantRole(vault_hub.WITHDRAWAL_EXECUTOR_ROLE(), adapter, {"from": owner})
+    vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), adapter, {"from": owner})
     return adapter
 
 

@@ -51,9 +51,9 @@ interface IVaultHub {
     /// @return The bytes32 role identifier for vault master
     function VAULT_MASTER_ROLE() external view returns (bytes32);
 
-    /// @notice Returns the role identifier for withdrawal executor
-    /// @return The bytes32 role identifier for withdrawal executor
-    function WITHDRAWAL_EXECUTOR_ROLE() external view returns (bytes32);
+    /// @notice Returns the role identifier for validator exit
+    /// @return The bytes32 role identifier for validator exit
+    function VALIDATOR_EXIT_ROLE() external view returns (bytes32);
 
     /// @notice Returns the vault connection information for a given vault address
     /// @param _vault The address of the vault to query
