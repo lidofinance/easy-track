@@ -97,7 +97,7 @@ contract VaultHubStub is AccessControl {
         emit VaultFeesUpdated(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
     }
 
-    function forceValidatorExits(
+    function forceValidatorExit(
         address _vault,
         bytes calldata _pubkeys,
         address _refundRecipient

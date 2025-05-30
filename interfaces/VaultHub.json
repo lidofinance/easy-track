@@ -56,7 +56,7 @@
         "type": "address"
       }
     ],
-    "name": "forceValidatorExits",
+    "name": "forceValidatorExit",
     "outputs": [],
     "stateMutability": "payable",
     "type": "function"

@@ -54,7 +54,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         _validateInputData(_vaults, _pubkeys);
 
         address toAddress = address(adapter);
-        bytes4 methodId = ForceValidatorExitAdapter.forceValidatorExits.selector;
+        bytes4 methodId = ForceValidatorExitAdapter.forceValidatorExit.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {

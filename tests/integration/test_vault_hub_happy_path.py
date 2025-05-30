@@ -280,7 +280,7 @@ def test_force_validator_exits_happy_path(
     adapter,
     vaults,
 ):
-    permission = adapter.address + adapter.forceValidatorExits.signature[2:]
+    permission = adapter.address + adapter.forceValidatorExit.signature[2:]
     force_validator_exits_factory = setup_evm_script_factory(
         ForceValidatorExitsInVaultHub,
         permission,

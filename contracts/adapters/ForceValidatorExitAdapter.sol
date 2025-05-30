@@ -46,7 +46,7 @@ contract ForceValidatorExitAdapter is TrustedCaller {
     /// @notice Function to force validator exits in VaultHub
     /// @param _vault Address of the vault to exit validators from
     /// @param _pubkeys Public keys of the validators to exit
-    function forceValidatorExits(
+    function forceValidatorExit(
         address _vault,
         bytes calldata _pubkeys
     ) external payable {
@@ -55,7 +55,7 @@ contract ForceValidatorExitAdapter is TrustedCaller {
         uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
         uint256 value = IStakingVault(_vault).calculateValidatorWithdrawalFee(numKeys);
 
-        try vaultHub.forceValidatorExits{value: value}(_vault, _pubkeys, address(this)) {} catch {}
+        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {} catch {}
     }
 
     /// @notice Function to withdraw all ETH to TrustedCaller

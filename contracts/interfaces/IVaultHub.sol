@@ -92,7 +92,7 @@ interface IVaultHub {
     /// @param _refundRecipient address that will receive the refund for transaction costs
     /// @dev    When the vault becomes unhealthy, withdrawal committee can force its validators to exit the beacon chain
     ///         This returns the vault's deposited ETH back to vault's balance and allows to rebalance the vault
-    function forceValidatorExits(
+    function forceValidatorExit(
         address _vault,
         bytes calldata _pubkeys,
         address _refundRecipient

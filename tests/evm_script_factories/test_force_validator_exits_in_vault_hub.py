@@ -73,7 +73,7 @@ def test_create_evm_script(owner, accounts, force_validator_exits_factory, adapt
     for i in range(len(vaults)):
         expected_calls.append((
             adapter.address,
-            adapter.forceValidatorExits.encode_input(vaults[i], pubkeys[i])
+            adapter.forceValidatorExit.encode_input(vaults[i], pubkeys[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 
