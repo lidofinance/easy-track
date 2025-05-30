@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, UpdateVaultsFeesInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, UpdateVaultsFeesInVaultHub, UpdateVaultsFeesAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -10,15 +10,19 @@ def create_calldata(vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_b
     )
 
 @pytest.fixture(scope="module")
-def update_vaults_fees_factory(owner, vault_hub_stub):
-    factory = UpdateVaultsFeesInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
-    vault_hub_stub.grantRole(vault_hub_stub.VAULT_MASTER_ROLE(), factory, {"from": owner})
+def adapter(owner, vault_hub_stub):
+    adapter = UpdateVaultsFeesAdapter.deploy(vault_hub_stub, owner, {"from": owner})
+    return adapter
+
+@pytest.fixture(scope="module")
+def update_vaults_fees_factory(owner, adapter):
+    factory = UpdateVaultsFeesInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, vault_hub_stub, update_vaults_fees_factory):
+def test_deploy(owner, adapter, update_vaults_fees_factory):
     "Must deploy contract with correct data"
     assert update_vaults_fees_factory.trustedCaller() == owner
-    assert update_vaults_fees_factory.vaultHub() == vault_hub_stub
+    assert update_vaults_fees_factory.adapter() == adapter
 
 def test_create_evm_script_called_by_stranger(stranger, update_vaults_fees_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -81,7 +85,7 @@ def test_vault_not_registered(owner, stranger, update_vaults_fees_factory):
     with reverts('Vault not registered'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_factory, vault_hub_stub):
+def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_factory, vault_hub_stub, adapter):
     "Must create correct EVMScript for a single vault if all requirements are met"
     # Register vault first
     vault_hub_stub.connectVault(stranger)
@@ -98,8 +102,8 @@ def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_fact
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            vault_hub_stub.address,
-            vault_hub_stub.updateVaultFees.encode_input(
+            adapter.address,
+            adapter.updateVaultFees.encode_input(
                 vaults[i],
                 infra_fees[i],
                 liquidity_fees[i],
@@ -110,7 +114,7 @@ def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_fact
 
     assert evm_script == expected_evm_script
 
-def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_factory, vault_hub_stub):
+def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_factory, vault_hub_stub, adapter):
     "Must create correct EVMScript for multiple vaults if all requirements are met"
     # Register multiple vaults first
     vault1 = accounts[1]
@@ -130,8 +134,8 @@ def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_f
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            vault_hub_stub.address,
-            vault_hub_stub.updateVaultFees.encode_input(
+            adapter.address,
+            adapter.updateVaultFees.encode_input(
                 vaults[i],
                 infra_fees[i],
                 liquidity_fees[i],
