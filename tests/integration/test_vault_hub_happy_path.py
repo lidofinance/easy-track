@@ -35,6 +35,13 @@ def vaults(owner, StakingVaultStub):
     return vaults
 
 
+@pytest.fixture(scope="module", autouse=True)
+def update_vaults_fees_adapter(owner, vault_hub, UpdateVaultsFeesAdapter, easy_track):
+    adapter = owner.deploy(UpdateVaultsFeesAdapter, vault_hub, easy_track.evmScriptExecutor())
+    vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), adapter, {"from": owner})
+    return adapter
+
+
 def setup_evm_script_factory(
     factory, permissions, easy_track, trusted_address, voting, deployer, vault_hub, adapter=None
 ):
@@ -144,15 +151,15 @@ def create_enact_and_check_update_vaults_fees_motion(
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    execute_motion(easy_track, motion_transaction, stranger)
+    tx = execute_motion(easy_track, motion_transaction, stranger)
 
-    # Check final state
-    for i, vault_address in enumerate(vault_addresses):
-        connection = vault_hub.vaultConnection(vault_address)
-        assert connection[0] == owner  # owner
-        assert connection[6] == infra_fees_bp[i]  # infraFeeBP
-        assert connection[7] == liquidity_fees_bp[i]  # liquidityFeeBP
-        assert connection[8] == reservation_fees_bp[i]  # reservationFeeBP
+    # Check that events were emitted only for non-reverting vaults
+    assert len(tx.events["VaultFeesUpdated"]) == len(vault_addresses) - 1  # First vault is special and will revert
+    for i, event in enumerate(tx.events["VaultFeesUpdated"]):
+        assert event["vault"] == vault_addresses[i+1]  # Skip first vault
+        assert event["infraFeeBP"] == infra_fees_bp[i+1]
+        assert event["liquidityFeeBP"] == liquidity_fees_bp[i+1]
+        assert event["reservationFeeBP"] == reservation_fees_bp[i+1]
 
 
 def create_enact_and_check_force_validator_exits_motion(
@@ -232,8 +239,9 @@ def test_update_vaults_fees_happy_path(
     deployer,
     stranger,
     vault_hub,
+    update_vaults_fees_adapter,
 ):
-    permission = vault_hub.address + vault_hub.updateVaultFees.signature[2:]
+    permission = update_vaults_fees_adapter.address + update_vaults_fees_adapter.updateVaultFees.signature[2:]
     update_vaults_fees_factory = setup_evm_script_factory(
         UpdateVaultsFeesInVaultHub,
         permission,
@@ -242,6 +250,7 @@ def test_update_vaults_fees_happy_path(
         voting,
         deployer,
         vault_hub,
+        update_vaults_fees_adapter,
     )
 
     create_enact_and_check_update_vaults_fees_motion(
@@ -251,10 +260,10 @@ def test_update_vaults_fees_happy_path(
         stranger,
         trusted_address,
         update_vaults_fees_factory,
-        ["0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002"],
-        [800, 900],  # infra fees BP
-        [300, 400],  # liquidity fees BP
-        [200, 300],  # reservation fees BP
+        ["0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002", "0x0000000000000000000000000000000000000003"],
+        [800, 900, 1000],  # infra fees BP
+        [300, 400, 500],  # liquidity fees BP
+        [200, 300, 400],  # reservation fees BP
     )
 
 

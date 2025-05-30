@@ -87,6 +87,10 @@ contract VaultHubStub is AccessControl {
         uint256 _liquidityFeeBP,
         uint256 _reservationFeeBP
     ) external onlyRole(VAULT_MASTER_ROLE) {
+        // First vault is special and will revert
+        if (connections[_vault].vaultIndex == 1) {
+            revert("Special vault revert 1");
+        }
         connections[_vault].infraFeeBP = uint16(_infraFeeBP);
         connections[_vault].liquidityFeeBP = uint16(_liquidityFeeBP);
         connections[_vault].reservationFeeBP = uint16(_reservationFeeBP);

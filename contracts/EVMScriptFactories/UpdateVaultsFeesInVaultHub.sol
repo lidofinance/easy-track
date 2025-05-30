@@ -6,6 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
+import "../adapters/UpdateVaultsFeesAdapter.sol";
 import "../interfaces/IVaultHub.sol";
 
 /// @author dry914
@@ -16,17 +17,17 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
+    /// @notice Address of adapter
+    UpdateVaultsFeesAdapter public immutable adapter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub)
+    constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
     {
-        vaultHub = IVaultHub(_vaultHub);
+        adapter = UpdateVaultsFeesAdapter(_adapter);
     }
 
     // -------------
@@ -52,8 +53,8 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _infraFeesBP, _liquidityFeesBP, _reservationFeesBP);
 
-        address toAddress = address(vaultHub);
-        bytes4 methodId = IVaultHub.updateVaultFees.selector;
+        address toAddress = address(adapter);
+        bytes4 methodId = UpdateVaultsFeesAdapter.updateVaultFees.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -111,7 +112,7 @@ contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(_liquidityFeesBP[i] <= 10000, "Liquidity fee BP exceeds 100%");
             require(_reservationFeesBP[i] <= 10000, "Reservation fee BP exceeds 100%");
             
-            IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vaults[i]);
+            IVaultHub.VaultConnection memory connection = adapter.vaultHub().vaultConnection(_vaults[i]);
             require(connection.owner != address(0), "Vault not registered");
         }
     }

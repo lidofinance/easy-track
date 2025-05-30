@@ -8,6 +8,7 @@ from brownie import (
     UpdateVaultsFeesInVaultHub,
     ForceValidatorExitsInVaultHub,
     ForceValidatorExitAdapter,
+    UpdateVaultsFeesAdapter,
     web3,
 )
 
@@ -97,15 +98,28 @@ def deploy_vault_hub_factories(
     log.ok("Deployed UpdateShareLimitsInVaultHub", update_share_limits_in_vault_hub.address)
 
     # UpdateVaultsFeesInVaultHub
+    update_vaults_fees_adapter = UpdateVaultsFeesAdapter.deploy(
+        vault_hub,
+        evmScriptExecutor,
+        tx_params,
+    )
+    deployment_artifacts["UpdateVaultsFeesAdapter"] = {
+        "contract": "UpdateVaultsFeesAdapter",
+        "address": update_vaults_fees_adapter.address,
+        "constructorArgs": [vault_hub, evmScriptExecutor],
+    }
+
+    log.ok("Deployed UpdateVaultsFeesAdapter", update_vaults_fees_adapter.address)
+
     update_vaults_fees_in_vault_hub = UpdateVaultsFeesInVaultHub.deploy(
         trusted_caller,
-        vault_hub,
+        update_vaults_fees_adapter.address,
         tx_params,
     )
     deployment_artifacts["UpdateVaultsFeesInVaultHub"] = {
         "contract": "UpdateVaultsFeesInVaultHub",
         "address": update_vaults_fees_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub],
+        "constructorArgs": [trusted_caller, update_vaults_fees_adapter.address],
     }
 
     log.ok("Deployed UpdateVaultsFeesInVaultHub", update_vaults_fees_in_vault_hub.address)
@@ -150,6 +164,7 @@ def deploy_vault_hub_factories(
     log.ok("Deployment artifacts have been saved to", filename)
 
     UpdateShareLimitsInVaultHub.publish_source(update_share_limits_in_vault_hub)
+    UpdateVaultsFeesAdapter.publish_source(update_vaults_fees_adapter)
     UpdateVaultsFeesInVaultHub.publish_source(update_vaults_fees_in_vault_hub)
     ForceValidatorExitAdapter.publish_source(adapter)
     ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)
