@@ -12,6 +12,10 @@ import "../interfaces/IStakingRouter.sol";
 /// @title ValidatorExitRequestHelpers
 /// @notice Library for creating and validating EVM scripts for validators exit requests.
 library ValidatorExitRequestHelpers {
+    // -------------
+    // STRUCTS
+    // -------------
+
     /// @notice Input data for exit report
     struct ExitRequestInput {
         uint256 moduleId;
@@ -24,6 +28,7 @@ library ValidatorExitRequestHelpers {
     // -------------
     // CONSTANTS
     // -------------
+
     /// @notice Maximum length of validator public key in bytes
     uint256 private constant MAX_PUBKEY_LENGTH = 48;
     /// @notice Maximum number of items to process in one batch, if input data contains more items, it will be split into several batches
@@ -34,6 +39,7 @@ library ValidatorExitRequestHelpers {
     // -------------
     // ERRORS
     // -------------
+
     string private constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
     string private constant ERROR_MAX_BATCH_SIZE_EXCEEDED = "MAX_BATCH_SIZE_EXCEEDED";
 
@@ -46,6 +52,10 @@ library ValidatorExitRequestHelpers {
         "NODE_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE =
         "EXECUTOR_NOT_PERMISSIONED_ON_MODULE";
+
+    // -------------
+    // INTERNAL METHODS
+    // -------------
 
     /// @notice Validates and constructs an EVMScript for submitting exit requests to the Validators Exit Bus Oracle.
     /// @param _validatorsExitBusOracle Address of the Validators Exit Bus Oracle contract
@@ -105,6 +115,10 @@ library ValidatorExitRequestHelpers {
                 batchCallData
             );
     }
+
+    // -------------
+    // PRIVATE METHODS
+    // -------------
 
     /// @notice Hashes a slice of exit requests input data.
     function _hashSlice(

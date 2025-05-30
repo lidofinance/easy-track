@@ -14,6 +14,10 @@ import "../interfaces/IValidatorsExitBusOracle.sol";
 /// @author swissarmytowel
 /// @notice Creates EVMScript to submit exit request hashes to the Validators Exit Bus Oracle (Curated Module).
 contract CuratedModuleExitReportEVMScriptFactory is TrustedCaller, IEVMScriptFactory {
+    // -------------
+    // IMMUTABLES
+    // -------------
+
     /// @notice Address of NodeOperatorsRegistry contract
     INodeOperatorsRegistry public immutable sdvtNodeOperatorsRegistry;
 
