@@ -8,8 +8,8 @@ import "../interfaces/IVaultHub.sol";
 import "../interfaces/IStakingVault.sol";
 
 /// @author dry914
-/// @notice Paymaster contract for forcing validator exits in VaultHub
-contract ForceValidatorExitPaymaster is TrustedCaller {
+/// @notice Adapter contract for forcing validator exits in VaultHub
+contract ForceValidatorExitAdapter is TrustedCaller {
     // -------------
     // VARIABLES
     // -------------
@@ -55,11 +55,7 @@ contract ForceValidatorExitPaymaster is TrustedCaller {
         uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
         uint256 value = IStakingVault(_vault).calculateValidatorWithdrawalFee(numKeys);
 
-        vaultHub.forceValidatorExits{value: value}(
-            _vault,
-            _pubkeys,
-            address(this)
-        );
+        try vaultHub.forceValidatorExits{value: value}(_vault, _pubkeys, address(this)) {} catch {}
     }
 
     /// @notice Function to withdraw all ETH to TrustedCaller

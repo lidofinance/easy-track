@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "./ForceValidatorExitPaymaster.sol";
+import "../adapters/ForceValidatorExitAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
@@ -20,16 +20,16 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
 
     /// @notice Address of VaultHub
-    ForceValidatorExitPaymaster public immutable paymaster;
+    ForceValidatorExitAdapter public immutable adapter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address payable _paymaster)
+    constructor(address _trustedCaller, address payable _adapter)
         TrustedCaller(_trustedCaller)
     {
-        paymaster = ForceValidatorExitPaymaster(_paymaster);
+        adapter = ForceValidatorExitAdapter(_adapter);
     }
 
     // -------------
@@ -53,8 +53,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _pubkeys);
 
-        address toAddress = address(paymaster);
-        bytes4 methodId = ForceValidatorExitPaymaster.forceValidatorExits.selector;
+        address toAddress = address(adapter);
+        bytes4 methodId = ForceValidatorExitAdapter.forceValidatorExits.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {

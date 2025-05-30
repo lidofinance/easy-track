@@ -98,6 +98,10 @@ contract VaultHubStub is AccessControl {
         bytes calldata _pubkeys,
         address _refundRecipient
     ) external payable onlyRole(WITHDRAWAL_EXECUTOR_ROLE) {
+        // First vault is special and will revert
+        if (connections[_vault].vaultIndex == 1) {
+            revert("Special vault revert 1");
+        }
         emit ValidatorExitsForced(_vault, _pubkeys, _refundRecipient);
     }
 

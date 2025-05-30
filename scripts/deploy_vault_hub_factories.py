@@ -7,7 +7,7 @@ from brownie import (
     UpdateShareLimitsInVaultHub,
     UpdateVaultsFeesInVaultHub,
     ForceValidatorExitsInVaultHub,
-    ForceValidatorExitPaymaster,
+    ForceValidatorExitAdapter,
     web3,
 )
 
@@ -111,29 +111,29 @@ def deploy_vault_hub_factories(
     log.ok("Deployed UpdateVaultsFeesInVaultHub", update_vaults_fees_in_vault_hub.address)
 
     # ForceValidatorExitsInVaultHub
-    paymaster = ForceValidatorExitPaymaster.deploy(
+    adapter = ForceValidatorExitAdapter.deploy(
         trusted_caller,
         vault_hub,
         evmScriptExecutor,
         tx_params,
     )
-    deployment_artifacts["ForceValidatorExitPaymaster"] = {
-        "contract": "ForceValidatorExitPaymaster",
-        "address": paymaster.address,
+    deployment_artifacts["ForceValidatorExitAdapter"] = {
+        "contract": "ForceValidatorExitAdapter",
+        "address": adapter.address,
         "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
     }
 
-    log.ok("Deployed ForceValidatorExitPaymaster", paymaster.address)
+    log.ok("Deployed ForceValidatorExitAdapter", adapter.address)
 
     force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
         trusted_caller,
-        paymaster.address,
+        adapter.address,
         tx_params,
     )
     deployment_artifacts["ForceValidatorExitsInVaultHub"] = {
         "contract": "ForceValidatorExitsInVaultHub",
         "address": force_validator_exits_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, paymaster.address],
+        "constructorArgs": [trusted_caller, adapter.address],
     }
 
     log.ok("Deployed ForceValidatorExitsInVaultHub", force_validator_exits_in_vault_hub.address)
@@ -151,7 +151,7 @@ def deploy_vault_hub_factories(
 
     UpdateShareLimitsInVaultHub.publish_source(update_share_limits_in_vault_hub)
     UpdateVaultsFeesInVaultHub.publish_source(update_vaults_fees_in_vault_hub)
-    ForceValidatorExitPaymaster.publish_source(paymaster)
+    ForceValidatorExitAdapter.publish_source(adapter)
     ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)
 
     log.br()

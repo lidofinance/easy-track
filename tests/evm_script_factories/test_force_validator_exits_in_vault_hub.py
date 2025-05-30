@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, ForceValidatorExitsInVaultHub, ForceValidatorExitPaymaster, ZERO_ADDRESS # type: ignore
+from brownie import reverts, ForceValidatorExitsInVaultHub, ForceValidatorExitAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,19 +7,19 @@ def create_calldata(vaults, pubkeys):
     return encode_calldata(["address[]", "bytes[]"], [vaults, pubkeys])
 
 @pytest.fixture(scope="module")
-def force_validator_exits_factory(owner, paymaster):
-    factory = ForceValidatorExitsInVaultHub.deploy(owner, paymaster, {"from": owner})
+def force_validator_exits_factory(owner, adapter):
+    factory = ForceValidatorExitsInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
 @pytest.fixture(scope="module")
-def paymaster(owner, vault_hub_stub):
-    paymaster = ForceValidatorExitPaymaster.deploy(owner, vault_hub_stub, owner, {"from": owner})
-    return paymaster
+def adapter(owner, vault_hub_stub):
+    adapter = ForceValidatorExitAdapter.deploy(owner, vault_hub_stub, owner, {"from": owner})
+    return adapter
 
-def test_deploy(owner, vault_hub_stub, force_validator_exits_factory, paymaster):
+def test_deploy(owner, vault_hub_stub, force_validator_exits_factory, adapter):
     "Must deploy contract with correct data"
     assert force_validator_exits_factory.trustedCaller() == owner
-    assert force_validator_exits_factory.paymaster() == paymaster
+    assert force_validator_exits_factory.adapter() == adapter
 
 def test_create_evm_script_called_by_stranger(stranger, force_validator_exits_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -57,7 +57,7 @@ def test_invalid_pubkeys_length(owner, stranger, force_validator_exits_factory):
     with reverts('Invalid pubkeys length'):
         force_validator_exits_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script(owner, accounts, force_validator_exits_factory, paymaster):
+def test_create_evm_script(owner, accounts, force_validator_exits_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
     vault1 = accounts[5]
     vault2 = accounts[6]
@@ -72,8 +72,8 @@ def test_create_evm_script(owner, accounts, force_validator_exits_factory, payma
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            paymaster.address,
-            paymaster.forceValidatorExits.encode_input(vaults[i], pubkeys[i])
+            adapter.address,
+            adapter.forceValidatorExits.encode_input(vaults[i], pubkeys[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 

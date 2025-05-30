@@ -20,28 +20,28 @@ def vault_hub(owner, VaultHubStub, easy_track):
     return vault_hub
 
 
-@pytest.fixture(scope="module")
-def paymaster(owner, vault_hub, ForceValidatorExitPaymaster, easy_track):
-    paymaster = owner.deploy(ForceValidatorExitPaymaster, owner, vault_hub, easy_track.evmScriptExecutor())
-    # send 10 ETH to paymaster
-    owner.transfer(paymaster, 10 * 10 ** 18)
-    vault_hub.grantRole(vault_hub.WITHDRAWAL_EXECUTOR_ROLE(), paymaster, {"from": owner})
-    return paymaster
+@pytest.fixture(scope="module", autouse=True)
+def adapter(owner, vault_hub, ForceValidatorExitAdapter, easy_track):
+    adapter = owner.deploy(ForceValidatorExitAdapter, owner, vault_hub, easy_track.evmScriptExecutor())
+    # send 10 ETH to adapter
+    owner.transfer(adapter, 10 * 10 ** 18)
+    vault_hub.grantRole(vault_hub.WITHDRAWAL_EXECUTOR_ROLE(), adapter, {"from": owner})
+    return adapter
 
 
 @pytest.fixture(scope="module")
 def vaults(owner, StakingVaultStub):
-    vaults = [owner.deploy(StakingVaultStub).address for _ in range(2)]
+    vaults = [owner.deploy(StakingVaultStub).address for _ in range(3)]
     return vaults
 
 
 def setup_evm_script_factory(
-    factory, permissions, easy_track, trusted_address, voting, deployer, vault_hub, paymaster=None
+    factory, permissions, easy_track, trusted_address, voting, deployer, vault_hub, adapter=None
 ):
-    if paymaster is not None:
-        factory_instance = deployer.deploy(factory, trusted_address, paymaster)
+    if adapter is not None:
+        factory_instance = deployer.deploy(factory, trusted_address, adapter)
         assert factory_instance.trustedCaller() == trusted_address
-        assert factory_instance.paymaster() == paymaster
+        assert factory_instance.adapter() == adapter
     else:
         factory_instance = deployer.deploy(factory, trusted_address, vault_hub)
         assert factory_instance.trustedCaller() == trusted_address
@@ -164,7 +164,7 @@ def create_enact_and_check_force_validator_exits_motion(
     force_validator_exits_factory,
     vault_addresses,
     pubkeys,
-    paymaster,
+    adapter,
 ):
     # First register the vaults to update
     for vault_address in vault_addresses:
@@ -181,11 +181,11 @@ def create_enact_and_check_force_validator_exits_motion(
     
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
-    assert len(tx.events["ValidatorExitsForced"]) == len(vault_addresses)
+    assert len(tx.events["ValidatorExitsForced"]) == len(vault_addresses) - 1 # First vault is special and will revert
     for i, event in enumerate(tx.events["ValidatorExitsForced"]):
-        assert event["vault"] == vault_addresses[i]
-        assert event["pubkeys"] == "0x" + pubkeys[i].hex()
-        assert event["refundRecipient"] == paymaster.address
+        assert event["vault"] == vault_addresses[i+1]
+        assert event["pubkeys"] == "0x" + pubkeys[i+1].hex()
+        assert event["refundRecipient"] == adapter.address
 
 
 @pytest.mark.skip_coverage
@@ -268,10 +268,10 @@ def test_force_validator_exits_happy_path(
     deployer,
     stranger,
     vault_hub,
-    paymaster,
+    adapter,
     vaults,
 ):
-    permission = paymaster.address + paymaster.forceValidatorExits.signature[2:]
+    permission = adapter.address + adapter.forceValidatorExits.signature[2:]
     force_validator_exits_factory = setup_evm_script_factory(
         ForceValidatorExitsInVaultHub,
         permission,
@@ -280,7 +280,7 @@ def test_force_validator_exits_happy_path(
         voting,
         deployer,
         vault_hub,
-        paymaster,
+        adapter,
     )
 
     create_enact_and_check_force_validator_exits_motion(
@@ -291,6 +291,6 @@ def test_force_validator_exits_happy_path(
         trusted_address,
         force_validator_exits_factory,
         vaults,
-        [b"01" * 48, b"02" * 48],  # 48 bytes per pubkey
-        paymaster,
+        [b"01" * 48, b"02" * 48, b"03" * 48],  # 48 bytes per pubkey
+        adapter,
     )
