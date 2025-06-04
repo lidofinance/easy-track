@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: 2024 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2025 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
 pragma solidity 0.8.6;
@@ -46,10 +46,10 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to settle EL stealing penalty for the specific node operators on CSM
+    /// @notice Creates EVMScript to set treeRoot and treeCid for CSM's VettedGate
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds
-    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+    /// @param _evmScriptCallData Encoded: bytes32 treeRoot and string treeCid
+    function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
         override
@@ -69,9 +69,10 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds
-    /// @return Node operator IDs to settle EL stealing penalty
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    /// @param _evmScriptCallData Encoded: bytes32 treeRoot and string treeCid
+    /// @return treeRoot The root of the tree
+    /// @return treeCid The CID of the tree
+    function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
         returns (bytes32, string memory)
@@ -83,7 +84,7 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+    function _decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         private
         pure
         returns (bytes32, string memory)
