@@ -13,7 +13,7 @@ import "../interfaces/IValidatorsExitBusOracle.sol";
 
 /// @author swissarmytowel
 /// @notice Creates EVMScript to submit exit requests to the Validators Exit Bus Oracle (SDVT module).
-contract SDVTExitReportEVMScriptFactory is TrustedCaller, IEVMScriptFactory {
+contract SDVTSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactory {
     // -------------
     // IMMUTABLES
     // -------------
