@@ -24,6 +24,4 @@ interface IStakingRouter {
     function getStakingModule(
         uint256 _stakingModuleId
     ) external view returns (StakingModule memory);
-
-    function getStakingModules() external view returns (StakingModule[] memory res);
 }

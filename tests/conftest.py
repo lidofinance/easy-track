@@ -309,6 +309,17 @@ def top_up_allowed_recipients(
     return top_up_factory
 
 
+@pytest.fixture(scope="module")
+def validator_exit_bus_oracle(owner, ValidatorExitBusOracleStub):
+    return owner.deploy(ValidatorExitBusOracleStub)
+
+
+@pytest.fixture(scope="module")
+def staking_router_stub(owner, StakingRouterStub):
+    """A stub for the staking router, used in tests."""
+    return owner.deploy(StakingRouterStub)
+
+
 ##########
 # INTERFACES
 ##########
@@ -458,3 +469,20 @@ def vote_id_from_env() -> Optional[int]:
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def submit_exit_hashes_factory_config():
+    return {
+        "pubkeys": [
+            ("0x" + "a" * 48).encode("utf-8"),
+            ("0x" + "b" * 48).encode("utf-8"),
+        ],
+        "data_format": 1,
+        "max_batch_size": 600,
+        "max_pubkey_length": 48,
+        "module_ids": {
+            "curated": 1,
+            "sdvt": 2,
+        },
+    }

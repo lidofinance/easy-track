@@ -12,11 +12,16 @@ contract NodeOperatorsRegistryStub {
     uint64 public stakingLimit = 200;
     uint64 public totalSigningKeys = 400;
 
+    uint256 internal _nodeOperatorsCount = 10;
+
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
     }
 
-    function getNodeOperator(uint256 _id, bool _fullInfo)
+    function getNodeOperator(
+        uint256 _id,
+        bool _fullInfo
+    )
         external
         view
         returns (
@@ -57,5 +62,20 @@ contract NodeOperatorsRegistryStub {
 
     function setTotalSigningKeys(uint64 _totalSigningKeys) public {
         totalSigningKeys = _totalSigningKeys;
+    }
+
+    function getNodeOperatorsCount() external view returns (uint256) {
+        return _nodeOperatorsCount;
+    }
+
+    function getSigningKey(
+        uint256 _nodeOperatorId,
+        uint256 _index
+    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {}
+
+    /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
+    function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
+        require(_desiredCount > 0, "Desired count must be greater than zero");
+        _nodeOperatorsCount = _desiredCount;
     }
 }
