@@ -3,10 +3,10 @@
 
 pragma solidity 0.8.6;
 
-import "../TrustedCaller.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../adapters/ForceValidatorExitAdapter.sol";
+import "../../TrustedCaller.sol";
+import "../../libraries/EVMScriptCreator.sol";
+import "../../interfaces/IEVMScriptFactory.sol";
+import "../../adapters/ForceValidatorExitAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub

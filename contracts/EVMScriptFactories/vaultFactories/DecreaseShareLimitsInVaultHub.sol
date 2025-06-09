@@ -3,14 +3,14 @@
 
 pragma solidity 0.8.6;
 
-import "../TrustedCaller.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/IVaultHub.sol";
+import "../../TrustedCaller.sol";
+import "../../libraries/EVMScriptCreator.sol";
+import "../../interfaces/IEVMScriptFactory.sol";
+import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
-contract UpdateShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
+contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // VARIABLES

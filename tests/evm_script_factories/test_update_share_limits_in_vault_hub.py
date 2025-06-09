@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, UpdateShareLimitsInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, DecreaseShareLimitsInVaultHub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -8,7 +8,7 @@ def create_calldata(vaults, share_limits):
 
 @pytest.fixture(scope="module")
 def update_share_limits_factory(owner, vault_hub_stub):
-    factory = UpdateShareLimitsInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
+    factory = DecreaseShareLimitsInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
     vault_hub_stub.grantRole(vault_hub_stub.VAULT_MASTER_ROLE(), factory, {"from": owner})
     return factory
 

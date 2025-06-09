@@ -3,15 +3,15 @@
 
 pragma solidity 0.8.6;
 
-import "../TrustedCaller.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../adapters/UpdateVaultsFeesAdapter.sol";
-import "../interfaces/IVaultHub.sol";
+import "../../TrustedCaller.sol";
+import "../../libraries/EVMScriptCreator.sol";
+import "../../interfaces/IEVMScriptFactory.sol";
+import "../../adapters/UpdateVaultsFeesAdapter.sol";
+import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to update fees for multiple vaults in VaultHub
-contract UpdateVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
+contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // VARIABLES

@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, UpdateVaultsFeesInVaultHub, UpdateVaultsFeesAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, DecreaseVaultsFeesInVaultHub, UpdateVaultsFeesAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -16,7 +16,7 @@ def adapter(owner, vault_hub_stub):
 
 @pytest.fixture(scope="module")
 def update_vaults_fees_factory(owner, adapter):
-    factory = UpdateVaultsFeesInVaultHub.deploy(owner, adapter, {"from": owner})
+    factory = DecreaseVaultsFeesInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
 def test_deploy(owner, adapter, update_vaults_fees_factory):

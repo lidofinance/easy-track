@@ -3,10 +3,10 @@
 
 pragma solidity 0.8.6;
 
-import "../TrustedCaller.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/IOperatorGrid.sol";
+import "../../TrustedCaller.sol";
+import "../../libraries/EVMScriptCreator.sol";
+import "../../interfaces/IEVMScriptFactory.sol";
+import "../../interfaces/IOperatorGrid.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to register a group and its tiers in OperatorGrid

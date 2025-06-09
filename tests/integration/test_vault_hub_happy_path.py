@@ -198,7 +198,7 @@ def create_enact_and_check_force_validator_exits_motion(
 @pytest.mark.skip_coverage
 def test_update_share_limits_happy_path(
     owner,
-    UpdateShareLimitsInVaultHub,
+    DecreaseShareLimitsInVaultHub,
     easy_track,
     trusted_address,
     voting,
@@ -208,7 +208,7 @@ def test_update_share_limits_happy_path(
 ):
     permission = vault_hub.address + vault_hub.updateShareLimit.signature[2:]
     update_share_limits_factory = setup_evm_script_factory(
-        UpdateShareLimitsInVaultHub,
+        DecreaseShareLimitsInVaultHub,
         permission,
         easy_track,
         trusted_address,
@@ -232,7 +232,7 @@ def test_update_share_limits_happy_path(
 @pytest.mark.skip_coverage
 def test_update_vaults_fees_happy_path(
     owner,
-    UpdateVaultsFeesInVaultHub,
+    DecreaseVaultsFeesInVaultHub,
     easy_track,
     trusted_address,
     voting,
@@ -243,7 +243,7 @@ def test_update_vaults_fees_happy_path(
 ):
     permission = update_vaults_fees_adapter.address + update_vaults_fees_adapter.updateVaultFees.signature[2:]
     update_vaults_fees_factory = setup_evm_script_factory(
-        UpdateVaultsFeesInVaultHub,
+        DecreaseVaultsFeesInVaultHub,
         permission,
         easy_track,
         trusted_address,
