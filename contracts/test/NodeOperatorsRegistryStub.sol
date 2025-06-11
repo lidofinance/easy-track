@@ -13,6 +13,7 @@ contract NodeOperatorsRegistryStub {
     uint64 public totalSigningKeys = 400;
 
     uint256 internal _nodeOperatorsCount = 10;
+    mapping(uint256 => bytes[]) internal _signingKeys;
 
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
@@ -71,11 +72,27 @@ contract NodeOperatorsRegistryStub {
     function getSigningKey(
         uint256 _nodeOperatorId,
         uint256 _index
-    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {}
+    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {
+        require(_nodeOperatorId < _nodeOperatorsCount, "Node operator ID out of range");
+        require(_index < _signingKeys[_nodeOperatorId].length, "Index out of range");
+
+        key = _signingKeys[_nodeOperatorId][_index];
+        depositSignature = ""; // Stub implementation, no actual signature
+        used = false; // Stub implementation, no actual usage tracking
+    }
 
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
         require(_desiredCount > 0, "Desired count must be greater than zero");
         _nodeOperatorsCount = _desiredCount;
+    }
+
+    function setSigningKey(uint256 _nodeOperatorId, bytes memory _key) external {
+        // This is a stub implementation, so we don't care about the actual logic.
+        // We want to ensure that the signing key can be set for testing purposes.
+
+        require(_nodeOperatorId < _nodeOperatorsCount, "Node operator ID out of range");
+        // Store the signing key
+        _signingKeys[_nodeOperatorId].push(_key);
     }
 }

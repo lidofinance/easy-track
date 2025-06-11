@@ -71,48 +71,11 @@ library ValidatorExitRequestHelpers {
     ) internal view returns (bytes memory) {
         _validateExitRequests(_requests, _nodeOperatorsRegistry, _stakingRouter);
 
-        uint256 totalRequests = _requests.length;
-        // Calculate the number of batches needed based on the total requests and MAX_BATCH_SIZE
-        uint256 totalBatches = (totalRequests + MAX_BATCH_SIZE - 1) / MAX_BATCH_SIZE;
-        bytes[] memory batchCallData = new bytes[](totalBatches);
-
-        // Trivial case: if the number of requests is less than or equal to MAX_BATCH_SIZE,
-        // we can process them in a single batch and save a bit of gas by avoiding the loop.
-        if (totalRequests <= MAX_BATCH_SIZE) {
-            bytes32 singleBatchHash = _hashSlice(_requests, 0, totalRequests);
-
-            return
-                EVMScriptCreator.createEVMScript(
-                    _validatorsExitBusOracle,
-                    IValidatorsExitBusOracle.submitExitRequestsHash.selector,
-                    abi.encode(singleBatchHash)
-                );
-        }
-
-        // If the number of requests exceeds MAX_BATCH_SIZE, we need to split them into batches.
-        for (uint256 batchIndex; batchIndex < totalBatches; ) {
-            // Calculate the start and end indices for the current batch
-            uint256 startIndex = batchIndex * MAX_BATCH_SIZE;
-            uint256 endIndex = startIndex + MAX_BATCH_SIZE;
-
-            // Ensure the end index does not exceed the total number of requests
-            if (endIndex > totalRequests) {
-                endIndex = totalRequests;
-            }
-
-            // Hash the slice of requests for the current batch and encode it
-            batchCallData[batchIndex] = abi.encode(_hashSlice(_requests, startIndex, endIndex));
-
-            unchecked {
-                ++batchIndex;
-            }
-        }
-
         return
             EVMScriptCreator.createEVMScript(
                 _validatorsExitBusOracle,
                 IValidatorsExitBusOracle.submitExitRequestsHash.selector,
-                batchCallData
+                abi.encode(_hashRequests(_requests))
             );
     }
 
@@ -121,22 +84,24 @@ library ValidatorExitRequestHelpers {
     // -------------
 
     /// @notice Hashes a slice of exit requests input data.
-    function _hashSlice(
-        ExitRequestInput[] memory _requests,
-        uint256 _startIndex,
-        uint256 _endIndex
-    ) private pure returns (bytes32) {
-        uint256 sliceLength = _endIndex - _startIndex;
-        require(sliceLength <= MAX_BATCH_SIZE, ERROR_MAX_BATCH_SIZE_EXCEEDED);
+    function _hashRequests(ExitRequestInput[] memory _requests) private pure returns (bytes32) {
+        uint256 numberOfRequests = _requests.length;
+        require(numberOfRequests <= MAX_BATCH_SIZE, ERROR_MAX_BATCH_SIZE_EXCEEDED);
 
         bytes memory packedData;
-        for (uint256 i = _startIndex; i < _endIndex; ) {
+
+        for (uint256 i; i < numberOfRequests; ) {
             ExitRequestInput memory request = _requests[i];
+            // pack into 64 bytes: 3 + 5 + 8 + 48
             packedData = abi.encodePacked(
                 packedData,
-                request.moduleId,
-                request.nodeOpId,
-                request.valIndex,
+                // uint24
+                bytes3(uint24(request.moduleId)),
+                // uint40
+                bytes5(uint40(request.nodeOpId)),
+                // uint64
+                bytes8(request.valIndex),
+                // bytes48
                 request.valPubkey
             );
 
@@ -145,7 +110,7 @@ library ValidatorExitRequestHelpers {
             }
         }
 
-        return keccak256(abi.encodePacked(packedData, DATA_FORMAT_LIST));
+        return keccak256(abi.encode(packedData, DATA_FORMAT_LIST));
     }
 
     /// @notice Validates the exit requests input data.
@@ -186,7 +151,7 @@ library ValidatorExitRequestHelpers {
 
             (bytes memory key, , ) = _nodeOperatorsRegistry.getSigningKey(
                 _input.nodeOpId,
-                _input.valIndex
+                _input.valPubKeyIndex
             );
 
             require(keccak256(key) == keccak256(_input.valPubkey), ERROR_PUBKEY_MISMATCH);

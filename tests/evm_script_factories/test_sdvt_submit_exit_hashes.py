@@ -1,7 +1,10 @@
 import pytest
 import brownie
-from brownie import SDVTSubmitExitRequestHashes, NodeOperatorsRegistryStub, ZERO_ADDRESS, convert
+from eth_abi import encode
+from brownie import SDVTSubmitExitRequestHashes, NodeOperatorsRegistryStub, ZERO_ADDRESS, convert, web3
 from utils.evm_script import encode_calldata, encode_call_script
+
+NODE_OPERATOR_ID = 1
 
 
 class ExitRequestInput:
@@ -27,6 +30,8 @@ def sdvt(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_c
         submit_exit_hashes_factory_config["module_ids"]["sdvt"], registry.address, {"from": owner}
     )
 
+    registry.setSigningKey(NODE_OPERATOR_ID, submit_exit_hashes_factory_config["pubkeys"][0])
+
     return registry
 
 
@@ -48,14 +53,30 @@ def create_calldata(exit_request_inputs: list[ExitRequestInput]):
     )
 
 
-def create_exit_requests_hashes(requests):
-    return "0x" + "".join(
-        format(req.moduleId, "06x")
-        + format(req.nodeOpId, "010x")
-        + format(req.valIndex, "016x")
-        + (req.valPubkey[2:] if req.valPubkey.startswith("0x") else req.valPubkey)
-        for req in requests
+def create_exit_requests_hashes(requests, data_format=1):
+    """
+    requests: list of objects with attributes
+      - moduleId: int
+      - nodeOpId: int
+      - valIndex: int
+      - valPubkey: str or bytes (48-byte hex str with '0x' or raw bytes)
+    """
+
+    # helper to normalize pubkey to raw bytes
+    def _pub(r):
+        if isinstance(r.val_pubkey, str):
+            h = r.val_pubkey[2:] if r.val_pubkey.startswith("0x") else r.val_pubkey
+            return bytes.fromhex(h)
+        return r.val_pubkey
+
+    packed = b"".join(
+        r.module_id.to_bytes(3, "big") + r.node_op_id.to_bytes(5, "big") + r.val_index.to_bytes(8, "big") + _pub(r)
+        for r in requests
     )
+
+    # abi.encode(bytes, uint256) then keccak256
+    digest = web3.keccak(encode(["bytes", "uint256"], [packed, data_format]))
+    return digest.hex()
 
 
 ## ---- Deployment tests ----
@@ -123,8 +144,8 @@ def test_decode_calldata(sdvt_submit_exit_request_hashes, submit_exit_hashes_fac
     sdvt_module_id = submit_exit_hashes_factory_config["module_ids"]["sdvt"]
 
     exit_request_inputs = [
-        ExitRequestInput(sdvt_module_id, 2, 3, submit_exit_hashes_factory_config["pubkeys"][0], 4),
-        ExitRequestInput(sdvt_module_id, 6, 7, submit_exit_hashes_factory_config["pubkeys"][0], 8),
+        ExitRequestInput(sdvt_module_id, 2, 3, submit_exit_hashes_factory_config["pubkeys"][0], 0),
+        ExitRequestInput(sdvt_module_id, 6, 7, submit_exit_hashes_factory_config["pubkeys"][0], 0),
     ]
 
     calldata = create_calldata([req.to_tuple() for req in exit_request_inputs])
@@ -151,7 +172,7 @@ def test_decode_calldata_is_permissionless(
     sdvt_module_id = submit_exit_hashes_factory_config["module_ids"]["sdvt"]
 
     exit_request_inputs = [
-        ExitRequestInput(sdvt_module_id, 2, 3, submit_exit_hashes_factory_config["pubkeys"][0], 4),
+        ExitRequestInput(sdvt_module_id, 2, 3, submit_exit_hashes_factory_config["pubkeys"][0], 0),
     ]
 
     calldata = create_calldata([req.to_tuple() for req in exit_request_inputs])
@@ -165,7 +186,7 @@ def test_decode_calldata_is_permissionless(
     assert decoded_data == request_input_with_bytes
 
 
-## ---- EVM Script Creation ----
+# ## ---- EVM Script Creation ----
 
 
 def test_create_evm_script(
@@ -177,7 +198,9 @@ def test_create_evm_script(
     "Must create correct EVM script if all requirements are met"
     sdvt_module_id = submit_exit_hashes_factory_config["module_ids"]["sdvt"]
 
-    exit_request_input = [ExitRequestInput(sdvt_module_id, 2, 3, submit_exit_hashes_factory_config["pubkeys"][0], 4)]
+    exit_request_input = [
+        ExitRequestInput(sdvt_module_id, NODE_OPERATOR_ID, 3, submit_exit_hashes_factory_config["pubkeys"][0], 0)
+    ]
 
     calldata = create_calldata([req.to_tuple() for req in exit_request_input])
     evm_script = sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
@@ -188,7 +211,7 @@ def test_create_evm_script(
         [
             (
                 validator_exit_bus_oracle.address,
-                validator_exit_bus_oracle.submitExitHashes.encode_input(exit_request_hash),
+                validator_exit_bus_oracle.submitExitRequestsHash.encode_input(exit_request_hash),
             )
         ]
     )

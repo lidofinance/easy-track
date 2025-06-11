@@ -475,8 +475,8 @@ def bokkyPooBahsDateTimeContract():
 def submit_exit_hashes_factory_config():
     return {
         "pubkeys": [
-            ("0x" + "a" * 48).encode("utf-8"),
-            ("0x" + "b" * 48).encode("utf-8"),
+            bytes.fromhex("aa" * 48),
+            bytes.fromhex("bb" * 48),
         ],
         "data_format": 1,
         "max_batch_size": 600,
