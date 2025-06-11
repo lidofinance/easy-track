@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, DecreaseVaultsFeesInVaultHub, UpdateVaultsFeesAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, DecreaseVaultsFeesInVaultHub, DecreaseVaultsFeesAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -11,7 +11,7 @@ def create_calldata(vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_b
 
 @pytest.fixture(scope="module")
 def adapter(owner, vault_hub_stub):
-    adapter = UpdateVaultsFeesAdapter.deploy(vault_hub_stub, owner, {"from": owner})
+    adapter = DecreaseVaultsFeesAdapter.deploy(vault_hub_stub, owner, {"from": owner})
     return adapter
 
 @pytest.fixture(scope="module")
@@ -65,25 +65,19 @@ def test_fees_exceed_100_percent(owner, stranger, update_vaults_fees_factory, va
     vault_hub_stub.connectVault(stranger)
     
     # Test infra fee exceeds 100%
-    CALLDATA1 = create_calldata([stranger.address], [10001], [1000], [1000])
-    with reverts('Infra fee BP exceeds 100%'):
+    CALLDATA1 = create_calldata([stranger.address], [70001], [1000], [1000])
+    with reverts('Infra fee too high'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA1)
     
     # Test liquidity fee exceeds 100%
-    CALLDATA2 = create_calldata([stranger.address], [1000], [10001], [1000])
-    with reverts('Liquidity fee BP exceeds 100%'):
+    CALLDATA2 = create_calldata([stranger.address], [1000], [70001], [1000])
+    with reverts('Liquidity fee too high'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA2)
     
     # Test reservation fee exceeds 100%
-    CALLDATA3 = create_calldata([stranger.address], [1000], [1000], [10001])
-    with reverts('Reservation fee BP exceeds 100%'):
+    CALLDATA3 = create_calldata([stranger.address], [1000], [1000], [70001])
+    with reverts('Reservation fee too high'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA3)
-
-def test_vault_not_registered(owner, stranger, update_vaults_fees_factory):
-    "Must revert with message 'Vault not registered' if any vault is not registered"
-    CALLDATA = create_calldata([stranger.address], [1000], [1000], [1000])
-    with reverts('Vault not registered'):
-        update_vaults_fees_factory.createEVMScript(owner, CALLDATA)
 
 def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_factory, vault_hub_stub, adapter):
     "Must create correct EVMScript for a single vault if all requirements are met"

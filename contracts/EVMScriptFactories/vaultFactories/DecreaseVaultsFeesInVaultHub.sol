@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../adapters/UpdateVaultsFeesAdapter.sol";
+import "../../adapters/DecreaseVaultsFeesAdapter.sol";
 import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
@@ -14,11 +14,18 @@ import "../../interfaces/IVaultHub.sol";
 contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    /// @dev max value for fees in basis points - it's about 650%
+    uint256 internal constant MAX_FEE_BP = type(uint16).max;
+
+    // -------------
     // VARIABLES
     // -------------
 
     /// @notice Address of adapter
-    UpdateVaultsFeesAdapter public immutable adapter;
+    DecreaseVaultsFeesAdapter public immutable adapter;
 
     // -------------
     // CONSTRUCTOR
@@ -27,7 +34,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
     {
-        adapter = UpdateVaultsFeesAdapter(_adapter);
+        adapter = DecreaseVaultsFeesAdapter(_adapter);
     }
 
     // -------------
@@ -54,7 +61,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
         _validateInputData(_vaults, _infraFeesBP, _liquidityFeesBP, _reservationFeesBP);
 
         address toAddress = address(adapter);
-        bytes4 methodId = UpdateVaultsFeesAdapter.updateVaultFees.selector;
+        bytes4 methodId = DecreaseVaultsFeesAdapter.updateVaultFees.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -108,12 +115,10 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
         
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), "Zero vault address");
-            require(_infraFeesBP[i] <= 10000, "Infra fee BP exceeds 100%");
-            require(_liquidityFeesBP[i] <= 10000, "Liquidity fee BP exceeds 100%");
-            require(_reservationFeesBP[i] <= 10000, "Reservation fee BP exceeds 100%");
-            
-            IVaultHub.VaultConnection memory connection = adapter.vaultHub().vaultConnection(_vaults[i]);
-            require(connection.owner != address(0), "Vault not registered");
+            require(_infraFeesBP[i] <= MAX_FEE_BP, "Infra fee too high");
+            require(_liquidityFeesBP[i] <= MAX_FEE_BP, "Liquidity fee too high");
+            require(_reservationFeesBP[i] <= MAX_FEE_BP, "Reservation fee too high");
+            // fees check in adapter to prevent motion failure in case vault disconnected while motion is in progress
         }
     }
 }

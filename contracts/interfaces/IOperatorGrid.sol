@@ -12,7 +12,7 @@ interface IOperatorGrid {
         address operator;
         uint96 shareLimit;
         uint96 liabilityShares;
-        uint128[] tierIds;
+        uint64[] tierIds;
     }
 
     struct Tier {

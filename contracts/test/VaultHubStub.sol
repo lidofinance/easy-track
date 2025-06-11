@@ -16,6 +16,7 @@ contract VaultHubStub is AccessControl {
         uint16 infraFeeBP;
         uint16 liquidityFeeBP;
         uint16 reservationFeeBP;
+        bool isBeaconDepositsManuallyPaused;
     }
 
     struct VaultRecord {
@@ -31,19 +32,30 @@ contract VaultHubStub is AccessControl {
         int128 inOutDelta;
     }
 
+    struct VaultObligations {
+        uint128 cumulativeSettledLidoFees;
+        uint64 unsettledLidoFees;
+        uint64 redemptions;
+    }
+
     mapping(address => VaultConnection) connections;
     mapping(address => VaultRecord) records;
+    mapping(address => VaultObligations) obligations;
 
     uint96 public vaultIndex = 1;
 
     bytes32 public constant VAULT_MASTER_ROLE = keccak256("vaults.VaultHub.VaultMasterRole");
     bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
+    bytes32 public constant REDEMPTION_MASTER_ROLE = keccak256("vaults.VaultHub.RedemptionMasterRole");
+    bytes32 public constant SOCIALIZE_BAD_DEBT_ROLE = keccak256("vaults.VaultHub.SocializeBadDebtRole");
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(VAULT_MASTER_ROLE, _admin);
         _setupRole(VALIDATOR_EXIT_ROLE, _admin);
+        _setupRole(REDEMPTION_MASTER_ROLE, _admin);
+        _setupRole(SOCIALIZE_BAD_DEBT_ROLE, _admin);
     }
 
     function connectVault(address _vault) external {
@@ -56,7 +68,8 @@ contract VaultHubStub is AccessControl {
             50,
             1000,
             500,
-            500
+            500,
+            false
         );
 
         records[_vault] = VaultRecord(
@@ -66,6 +79,8 @@ contract VaultHubStub is AccessControl {
             uint64(block.timestamp),
             0
         );
+
+        obligations[_vault] = VaultObligations(0, 0, 0);
     }
 
     function vaultConnection(address _vault) external view returns (VaultConnection memory) {
@@ -74,6 +89,15 @@ contract VaultHubStub is AccessControl {
 
     function vaultRecord(address _vault) external view returns (VaultRecord memory) {
         return records[_vault];
+    }
+
+    function vaultObligations(address _vault) external view returns (VaultObligations memory) {
+        return obligations[_vault];
+    }
+
+    /// @return true if the vault is connected to the hub
+    function isVaultConnected(address _vault) external view returns (bool) {
+        return connections[_vault].vaultIndex != 0;
     }
 
     function updateShareLimit(address _vault, uint256 _shareLimit) external onlyRole(VAULT_MASTER_ROLE) {
@@ -109,7 +133,29 @@ contract VaultHubStub is AccessControl {
         emit ValidatorExitsForced(_vault, _pubkeys, _refundRecipient);
     }
 
+    function socializeBadDebt(
+        address _badDebtVault,
+        address _vaultAcceptor,
+        uint256 _maxSharesToSocialize
+    ) external onlyRole(SOCIALIZE_BAD_DEBT_ROLE) {
+        // First vault is special and will revert
+        if (connections[_badDebtVault].vaultIndex == 1) {
+            revert("Special vault revert 1");
+        }
+        emit BadDebtSocialized(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
+    }
+
+    function setVaultRedemptions(
+        address _vault,
+        uint256 _redemptionsValue
+    ) external onlyRole(REDEMPTION_MASTER_ROLE) {
+        obligations[_vault].redemptions = uint64(_redemptionsValue);
+        emit RedemptionsUpdated(_vault, _redemptionsValue);
+    }
+
     event ShareLimitUpdated(address indexed vault, uint256 newShareLimit);
     event VaultFeesUpdated(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
     event ValidatorExitsForced(address indexed vault, bytes pubkeys, address refundRecipient);
+    event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
+    event RedemptionsUpdated(address indexed vault, uint256 unsettledRedemptions);
 }

@@ -16,7 +16,8 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
-    uint256 internal constant TOTAL_BASIS_POINTS = 100_00;
+    /// @dev max value for fees in basis points - it's about 650%
+    uint256 internal constant MAX_FEE_BP = type(uint16).max;
 
     // -------------
     // VARIABLES
@@ -94,14 +95,14 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
             // Validate tier parameters
             require(_tierParams[i].reserveRatioBP != 0, "Zero reserve ratio");
-            require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
+            require(_tierParams[i].reserveRatioBP <= MAX_FEE_BP, "Reserve ratio too high");
 
             require(_tierParams[i].forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
             require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, "Forced rebalance threshold too high");
 
-            require(_tierParams[i].infraFeeBP <= TOTAL_BASIS_POINTS, "Infra fee too high");
-            require(_tierParams[i].liquidityFeeBP <= TOTAL_BASIS_POINTS, "Liquidity fee too high");
-            require(_tierParams[i].reservationFeeBP <= TOTAL_BASIS_POINTS, "Reservation fee too high");
+            require(_tierParams[i].infraFeeBP <= MAX_FEE_BP, "Infra fee too high");
+            require(_tierParams[i].liquidityFeeBP <= MAX_FEE_BP, "Liquidity fee too high");
+            require(_tierParams[i].reservationFeeBP <= MAX_FEE_BP, "Reservation fee too high");
         }
     }
 }

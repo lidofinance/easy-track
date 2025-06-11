@@ -6,38 +6,36 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../adapters/DecreaseShareLimitsAdapter.sol";
+import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
-contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to set vault redemptions for multiple vaults in VaultHub
+contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub adapter
-    DecreaseShareLimitsAdapter public immutable adapter;
+    /// @notice Address of VaultHub
+    IVaultHub public immutable vaultHub;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _adapter)
+    constructor(address _trustedCaller, address _vaultHub)
         TrustedCaller(_trustedCaller)
-    {   
-        require(_adapter != address(0), "Zero adapter address");
-
-        adapter = DecreaseShareLimitsAdapter(_adapter);
+    {
+        vaultHub = IVaultHub(_vaultHub);
     }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
-    /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _shareLimits
+    /// @notice Creates EVMScript to set vault redemptions for multiple vaults in VaultHub
+    /// @param _creator Address who creates EVMScript and will receive refunds
+    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _redemptionsValues
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -45,24 +43,30 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address[] memory _vaults, uint256[] memory _shareLimits) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (
+            address[] memory _vaults,
+            uint256[] memory _redemptionsValues
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(_vaults, _shareLimits);
+        _validateInputData(_vaults, _redemptionsValues);
 
-        address toAddress = address(adapter);
-        bytes4 methodId = DecreaseShareLimitsAdapter.updateShareLimit.selector;
+        address toAddress = address(vaultHub);
+        bytes4 methodId = IVaultHub.setVaultRedemptions.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
-            calldataArray[i] = abi.encode(_vaults[i], _shareLimits[i]);
+            calldataArray[i] = abi.encode(
+                _vaults[i],
+                _redemptionsValues[i]
+            );
         }
 
         return EVMScriptCreator.createEVMScript(toAddress, methodId, calldataArray);
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _shareLimits
-    /// @return Vault addresses and new share limit values
+    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _redemptionsValues
+    /// @return Vault addresses and redemptions values
     function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
@@ -85,14 +89,13 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     function _validateInputData(
         address[] memory _vaults,
-        uint256[] memory _shareLimits
+        uint256[] memory _redemptionsValues
     ) private pure {
         require(_vaults.length > 0, "Empty vaults array");
-        require(_vaults.length == _shareLimits.length, "Array length mismatch");
+        require(_vaults.length == _redemptionsValues.length, "Array length mismatch");
         
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), "Zero vault address");
-            // shareLimit check in adapter to prevent motion failure in case vault disconnected while motion is in progress
         }
     }
-}
+} 

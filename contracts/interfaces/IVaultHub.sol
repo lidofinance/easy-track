@@ -25,6 +25,8 @@ interface IVaultHub {
         uint16 liquidityFeeBP;
         /// @notice reservation fee in basis points
         uint16 reservationFeeBP;
+        /// @notice if true, vault owner manually paused the beacon chain deposits
+        bool isBeaconDepositsManuallyPaused;
     }
 
     struct VaultRecord {
@@ -47,6 +49,15 @@ interface IVaultHub {
         int128 inOutDelta;
     }
 
+    struct VaultObligations {
+        /// @notice cumulative value for Lido fees that were settled on the vault
+        uint128 cumulativeSettledLidoFees;
+        /// @notice current unsettled Lido fees amount
+        uint64 unsettledLidoFees;
+        /// @notice current unsettled redemptions amount
+        uint64 redemptions;
+    }
+
     /// @notice Returns the role identifier for vault master
     /// @return The bytes32 role identifier for vault master
     function VAULT_MASTER_ROLE() external view returns (bytes32);
@@ -54,6 +65,14 @@ interface IVaultHub {
     /// @notice Returns the role identifier for validator exit
     /// @return The bytes32 role identifier for validator exit
     function VALIDATOR_EXIT_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the role identifier for redemption master
+    /// @return The bytes32 role identifier for redemption master
+    function REDEMPTION_MASTER_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the role identifier for socialize bad debt
+    /// @return The bytes32 role identifier for socialize bad debt
+    function SOCIALIZE_BAD_DEBT_ROLE() external view returns (bytes32);
 
     /// @notice Returns the vault connection information for a given vault address
     /// @param _vault The address of the vault to query
@@ -64,6 +83,16 @@ interface IVaultHub {
     /// @param _vault The address of the vault to query
     /// @return The VaultRecord struct containing vault state
     function vaultRecord(address _vault) external view returns (VaultRecord memory);
+
+    /// @notice Returns the vault obligations information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultObligations struct containing vault obligations
+    function vaultObligations(address _vault) external view returns (VaultObligations memory);
+
+    /// @notice Returns true if the vault is connected to the hub
+    /// @param _vault The address of the vault to query
+    /// @return true if the vault is connected to the hub
+    function isVaultConnected(address _vault) external view returns (bool);
 
     /// @notice updates share limit for the vault
     /// @param _vault vault address
@@ -97,4 +126,20 @@ interface IVaultHub {
         bytes calldata _pubkeys,
         address _refundRecipient
     ) external payable;
+
+    /// @notice Transfer the bad debt from the donor vault to the acceptor vault
+    /// @param _badDebtVault address of the vault that has the bad debt
+    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
+    /// @param _maxSharesToSocialize maximum amount of shares to socialize
+    /// @dev if _vaultAcceptor is 0, the bad debt is internalized to the protocol
+    function socializeBadDebt(
+        address _badDebtVault,
+        address _vaultAcceptor,
+        uint256 _maxSharesToSocialize
+    ) external;
+
+    /// @notice Accrues a redemption obligation on the vault under extreme conditions
+    /// @param _vault The address of the vault
+    /// @param _redemptionsValue The value of the redemptions obligation
+    function setVaultRedemptions(address _vault, uint256 _redemptionsValue) external;
 }

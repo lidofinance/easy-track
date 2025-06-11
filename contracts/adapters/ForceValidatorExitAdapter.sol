@@ -24,6 +24,12 @@ contract ForceValidatorExitAdapter is TrustedCaller {
     address public immutable evmScriptExecutor;
 
     // -------------
+    // EVENTS
+    // -------------
+
+    event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
+
+    // -------------
     // CONSTRUCTOR
     // -------------
 
@@ -55,7 +61,9 @@ contract ForceValidatorExitAdapter is TrustedCaller {
         uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
         uint256 value = IStakingVault(_vault).calculateValidatorWithdrawalFee(numKeys);
 
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {} catch {}
+        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {} catch {
+            emit ForceValidatorExitFailed(_vault, _pubkeys);
+        }
     }
 
     /// @notice Function to withdraw all ETH to TrustedCaller

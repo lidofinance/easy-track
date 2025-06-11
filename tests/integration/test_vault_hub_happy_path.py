@@ -16,17 +16,9 @@ def trusted_address(accounts):
 def vault_hub(owner, VaultHubStub, easy_track):
     vault_hub = owner.deploy(VaultHubStub, owner)
     vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), easy_track.evmScriptExecutor(), {"from": owner})
+    vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), easy_track.evmScriptExecutor(), {"from": owner})
     vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), owner, {"from": owner})
     return vault_hub
-
-
-@pytest.fixture(scope="module", autouse=True)
-def adapter(owner, vault_hub, ForceValidatorExitAdapter, easy_track):
-    adapter = owner.deploy(ForceValidatorExitAdapter, owner, vault_hub, easy_track.evmScriptExecutor())
-    # send 10 ETH to adapter
-    owner.transfer(adapter, 10 * 10 ** 18)
-    vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), adapter, {"from": owner})
-    return adapter
 
 
 @pytest.fixture(scope="module")
@@ -36,9 +28,32 @@ def vaults(owner, StakingVaultStub):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def update_vaults_fees_adapter(owner, vault_hub, UpdateVaultsFeesAdapter, easy_track):
-    adapter = owner.deploy(UpdateVaultsFeesAdapter, vault_hub, easy_track.evmScriptExecutor())
+def force_validator_exit_adapter(owner, vault_hub, ForceValidatorExitAdapter, easy_track):
+    adapter = owner.deploy(ForceValidatorExitAdapter, owner, vault_hub, easy_track.evmScriptExecutor())
+    # send 10 ETH to adapter
+    owner.transfer(adapter, 10 * 10 ** 18)
+    vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), adapter, {"from": owner})
+    return adapter
+
+
+@pytest.fixture(scope="module", autouse=True)
+def update_vaults_fees_adapter(owner, vault_hub, DecreaseVaultsFeesAdapter, easy_track):
+    adapter = owner.deploy(DecreaseVaultsFeesAdapter, vault_hub, easy_track.evmScriptExecutor())
     vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), adapter, {"from": owner})
+    return adapter
+
+
+@pytest.fixture(scope="module", autouse=True)
+def update_share_limits_adapter(owner, vault_hub, DecreaseShareLimitsAdapter, easy_track):
+    adapter = owner.deploy(DecreaseShareLimitsAdapter, vault_hub, easy_track.evmScriptExecutor())
+    vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), adapter, {"from": owner})
+    return adapter
+
+
+@pytest.fixture(scope="module", autouse=True)
+def socialize_bad_debt_adapter(owner, vault_hub, SocializeBadDebtAdapter, easy_track):
+    adapter = owner.deploy(SocializeBadDebtAdapter, vault_hub, easy_track.evmScriptExecutor())
+    vault_hub.grantRole(vault_hub.SOCIALIZE_BAD_DEBT_ROLE(), adapter, {"from": owner})
     return adapter
 
 
@@ -195,6 +210,79 @@ def create_enact_and_check_force_validator_exits_motion(
         assert event["refundRecipient"] == adapter.address
 
 
+def create_enact_and_check_set_vault_redemptions_motion(
+    owner,
+    easy_track,
+    vault_hub,
+    stranger,
+    trusted_address,
+    set_vault_redemptions_factory,
+    vault_addresses,
+    redemptions_values,
+):
+    # First register the vaults to update
+    for vault_address in vault_addresses:
+        vault_hub.connectVault(vault_address, {"from": owner})
+    
+    # Check initial state
+    for vault_address in vault_addresses:
+        obligations = vault_hub.vaultObligations(vault_address)
+        assert obligations[2] == 0  # redemptions (default from VaultHubStub)
+    
+    # Create and execute motion to set vault redemptions
+    motion_transaction = easy_track.createMotion(
+        set_vault_redemptions_factory.address,
+        encode_calldata(["address[]", "uint256[]"], [vault_addresses, redemptions_values]),
+        {"from": trusted_address},
+    )
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+
+    tx = execute_motion(easy_track, motion_transaction, stranger)
+
+    # Check final state
+    for i, vault_address in enumerate(vault_addresses):
+        obligations = vault_hub.vaultObligations(vault_address)
+        assert obligations[2] == redemptions_values[i]  # redemptions
+
+
+def create_enact_and_check_socialize_bad_debt_motion(
+    owner,
+    easy_track,
+    vault_hub,
+    stranger,
+    trusted_address,
+    socialize_bad_debt_factory,
+    bad_debt_vaults,
+    vault_acceptors,
+    max_shares_to_socialize,
+):
+    # First register the vaults to update
+    for vault_address in bad_debt_vaults:
+        vault_hub.connectVault(vault_address, {"from": owner})
+    
+    # Create and execute motion to socialize bad debt
+    motion_transaction = easy_track.createMotion(
+        socialize_bad_debt_factory.address,
+        encode_calldata(
+            ["address[]", "address[]", "uint256[]"],
+            [bad_debt_vaults, vault_acceptors, max_shares_to_socialize]
+        ),
+        {"from": trusted_address},
+    )
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+    
+    tx = execute_motion(easy_track, motion_transaction, stranger)
+
+    # Check that events were emitted for failed socializations
+    assert len(tx.events["BadDebtSocialized"]) == len(bad_debt_vaults) - 1  # First vault is special and will revert
+    for i, event in enumerate(tx.events["BadDebtSocialized"]):
+        assert event["vaultDonor"] == bad_debt_vaults[i+1]
+        assert event["vaultAcceptor"] == vault_acceptors[i+1]
+        assert event["badDebtShares"] == max_shares_to_socialize[i+1]
+
+
 @pytest.mark.skip_coverage
 def test_update_share_limits_happy_path(
     owner,
@@ -205,8 +293,9 @@ def test_update_share_limits_happy_path(
     deployer,
     stranger,
     vault_hub,
+    update_share_limits_adapter,
 ):
-    permission = vault_hub.address + vault_hub.updateShareLimit.signature[2:]
+    permission = update_share_limits_adapter.address + update_share_limits_adapter.updateShareLimit.signature[2:]
     update_share_limits_factory = setup_evm_script_factory(
         DecreaseShareLimitsInVaultHub,
         permission,
@@ -215,6 +304,7 @@ def test_update_share_limits_happy_path(
         voting,
         deployer,
         vault_hub,
+        update_share_limits_adapter,
     )
 
     create_enact_and_check_update_share_limits_motion(
@@ -277,10 +367,10 @@ def test_force_validator_exits_happy_path(
     deployer,
     stranger,
     vault_hub,
-    adapter,
+    force_validator_exit_adapter,
     vaults,
 ):
-    permission = adapter.address + adapter.forceValidatorExit.signature[2:]
+    permission = force_validator_exit_adapter.address + force_validator_exit_adapter.forceValidatorExit.signature[2:]
     force_validator_exits_factory = setup_evm_script_factory(
         ForceValidatorExitsInVaultHub,
         permission,
@@ -289,7 +379,7 @@ def test_force_validator_exits_happy_path(
         voting,
         deployer,
         vault_hub,
-        adapter,
+        force_validator_exit_adapter,
     )
 
     create_enact_and_check_force_validator_exits_motion(
@@ -301,5 +391,77 @@ def test_force_validator_exits_happy_path(
         force_validator_exits_factory,
         vaults,
         [b"01" * 48, b"02" * 48, b"03" * 48],  # 48 bytes per pubkey
-        adapter,
+        force_validator_exit_adapter,
+    )
+
+
+@pytest.mark.skip_coverage
+def test_set_vault_redemptions_happy_path(
+    owner,
+    SetVaultRedemptionsInVaultHub,
+    easy_track,
+    trusted_address,
+    voting,
+    deployer,
+    stranger,
+    vault_hub,
+):
+    permission = vault_hub.address + vault_hub.setVaultRedemptions.signature[2:]
+    set_vault_redemptions_factory = setup_evm_script_factory(
+        SetVaultRedemptionsInVaultHub,
+        permission,
+        easy_track,
+        trusted_address,
+        voting,
+        deployer,
+        vault_hub,
+    )
+
+    create_enact_and_check_set_vault_redemptions_motion(
+        owner,
+        easy_track,
+        vault_hub,
+        stranger,
+        trusted_address,
+        set_vault_redemptions_factory,
+        ["0x0000000000000000000000000000000000000001", "0x0000000000000000000000000000000000000002"],
+        [100, 200],  # redemptions values
+    )
+
+
+@pytest.mark.skip_coverage
+def test_socialize_bad_debt_happy_path(
+    owner,
+    SocializeBadDebtInVaultHub,
+    easy_track,
+    trusted_address,
+    voting,
+    deployer,
+    stranger,
+    vault_hub,
+    socialize_bad_debt_adapter,
+    vaults,
+):
+    permission = socialize_bad_debt_adapter.address + socialize_bad_debt_adapter.socializeBadDebt.signature[2:]
+    socialize_bad_debt_factory = setup_evm_script_factory(
+        SocializeBadDebtInVaultHub,
+        permission,
+        easy_track,
+        trusted_address,
+        voting,
+        deployer,
+        vault_hub,
+        socialize_bad_debt_adapter,
+    )
+
+    create_enact_and_check_socialize_bad_debt_motion(
+        owner,
+        easy_track,
+        vault_hub,
+        stranger,
+        trusted_address,
+        socialize_bad_debt_factory,
+        vaults,  # bad debt vaults
+        [vaults[1], vaults[2], vaults[0]],  # vault acceptors (rotated to avoid self-acceptance)
+        [100, 200, 300],  # max shares to socialize
     )

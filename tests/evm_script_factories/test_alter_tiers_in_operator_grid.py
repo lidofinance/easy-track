@@ -126,7 +126,7 @@ def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, ope
     operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
 
     tier_ids = [0]
-    tier_params = [(1000, 10001, 100, 50, 40, 10)]  # reserveRatioBP > 10000
+    tier_params = [(1000, 70001, 100, 50, 40, 10)]  # reserveRatioBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("Reserve ratio too high"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
@@ -171,7 +171,7 @@ def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operato
     operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
 
     tier_ids = [0]
-    tier_params = [(1000, 200, 100, 10001, 40, 10)]  # infraFeeBP > 10000
+    tier_params = [(1000, 200, 100, 70001, 40, 10)]  # infraFeeBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("Infra fee too high"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
@@ -186,7 +186,7 @@ def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, ope
     operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
 
     tier_ids = [0]
-    tier_params = [(1000, 200, 100, 50, 10001, 10)]  # liquidityFeeBP > 10000
+    tier_params = [(1000, 200, 100, 50, 70001, 10)]  # liquidityFeeBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("Liquidity fee too high"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
@@ -201,7 +201,7 @@ def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, o
     operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
 
     tier_ids = [0]
-    tier_params = [(1000, 200, 100, 50, 40, 10001)]  # reservationFeeBP > 10000
+    tier_params = [(1000, 200, 100, 50, 40, 70001)]  # reservationFeeBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("Reservation fee too high"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)

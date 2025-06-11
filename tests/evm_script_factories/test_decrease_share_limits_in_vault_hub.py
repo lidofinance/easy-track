@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, DecreaseShareLimitsInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, DecreaseShareLimitsInVaultHub, DecreaseShareLimitsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,15 +7,19 @@ def create_calldata(vaults, share_limits):
     return encode_calldata(["address[]", "uint256[]"], [vaults, share_limits])
 
 @pytest.fixture(scope="module")
-def update_share_limits_factory(owner, vault_hub_stub):
-    factory = DecreaseShareLimitsInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
-    vault_hub_stub.grantRole(vault_hub_stub.VAULT_MASTER_ROLE(), factory, {"from": owner})
+def update_share_limits_factory(owner, adapter):
+    factory = DecreaseShareLimitsInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, vault_hub_stub, update_share_limits_factory):
+@pytest.fixture(scope="module")
+def adapter(owner, vault_hub_stub):
+    adapter = DecreaseShareLimitsAdapter.deploy(vault_hub_stub, owner, {"from": owner})
+    return adapter
+
+def test_deploy(owner, adapter, update_share_limits_factory):
     "Must deploy contract with correct data"
     assert update_share_limits_factory.trustedCaller() == owner
-    assert update_share_limits_factory.vaultHub() == vault_hub_stub
+    assert update_share_limits_factory.adapter() == adapter
 
 def test_create_evm_script_called_by_stranger(stranger, update_share_limits_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -41,32 +45,14 @@ def test_zero_vault_address(owner, stranger, update_share_limits_factory):
     with reverts('Zero vault address'):
         update_share_limits_factory.createEVMScript(owner, CALLDATA)
 
-def test_vault_not_registered(owner, stranger, accounts, update_share_limits_factory):
-    "Must revert with message 'Vault not registered' if any vault is not registered"
-    CALLDATA = create_calldata([stranger.address, accounts[5].address], [1000, 2000])
-    with reverts('Vault not registered'):
-        update_share_limits_factory.createEVMScript(owner, CALLDATA)
-
-def test_share_limit_greater_than_current(owner, stranger, update_share_limits_factory, vault_hub_stub):
-    "Must revert if new share limit is greater than current limit"
-    # Register vault first
-    vault_hub_stub.connectVault(stranger)
-    
-    # Current share limit is 1000, try to set to 2000
-    CALLDATA = create_calldata([stranger.address], [2000])
-    with reverts('Share limit is greater than the current limit'):
-        update_share_limits_factory.createEVMScript(owner, CALLDATA)
-
-def test_create_evm_script(owner, accounts, update_share_limits_factory, vault_hub_stub):
+def test_create_evm_script(owner, accounts, update_share_limits_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
     # Register vaults first
     vault1 = accounts[5]
     vault2 = accounts[6]
-    vault_hub_stub.connectVault(vault1)
-    vault_hub_stub.connectVault(vault2)
     
     vaults = [vault1.address, vault2.address]
-    share_limits = [500, 500]  # Using values less than current limit (1000)
+    share_limits = [500, 500]
     
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, share_limits)
     evm_script = update_share_limits_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -75,8 +61,8 @@ def test_create_evm_script(owner, accounts, update_share_limits_factory, vault_h
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            vault_hub_stub.address,
-            vault_hub_stub.updateShareLimit.encode_input(vaults[i], share_limits[i])
+            adapter.address,
+            adapter.updateShareLimit.encode_input(vaults[i], share_limits[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 

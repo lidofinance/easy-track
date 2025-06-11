@@ -8,7 +8,7 @@ from brownie import (
     DecreaseVaultsFeesInVaultHub,
     ForceValidatorExitsInVaultHub,
     ForceValidatorExitAdapter,
-    UpdateVaultsFeesAdapter,
+    DecreaseVaultsFeesAdapter,
     web3,
 )
 
@@ -98,18 +98,18 @@ def deploy_vault_hub_factories(
     log.ok("Deployed DecreaseShareLimitsInVaultHub", decrease_share_limits_in_vault_hub.address)
 
     # DecreaseVaultsFeesInVaultHub
-    update_vaults_fees_adapter = UpdateVaultsFeesAdapter.deploy(
+    update_vaults_fees_adapter = DecreaseVaultsFeesAdapter.deploy(
         vault_hub,
         evmScriptExecutor,
         tx_params,
     )
-    deployment_artifacts["UpdateVaultsFeesAdapter"] = {
-        "contract": "UpdateVaultsFeesAdapter",
+    deployment_artifacts["DecreaseVaultsFeesAdapter"] = {
+        "contract": "DecreaseVaultsFeesAdapter",
         "address": update_vaults_fees_adapter.address,
         "constructorArgs": [vault_hub, evmScriptExecutor],
     }
 
-    log.ok("Deployed UpdateVaultsFeesAdapter", update_vaults_fees_adapter.address)
+    log.ok("Deployed DecreaseVaultsFeesAdapter", update_vaults_fees_adapter.address)
 
     decrease_vaults_fees_in_vault_hub = DecreaseVaultsFeesInVaultHub.deploy(
         trusted_caller,
@@ -164,7 +164,7 @@ def deploy_vault_hub_factories(
     log.ok("Deployment artifacts have been saved to", filename)
 
     DecreaseShareLimitsInVaultHub.publish_source(decrease_share_limits_in_vault_hub)
-    UpdateVaultsFeesAdapter.publish_source(update_vaults_fees_adapter)
+    DecreaseVaultsFeesAdapter.publish_source(update_vaults_fees_adapter)
     DecreaseVaultsFeesInVaultHub.publish_source(decrease_vaults_fees_in_vault_hub)
     ForceValidatorExitAdapter.publish_source(adapter)
     ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)

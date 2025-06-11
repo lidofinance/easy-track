@@ -7,7 +7,7 @@ import "../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Adapter contract for updating vault fees in VaultHub
-contract UpdateVaultsFeesAdapter {
+contract DecreaseVaultsFeesAdapter {
     // -------------
     // VARIABLES
     // -------------
@@ -17,6 +17,12 @@ contract UpdateVaultsFeesAdapter {
 
     /// @notice Address of EVMScriptExecutor
     address public immutable evmScriptExecutor;
+
+    // -------------
+    // EVENTS
+    // -------------
+
+    event VaultFeesUpdateFailed(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
 
     // -------------
     // CONSTRUCTOR
@@ -50,11 +56,21 @@ contract UpdateVaultsFeesAdapter {
     ) external {
         require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
 
+        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
+        if (_infraFeeBP > connection.infraFeeBP ||
+            _liquidityFeeBP > connection.liquidityFeeBP ||
+            _reservationFeeBP > connection.reservationFeeBP) {
+            emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
+            return;
+        }
+
         try vaultHub.updateVaultFees(
             _vault,
             _infraFeeBP,
             _liquidityFeeBP,
             _reservationFeeBP
-        ) {} catch {}
+        ) {} catch {
+            emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
+        }
     }
 }
