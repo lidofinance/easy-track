@@ -25,6 +25,12 @@ contract SocializeBadDebtAdapter {
     event BadDebtSocializationFailed(address indexed badDebtVault, address indexed vaultAcceptor, uint256 maxSharesToSocialize);
 
     // -------------
+    // ERRORS
+    // -------------
+
+    error OutOfGasError();
+
+    // -------------
     // CONSTRUCTOR
     // -------------
 
@@ -52,7 +58,14 @@ contract SocializeBadDebtAdapter {
         require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
 
         try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) {
-        } catch {
+        } catch (bytes memory lowLevelRevertData) {
+            /// @dev This check is required to prevent incorrect gas estimation of the method.
+            ///      Without it, Ethereum nodes that use binary search for gas estimation may
+            ///      return an invalid value when the socializeBadDebt() reverts because of the
+            ///      "out of gas" error.
+            ///      Here we assume that the socializeBadDebt() method doesn't have reverts with
+            ///      empty error data except "out of gas".
+            if (lowLevelRevertData.length == 0) revert OutOfGasError();
             emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
         }
     }

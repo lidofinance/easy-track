@@ -36,28 +36,28 @@ interface IVaultHub {
         uint128 locked;
         /// @notice liability shares of the vault
         uint96 liabilityShares;
+        /// @notice current inOutDelta of the vault (all deposits - all withdrawals)
+        Int112WithRefSlotCache inOutDelta;
         /// @notice timestamp of the latest report
         uint64 reportTimestamp;
-        /// @notice current inOutDelta of the vault (all deposits - all withdrawals)
-        int128 inOutDelta;
+    }
+
+    struct Int112WithRefSlotCache {
+        int112 value;
+        int112 valueOnRefSlot;
+        uint32 refSlot;
     }
 
     struct Report {
         /// @notice total value of the vault
         uint128 totalValue;
         /// @notice inOutDelta of the report
-        int128 inOutDelta;
+        int112 inOutDelta;
     }
 
-    struct VaultObligations {
-        /// @notice cumulative value for Lido fees that were settled on the vault
-        uint128 cumulativeSettledLidoFees;
-        /// @notice current unsettled Lido fees amount
-        uint64 unsettledLidoFees;
-        /// @notice current unsettled redemptions amount
-        uint64 redemptions;
-    }
-
+    // -----------------------------
+    //           CONSTANTS
+    // -----------------------------
     /// @notice Returns the role identifier for vault master
     /// @return The bytes32 role identifier for vault master
     function VAULT_MASTER_ROLE() external view returns (bytes32);
@@ -70,9 +70,17 @@ interface IVaultHub {
     /// @return The bytes32 role identifier for redemption master
     function REDEMPTION_MASTER_ROLE() external view returns (bytes32);
 
-    /// @notice Returns the role identifier for socialize bad debt
-    /// @return The bytes32 role identifier for socialize bad debt
-    function SOCIALIZE_BAD_DEBT_ROLE() external view returns (bytes32);
+    /// @notice Returns the role identifier for bad debt master
+    /// @return The bytes32 role identifier for bad debt master
+    function BAD_DEBT_MASTER_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the maximum relative share limit in basis points
+    /// @return The maximum relative share limit in basis points
+    function MAX_RELATIVE_SHARE_LIMIT_BP() external view returns (uint256);
+
+    // -----------------------------
+    //           FUNCTIONS
+    // -----------------------------
 
     /// @notice Returns the vault connection information for a given vault address
     /// @param _vault The address of the vault to query
@@ -84,22 +92,16 @@ interface IVaultHub {
     /// @return The VaultRecord struct containing vault state
     function vaultRecord(address _vault) external view returns (VaultRecord memory);
 
-    /// @notice Returns the vault obligations information for a given vault address
-    /// @param _vault The address of the vault to query
-    /// @return The VaultObligations struct containing vault obligations
-    function vaultObligations(address _vault) external view returns (VaultObligations memory);
+    /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
+    /// @param _vault vault address
+    function connectVault(address _vault) external;
 
-    /// @notice Returns true if the vault is connected to the hub
-    /// @param _vault The address of the vault to query
-    /// @return true if the vault is connected to the hub
-    function isVaultConnected(address _vault) external view returns (bool);
-
-    /// @notice updates share limit for the vault
+    /// @notice Updates share limit for the vault
     /// @param _vault vault address
     /// @param _shareLimit new share limit
     function updateShareLimit(address _vault, uint256 _shareLimit) external;
 
-    /// @notice updates fees for the vault
+    /// @notice Updates fees for the vault
     /// @param _vault vault address
     /// @param _infraFeeBP new infra fee in basis points
     /// @param _liquidityFeeBP new liquidity fee in basis points
@@ -111,9 +113,16 @@ interface IVaultHub {
         uint256 _reservationFeeBP
     ) external;
 
-    /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
-    /// @param _vault vault address
-    function connectVault(address _vault) external;
+    /// @notice Transfer the bad debt from the donor vault to the acceptor vault
+    /// @param _badDebtVault address of the vault that has the bad debt
+    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
+    /// @param _maxSharesToSocialize maximum amount of shares to socialize
+    /// @dev if _vaultAcceptor is 0, the bad debt is internalized to the protocol
+    function socializeBadDebt(
+        address _badDebtVault,
+        address _vaultAcceptor,
+        uint256 _maxSharesToSocialize
+    ) external;
 
     /// @notice Triggers validator full withdrawals for the vault using EIP-7002 permissionlessly if the vault is unhealthy
     /// @param _vault address of the vault to exit validators from
@@ -126,17 +135,6 @@ interface IVaultHub {
         bytes calldata _pubkeys,
         address _refundRecipient
     ) external payable;
-
-    /// @notice Transfer the bad debt from the donor vault to the acceptor vault
-    /// @param _badDebtVault address of the vault that has the bad debt
-    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
-    /// @param _maxSharesToSocialize maximum amount of shares to socialize
-    /// @dev if _vaultAcceptor is 0, the bad debt is internalized to the protocol
-    function socializeBadDebt(
-        address _badDebtVault,
-        address _vaultAcceptor,
-        uint256 _maxSharesToSocialize
-    ) external;
 
     /// @notice Accrues a redemption obligation on the vault under extreme conditions
     /// @param _vault The address of the vault

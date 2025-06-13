@@ -24,7 +24,7 @@ contract OperatorGridStub is AccessControl {
         address operator;
         uint96 shareLimit;
         uint96 liabilityShares;
-        uint64[] tierIds;
+        uint256[] tierIds;
     }
 
     struct Tier {
@@ -41,11 +41,14 @@ contract OperatorGridStub is AccessControl {
     Tier[] tiers;
     mapping(address => Group) groups;
     address[] nodeOperators;
+    address public immutable LIDO_LOCATOR;
 
-    constructor(address _admin, TierParams memory _defaultTierParams) {
+    constructor(address _admin, TierParams memory _defaultTierParams, address _lidoLocator) {
         require(_admin != address(0), "Zero admin address");
+        require(_lidoLocator != address(0), "Zero lido locator address");
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(REGISTRY_ROLE, _admin);
+        LIDO_LOCATOR = _lidoLocator;
 
         tiers.push(
             Tier({
@@ -69,7 +72,7 @@ contract OperatorGridStub is AccessControl {
             operator: _nodeOperator,
             shareLimit: uint96(_shareLimit),
             liabilityShares: 0,
-            tierIds: new uint64[](0)
+            tierIds: new uint256[](0)
         });
         nodeOperators.push(_nodeOperator);
     }
@@ -92,7 +95,7 @@ contract OperatorGridStub is AccessControl {
         require(_nodeOperator != address(0), "Zero node operator address");
         require(groups[_nodeOperator].operator != address(0), "Group does not exist");
 
-        uint64 tierId = uint64(tiers.length);
+        uint256 tierId = tiers.length;
         uint256 length = _tiers.length;
         for (uint256 i = 0; i < length; i++) {
             Tier memory tier_ = Tier({

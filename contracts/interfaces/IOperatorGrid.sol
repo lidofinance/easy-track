@@ -12,7 +12,7 @@ interface IOperatorGrid {
         address operator;
         uint96 shareLimit;
         uint96 liabilityShares;
-        uint64[] tierIds;
+        uint256[] tierIds;
     }
 
     struct Tier {
@@ -79,4 +79,8 @@ interface IOperatorGrid {
     /// @notice Returns the number of tiers
     /// @return Number of tiers
     function tiersCount() external view returns (uint256);
+
+    /// @notice Returns the address of the Lido Locator contract
+    /// @return The address of the Lido Locator contract
+    function LIDO_LOCATOR() external view returns (address);
 }

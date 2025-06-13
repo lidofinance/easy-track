@@ -19,23 +19,29 @@ contract VaultHubStub is AccessControl {
         bool isBeaconDepositsManuallyPaused;
     }
 
+    struct Int112WithRefSlotCache {
+        int112 value;
+        int112 valueOnRefSlot;
+        uint32 refSlot;
+    }
+
     struct VaultRecord {
         Report report;
         uint128 locked;
         uint96 liabilityShares;
+        Int112WithRefSlotCache inOutDelta;
         uint64 reportTimestamp;
-        int128 inOutDelta;
     }
 
     struct Report {
         uint128 totalValue;
-        int128 inOutDelta;
+        int112 inOutDelta;
     }
 
     struct VaultObligations {
-        uint128 cumulativeSettledLidoFees;
-        uint64 unsettledLidoFees;
-        uint64 redemptions;
+        uint128 settledLidoFees;
+        uint128 unsettledLidoFees;
+        uint128 redemptions;
     }
 
     mapping(address => VaultConnection) connections;
@@ -47,7 +53,8 @@ contract VaultHubStub is AccessControl {
     bytes32 public constant VAULT_MASTER_ROLE = keccak256("vaults.VaultHub.VaultMasterRole");
     bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
     bytes32 public constant REDEMPTION_MASTER_ROLE = keccak256("vaults.VaultHub.RedemptionMasterRole");
-    bytes32 public constant SOCIALIZE_BAD_DEBT_ROLE = keccak256("vaults.VaultHub.SocializeBadDebtRole");
+    bytes32 public constant BAD_DEBT_MASTER_ROLE = keccak256("vaults.VaultHub.BadDebtMasterRole");
+    uint256 public constant MAX_RELATIVE_SHARE_LIMIT_BP = 1000;
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
@@ -55,7 +62,7 @@ contract VaultHubStub is AccessControl {
         _setupRole(VAULT_MASTER_ROLE, _admin);
         _setupRole(VALIDATOR_EXIT_ROLE, _admin);
         _setupRole(REDEMPTION_MASTER_ROLE, _admin);
-        _setupRole(SOCIALIZE_BAD_DEBT_ROLE, _admin);
+        _setupRole(BAD_DEBT_MASTER_ROLE, _admin);
     }
 
     function connectVault(address _vault) external {
@@ -76,8 +83,8 @@ contract VaultHubStub is AccessControl {
             Report(0, 0),
             0,
             0,
-            uint64(block.timestamp),
-            0
+            Int112WithRefSlotCache(0, 0, 0),
+            uint64(block.timestamp)
         );
 
         obligations[_vault] = VaultObligations(0, 0, 0);
@@ -102,7 +109,7 @@ contract VaultHubStub is AccessControl {
 
     function updateShareLimit(address _vault, uint256 _shareLimit) external onlyRole(VAULT_MASTER_ROLE) {
         connections[_vault].shareLimit = uint96(_shareLimit);
-        emit ShareLimitUpdated(_vault, _shareLimit);
+        emit VaultShareLimitUpdated(_vault, _shareLimit);
     }
 
     function updateVaultFees(
@@ -115,10 +122,23 @@ contract VaultHubStub is AccessControl {
         if (connections[_vault].vaultIndex == 1) {
             revert("Special vault revert 1");
         }
+        uint16 preInfraFeeBP = connections[_vault].infraFeeBP;
+        uint16 preLiquidityFeeBP = connections[_vault].liquidityFeeBP;
+        uint16 preReservationFeeBP = connections[_vault].reservationFeeBP;
+
         connections[_vault].infraFeeBP = uint16(_infraFeeBP);
         connections[_vault].liquidityFeeBP = uint16(_liquidityFeeBP);
         connections[_vault].reservationFeeBP = uint16(_reservationFeeBP);
-        emit VaultFeesUpdated(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
+
+        emit VaultFeesUpdated(
+            _vault,
+            preInfraFeeBP,
+            preLiquidityFeeBP,
+            preReservationFeeBP,
+            _infraFeeBP,
+            _liquidityFeeBP,
+            _reservationFeeBP
+        );
     }
 
     function forceValidatorExit(
@@ -130,14 +150,14 @@ contract VaultHubStub is AccessControl {
         if (connections[_vault].vaultIndex == 1) {
             revert("Special vault revert 1");
         }
-        emit ValidatorExitsForced(_vault, _pubkeys, _refundRecipient);
+        emit ForcedValidatorExitTriggered(_vault, _pubkeys, _refundRecipient);
     }
 
     function socializeBadDebt(
         address _badDebtVault,
         address _vaultAcceptor,
         uint256 _maxSharesToSocialize
-    ) external onlyRole(SOCIALIZE_BAD_DEBT_ROLE) {
+    ) external onlyRole(BAD_DEBT_MASTER_ROLE) {
         // First vault is special and will revert
         if (connections[_badDebtVault].vaultIndex == 1) {
             revert("Special vault revert 1");
@@ -149,13 +169,21 @@ contract VaultHubStub is AccessControl {
         address _vault,
         uint256 _redemptionsValue
     ) external onlyRole(REDEMPTION_MASTER_ROLE) {
-        obligations[_vault].redemptions = uint64(_redemptionsValue);
+        obligations[_vault].redemptions = uint128(_redemptionsValue);
         emit RedemptionsUpdated(_vault, _redemptionsValue);
     }
 
-    event ShareLimitUpdated(address indexed vault, uint256 newShareLimit);
-    event VaultFeesUpdated(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
-    event ValidatorExitsForced(address indexed vault, bytes pubkeys, address refundRecipient);
+    event VaultShareLimitUpdated(address indexed vault, uint256 newShareLimit);
+    event VaultFeesUpdated(
+        address indexed vault,
+        uint256 preInfraFeeBP,
+        uint256 preLiquidityFeeBP,
+        uint256 preReservationFeeBP,
+        uint256 infraFeeBP,
+        uint256 liquidityFeeBP,
+        uint256 reservationFeeBP
+    );
+    event ForcedValidatorExitTriggered(address indexed vault, bytes pubkeys, address refundRecipient);
     event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
     event RedemptionsUpdated(address indexed vault, uint256 unsettledRedemptions);
 }

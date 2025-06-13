@@ -18,6 +18,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @dev max value for fees in basis points - it's about 650%
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
+    uint256 internal constant TOTAL_BASIS_POINTS = 10000;
 
     // -------------
     // VARIABLES
@@ -33,6 +34,8 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address _operatorGrid)
         TrustedCaller(_trustedCaller)
     {
+        require(_operatorGrid != address(0), "Zero operator grid");
+
         operatorGrid = IOperatorGrid(_operatorGrid);
     }
 
@@ -88,14 +91,15 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(uint256[] memory _tierIds, IOperatorGrid.TierParams[] memory _tierParams) private view {
         require(_tierIds.length > 0, "Empty tier IDs array");
         require(_tierIds.length == _tierParams.length, "Array length mismatch");
-        
-        uint256 _tiersCount = operatorGrid.tiersCount();
-        for (uint256 i = 0; i < _tierIds.length; i++) {
-            require(_tierIds[i] < _tiersCount, "Tier not exists");
 
-            // Validate tier parameters
+        // Validate tier parameters
+        for (uint256 i = 0; i < _tierIds.length; i++) {
+            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]);
+            IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
+            require(_tierParams[i].shareLimit <= group.shareLimit, "Tier share limit too high");
+
             require(_tierParams[i].reserveRatioBP != 0, "Zero reserve ratio");
-            require(_tierParams[i].reserveRatioBP <= MAX_FEE_BP, "Reserve ratio too high");
+            require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
 
             require(_tierParams[i].forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
             require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, "Forced rebalance threshold too high");

@@ -28,6 +28,13 @@ contract ForceValidatorExitAdapter is TrustedCaller {
     // -------------
 
     event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
+    event LowBalance(uint256 value, uint256 balance);
+
+    // -------------
+    // ERRORS
+    // -------------
+
+    error OutOfGasError();
 
     // -------------
     // CONSTRUCTOR
@@ -60,8 +67,20 @@ contract ForceValidatorExitAdapter is TrustedCaller {
 
         uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
         uint256 value = IStakingVault(_vault).calculateValidatorWithdrawalFee(numKeys);
+        if (value > address(this).balance) {
+            emit LowBalance(value, address(this).balance);
+            return;
+        }
 
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {} catch {
+        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {
+        } catch (bytes memory lowLevelRevertData) {
+            /// @dev This check is required to prevent incorrect gas estimation of the method.
+            ///      Without it, Ethereum nodes that use binary search for gas estimation may
+            ///      return an invalid value when the forceValidatorExit() reverts because of the
+            ///      "out of gas" error.
+            ///      Here we assume that the forceValidatorExit() method doesn't have reverts with
+            ///      empty error data except "out of gas".
+            if (lowLevelRevertData.length == 0) revert OutOfGasError();
             emit ForceValidatorExitFailed(_vault, _pubkeys);
         }
     }

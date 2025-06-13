@@ -25,6 +25,12 @@ contract DecreaseShareLimitsAdapter {
     event ShareLimitUpdateFailed(address indexed vault, uint256 shareLimit);
 
     // -------------
+    // ERRORS
+    // -------------
+    
+    error OutOfGasError();
+
+    // -------------
     // CONSTRUCTOR
     // -------------
 
@@ -52,7 +58,14 @@ contract DecreaseShareLimitsAdapter {
         }
 
         try vaultHub.updateShareLimit(_vault, _shareLimit) {
-        } catch {
+        } catch (bytes memory lowLevelRevertData) {
+            /// @dev This check is required to prevent incorrect gas estimation of the method.
+            ///      Without it, Ethereum nodes that use binary search for gas estimation may
+            ///      return an invalid value when the updateShareLimit() reverts because of the
+            ///      "out of gas" error.
+            ///      Here we assume that the updateShareLimit() method doesn't have reverts with
+            ///      empty error data except "out of gas".
+            if (lowLevelRevertData.length == 0) revert OutOfGasError();
             emit ShareLimitUpdateFailed(_vault, _shareLimit);
         }
     }

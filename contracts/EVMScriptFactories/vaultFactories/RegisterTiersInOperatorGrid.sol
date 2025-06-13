@@ -20,12 +20,21 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     IOperatorGrid public immutable operatorGrid;
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 internal constant TOTAL_BASIS_POINTS = 10000;
+    uint256 internal constant MAX_FEE_BP = type(uint16).max;
+
+    // -------------
     // CONSTRUCTOR
     // -------------
 
     constructor(address _trustedCaller, address _operatorGrid)
         TrustedCaller(_trustedCaller)
     {
+        require(_operatorGrid != address(0), "Zero operator grid");
+
         operatorGrid = IOperatorGrid(_operatorGrid);
     }
 
@@ -94,6 +103,21 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
             require(group.operator != address(0), "Group not exists");
+
+            // Validate tier parameters
+            for (uint256 j = 0; j < _tiers[i].length; j++) {
+                require(_tiers[i][j].shareLimit <= group.shareLimit, "Tier share limit too high");
+
+                require(_tiers[i][j].reserveRatioBP != 0, "Zero reserve ratio");
+                require(_tiers[i][j].reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
+
+                require(_tiers[i][j].forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
+                require(_tiers[i][j].forcedRebalanceThresholdBP <= _tiers[i][j].reserveRatioBP, "Forced rebalance threshold too high");
+
+                require(_tiers[i][j].infraFeeBP <= MAX_FEE_BP, "Infra fee too high");
+                require(_tiers[i][j].liquidityFeeBP <= MAX_FEE_BP, "Liquidity fee too high");
+                require(_tiers[i][j].reservationFeeBP <= MAX_FEE_BP, "Reservation fee too high");
+            }
         }
     }
 }

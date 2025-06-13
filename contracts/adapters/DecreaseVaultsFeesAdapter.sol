@@ -25,6 +25,12 @@ contract DecreaseVaultsFeesAdapter {
     event VaultFeesUpdateFailed(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
 
     // -------------
+    // ERRORS
+    // -------------
+
+    error OutOfGasError();
+
+    // -------------
     // CONSTRUCTOR
     // -------------
 
@@ -69,7 +75,14 @@ contract DecreaseVaultsFeesAdapter {
             _infraFeeBP,
             _liquidityFeeBP,
             _reservationFeeBP
-        ) {} catch {
+        ) {} catch (bytes memory lowLevelRevertData) {
+            /// @dev This check is required to prevent incorrect gas estimation of the method.
+            ///      Without it, Ethereum nodes that use binary search for gas estimation may
+            ///      return an invalid value when the updateVaultFees() reverts because of the
+            ///      "out of gas" error.
+            ///      Here we assume that the updateVaultFees() method doesn't have reverts with
+            ///      empty error data except "out of gas".
+            if (lowLevelRevertData.length == 0) revert OutOfGasError();
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
         }
     }

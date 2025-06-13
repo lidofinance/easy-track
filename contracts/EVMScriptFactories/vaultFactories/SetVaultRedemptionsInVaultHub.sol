@@ -26,6 +26,8 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address _vaultHub)
         TrustedCaller(_trustedCaller)
     {
+        require(_vaultHub != address(0), "Zero vault hub");
+
         vaultHub = IVaultHub(_vaultHub);
     }
 

@@ -7,6 +7,7 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../adapters/ForceValidatorExitAdapter.sol";
+import "../../interfaces/IStakingVault.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
@@ -29,6 +30,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address payable _adapter)
         TrustedCaller(_trustedCaller)
     {
+        require(_adapter != address(0), "Zero adapter");
+
         adapter = ForceValidatorExitAdapter(_adapter);
     }
 
@@ -96,11 +99,17 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     ) private view {
         require(_vaults.length > 0, "Empty vaults array");
         require(_vaults.length == _pubkeys.length, "Array length mismatch");
-        
+
+        uint256 numKeys;
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), "Zero vault address");
             require(_pubkeys[i].length > 0, "Empty pubkeys");
             require(_pubkeys[i].length % PUBLIC_KEY_LENGTH == 0, "Invalid pubkeys length");
+            numKeys += _pubkeys[i].length / PUBLIC_KEY_LENGTH;
         }
+
+        // check if we have enough balance on the adapter to pay for the validator exits
+        uint256 value = IStakingVault(_vaults[0]).calculateValidatorWithdrawalFee(numKeys);
+        require(value <= address(adapter).balance, "Not enough balance on the adapter");
     }
 }

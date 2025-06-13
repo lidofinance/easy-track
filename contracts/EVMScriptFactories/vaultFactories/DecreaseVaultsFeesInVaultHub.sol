@@ -33,7 +33,9 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
-    {
+    {   
+        require(_adapter != address(0), "Zero adapter");
+
         adapter = DecreaseVaultsFeesAdapter(_adapter);
     }
 
@@ -104,7 +106,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
         uint256[] memory _infraFeesBP,
         uint256[] memory _liquidityFeesBP,
         uint256[] memory _reservationFeesBP
-    ) private view {
+    ) private pure {
         require(_vaults.length > 0, "Empty vaults array");
         require(
             _vaults.length == _infraFeesBP.length &&
@@ -118,7 +120,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(_infraFeesBP[i] <= MAX_FEE_BP, "Infra fee too high");
             require(_liquidityFeesBP[i] <= MAX_FEE_BP, "Liquidity fee too high");
             require(_reservationFeesBP[i] <= MAX_FEE_BP, "Reservation fee too high");
-            // fees check in adapter to prevent motion failure in case vault disconnected while motion is in progress
+            // more checks in adapter to prevent motion failure in case vault disconnected while motion is in progress
         }
     }
 }

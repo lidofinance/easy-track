@@ -26,6 +26,8 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
     constructor(address _trustedCaller, address _operatorGrid)
         TrustedCaller(_trustedCaller)
     {
+        require(_operatorGrid != address(0), "Zero operator grid");
+
         operatorGrid = IOperatorGrid(_operatorGrid);
     }
 

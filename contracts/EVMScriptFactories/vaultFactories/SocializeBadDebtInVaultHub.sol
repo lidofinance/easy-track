@@ -26,6 +26,8 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address payable _adapter)
         TrustedCaller(_trustedCaller)
     {
+        require(_adapter != address(0), "Zero adapter");
+
         adapter = SocializeBadDebtAdapter(_adapter);
     }
 
@@ -100,6 +102,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
         
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
             require(_badDebtVaults[i] != address(0), "Zero bad debt vault address");
+            // acceptor address can't be zero - as it means to socialize bad debt to the core protocol
             require(_vaultAcceptors[i] != address(0), "Zero vault acceptor address");
         }
     }
