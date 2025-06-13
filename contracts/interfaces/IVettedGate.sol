@@ -5,6 +5,10 @@
 
 /// @title Lido's Community Staking Module Vetted Gate interface
 interface IVettedGate {
+
+    function treeRoot() external view returns (bytes32);
+    function treeCid() external view returns (string memory);
+
     /// @notice Set the root of the eligible members Merkle Tree
     /// @param _treeRoot New root of the Merkle Tree
     /// @param _treeCid New CID of the Merkle Tree

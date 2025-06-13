@@ -16,10 +16,14 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_TREE_ROOT =
+    string private constant ERROR_EMPTY_TREE_ROOT =
         "EMPTY_TREE_ROOT";
-    string private constant ERROR_TREE_CID =
+    string private constant ERROR_EMPTY_TREE_CID =
         "EMPTY_TREE_CID";
+    string private constant ERROR_SAME_TREE_CID =
+        "SAME_TREE_CID";
+    string private constant ERROR_SAME_TREE_ROOT =
+        "SAME_TREE_ROOT";
 
     // -------------
     // VARIABLES
@@ -95,8 +99,10 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(
         bytes32 treeRoot,
         string memory treeCid
-    ) private pure {
-        require(treeRoot != bytes32(0), ERROR_TREE_ROOT);
-        require(bytes(treeCid).length > 0, ERROR_TREE_CID);
+    ) private view {
+        require(treeRoot != bytes32(0), ERROR_EMPTY_TREE_ROOT);
+        require(bytes(treeCid).length > 0, ERROR_EMPTY_TREE_CID);
+        require(treeRoot != vettedGate.treeRoot(), ERROR_SAME_TREE_ROOT);
+        require(keccak256(bytes(treeCid)) != keccak256(bytes(vettedGate.treeCid())), ERROR_SAME_TREE_CID);
     }
 }

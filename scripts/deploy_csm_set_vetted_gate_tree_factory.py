@@ -43,6 +43,13 @@ def get_factory_name():
 
     factory_name = os.environ["FACTORY_NAME"]
 
+    if not factory_name:
+        raise ValueError("Factory name cannot be empty")
+    if not isinstance(factory_name, str):
+        raise TypeError("Factory name must be a string")
+    if len(factory_name) > 32:
+        raise ValueError("Factory name must be less than 32 characters")
+
     return factory_name
 
 
@@ -117,7 +124,7 @@ def main():
     log.nb("All factories have been deployed.")
     log.nb("Saving artifacts...")
 
-    with open(f"deployed-csm-vetted-gate-tree-{network_name}.json", "w") as outfile:
+    with open(f"deployed-csm-{network_name}.json", "w") as outfile:
         json.dump(deployment_artifacts, outfile)
 
     if get_is_live() and get_env("FORCE_VERIFY", False):

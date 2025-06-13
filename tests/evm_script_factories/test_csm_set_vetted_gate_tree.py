@@ -53,6 +53,33 @@ def test_empty_tree_cid(owner, csm_set_vetted_gate_tree_factory):
         csm_set_vetted_gate_tree_factory.createEVMScript(owner, EMPTY_CID_CALLDATA)
 
 
+def test_same_tree_root(owner, vetted_gate_stub, csm_set_vetted_gate_tree_factory):
+    """Must revert with message 'SAME_TREE_ROOT' if tree params are the same as the last set"""
+    tree_root = bytes.fromhex("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+    tree_cid = "QmTest123456789"
+    # Set initial tree params
+    vetted_gate_stub.setTreeParams(tree_root, tree_cid, {"from": owner})
+
+    # Create calldata for the same tree root
+    new_tree_cid = "QmTest1234567890"  # Slightly different CID
+    EVM_SCRIPT_CALLDATA = create_calldata(tree_root, new_tree_cid)
+    with reverts('SAME_TREE_ROOT'):
+        csm_set_vetted_gate_tree_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+def test_same_tree_cid(owner, vetted_gate_stub, csm_set_vetted_gate_tree_factory):
+    """Must revert with message 'SAME_TREE_CID' if tree params are the same as the last set"""
+    tree_root = bytes.fromhex("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+    tree_cid = "QmTest123456789"
+    # Set initial tree params
+    vetted_gate_stub.setTreeParams(tree_root, tree_cid, {"from": owner})
+
+    # Create calldata for the same CID
+    new_tree_root = bytes.fromhex("abcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890")
+    EVM_SCRIPT_CALLDATA = create_calldata(new_tree_root, tree_cid)
+    with reverts('SAME_TREE_CID'):
+        csm_set_vetted_gate_tree_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+
 def test_create_evm_script(owner, csm_set_vetted_gate_tree_factory, vetted_gate_stub):
     """Must create correct EVMScript if all requirements are met"""
     tree_root = bytes.fromhex("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
