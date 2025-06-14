@@ -74,7 +74,7 @@ def test_create_evm_script(owner, accounts, register_tiers_in_operator_grid_fact
     operators = [operator1.address, operator2.address]
     tiers = [
         [(1000, 200, 100, 50, 40, 10)],  # Tiers for operator1
-        [(2000, 300, 150, 75, 60, 20)]   # Tiers for operator2
+        [(800, 300, 150, 75, 60, 20)]   # Tiers for operator2
     ]
 
     EVM_SCRIPT_CALLDATA = create_calldata(operators, tiers)
@@ -116,3 +116,13 @@ def test_decode_evm_script_call_data(accounts, register_tiers_in_operator_grid_f
             assert decoded_tiers[i][j][3] == tiers[i][j][3]  # infraFeeBP
             assert decoded_tiers[i][j][4] == tiers[i][j][4]  # liquidityFeeBP
             assert decoded_tiers[i][j][5] == tiers[i][j][5]  # reservationFeeBP
+
+
+def test_tier_share_limit_too_high(owner, register_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Tier share limit too high' if any tier's share limit exceeds the group's share limit"
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1500, 200, 100, 50, 40, 10)]]  # Tier share limit exceeds group share limit
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('Tier share limit too high'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)

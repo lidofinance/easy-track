@@ -30,8 +30,8 @@ def test_create_evm_script_called_by_stranger(stranger, socialize_bad_debt_facto
     with reverts("CALLER_IS_FORBIDDEN"):
         socialize_bad_debt_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
-def test_empty_vaults_array(owner, socialize_bad_debt_factory):
-    "Must revert with message 'Empty bad debt vaults array' if vaults array is empty"
+def test_empty_bad_debt_vaults_array(owner, socialize_bad_debt_factory):
+    "Must revert with message 'Empty bad debt vaults array' if bad debt vaults array is empty"
     EMPTY_CALLDATA = create_calldata([], [], [])
     with reverts('Empty bad debt vaults array'):
         socialize_bad_debt_factory.createEVMScript(owner, EMPTY_CALLDATA)

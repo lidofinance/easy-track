@@ -53,7 +53,7 @@ def update_share_limits_adapter(owner, vault_hub, DecreaseShareLimitsAdapter, ea
 @pytest.fixture(scope="module", autouse=True)
 def socialize_bad_debt_adapter(owner, vault_hub, SocializeBadDebtAdapter, easy_track):
     adapter = owner.deploy(SocializeBadDebtAdapter, vault_hub, easy_track.evmScriptExecutor())
-    vault_hub.grantRole(vault_hub.SOCIALIZE_BAD_DEBT_ROLE(), adapter, {"from": owner})
+    vault_hub.grantRole(vault_hub.BAD_DEBT_MASTER_ROLE(), adapter, {"from": owner})
     return adapter
 
 
@@ -203,8 +203,8 @@ def create_enact_and_check_force_validator_exits_motion(
     
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
-    assert len(tx.events["ValidatorExitsForced"]) == len(vault_addresses) - 1 # First vault is special and will revert
-    for i, event in enumerate(tx.events["ValidatorExitsForced"]):
+    assert len(tx.events["ForcedValidatorExitTriggered"]) == len(vault_addresses) - 1 # First vault is special and will revert
+    for i, event in enumerate(tx.events["ForcedValidatorExitTriggered"]):
         assert event["vault"] == vault_addresses[i+1]
         assert event["pubkeys"] == "0x" + pubkeys[i+1].hex()
         assert event["refundRecipient"] == adapter.address

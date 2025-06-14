@@ -204,7 +204,7 @@ def create_enact_and_check_alter_tiers_motion(
 ):
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
-    operator_grid.registerGroup(operator_address, 1000, {"from": owner})
+    operator_grid.registerGroup(operator_address, 10000, {"from": owner})
     initial_tier_params = [(1000, 200, 100, 50, 40, 10), (1000, 200, 100, 50, 40, 10)]
     operator_grid.registerTiers(operator_address, initial_tier_params, {"from": owner})
 

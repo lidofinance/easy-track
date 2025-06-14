@@ -67,7 +67,7 @@ def test_create_evm_script(owner, accounts, register_groups_in_operator_grid_fac
     operator2 = accounts[6]
     
     operators = [operator1.address, operator2.address]
-    share_limits = [1000, 1500]
+    share_limits = [1000, 3000]
     tiers = [
         [(1000, 200, 100, 50, 40, 10)],  # Tiers for operator1
         [(2000, 300, 150, 75, 60, 20)]   # Tiers for operator2
@@ -121,3 +121,24 @@ def test_decode_evm_script_call_data(accounts, register_groups_in_operator_grid_
             assert decoded_tiers[i][j][3] == tiers[i][j][3]  # infraFeeBP
             assert decoded_tiers[i][j][4] == tiers[i][j][4]  # liquidityFeeBP
             assert decoded_tiers[i][j][5] == tiers[i][j][5]  # reservationFeeBP
+
+
+def test_tier_share_limit_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'Tier share limit too high' if any tier's share limit exceeds the group's share limit"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1500, 200, 100, 50, 40, 10)]]  # Tier share limit exceeds group share limit
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('Tier share limit too high'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_group_share_limit_too_high(owner, register_groups_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'Group share limit too high' if the group's share limit exceeds the maximum allowed"
+    operator = "0x0000000000000000000000000000000000000001"
+    max_sane_share_limit = (operator_grid_stub.getTotalShares() * operator_grid_stub.MAX_RELATIVE_SHARE_LIMIT_BP()) // 10000
+    share_limit = max_sane_share_limit + 1  # Exceeds maximum allowed
+    tiers = [[(1000, 200, 100, 50, 40, 10)]]
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('Group share limit too high'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)

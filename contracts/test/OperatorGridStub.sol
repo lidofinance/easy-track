@@ -41,14 +41,11 @@ contract OperatorGridStub is AccessControl {
     Tier[] tiers;
     mapping(address => Group) groups;
     address[] nodeOperators;
-    address public immutable LIDO_LOCATOR;
 
-    constructor(address _admin, TierParams memory _defaultTierParams, address _lidoLocator) {
+    constructor(address _admin, TierParams memory _defaultTierParams) {
         require(_admin != address(0), "Zero admin address");
-        require(_lidoLocator != address(0), "Zero lido locator address");
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         _setupRole(REGISTRY_ROLE, _admin);
-        LIDO_LOCATOR = _lidoLocator;
 
         tiers.push(
             Tier({
@@ -139,5 +136,27 @@ contract OperatorGridStub is AccessControl {
             tier_.liquidityFeeBP = uint16(_tierParams[i].liquidityFeeBP);
             tier_.reservationFeeBP = uint16(_tierParams[i].reservationFeeBP);
         }
+    }
+
+    // mock methods for unit tests only
+
+    function LIDO_LOCATOR() external view returns (address) {
+        return address(this);
+    }
+
+    function lido() external view returns (address) {
+        return address(this);
+    }
+
+    function vaultHub() external view returns (address) {
+        return address(this);
+    }
+
+    function MAX_RELATIVE_SHARE_LIMIT_BP() external view returns (uint256) {
+        return 30_00; // 30%
+    }
+
+    function getTotalShares() external view returns (uint256) {
+        return 100_000_000 ether;
     }
 }

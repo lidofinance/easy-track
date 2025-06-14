@@ -17,6 +17,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
+    address constant WITHDRAWAL_REQUEST = 0x00000961Ef480Eb55e80D19ad83579A64c007002;
     /// @notice The length of the public key in bytes
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
 
@@ -109,7 +110,18 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         }
 
         // check if we have enough balance on the adapter to pay for the validator exits
-        uint256 value = IStakingVault(_vaults[0]).calculateValidatorWithdrawalFee(numKeys);
+        uint256 value = numKeys * _getWithdrawalRequestFee();
         require(value <= address(adapter).balance, "Not enough balance on the adapter");
+    }
+
+    /// @dev Retrieves the current EIP-7002 withdrawal fee.
+    /// @return The minimum fee required per withdrawal request.
+    function _getWithdrawalRequestFee() internal view returns (uint256) {
+        (bool success, bytes memory feeData) = WITHDRAWAL_REQUEST.staticcall("");
+
+        require(success, "Withdrawal fee read failed");
+        require(feeData.length == 32, "Withdrawal fee invalid data");
+
+        return abi.decode(feeData, (uint256));
     }
 }

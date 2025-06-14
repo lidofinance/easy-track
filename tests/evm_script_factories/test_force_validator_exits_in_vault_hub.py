@@ -14,6 +14,8 @@ def force_validator_exits_factory(owner, adapter):
 @pytest.fixture(scope="module")
 def adapter(owner, vault_hub_stub):
     adapter = ForceValidatorExitAdapter.deploy(owner, vault_hub_stub, owner, {"from": owner})
+    # send 10 ETH to adapter
+    owner.transfer(adapter, 10 * 10 ** 18)
     return adapter
 
 def test_deploy(owner, vault_hub_stub, force_validator_exits_factory, adapter):
@@ -99,6 +101,7 @@ def test_withdraw_eth_called_by_stranger(stranger, adapter):
 
 def test_withdraw_eth_no_balance(owner, adapter):
     "Must revert with message 'No ETH to withdraw' if contract has no ETH balance"
+    adapter.withdrawETH({"from": owner})
     with reverts():
         adapter.withdrawETH({"from": owner})
 
