@@ -1,5 +1,18 @@
 [
   {
+    "inputs": [],
+    "name": "LIDO_LOCATOR",
+    "outputs": [
+      {
+        "internalType": "address",
+        "name": "",
+        "type": "address"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
     "inputs": [
       {
         "internalType": "uint256[]",
@@ -77,9 +90,9 @@
             "type": "uint96"
           },
           {
-            "internalType": "uint128[]",
+            "internalType": "uint256[]",
             "name": "tierIds",
-            "type": "uint128[]"
+            "type": "uint256[]"
           }
         ],
         "internalType": "struct IOperatorGrid.Group",

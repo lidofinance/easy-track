@@ -6,8 +6,8 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../adapters/ForceValidatorExitAdapter.sol";
 import "../../interfaces/IStakingVault.sol";
+import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
@@ -22,18 +22,36 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
 
     /// @notice Address of VaultHub
-    ForceValidatorExitAdapter public immutable adapter;
+    IVaultHub public immutable vaultHub;
+
+    /// @notice Address of EVMScriptExecutor
+    address public immutable evmScriptExecutor;
+
+    // -------------
+    // EVENTS
+    // -------------
+
+    event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
+    event LowBalance(uint256 value, uint256 balance);
+
+    // -------------
+    // ERRORS
+    // -------------
+
+    error OutOfGasError();
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address payable _adapter)
+    constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
         TrustedCaller(_trustedCaller)
     {
-        require(_adapter != address(0), "Zero adapter");
+        require(_vaultHub != address(0), "Zero VaultHub address");
+        require(_evmScriptExecutor != address(0), "Zero EVMScriptExecutor address");
 
-        adapter = ForceValidatorExitAdapter(_adapter);
+        vaultHub = IVaultHub(_vaultHub);
+        evmScriptExecutor = _evmScriptExecutor;
     }
 
     // -------------
@@ -57,8 +75,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _pubkeys);
 
-        address toAddress = address(adapter);
-        bytes4 methodId = ForceValidatorExitAdapter.forceValidatorExit.selector;
+        address toAddress = address(this);
+        bytes4 methodId = this.forceValidatorExit.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -109,9 +127,9 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
             numKeys += _pubkeys[i].length / PUBLIC_KEY_LENGTH;
         }
 
-        // check if we have enough balance on the adapter to pay for the validator exits
+        // check if we have enough balance to pay for the validator exits
         uint256 value = numKeys * _getWithdrawalRequestFee();
-        require(value <= address(adapter).balance, "Not enough balance on the adapter");
+        require(value <= address(this).balance, "Not enough ETH balance");
     }
 
     /// @dev Retrieves the current EIP-7002 withdrawal fee.
@@ -124,4 +142,48 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         return abi.decode(feeData, (uint256));
     }
+
+    // -------------
+    // ADAPTER METHODS
+    // -------------
+
+    /// @notice Function to force validator exits in VaultHub
+    /// @param _vault Address of the vault to exit validators from
+    /// @param _pubkeys Public keys of the validators to exit
+    function forceValidatorExit(
+        address _vault,
+        bytes calldata _pubkeys
+    ) external payable {
+        require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
+
+        uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
+        uint256 value = IStakingVault(_vault).calculateValidatorWithdrawalFee(numKeys);
+        if (value > address(this).balance) {
+            emit LowBalance(value, address(this).balance);
+            return;
+        }
+
+        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {
+        } catch (bytes memory lowLevelRevertData) {
+            /// @dev This check is required to prevent incorrect gas estimation of the method.
+            ///      Without it, Ethereum nodes that use binary search for gas estimation may
+            ///      return an invalid value when the forceValidatorExit() reverts because of the
+            ///      "out of gas" error.
+            ///      Here we assume that the forceValidatorExit() method doesn't have reverts with
+            ///      empty error data except "out of gas".
+            if (lowLevelRevertData.length == 0) revert OutOfGasError();
+            emit ForceValidatorExitFailed(_vault, _pubkeys);
+        }
+    }
+
+    /// @notice Function to withdraw all ETH to TrustedCaller
+    function withdrawETH() external onlyTrustedCaller(msg.sender) {
+        uint256 balance = address(this).balance;
+        require(balance > 0, "No ETH to withdraw");
+
+        (bool success, ) = msg.sender.call{value: balance}("");
+        require(success, "ETH transfer failed");
+    }
+
+    receive() external payable {}
 }

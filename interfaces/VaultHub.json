@@ -1,7 +1,7 @@
 [
   {
     "inputs": [],
-    "name": "VAULT_MASTER_ROLE",
+    "name": "BAD_DEBT_MASTER_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -14,7 +14,46 @@
   },
   {
     "inputs": [],
-    "name": "WITHDRAWAL_EXECUTOR_ROLE",
+    "name": "MAX_RELATIVE_SHARE_LIMIT_BP",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REDEMPTION_MASTER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "VALIDATOR_EXIT_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "VAULT_MASTER_ROLE",
     "outputs": [
       {
         "internalType": "bytes32",
@@ -59,6 +98,47 @@
     "name": "forceValidatorExit",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_redemptionsValue",
+        "type": "uint256"
+      }
+    ],
+    "name": "setVaultRedemptions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_badDebtVault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_vaultAcceptor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxSharesToSocialize",
+        "type": "uint256"
+      }
+    ],
+    "name": "socializeBadDebt",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -163,6 +243,11 @@
             "internalType": "uint16",
             "name": "reservationFeeBP",
             "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "isBeaconDepositsManuallyPaused",
+            "type": "bool"
           }
         ],
         "internalType": "struct IVaultHub.VaultConnection",
@@ -193,9 +278,9 @@
                 "type": "uint128"
               },
               {
-                "internalType": "int128",
+                "internalType": "int112",
                 "name": "inOutDelta",
-                "type": "int128"
+                "type": "int112"
               }
             ],
             "internalType": "struct IVaultHub.Report",
@@ -213,14 +298,31 @@
             "type": "uint96"
           },
           {
+            "components": [
+              {
+                "internalType": "int112",
+                "name": "value",
+                "type": "int112"
+              },
+              {
+                "internalType": "int112",
+                "name": "valueOnRefSlot",
+                "type": "int112"
+              },
+              {
+                "internalType": "uint32",
+                "name": "refSlot",
+                "type": "uint32"
+              }
+            ],
+            "internalType": "struct IVaultHub.Int112WithRefSlotCache",
+            "name": "inOutDelta",
+            "type": "tuple"
+          },
+          {
             "internalType": "uint64",
             "name": "reportTimestamp",
             "type": "uint64"
-          },
-          {
-            "internalType": "int128",
-            "name": "inOutDelta",
-            "type": "int128"
           }
         ],
         "internalType": "struct IVaultHub.VaultRecord",

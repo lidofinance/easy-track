@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, DecreaseShareLimitsInVaultHub, DecreaseShareLimitsAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, DecreaseShareLimitsInVaultHub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,19 +7,15 @@ def create_calldata(vaults, share_limits):
     return encode_calldata(["address[]", "uint256[]"], [vaults, share_limits])
 
 @pytest.fixture(scope="module")
-def update_share_limits_factory(owner, adapter):
-    factory = DecreaseShareLimitsInVaultHub.deploy(owner, adapter, {"from": owner})
+def update_share_limits_factory(owner, vault_hub_stub):
+    factory = DecreaseShareLimitsInVaultHub.deploy(owner, vault_hub_stub, owner, {"from": owner})
     return factory
 
-@pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub):
-    adapter = DecreaseShareLimitsAdapter.deploy(vault_hub_stub, owner, {"from": owner})
-    return adapter
-
-def test_deploy(owner, adapter, update_share_limits_factory):
+def test_deploy(owner, update_share_limits_factory, vault_hub_stub):
     "Must deploy contract with correct data"
     assert update_share_limits_factory.trustedCaller() == owner
-    assert update_share_limits_factory.adapter() == adapter
+    assert update_share_limits_factory.vaultHub() == vault_hub_stub
+    assert update_share_limits_factory.evmScriptExecutor() == owner
 
 def test_create_evm_script_called_by_stranger(stranger, update_share_limits_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -45,7 +41,7 @@ def test_zero_vault_address(owner, stranger, update_share_limits_factory):
     with reverts('Zero vault address'):
         update_share_limits_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script(owner, accounts, update_share_limits_factory, adapter):
+def test_create_evm_script(owner, accounts, update_share_limits_factory):
     "Must create correct EVMScript if all requirements are met"
     # Register vaults first
     vault1 = accounts[5]
@@ -61,8 +57,8 @@ def test_create_evm_script(owner, accounts, update_share_limits_factory, adapter
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            adapter.address,
-            adapter.updateShareLimit.encode_input(vaults[i], share_limits[i])
+            update_share_limits_factory.address,
+            update_share_limits_factory.updateShareLimit.encode_input(vaults[i], share_limits[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 

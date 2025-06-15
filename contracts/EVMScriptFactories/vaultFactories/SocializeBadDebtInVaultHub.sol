@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../adapters/SocializeBadDebtAdapter.sol";
+import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to socialize bad debt for multiple vaults in VaultHub
@@ -16,19 +16,36 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub adapter
-    SocializeBadDebtAdapter public immutable adapter;
+    /// @notice Address of VaultHub
+    IVaultHub public immutable vaultHub;
+
+    /// @notice Address of the EVMScriptExecutor
+    address public immutable evmScriptExecutor;
+
+    // -------------
+    // EVENTS
+    // -------------
+
+    event BadDebtSocializationFailed(address indexed badDebtVault, address indexed vaultAcceptor, uint256 maxSharesToSocialize);
+
+    // -------------
+    // ERRORS
+    // -------------
+
+    error OutOfGasError();
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address payable _adapter)
+    constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
         TrustedCaller(_trustedCaller)
     {
-        require(_adapter != address(0), "Zero adapter");
+        require(_vaultHub != address(0), "Zero VaultHub address");
+        require(_evmScriptExecutor != address(0), "Zero EVMScriptExecutor address");
 
-        adapter = SocializeBadDebtAdapter(_adapter);
+        vaultHub = IVaultHub(_vaultHub);
+        evmScriptExecutor = _evmScriptExecutor;
     }
 
     // -------------
@@ -53,8 +70,8 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_badDebtVaults, _vaultAcceptors, _maxSharesToSocialize);
 
-        address toAddress = address(adapter);
-        bytes4 methodId = SocializeBadDebtAdapter.socializeBadDebt.selector;
+        address toAddress = address(this);
+        bytes4 methodId = this.socializeBadDebt.selector;
         bytes[] memory calldataArray = new bytes[](_badDebtVaults.length);
 
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
@@ -104,6 +121,34 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(_badDebtVaults[i] != address(0), "Zero bad debt vault address");
             // acceptor address can't be zero - as it means to socialize bad debt to the core protocol
             require(_vaultAcceptors[i] != address(0), "Zero vault acceptor address");
+        }
+    }
+
+    // -------------
+    // ADAPTER METHODS
+    // -------------
+
+    /// @notice Socializes bad debt for a vault
+    /// @param _badDebtVault address of the vault that has the bad debt
+    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
+    /// @param _maxSharesToSocialize maximum amount of shares to socialize
+    function socializeBadDebt(
+        address _badDebtVault,
+        address _vaultAcceptor,
+        uint256 _maxSharesToSocialize
+    ) external {
+        require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
+
+        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) {
+        } catch (bytes memory lowLevelRevertData) {
+            /// @dev This check is required to prevent incorrect gas estimation of the method.
+            ///      Without it, Ethereum nodes that use binary search for gas estimation may
+            ///      return an invalid value when the socializeBadDebt() reverts because of the
+            ///      "out of gas" error.
+            ///      Here we assume that the socializeBadDebt() method doesn't have reverts with
+            ///      empty error data except "out of gas".
+            if (lowLevelRevertData.length == 0) revert OutOfGasError();
+            emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
         }
     }
 } 
