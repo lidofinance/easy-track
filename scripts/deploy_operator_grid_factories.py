@@ -48,6 +48,7 @@ def main():
 
     log.br()
 
+    log.nb("Trusted caller", trusted_caller)
     log.nb("Deployed Operator Grid", operator_grid)
 
     log.br()

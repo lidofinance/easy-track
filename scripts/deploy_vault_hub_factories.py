@@ -7,8 +7,8 @@ from brownie import (
     DecreaseShareLimitsInVaultHub,
     DecreaseVaultsFeesInVaultHub,
     ForceValidatorExitsInVaultHub,
-    ForceValidatorExitAdapter,
-    DecreaseVaultsFeesAdapter,
+    SocializeBadDebtInVaultHub,
+    SetVaultRedemptionsInVaultHub,
     web3,
 )
 
@@ -50,6 +50,8 @@ def main():
 
     log.br()
 
+    log.nb("Trusted caller", trusted_caller)
+    log.nb("EVMScriptExecutor", evmScriptExecutor)
     log.nb("Deployed Vault Hub", vault_hub)
 
     log.br()
@@ -87,70 +89,75 @@ def deploy_vault_hub_factories(
     decrease_share_limits_in_vault_hub = DecreaseShareLimitsInVaultHub.deploy(
         trusted_caller,
         vault_hub,
+        evmScriptExecutor,
         tx_params,
     )
     deployment_artifacts["DecreaseShareLimitsInVaultHub"] = {
         "contract": "DecreaseShareLimitsInVaultHub",
         "address": decrease_share_limits_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub],
+        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
     }
 
     log.ok("Deployed DecreaseShareLimitsInVaultHub", decrease_share_limits_in_vault_hub.address)
 
     # DecreaseVaultsFeesInVaultHub
-    update_vaults_fees_adapter = DecreaseVaultsFeesAdapter.deploy(
-        vault_hub,
-        evmScriptExecutor,
-        tx_params,
-    )
-    deployment_artifacts["DecreaseVaultsFeesAdapter"] = {
-        "contract": "DecreaseVaultsFeesAdapter",
-        "address": update_vaults_fees_adapter.address,
-        "constructorArgs": [vault_hub, evmScriptExecutor],
-    }
-
-    log.ok("Deployed DecreaseVaultsFeesAdapter", update_vaults_fees_adapter.address)
-
     decrease_vaults_fees_in_vault_hub = DecreaseVaultsFeesInVaultHub.deploy(
         trusted_caller,
-        update_vaults_fees_adapter.address,
+        vault_hub,
+        evmScriptExecutor,
         tx_params,
     )
     deployment_artifacts["DecreaseVaultsFeesInVaultHub"] = {
         "contract": "DecreaseVaultsFeesInVaultHub",
         "address": decrease_vaults_fees_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, update_vaults_fees_adapter.address],
+        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
     }
 
     log.ok("Deployed DecreaseVaultsFeesInVaultHub", decrease_vaults_fees_in_vault_hub.address)
 
     # ForceValidatorExitsInVaultHub
-    adapter = ForceValidatorExitAdapter.deploy(
+    force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
         trusted_caller,
         vault_hub,
         evmScriptExecutor,
         tx_params,
     )
-    deployment_artifacts["ForceValidatorExitAdapter"] = {
-        "contract": "ForceValidatorExitAdapter",
-        "address": adapter.address,
-        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
-    }
-
-    log.ok("Deployed ForceValidatorExitAdapter", adapter.address)
-
-    force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
-        trusted_caller,
-        adapter.address,
-        tx_params,
-    )
     deployment_artifacts["ForceValidatorExitsInVaultHub"] = {
         "contract": "ForceValidatorExitsInVaultHub",
         "address": force_validator_exits_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, adapter.address],
+        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
     }
 
     log.ok("Deployed ForceValidatorExitsInVaultHub", force_validator_exits_in_vault_hub.address)
+
+    # SocializeBadDebtInVaultHub
+    socialize_bad_debt_in_vault_hub = SocializeBadDebtInVaultHub.deploy(
+        trusted_caller,
+        vault_hub,
+        evmScriptExecutor,
+        tx_params,
+    )
+    deployment_artifacts["SocializeBadDebtInVaultHub"] = {
+        "contract": "SocializeBadDebtInVaultHub",
+        "address": socialize_bad_debt_in_vault_hub.address,
+        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
+    }
+
+    log.ok("Deployed SocializeBadDebtInVaultHub", socialize_bad_debt_in_vault_hub.address)
+
+    # SetVaultRedemptionsInVaultHub
+    set_vault_redemptions_in_vault_hub = SetVaultRedemptionsInVaultHub.deploy(
+        trusted_caller,
+        vault_hub,
+        tx_params,
+    )
+    deployment_artifacts["SetVaultRedemptionsInVaultHub"] = {
+        "contract": "SetVaultRedemptionsInVaultHub",
+        "address": set_vault_redemptions_in_vault_hub.address,
+        "constructorArgs": [trusted_caller, vault_hub],
+    }
+
+    log.ok("Deployed SetVaultRedemptionsInVaultHub", set_vault_redemptions_in_vault_hub.address)
 
     log.br()
     log.ok(f"All Vault Hub factories have been deployed. Saving artifacts...")
@@ -164,10 +171,10 @@ def deploy_vault_hub_factories(
     log.ok("Deployment artifacts have been saved to", filename)
 
     DecreaseShareLimitsInVaultHub.publish_source(decrease_share_limits_in_vault_hub)
-    DecreaseVaultsFeesAdapter.publish_source(update_vaults_fees_adapter)
     DecreaseVaultsFeesInVaultHub.publish_source(decrease_vaults_fees_in_vault_hub)
-    ForceValidatorExitAdapter.publish_source(adapter)
     ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)
+    SocializeBadDebtInVaultHub.publish_source(socialize_bad_debt_in_vault_hub)
+    SetVaultRedemptionsInVaultHub.publish_source(set_vault_redemptions_in_vault_hub)
 
     log.br()
     log.ok("All Vault Hub factories have been verified and published.") 
