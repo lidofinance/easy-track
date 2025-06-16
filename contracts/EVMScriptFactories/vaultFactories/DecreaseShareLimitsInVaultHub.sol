@@ -128,7 +128,7 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
             return;
         }
 
-        try vaultHub.updateShareLimit(_vault, _shareLimit) {
+        try vaultHub.updateShareLimit(_vault, _shareLimit) { // reverts if vault is disconnected while motion is in progress
         } catch (bytes memory lowLevelRevertData) {
             /// @dev This check is required to prevent incorrect gas estimation of the method.
             ///      Without it, Ethereum nodes that use binary search for gas estimation may

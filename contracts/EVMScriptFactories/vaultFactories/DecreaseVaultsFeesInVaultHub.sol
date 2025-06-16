@@ -165,7 +165,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             return;
         }
 
-        try vaultHub.updateVaultFees(
+        try vaultHub.updateVaultFees( // reverts if vault is disconnected while motion is in progress
             _vault,
             _infraFeeBP,
             _liquidityFeeBP,

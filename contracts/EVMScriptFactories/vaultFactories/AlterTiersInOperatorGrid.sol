@@ -94,7 +94,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {
-            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]);
+            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]); // reverts if tier does not exist in the operator grid
             IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
             require(_tierParams[i].shareLimit <= group.shareLimit, "Tier share limit too high");
 

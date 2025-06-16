@@ -163,7 +163,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
             return;
         }
 
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {
+        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) { // reverts if vault is disconnected or healthy
         } catch (bytes memory lowLevelRevertData) {
             /// @dev This check is required to prevent incorrect gas estimation of the method.
             ///      Without it, Ethereum nodes that use binary search for gas estimation may

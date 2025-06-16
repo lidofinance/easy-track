@@ -139,7 +139,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     ) external {
         require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
 
-        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) {
+        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) { // reverts if vault is disconnected while motion is in progress
         } catch (bytes memory lowLevelRevertData) {
             /// @dev This check is required to prevent incorrect gas estimation of the method.
             ///      Without it, Ethereum nodes that use binary search for gas estimation may
