@@ -13,6 +13,18 @@ import "../../interfaces/IVaultHub.sol";
 contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
+    string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
+    string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -29,20 +41,14 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     event ShareLimitUpdateFailed(address indexed vault, uint256 shareLimit);
 
     // -------------
-    // ERRORS
-    // -------------
-    
-    error OutOfGasError();
-
-    // -------------
     // CONSTRUCTOR
     // -------------
 
     constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
         TrustedCaller(_trustedCaller)
     {   
-        require(_vaultHub != address(0), "Zero VaultHub address");
-        require(_evmScriptExecutor != address(0), "Zero EVMScriptExecutor address");
+        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
+        require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
 
         vaultHub = IVaultHub(_vaultHub);
         evmScriptExecutor = _evmScriptExecutor;
@@ -104,11 +110,11 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         address[] memory _vaults,
         uint256[] memory _shareLimits
     ) private pure {
-        require(_vaults.length > 0, "Empty vaults array");
-        require(_vaults.length == _shareLimits.length, "Array length mismatch");
+        require(_vaults.length > 0, ERROR_EMPTY_VAULTS);
+        require(_vaults.length == _shareLimits.length, ERROR_ARRAY_LENGTH_MISMATCH);
         
         for (uint256 i = 0; i < _vaults.length; i++) {
-            require(_vaults[i] != address(0), "Zero vault address");
+            require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
             // shareLimit check in adapter to prevent motion failure in case vault disconnected while motion is in progress
         }
     }
@@ -121,7 +127,7 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @param _vault address of the vault to update
     /// @param _shareLimit new share limit value
     function updateShareLimit(address _vault, uint256 _shareLimit) external {
-        require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
+        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         if (_shareLimit > vaultHub.vaultConnection(_vault).shareLimit) {
             emit ShareLimitUpdateFailed(_vault, _shareLimit);
@@ -136,7 +142,7 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
             ///      "out of gas" error.
             ///      Here we assume that the updateShareLimit() method doesn't have reverts with
             ///      empty error data except "out of gas".
-            if (lowLevelRevertData.length == 0) revert OutOfGasError();
+            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
             emit ShareLimitUpdateFailed(_vault, _shareLimit);
         }
     }

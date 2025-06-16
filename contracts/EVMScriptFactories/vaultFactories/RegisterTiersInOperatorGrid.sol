@@ -13,6 +13,25 @@ import "../../interfaces/IOperatorGrid.sol";
 contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_EMPTY_NODE_OPERATORS = "EMPTY_NODE_OPERATORS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_NODE_OPERATOR = "ZERO_NODE_OPERATOR";
+    string private constant ERROR_EMPTY_TIERS = "EMPTY_TIERS";
+    string private constant ERROR_GROUP_NOT_EXISTS = "GROUP_NOT_EXISTS";
+    string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
+    string private constant ERROR_ZERO_RESERVE_RATIO = "ZERO_RESERVE_RATIO";
+    string private constant ERROR_RESERVE_RATIO_TOO_HIGH = "RESERVE_RATIO_TOO_HIGH";
+    string private constant ERROR_ZERO_FORCED_REBALANCE_THRESHOLD = "ZERO_FORCED_REBALANCE_THRESHOLD";
+    string private constant ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH = "FORCED_REBALANCE_THRESHOLD_TOO_HIGH";
+    string private constant ERROR_INFRA_FEE_TOO_HIGH = "INFRA_FEE_TOO_HIGH";
+    string private constant ERROR_LIQUIDITY_FEE_TOO_HIGH = "LIQUIDITY_FEE_TOO_HIGH";
+    string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -33,7 +52,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address _operatorGrid)
         TrustedCaller(_trustedCaller)
     {
-        require(_operatorGrid != address(0), "Zero operator grid");
+        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
     }
@@ -94,29 +113,29 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         address[] memory _nodeOperators,
         IOperatorGrid.TierParams[][] memory _tiers
     ) private view {
-        require(_nodeOperators.length > 0, "Empty node operators array");
-        require(_nodeOperators.length == _tiers.length, "Array length mismatch");
+        require(_nodeOperators.length > 0, ERROR_EMPTY_NODE_OPERATORS);
+        require(_nodeOperators.length == _tiers.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
-            require(_nodeOperators[i] != address(0), "Zero node operator");
-            require(_tiers[i].length > 0, "Empty tiers array");
+            require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
+            require(_tiers[i].length > 0, ERROR_EMPTY_TIERS);
 
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
-            require(group.operator != address(0), "Group not exists");
+            require(group.operator != address(0), ERROR_GROUP_NOT_EXISTS);
 
             // Validate tier parameters
             for (uint256 j = 0; j < _tiers[i].length; j++) {
-                require(_tiers[i][j].shareLimit <= group.shareLimit, "Tier share limit too high");
+                require(_tiers[i][j].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
 
-                require(_tiers[i][j].reserveRatioBP != 0, "Zero reserve ratio");
-                require(_tiers[i][j].reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
+                require(_tiers[i][j].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
+                require(_tiers[i][j].reserveRatioBP <= TOTAL_BASIS_POINTS, ERROR_RESERVE_RATIO_TOO_HIGH);
 
-                require(_tiers[i][j].forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
-                require(_tiers[i][j].forcedRebalanceThresholdBP <= _tiers[i][j].reserveRatioBP, "Forced rebalance threshold too high");
+                require(_tiers[i][j].forcedRebalanceThresholdBP != 0, ERROR_ZERO_FORCED_REBALANCE_THRESHOLD);
+                require(_tiers[i][j].forcedRebalanceThresholdBP <= _tiers[i][j].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);
 
-                require(_tiers[i][j].infraFeeBP <= MAX_FEE_BP, "Infra fee too high");
-                require(_tiers[i][j].liquidityFeeBP <= MAX_FEE_BP, "Liquidity fee too high");
-                require(_tiers[i][j].reservationFeeBP <= MAX_FEE_BP, "Reservation fee too high");
+                require(_tiers[i][j].infraFeeBP <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
+                require(_tiers[i][j].liquidityFeeBP <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
+                require(_tiers[i][j].reservationFeeBP <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
             }
         }
     }

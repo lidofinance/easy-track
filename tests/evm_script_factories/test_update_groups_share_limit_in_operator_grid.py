@@ -26,30 +26,30 @@ def test_create_evm_script_called_by_stranger(stranger, update_groups_share_limi
 
 
 def test_empty_node_operators_array(owner, update_groups_share_limit_in_operator_grid_factory):
-    "Must revert with message 'Empty node operators array' if operators array is empty"
+    "Must revert with message 'EMPTY_NODE_OPERATORS' if operators array is empty"
     EMPTY_CALLDATA = create_calldata([], [])
-    with reverts('Empty node operators array'):
+    with reverts('EMPTY_NODE_OPERATORS'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_array_length_mismatch(owner, stranger, update_groups_share_limit_in_operator_grid_factory):
-    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     CALLDATA = create_calldata([stranger.address], [1000, 2000])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_zero_node_operator(owner, stranger, update_groups_share_limit_in_operator_grid_factory):
-    "Must revert with message 'Zero node operator' if any operator is zero address"
+    "Must revert with message 'ZERO_NODE_OPERATOR' if any operator is zero address"
     CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [1000, 2000])
-    with reverts('Zero node operator'):
+    with reverts('ZERO_NODE_OPERATOR'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_group_not_exists(owner, stranger, accounts, update_groups_share_limit_in_operator_grid_factory):
-    "Must revert with message 'Group not exists' if any group doesn't exist"
+    "Must revert with message 'GROUP_NOT_EXISTS' if any group doesn't exist"
     CALLDATA = create_calldata([stranger.address, accounts[5].address], [1000, 2000])
-    with reverts('Group not exists'):
+    with reverts('GROUP_NOT_EXISTS'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 

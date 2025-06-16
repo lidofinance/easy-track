@@ -26,17 +26,17 @@ def test_create_evm_script_called_by_stranger(stranger, alter_tiers_in_operator_
 
 
 def test_empty_tier_ids_array(owner, alter_tiers_in_operator_grid_factory):
-    "Must revert with message 'Empty tier IDs array' if tier IDs array is empty"
+    "Must revert with message 'EMPTY_TIER_IDS' if tier IDs array is empty"
     EMPTY_CALLDATA = create_calldata([], [])
-    with reverts('Empty tier IDs array'):
+    with reverts('EMPTY_TIER_IDS'):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_array_length_mismatch(owner, alter_tiers_in_operator_grid_factory):
-    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     tier_params = [(1000, 200, 100, 50, 40, 10)]
     CALLDATA = create_calldata([0, 1], tier_params)
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
@@ -103,7 +103,7 @@ def test_decode_evm_script_call_data(alter_tiers_in_operator_grid_factory):
 
 
 def test_zero_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Zero reserve ratio' if reserve ratio is zero"
+    "Must revert with message 'ZERO_RESERVE_RATIO' if reserve ratio is zero"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -113,12 +113,12 @@ def test_zero_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, operato
     tier_ids = [1]
     tier_params = [(1000, 0, 100, 50, 40, 10)]  # reserveRatioBP = 0
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Zero reserve ratio"):
+    with reverts("ZERO_RESERVE_RATIO"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Reserve ratio too high' if reserve ratio exceeds 100%"
+    "Must revert with message 'RESERVE_RATIO_TOO_HIGH' if reserve ratio exceeds 100%"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -128,12 +128,12 @@ def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, ope
     tier_ids = [1]
     tier_params = [(1000, 70001, 100, 50, 40, 10)]  # reserveRatioBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Reserve ratio too high"):
+    with reverts("RESERVE_RATIO_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_zero_forced_rebalance_threshold(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Zero forced rebalance threshold' if forced rebalance threshold is zero"
+    "Must revert with message 'ZERO_FORCED_REBALANCE_THRESHOLD' if forced rebalance threshold is zero"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -143,12 +143,12 @@ def test_zero_forced_rebalance_threshold(owner, alter_tiers_in_operator_grid_fac
     tier_ids = [1]
     tier_params = [(1000, 200, 0, 50, 40, 10)]  # forcedRebalanceThresholdBP = 0
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Zero forced rebalance threshold"):
+    with reverts("ZERO_FORCED_REBALANCE_THRESHOLD"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Forced rebalance threshold too high' if forced rebalance threshold exceeds reserve ratio"
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold exceeds reserve ratio"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -158,12 +158,12 @@ def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid
     tier_ids = [1]
     tier_params = [(1000, 200, 300, 50, 40, 10)]  # forcedRebalanceThresholdBP > reserveRatioBP
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Forced rebalance threshold too high"):
+    with reverts("FORCED_REBALANCE_THRESHOLD_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Infra fee too high' if infra fee exceeds 100%"
+    "Must revert with message 'INFRA_FEE_TOO_HIGH' if infra fee exceeds max fee"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -173,12 +173,12 @@ def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operato
     tier_ids = [1]
     tier_params = [(1000, 200, 100, 70001, 40, 10)]  # infraFeeBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Infra fee too high"):
+    with reverts("INFRA_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Liquidity fee too high' if liquidity fee exceeds 100%"
+    "Must revert with message 'LIQUIDITY_FEE_TOO_HIGH' if liquidity fee exceeds max fee"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -188,12 +188,12 @@ def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, ope
     tier_ids = [1]
     tier_params = [(1000, 200, 100, 50, 70001, 10)]  # liquidityFeeBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Liquidity fee too high"):
+    with reverts("LIQUIDITY_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Reservation fee too high' if reservation fee exceeds 100%"
+    "Must revert with message 'RESERVATION_FEE_TOO_HIGH' if reservation fee exceeds max fee"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -203,7 +203,7 @@ def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, o
     tier_ids = [1]
     tier_params = [(1000, 200, 100, 50, 40, 70001)]  # reservationFeeBP > uint16.max
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Reservation fee too high"):
+    with reverts("RESERVATION_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
@@ -219,23 +219,23 @@ def test_fees_less_than_uint16_max(owner, alter_tiers_in_operator_grid_factory, 
 
     tier_params = [(1000, 200, 100, 70001, 100, 100)]
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Infra fee too high"):
+    with reverts("INFRA_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
     tier_params = [(1000, 200, 100, 100, 70001, 100)]
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Liquidity fee too high"):
+    with reverts("LIQUIDITY_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
     tier_params = [(1000, 200, 100, 100, 100, 70001)]
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Reservation fee too high"):
+    with reverts("RESERVATION_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
     
 
 
 def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Tier share limit too high' if tier share limit exceeds group share limit"
+    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if tier share limit exceeds group share limit"
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -245,5 +245,5 @@ def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_gr
     tier_ids = [1]
     tier_params = [(2000, 200, 100, 50, 40, 10)]  # shareLimit > group share limit
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("Tier share limit too high"):
+    with reverts("TIER_SHARE_LIMIT_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)

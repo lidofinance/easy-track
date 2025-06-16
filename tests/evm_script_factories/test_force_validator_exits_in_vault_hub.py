@@ -26,33 +26,33 @@ def test_create_evm_script_called_by_stranger(stranger, force_validator_exits_fa
         force_validator_exits_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 def test_empty_vaults_array(owner, force_validator_exits_factory):
-    "Must revert with message 'Empty vaults array' if vaults array is empty"
+    "Must revert with message 'EMPTY_VAULTS' if vaults array is empty"
     EMPTY_CALLDATA = create_calldata([], [])
-    with reverts('Empty vaults array'):
+    with reverts('EMPTY_VAULTS'):
         force_validator_exits_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 def test_array_length_mismatch(owner, stranger, force_validator_exits_factory):
-    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     CALLDATA = create_calldata([stranger.address], [b"0x" * 48, b"0x" * 48])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         force_validator_exits_factory.createEVMScript(owner, CALLDATA)
 
 def test_zero_vault_address(owner, stranger, force_validator_exits_factory):
-    "Must revert with message 'Zero vault address' if any vault is zero address"
+    "Must revert with message 'ZERO_VAULT' if any vault is zero address"
     CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [b"0x" * 48, b"0x" * 48])
-    with reverts('Zero vault address'):
+    with reverts('ZERO_VAULT'):
         force_validator_exits_factory.createEVMScript(owner, CALLDATA)
 
 def test_empty_pubkeys(owner, stranger, force_validator_exits_factory):
-    "Must revert with message 'Empty pubkeys' if any pubkeys array is empty"
+    "Must revert with message 'EMPTY_PUBKEYS' if any pubkeys array is empty"
     CALLDATA = create_calldata([stranger.address], [b""])
-    with reverts('Empty pubkeys'):
+    with reverts('EMPTY_PUBKEYS'):
         force_validator_exits_factory.createEVMScript(owner, CALLDATA)
 
 def test_invalid_pubkeys_length(owner, stranger, force_validator_exits_factory):
-    "Must revert with message 'Invalid pubkeys length' if pubkeys length is not multiple of 48"
+    "Must revert with message 'INVALID_PUBKEYS_LENGTH' if pubkeys length is not multiple of 48"
     CALLDATA = create_calldata([stranger.address], [b"0x" * 47])
-    with reverts('Invalid pubkeys length'):
+    with reverts('INVALID_PUBKEYS_LENGTH'):
         force_validator_exits_factory.createEVMScript(owner, CALLDATA)
 
 def test_create_evm_script(owner, accounts, force_validator_exits_factory):

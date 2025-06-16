@@ -13,6 +13,22 @@ import "../../interfaces/IOperatorGrid.sol";
 contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_EMPTY_TIER_IDS = "EMPTY_TIER_IDS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
+    string private constant ERROR_ZERO_RESERVE_RATIO = "ZERO_RESERVE_RATIO";
+    string private constant ERROR_RESERVE_RATIO_TOO_HIGH = "RESERVE_RATIO_TOO_HIGH";
+    string private constant ERROR_ZERO_FORCED_REBALANCE_THRESHOLD = "ZERO_FORCED_REBALANCE_THRESHOLD";
+    string private constant ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH = "FORCED_REBALANCE_THRESHOLD_TOO_HIGH";
+    string private constant ERROR_INFRA_FEE_TOO_HIGH = "INFRA_FEE_TOO_HIGH";
+    string private constant ERROR_LIQUIDITY_FEE_TOO_HIGH = "LIQUIDITY_FEE_TOO_HIGH";
+    string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
+
+    // -------------
     // CONSTANTS
     // -------------
 
@@ -34,7 +50,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address _operatorGrid)
         TrustedCaller(_trustedCaller)
     {
-        require(_operatorGrid != address(0), "Zero operator grid");
+        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
     }
@@ -89,24 +105,24 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     function _validateInputData(uint256[] memory _tierIds, IOperatorGrid.TierParams[] memory _tierParams) private view {
-        require(_tierIds.length > 0, "Empty tier IDs array");
-        require(_tierIds.length == _tierParams.length, "Array length mismatch");
+        require(_tierIds.length > 0, ERROR_EMPTY_TIER_IDS);
+        require(_tierIds.length == _tierParams.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {
             IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]); // reverts if tier does not exist in the operator grid
             IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
-            require(_tierParams[i].shareLimit <= group.shareLimit, "Tier share limit too high");
+            require(_tierParams[i].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
 
-            require(_tierParams[i].reserveRatioBP != 0, "Zero reserve ratio");
-            require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, "Reserve ratio too high");
+            require(_tierParams[i].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
+            require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, ERROR_RESERVE_RATIO_TOO_HIGH);
 
-            require(_tierParams[i].forcedRebalanceThresholdBP != 0, "Zero forced rebalance threshold");
-            require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, "Forced rebalance threshold too high");
+            require(_tierParams[i].forcedRebalanceThresholdBP != 0, ERROR_ZERO_FORCED_REBALANCE_THRESHOLD);
+            require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);
 
-            require(_tierParams[i].infraFeeBP <= MAX_FEE_BP, "Infra fee too high");
-            require(_tierParams[i].liquidityFeeBP <= MAX_FEE_BP, "Liquidity fee too high");
-            require(_tierParams[i].reservationFeeBP <= MAX_FEE_BP, "Reservation fee too high");
+            require(_tierParams[i].infraFeeBP <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
+            require(_tierParams[i].liquidityFeeBP <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
+            require(_tierParams[i].reservationFeeBP <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
         }
     }
 }

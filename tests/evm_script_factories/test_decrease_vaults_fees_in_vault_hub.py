@@ -27,32 +27,32 @@ def test_create_evm_script_called_by_stranger(stranger, update_vaults_fees_facto
         update_vaults_fees_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 def test_empty_vaults_array(owner, update_vaults_fees_factory):
-    "Must revert with message 'Empty vaults array' if vaults array is empty"
+    "Must revert with message 'EMPTY_VAULTS' if vaults array is empty"
     EMPTY_CALLDATA = create_calldata([], [], [], [])
-    with reverts('Empty vaults array'):
+    with reverts('EMPTY_VAULTS'):
         update_vaults_fees_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 def test_array_length_mismatch(owner, stranger, update_vaults_fees_factory):
-    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     # Different lengths for infra fees
     CALLDATA1 = create_calldata([stranger.address], [1000, 2000], [1000], [1000])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA1)
     
     # Different lengths for liquidity fees
     CALLDATA2 = create_calldata([stranger.address], [1000], [1000, 2000], [1000])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA2)
     
     # Different lengths for reservation fees
     CALLDATA3 = create_calldata([stranger.address], [1000], [1000], [1000, 2000])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA3)
 
 def test_zero_vault_address(owner, stranger, update_vaults_fees_factory):
-    "Must revert with message 'Zero vault address' if any vault is zero address"
+    "Must revert with message 'ZERO_VAULT' if any vault is zero address"
     CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [1000, 1000], [1000, 1000], [1000, 1000])
-    with reverts('Zero vault address'):
+    with reverts('ZERO_VAULT'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA)
 
 def test_fees_exceed_100_percent(owner, stranger, update_vaults_fees_factory, vault_hub_stub):
@@ -62,17 +62,17 @@ def test_fees_exceed_100_percent(owner, stranger, update_vaults_fees_factory, va
     
     # Test infra fee exceeds 100%
     CALLDATA1 = create_calldata([stranger.address], [70001], [1000], [1000])
-    with reverts('Infra fee too high'):
+    with reverts('INFRA_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA1)
     
     # Test liquidity fee exceeds 100%
     CALLDATA2 = create_calldata([stranger.address], [1000], [70001], [1000])
-    with reverts('Liquidity fee too high'):
+    with reverts('LIQUIDITY_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA2)
     
     # Test reservation fee exceeds 100%
     CALLDATA3 = create_calldata([stranger.address], [1000], [1000], [70001])
-    with reverts('Reservation fee too high'):
+    with reverts('RESERVATION_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA3)
 
 def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_factory, vault_hub_stub):

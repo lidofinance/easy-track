@@ -27,27 +27,27 @@ def test_create_evm_script_called_by_stranger(stranger, socialize_bad_debt_facto
         socialize_bad_debt_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 def test_empty_bad_debt_vaults_array(owner, socialize_bad_debt_factory):
-    "Must revert with message 'Empty bad debt vaults array' if bad debt vaults array is empty"
+    "Must revert with message 'EMPTY_BAD_DEBT_VAULTS' if bad debt vaults array is empty"
     EMPTY_CALLDATA = create_calldata([], [], [])
-    with reverts('Empty bad debt vaults array'):
+    with reverts('EMPTY_BAD_DEBT_VAULTS'):
         socialize_bad_debt_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 def test_array_length_mismatch(owner, stranger, socialize_bad_debt_factory):
-    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     CALLDATA = create_calldata([stranger.address], [stranger.address, stranger.address], [100])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         socialize_bad_debt_factory.createEVMScript(owner, CALLDATA)
 
 def test_zero_bad_debt_vault_address(owner, stranger, socialize_bad_debt_factory):
-    "Must revert with message 'Zero bad debt vault address' if any bad debt vault is zero address"
+    "Must revert with message 'ZERO_BAD_DEBT_VAULT' if any bad debt vault is zero address"
     CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [stranger.address, stranger.address], [100, 200])
-    with reverts('Zero bad debt vault address'):
+    with reverts('ZERO_BAD_DEBT_VAULT'):
         socialize_bad_debt_factory.createEVMScript(owner, CALLDATA)
 
 def test_zero_vault_acceptor_address(owner, stranger, socialize_bad_debt_factory):
-    "Must revert with message 'Zero vault acceptor address' if any vault acceptor is zero address"
+    "Must revert with message 'ZERO_VAULT_ACCEPTOR' if any vault acceptor is zero address"
     CALLDATA = create_calldata([stranger.address, stranger.address], [ZERO_ADDRESS, stranger.address], [100, 200])
-    with reverts('Zero vault acceptor address'):
+    with reverts('ZERO_VAULT_ACCEPTOR'):
         socialize_bad_debt_factory.createEVMScript(owner, CALLDATA)
 
 def test_create_evm_script(owner, accounts, socialize_bad_debt_factory):

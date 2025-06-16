@@ -13,6 +13,21 @@ import "../../interfaces/IVaultHub.sol";
 contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
+    string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
+    string private constant ERROR_INFRA_FEE_TOO_HIGH = "INFRA_FEE_TOO_HIGH";
+    string private constant ERROR_LIQUIDITY_FEE_TOO_HIGH = "LIQUIDITY_FEE_TOO_HIGH";
+    string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
+    string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
+
+    // -------------
     // CONSTANTS
     // -------------
 
@@ -36,20 +51,14 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     event VaultFeesUpdateFailed(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
 
     // -------------
-    // ERRORS
-    // -------------
-
-    error OutOfGasError();
-
-    // -------------
     // CONSTRUCTOR
     // -------------
 
     constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
         TrustedCaller(_trustedCaller)
     {   
-        require(_vaultHub != address(0), "Zero VaultHub address");
-        require(_evmScriptExecutor != address(0), "Zero EVMScriptExecutor address");
+        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
+        require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
 
         vaultHub = IVaultHub(_vaultHub);
         evmScriptExecutor = _evmScriptExecutor;
@@ -123,19 +132,19 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
         uint256[] memory _liquidityFeesBP,
         uint256[] memory _reservationFeesBP
     ) private pure {
-        require(_vaults.length > 0, "Empty vaults array");
+        require(_vaults.length > 0, ERROR_EMPTY_VAULTS);
         require(
             _vaults.length == _infraFeesBP.length &&
             _vaults.length == _liquidityFeesBP.length &&
             _vaults.length == _reservationFeesBP.length,
-            "Array length mismatch"
+            ERROR_ARRAY_LENGTH_MISMATCH
         );
         
         for (uint256 i = 0; i < _vaults.length; i++) {
-            require(_vaults[i] != address(0), "Zero vault address");
-            require(_infraFeesBP[i] <= MAX_FEE_BP, "Infra fee too high");
-            require(_liquidityFeesBP[i] <= MAX_FEE_BP, "Liquidity fee too high");
-            require(_reservationFeesBP[i] <= MAX_FEE_BP, "Reservation fee too high");
+            require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
+            require(_infraFeesBP[i] <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
+            require(_liquidityFeesBP[i] <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
+            require(_reservationFeesBP[i] <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
             // more checks in adapter function to prevent motion failure in case vault disconnected while motion is in progress
         }
     }
@@ -155,7 +164,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
         uint256 _liquidityFeeBP,
         uint256 _reservationFeeBP
     ) external {
-        require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
+        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
         if (_infraFeeBP > connection.infraFeeBP ||
@@ -177,7 +186,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             ///      "out of gas" error.
             ///      Here we assume that the updateVaultFees() method doesn't have reverts with
             ///      empty error data except "out of gas".
-            if (lowLevelRevertData.length == 0) revert OutOfGasError();
+            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
         }
     }

@@ -13,6 +13,16 @@ import "../../interfaces/IOperatorGrid.sol";
 contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_EMPTY_NODE_OPERATORS = "EMPTY_NODE_OPERATORS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_NODE_OPERATOR = "ZERO_NODE_OPERATOR";
+    string private constant ERROR_GROUP_NOT_EXISTS = "GROUP_NOT_EXISTS";
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -26,7 +36,7 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
     constructor(address _trustedCaller, address _operatorGrid)
         TrustedCaller(_trustedCaller)
     {
-        require(_operatorGrid != address(0), "Zero operator grid");
+        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
     }
@@ -84,14 +94,14 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
     }
 
     function _validateInputData(address[] memory _nodeOperators, uint256[] memory _shareLimits) private view {
-        require(_nodeOperators.length > 0, "Empty node operators array");
-        require(_nodeOperators.length == _shareLimits.length, "Array length mismatch");
+        require(_nodeOperators.length > 0, ERROR_EMPTY_NODE_OPERATORS);
+        require(_nodeOperators.length == _shareLimits.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
-            require(_nodeOperators[i] != address(0), "Zero node operator");
+            require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
 
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
-            require(group.operator != address(0), "Group not exists");
+            require(group.operator != address(0), ERROR_GROUP_NOT_EXISTS);
         }
     }
 }

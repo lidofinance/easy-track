@@ -13,6 +13,19 @@ import "../../interfaces/IVaultHub.sol";
 contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
+    string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_EMPTY_BAD_DEBT_VAULTS = "EMPTY_BAD_DEBT_VAULTS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_BAD_DEBT_VAULT = "ZERO_BAD_DEBT_VAULT";
+    string private constant ERROR_ZERO_VAULT_ACCEPTOR = "ZERO_VAULT_ACCEPTOR";
+    string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -29,20 +42,14 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     event BadDebtSocializationFailed(address indexed badDebtVault, address indexed vaultAcceptor, uint256 maxSharesToSocialize);
 
     // -------------
-    // ERRORS
-    // -------------
-
-    error OutOfGasError();
-
-    // -------------
     // CONSTRUCTOR
     // -------------
 
     constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
         TrustedCaller(_trustedCaller)
     {
-        require(_vaultHub != address(0), "Zero VaultHub address");
-        require(_evmScriptExecutor != address(0), "Zero EVMScriptExecutor address");
+        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
+        require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
 
         vaultHub = IVaultHub(_vaultHub);
         evmScriptExecutor = _evmScriptExecutor;
@@ -113,14 +120,17 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
         address[] memory _vaultAcceptors,
         uint256[] memory _maxSharesToSocialize
     ) private pure {
-        require(_badDebtVaults.length > 0, "Empty bad debt vaults array");
-        require(_badDebtVaults.length == _vaultAcceptors.length, "Array length mismatch");
-        require(_badDebtVaults.length == _maxSharesToSocialize.length, "Array length mismatch");
+        require(_badDebtVaults.length > 0, ERROR_EMPTY_BAD_DEBT_VAULTS);
+        require(
+            _badDebtVaults.length == _vaultAcceptors.length &&
+            _badDebtVaults.length == _maxSharesToSocialize.length,
+            ERROR_ARRAY_LENGTH_MISMATCH
+        );
         
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
-            require(_badDebtVaults[i] != address(0), "Zero bad debt vault address");
+            require(_badDebtVaults[i] != address(0), ERROR_ZERO_BAD_DEBT_VAULT);
             // acceptor address can't be zero - as it means to socialize bad debt to the core protocol
-            require(_vaultAcceptors[i] != address(0), "Zero vault acceptor address");
+            require(_vaultAcceptors[i] != address(0), ERROR_ZERO_VAULT_ACCEPTOR);
         }
     }
 
@@ -137,7 +147,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
         address _vaultAcceptor,
         uint256 _maxSharesToSocialize
     ) external {
-        require(msg.sender == evmScriptExecutor, "Only EVMScriptExecutor");
+        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) { // reverts if vault is disconnected while motion is in progress
         } catch (bytes memory lowLevelRevertData) {
@@ -147,7 +157,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
             ///      "out of gas" error.
             ///      Here we assume that the socializeBadDebt() method doesn't have reverts with
             ///      empty error data except "out of gas".
-            if (lowLevelRevertData.length == 0) revert OutOfGasError();
+            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
             emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
         }
     }

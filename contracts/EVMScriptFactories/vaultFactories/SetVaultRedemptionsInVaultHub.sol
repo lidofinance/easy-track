@@ -13,6 +13,15 @@ import "../../interfaces/IVaultHub.sol";
 contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
+    // ERROR MESSAGES
+    // -------------
+
+    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
+    string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -26,7 +35,7 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
     constructor(address _trustedCaller, address _vaultHub)
         TrustedCaller(_trustedCaller)
     {
-        require(_vaultHub != address(0), "Zero vault hub");
+        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
 
         vaultHub = IVaultHub(_vaultHub);
     }
@@ -93,11 +102,11 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
         address[] memory _vaults,
         uint256[] memory _redemptionsValues
     ) private pure {
-        require(_vaults.length > 0, "Empty vaults array");
-        require(_vaults.length == _redemptionsValues.length, "Array length mismatch");
+        require(_vaults.length > 0, ERROR_EMPTY_VAULTS);
+        require(_vaults.length == _redemptionsValues.length, ERROR_ARRAY_LENGTH_MISMATCH);
         
         for (uint256 i = 0; i < _vaults.length; i++) {
-            require(_vaults[i] != address(0), "Zero vault address");
+            require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
         }
     }
 } 

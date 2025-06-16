@@ -26,39 +26,39 @@ def test_create_evm_script_called_by_stranger(stranger, register_tiers_in_operat
 
 
 def test_empty_node_operators_array(owner, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'Empty node operators array' if operators array is empty"
+    "Must revert with message 'EMPTY_NODE_OPERATORS' if operators array is empty"
     EMPTY_CALLDATA = create_calldata([], [[]])
-    with reverts('Empty node operators array'):
+    with reverts('EMPTY_NODE_OPERATORS'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
 def test_array_length_mismatch(owner, stranger, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'Array length mismatch' if arrays have different lengths"
+    "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     CALLDATA = create_calldata([stranger.address], [[], []])
-    with reverts('Array length mismatch'):
+    with reverts('ARRAY_LENGTH_MISMATCH'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_zero_node_operator(owner, stranger, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'Zero node operator' if any operator is zero address"
+    "Must revert with message 'ZERO_NODE_OPERATOR' if any operator is zero address"
     CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]])
-    with reverts('Zero node operator'):
+    with reverts('ZERO_NODE_OPERATOR'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Empty tiers array' if any tiers array is empty"
+    "Must revert with message 'EMPTY_TIERS' if any tiers array is empty"
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
     CALLDATA = create_calldata([stranger.address], [[]])
-    with reverts('Empty tiers array'):
+    with reverts('EMPTY_TIERS'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
 def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_factory):
-    "Must revert with message 'Group not exists' if any group doesn't exist"
+    "Must revert with message 'GROUP_NOT_EXISTS' if any group doesn't exist"
     tiers = [(1000, 200, 100, 50, 40, 10)]
     CALLDATA = create_calldata([stranger.address], [tiers])
-    with reverts('Group not exists'):
+    with reverts('GROUP_NOT_EXISTS'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
@@ -119,10 +119,10 @@ def test_decode_evm_script_call_data(accounts, register_tiers_in_operator_grid_f
 
 
 def test_tier_share_limit_too_high(owner, register_tiers_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'Tier share limit too high' if any tier's share limit exceeds the group's share limit"
+    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if any tier's share limit exceeds the group's share limit"
     operator = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
     tiers = [[(1500, 200, 100, 50, 40, 10)]]  # Tier share limit exceeds group share limit
     CALLDATA = create_calldata([operator], tiers)
-    with reverts('Tier share limit too high'):
+    with reverts('TIER_SHARE_LIMIT_TOO_HIGH'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
