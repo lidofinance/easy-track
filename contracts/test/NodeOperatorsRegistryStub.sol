@@ -12,7 +12,7 @@ contract NodeOperatorsRegistryStub {
     uint64 public stakingLimit = 200;
     uint64 public totalSigningKeys = 400;
 
-    uint256 internal _nodeOperatorsCount = 10;
+    uint256 internal _nodeOperatorsCount = 1;
     mapping(uint256 => bytes[]) internal _signingKeys;
 
     constructor(address _rewardAddress) {

@@ -5,7 +5,7 @@ pragma solidity ^0.8.4;
 
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
-import "../libraries/ValidatorExitRequestHelpers.sol";
+import "../libraries/ValidatorExitRequestUtils.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IStakingRouter.sol";
 import "../interfaces/INodeOperatorsRegistry.sol";
@@ -13,7 +13,7 @@ import "../interfaces/IValidatorsExitBusOracle.sol";
 
 /// @author swissarmytowel
 /// @notice Creates EVMScript to submit exit requests to the Validators Exit Bus Oracle (SDVT module).
-contract SDVTSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactory {
+contract SDVTModuleSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactory {
     // -------------
     // IMMUTABLES
     // -------------
@@ -48,29 +48,34 @@ contract SDVTSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to submit exit requests to the Validators Exit Bus Oracle (SDVT module).
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded relays data: ValidatorExitRequestHelpers.ExitRequestInput[]
+    /// @param _evmScriptCallData Encoded relays data: ValidatorExitRequestUtils.ExitRequestInput[]
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        ValidatorExitRequestHelpers.ExitRequestInput[]
+        ValidatorExitRequestUtils.ExitRequestInput[]
             memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
+        ValidatorExitRequestUtils.validateExitRequests(
+            decodedCallData,
+            sdvtNodeOperatorsRegistry,
+            stakingRouter
+        );
+
         return
-            ValidatorExitRequestHelpers.constructExitValidatorInputHash(
+            EVMScriptCreator.createEVMScript(
                 address(validatorsExitBusOracle),
-                decodedCallData,
-                sdvtNodeOperatorsRegistry,
-                stakingRouter
+                IValidatorsExitBusOracle.submitExitRequestsHash.selector,
+                abi.encode(ValidatorExitRequestUtils.hashExitRequests(decodedCallData))
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded relays data: ValidatorExitRequestHelpers.ExitRequestInput[]
+    /// @param _evmScriptCallData Encoded relays data: ValidatorExitRequestUtils.ExitRequestInput[]
     /// @return Array of ExitRequestInput structs
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) external pure returns (ValidatorExitRequestHelpers.ExitRequestInput[] memory) {
+    ) external pure returns (ValidatorExitRequestUtils.ExitRequestInput[] memory) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -80,7 +85,7 @@ contract SDVTSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactory {
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (ValidatorExitRequestHelpers.ExitRequestInput[] memory) {
-        return abi.decode(_evmScriptCallData, (ValidatorExitRequestHelpers.ExitRequestInput[]));
+    ) private pure returns (ValidatorExitRequestUtils.ExitRequestInput[] memory) {
+        return abi.decode(_evmScriptCallData, (ValidatorExitRequestUtils.ExitRequestInput[]));
     }
 }
