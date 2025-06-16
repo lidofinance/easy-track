@@ -49,10 +49,15 @@ library ValidatorExitRequestUtils {
     string private constant ERROR_INVALID_PUBKEY = "INVALID_PUBKEY";
     string private constant ERROR_INVALID_PUBKEY_LENGTH = "INVALID_PUBKEY_LENGTH";
 
+    // Error messages for node operator ID validation
     string private constant ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST =
         "NODE_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE =
         "EXECUTOR_NOT_PERMISSIONED_ON_MODULE";
+
+    // Error messages for integer overflows
+    string private constant ERROR_MODULE_ID_OVERFLOW = "MODULE_ID_OVERFLOW";
+    string private constant ERROR_NODE_OP_ID_OVERFLOW = "NODE_OPERATOR_ID_OVERFLOW";
 
     // -------------
     // INTERNAL METHODS
@@ -60,13 +65,8 @@ library ValidatorExitRequestUtils {
 
     /// @notice Hashes a slice of exit requests input data.
     function hashExitRequests(ExitRequestInput[] memory _requests) internal pure returns (bytes32) {
-        uint256 numberOfRequests = _requests.length;
-        require(
-            numberOfRequests <= MAX_REQUESTS_PER_MOTION,
-            ERROR_MAX_REQUESTS_PER_MOTION_EXCEEDED
-        );
-
         bytes memory packedData;
+        uint256 numberOfRequests = _requests.length;
 
         for (uint256 i; i < numberOfRequests; ) {
             ExitRequestInput memory request = _requests[i];
@@ -100,6 +100,8 @@ library ValidatorExitRequestUtils {
         uint256 length = _requests.length;
         require(length > 0, ERROR_EMPTY_REQUESTS_LIST);
 
+        require(length <= MAX_REQUESTS_PER_MOTION, ERROR_MAX_REQUESTS_PER_MOTION_EXCEEDED);
+
         // Retrieve the first request module details
         IStakingRouter.StakingModule memory module = _stakingRouter.getStakingModule(
             _requests[0].moduleId
@@ -117,6 +119,10 @@ library ValidatorExitRequestUtils {
 
         for (uint256 i; i < length; ) {
             ExitRequestInput memory _input = _requests[i];
+
+            // Check that the module ID, node operator ID, are within the valid ranges as they are stored as uint256 but have smaller limits
+            require(_input.moduleId <= type(uint24).max, ERROR_MODULE_ID_OVERFLOW);
+            require(_input.nodeOpId <= type(uint40).max, ERROR_NODE_OP_ID_OVERFLOW);
 
             // Node operator ids are ordered from 0 to nodeOperatorsCount - 1, so we check that the id is less than the count
             require(_input.nodeOpId < nodeOperatorsCount, ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST);

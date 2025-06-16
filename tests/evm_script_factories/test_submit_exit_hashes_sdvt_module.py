@@ -1,6 +1,6 @@
 import pytest
 import brownie
-from brownie import SDVTModuleSubmitExitRequestHashes, ZERO_ADDRESS, convert
+from brownie import SDVTModuleSubmitExitRequestHashes, ZERO_ADDRESS, convert, reverts
 from utils.evm_script import encode_call_script
 from utils.test_helpers import create_exit_requests_hashes, create_exit_request_hash_calldata
 
@@ -122,7 +122,7 @@ def test_decode_calldata(
 
 def test_decode_calldata_empty(sdvt_submit_exit_request_hashes):
     "Must revert decoding empty calldata"
-    with brownie.reverts():
+    with reverts():
         sdvt_submit_exit_request_hashes.decodeEVMScriptCallData("0x")
 
 
@@ -300,7 +300,7 @@ def test_cannot_create_evm_script_exceeds_max_requests(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("MAX_REQUESTS_PER_MOTION_EXCEEDED"):
+    with reverts("MAX_REQUESTS_PER_MOTION_EXCEEDED"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -308,7 +308,7 @@ def test_cannot_create_evm_script_no_exit_requests(owner, sdvt_submit_exit_reque
     "Must revert if no exit requests are provided"
     calldata = create_exit_request_hash_calldata([])
 
-    with brownie.reverts("EMPTY_REQUESTS_LIST"):
+    with reverts("EMPTY_REQUESTS_LIST"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -330,7 +330,7 @@ def test_cannot_create_evm_script_wrong_staking_module(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
+    with reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -369,7 +369,7 @@ def test_cannot_create_evm_script_wrong_staking_module_multiple(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
+    with reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -391,7 +391,7 @@ def test_cannot_create_evm_script_wrong_node_operator(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
+    with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -420,7 +420,7 @@ def test_cannot_create_evm_script_wrong_node_operator_multiple(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
+    with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -442,7 +442,7 @@ def test_cannot_create_evm_script_empty_pubkey(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("PUBKEY_IS_EMPTY"):
+    with reverts("PUBKEY_IS_EMPTY"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -465,7 +465,7 @@ def test_cannot_create_evm_script_pubkey_too_short(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("INVALID_PUBKEY_LENGTH"):
+    with reverts("INVALID_PUBKEY_LENGTH"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -488,7 +488,7 @@ def test_cannot_create_evm_script_pubkey_too_long(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("INVALID_PUBKEY_LENGTH"):
+    with reverts("INVALID_PUBKEY_LENGTH"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
@@ -513,5 +513,101 @@ def test_cannot_create_evm_script_with_wrong_pubkey(
 
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
 
-    with brownie.reverts("INVALID_PUBKEY"):
+    with reverts("INVALID_PUBKEY"):
+        sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
+
+
+def test_cannot_create_evm_script_with_wrong_pubkey_multiple(
+    owner,
+    submit_exit_hashes_factory_config,
+    sdvt_submit_exit_request_hashes,
+    exit_request_input_factory,
+):
+    "Must revert if one of the validator public keys is not in the allowed list"
+    sdvt_module_id = submit_exit_hashes_factory_config["module_ids"]["sdvt"]
+
+    # Use a pubkey that is not in the allowed list
+    invalid_pubkey = submit_exit_hashes_factory_config["pubkeys"][1]  # 48-byte hex string
+
+    exit_request_inputs = [
+        exit_request_input_factory(
+            sdvt_module_id,
+            submit_exit_hashes_factory_config["node_op_id"],
+            submit_exit_hashes_factory_config["validator_index"],
+            invalid_pubkey,
+            0,
+        ),
+        exit_request_input_factory(
+            sdvt_module_id,
+            submit_exit_hashes_factory_config["node_op_id"] + 1,
+            submit_exit_hashes_factory_config["validator_index"] + 1,
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        ),
+    ]
+
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+
+    with reverts("INVALID_PUBKEY"):
+        sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
+
+
+def test_cannot_create_evm_script_with_module_id_overflow(
+    owner,
+    submit_exit_hashes_factory_config,
+    sdvt_submit_exit_request_hashes,
+    exit_request_input_factory,
+    staking_router_stub,
+    sdvt_registry,
+):
+    "Must revert if the module ID overflows the allowed range"
+    invalid_sdvt_module_id = 2**24
+    staking_router_stub.setStakingModule(
+        invalid_sdvt_module_id,
+        sdvt_registry.address,
+    )
+
+    # Use a module ID that is too high
+    exit_request_inputs = [
+        exit_request_input_factory(
+            invalid_sdvt_module_id,  # Invalid module ID
+            submit_exit_hashes_factory_config["node_op_id"],
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        )
+    ]
+
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+
+    with reverts("MODULE_ID_OVERFLOW"):
+        sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
+
+
+def test_cannot_create_evm_script_with_node_operator_id_overflow(
+    owner,
+    submit_exit_hashes_factory_config,
+    sdvt_submit_exit_request_hashes,
+    exit_request_input_factory,
+    sdvt_registry,
+):
+    "Must revert if the node operator ID overflows the allowed range"
+    invalid_node_op_id = 2**40
+    # Set a valid module ID for the test
+    sdvt_registry.setDesiredNodeOperatorCount(invalid_node_op_id)
+
+    # Use a node operator ID that is too high
+    exit_request_inputs = [
+        exit_request_input_factory(
+            submit_exit_hashes_factory_config["module_ids"]["sdvt"],
+            invalid_node_op_id,  # Invalid node operator ID
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        )
+    ]
+
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+
+    with reverts("NODE_OPERATOR_ID_OVERFLOW"):
         sdvt_submit_exit_request_hashes.createEVMScript(owner, calldata)
