@@ -47,8 +47,6 @@ def get_factory_name():
         raise ValueError("Factory name cannot be empty")
     if not isinstance(factory_name, str):
         raise TypeError("Factory name must be a string")
-    if len(factory_name) > 32:
-        raise ValueError("Factory name must be less than 32 characters")
 
     return factory_name
 
