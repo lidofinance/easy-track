@@ -11,7 +11,11 @@ def create_calldata(tree_root, tree_cid):
 @pytest.fixture(scope="module")
 def vetted_gate_stub(owner):
     """Create a mock VettedGate contract with setTreeParams method"""
-    return owner.deploy(VettedGateStub)
+    stub = owner.deploy(VettedGateStub)
+    # Grant SET_TREE_ROLE to owner for testing
+    set_tree_role = stub.SET_TREE_ROLE()
+    stub.grantRole(set_tree_role, owner, {"from": owner})
+    return stub
 
 
 @pytest.fixture(scope="module") 
