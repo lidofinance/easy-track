@@ -220,6 +220,11 @@ def bytes_utils_wrapper(accounts, BytesUtilsWrapper):
 
 
 @pytest.fixture(scope="module")
+def mev_boost_relay_input_utils_wrapper(owner, MEVBoostRelaysInputUtilsWrapper):
+    return owner.deploy(MEVBoostRelaysInputUtilsWrapper)
+
+
+@pytest.fixture(scope="module")
 def node_operators_registry_stub(owner, node_operator, NodeOperatorsRegistryStub):
     return owner.deploy(NodeOperatorsRegistryStub, node_operator)
 
@@ -234,6 +239,13 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     contract = owner.deploy(EVMScriptExecutorStub)
     set_account_balance(contract.address)
     return contract
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list_stub(owner, agent, MEVBoostRelayAllowedListStub):
+    # set agent as the owner of the list and owner as the manager for the ease of testing purposes
+    # in actual deployment, the owner should be the EVM script executor
+    return owner.deploy(MEVBoostRelayAllowedListStub, agent, owner)
 
 
 @pytest.fixture(scope="module")
@@ -382,6 +394,15 @@ def locator(lido_contracts):
     return lido_contracts.locator
 
 
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list(lido_contracts, owner):
+    manager = lido_contracts.mev_boost_list.get_manager()
+    if manager != owner:
+        list_owner = lido_contracts.mev_boost_list.get_owner()
+        lido_contracts.mev_boost_list.set_manager(owner, {"from": list_owner})
+    return lido_contracts.mev_boost_list
+
+
 #########################
 # State Changing Fixtures
 #########################
@@ -458,3 +479,17 @@ def vote_id_from_env() -> Optional[int]:
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_test_config():
+    return {
+        "relays": [
+            # uri, operator, is_mandatory, description
+            ("https://relay1.example.com", "Operator 1", True, "First relay description"),
+            ("https://relay2.example.com", "Operator 2", False, "Second relay description"),
+            ("https://relay3.example.com", "Operator 3", True, "Third relay description"),
+        ],
+        "max_num_relays": 40,
+        "max_string_length": 1024,
+    }
