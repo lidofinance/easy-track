@@ -327,7 +327,7 @@ def validator_exit_request_utils_wrapper(owner, ValidatorExitRequestUtilsWrapper
 
 
 @pytest.fixture(scope="module")
-def sdvt_registry(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+def sdvt_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
     registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
     staking_router_stub.setStakingModule(
         submit_exit_hashes_factory_config["module_ids"]["sdvt"], registry.address, {"from": owner}
@@ -336,12 +336,15 @@ def sdvt_registry(owner, node_operator, staking_router_stub, submit_exit_hashes_
     registry.setSigningKey(
         submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][0]
     )
+    registry.setSigningKey(
+        submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][1]
+    )
 
     return registry
 
 
 @pytest.fixture(scope="module")
-def curated_registry(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+def curated_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
     registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
     staking_router_stub.setStakingModule(
         submit_exit_hashes_factory_config["module_ids"]["curated"], registry.address, {"from": owner}
@@ -349,6 +352,9 @@ def curated_registry(owner, node_operator, staking_router_stub, submit_exit_hash
 
     registry.setSigningKey(
         submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][0]
+    )
+    registry.setSigningKey(
+        submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][1]
     )
 
     return registry
@@ -425,6 +431,16 @@ def staking_router(lido_contracts):
 @pytest.fixture(scope="module")
 def locator(lido_contracts):
     return lido_contracts.locator
+
+
+@pytest.fixture(scope="module")
+def sdvt_registry(lido_contracts):
+    return lido_contracts.simple_dvt
+
+
+@pytest.fixture(scope="module")
+def curated_registry(lido_contracts):
+    return lido_contracts.curated_module
 
 
 #########################
@@ -537,6 +553,7 @@ def submit_exit_hashes_factory_config():
         "pubkeys": [
             bytes.fromhex("aa" * 48),
             bytes.fromhex("bb" * 48),
+            bytes.fromhex("11" * 48),
         ],
         "data_format": 1,
         "max_requests_per_motion": 300,

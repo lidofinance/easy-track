@@ -9,9 +9,9 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IValidatorsExitBusOracle.sol";
 import "../interfaces/IStakingRouter.sol";
 
-/// @title ValidatorExitRequestUtils
+/// @title ValidatorSubmitExitHashesUtils
 /// @notice Library for creating and validating EVM scripts for validators exit requests.
-library ValidatorExitRequestUtils {
+library ValidatorSubmitExitHashesUtils {
     // -------------
     // STRUCTS
     // -------------

@@ -5,7 +5,7 @@ pragma solidity ^0.8.4;
 
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
-import "../libraries/ValidatorExitRequestUtils.sol";
+import "../libraries/ValidatorSubmitExitHashesUtils.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IStakingRouter.sol";
 import "../interfaces/INodeOperatorsRegistry.sol";
@@ -48,15 +48,15 @@ contract CuratedModuleSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactor
 
     /// @notice Creates EVMScript to submit exit requests to the Validators Exit Bus Oracle (Curated Module).
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded relays data: ValidatorExitRequestUtils.ExitRequestInput[]
+    /// @param _evmScriptCallData Encoded relays data: ValidatorSubmitExitHashesUtils.ExitRequestInput[]
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
     ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        ValidatorExitRequestUtils.ExitRequestInput[]
+        ValidatorSubmitExitHashesUtils.ExitRequestInput[]
             memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        ValidatorExitRequestUtils.validateExitRequests(
+        ValidatorSubmitExitHashesUtils.validateExitRequests(
             decodedCallData,
             curatedNodeOperatorsRegistry,
             stakingRouter
@@ -66,16 +66,16 @@ contract CuratedModuleSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactor
             EVMScriptCreator.createEVMScript(
                 address(validatorsExitBusOracle),
                 IValidatorsExitBusOracle.submitExitRequestsHash.selector,
-                abi.encode(ValidatorExitRequestUtils.hashExitRequests(decodedCallData))
+                abi.encode(ValidatorSubmitExitHashesUtils.hashExitRequests(decodedCallData))
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded relays data: ValidatorExitRequestUtils.ExitRequestInput[]
+    /// @param _evmScriptCallData Encoded relays data: ValidatorSubmitExitHashesUtils.ExitRequestInput[]
     /// @return Array of ExitRequestInput structs
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) external pure returns (ValidatorExitRequestUtils.ExitRequestInput[] memory) {
+    ) external pure returns (ValidatorSubmitExitHashesUtils.ExitRequestInput[] memory) {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -85,7 +85,7 @@ contract CuratedModuleSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactor
 
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
-    ) private pure returns (ValidatorExitRequestUtils.ExitRequestInput[] memory) {
-        return abi.decode(_evmScriptCallData, (ValidatorExitRequestUtils.ExitRequestInput[]));
+    ) private pure returns (ValidatorSubmitExitHashesUtils.ExitRequestInput[] memory) {
+        return abi.decode(_evmScriptCallData, (ValidatorSubmitExitHashesUtils.ExitRequestInput[]));
     }
 }

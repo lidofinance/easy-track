@@ -17,14 +17,14 @@ from utils.test_helpers import create_exit_requests_hashes, create_exit_request_
             "name": "curated",
             "ContractClass": CuratedModuleSubmitExitRequestHashes,
             "registry_attr": "curatedNodeOperatorsRegistry",
-            "registry_fixture": "curated_registry",
+            "registry_fixture": "curated_registry_stub",
             "wrong_module_id_key": "sdvt",
         },
         {
             "name": "sdvt",
             "ContractClass": SDVTModuleSubmitExitRequestHashes,
             "registry_attr": "sdvtNodeOperatorsRegistry",
-            "registry_fixture": "sdvt_registry",
+            "registry_fixture": "sdvt_registry_stub",
             "wrong_module_id_key": "curated",
         },
     ],
@@ -459,7 +459,7 @@ def test_cannot_create_evm_script_with_wrong_pubkey(
     owner, submit_exit_hashes_factory_config, submit_exit_request_hashes, exit_request_input_factory, module_id_key
 ):
     module_id = submit_exit_hashes_factory_config["module_ids"][module_id_key]
-    invalid_pubkey = submit_exit_hashes_factory_config["pubkeys"][1]
+    invalid_pubkey = submit_exit_hashes_factory_config["pubkeys"][2]
     exit_request_inputs = [
         exit_request_input_factory(
             module_id,
@@ -474,11 +474,30 @@ def test_cannot_create_evm_script_with_wrong_pubkey(
         submit_exit_request_hashes.createEVMScript(owner, calldata)
 
 
+def test_cannot_create_evm_script_with_wrong_pubkey_index(
+    owner, submit_exit_hashes_factory_config, submit_exit_request_hashes, exit_request_input_factory, module_id_key
+):
+    module_id = submit_exit_hashes_factory_config["module_ids"][module_id_key]
+    invalid_pubkey_index = 1
+    exit_request_inputs = [
+        exit_request_input_factory(
+            module_id,
+            submit_exit_hashes_factory_config["node_op_id"],
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][0],  # valid pubkey
+            invalid_pubkey_index,  # invalid pubkey index
+        )
+    ]
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+    with reverts("INVALID_PUBKEY"):
+        submit_exit_request_hashes.createEVMScript(owner, calldata)
+
+
 def test_cannot_create_evm_script_with_wrong_pubkey_multiple(
     owner, submit_exit_hashes_factory_config, submit_exit_request_hashes, exit_request_input_factory, module_id_key
 ):
     module_id = submit_exit_hashes_factory_config["module_ids"][module_id_key]
-    invalid_pubkey = submit_exit_hashes_factory_config["pubkeys"][1]
+    invalid_pubkey = submit_exit_hashes_factory_config["pubkeys"][2]
     exit_request_inputs = [
         exit_request_input_factory(
             module_id,

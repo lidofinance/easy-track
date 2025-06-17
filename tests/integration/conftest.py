@@ -1,9 +1,11 @@
 import pytest
 import brownie
+import json
 
 import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
+from utils.config import get_network_name
 from dataclasses import dataclass
 
 #####
@@ -52,6 +54,18 @@ def recipients(accounts):
 #####
 # CONTRACTS
 #####
+
+
+@pytest.fixture(scope="session")
+def deployed_artifact():
+    network_name = get_network_name()
+    file_name = f"deployed-{network_name}.json"
+
+    try:
+        f = open(file_name)
+        return json.load(f)
+    except:
+        pass
 
 
 @pytest.fixture(scope="module")
@@ -314,6 +328,102 @@ def top_up_allowed_recipients_evm_script_factory(
         log.ok(f"EVM Script Factory TopUpAllowedRecipients({evm_script_factory}) was added to EasyTrack")
 
     return evm_script_factory
+
+
+@pytest.fixture(scope="module")
+def sdvt_multisig():
+    """
+    Test multisig address for SDVT submit validator exit hashes factory.
+    """
+    network_name = get_network_name()
+    if network_name in ("mainnet", "mainnet-fork"):
+        return "0x08637515E85A4633E23dfc7861e2A9f53af640f7"
+    else:
+        return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"
+
+
+@pytest.fixture(scope="module")
+def curated_module_multisig():
+    """
+    Test multisig address for Curated submit validator exit hashes factory.
+    """
+    network_name = get_network_name()
+    if network_name in ("mainnet", "mainnet-fork"):
+        return "0xC52fC3081123073078698F1EAc2f1Dc7Bd71880f"
+    else:
+        return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"
+
+
+@pytest.fixture(scope="module")
+def sdvt_submit_exit_hashes_evm_script_factory(
+    SDVTModuleSubmitExitRequestHashes,
+    sdvt_multisig,
+    easy_track,
+    lido_contracts,
+    sdvt_registry_stub,
+    validator_exit_bus_oracle,
+    deployer,
+    staking_router_stub,
+):
+    """
+    Deploy and register the SDVTModuleSubmitExitRequestHashes factory to EasyTrack, if not present.
+    """
+    factory = deployer.deploy(
+        SDVTModuleSubmitExitRequestHashes,
+        sdvt_multisig,
+        staking_router_stub,
+        sdvt_registry_stub,
+        validator_exit_bus_oracle,
+    )
+    assert factory.trustedCaller() == sdvt_multisig
+    assert factory.sdvtNodeOperatorsRegistry() == sdvt_registry_stub
+
+    if not easy_track.isEVMScriptFactory(factory):
+        permission = validator_exit_bus_oracle.address + validator_exit_bus_oracle.submitExitRequestsHash.signature[2:]
+        easy_track.addEVMScriptFactory(
+            factory,
+            permission,
+            {"from": lido_contracts.aragon.voting},
+        )
+        assert factory in easy_track.getEVMScriptFactories()
+
+    return factory
+
+
+@pytest.fixture(scope="module")
+def curated_submit_exit_hashes_evm_script_factory(
+    CuratedModuleSubmitExitRequestHashes,
+    curated_module_multisig,
+    easy_track,
+    lido_contracts,
+    curated_registry_stub,
+    validator_exit_bus_oracle,
+    deployer,
+    staking_router_stub,
+):
+    """
+    Deploy and register the CuratedModuleSubmitExitRequestHashes factory to EasyTrack, if not present.
+    """
+    factory = deployer.deploy(
+        CuratedModuleSubmitExitRequestHashes,
+        curated_module_multisig,
+        staking_router_stub,
+        curated_registry_stub,
+        validator_exit_bus_oracle,
+    )
+    assert factory.trustedCaller() == curated_module_multisig
+    assert factory.curatedNodeOperatorsRegistry() == curated_registry_stub
+
+    if not easy_track.isEVMScriptFactory(factory):
+        permission = validator_exit_bus_oracle.address + validator_exit_bus_oracle.submitExitRequestsHash.signature[2:]
+        easy_track.addEVMScriptFactory(
+            factory,
+            permission,
+            {"from": lido_contracts.aragon.voting},
+        )
+        assert factory in easy_track.getEVMScriptFactories()
+
+    return factory
 
 
 ####

@@ -20,6 +20,7 @@ def addresses(network=DEFAULT_NETWORK):
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
             simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
+            curated_module="0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
         )
@@ -98,6 +99,11 @@ class LidoContractsSetup:
         self.simple_dvt = (
             None if not lido_addresses.simple_dvt else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
         )
+        self.curated_module = (
+            None
+            if not lido_addresses.curated_module
+            else interface.NodeOperatorsRegistry(lido_addresses.curated_module)
+        )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
@@ -140,11 +146,12 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, curated_module, staking_router, locator):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
         self.simple_dvt = simple_dvt
+        self.curated_module = curated_module
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
         self.locator = locator

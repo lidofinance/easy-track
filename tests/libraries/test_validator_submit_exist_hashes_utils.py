@@ -6,7 +6,7 @@ def test_validation_passes_on_correct_request(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a valid exit request passes validation."""
@@ -20,21 +20,21 @@ def test_validation_passes_on_correct_request(
 
     validator_exit_request_utils_wrapper.validateExitRequests(
         [request.to_tuple()],
-        sdvt_registry,
+        sdvt_registry_stub,
         staking_router_stub,
     )
 
 
 def test_validation_reverts_on_empty_requests(
     validator_exit_request_utils_wrapper,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that an empty exit request list reverts."""
     with reverts("EMPTY_REQUESTS_LIST"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -43,7 +43,7 @@ def test_validation_reverts_on_too_many_requests(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with too many requests reverts."""
@@ -63,7 +63,7 @@ def test_validation_reverts_on_too_many_requests(
     # This should pass
     validator_exit_request_utils_wrapper.validateExitRequests(
         requests,
-        sdvt_registry,
+        sdvt_registry_stub,
         staking_router_stub,
     )
 
@@ -79,7 +79,7 @@ def test_validation_reverts_on_too_many_requests(
     with reverts("MAX_REQUESTS_PER_MOTION_EXCEEDED"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             requests + [extra_request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -88,7 +88,7 @@ def test_validation_reverts_on_wrong_staking_module(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a wrong staking module reverts."""
@@ -103,7 +103,7 @@ def test_validation_reverts_on_wrong_staking_module(
     with reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,  # Use the SDVT registry to validate the request, should fail
+            sdvt_registry_stub,  # Use the SDVT registry to validate the request, should fail
             staking_router_stub,
         )
 
@@ -112,7 +112,7 @@ def test_validation_reverts_on_wrong_staking_module_multiple(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a wrong staking module reverts when multiple requests are present."""
@@ -134,7 +134,7 @@ def test_validation_reverts_on_wrong_staking_module_multiple(
     with reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request1.to_tuple(), request2.to_tuple()],
-            sdvt_registry,  # Use the SDVT registry to validate the request, should fail
+            sdvt_registry_stub,  # Use the SDVT registry to validate the request, should fail
             staking_router_stub,
         )
 
@@ -143,7 +143,7 @@ def test_validation_reverts_on_empty_pubkey(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with an empty pubkey reverts."""
@@ -158,7 +158,7 @@ def test_validation_reverts_on_empty_pubkey(
     with reverts("PUBKEY_IS_EMPTY"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -167,7 +167,7 @@ def test_validation_reverts_on_pubkey_too_short(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a pubkey that is too short reverts."""
@@ -184,7 +184,7 @@ def test_validation_reverts_on_pubkey_too_short(
     with reverts("INVALID_PUBKEY_LENGTH"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -193,7 +193,7 @@ def test_validation_reverts_on_pubkey_too_long(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a pubkey that is too long reverts."""
@@ -210,7 +210,7 @@ def test_validation_reverts_on_pubkey_too_long(
     with reverts("INVALID_PUBKEY_LENGTH"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -219,7 +219,7 @@ def test_validation_reverts_on_wrong_pubkey(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a wrong pubkey reverts."""
@@ -234,7 +234,7 @@ def test_validation_reverts_on_wrong_pubkey(
     with reverts("INVALID_PUBKEY"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -243,11 +243,11 @@ def test_validation_reverts_on_wrong_node_op_id(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a wrong node operator ID reverts."""
-    last_node_op_id = sdvt_registry.getNodeOperatorsCount()
+    last_node_op_id = sdvt_registry_stub.getNodeOperatorsCount()
     request = exit_request_input_factory(
         submit_exit_hashes_factory_config["module_ids"]["sdvt"],
         last_node_op_id + 1,  # Use an invalid node operator ID
@@ -259,7 +259,7 @@ def test_validation_reverts_on_wrong_node_op_id(
     with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -268,7 +268,7 @@ def test_validation_reverts_on_wrong_node_op_id_multiple(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a wrong node operator ID reverts when multiple requests are present."""
@@ -280,7 +280,7 @@ def test_validation_reverts_on_wrong_node_op_id_multiple(
         0,
     )
 
-    last_node_op_id = sdvt_registry.getNodeOperatorsCount()
+    last_node_op_id = sdvt_registry_stub.getNodeOperatorsCount()
     request2 = exit_request_input_factory(
         submit_exit_hashes_factory_config["module_ids"]["sdvt"],
         last_node_op_id + 1,  # Use an invalid node operator ID
@@ -292,7 +292,7 @@ def test_validation_reverts_on_wrong_node_op_id_multiple(
     with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request1.to_tuple(), request2.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -368,14 +368,14 @@ def test_validation_reverts_on_module_id_overflow(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a moduleId exceeding uint24 reverts."""
     invalid_module_id = 2**24  # Set the moduleId to a value that exceeds uint24
 
     staking_router_stub.setStakingModule(
-        invalid_module_id, sdvt_registry.address
+        invalid_module_id, sdvt_registry_stub.address
     )  # Set the count to a value that exceeds uint24
 
     # Create a request with moduleId exceeding uint24
@@ -390,7 +390,7 @@ def test_validation_reverts_on_module_id_overflow(
     with reverts("MODULE_ID_OVERFLOW"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )
 
@@ -399,13 +399,13 @@ def test_validation_reverts_on_node_op_id_overflow(
     validator_exit_request_utils_wrapper,
     exit_request_input_factory,
     submit_exit_hashes_factory_config,
-    sdvt_registry,
+    sdvt_registry_stub,
     staking_router_stub,
 ):
     """Test that a request with a nodeOpId exceeding uint40 reverts."""
     invalid_node_op_id = 2**40  # Set the nodeOpId to a value that exceeds uint40
 
-    sdvt_registry.setDesiredNodeOperatorCount(invalid_node_op_id)  # Set the count to a value that exceeds uint40
+    sdvt_registry_stub.setDesiredNodeOperatorCount(invalid_node_op_id)  # Set the count to a value that exceeds uint40
 
     # Create a request with nodeOpId exceeding uint40
     request = exit_request_input_factory(
@@ -419,6 +419,6 @@ def test_validation_reverts_on_node_op_id_overflow(
     with reverts("NODE_OPERATOR_ID_OVERFLOW"):
         validator_exit_request_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
-            sdvt_registry,
+            sdvt_registry_stub,
             staking_router_stub,
         )

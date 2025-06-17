@@ -3,22 +3,22 @@
 
 pragma solidity 0.8.6;
 
-import "../libraries/ValidatorExitRequestUtils.sol";
+import "../libraries/ValidatorSubmitExitHashesUtils.sol";
 
-/// @notice Helper contract to wrap ValidatorExitRequestUtils functions for testing purposes.
+/// @notice Helper contract to wrap ValidatorSubmitExitHashesUtils functions for testing purposes.
 contract ValidatorExitRequestUtilsWrapper {
     function hashExitRequests(
-        ValidatorExitRequestUtils.ExitRequestInput[] memory _requests
+        ValidatorSubmitExitHashesUtils.ExitRequestInput[] memory _requests
     ) external pure returns (bytes32) {
-        return ValidatorExitRequestUtils.hashExitRequests(_requests);
+        return ValidatorSubmitExitHashesUtils.hashExitRequests(_requests);
     }
 
     function validateExitRequests(
-        ValidatorExitRequestUtils.ExitRequestInput[] memory _requests,
+        ValidatorSubmitExitHashesUtils.ExitRequestInput[] memory _requests,
         INodeOperatorsRegistry _nodeOperatorsRegistry,
         IStakingRouter _stakingRouter
     ) external view {
-        ValidatorExitRequestUtils.validateExitRequests(
+        ValidatorSubmitExitHashesUtils.validateExitRequests(
             _requests,
             _nodeOperatorsRegistry,
             _stakingRouter
