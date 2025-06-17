@@ -220,6 +220,11 @@ def bytes_utils_wrapper(accounts, BytesUtilsWrapper):
 
 
 @pytest.fixture(scope="module")
+def mev_boost_relay_input_utils_wrapper(owner, MEVBoostRelaysInputUtilsWrapper):
+    return owner.deploy(MEVBoostRelaysInputUtilsWrapper)
+
+
+@pytest.fixture(scope="module")
 def node_operators_registry_stub(owner, node_operator, NodeOperatorsRegistryStub):
     return owner.deploy(NodeOperatorsRegistryStub, node_operator)
 
@@ -234,6 +239,13 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     contract = owner.deploy(EVMScriptExecutorStub)
     set_account_balance(contract.address)
     return contract
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list_stub(owner, agent, MEVBoostRelayAllowedListStub):
+    # set agent as the owner of the list and owner as the manager for the ease of testing purposes
+    # in actual deployment, the owner should be the EVM script executor
+    return owner.deploy(MEVBoostRelayAllowedListStub, agent, owner)
 
 
 @pytest.fixture(scope="module")
@@ -443,6 +455,15 @@ def curated_registry(lido_contracts):
     return lido_contracts.curated_module
 
 
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list(lido_contracts, owner):
+    manager = lido_contracts.mev_boost_list.get_manager()
+    if manager != owner:
+        list_owner = lido_contracts.mev_boost_list.get_owner()
+        lido_contracts.mev_boost_list.set_manager(owner, {"from": list_owner})
+    return lido_contracts.mev_boost_list
+
+
 #########################
 # State Changing Fixtures
 #########################
@@ -521,32 +542,6 @@ def bokkyPooBahsDateTimeContract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
 
 
-def create_exit_requests_hashes(requests, data_format=1):
-    """
-    requests: list of objects with attributes
-      - moduleId: int
-      - nodeOpId: int
-      - valIndex: int
-      - valPubkey: str or bytes (48-byte hex str with '0x' or raw bytes)
-    """
-
-    # helper to normalize pubkey to raw bytes
-    def _pub(r):
-        if isinstance(r.val_pubkey, str):
-            h = r.val_pubkey[2:] if r.val_pubkey.startswith("0x") else r.val_pubkey
-            return bytes.fromhex(h)
-        return r.val_pubkey
-
-    packed = b"".join(
-        r.module_id.to_bytes(3, "big") + r.node_op_id.to_bytes(5, "big") + r.val_index.to_bytes(8, "big") + _pub(r)
-        for r in requests
-    )
-
-    # abi.encode(bytes, uint256) then keccak256
-    digest = web3.keccak(encode(["bytes", "uint256"], [packed, data_format]))
-    return digest.hex()
-
-
 @pytest.fixture(scope="module")
 def submit_exit_hashes_factory_config():
     return {
@@ -593,3 +588,17 @@ def exit_request_input_factory():
         )
 
     return factory
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_test_config():
+    return {
+        "relays": [
+            # uri, operator, is_mandatory, description
+            ("https://relay1.example.com", "Operator 1", True, "First relay description"),
+            ("https://relay2.example.com", "Operator 2", False, "Second relay description"),
+            ("https://relay3.example.com", "Operator 3", True, "Third relay description"),
+        ],
+        "max_num_relays": 40,
+        "max_string_length": 1024,
+    }

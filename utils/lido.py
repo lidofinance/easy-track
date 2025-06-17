@@ -23,6 +23,7 @@ def addresses(network=DEFAULT_NETWORK):
             curated_module="0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -41,6 +42,7 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
+            mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
         )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
@@ -108,6 +110,7 @@ class LidoContractsSetup:
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
+        self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -146,7 +149,17 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, curated_module, staking_router, locator):
+    def __init__(
+        self,
+        aragon,
+        steth,
+        node_operators_registry,
+        simple_dvt,
+        curated_module,
+        staking_router,
+        locator,
+        mev_boost_list,
+    ):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
@@ -155,6 +168,7 @@ class LidoAddressesSetup:
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
         self.locator = locator
+        self.mev_boost_list = mev_boost_list
 
 
 class AragonSetup:
