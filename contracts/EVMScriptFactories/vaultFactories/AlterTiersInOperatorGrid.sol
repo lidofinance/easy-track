@@ -61,7 +61,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to alter tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: uint256[] _tierIds, IOperatorGrid.TierParams[] _tierParams
+    /// @param _evmScriptCallData Encoded: uint256[] _tierIds, TierParams[] _tierParams
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -69,7 +69,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (uint256[] memory _tierIds, IOperatorGrid.TierParams[] memory _tierParams) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (uint256[] memory _tierIds, TierParams[] memory _tierParams) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         _validateInputData(_tierIds, _tierParams);
 
@@ -82,12 +82,12 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: uint256[] _tierIds, IOperatorGrid.TierParams[] _tierParams
+    /// @param _evmScriptCallData Encoded: uint256[] _tierIds, TierParams[] _tierParams
     /// @return Tier IDs and tier parameters which should be updated in OperatorGrid
     function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
-        returns (uint256[] memory, IOperatorGrid.TierParams[] memory)
+        returns (uint256[] memory, TierParams[] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -99,12 +99,12 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (uint256[] memory, IOperatorGrid.TierParams[] memory)
+        returns (uint256[] memory, TierParams[] memory)
     {
-        return abi.decode(_evmScriptCallData, (uint256[], IOperatorGrid.TierParams[]));
+        return abi.decode(_evmScriptCallData, (uint256[], TierParams[]));
     }
 
-    function _validateInputData(uint256[] memory _tierIds, IOperatorGrid.TierParams[] memory _tierParams) private view {
+    function _validateInputData(uint256[] memory _tierIds, TierParams[] memory _tierParams) private view {
         require(_tierIds.length > 0, ERROR_EMPTY_TIER_IDS);
         require(_tierIds.length == _tierParams.length, ERROR_ARRAY_LENGTH_MISMATCH);
 

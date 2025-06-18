@@ -23,6 +23,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_NODE_OPERATORS = "EMPTY_NODE_OPERATORS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_NODE_OPERATOR = "ZERO_NODE_OPERATOR";
+    string private constant ERROR_DEFAULT_TIER_OPERATOR = "DEFAULT_TIER_OPERATOR";
     string private constant ERROR_EMPTY_TIERS = "EMPTY_TIERS";
     string private constant ERROR_GROUP_EXISTS = "GROUP_EXISTS";
     string private constant ERROR_GROUP_SHARE_LIMIT_TOO_HIGH = "GROUP_SHARE_LIMIT_TOO_HIGH";
@@ -48,9 +49,8 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     uint256 internal constant TOTAL_BASIS_POINTS = 10000;
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
-
-    uint256 internal immutable MAX_RELATIVE_SHARE_LIMIT_BP;
-    ILido internal immutable LIDO;
+    /// @notice Special address to denote that default tier is not linked to any real operator
+    address public constant DEFAULT_TIER_OPERATOR = address(uint160(type(uint160).max));
 
     // -------------
     // CONSTRUCTOR
@@ -62,11 +62,6 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
-
-        ILidoLocator locator = ILidoLocator(IOperatorGrid(_operatorGrid).LIDO_LOCATOR());
-        LIDO = ILido(locator.lido());
-        IVaultHub vaultHub = IVaultHub(locator.vaultHub());
-        MAX_RELATIVE_SHARE_LIMIT_BP = vaultHub.MAX_RELATIVE_SHARE_LIMIT_BP();
     }
 
     // -------------
@@ -75,7 +70,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to register multiple groups and their tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, IOperatorGrid.TierParams[][] _tiers)
+    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, TierParams[][] _tiers)
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -86,7 +81,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         (
             address[] memory _nodeOperators,
             uint256[] memory _shareLimits,
-            IOperatorGrid.TierParams[][] memory _tiers
+            TierParams[][] memory _tiers
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         _validateInputData(_nodeOperators, _shareLimits, _tiers);
@@ -111,12 +106,12 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, IOperatorGrid.TierParams[][] _tiers)
+    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, TierParams[][] _tiers)
     /// @return NodeOperator addresses, group share limits and arrays of tier parameters
     function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
-        returns (address[] memory, uint256[] memory, IOperatorGrid.TierParams[][] memory)
+        returns (address[] memory, uint256[] memory, TierParams[][] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -128,15 +123,15 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address[] memory, uint256[] memory, IOperatorGrid.TierParams[][] memory)
+        returns (address[] memory, uint256[] memory, TierParams[][] memory)
     {
-        return abi.decode(_evmScriptCallData, (address[], uint256[], IOperatorGrid.TierParams[][]));
+        return abi.decode(_evmScriptCallData, (address[], uint256[], TierParams[][]));
     }
 
     function _validateInputData(
         address[] memory _nodeOperators,
         uint256[] memory _shareLimits,
-        IOperatorGrid.TierParams[][] memory _tiers
+        TierParams[][] memory _tiers
     ) private view {
         require(_nodeOperators.length > 0, ERROR_EMPTY_NODE_OPERATORS);
         require(
@@ -145,15 +140,16 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             ERROR_ARRAY_LENGTH_MISMATCH
         );
 
-        uint256 _maxSaneShareLimit = (LIDO.getTotalShares() * MAX_RELATIVE_SHARE_LIMIT_BP) / TOTAL_BASIS_POINTS;
+        uint256 maxSaneShareLimit = _maxSaneShareLimit();
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
+            require(_nodeOperators[i] != DEFAULT_TIER_OPERATOR, ERROR_DEFAULT_TIER_OPERATOR);
             require(_tiers[i].length > 0, ERROR_EMPTY_TIERS);
 
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
             require(group.operator == address(0), ERROR_GROUP_EXISTS);
 
-            require(_shareLimits[i] <= _maxSaneShareLimit, ERROR_GROUP_SHARE_LIMIT_TOO_HIGH);
+            require(_shareLimits[i] <= maxSaneShareLimit, ERROR_GROUP_SHARE_LIMIT_TOO_HIGH);
 
             // Validate tier parameters
             for (uint256 j = 0; j < _tiers[i].length; j++) {
@@ -170,5 +166,14 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
                 require(_tiers[i][j].reservationFeeBP <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
             }
         }
+    }
+
+    /// @notice Calculates the maximum sane share limit (percent from Lido total shares)
+    /// @return Maximum sane share limit
+    function _maxSaneShareLimit() private view returns (uint256) {
+        ILidoLocator locator = ILidoLocator(IOperatorGrid(operatorGrid).LIDO_LOCATOR());
+        ILido lido = ILido(locator.lido());
+        IVaultHub vaultHub = IVaultHub(locator.vaultHub());
+        return (lido.getTotalShares() * vaultHub.MAX_RELATIVE_SHARE_LIMIT_BP()) / TOTAL_BASIS_POINTS;
     }
 }

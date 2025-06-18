@@ -20,6 +20,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_NODE_OPERATORS = "EMPTY_NODE_OPERATORS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_NODE_OPERATOR = "ZERO_NODE_OPERATOR";
+    string private constant ERROR_DEFAULT_TIER_OPERATOR = "DEFAULT_TIER_OPERATOR";
     string private constant ERROR_EMPTY_TIERS = "EMPTY_TIERS";
     string private constant ERROR_GROUP_NOT_EXISTS = "GROUP_NOT_EXISTS";
     string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
@@ -44,6 +45,8 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     uint256 internal constant TOTAL_BASIS_POINTS = 10000;
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
+    /// @notice Special address to denote that default tier is not linked to any real operator
+    address public constant DEFAULT_TIER_OPERATOR = address(uint160(type(uint160).max));
 
     // -------------
     // CONSTRUCTOR
@@ -63,7 +66,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to register multiple tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, IOperatorGrid.TierParams[][] _tiers)
+    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, TierParams[][] _tiers)
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -71,7 +74,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address[] memory _nodeOperators, IOperatorGrid.TierParams[][] memory _tiers) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address[] memory _nodeOperators, TierParams[][] memory _tiers) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         _validateInputData(_nodeOperators, _tiers);
 
@@ -87,12 +90,12 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, IOperatorGrid.TierParams[][] _tiers)
+    /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, TierParams[][] _tiers)
     /// @return Node operator addresses and arrays of tier parameters which should be added to OperatorGrid
     function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
-        returns (address[] memory, IOperatorGrid.TierParams[][] memory)
+        returns (address[] memory, TierParams[][] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -104,20 +107,21 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address[] memory, IOperatorGrid.TierParams[][] memory)
+        returns (address[] memory, TierParams[][] memory)
     {
-        return abi.decode(_evmScriptCallData, (address[], IOperatorGrid.TierParams[][]));
+        return abi.decode(_evmScriptCallData, (address[], TierParams[][]));
     }
 
     function _validateInputData(
         address[] memory _nodeOperators,
-        IOperatorGrid.TierParams[][] memory _tiers
+        TierParams[][] memory _tiers
     ) private view {
         require(_nodeOperators.length > 0, ERROR_EMPTY_NODE_OPERATORS);
         require(_nodeOperators.length == _tiers.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
+            require(_nodeOperators[i] != DEFAULT_TIER_OPERATOR, ERROR_DEFAULT_TIER_OPERATOR);
             require(_tiers[i].length > 0, ERROR_EMPTY_TIERS);
 
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);

@@ -62,6 +62,15 @@ def test_group_not_exists(owner, stranger, register_tiers_in_operator_grid_facto
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
+def test_default_tier_operator(owner, register_tiers_in_operator_grid_factory):
+    "Must revert with message 'DEFAULT_TIER_OPERATOR' when trying to register tiers for DEFAULT_TIER_OPERATOR"
+    DEFAULT_TIER_OPERATOR = register_tiers_in_operator_grid_factory.DEFAULT_TIER_OPERATOR()
+    tiers = [(1000, 200, 100, 50, 40, 10)]
+    CALLDATA = create_calldata([DEFAULT_TIER_OPERATOR], [tiers])
+    with reverts('DEFAULT_TIER_OPERATOR'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
 def test_create_evm_script(owner, accounts, register_tiers_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
     operator1 = accounts[5]

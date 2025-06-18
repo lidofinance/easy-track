@@ -3,6 +3,15 @@
 
 pragma solidity 0.8.6;
 
+struct TierParams {
+    uint256 shareLimit;
+    uint256 reserveRatioBP;
+    uint256 forcedRebalanceThresholdBP;
+    uint256 infraFeeBP;
+    uint256 liquidityFeeBP;
+    uint256 reservationFeeBP;
+}
+
 /// @title Lido's OperatorGrid interface
 interface IOperatorGrid {
     // -----------------------------
@@ -24,15 +33,6 @@ interface IOperatorGrid {
         uint16 infraFeeBP;
         uint16 liquidityFeeBP;
         uint16 reservationFeeBP;
-    }
-
-    struct TierParams {
-        uint256 shareLimit;
-        uint256 reserveRatioBP;
-        uint256 forcedRebalanceThresholdBP;
-        uint256 infraFeeBP;
-        uint256 liquidityFeeBP;
-        uint256 reservationFeeBP;
     }
 
     // -----------------------------

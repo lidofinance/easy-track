@@ -22,6 +22,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_BAD_DEBT_VAULT = "ZERO_BAD_DEBT_VAULT";
     string private constant ERROR_ZERO_VAULT_ACCEPTOR = "ZERO_VAULT_ACCEPTOR";
+    string private constant ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE = "ZERO_MAX_SHARES_TO_SOCIALIZE";
     string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
     string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
 
@@ -131,6 +132,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(_badDebtVaults[i] != address(0), ERROR_ZERO_BAD_DEBT_VAULT);
             // acceptor address can't be zero - as it means to socialize bad debt to the core protocol
             require(_vaultAcceptors[i] != address(0), ERROR_ZERO_VAULT_ACCEPTOR);
+            require(_maxSharesToSocialize[i] != 0, ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE);
         }
     }
 

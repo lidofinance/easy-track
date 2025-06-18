@@ -9,7 +9,7 @@ MOTION_BUFFER_TIME = 100
 
 @pytest.fixture(scope="module")
 def trusted_address(accounts):
-    return accounts[7]
+    return accounts[6]
 
 
 @pytest.fixture(scope="module", autouse=True)
@@ -20,8 +20,8 @@ def vault_hub(owner, VaultHubStub, easy_track):
 
 
 @pytest.fixture(scope="module")
-def vaults(owner, StakingVaultStub):
-    vaults = [owner.deploy(StakingVaultStub).address for _ in range(3)]
+def vaults(accounts):
+    vaults = [account.address for account in accounts[7:10]]
     return vaults
 
 

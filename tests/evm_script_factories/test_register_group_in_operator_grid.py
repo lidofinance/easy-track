@@ -46,6 +46,14 @@ def test_zero_node_operator(owner, stranger, register_groups_in_operator_grid_fa
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
+def test_default_tier_operator(owner, stranger, register_groups_in_operator_grid_factory):
+    "Must revert with message 'DEFAULT_TIER_OPERATOR' if any operator is DEFAULT_TIER_OPERATOR"
+    DEFAULT_TIER_OPERATOR = register_groups_in_operator_grid_factory.DEFAULT_TIER_OPERATOR()
+    CALLDATA = create_calldata([DEFAULT_TIER_OPERATOR, stranger.address], [1000, 2000], [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]])
+    with reverts('DEFAULT_TIER_OPERATOR'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
 def test_empty_tiers_array(owner, register_groups_in_operator_grid_factory):
     "Must revert with message 'EMPTY_TIERS' if any tiers array is empty"
     CALLDATA = create_calldata(["0x0000000000000000000000000000000000000001"], [1000], [[]])

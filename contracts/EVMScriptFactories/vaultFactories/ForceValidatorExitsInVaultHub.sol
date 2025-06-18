@@ -6,7 +6,6 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IStakingVault.sol";
 import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
@@ -51,7 +50,6 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
-    event LowBalance(uint256 value, uint256 balance);
 
     // -------------
     // CONSTRUCTOR
@@ -170,11 +168,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
-        uint256 value = IStakingVault(_vault).calculateValidatorWithdrawalFee(numKeys);
-        if (value > address(this).balance) {
-            emit LowBalance(value, address(this).balance);
-            return;
-        }
+        uint256 value = numKeys * _getWithdrawalRequestFee();
+        require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
 
         try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) { // reverts if vault is disconnected or healthy
         } catch (bytes memory lowLevelRevertData) {
