@@ -79,8 +79,8 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
 
     constructor(
         address _trustedCaller,
-        address _stakingRouter,
         address _nodeOperatorsRegistry,
+        address _stakingRouter,
         address _validatorsExitBusOracle
     ) TrustedCaller(_trustedCaller) {
         nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
