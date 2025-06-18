@@ -377,27 +377,27 @@ def curated_module_multisig():
 
 @pytest.fixture(scope="module")
 def sdvt_submit_exit_hashes_evm_script_factory(
-    SDVTModuleSubmitExitRequestHashes,
+    SubmitValidatorsExitRequestHashes,
     sdvt_multisig,
     easy_track,
     lido_contracts,
-    sdvt_registry_stub,
+    sdvt_registry,
     validator_exit_bus_oracle,
     deployer,
     staking_router_stub,
 ):
     """
-    Deploy and register the SDVTModuleSubmitExitRequestHashes factory to EasyTrack, if not present.
+    Deploy and register the SubmitValidatorsExitRequestHashes factory to EasyTrack, if not present.
     """
     factory = deployer.deploy(
-        SDVTModuleSubmitExitRequestHashes,
+        SubmitValidatorsExitRequestHashes,
         sdvt_multisig,
         staking_router_stub,
-        sdvt_registry_stub,
+        sdvt_registry,
         validator_exit_bus_oracle,
     )
     assert factory.trustedCaller() == sdvt_multisig
-    assert factory.sdvtNodeOperatorsRegistry() == sdvt_registry_stub
+    assert factory.nodeOperatorsRegistry() == sdvt_registry
 
     if not easy_track.isEVMScriptFactory(factory):
         permission = validator_exit_bus_oracle.address + validator_exit_bus_oracle.submitExitRequestsHash.signature[2:]
@@ -413,27 +413,27 @@ def sdvt_submit_exit_hashes_evm_script_factory(
 
 @pytest.fixture(scope="module")
 def curated_submit_exit_hashes_evm_script_factory(
-    CuratedModuleSubmitExitRequestHashes,
+    SubmitValidatorsExitRequestHashes,
     curated_module_multisig,
     easy_track,
     lido_contracts,
-    curated_registry_stub,
+    curated_registry,
     validator_exit_bus_oracle,
     deployer,
     staking_router_stub,
 ):
     """
-    Deploy and register the CuratedModuleSubmitExitRequestHashes factory to EasyTrack, if not present.
+    Deploy and register the SubmitValidatorsExitRequestHashes factory to EasyTrack, if not present.
     """
     factory = deployer.deploy(
-        CuratedModuleSubmitExitRequestHashes,
+        SubmitValidatorsExitRequestHashes,
         curated_module_multisig,
         staking_router_stub,
-        curated_registry_stub,
+        curated_registry,
         validator_exit_bus_oracle,
     )
     assert factory.trustedCaller() == curated_module_multisig
-    assert factory.curatedNodeOperatorsRegistry() == curated_registry_stub
+    assert factory.nodeOperatorsRegistry() == curated_registry
 
     if not easy_track.isEVMScriptFactory(factory):
         permission = validator_exit_bus_oracle.address + validator_exit_bus_oracle.submitExitRequestsHash.signature[2:]

@@ -10,7 +10,7 @@ import constants
 from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
-from utils.test_helpers import set_account_balance
+from utils.test_helpers import set_account_balance, make_test_bytes
 
 ####################################
 # Brownie Blockchain State Snapshots
@@ -333,40 +333,15 @@ def staking_router_stub(owner, StakingRouterStub):
 
 
 @pytest.fixture(scope="module")
-def validator_exit_request_utils_wrapper(owner, ValidatorExitRequestUtilsWrapper):
-    """A wrapper for validator exit request utilities."""
-    return owner.deploy(ValidatorExitRequestUtilsWrapper)
-
-
-@pytest.fixture(scope="module")
-def sdvt_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+def registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
     registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
     staking_router_stub.setStakingModule(
-        submit_exit_hashes_factory_config["module_ids"]["sdvt"], registry.address, {"from": owner}
+        submit_exit_hashes_factory_config["module_ids"]["correct"], registry.address, {"from": owner}
     )
 
-    registry.setSigningKey(
-        submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][0]
-    )
-    registry.setSigningKey(
-        submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][1]
-    )
-
-    return registry
-
-
-@pytest.fixture(scope="module")
-def curated_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
-    registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
-    staking_router_stub.setStakingModule(
-        submit_exit_hashes_factory_config["module_ids"]["curated"], registry.address, {"from": owner}
-    )
-
-    registry.setSigningKey(
-        submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][0]
-    )
-    registry.setSigningKey(
-        submit_exit_hashes_factory_config["node_op_id"], submit_exit_hashes_factory_config["pubkeys"][1]
+    registry.setSigningKeys(
+        submit_exit_hashes_factory_config["node_op_id"],
+        b"".join(submit_exit_hashes_factory_config["pubkeys"]),
     )
 
     return registry
@@ -544,20 +519,20 @@ def bokkyPooBahsDateTimeContract():
 
 @pytest.fixture(scope="module")
 def submit_exit_hashes_factory_config():
+    pubkeys = []
+    for i in range(200):
+        pubkeys.append(make_test_bytes(i))
+
     return {
-        "pubkeys": [
-            bytes.fromhex("aa" * 48),
-            bytes.fromhex("bb" * 48),
-            bytes.fromhex("11" * 48),
-        ],
+        "pubkeys": pubkeys,
         "data_format": 1,
-        "max_requests_per_motion": 300,
+        "max_requests_per_motion": 200,
         "max_pubkey_length": 48,
         "node_op_id": 0,
         "validator_index": 0,
         "module_ids": {
-            "curated": 1,
-            "sdvt": 2,
+            "correct": 1,
+            "wrong": 2,
         },
     }
 

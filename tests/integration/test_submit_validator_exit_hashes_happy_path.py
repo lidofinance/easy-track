@@ -2,163 +2,167 @@ import pytest
 import brownie
 from brownie import convert, reverts
 from utils.evm_script import encode_call_script
+from utils.test_helpers import make_test_bytes
+
+NUM_OPERATORS = 51
+MIN_KEYS_PER_OPERATOR = 4
+PUBKEY_SIZE = 48
+SIG_SIZE = 96
+DATA_FORMAT_LIST = 1
 
 MODULES = [
     {
         "name": "sdvt",
+        "module_id": 2,
         "factory_fixture": "sdvt_submit_exit_hashes_evm_script_factory",
         "registry_fixture": "sdvt_registry",
         "multisig_fixture": "sdvt_multisig",
-        "module_id_key": "sdvt",
     },
     {
         "name": "curated",
+        "module_id": 1,
         "factory_fixture": "curated_submit_exit_hashes_evm_script_factory",
         "registry_fixture": "curated_registry",
         "multisig_fixture": "curated_multisig",
-        "module_id_key": "curated",
     },
 ]
 
-PUBKEYS = [
-    "8bb1db218877a42047b953bdc32573445a78d93383ef5fd08f79c066d4781961db4f5ab5a7cc0cf1e4cbcc23fd17f9d7",
-]
-SIGNATURES = [
-    "ad17ef7cdf0c4917aaebc067a785b049d417dda5d4dd66395b21bbd50781d51e28ee750183eca3d32e1f57b324049a06135ad07d1aa243368bca9974e25233f050e0d6454894739f87faace698b90ea65ee4baba2758772e09fec4f1d8d35660",
-]
 
-DATA_FORMAT_LIST = 1
-
-
-def ensure_node_operators_and_keys(
+def ensure_operators_with_keys(
     registry,
-    lido_contracts,
     accounts,
+    acl,
     voting,
     agent,
-    acl,
-    min_count=300,
-    pubkeys=PUBKEYS,
-    signatures=SIGNATURES,
+    lido_contracts,
+    required_operator_count=NUM_OPERATORS,
+    min_keys=MIN_KEYS_PER_OPERATOR,
 ):
-    """Ensures the registry has at least `min_count` node operators, each with at least one pubkey."""
-    existing_count = registry.getNodeOperatorsCount()
-    for i in range(existing_count, min_count):
-        operator = {"name": f"test_node_operator_{i}", "address": accounts[(i % (len(accounts) - 1)) + 1]}
-        add_node_operator_calldata = registry.addNodeOperator.encode_input(operator["name"], operator["address"])
-        add_node_operator_evm_script = encode_call_script(
+    """
+    Ensure the registry has the required number of node operators, and each has at least `min_keys` signing keys.
+    All operators use accounts[1] for simplicity.
+    Only grants MANAGE_NODE_OPERATOR_ROLE if not present.
+    """
+    operator_address = accounts[1]
+    manage_role = registry.MANAGE_NODE_OPERATOR_ROLE()
+    registry_address = registry.address
+
+    # Grant permission to voting to manage node operators (only if needed)
+    if not acl.hasPermission(voting, registry_address, manage_role):
+        permission_script = encode_call_script(
             [
                 (
                     acl.address,
-                    acl.grantPermission.encode_input(voting, registry, registry.MANAGE_NODE_OPERATOR_ROLE()),
-                ),
-                (
-                    registry.address,
-                    add_node_operator_calldata,
+                    acl.grantPermission.encode_input(voting, registry_address, manage_role),
                 ),
             ]
         )
-        voting_id, _ = lido_contracts.create_voting(
-            evm_script=add_node_operator_evm_script,
-            description=f"Add node operator {i}",
+        vote_id, _ = lido_contracts.create_voting(
+            evm_script=permission_script,
+            description="Grant node operator manage permission",
             tx_params={"from": agent},
         )
-        lido_contracts.execute_voting(voting_id)
+        lido_contracts.execute_voting(vote_id)
 
-    # Now, ensure each operator has at least one pubkey
-    total_operators = registry.getNodeOperatorsCount()
-    for operator_id in range(total_operators):
-        operator = registry.getNodeOperator(operator_id, True)
-        operator_address = operator[2]
-        total_signing_keys = operator[5]
-        if total_signing_keys < 1:
+    # Add node operators if missing
+    current_count = registry.getNodeOperatorsCount()
+    for op_id in range(current_count, required_operator_count):
+        registry.addNodeOperator(f"op_{op_id}", operator_address, {"from": agent})
+
+    # Add signing keys as needed
+    for op_id in range(required_operator_count):
+        pubkeys_bytes, _, _ = registry.getSigningKeys(op_id, 0, min_keys)
+        key_count = len(pubkeys_bytes) // PUBKEY_SIZE
+
+        if key_count < min_keys:
+            offset = key_count
+            keys_to_add = min_keys - key_count
+            pubkeys = b"".join(
+                make_test_bytes(op_id * min_keys + i, PUBKEY_SIZE) for i in range(offset, offset + keys_to_add)
+            )
+            sigs = b"".join(
+                make_test_bytes(op_id * min_keys + i, SIG_SIZE) for i in range(offset, offset + keys_to_add)
+            )
             registry.addSigningKeys(
-                operator_id,
-                1,
-                "0x" + pubkeys[0],
-                "0x" + signatures[0],
+                op_id,
+                keys_to_add,
+                "0x" + pubkeys.hex(),
+                "0x" + sigs.hex(),
                 {"from": operator_address},
             )
 
 
-def select_first_operator_and_key(registry):
-    """Returns (operator_id, pubkey) for the first operator with a signing key."""
-    count = registry.getNodeOperatorsCount()
-    for operator_id in range(count):
-        operator = registry.getNodeOperator(operator_id, True)
-        if operator[5] >= 1:
-            # You may have to actually query keys, but for test, return our known one
-            return operator_id, PUBKEYS[0]
-    raise Exception("No operator with at least one signing key found.")
+def get_operator_keys(registry, operator_id, num_keys):
+    """
+    Return [(key_index, pubkey-bytes)] for one operator.
+    """
+    pubkeys_bytes, _, _ = registry.getSigningKeys(operator_id, 0, num_keys)
+    return [
+        (key_index, pubkeys_bytes[key_index * PUBKEY_SIZE : (key_index + 1) * PUBKEY_SIZE])
+        for key_index in range(num_keys)
+    ]
 
 
-def run_happy_path(
-    *,
+def build_exit_requests(request_input_factory, module_id, operator_id, key_entries):
+    """
+    Build exit request objects for a given operator and a list of (key_index, pubkey-bytes).
+    """
+    return [
+        request_input_factory(
+            module_id=module_id,
+            node_op_id=operator_id,
+            val_index=key_index,
+            val_pubkey=pubkey_bytes,
+            val_pubkey_index=key_index,
+        )
+        for key_index, pubkey_bytes in key_entries
+    ]
+
+
+def run_motion_and_check_events(
     factory,
     multisig,
     easy_track,
-    validator_exit_bus_oracle,
+    oracle_contract,
     exit_requests,
-    stranger,
+    stranger_account,
 ):
-    """
-    Simulates the full EasyTrack motion happy path for exit requests:
-    - Creates the motion and calldata
-    - Verifies oracle rejects data before enactment
-    - Enacts the motion and verifies RequestsHashSubmitted event
-    - Submits the data and checks ValidatorExitRequest events
-    """
     from utils.test_helpers import create_exit_request_hash_calldata, create_exit_requests_hashes
 
-    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_requests])
-
-    motion_tx = easy_track.createMotion(
-        factory.address,
-        calldata,
-        {"from": multisig},
-    )
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
-    motion_id = motions[0][0]
+    # Build the motion calldata
+    calldata = create_exit_request_hash_calldata([request.to_tuple() for request in exit_requests])
+    motion_tx = easy_track.createMotion(factory, calldata, {"from": multisig})
+    motion_id = easy_track.getMotions()[0][0]
     evm_script_call_data = motion_tx.events["MotionCreated"]["_evmScriptCallData"]
 
-    packed = b"".join(
-        [req.to_bytes() if hasattr(req, "to_bytes") else convert.to_bytes(req.to_tuple()) for req in exit_requests]
-    )
+    packed_requests = b"".join(convert.to_bytes(request.to_tuple()) for request in exit_requests)
 
+    # Before hash is submitted, should revert
     with reverts("ExitHashNotSubmitted"):
-        validator_exit_bus_oracle.submitExitRequestsData((packed, DATA_FORMAT_LIST), {"from": multisig})
+        oracle_contract.submitExitRequestsData((packed_requests, DATA_FORMAT_LIST), {"from": multisig})
 
-    brownie.chain.sleep(easy_track.motionDuration() + 10)
+    brownie.chain.sleep(easy_track.motionDuration() + 5)
+    enact_tx = easy_track.enactMotion(motion_id, evm_script_call_data, {"from": stranger_account})
 
-    enact_tx = easy_track.enactMotion(
-        motion_id,
-        evm_script_call_data,
-        {"from": stranger},
-    )
+    expected_hash = create_exit_requests_hashes(exit_requests)
+    hash_events = enact_tx.events["RequestsHashSubmitted"]
+    assert any(event["exitRequestsHash"] == expected_hash for event in hash_events)
 
-    exit_requests_hash = create_exit_requests_hashes(exit_requests)
-    hash_events = enact_tx.events.get("RequestsHashSubmitted", [])
-    assert any(
-        e["exitRequestsHash"] == exit_requests_hash for e in hash_events
-    ), f"RequestsHashSubmitted event for hash {exit_requests_hash.hex()} not found!"
+    # Now submit the batch to the oracle, should succeed
+    oracle_tx = oracle_contract.submitExitRequestsData((packed_requests, DATA_FORMAT_LIST), {"from": multisig})
+    validator_exit_events = oracle_tx.events["ValidatorExitRequest"]
 
-    oracle_tx = validator_exit_bus_oracle.submitExitRequestsData((packed, DATA_FORMAT_LIST), {"from": multisig})
-    timestamp = oracle_tx.timestamp
-    events = oracle_tx.events["ValidatorExitRequest"]
-    assert len(events) == len(exit_requests)
-    for idx, req in enumerate(exit_requests):
-        event = events[idx]
-        assert event["stakingModuleId"] == req.module_id
-        assert event["nodeOperatorId"] == req.node_op_id
-        assert event["validatorIndex"] == req.val_index
-        req_pubkey = req.val_pubkey if isinstance(req.val_pubkey, bytes) else convert.to_bytes(req.val_pubkey, "bytes")
-        assert event["validatorPubkey"] == req_pubkey
-        assert event["timestamp"] == timestamp
+    assert len(validator_exit_events) == len(exit_requests)
+    for event, request in zip(validator_exit_events, exit_requests):
+        assert event["stakingModuleId"] == request.module_id
+        assert event["nodeOperatorId"] == request.node_op_id
+        assert event["validatorIndex"] == request.val_index
+        assert event["validatorPubkey"] == request.val_pubkey
+        assert event["timestamp"] == oracle_tx.timestamp
 
 
-@pytest.mark.parametrize("module", MODULES, ids=[m["name"] for m in MODULES])
-def test_evm_script_factory_happy_path(
+@pytest.mark.parametrize("module", MODULES, ids=[mod["name"] for mod in MODULES])
+def test_single_exit_request_happy_path(
     module,
     request,
     easy_track,
@@ -167,72 +171,91 @@ def test_evm_script_factory_happy_path(
     exit_request_input_factory,
     stranger,
     accounts,
-    submit_exit_hashes_factory_config,
 ):
     """
-    Ensures the registry is filled with 300 operators with at least one signing key, then runs the integration happy path.
+    Test a single exit request (first operator, first key).
     """
     factory = request.getfixturevalue(module["factory_fixture"])
     registry = request.getfixturevalue(module["registry_fixture"])
     multisig = request.getfixturevalue(module["multisig_fixture"])
 
-    voting = lido_contracts.aragon.voting
-    agent = lido_contracts.aragon.agent
-    acl = lido_contracts.aragon.acl
-
-    ensure_node_operators_and_keys(
+    ensure_operators_with_keys(
         registry=registry,
-        lido_contracts=lido_contracts,
         accounts=accounts,
-        voting=voting,
-        agent=agent,
-        acl=acl,
-        min_count=300,
+        acl=lido_contracts.aragon.acl,
+        voting=lido_contracts.aragon.voting,
+        agent=lido_contracts.aragon.agent,
+        lido_contracts=lido_contracts,
+        required_operator_count=NUM_OPERATORS,
+        min_keys=MIN_KEYS_PER_OPERATOR,
     )
 
-    # Find the module id: use config (like in your original tests)
-    module_id_key = module["module_id_key"]
-    module_id = submit_exit_hashes_factory_config["module_ids"][module_id_key]
+    key_entries = get_operator_keys(registry, 0, MIN_KEYS_PER_OPERATOR)
+    single_exit_request = build_exit_requests(
+        exit_request_input_factory,
+        module["module_id"],
+        0,
+        [key_entries[0]],
+    )
 
-    # Pick operator ids and the first pubkey for each
-    operator_ids = list(range(registry.getNodeOperatorsCount()))
-    pubkeys = [select_first_operator_and_key(registry)[1] for _ in operator_ids]
-
-    # Single request using first operator and pubkey
-    single_exit_requests = [
-        exit_request_input_factory(
-            module_id=module_id,
-            node_op_id=operator_ids[0],
-            val_index=0,
-            val_pubkey=pubkeys[0],
-            val_pubkey_index=0,
-        )
-    ]
-    run_happy_path(
+    run_motion_and_check_events(
         factory=factory,
         multisig=multisig,
         easy_track=easy_track,
-        validator_exit_bus_oracle=validator_exit_bus_oracle,
-        exit_requests=single_exit_requests,
-        stranger=stranger,
+        oracle_contract=validator_exit_bus_oracle,
+        exit_requests=single_exit_request,
+        stranger_account=stranger,
     )
 
-    # Batch: one exit request per operator (first 300)
-    batch_exit_requests = [
-        exit_request_input_factory(
-            module_id=module_id,
-            node_op_id=operator_id,
-            val_index=0,  # could increment if you want, but 0 is fine for all
-            val_pubkey=select_first_operator_and_key(registry)[1],  # always first pubkey
-            val_pubkey_index=0,
+
+@pytest.mark.parametrize("module", MODULES, ids=[mod["name"] for mod in MODULES])
+def test_batch_exit_requests_happy_path(
+    module,
+    request,
+    easy_track,
+    lido_contracts,
+    validator_exit_bus_oracle,
+    exit_request_input_factory,
+    stranger,
+    accounts,
+):
+    """
+    Test batch flow: 50 operators (1–50), 4 keys each, total 200 requests.
+    """
+    factory = request.getfixturevalue(module["factory_fixture"])
+    registry = request.getfixturevalue(module["registry_fixture"])
+    multisig = request.getfixturevalue(module["multisig_fixture"])
+
+    ensure_operators_with_keys(
+        registry=registry,
+        accounts=accounts,
+        acl=lido_contracts.aragon.acl,
+        voting=lido_contracts.aragon.voting,
+        agent=lido_contracts.aragon.agent,
+        lido_contracts=lido_contracts,
+        required_operator_count=NUM_OPERATORS,
+        min_keys=MIN_KEYS_PER_OPERATOR,
+    )
+
+    batch_exit_requests = []
+    for operator_id in range(1, NUM_OPERATORS):
+        key_entries = get_operator_keys(registry, operator_id, MIN_KEYS_PER_OPERATOR)
+        batch_exit_requests.extend(
+            build_exit_requests(
+                exit_request_input_factory,
+                module["module_id"],
+                operator_id,
+                key_entries,
+            )
         )
-        for operator_id in operator_ids[:300]
-    ]
-    run_happy_path(
+
+    assert len(batch_exit_requests) == (NUM_OPERATORS - 1) * MIN_KEYS_PER_OPERATOR
+
+    run_motion_and_check_events(
         factory=factory,
         multisig=multisig,
         easy_track=easy_track,
-        validator_exit_bus_oracle=validator_exit_bus_oracle,
+        oracle_contract=validator_exit_bus_oracle,
         exit_requests=batch_exit_requests,
-        stranger=stranger,
+        stranger_account=stranger,
     )

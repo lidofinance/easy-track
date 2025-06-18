@@ -13,7 +13,8 @@ contract NodeOperatorsRegistryStub {
     uint64 public totalSigningKeys = 400;
 
     uint256 internal _nodeOperatorsCount = 1;
-    mapping(uint256 => bytes[]) internal _signingKeys;
+
+    mapping(uint256 => bytes) internal _signingKeys;
 
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
@@ -69,30 +70,36 @@ contract NodeOperatorsRegistryStub {
         return _nodeOperatorsCount;
     }
 
-    function getSigningKey(
-        uint256 _nodeOperatorId,
-        uint256 _index
-    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {
-        require(_nodeOperatorId < _nodeOperatorsCount, "Node operator ID out of range");
-        require(_index < _signingKeys[_nodeOperatorId].length, "Index out of range");
-
-        key = _signingKeys[_nodeOperatorId][_index];
-        depositSignature = ""; // Stub implementation, no actual signature
-        used = false; // Stub implementation, no actual usage tracking
-    }
-
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
         require(_desiredCount > 0, "Desired count must be greater than zero");
         _nodeOperatorsCount = _desiredCount;
     }
 
-    function setSigningKey(uint256 _nodeOperatorId, bytes memory _key) external {
-        // This is a stub implementation, so we don't care about the actual logic.
-        // We want to ensure that the signing key can be set for testing purposes.
+    /// @notice Returns the signing key for a given node operator and index.
+    function getSigningKey(
+        uint256 _nodeOperatorId,
+        uint256 _index
+    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {
+        bytes memory allKeys = _signingKeys[_nodeOperatorId];
 
-        require(_nodeOperatorId < _nodeOperatorsCount, "Node operator ID out of range");
-        // Store the signing key
-        _signingKeys[_nodeOperatorId].push(_key);
+        key = new bytes(48);
+        assembly {
+            // src offset = allKeys + 32 (array header) + _index * 48
+            let src := add(add(allKeys, 32), mul(_index, 48))
+            let dest := add(key, 32)
+            mstore(dest, mload(src))
+            mstore(add(dest, 32), mload(add(src, 32)))
+        }
+        depositSignature = "";
+        used = false;
+    }
+
+    /// @notice Sets the signing keys for a given node operator.
+    /// @dev This function overwrites all existing keys for the specified node operator. It expects the keys to be concatenated to a single bytes array.
+    ///      This is done to make it more efficient for testing purposes.
+    function setSigningKeys(uint256 _nodeOperatorId, bytes memory keysConcat) external {
+        // Overwrite all keys for this node operator
+        _signingKeys[_nodeOperatorId] = keysConcat;
     }
 }

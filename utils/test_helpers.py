@@ -238,3 +238,15 @@ def create_exit_requests_hashes(requests, data_format=1):
     # abi.encode(bytes, uint256) then keccak256
     digest = web3.keccak(encode(["bytes", "uint256"], [packed, data_format]))
     return digest.hex()
+
+
+def make_test_bytes(i: int, length: int = 48) -> bytes:
+    """
+    Generate a test byte sequence for key or signature of arbitrary length.
+    First 3 bytes: index (big-endian),
+    Rest: repeat of (i mod 256).
+    """
+    idx_bytes = i.to_bytes(3, "big")
+    if length < 3:
+        raise ValueError("Length must be at least 3 bytes")
+    return idx_bytes + bytes([i % 256]) * (length - 3)
