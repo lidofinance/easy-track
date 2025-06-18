@@ -22,6 +22,7 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
             operator_grid="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add operator grid mainnet address
             vault_hub="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add vault hub mainnet address
             evm_script_executor="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # TODO: add evm script executor mainnet address
@@ -43,6 +44,10 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
+            mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
+            operator_grid="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # TODO: add operator grid hoodi address
+            vault_hub="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # TODO: add vault hub hoodi address
+            evm_script_executor="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # TODO: add evm script executor hoodi address
         )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
@@ -79,6 +84,7 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x90106946d5525003385310D8e3e123cA6CFCf5Cd",
             staking_router="0xf320D34b55E89826631C2bb1b3c5b50932cCaB3C",
             locator="0xbE861866E2Ca8f401e2b51b2cFb36A61B0Bf6840",
+            mev_boost_list="0xbE861866E2Ca8f401e2b51b2cFb36A61B0Bf6840", # TODO: add mev boost list hoodi address
             operator_grid="0xccb86588b776743CCCB6572D2a6eAFd466012191",
             vault_hub="0xDfA0B34F28b1b6735d2df150a99048139302a80E",
             evm_script_executor="0x0b6de69562CADa4dBFdCA7e448fdc71D3542A590",
@@ -126,6 +132,7 @@ class LidoContractsSetup:
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
+        self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
         self.operator_grid = interface.OperatorGrid(lido_addresses.operator_grid)
         self.vault_hub = interface.VaultHub(lido_addresses.vault_hub)
 
@@ -166,7 +173,7 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, operator_grid, vault_hub, evm_script_executor):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, mev_boost_list, operator_grid, vault_hub, evm_script_executor):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
@@ -174,6 +181,7 @@ class LidoAddressesSetup:
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
         self.locator = locator
+        self.mev_boost_list = mev_boost_list
         self.operator_grid = operator_grid
         self.vault_hub = vault_hub
         self.evm_script_executor = evm_script_executor
