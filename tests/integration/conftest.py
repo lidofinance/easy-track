@@ -370,7 +370,8 @@ def curated_module_multisig():
     """
     network_name = get_network_name()
     if network_name in ("mainnet", "mainnet-fork"):
-        return "0xC52fC3081123073078698F1EAc2f1Dc7Bd71880f"
+        # TODO: Replace with the actual multisig address for the Curated module (when known)
+        return brownie.ZERO_ADDRESS
     else:
         return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"
 
