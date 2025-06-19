@@ -12,7 +12,7 @@ from utils.test_helpers import create_exit_requests_hashes, create_exit_request_
 @pytest.fixture(scope="module")
 def submit_exit_request_hashes(owner, staking_router_stub, validator_exit_bus_oracle, registry_stub):
     return SubmitValidatorsExitRequestHashes.deploy(
-        owner, staking_router_stub, registry_stub, validator_exit_bus_oracle, {"from": owner}
+        owner, registry_stub, staking_router_stub, validator_exit_bus_oracle, {"from": owner}
     )
 
 
@@ -41,7 +41,7 @@ def overflowed_node_op_id():
 
 def test_deploy(owner, staking_router_stub, registry, validator_exit_bus_oracle):
     contract = SubmitValidatorsExitRequestHashes.deploy(
-        owner, staking_router_stub, registry, validator_exit_bus_oracle, {"from": owner}
+        owner, registry, staking_router_stub, validator_exit_bus_oracle, {"from": owner}
     )
     assert contract.trustedCaller() == owner
     assert contract.stakingRouter() == staking_router_stub
@@ -51,21 +51,21 @@ def test_deploy(owner, staking_router_stub, registry, validator_exit_bus_oracle)
 
 def test_deploy_zero_staking_router(owner, registry, validator_exit_bus_oracle):
     contract = SubmitValidatorsExitRequestHashes.deploy(
-        owner, ZERO_ADDRESS, registry, validator_exit_bus_oracle, {"from": owner}
+        owner, registry, ZERO_ADDRESS, validator_exit_bus_oracle, {"from": owner}
     )
     assert contract.stakingRouter() == ZERO_ADDRESS
 
 
 def test_deploy_zero_validator_exit_bus_oracle(owner, staking_router_stub, registry):
     contract = SubmitValidatorsExitRequestHashes.deploy(
-        owner, staking_router_stub, registry, ZERO_ADDRESS, {"from": owner}
+        owner, registry, staking_router_stub, ZERO_ADDRESS, {"from": owner}
     )
     assert contract.validatorsExitBusOracle() == ZERO_ADDRESS
 
 
 def test_deploy_zero_node_operators_registry(owner, staking_router_stub, validator_exit_bus_oracle):
     contract = SubmitValidatorsExitRequestHashes.deploy(
-        owner, staking_router_stub, ZERO_ADDRESS, validator_exit_bus_oracle, {"from": owner}
+        owner, ZERO_ADDRESS, staking_router_stub, validator_exit_bus_oracle, {"from": owner}
     )
     assert contract.nodeOperatorsRegistry() == ZERO_ADDRESS
 

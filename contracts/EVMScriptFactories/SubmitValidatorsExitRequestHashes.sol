@@ -44,7 +44,7 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     /// @notice Maximum length of validator public key in bytes
-    uint256 private constant MAX_PUBKEY_LENGTH = 48;
+    uint256 private constant PUBKEY_LENGTH = 48;
     /// @notice Maximum number of items to process in one motion
     uint256 private constant MAX_REQUESTS_PER_MOTION = 200;
     /// @notice Data format identifier for the list of exit requests, only 1 is supported at the moment (ref: https://etherscan.io/address/0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e)
@@ -94,7 +94,7 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to submit exit request hashes to the Validators Exit Bus Oracle
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded relays data: ExitRequestInput[]
+    /// @param _evmScriptCallData Encoded exit requests data: ExitRequestInput[]
     function createEVMScript(
         address _creator,
         bytes memory _evmScriptCallData
@@ -137,7 +137,7 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded relays data: ExitRequestInput[]
+    /// @param _evmScriptCallData Encoded exit requests data: ExitRequestInput[]
     /// @return Array of ExitRequestInput structs
     function decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
@@ -183,7 +183,7 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
             // Node operator ids are ordered from 0 to nodeOperatorsCount - 1, so we check that the id is less than the count
             require(_input.nodeOpId < nodeOperatorsCount, ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST);
             // Check that the validator public key is exactly 48 bytes long
-            require(_input.valPubkey.length == MAX_PUBKEY_LENGTH, ERROR_INVALID_PUBKEY_LENGTH);
+            require(_input.valPubkey.length == PUBKEY_LENGTH, ERROR_INVALID_PUBKEY_LENGTH);
             // Check that all requests have the same module ID, which ensures that all requests are for the same staking module
             require(_input.moduleId == moduleId, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE);
 

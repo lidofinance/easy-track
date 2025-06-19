@@ -520,7 +520,7 @@ def bokkyPooBahsDateTimeContract():
 @pytest.fixture(scope="module")
 def submit_exit_hashes_factory_config():
     pubkeys = []
-    for i in range(200):
+    for i in range(1, 201):
         pubkeys.append(make_test_bytes(i))
 
     return {

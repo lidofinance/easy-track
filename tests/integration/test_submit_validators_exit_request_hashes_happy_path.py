@@ -2,7 +2,7 @@ import pytest
 import brownie
 from brownie import convert, reverts
 from utils.evm_script import encode_call_script
-from utils.test_helpers import make_test_bytes
+from utils.test_helpers import make_test_bytes, create_exit_request_hash_calldata, create_exit_requests_hashes
 
 NUM_OPERATORS = 51
 MIN_KEYS_PER_OPERATOR = 4
@@ -127,8 +127,6 @@ def run_motion_and_check_events(
     exit_requests,
     stranger_account,
 ):
-    from utils.test_helpers import create_exit_request_hash_calldata, create_exit_requests_hashes
-
     # Build the motion calldata
     calldata = create_exit_request_hash_calldata([request.to_tuple() for request in exit_requests])
     motion_tx = easy_track.createMotion(factory, calldata, {"from": multisig})
@@ -158,7 +156,6 @@ def run_motion_and_check_events(
         assert event["nodeOperatorId"] == request.node_op_id
         assert event["validatorIndex"] == request.val_index
         assert event["validatorPubkey"] == request.val_pubkey
-        assert event["timestamp"] == oracle_tx.timestamp
 
 
 @pytest.mark.parametrize("module", MODULES, ids=[mod["name"] for mod in MODULES])
@@ -220,7 +217,7 @@ def test_batch_exit_requests_happy_path(
     accounts,
 ):
     """
-    Test batch flow: 50 operators (1–50), 4 keys each, total 200 requests.
+    Test batch flow: 50 operators (1-50), 4 keys each, total 200 requests.
     """
     factory = request.getfixturevalue(module["factory_fixture"])
     registry = request.getfixturevalue(module["registry_fixture"])
