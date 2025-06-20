@@ -42,7 +42,7 @@ library SubmitExitRequestHashesUtils {
     // -------------
 
     // Error messages for input validation
-    string private constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
+    string public constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
     string private constant ERROR_MAX_REQUESTS_PER_MOTION_EXCEEDED =
         "MAX_REQUESTS_PER_MOTION_EXCEEDED";
     string private constant ERROR_DUPLICATE_EXIT_REQUESTS = "DUPLICATE_EXIT_REQUESTS";
@@ -53,7 +53,7 @@ library SubmitExitRequestHashesUtils {
     // Error messages for node operator ID validation
     string private constant ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST =
         "NODE_OPERATOR_ID_DOES_NOT_EXIST";
-    string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR =
+    string public constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR =
         "EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR";
     string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE =
         "EXECUTOR_NOT_PERMISSIONED_ON_MODULE";
@@ -136,15 +136,6 @@ library SubmitExitRequestHashesUtils {
         // Prepare array for deduplication hashes
         bytes32[] memory seenPubkeyHashes = new bytes32[](length);
         bool shouldCheckCreator = _creator != address(0);
-
-        // If a creator is specified, check that they are permissioned on the module
-        if (shouldCheckCreator) {
-            (, , address rewardAddress, , , , ) = _nodeOperatorsRegistry.getNodeOperator(
-                prevNodeOpId,
-                false
-            );
-            require(rewardAddress == _creator, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR);
-        }
 
         // Iterate through all exit requests to validate them
         for (uint256 i; i < length; ) {
