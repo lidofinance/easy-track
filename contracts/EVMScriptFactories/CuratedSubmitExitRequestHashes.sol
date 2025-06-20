@@ -55,10 +55,16 @@ contract CuratedSubmitExitRequestHashes is IEVMScriptFactory {
         SubmitExitRequestHashesUtils.ExitRequestInput[]
             memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        require(decodedCallData.length > 0, SubmitExitRequestHashesUtils.ERROR_EMPTY_REQUESTS_LIST);
+        // Validate the input data
+        SubmitExitRequestHashesUtils.validateExitRequests(
+            decodedCallData,
+            nodeOperatorsRegistry,
+            stakingRouter,
+            _creator
+        );
 
         // validate that the first exit request is for the node operator that is creating the EVMScript
-        // the rest of the exit requests can be for that one node operator, which is checked in the validateExitRequests method below
+        // the rest of the exit requests can be for that one node operator, which is checked in the validateExitRequests method above
         (, , address rewardAddress, , , , ) = nodeOperatorsRegistry.getNodeOperator(
             decodedCallData[0].nodeOpId,
             false
@@ -67,14 +73,6 @@ contract CuratedSubmitExitRequestHashes is IEVMScriptFactory {
         require(
             rewardAddress == _creator,
             SubmitExitRequestHashesUtils.ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR
-        );
-
-        // Validate the input data
-        SubmitExitRequestHashesUtils.validateExitRequests(
-            decodedCallData,
-            nodeOperatorsRegistry,
-            stakingRouter,
-            _creator
         );
 
         bytes32 hashedExitRequests = SubmitExitRequestHashesUtils.hashExitRequests(decodedCallData);

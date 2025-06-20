@@ -76,6 +76,11 @@ def overflowed_module_id():
     return 2**24
 
 
+@pytest.fixture(scope="module")
+def overflowed_node_op_id():
+    return 2**40
+
+
 # ---- EVM Script Calldata decoding ----
 
 
@@ -409,6 +414,57 @@ def test_cannot_create_evm_script_with_wrong_pubkey_multiple(
         submit_exit_request_hashes.createEVMScript(creator, calldata)
 
 
+def test_cannot_create_evm_script_wrong_node_operator(
+    creator,
+    registry,
+    submit_exit_hashes_factory_config,
+    submit_exit_request_hashes,
+    exit_request_input_factory,
+    module_id,
+):
+    exit_request_inputs = [
+        exit_request_input_factory(
+            module_id,
+            registry.getNodeOperatorsCount() + 1,
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        )
+    ]
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+    with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
+        submit_exit_request_hashes.createEVMScript(creator, calldata)
+
+
+def test_cannot_create_evm_script_wrong_node_operator_multiple(
+    creator,
+    registry,
+    submit_exit_hashes_factory_config,
+    submit_exit_request_hashes,
+    exit_request_input_factory,
+    module_id,
+):
+    exit_request_inputs = [
+        exit_request_input_factory(
+            module_id,
+            registry.getNodeOperatorsCount() + 1,
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        ),
+        exit_request_input_factory(
+            module_id,
+            submit_exit_hashes_factory_config["node_op_id"],
+            submit_exit_hashes_factory_config["validator_index"] + 1,
+            submit_exit_hashes_factory_config["pubkeys"][1],
+            0,
+        ),
+    ]
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+    with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
+        submit_exit_request_hashes.createEVMScript(creator, calldata)
+
+
 def test_cannot_create_evm_script_with_wrong_pubkey_index(
     creator, submit_exit_hashes_factory_config, submit_exit_request_hashes, exit_request_input_factory, module_id
 ):
@@ -476,4 +532,28 @@ def test_cannot_create_evm_script_with_duplicate_requests(
     ]
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
     with reverts("DUPLICATE_EXIT_REQUESTS"):
+        submit_exit_request_hashes.createEVMScript(creator, calldata)
+
+
+def test_cannot_create_evm_script_with_node_operator_id_overflow(
+    creator,
+    submit_exit_hashes_factory_config,
+    submit_exit_request_hashes,
+    exit_request_input_factory,
+    registry,
+    module_id,
+    overflowed_node_op_id,
+):
+    registry.setDesiredNodeOperatorCount(overflowed_node_op_id)
+    exit_request_inputs = [
+        exit_request_input_factory(
+            module_id,
+            overflowed_node_op_id,
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        )
+    ]
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+    with reverts("NODE_OPERATOR_ID_OVERFLOW"):
         submit_exit_request_hashes.createEVMScript(creator, calldata)

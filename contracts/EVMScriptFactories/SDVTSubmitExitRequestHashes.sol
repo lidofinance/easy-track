@@ -56,8 +56,6 @@ contract SDVTSubmitExitRequestHashes is TrustedCaller, IEVMScriptFactory {
         SubmitExitRequestHashesUtils.ExitRequestInput[]
             memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        require(decodedCallData.length > 0, SubmitExitRequestHashesUtils.ERROR_EMPTY_REQUESTS_LIST);
-
         // Validate the input data, set creator to zero as this function is only called by the trusted caller
         // and does not require checks for the creator being node operator.
         SubmitExitRequestHashesUtils.validateExitRequests(

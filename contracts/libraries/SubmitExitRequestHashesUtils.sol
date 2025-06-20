@@ -42,7 +42,7 @@ library SubmitExitRequestHashesUtils {
     // -------------
 
     // Error messages for input validation
-    string public constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
+    string private constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
     string private constant ERROR_MAX_REQUESTS_PER_MOTION_EXCEEDED =
         "MAX_REQUESTS_PER_MOTION_EXCEEDED";
     string private constant ERROR_DUPLICATE_EXIT_REQUESTS = "DUPLICATE_EXIT_REQUESTS";
