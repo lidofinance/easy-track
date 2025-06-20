@@ -3,16 +3,16 @@
 
 pragma solidity ^0.8.4;
 
-import "../TrustedCaller.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/IStakingRouter.sol";
 import "../interfaces/INodeOperatorsRegistry.sol";
+import "../interfaces/IStakingRouter.sol";
+import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IValidatorsExitBusOracle.sol";
+import "../interfaces/IStakingRouter.sol";
 
 /// @author swissarmytowel
-/// @notice Creates EVMScript to submit exit hashes to the Validators Exit Bus Oracle
-contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
+/// @title SubmitExitRequestHashesUtils
+/// @notice Library for creating and validating EVM scripts for validators exit requests.
+library SubmitExitRequestHashesUtils {
     // -------------
     // STRUCTS
     // -------------
@@ -25,19 +25,6 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
         bytes valPubkey;
         uint256 valPubKeyIndex;
     }
-
-    // -------------
-    // IMMUTABLES
-    // -------------
-
-    /// @notice Address of NodeOperatorsRegistry contract
-    INodeOperatorsRegistry public immutable nodeOperatorsRegistry;
-
-    /// @notice Address of Lido's Staking Router contract
-    IStakingRouter public immutable stakingRouter;
-
-    /// @notice Address of ValidatorsExitBusOracle contract
-    IValidatorsExitBusOracle public immutable validatorsExitBusOracle;
 
     // -------------
     // CONSTANTS
@@ -66,6 +53,8 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
     // Error messages for node operator ID validation
     string private constant ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST =
         "NODE_OPERATOR_ID_DOES_NOT_EXIST";
+    string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR =
+        "EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR";
     string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE =
         "EXECUTOR_NOT_PERMISSIONED_ON_MODULE";
 
@@ -74,40 +63,16 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_NODE_OP_ID_OVERFLOW = "NODE_OPERATOR_ID_OVERFLOW";
 
     // -------------
-    // CONSTRUCTOR
+    // INTERNAL METHODS
     // -------------
 
-    constructor(
-        address _trustedCaller,
-        address _nodeOperatorsRegistry,
-        address _stakingRouter,
-        address _validatorsExitBusOracle
-    ) TrustedCaller(_trustedCaller) {
-        nodeOperatorsRegistry = INodeOperatorsRegistry(_nodeOperatorsRegistry);
-        stakingRouter = IStakingRouter(_stakingRouter);
-        validatorsExitBusOracle = IValidatorsExitBusOracle(_validatorsExitBusOracle);
-    }
-
-    // -------------
-    // EXTERNAL METHODS
-    // -------------
-
-    /// @notice Creates EVMScript to submit exit request hashes to the Validators Exit Bus Oracle
-    /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded exit requests data: ExitRequestInput[]
-    function createEVMScript(
-        address _creator,
-        bytes memory _evmScriptCallData
-    ) external view override onlyTrustedCaller(_creator) returns (bytes memory) {
-        ExitRequestInput[] memory decodedCallData = _decodeEVMScriptCallData(_evmScriptCallData);
-
-        _validateInputData(decodedCallData);
-
+    /// @notice Hashes a slice of exit requests input data.
+    function hashExitRequests(ExitRequestInput[] memory _requests) internal pure returns (bytes32) {
         bytes memory packedData;
-        uint256 numberOfRequests = decodedCallData.length;
+        uint256 numberOfRequests = _requests.length;
 
         for (uint256 i; i < numberOfRequests; ) {
-            ExitRequestInput memory request = decodedCallData[i];
+            ExitRequestInput memory request = _requests[i];
             // pack into 64 bytes: 3 + 5 + 8 + 48
             packedData = abi.encodePacked(
                 packedData,
@@ -126,52 +91,60 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
             }
         }
 
-        bytes32 hashedExitRequests = keccak256(abi.encode(packedData, DATA_FORMAT_LIST));
-
-        return
-            EVMScriptCreator.createEVMScript(
-                address(validatorsExitBusOracle),
-                IValidatorsExitBusOracle.submitExitRequestsHash.selector,
-                abi.encode(hashedExitRequests)
-            );
+        return keccak256(abi.encode(packedData, DATA_FORMAT_LIST));
     }
 
-    /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded exit requests data: ExitRequestInput[]
-    /// @return Array of ExitRequestInput structs
-    function decodeEVMScriptCallData(
-        bytes memory _evmScriptCallData
-    ) external pure returns (ExitRequestInput[] memory) {
-        return _decodeEVMScriptCallData(_evmScriptCallData);
-    }
-
-    // ------------------
-    // PRIVATE METHODS
-    // ------------------
-    function _validateInputData(ExitRequestInput[] memory _exitRequests) private view {
+    /// @notice Validates the exit requests input data.
+    /// @param _exitRequests Array of exit requests to validate
+    /// @param _nodeOperatorsRegistry Address of the NodeOperatorsRegistry contract
+    /// @param _stakingRouter Address of the StakingRouter contract
+    /// @param _creator Address of the creator of the exit requests (used for permission checks for Curated module).
+    ///                 Should be set to either the node operator's reward address or zero if the check is not needed.
+    ///                 When zero, the check should be performed in the factory for trusted caller (SDVT Case).
+    function validateExitRequests(
+        ExitRequestInput[] memory _exitRequests,
+        INodeOperatorsRegistry _nodeOperatorsRegistry,
+        IStakingRouter _stakingRouter,
+        address _creator
+    ) internal view {
         uint256 length = _exitRequests.length;
 
         // Validate the length of the exit requests array
         require(length > 0, ERROR_EMPTY_REQUESTS_LIST);
         require(length <= MAX_REQUESTS_PER_MOTION, ERROR_MAX_REQUESTS_PER_MOTION_EXCEEDED);
 
+        // Use the first request to determine the module ID (should be the same for all requests)
+        ExitRequestInput memory firstRequest = _exitRequests[0];
+
         // Retrieve the first request module details
-        IStakingRouter.StakingModule memory module = stakingRouter.getStakingModule(
-            _exitRequests[0].moduleId
+        IStakingRouter.StakingModule memory module = _stakingRouter.getStakingModule(
+            firstRequest.moduleId
         );
 
         // Check if the module is valid and matches the registry address. If this passes, all subsequent requests
         // will only have to be checked to have the same module ID
         require(
-            module.stakingModuleAddress == address(nodeOperatorsRegistry),
+            module.stakingModuleAddress == address(_nodeOperatorsRegistry),
             ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE
         );
 
         uint256 moduleId = module.id;
-        uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
+        // cache the node operator ID from the first request for checking the creator
+        uint256 prevNodeOpId = firstRequest.nodeOpId;
+        uint256 nodeOperatorsCount = _nodeOperatorsRegistry.getNodeOperatorsCount();
 
         // Prepare array for deduplication hashes
         bytes32[] memory seenPubkeyHashes = new bytes32[](length);
+        bool shouldCheckCreator = _creator != address(0);
+
+        // If a creator is specified, check that they are permissioned on the module
+        if (shouldCheckCreator) {
+            (, , address rewardAddress, , , , ) = _nodeOperatorsRegistry.getNodeOperator(
+                prevNodeOpId,
+                false
+            );
+            require(rewardAddress == _creator, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR);
+        }
 
         // Iterate through all exit requests to validate them
         for (uint256 i; i < length; ) {
@@ -187,8 +160,18 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
             // Check that all requests have the same module ID, which ensures that all requests are for the same staking module
             require(_input.moduleId == moduleId, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE);
 
+            // Check that the node operator ID matches the previous request's node operator ID if a creator is specified
+            // As node operators can trigger exist requests only for their own ids, they should match.
+            // Reward address is checked above and is unique for the Curated module.
+            if (shouldCheckCreator) {
+                require(
+                    prevNodeOpId == _input.nodeOpId,
+                    ERROR_EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR
+                );
+            }
+
             // Fetch the registered signing key for this operator and pubkey index
-            (bytes memory key, , ) = nodeOperatorsRegistry.getSigningKey(
+            (bytes memory key, , ) = _nodeOperatorsRegistry.getSigningKey(
                 _input.nodeOpId,
                 _input.valPubKeyIndex
             );
@@ -213,11 +196,5 @@ contract SubmitValidatorsExitRequestHashes is TrustedCaller, IEVMScriptFactory {
                 ++i;
             }
         }
-    }
-
-    function _decodeEVMScriptCallData(
-        bytes memory _evmScriptCallData
-    ) private pure returns (ExitRequestInput[] memory) {
-        return abi.decode(_evmScriptCallData, (ExitRequestInput[]));
     }
 }

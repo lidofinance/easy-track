@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from brownie import chain, web3
+from brownie import chain, web3, accounts
 
 from utils import log
 from utils.evm_script import encode_calldata
@@ -250,3 +250,15 @@ def make_test_bytes(i: int, length: int = 48) -> bytes:
     if length < 3:
         raise ValueError("Length must be at least 3 bytes")
     return idx_bytes + bytes([i % 256]) * (length - 3)
+
+
+def add_node_operator(registry, pubkey):
+    registry.addNodeOperator("test_node_op_1", accounts[0].address, 200, 400)  # Add a node operator to the registry
+    new_node_op_id = registry.getNodeOperatorsCount() - 1
+
+    registry.setSigningKeys(
+        new_node_op_id,
+        pubkey,
+    )
+
+    return new_node_op_id

@@ -12,12 +12,24 @@ contract NodeOperatorsRegistryStub {
     uint64 public stakingLimit = 200;
     uint64 public totalSigningKeys = 400;
 
-    uint256 internal _nodeOperatorsCount = 1;
+    struct NodeOperator {
+        bool active;
+        string name;
+        address rewardAddress;
+        uint64 stakingLimit;
+        uint64 stoppedValidators;
+        uint64 totalSigningKeys;
+        uint64 usedSigningKeys;
+    }
 
+    uint256 internal _nodeOperatorsCount = 0;
+
+    mapping(uint256 => NodeOperator) internal _nodeOperators;
     mapping(uint256 => bytes) internal _signingKeys;
 
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
+        _addNodeOperator("Test Node Operator", _rewardAddress, stakingLimit, totalSigningKeys);
     }
 
     function getNodeOperator(
@@ -36,10 +48,45 @@ contract NodeOperatorsRegistryStub {
             uint64 _usedSigningKeys
         )
     {
-        _active = active;
-        _rewardAddress = rewardAddress;
-        _stakingLimit = stakingLimit;
-        _totalSigningKeys = totalSigningKeys;
+        NodeOperator storage nodeOperator = _nodeOperators[_id];
+
+        _active = nodeOperator.active;
+        _name = nodeOperator.name;
+        _rewardAddress = nodeOperator.rewardAddress;
+        _stakingLimit = nodeOperator.stakingLimit;
+        _stoppedValidators = nodeOperator.stoppedValidators;
+        _totalSigningKeys = nodeOperator.totalSigningKeys;
+        _usedSigningKeys = nodeOperator.usedSigningKeys;
+    }
+
+    function addNodeOperator(
+        string memory _name,
+        address _rewardAddress,
+        uint64 _stakingLimit,
+        uint64 _totalSigningKeys
+    ) external returns (uint256) {
+        return _addNodeOperator(_name, _rewardAddress, _stakingLimit, _totalSigningKeys);
+    }
+
+    function _addNodeOperator(
+        string memory _name,
+        address _rewardAddress,
+        uint64 _stakingLimit,
+        uint64 _totalSigningKeys
+    ) internal returns (uint256) {
+        _nodeOperators[_nodeOperatorsCount] = NodeOperator({
+            active: true,
+            name: _name,
+            rewardAddress: _rewardAddress,
+            stakingLimit: _stakingLimit,
+            stoppedValidators: 0,
+            totalSigningKeys: _totalSigningKeys,
+            usedSigningKeys: 0
+        });
+
+        _nodeOperatorsCount++;
+
+        return _nodeOperatorsCount;
     }
 
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external {

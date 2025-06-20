@@ -327,16 +327,38 @@ def validator_exit_bus_oracle(owner, ValidatorExitBusOracleStub):
 
 
 @pytest.fixture(scope="module")
+def submit_exit_request_hashes_utils_wrapper(owner, SubmitExitRequestHashesUtilsWrapper):
+    """A wrapper for validator exit request utilities."""
+    return owner.deploy(SubmitExitRequestHashesUtilsWrapper)
+
+
+@pytest.fixture(scope="module")
 def staking_router_stub(owner, StakingRouterStub):
     """A stub for the staking router, used in tests."""
     return owner.deploy(StakingRouterStub)
 
 
 @pytest.fixture(scope="module")
-def registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+def sdvt_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
     registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
     staking_router_stub.setStakingModule(
-        submit_exit_hashes_factory_config["module_ids"]["correct"], registry.address, {"from": owner}
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"], registry.address, {"from": owner}
+    )
+
+    registry.setSigningKeys(
+        submit_exit_hashes_factory_config["node_op_id"],
+        b"".join(submit_exit_hashes_factory_config["pubkeys"]),
+    )
+
+    return registry
+
+
+@pytest.fixture(scope="module")
+def curated_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+    """A stub for the curated registry, used in tests."""
+    registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
+    staking_router_stub.setStakingModule(
+        submit_exit_hashes_factory_config["module_ids"]["curated"], registry.address, {"from": owner}
     )
 
     registry.setSigningKeys(
@@ -531,8 +553,8 @@ def submit_exit_hashes_factory_config():
         "node_op_id": 0,
         "validator_index": 0,
         "module_ids": {
-            "correct": 1,
-            "wrong": 2,
+            "curated": 1,
+            "sdvt": 2,
         },
     }
 
