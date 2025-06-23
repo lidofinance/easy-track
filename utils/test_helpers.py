@@ -1,10 +1,8 @@
 from datetime import datetime, timezone
 
-from brownie import chain, web3, accounts
+from brownie import chain, web3
 
 from utils import log
-from utils.evm_script import encode_calldata
-from eth_abi import encode
 
 CANCEL_ROLE = "0x9f959e00d95122f5cbd677010436cf273ef535b86b056afc172852144b9491d7"
 PAUSE_ROLE = "0x139c2898040ef16910dc9f44dc697df79363da767d8bc92f2e310312b816e46d"
@@ -205,60 +203,3 @@ def get_timestamp_from_date(year, month, day, hour=0, min=0, sec=0):
 
 def set_account_balance(address, amount=1 * 10**18):
     web3.provider.make_request("evm_setAccountBalance", [address, amount])
-
-
-def create_exit_request_hash_calldata(exit_request_inputs: list):
-    return encode_calldata(
-        ["(uint256,uint256,uint64,bytes,uint256)[]"],
-        [exit_request_inputs],
-    )
-
-
-def create_exit_requests_hashes(requests, data_format=1):
-    """
-    requests: list of objects with attributes
-      - moduleId: int
-      - nodeOpId: int
-      - valIndex: int
-      - valPubkey: str or bytes (48-byte hex str with '0x' or raw bytes)
-    """
-
-    # helper to normalize pubkey to raw bytes
-    def _pub(r):
-        if isinstance(r.val_pubkey, str):
-            h = r.val_pubkey[2:] if r.val_pubkey.startswith("0x") else r.val_pubkey
-            return bytes.fromhex(h)
-        return r.val_pubkey
-
-    packed = b"".join(
-        r.module_id.to_bytes(3, "big") + r.node_op_id.to_bytes(5, "big") + r.val_index.to_bytes(8, "big") + _pub(r)
-        for r in requests
-    )
-
-    # abi.encode(bytes, uint256) then keccak256
-    digest = web3.keccak(encode(["bytes", "uint256"], [packed, data_format]))
-    return digest.hex()
-
-
-def make_test_bytes(i: int, length: int = 48) -> bytes:
-    """
-    Generate a test byte sequence for key or signature of arbitrary length.
-    First 3 bytes: index (big-endian),
-    Rest: repeat of (i mod 256).
-    """
-    idx_bytes = i.to_bytes(3, "big")
-    if length < 3:
-        raise ValueError("Length must be at least 3 bytes")
-    return idx_bytes + bytes([i % 256]) * (length - 3)
-
-
-def add_node_operator(registry, pubkey):
-    registry.addNodeOperator("test_node_op_1", accounts[0].address, 200, 400)  # Add a node operator to the registry
-    new_node_op_id = registry.getNodeOperatorsCount() - 1
-
-    registry.setSigningKeys(
-        new_node_op_id,
-        pubkey,
-    )
-
-    return new_node_op_id

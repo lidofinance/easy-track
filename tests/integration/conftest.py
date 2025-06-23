@@ -352,7 +352,7 @@ def rmc_factories_multisig():
 
 
 @pytest.fixture(scope="module")
-def sdvt_multisig():
+def sdvt_trusted_caller():
     """
     Test multisig address for SDVT submit validator exit hashes factory.
     """
@@ -364,22 +364,9 @@ def sdvt_multisig():
 
 
 @pytest.fixture(scope="module")
-def curated_module_multisig():
-    """
-    Test multisig address for Curated submit validator exit hashes factory.
-    """
-    network_name = get_network_name()
-    if network_name in ("mainnet", "mainnet-fork"):
-        # TODO: Replace with the actual multisig address for the Curated module (when known)
-        return brownie.ZERO_ADDRESS
-    else:
-        return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"
-
-
-@pytest.fixture(scope="module")
 def sdvt_submit_exit_hashes_evm_script_factory(
     SubmitValidatorsExitRequestHashes,
-    sdvt_multisig,
+    sdvt_trusted_caller,
     easy_track,
     lido_contracts,
     sdvt_registry,
@@ -392,12 +379,12 @@ def sdvt_submit_exit_hashes_evm_script_factory(
     """
     factory = deployer.deploy(
         SubmitValidatorsExitRequestHashes,
-        sdvt_multisig,
+        sdvt_trusted_caller,
         staking_router_stub,
         sdvt_registry,
         validator_exit_bus_oracle,
     )
-    assert factory.trustedCaller() == sdvt_multisig
+    assert factory.trustedCaller() == sdvt_trusted_caller
     assert factory.nodeOperatorsRegistry() == sdvt_registry
 
     if not easy_track.isEVMScriptFactory(factory):
@@ -415,7 +402,6 @@ def sdvt_submit_exit_hashes_evm_script_factory(
 @pytest.fixture(scope="module")
 def curated_submit_exit_hashes_evm_script_factory(
     SubmitValidatorsExitRequestHashes,
-    curated_module_multisig,
     easy_track,
     lido_contracts,
     curated_registry,
@@ -428,12 +414,10 @@ def curated_submit_exit_hashes_evm_script_factory(
     """
     factory = deployer.deploy(
         SubmitValidatorsExitRequestHashes,
-        curated_module_multisig,
         staking_router_stub,
         curated_registry,
         validator_exit_bus_oracle,
     )
-    assert factory.trustedCaller() == curated_module_multisig
     assert factory.nodeOperatorsRegistry() == curated_registry
 
     if not easy_track.isEVMScriptFactory(factory):

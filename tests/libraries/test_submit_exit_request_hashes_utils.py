@@ -1,5 +1,5 @@
 from brownie import reverts, ZERO_ADDRESS, accounts
-from utils.test_helpers import create_exit_requests_hashes, add_node_operator
+from utils.submit_exit_requests_test_helpers import create_exit_requests_hashes, add_node_operator
 
 
 ## This test module tests the validation and hashing of exit requests
@@ -88,33 +88,6 @@ def test_validation_passes_on_valid_requests_with_creator(
         staking_router_stub,
         node_operator.address,  # Pass the creator address
     )
-
-
-def test_validation_reverts_if_creator_not_node_operator(
-    submit_exit_request_hashes_utils_wrapper,
-    exit_request_input_factory,
-    submit_exit_hashes_factory_config,
-    curated_registry_stub,
-    staking_router_stub,
-):
-    """Test that a valid exit request with a creator not in the registry reverts."""
-    request = exit_request_input_factory(
-        submit_exit_hashes_factory_config["module_ids"]["curated"],
-        submit_exit_hashes_factory_config["node_op_id"],
-        submit_exit_hashes_factory_config["validator_index"],
-        submit_exit_hashes_factory_config["pubkeys"][0],
-        0,
-    )
-
-    # Use an address that is not in the registry
-    non_registry_address = accounts[0].address
-    with reverts("EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR"):
-        submit_exit_request_hashes_utils_wrapper.validateExitRequests(
-            [request.to_tuple()],
-            curated_registry_stub,
-            staking_router_stub,
-            non_registry_address,  # Pass a non-registry address
-        )
 
 
 def test_validation_reverts_if_creator_not_node_operator_multiple(

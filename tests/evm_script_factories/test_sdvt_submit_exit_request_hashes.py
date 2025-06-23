@@ -1,6 +1,5 @@
 import pytest
-from brownie import SDVTSubmitExitRequestHashes, ZERO_ADDRESS, reverts
-from utils.test_helpers import create_exit_request_hash_calldata
+from brownie import SDVTSubmitExitRequestHashes, ZERO_ADDRESS
 
 
 @pytest.fixture(scope="module")

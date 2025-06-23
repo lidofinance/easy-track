@@ -10,7 +10,8 @@ import constants
 from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
-from utils.test_helpers import set_account_balance, make_test_bytes
+from utils.test_helpers import set_account_balance
+from utils.submit_exit_requests_test_helpers import make_test_bytes
 
 ####################################
 # Brownie Blockchain State Snapshots

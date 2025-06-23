@@ -1,7 +1,11 @@
 import pytest
 from brownie import CuratedSubmitExitRequestHashes, SDVTSubmitExitRequestHashes, convert, reverts
 from utils.evm_script import encode_call_script
-from utils.test_helpers import create_exit_requests_hashes, create_exit_request_hash_calldata, make_test_bytes
+from utils.submit_exit_requests_test_helpers import (
+    create_exit_requests_hashes,
+    create_exit_request_hash_calldata,
+    make_test_bytes,
+)
 
 
 ## This test file contains tests for the SDVT and Curated SubmitExitRequestHashes factories, parameterized to avoid copy-pasting

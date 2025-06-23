@@ -1,6 +1,6 @@
 import pytest
 from brownie import CuratedSubmitExitRequestHashes, ZERO_ADDRESS, reverts
-from utils.test_helpers import create_exit_request_hash_calldata
+from utils.submit_exit_requests_test_helpers import create_exit_request_hash_calldata
 
 
 @pytest.fixture(scope="module")
