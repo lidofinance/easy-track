@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHub.sol";
+import "../../interfaces/IVaultHubAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to socialize bad debt for multiple vaults in VaultHub
@@ -16,44 +16,29 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
-    string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_ZERO_ADAPTER = "ZERO_ADAPTER";
     string private constant ERROR_EMPTY_BAD_DEBT_VAULTS = "EMPTY_BAD_DEBT_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_BAD_DEBT_VAULT = "ZERO_BAD_DEBT_VAULT";
     string private constant ERROR_ZERO_VAULT_ACCEPTOR = "ZERO_VAULT_ACCEPTOR";
     string private constant ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE = "ZERO_MAX_SHARES_TO_SOCIALIZE";
-    string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
-    string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
-
-    /// @notice Address of the EVMScriptExecutor
-    address public immutable evmScriptExecutor;
-
-    // -------------
-    // EVENTS
-    // -------------
-
-    event BadDebtSocializationFailed(address indexed badDebtVault, address indexed vaultAcceptor, uint256 maxSharesToSocialize);
+    /// @notice Address of VaultHub adapter
+    IVaultHubAdapter public immutable vaultHubAdapter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
+    constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
     {
-        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
-        require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
-
-        vaultHub = IVaultHub(_vaultHub);
-        evmScriptExecutor = _evmScriptExecutor;
+        require(_adapter != address(0), ERROR_ZERO_ADAPTER);
+        vaultHubAdapter = IVaultHubAdapter(_adapter);
     }
 
     // -------------
@@ -78,8 +63,8 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_badDebtVaults, _vaultAcceptors, _maxSharesToSocialize);
 
-        address toAddress = address(this);
-        bytes4 methodId = this.socializeBadDebt.selector;
+        address toAddress = address(vaultHubAdapter);
+        bytes4 methodId = vaultHubAdapter.socializeBadDebt.selector;
         bytes[] memory calldataArray = new bytes[](_badDebtVaults.length);
 
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
@@ -133,34 +118,6 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
             // acceptor address can't be zero - as it means to socialize bad debt to the core protocol
             require(_vaultAcceptors[i] != address(0), ERROR_ZERO_VAULT_ACCEPTOR);
             require(_maxSharesToSocialize[i] != 0, ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE);
-        }
-    }
-
-    // -------------
-    // ADAPTER METHODS
-    // -------------
-
-    /// @notice Socializes bad debt for a vault
-    /// @param _badDebtVault address of the vault that has the bad debt
-    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
-    /// @param _maxSharesToSocialize maximum amount of shares to socialize
-    function socializeBadDebt(
-        address _badDebtVault,
-        address _vaultAcceptor,
-        uint256 _maxSharesToSocialize
-    ) external {
-        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
-
-        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) { // reverts if vault is disconnected while motion is in progress
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the socializeBadDebt() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the socializeBadDebt() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
-            emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
         }
     }
 } 

@@ -1,6 +1,7 @@
 import pytest
 import brownie
 
+from brownie import VaultHubAdapter # type: ignore
 from utils.evm_script import encode_calldata
 from utils.test_helpers import assert_event_exists
 
@@ -17,6 +18,18 @@ def vault_hub(owner, VaultHubStub, easy_track):
     vault_hub = owner.deploy(VaultHubStub, owner)
     vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), easy_track.evmScriptExecutor(), {"from": owner})
     return vault_hub
+
+
+@pytest.fixture(scope="module", autouse=True)
+def adapter(owner, vault_hub, easy_track, trusted_address):
+    adapter = VaultHubAdapter.deploy(trusted_address, vault_hub, easy_track.evmScriptExecutor(), 1000000000000000000, {"from": owner})
+    # send 10 ETH to adapter
+    owner.transfer(adapter, 10 * 10 ** 18)
+    # grant all needed roles to adapter
+    vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), adapter, {"from": owner})
+    vault_hub.grantRole(vault_hub.BAD_DEBT_MASTER_ROLE(), adapter, {"from": owner})
+    vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), adapter, {"from": owner})
+    return adapter
 
 
 @pytest.fixture(scope="module")
@@ -143,6 +156,7 @@ def create_enact_and_check_force_validator_exits_motion(
     force_validator_exits_factory,
     vault_addresses,
     pubkeys,
+    adapter,
 ):
     # First register the vaults to update
     for vault_address in vault_addresses:
@@ -163,7 +177,7 @@ def create_enact_and_check_force_validator_exits_motion(
     for i, event in enumerate(tx.events["ForcedValidatorExitTriggered"]):
         assert event["vault"] == vault_addresses[i+1]
         assert event["pubkeys"] == "0x" + pubkeys[i+1].hex()
-        assert event["refundRecipient"] == force_validator_exits_factory.address
+        assert event["refundRecipient"] == adapter.address
 
 
 def create_enact_and_check_set_vault_redemptions_motion(
@@ -249,15 +263,16 @@ def test_update_share_limits_happy_path(
     deployer,
     stranger,
     vault_hub,
+    adapter,
 ):  
-    factory_instance = deployer.deploy(DecreaseShareLimitsInVaultHub, trusted_address, vault_hub, easy_track.evmScriptExecutor())
+    factory_instance = deployer.deploy(DecreaseShareLimitsInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHub() == vault_hub
-    assert factory_instance.evmScriptExecutor() == easy_track.evmScriptExecutor()
+    assert factory_instance.vaultHubAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == trusted_address
+    assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
 
-    vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), factory_instance, {"from": owner})
-
-    permission = factory_instance.address + factory_instance.updateShareLimit.signature[2:]
+    permission = adapter.address + adapter.updateShareLimit.signature[2:]
 
     setup_evm_script_factory(
         factory_instance,
@@ -289,15 +304,16 @@ def test_update_vaults_fees_happy_path(
     deployer,
     stranger,
     vault_hub,
+    adapter,
 ):  
-    factory_instance = deployer.deploy(DecreaseVaultsFeesInVaultHub, trusted_address, vault_hub, easy_track.evmScriptExecutor())
+    factory_instance = deployer.deploy(DecreaseVaultsFeesInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHub() == vault_hub
-    assert factory_instance.evmScriptExecutor() == easy_track.evmScriptExecutor()
+    assert factory_instance.vaultHubAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == trusted_address
+    assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
 
-    vault_hub.grantRole(vault_hub.VAULT_MASTER_ROLE(), factory_instance, {"from": owner})
-
-    permission = factory_instance.address + factory_instance.updateVaultFees.signature[2:]
+    permission = adapter.address + adapter.updateVaultFees.signature[2:]
 
     setup_evm_script_factory(
         factory_instance,
@@ -332,18 +348,16 @@ def test_force_validator_exits_happy_path(
     stranger,
     vault_hub,
     vaults,
+    adapter,
 ):  
-    factory_instance = deployer.deploy(ForceValidatorExitsInVaultHub, trusted_address, vault_hub, easy_track.evmScriptExecutor())
+    factory_instance = deployer.deploy(ForceValidatorExitsInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHub() == vault_hub
-    assert factory_instance.evmScriptExecutor() == easy_track.evmScriptExecutor()
+    assert factory_instance.vaultHubAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == trusted_address
+    assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
 
-    # send 10 ETH to factory
-    owner.transfer(factory_instance, 10 * 10 ** 18)
-
-    vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), factory_instance, {"from": owner})
-
-    permission = factory_instance.address + factory_instance.forceValidatorExit.signature[2:]
+    permission = adapter.address + adapter.forceValidatorExit.signature[2:]
 
     setup_evm_script_factory(
         factory_instance,
@@ -362,6 +376,7 @@ def test_force_validator_exits_happy_path(
         factory_instance,
         vaults,
         [b"01" * 48, b"02" * 48, b"03" * 48],  # 48 bytes per pubkey
+        adapter,
     )
 
 
@@ -413,15 +428,16 @@ def test_socialize_bad_debt_happy_path(
     stranger,
     vault_hub,
     vaults,
+    adapter,
 ):
-    factory_instance = deployer.deploy(SocializeBadDebtInVaultHub, trusted_address, vault_hub, easy_track.evmScriptExecutor())
+    factory_instance = deployer.deploy(SocializeBadDebtInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHub() == vault_hub
-    assert factory_instance.evmScriptExecutor() == easy_track.evmScriptExecutor()
+    assert factory_instance.vaultHubAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == trusted_address
+    assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
 
-    vault_hub.grantRole(vault_hub.BAD_DEBT_MASTER_ROLE(), factory_instance, {"from": owner})
-
-    permission = factory_instance.address + factory_instance.socializeBadDebt.signature[2:]
+    permission = adapter.address + adapter.socializeBadDebt.signature[2:]
 
     setup_evm_script_factory(
         factory_instance,

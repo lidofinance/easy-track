@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHub.sol";
+import "../../interfaces/IVaultHubAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
@@ -16,8 +16,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
-    string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_ZERO_ADAPTER = "ZERO_ADAPTER";
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
@@ -26,10 +25,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_NOT_ENOUGH_ETH = "NOT_ENOUGH_ETH";
     string private constant ERROR_WITHDRAWAL_FEE_READ_FAILED = "WITHDRAWAL_FEE_READ_FAILED";
     string private constant ERROR_WITHDRAWAL_FEE_INVALID_DATA = "WITHDRAWAL_FEE_INVALID_DATA";
-    string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
-    string private constant ERROR_NO_ETH_TO_WITHDRAW = "NO_ETH_TO_WITHDRAW";
-    string private constant ERROR_ETH_TRANSFER_FAILED = "ETH_TRANSFER_FAILED";
-    string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
+    string private constant ERROR_VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED = "VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED";
 
     // -------------
     // VARIABLES
@@ -39,30 +35,18 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @notice The length of the public key in bytes
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
 
-    /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
-
-    /// @notice Address of EVMScriptExecutor
-    address public immutable evmScriptExecutor;
-
-    // -------------
-    // EVENTS
-    // -------------
-
-    event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
+    /// @notice Address of VaultHub adapter
+    IVaultHubAdapter public immutable vaultHubAdapter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
+    constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
     {
-        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
-        require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
-
-        vaultHub = IVaultHub(_vaultHub);
-        evmScriptExecutor = _evmScriptExecutor;
+        require(_adapter != address(0), ERROR_ZERO_ADAPTER);
+        vaultHubAdapter = IVaultHubAdapter(_adapter);
     }
 
     // -------------
@@ -86,8 +70,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _pubkeys);
 
-        address toAddress = address(this);
-        bytes4 methodId = this.forceValidatorExit.selector;
+        address toAddress = address(vaultHubAdapter);
+        bytes4 methodId = vaultHubAdapter.forceValidatorExit.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -138,9 +122,11 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
             numKeys += _pubkeys[i].length / PUBLIC_KEY_LENGTH;
         }
 
+        // check if the validator exit fee limit is exceeded
+        uint256 fee = _getWithdrawalRequestFee();
+        require(fee <= vaultHubAdapter.validatorExitFeeLimit(), ERROR_VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED);
         // check if we have enough balance to pay for the validator exits
-        uint256 value = numKeys * _getWithdrawalRequestFee();
-        require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
+        require(numKeys * fee <= address(vaultHubAdapter).balance, ERROR_NOT_ENOUGH_ETH);
     }
 
     /// @dev Retrieves the current EIP-7002 withdrawal fee.
@@ -153,45 +139,4 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         return abi.decode(feeData, (uint256));
     }
-
-    // -------------
-    // ADAPTER METHODS
-    // -------------
-
-    /// @notice Function to force validator exits in VaultHub
-    /// @param _vault Address of the vault to exit validators from
-    /// @param _pubkeys Public keys of the validators to exit
-    function forceValidatorExit(
-        address _vault,
-        bytes calldata _pubkeys
-    ) external payable {
-        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
-
-        uint256 numKeys = _pubkeys.length / PUBLIC_KEY_LENGTH;
-        uint256 value = numKeys * _getWithdrawalRequestFee();
-        require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
-
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) { // reverts if vault is disconnected or healthy
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the forceValidatorExit() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the forceValidatorExit() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
-            emit ForceValidatorExitFailed(_vault, _pubkeys);
-        }
-    }
-
-    /// @notice Function to withdraw all ETH to TrustedCaller
-    function withdrawETH() external onlyTrustedCaller(msg.sender) {
-        uint256 balance = address(this).balance;
-        require(balance > 0, ERROR_NO_ETH_TO_WITHDRAW);
-
-        (bool success, ) = msg.sender.call{value: balance}("");
-        require(success, ERROR_ETH_TRANSFER_FAILED);
-    }
-
-    receive() external payable {}
 }

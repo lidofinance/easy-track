@@ -9,6 +9,7 @@ from brownie import (
     ForceValidatorExitsInVaultHub,
     SocializeBadDebtInVaultHub,
     SetVaultRedemptionsInVaultHub,
+    VaultHubAdapter,
     web3,
 )
 
@@ -19,6 +20,8 @@ from utils.config import (
     prompt_bool,
     get_network_name,
 )
+
+from utils.constants import INITIAL_VALIDATOR_EXIT_FEE_LIMIT
 
 
 def get_trusted_caller():
@@ -85,17 +88,25 @@ def deploy_vault_hub_factories(
 ):
     deployment_artifacts = {}
 
+    # VaultHubAdapter
+    adapter = VaultHubAdapter.deploy(trusted_caller, vault_hub, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT, tx_params)
+    deployment_artifacts["VaultHubAdapter"] = {
+        "contract": "VaultHubAdapter",
+        "address": adapter.address,
+        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT],
+    }
+    log.ok("Deployed VaultHubAdapter", adapter.address)
+
     # DecreaseShareLimitsInVaultHub
     decrease_share_limits_in_vault_hub = DecreaseShareLimitsInVaultHub.deploy(
         trusted_caller,
-        vault_hub,
-        evmScriptExecutor,
+        adapter.address,
         tx_params,
     )
     deployment_artifacts["DecreaseShareLimitsInVaultHub"] = {
         "contract": "DecreaseShareLimitsInVaultHub",
         "address": decrease_share_limits_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
+        "constructorArgs": [trusted_caller, adapter.address],
     }
 
     log.ok("Deployed DecreaseShareLimitsInVaultHub", decrease_share_limits_in_vault_hub.address)
@@ -103,14 +114,13 @@ def deploy_vault_hub_factories(
     # DecreaseVaultsFeesInVaultHub
     decrease_vaults_fees_in_vault_hub = DecreaseVaultsFeesInVaultHub.deploy(
         trusted_caller,
-        vault_hub,
-        evmScriptExecutor,
+        adapter.address,
         tx_params,
     )
     deployment_artifacts["DecreaseVaultsFeesInVaultHub"] = {
         "contract": "DecreaseVaultsFeesInVaultHub",
         "address": decrease_vaults_fees_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
+        "constructorArgs": [trusted_caller, adapter.address],
     }
 
     log.ok("Deployed DecreaseVaultsFeesInVaultHub", decrease_vaults_fees_in_vault_hub.address)
@@ -118,14 +128,13 @@ def deploy_vault_hub_factories(
     # ForceValidatorExitsInVaultHub
     force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
         trusted_caller,
-        vault_hub,
-        evmScriptExecutor,
+        adapter.address,
         tx_params,
     )
     deployment_artifacts["ForceValidatorExitsInVaultHub"] = {
         "contract": "ForceValidatorExitsInVaultHub",
         "address": force_validator_exits_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
+        "constructorArgs": [trusted_caller, adapter.address],
     }
 
     log.ok("Deployed ForceValidatorExitsInVaultHub", force_validator_exits_in_vault_hub.address)
@@ -133,14 +142,13 @@ def deploy_vault_hub_factories(
     # SocializeBadDebtInVaultHub
     socialize_bad_debt_in_vault_hub = SocializeBadDebtInVaultHub.deploy(
         trusted_caller,
-        vault_hub,
-        evmScriptExecutor,
+        adapter.address,
         tx_params,
     )
     deployment_artifacts["SocializeBadDebtInVaultHub"] = {
         "contract": "SocializeBadDebtInVaultHub",
         "address": socialize_bad_debt_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub, evmScriptExecutor],
+        "constructorArgs": [trusted_caller, adapter.address],
     }
 
     log.ok("Deployed SocializeBadDebtInVaultHub", socialize_bad_debt_in_vault_hub.address)
@@ -170,6 +178,7 @@ def deploy_vault_hub_factories(
     log.br()
     log.ok("Deployment artifacts have been saved to", filename)
 
+    VaultHubAdapter.publish_source(adapter)
     DecreaseShareLimitsInVaultHub.publish_source(decrease_share_limits_in_vault_hub)
     DecreaseVaultsFeesInVaultHub.publish_source(decrease_vaults_fees_in_vault_hub)
     ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)

@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHub.sol";
+import "../../interfaces/IVaultHubAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to update share limits for multiple vaults in VaultHub
@@ -16,42 +16,27 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
-    string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
+    string private constant ERROR_ZERO_ADAPTER = "ZERO_ADAPTER";
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
-    string private constant ERROR_ONLY_EVM_SCRIPT_EXECUTOR = "ONLY_EVM_SCRIPT_EXECUTOR";
-    string private constant ERROR_OUT_OF_GAS = "OUT_OF_GAS";
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of the EVMScriptExecutor
-    address public immutable evmScriptExecutor;
-
-    /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
-
-    // -------------
-    // EVENTS
-    // -------------
-
-    event ShareLimitUpdateFailed(address indexed vault, uint256 shareLimit);
+    /// @notice Address of VaultHub adapter
+    IVaultHubAdapter public immutable vaultHubAdapter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor)
+    constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
     {   
-        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
-        require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
-
-        vaultHub = IVaultHub(_vaultHub);
-        evmScriptExecutor = _evmScriptExecutor;
+        require(_adapter != address(0), ERROR_ZERO_ADAPTER);
+        vaultHubAdapter = IVaultHubAdapter(_adapter);
     }
 
     // -------------
@@ -72,8 +57,8 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _shareLimits);
 
-        address toAddress = address(this);
-        bytes4 methodId = this.updateShareLimit.selector;
+        address toAddress = address(vaultHubAdapter);
+        bytes4 methodId = vaultHubAdapter.updateShareLimit.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -116,34 +101,6 @@ contract DecreaseShareLimitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
             // shareLimit check in adapter to prevent motion failure in case vault disconnected while motion is in progress
-        }
-    }
-
-    // -------------
-    // ADAPTER METHODS
-    // -------------
-
-    /// @notice Updates share limit for a vault
-    /// @param _vault address of the vault to update
-    /// @param _shareLimit new share limit value
-    function updateShareLimit(address _vault, uint256 _shareLimit) external {
-        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
-
-        if (_shareLimit > vaultHub.vaultConnection(_vault).shareLimit) {
-            emit ShareLimitUpdateFailed(_vault, _shareLimit);
-            return;
-        }
-
-        try vaultHub.updateShareLimit(_vault, _shareLimit) { // reverts if vault is disconnected while motion is in progress
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the updateShareLimit() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the updateShareLimit() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
-            emit ShareLimitUpdateFailed(_vault, _shareLimit);
         }
     }
 }

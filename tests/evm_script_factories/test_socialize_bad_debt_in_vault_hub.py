@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SocializeBadDebtInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SocializeBadDebtInVaultHub, VaultHubAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -10,15 +10,22 @@ def create_calldata(bad_debt_vaults, vault_acceptors, max_shares_to_socialize):
     )
 
 @pytest.fixture(scope="module")
-def socialize_bad_debt_factory(owner, vault_hub_stub):
-    factory = SocializeBadDebtInVaultHub.deploy(owner, vault_hub_stub, owner, {"from": owner})
+def adapter(owner, vault_hub_stub):
+    adapter = VaultHubAdapter.deploy(owner, vault_hub_stub, owner, 1000000000000000000, {"from": owner})
+    return adapter
+
+@pytest.fixture(scope="module")
+def socialize_bad_debt_factory(owner, adapter):
+    factory = SocializeBadDebtInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, socialize_bad_debt_factory, vault_hub_stub):
+def test_deploy(owner, socialize_bad_debt_factory, adapter, vault_hub_stub):
     "Must deploy contract with correct data"
     assert socialize_bad_debt_factory.trustedCaller() == owner
-    assert socialize_bad_debt_factory.vaultHub() == vault_hub_stub
-    assert socialize_bad_debt_factory.evmScriptExecutor() == owner
+    assert socialize_bad_debt_factory.vaultHubAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == owner
+    assert adapter.evmScriptExecutor() == owner
 
 def test_create_evm_script_called_by_stranger(stranger, socialize_bad_debt_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -50,7 +57,7 @@ def test_zero_vault_acceptor_address(owner, stranger, socialize_bad_debt_factory
     with reverts('ZERO_VAULT_ACCEPTOR'):
         socialize_bad_debt_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script(owner, accounts, socialize_bad_debt_factory):
+def test_create_evm_script(owner, accounts, socialize_bad_debt_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
     bad_debt_vault1 = accounts[5]
     bad_debt_vault2 = accounts[6]
@@ -68,8 +75,8 @@ def test_create_evm_script(owner, accounts, socialize_bad_debt_factory):
     expected_calls = []
     for i in range(len(bad_debt_vaults)):
         expected_calls.append((
-            socialize_bad_debt_factory.address,
-            socialize_bad_debt_factory.socializeBadDebt.encode_input(
+            adapter.address,
+            adapter.socializeBadDebt.encode_input(
                 bad_debt_vaults[i],
                 vault_acceptors[i],
                 max_shares_to_socialize[i]

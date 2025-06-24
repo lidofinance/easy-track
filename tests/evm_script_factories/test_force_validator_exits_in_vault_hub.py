@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, ForceValidatorExitsInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, ForceValidatorExitsInVaultHub, VaultHubAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,17 +7,24 @@ def create_calldata(vaults, pubkeys):
     return encode_calldata(["address[]", "bytes[]"], [vaults, pubkeys])
 
 @pytest.fixture(scope="module")
-def force_validator_exits_factory(owner, vault_hub_stub):
-    factory = ForceValidatorExitsInVaultHub.deploy(owner, vault_hub_stub, owner, {"from": owner})
-    # send 10 ETH to factory
-    owner.transfer(factory, 10 * 10 ** 18)
+def adapter(owner, vault_hub_stub):
+    adapter = VaultHubAdapter.deploy(owner, vault_hub_stub, owner, 1000000000000000000, {"from": owner})
+    # send 10 ETH to adapter
+    owner.transfer(adapter, 10 * 10 ** 18)
+    return adapter
+
+@pytest.fixture(scope="module")
+def force_validator_exits_factory(owner, adapter):
+    factory = ForceValidatorExitsInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, vault_hub_stub, force_validator_exits_factory):
+def test_deploy(owner, force_validator_exits_factory, adapter, vault_hub_stub):
     "Must deploy contract with correct data"
     assert force_validator_exits_factory.trustedCaller() == owner
-    assert force_validator_exits_factory.vaultHub() == vault_hub_stub
-    assert force_validator_exits_factory.evmScriptExecutor() == owner
+    assert force_validator_exits_factory.vaultHubAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == owner
+    assert adapter.evmScriptExecutor() == owner
 
 def test_create_evm_script_called_by_stranger(stranger, force_validator_exits_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -55,7 +62,7 @@ def test_invalid_pubkeys_length(owner, stranger, force_validator_exits_factory):
     with reverts('INVALID_PUBKEYS_LENGTH'):
         force_validator_exits_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script(owner, accounts, force_validator_exits_factory):
+def test_create_evm_script(owner, accounts, force_validator_exits_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
     vault1 = accounts[5]
     vault2 = accounts[6]
@@ -70,8 +77,8 @@ def test_create_evm_script(owner, accounts, force_validator_exits_factory):
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            force_validator_exits_factory.address,
-            force_validator_exits_factory.forceValidatorExit.encode_input(vaults[i], pubkeys[i])
+            adapter.address,
+            adapter.forceValidatorExit.encode_input(vaults[i], pubkeys[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 
@@ -90,31 +97,31 @@ def test_decode_evm_script_call_data(accounts, force_validator_exits_factory):
         assert decoded_vaults[i] == vaults[i]
         assert decoded_pubkeys[i] == "0x" + pubkeys[i].hex()
 
-def test_withdraw_eth_called_by_stranger(stranger, force_validator_exits_factory):
+def test_withdraw_eth_called_by_stranger(stranger, adapter):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if caller isn't trustedCaller"
     with reverts():
-        force_validator_exits_factory.withdrawETH({"from": stranger})
+        adapter.withdrawETH({"from": stranger})
 
-def test_withdraw_eth_no_balance(owner, force_validator_exits_factory):
+def test_withdraw_eth_no_balance(owner, adapter):
     "Must revert with message 'No ETH to withdraw' if contract has no ETH balance"
-    force_validator_exits_factory.withdrawETH({"from": owner})
+    adapter.withdrawETH({"from": owner})
     with reverts():
-        force_validator_exits_factory.withdrawETH({"from": owner})
+        adapter.withdrawETH({"from": owner})
 
-def test_withdraw_eth_success(owner, force_validator_exits_factory):
+def test_withdraw_eth_success(owner, adapter):
     "Must successfully withdraw ETH to trusted caller"
-    # Send some ETH to the factory
-    owner.transfer(force_validator_exits_factory, "1 ether")
+    # Send some ETH to the adapter
+    owner.transfer(adapter, "1 ether")
     
     # Get initial balances
     initial_owner_balance = owner.balance()
-    initial_balance = force_validator_exits_factory.balance()
+    initial_balance = adapter.balance()
     
     # Withdraw ETH
-    tx = force_validator_exits_factory.withdrawETH({"from": owner})
+    tx = adapter.withdrawETH({"from": owner})
     
     # Check final balances
-    assert force_validator_exits_factory.balance() == 0, "Factory should have 0 ETH after withdrawal"
+    assert adapter.balance() == 0, "Factory should have 0 ETH after withdrawal"
     # Account for gas costs in the owner's final balance
     gas_cost = tx.gas_used * tx.gas_price
     assert owner.balance() == initial_owner_balance + initial_balance - gas_cost, "Owner should receive all ETH minus gas costs"
