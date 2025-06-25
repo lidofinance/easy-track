@@ -57,5 +57,5 @@ interface IVaultHubAdapter {
     function setValidatorExitFeeLimit(uint256 _validatorExitFeeLimit) external;
 
     /// @notice Function to withdraw all ETH to TrustedCaller
-    function withdrawETH() external;
+    function withdrawETH(address _recipient) external;
 } 

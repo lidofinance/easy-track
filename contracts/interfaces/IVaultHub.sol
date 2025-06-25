@@ -56,29 +56,6 @@ interface IVaultHub {
     }
 
     // -----------------------------
-    //           CONSTANTS
-    // -----------------------------
-    /// @notice Returns the role identifier for vault master
-    /// @return The bytes32 role identifier for vault master
-    function VAULT_MASTER_ROLE() external view returns (bytes32);
-
-    /// @notice Returns the role identifier for validator exit
-    /// @return The bytes32 role identifier for validator exit
-    function VALIDATOR_EXIT_ROLE() external view returns (bytes32);
-
-    /// @notice Returns the role identifier for redemption master
-    /// @return The bytes32 role identifier for redemption master
-    function REDEMPTION_MASTER_ROLE() external view returns (bytes32);
-
-    /// @notice Returns the role identifier for bad debt master
-    /// @return The bytes32 role identifier for bad debt master
-    function BAD_DEBT_MASTER_ROLE() external view returns (bytes32);
-
-    /// @notice Returns the maximum relative share limit in basis points
-    /// @return The maximum relative share limit in basis points
-    function MAX_RELATIVE_SHARE_LIMIT_BP() external view returns (uint256);
-
-    // -----------------------------
     //           FUNCTIONS
     // -----------------------------
 

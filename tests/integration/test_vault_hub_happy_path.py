@@ -139,12 +139,12 @@ def create_enact_and_check_update_vaults_fees_motion(
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
     # Check that events were emitted only for non-reverting vaults
-    assert len(tx.events["VaultFeesUpdated"]) == len(vault_addresses) - 1  # First vault is special and will revert
+    assert len(tx.events["VaultFeesUpdated"]) == len(vault_addresses)
     for i, event in enumerate(tx.events["VaultFeesUpdated"]):
-        assert event["vault"] == vault_addresses[i+1]  # Skip first vault
-        assert event["infraFeeBP"] == infra_fees_bp[i+1]
-        assert event["liquidityFeeBP"] == liquidity_fees_bp[i+1]
-        assert event["reservationFeeBP"] == reservation_fees_bp[i+1]
+        assert event["vault"] == vault_addresses[i]
+        assert event["infraFeeBP"] == infra_fees_bp[i]
+        assert event["liquidityFeeBP"] == liquidity_fees_bp[i]
+        assert event["reservationFeeBP"] == reservation_fees_bp[i]
 
 
 def create_enact_and_check_force_validator_exits_motion(

@@ -7,7 +7,7 @@ def create_calldata(operators, share_limits, tiers):
 
 @pytest.fixture(scope="module")
 def register_groups_in_operator_grid_factory(owner, operator_grid_stub):
-    factory = RegisterGroupsInOperatorGrid.deploy(owner, operator_grid_stub, {"from": owner})
+    factory = RegisterGroupsInOperatorGrid.deploy(owner, operator_grid_stub, 10000, {"from": owner})
     operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
     return factory
 
@@ -141,10 +141,10 @@ def test_tier_share_limit_too_high(owner, register_groups_in_operator_grid_facto
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_group_share_limit_too_high(owner, register_groups_in_operator_grid_factory, operator_grid_stub):
+def test_group_share_limit_too_high(owner, register_groups_in_operator_grid_factory):
     "Must revert with message 'GROUP_SHARE_LIMIT_TOO_HIGH' if the group's share limit exceeds the maximum allowed"
     operator = "0x0000000000000000000000000000000000000001"
-    max_sane_share_limit = (operator_grid_stub.getTotalShares() * operator_grid_stub.MAX_RELATIVE_SHARE_LIMIT_BP()) // 10000
+    max_sane_share_limit = register_groups_in_operator_grid_factory.maxSaneShareLimit()
     share_limit = max_sane_share_limit + 1  # Exceeds maximum allowed
     tiers = [[(1000, 200, 100, 50, 40, 10)]]
     CALLDATA = create_calldata([operator], [share_limit], tiers)

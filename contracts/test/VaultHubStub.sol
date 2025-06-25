@@ -54,7 +54,6 @@ contract VaultHubStub is AccessControl {
     bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
     bytes32 public constant REDEMPTION_MASTER_ROLE = keccak256("vaults.VaultHub.RedemptionMasterRole");
     bytes32 public constant BAD_DEBT_MASTER_ROLE = keccak256("vaults.VaultHub.BadDebtMasterRole");
-    uint256 public constant MAX_RELATIVE_SHARE_LIMIT_BP = 1000;
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
@@ -118,10 +117,6 @@ contract VaultHubStub is AccessControl {
         uint256 _liquidityFeeBP,
         uint256 _reservationFeeBP
     ) external onlyRole(VAULT_MASTER_ROLE) {
-        // First vault is special and will revert
-        if (connections[_vault].vaultIndex == 1) {
-            revert("Special vault revert 1");
-        }
         uint16 preInfraFeeBP = connections[_vault].infraFeeBP;
         uint16 preLiquidityFeeBP = connections[_vault].liquidityFeeBP;
         uint16 preReservationFeeBP = connections[_vault].reservationFeeBP;

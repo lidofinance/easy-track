@@ -7,7 +7,7 @@ def create_calldata(operators, share_limits):
 
 @pytest.fixture(scope="module")
 def update_groups_share_limit_in_operator_grid_factory(owner, operator_grid_stub):
-    factory = UpdateGroupsShareLimitInOperatorGrid.deploy(owner, operator_grid_stub, {"from": owner})
+    factory = UpdateGroupsShareLimitInOperatorGrid.deploy(owner, operator_grid_stub, 10000, {"from": owner})
     operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
     return factory
 
@@ -50,6 +50,22 @@ def test_group_not_exists(owner, stranger, accounts, update_groups_share_limit_i
     "Must revert with message 'GROUP_NOT_EXISTS' if any group doesn't exist"
     CALLDATA = create_calldata([stranger.address, accounts[5].address], [1000, 2000])
     with reverts('GROUP_NOT_EXISTS'):
+        update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_share_limit_too_high(owner, accounts, update_groups_share_limit_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'SHARE_LIMIT_TOO_HIGH' if any share limit exceeds maxSaneShareLimit"
+    operator = accounts[5]
+    
+    # Register operator first
+    operator_grid_stub.registerGroup(operator, 5000, {"from": owner})
+    
+    # Get maxSaneShareLimit from the factory (10000 based on deployment)
+    max_sane_share_limit = update_groups_share_limit_in_operator_grid_factory.maxSaneShareLimit()
+    
+    # Try to set share limit higher than maxSaneShareLimit
+    CALLDATA = create_calldata([operator.address], [max_sane_share_limit + 1])
+    with reverts('SHARE_LIMIT_TOO_HIGH'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 

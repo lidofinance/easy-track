@@ -31,7 +31,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    address constant WITHDRAWAL_REQUEST = 0x00000961Ef480Eb55e80D19ad83579A64c007002;
+    address public constant WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS = 0x00000961Ef480Eb55e80D19ad83579A64c007002;
     /// @notice The length of the public key in bytes
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
 
@@ -132,7 +132,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @dev Retrieves the current EIP-7002 withdrawal fee.
     /// @return The minimum fee required per withdrawal request.
     function _getWithdrawalRequestFee() internal view returns (uint256) {
-        (bool success, bytes memory feeData) = WITHDRAWAL_REQUEST.staticcall("");
+        (bool success, bytes memory feeData) = WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS.staticcall("");
 
         require(success, ERROR_WITHDRAWAL_FEE_READ_FAILED);
         require(feeData.length == 32, ERROR_WITHDRAWAL_FEE_INVALID_DATA);

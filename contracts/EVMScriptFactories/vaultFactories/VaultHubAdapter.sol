@@ -30,7 +30,7 @@ contract VaultHubAdapter is TrustedCaller {
     // -------------
     
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
-    address constant WITHDRAWAL_REQUEST = 0x00000961Ef480Eb55e80D19ad83579A64c007002;
+    address public constant WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS = 0x00000961Ef480Eb55e80D19ad83579A64c007002;
 
     // -------------
     // VARIABLES
@@ -89,28 +89,16 @@ contract VaultHubAdapter is TrustedCaller {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        if (_infraFeeBP > connection.infraFeeBP ||
+        if (connection.vaultIndex == 0 || // vault is not connected to hub
+            connection.pendingDisconnect || // vault is disconnecting
+            _infraFeeBP > connection.infraFeeBP ||
             _liquidityFeeBP > connection.liquidityFeeBP ||
             _reservationFeeBP > connection.reservationFeeBP) {
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
             return;
         }
 
-        try vaultHub.updateVaultFees( // reverts if vault is disconnected while motion is in progress
-            _vault,
-            _infraFeeBP,
-            _liquidityFeeBP,
-            _reservationFeeBP
-        ) {} catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the updateVaultFees() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the updateVaultFees() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
-            emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
-        }
+        vaultHub.updateVaultFees(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
     }
 
     /// @notice Updates share limit for a vault
@@ -119,27 +107,20 @@ contract VaultHubAdapter is TrustedCaller {
     function updateShareLimit(address _vault, uint256 _shareLimit) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        if (_shareLimit > vaultHub.vaultConnection(_vault).shareLimit) {
+        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
+        if (connection.vaultIndex == 0 || // vault is not connected to hub
+            connection.pendingDisconnect || // vault is disconnecting
+            _shareLimit > connection.shareLimit) {
             emit ShareLimitUpdateFailed(_vault, _shareLimit);
             return;
         }
 
-        try vaultHub.updateShareLimit(_vault, _shareLimit) { // reverts if vault is disconnected while motion is in progress
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the updateShareLimit() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the updateShareLimit() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
-            emit ShareLimitUpdateFailed(_vault, _shareLimit);
-        }
+        vaultHub.updateShareLimit(_vault, _shareLimit);
     }
 
     /// @notice Socializes bad debt for a vault
     /// @param _badDebtVault address of the vault that has the bad debt
-    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
+    /// @param _vaultAcceptor address of the vault that will accept the bad debt
     /// @param _maxSharesToSocialize maximum amount of shares to socialize
     function socializeBadDebt(
         address _badDebtVault,
@@ -148,7 +129,8 @@ contract VaultHubAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) { // reverts if vault is disconnected while motion is in progress
+        // reverts if vault is disconnected or a few other reasons from VaultHub logic
+        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) {
         } catch (bytes memory lowLevelRevertData) {
             /// @dev This check is required to prevent incorrect gas estimation of the method.
             ///      Without it, Ethereum nodes that use binary search for gas estimation may
@@ -177,7 +159,8 @@ contract VaultHubAdapter is TrustedCaller {
         uint256 value = fee * numKeys;
         require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
 
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) { // reverts if vault is disconnected or healthy
+        // reverts if vault is disconnected or healthy
+        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {
         } catch (bytes memory lowLevelRevertData) {
             /// @dev This check is required to prevent incorrect gas estimation of the method.
             ///      Without it, Ethereum nodes that use binary search for gas estimation may
@@ -200,18 +183,18 @@ contract VaultHubAdapter is TrustedCaller {
     }
 
     /// @notice Function to withdraw all ETH to TrustedCaller
-    function withdrawETH() external onlyTrustedCaller(msg.sender) {
+    function withdrawETH(address _recipient) external onlyTrustedCaller(msg.sender) {
         uint256 balance = address(this).balance;
         require(balance > 0, ERROR_NO_ETH_TO_WITHDRAW);
 
-        (bool success, ) = msg.sender.call{value: balance}("");
+        (bool success, ) = _recipient.call{value: balance}("");
         require(success, ERROR_ETH_TRANSFER_FAILED);
     }
 
     /// @dev Retrieves the current EIP-7002 withdrawal fee.
     /// @return The minimum fee required per withdrawal request.
     function _getWithdrawalRequestFee() internal view returns (uint256) {
-        (bool success, bytes memory feeData) = WITHDRAWAL_REQUEST.staticcall("");
+        (bool success, bytes memory feeData) = WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS.staticcall("");
 
         require(success, ERROR_WITHDRAWAL_FEE_READ_FAILED);
         require(feeData.length == 32, ERROR_WITHDRAWAL_FEE_INVALID_DATA);

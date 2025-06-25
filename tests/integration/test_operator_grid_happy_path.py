@@ -29,12 +29,8 @@ def setup_operator_grid(owner, operator_grid, easy_track, agent):
 
 
 def setup_evm_script_factory(
-    factory, permissions, easy_track, trusted_address, voting, deployer, operator_grid
+    factory_instance, permissions, easy_track, trusted_address, voting, deployer, operator_grid
 ):
-    factory_instance = deployer.deploy(factory, trusted_address, operator_grid)
-    assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.operatorGrid() == operator_grid
-
     num_factories_before = len(easy_track.getEVMScriptFactories())
     easy_track.addEVMScriptFactory(factory_instance, permissions, {"from": voting})
     evm_script_factories = easy_track.getEVMScriptFactories()
@@ -253,9 +249,14 @@ def test_register_group_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
+    factory_instance = deployer.deploy(RegisterGroupsInOperatorGrid, trusted_address, operator_grid, 10000)
+    assert factory_instance.trustedCaller() == trusted_address
+    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.maxSaneShareLimit() == 10000
+
     permission = operator_grid.address + operator_grid.registerGroup.signature[2:] + operator_grid.address[2:] + operator_grid.registerTiers.signature[2:]
     register_group_factory = setup_evm_script_factory(
-        RegisterGroupsInOperatorGrid,
+        factory_instance,
         permission,
         easy_track,
         trusted_address,
@@ -309,9 +310,14 @@ def test_update_groups_share_limit_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
+    factory_instance = deployer.deploy(UpdateGroupsShareLimitInOperatorGrid, trusted_address, operator_grid, 10000)
+    assert factory_instance.trustedCaller() == trusted_address
+    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.maxSaneShareLimit() == 10000
+
     permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
     update_share_limits_factory = setup_evm_script_factory(
-        UpdateGroupsShareLimitInOperatorGrid,
+        factory_instance,
         permission,
         easy_track,
         trusted_address,
@@ -346,9 +352,13 @@ def test_register_tiers_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
+    factory_instance = deployer.deploy(RegisterTiersInOperatorGrid, trusted_address, operator_grid)
+    assert factory_instance.trustedCaller() == trusted_address
+    assert factory_instance.operatorGrid() == operator_grid
+
     permission = operator_grid.address + operator_grid.registerTiers.signature[2:]
     register_tiers_factory = setup_evm_script_factory(
-        RegisterTiersInOperatorGrid,
+        factory_instance,
         permission,
         easy_track,
         trusted_address,
@@ -401,9 +411,13 @@ def test_alter_tiers_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
+    factory_instance = deployer.deploy(AlterTiersInOperatorGrid, trusted_address, operator_grid)
+    assert factory_instance.trustedCaller() == trusted_address
+    assert factory_instance.operatorGrid() == operator_grid
+
     permission = operator_grid.address + operator_grid.alterTiers.signature[2:]
     alter_tiers_factory = setup_evm_script_factory(
-        AlterTiersInOperatorGrid,
+        factory_instance,
         permission,
         easy_track,
         trusted_address,

@@ -79,8 +79,4 @@ interface IOperatorGrid {
     /// @notice Returns the number of tiers
     /// @return Number of tiers
     function tiersCount() external view returns (uint256);
-
-    /// @notice Returns the address of the Lido Locator contract
-    /// @return The address of the Lido Locator contract
-    function LIDO_LOCATOR() external view returns (address);
 }

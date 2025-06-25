@@ -35,6 +35,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @dev max value for fees in basis points - it's about 650%
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
     uint256 internal constant TOTAL_BASIS_POINTS = 10000;
+    uint256 internal constant DEFAULT_TIER_ID = 0;
 
     // -------------
     // VARIABLES
@@ -110,9 +111,13 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {
-            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]); // reverts if tier does not exist in the operator grid
-            IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
-            require(_tierParams[i].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
+            // reverts if tier does not exist in the operator grid
+            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]); 
+
+            if (_tierIds[i] != DEFAULT_TIER_ID) {
+                IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
+                require(_tierParams[i].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
+            }
 
             require(_tierParams[i].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
             require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, ERROR_RESERVE_RATIO_TOO_HIGH);

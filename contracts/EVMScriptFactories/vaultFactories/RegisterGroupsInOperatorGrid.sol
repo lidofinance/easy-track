@@ -7,9 +7,6 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IOperatorGrid.sol";
-import "../../interfaces/ILido.sol";
-import "../../interfaces/ILidoLocator.sol";
-import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to register a group and its tiers in OperatorGrid
@@ -35,6 +32,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_INFRA_FEE_TOO_HIGH = "INFRA_FEE_TOO_HIGH";
     string private constant ERROR_LIQUIDITY_FEE_TOO_HIGH = "LIQUIDITY_FEE_TOO_HIGH";
     string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
+    string private constant ERROR_ZERO_MAX_SHARE_LIMIT = "ZERO_MAX_SHARE_LIMIT";
 
     // -------------
     // VARIABLES
@@ -42,6 +40,9 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of OperatorGrid
     IOperatorGrid public immutable operatorGrid;
+
+    /// @notice Maximum sane share limit (percent from Lido total shares)
+    uint256 public immutable maxSaneShareLimit;
 
     // -------------
     // CONSTANTS
@@ -56,12 +57,14 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid)
+    constructor(address _trustedCaller, address _operatorGrid, uint256 _maxSaneShareLimit)
         TrustedCaller(_trustedCaller)
-    {   
+    {
         require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        require(_maxSaneShareLimit > 0, ERROR_ZERO_MAX_SHARE_LIMIT);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
+        maxSaneShareLimit = _maxSaneShareLimit;
     }
 
     // -------------
@@ -140,7 +143,6 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             ERROR_ARRAY_LENGTH_MISMATCH
         );
 
-        uint256 maxSaneShareLimit = _maxSaneShareLimit();
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
             require(_nodeOperators[i] != DEFAULT_TIER_OPERATOR, ERROR_DEFAULT_TIER_OPERATOR);
@@ -166,14 +168,5 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
                 require(_tiers[i][j].reservationFeeBP <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
             }
         }
-    }
-
-    /// @notice Calculates the maximum sane share limit (percent from Lido total shares)
-    /// @return Maximum sane share limit
-    function _maxSaneShareLimit() private view returns (uint256) {
-        ILidoLocator locator = ILidoLocator(IOperatorGrid(operatorGrid).LIDO_LOCATOR());
-        ILido lido = ILido(locator.lido());
-        IVaultHub vaultHub = IVaultHub(locator.vaultHub());
-        return (lido.getTotalShares() * vaultHub.MAX_RELATIVE_SHARE_LIMIT_BP()) / TOTAL_BASIS_POINTS;
     }
 }

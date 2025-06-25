@@ -100,13 +100,13 @@ def test_decode_evm_script_call_data(accounts, force_validator_exits_factory):
 def test_withdraw_eth_called_by_stranger(stranger, adapter):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if caller isn't trustedCaller"
     with reverts():
-        adapter.withdrawETH({"from": stranger})
+        adapter.withdrawETH(stranger.address, {"from": stranger})
 
 def test_withdraw_eth_no_balance(owner, adapter):
     "Must revert with message 'No ETH to withdraw' if contract has no ETH balance"
-    adapter.withdrawETH({"from": owner})
+    adapter.withdrawETH(owner.address, {"from": owner})
     with reverts():
-        adapter.withdrawETH({"from": owner})
+        adapter.withdrawETH(owner.address, {"from": owner})
 
 def test_withdraw_eth_success(owner, adapter):
     "Must successfully withdraw ETH to trusted caller"
@@ -118,7 +118,7 @@ def test_withdraw_eth_success(owner, adapter):
     initial_balance = adapter.balance()
     
     # Withdraw ETH
-    tx = adapter.withdrawETH({"from": owner})
+    tx = adapter.withdrawETH(owner.address, {"from": owner})
     
     # Check final balances
     assert adapter.balance() == 0, "Factory should have 0 ETH after withdrawal"
