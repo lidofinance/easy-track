@@ -1,7 +1,7 @@
 import json
 import os
 
-from brownie import chain, SubmitValidatorsExitRequestHashes, web3
+from brownie import chain, SDVTSubmitExitRequestHashes, web3
 
 from utils import lido, log
 from utils.config import (
@@ -17,19 +17,15 @@ def get_trusted_caller():
         raise EnvironmentError("Please set TRUSTED_CALLER env variable")
     trusted_caller = os.environ["TRUSTED_CALLER"]
 
-    assert web3.isAddress(trusted_caller), "Trusted caller address is not valid"
-
     return trusted_caller
 
 
-def get_node_operators_registry():
-    if "NODE_OPERATORS_REGISTRY" not in os.environ:
-        raise EnvironmentError("Please set NODE_OPERATORS_REGISTRY env variable")
-    node_operators_registry = os.environ["NODE_OPERATORS_REGISTRY"]
+def get_sdvt_registry():
+    if "SDVT_REGISTRY" not in os.environ:
+        raise EnvironmentError("Please set SDVT_REGISTRY env variable")
+    sdvt_registry = os.environ["SDVT_REGISTRY"]
 
-    assert web3.isAddress(node_operators_registry), "Node Operators Registry address is not valid"
-
-    return node_operators_registry
+    return sdvt_registry
 
 
 def main():
@@ -45,10 +41,10 @@ def main():
     log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.nb("chain id", chain.id)
 
-    registry = get_node_operators_registry()
+    registry = get_sdvt_registry()
 
     staking_router = contracts.staking_router.address
-    validator_exit_bus_oracle = contracts.locator.validatorExitBusOracle()
+    validator_exit_bus_oracle = contracts.locator.validatorsExitBusOracle()
 
     log.br()
 
@@ -57,7 +53,7 @@ def main():
     log.br()
 
     log.ok("Trusted caller", trusted_caller)
-    log.ok("Node Operator Registry address", registry)
+    log.ok("SDVT address", registry)
     log.ok("Staking Router address", staking_router)
     log.ok("Validator Exit Bus Oracle address", validator_exit_bus_oracle)
 
@@ -75,18 +71,18 @@ def main():
 
     deployment_artifacts = {}
 
-    # SubmitValidatorsExitRequestHashes
-    submit_validators_exit_request_hashes = SubmitValidatorsExitRequestHashes.deploy(
+    # SDVTSubmitExitRequestHashes
+    submit_validators_exit_request_hashes = SDVTSubmitExitRequestHashes.deploy(
         trusted_caller, registry, staking_router, validator_exit_bus_oracle, tx_params
     )
 
-    deployment_artifacts["SubmitValidatorsExitRequestHashes"] = {
-        "contract": "SubmitValidatorsExitRequestHashes",
+    deployment_artifacts["SDVTSubmitExitRequestHashes"] = {
+        "contract": "SDVTSubmitExitRequestHashes",
         "address": submit_validators_exit_request_hashes.address,
         "constructorArgs": [trusted_caller, registry, staking_router, validator_exit_bus_oracle],
     }
 
-    log.ok("Deployed SubmitValidatorsExitRequestHashes", submit_validators_exit_request_hashes.address)
+    log.ok("Deployed SDVTSubmitExitRequestHashes", submit_validators_exit_request_hashes.address)
 
     log.br()
     log.nb("All factories have been deployed.")
@@ -98,6 +94,6 @@ def main():
     log.nb("Starting code verification.")
     log.br()
 
-    SubmitValidatorsExitRequestHashes.publish_source(submit_validators_exit_request_hashes)
+    SDVTSubmitExitRequestHashes.publish_source(submit_validators_exit_request_hashes)
 
     log.br()
