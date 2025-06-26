@@ -18,10 +18,12 @@ from utils.test_helpers import set_account_balance
 
 # autouse, so enabled by default for all test modules in this directory
 
+
 @pytest.fixture(scope="module", autouse=True)
 def gas():
     """Set gas estimates for all tests."""
     network.gas_price("auto")
+
 
 @pytest.fixture(scope="module", autouse=True)
 def mod_isolation(module_isolation):
@@ -218,6 +220,11 @@ def bytes_utils_wrapper(accounts, BytesUtilsWrapper):
 
 
 @pytest.fixture(scope="module")
+def mev_boost_relay_input_utils_wrapper(owner, MEVBoostRelaysInputUtilsWrapper):
+    return owner.deploy(MEVBoostRelaysInputUtilsWrapper)
+
+
+@pytest.fixture(scope="module")
 def node_operators_registry_stub(owner, node_operator, NodeOperatorsRegistryStub):
     return owner.deploy(NodeOperatorsRegistryStub, node_operator)
 
@@ -232,6 +239,13 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     contract = owner.deploy(EVMScriptExecutorStub)
     set_account_balance(contract.address)
     return contract
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list_stub(owner, agent, MEVBoostRelayAllowedListStub):
+    # set agent as the owner of the list and owner as the manager for the ease of testing purposes
+    # in actual deployment, the owner should be the EVM script executor
+    return owner.deploy(MEVBoostRelayAllowedListStub, agent, owner)
 
 
 @pytest.fixture(scope="module")
@@ -329,9 +343,11 @@ def node_operators_registry(lido_contracts, agent):
             lido_contracts.node_operators_registry.activateNodeOperator(i, {"from": agent})
     return lido_contracts.node_operators_registry
 
+
 @pytest.fixture(scope="module")
 def cs_module(csm_contracts):
     return csm_contracts.module
+
 
 @pytest.fixture(scope="module")
 def voting(lido_contracts):
@@ -378,6 +394,15 @@ def locator(lido_contracts):
     return lido_contracts.locator
 
 
+@pytest.fixture(scope="module")
+def mev_boost_relay_allowed_list(lido_contracts, owner):
+    manager = lido_contracts.mev_boost_list.get_manager()
+    if manager != owner:
+        list_owner = lido_contracts.mev_boost_list.get_owner()
+        lido_contracts.mev_boost_list.set_manager(owner, {"from": list_owner})
+    return lido_contracts.mev_boost_list
+
+
 #########################
 # State Changing Fixtures
 #########################
@@ -422,7 +447,7 @@ class Helpers:
                 dao_voting.vote(vote_id, True, False, {"from": account})
 
         # wait for the vote to end
-        chain.sleep(3 * 60 * 60 * 24)
+        chain.sleep(dao_voting.voteTime())
         chain.mine()
 
         assert dao_voting.canExecute(vote_id)
@@ -454,3 +479,17 @@ def vote_id_from_env() -> Optional[int]:
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def mev_boost_relay_test_config():
+    return {
+        "relays": [
+            # uri, operator, is_mandatory, description
+            ("https://relay1.example.com", "Operator 1", True, "First relay description"),
+            ("https://relay2.example.com", "Operator 2", False, "Second relay description"),
+            ("https://relay3.example.com", "Operator 3", True, "Third relay description"),
+        ],
+        "max_num_relays": 40,
+        "max_string_length": 1024,
+    }
