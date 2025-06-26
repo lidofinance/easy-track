@@ -13,6 +13,10 @@ def addresses(network=DEFAULT_NETWORK):
         return CSMAddressesSetup(
             module="0x4562c3e63c2e586cD1651B958C22F88135aCAd4f",
         )
+    if network == "hoodi" or network == "hoodi-fork":
+        return CSMAddressesSetup(
+            module="0x79CEf36D84743222f37765204Bec41E92a93E59d"
+        )
     raise NameError(
         f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"
     )
