@@ -31,8 +31,8 @@ class AllowedRecipientsSingleRecipientSetupDeployConfig(AllowedRecipientsDeployC
 
 @dataclass
 class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
-    titles: [str]
-    recipients: [str]
+    titles: list[str]
+    recipients: list[str]
 
 
 def deploy_easy_track(
@@ -53,9 +53,9 @@ def deploy_easy_track(
     )
 
 
-def deploy_evm_script_executor(aragon_voting, easy_track, aragon_calls_script, tx_params):
+def deploy_evm_script_executor(owner, easy_track, aragon_calls_script, tx_params):
     evm_script_executor = EVMScriptExecutor.deploy(aragon_calls_script, easy_track, tx_params)
-    evm_script_executor.transferOwnership(aragon_voting, tx_params)
+    evm_script_executor.transferOwnership(owner, tx_params)
     easy_track.setEVMScriptExecutor(evm_script_executor, tx_params)
     return evm_script_executor
 

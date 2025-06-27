@@ -1,5 +1,5 @@
 import brownie
-from utils import evm_script as evm_script_utils
+from utils import evm_script as evm_script_utils, config
 
 DEFAULT_NETWORK = "mainnet"
 
@@ -65,6 +65,24 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
             locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
         )
+    if network == "hoodi" or network == "hoodi-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0x78780e70Eae33e2935814a327f7dB6c01136cc62",
+                agent="0x0534aA41907c9631fae990960bCC72d75fA7cfeD",
+                voting="0x49B3512c44891bef83F8967d075121Bd1b07a01B",
+                finance="0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b",
+                gov_token="0xEf2573966D009CcEA0Fc74451dee2193564198dc",
+                calls_script="0xfB3cB48d81eC8c7f2013a8dc9fA46D2D48112c3A",
+                token_manager="0x8ab4a56721Ad8e68c6Ad86F9D9929782A78E39E5",
+                kernel="0xA48DF029Fd2e5FCECB3886c5c2F60e3625A1E87d",
+            ),
+            steth="0x3508A952176b3c15387C97BE809eaffB1982176a",
+            node_operators_registry="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
+            simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+            staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
+            locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
+        )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
     )
@@ -119,6 +137,8 @@ class LidoContractsSetup:
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
 
+        config.set_balance_in_wei(self.aragon.agent.address, 100 * 10**18)
+
         voting_tx = self.aragon.token_manager.forward(
             evm_script_utils.encode_call_script(
                 [
@@ -128,7 +148,7 @@ class LidoContractsSetup:
                     )
                 ]
             ),
-            tx_params or {"from": self.aragon.agent},
+            tx_params or {"from": self.aragon.agent, "priority_fee": "2 gwei"},
         )
         return voting_tx.events["StartVote"]["voteId"], voting_tx
 
@@ -137,19 +157,19 @@ class LidoContractsSetup:
         if voting.getVote(voting_id)["executed"]:
             print(f"Voting {voting_id} already executed")
             return
-        ldo_holders = [self.aragon.agent]
+        ldo_holders = [self.aragon.agent.address]
         for holder_addr in ldo_holders:
             if not voting.canVote(voting_id, holder_addr):
                 print(f"{holder_addr} can't vote in voting {voting_id}")
                 continue
-            brownie.accounts[0].transfer(holder_addr, "0.1 ether")
+            config.set_balance_in_wei(holder_addr, 10**18)
             account = brownie.accounts.at(holder_addr, force=True)
-            voting.vote(voting_id, True, False, {"from": account})
+            voting.vote(voting_id, True, False, {"from": account, "priority_fee": "2 gwei"})
 
         brownie.chain.sleep(self.aragon.voting.voteTime())
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
-        return voting.executeVote(voting_id, {"from": brownie.accounts[0]})
+        voting.executeVote(voting_id, {"from": brownie.accounts[0], "priority_fee": "2 gwei"})
 
 
 class LidoAddressesSetup:
