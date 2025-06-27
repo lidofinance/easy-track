@@ -6,6 +6,7 @@ import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
 from utils.config import get_network_name
+from utils.test_helpers import set_account_balance
 from dataclasses import dataclass
 
 #####
@@ -360,35 +361,39 @@ def sdvt_trusted_caller():
     if network_name in ("mainnet", "mainnet-fork"):
         return "0x08637515E85A4633E23dfc7861e2A9f53af640f7"
     else:
-        return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"
+        account = brownie.accounts.at("0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A", force=True)
+        set_account_balance(account.address)
+        return account.address
 
 
 @pytest.fixture(scope="module")
 def sdvt_submit_exit_hashes_evm_script_factory(
-    SubmitValidatorsExitRequestHashes,
+    SDVTSubmitExitRequestHashes,
     sdvt_trusted_caller,
     easy_track,
     lido_contracts,
     sdvt_registry,
-    validator_exit_bus_oracle,
+    validators_exit_bus_oracle,
     deployer,
-    staking_router_stub,
+    staking_router,
 ):
     """
-    Deploy and register the SubmitValidatorsExitRequestHashes factory to EasyTrack, if not present.
+    Deploy and register the SDVTSubmitExitRequestHashes factory to EasyTrack, if not present.
     """
     factory = deployer.deploy(
-        SubmitValidatorsExitRequestHashes,
+        SDVTSubmitExitRequestHashes,
         sdvt_trusted_caller,
-        staking_router_stub,
         sdvt_registry,
-        validator_exit_bus_oracle,
+        staking_router,
+        validators_exit_bus_oracle,
     )
     assert factory.trustedCaller() == sdvt_trusted_caller
     assert factory.nodeOperatorsRegistry() == sdvt_registry
 
     if not easy_track.isEVMScriptFactory(factory):
-        permission = validator_exit_bus_oracle.address + validator_exit_bus_oracle.submitExitRequestsHash.signature[2:]
+        permission = (
+            validators_exit_bus_oracle.address + validators_exit_bus_oracle.submitExitRequestsHash.signature[2:]
+        )
         easy_track.addEVMScriptFactory(
             factory,
             permission,
@@ -401,27 +406,29 @@ def sdvt_submit_exit_hashes_evm_script_factory(
 
 @pytest.fixture(scope="module")
 def curated_submit_exit_hashes_evm_script_factory(
-    SubmitValidatorsExitRequestHashes,
+    CuratedSubmitExitRequestHashes,
     easy_track,
     lido_contracts,
     curated_registry,
-    validator_exit_bus_oracle,
+    validators_exit_bus_oracle,
     deployer,
-    staking_router_stub,
+    staking_router,
 ):
     """
-    Deploy and register the SubmitValidatorsExitRequestHashes factory to EasyTrack, if not present.
+    Deploy and register the CuratedSubmitExitRequestHashes factory to EasyTrack, if not present.
     """
     factory = deployer.deploy(
-        SubmitValidatorsExitRequestHashes,
-        staking_router_stub,
+        CuratedSubmitExitRequestHashes,
         curated_registry,
-        validator_exit_bus_oracle,
+        staking_router,
+        validators_exit_bus_oracle,
     )
     assert factory.nodeOperatorsRegistry() == curated_registry
 
     if not easy_track.isEVMScriptFactory(factory):
-        permission = validator_exit_bus_oracle.address + validator_exit_bus_oracle.submitExitRequestsHash.signature[2:]
+        permission = (
+            validators_exit_bus_oracle.address + validators_exit_bus_oracle.submitExitRequestsHash.signature[2:]
+        )
         easy_track.addEVMScriptFactory(
             factory,
             permission,

@@ -119,8 +119,7 @@ contract NodeOperatorsRegistryStub {
 
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
-        require(_desiredCount > 0, "Desired count must be greater than zero");
-        _nodeOperatorsCount = _desiredCount;
+        _nodeOperatorsCount = uint40(_desiredCount);
     }
 
     /// @notice Returns the signing key for a given node operator and index.

@@ -5,8 +5,6 @@ pragma solidity ^0.8.4;
 
 import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IStakingRouter.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IValidatorsExitBusOracle.sol";
 import "../interfaces/IStakingRouter.sol";
 
 /// @author swissarmytowel
@@ -33,7 +31,7 @@ library SubmitExitRequestHashesUtils {
     /// @notice Maximum length of validator public key in bytes
     uint256 private constant PUBKEY_LENGTH = 48;
     /// @notice Maximum number of items to process in one motion
-    uint256 private constant MAX_REQUESTS_PER_MOTION = 200;
+    uint256 private constant MAX_REQUESTS_PER_MOTION = 250;
     /// @notice Data format identifier for the list of exit requests, only 1 is supported at the moment (ref: https://etherscan.io/address/0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e)
     uint256 private constant DATA_FORMAT_LIST = 1;
 
@@ -49,6 +47,8 @@ library SubmitExitRequestHashesUtils {
     // Error messages for validator public key validation
     string private constant ERROR_INVALID_PUBKEY = "INVALID_PUBKEY";
     string private constant ERROR_INVALID_PUBKEY_LENGTH = "INVALID_PUBKEY_LENGTH";
+    string private constant ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER =
+        "INVALID_EXIT_REQUESTS_SORT_ORDER";
 
     // Error messages for node operator ID validation
     string private constant ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST =
@@ -57,10 +57,6 @@ library SubmitExitRequestHashesUtils {
         "EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR";
     string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE =
         "EXECUTOR_NOT_PERMISSIONED_ON_MODULE";
-
-    // Error messages for integer overflows
-    string private constant ERROR_MODULE_ID_OVERFLOW = "MODULE_ID_OVERFLOW";
-    string private constant ERROR_NODE_OP_ID_OVERFLOW = "NODE_OPERATOR_ID_OVERFLOW";
 
     // -------------
     // INTERNAL METHODS
@@ -134,22 +130,24 @@ library SubmitExitRequestHashesUtils {
         uint256 nodeOperatorsCount = _nodeOperatorsRegistry.getNodeOperatorsCount();
 
         // Prepare array for deduplication hashes
-        bytes32[] memory seenPubkeyHashes = new bytes32[](length);
         bool shouldCheckCreator = _creator != address(0);
+        uint256 prevValIndex = firstRequest.valIndex;
 
         // Iterate through all exit requests to validate them
         for (uint256 i; i < length; ) {
             ExitRequestInput memory _input = _exitRequests[i];
 
-            // Check that the module ID, node operator ID, are within the valid ranges as they are stored as uint256 but have smaller limits
-            require(_input.moduleId <= type(uint24).max, ERROR_MODULE_ID_OVERFLOW);
-            require(_input.nodeOpId <= type(uint40).max, ERROR_NODE_OP_ID_OVERFLOW);
             // Node operator ids are ordered from 0 to nodeOperatorsCount - 1, so we check that the id is less than the count
             require(_input.nodeOpId < nodeOperatorsCount, ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST);
             // Check that the validator public key is exactly 48 bytes long
             require(_input.valPubkey.length == PUBKEY_LENGTH, ERROR_INVALID_PUBKEY_LENGTH);
             // Check that all requests have the same module ID, which ensures that all requests are for the same staking module
             require(_input.moduleId == moduleId, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE);
+            // Check that the validator public key index is in ascending order. Strict comparison is used to ensure that there are no duplicates.
+            if (i > 0) {
+                require(_input.valIndex > prevValIndex, ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER);
+                prevValIndex = _input.valIndex;
+            }
 
             // Check that the node operator ID matches the previous request's node operator ID if a creator is specified
             // As node operators can trigger exist requests only for their own ids, they should match.
@@ -172,16 +170,6 @@ library SubmitExitRequestHashesUtils {
 
             // Compare the keccak256 hash of the provided public key with the keccak256 hash of the signing key
             require(keccak256(key) == providedPubkeyHash, ERROR_INVALID_PUBKEY);
-
-            for (uint256 j; j < i; ) {
-                require(seenPubkeyHashes[j] != providedPubkeyHash, ERROR_DUPLICATE_EXIT_REQUESTS);
-
-                unchecked {
-                    ++j;
-                }
-            }
-
-            seenPubkeyHashes[i] = providedPubkeyHash;
 
             unchecked {
                 ++i;

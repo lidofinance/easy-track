@@ -44,7 +44,7 @@ def main():
     registry = get_sdvt_registry()
 
     staking_router = contracts.staking_router.address
-    validator_exit_bus_oracle = contracts.locator.validatorsExitBusOracle()
+    validators_exit_bus_oracle = contracts.locator.validatorsExitBusOracle()
 
     log.br()
 
@@ -55,7 +55,7 @@ def main():
     log.ok("Trusted caller", trusted_caller)
     log.ok("SDVT address", registry)
     log.ok("Staking Router address", staking_router)
-    log.ok("Validator Exit Bus Oracle address", validator_exit_bus_oracle)
+    log.ok("Validator Exit Bus Oracle address", validators_exit_bus_oracle)
 
     log.br()
 
@@ -73,13 +73,13 @@ def main():
 
     # SDVTSubmitExitRequestHashes
     submit_validators_exit_request_hashes = SDVTSubmitExitRequestHashes.deploy(
-        trusted_caller, registry, staking_router, validator_exit_bus_oracle, tx_params
+        trusted_caller, registry, staking_router, validators_exit_bus_oracle, tx_params
     )
 
     deployment_artifacts["SDVTSubmitExitRequestHashes"] = {
         "contract": "SDVTSubmitExitRequestHashes",
         "address": submit_validators_exit_request_hashes.address,
-        "constructorArgs": [trusted_caller, registry, staking_router, validator_exit_bus_oracle],
+        "constructorArgs": [trusted_caller, registry, staking_router, validators_exit_bus_oracle],
     }
 
     log.ok("Deployed SDVTSubmitExitRequestHashes", submit_validators_exit_request_hashes.address)

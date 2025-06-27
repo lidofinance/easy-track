@@ -35,7 +35,7 @@ def main():
     registry = get_node_operators_registry()
 
     staking_router = contracts.staking_router.address
-    validator_exit_bus_oracle = contracts.locator.validatorsExitBusOracle()
+    validators_exit_bus_oracle = contracts.locator.validatorsExitBusOracle()
 
     log.br()
 
@@ -45,7 +45,7 @@ def main():
 
     log.ok("Node Operator Registry address", registry)
     log.ok("Staking Router address", staking_router)
-    log.ok("Validator Exit Bus Oracle address", validator_exit_bus_oracle)
+    log.ok("Validator Exit Bus Oracle address", validators_exit_bus_oracle)
 
     log.br()
 
@@ -63,13 +63,13 @@ def main():
 
     # CuratedSubmitExitRequestHashes
     submit_validators_exit_request_hashes = CuratedSubmitExitRequestHashes.deploy(
-        registry, staking_router, validator_exit_bus_oracle, tx_params
+        registry, staking_router, validators_exit_bus_oracle, tx_params
     )
 
     deployment_artifacts["CuratedSubmitExitRequestHashes"] = {
         "contract": "CuratedSubmitExitRequestHashes",
         "address": submit_validators_exit_request_hashes.address,
-        "constructorArgs": [registry, staking_router, validator_exit_bus_oracle],
+        "constructorArgs": [registry, staking_router, validators_exit_bus_oracle],
     }
 
     log.ok("Deployed CuratedSubmitExitRequestHashes", submit_validators_exit_request_hashes.address)

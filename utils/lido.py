@@ -24,6 +24,7 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
+            validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -44,6 +45,7 @@ def addresses(network=DEFAULT_NETWORK):
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
             curated_module="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+            validators_exit_bus_oracle="0xffDDF7025410412deaa05E3E1cE68FE53208afcb",
         )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
@@ -112,6 +114,7 @@ class LidoContractsSetup:
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -146,7 +149,7 @@ class LidoContractsSetup:
         brownie.chain.sleep(self.aragon.voting.voteTime())
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
-        voting.executeVote(voting_id, {"from": brownie.accounts[0]})
+        return voting.executeVote(voting_id, {"from": brownie.accounts[0]})
 
 
 class LidoAddressesSetup:
@@ -160,6 +163,7 @@ class LidoAddressesSetup:
         staking_router,
         locator,
         mev_boost_list,
+        validators_exit_bus_oracle,
     ):
         self.aragon = aragon
         self.steth = steth
@@ -170,6 +174,7 @@ class LidoAddressesSetup:
         self.staking_router = staking_router
         self.locator = locator
         self.mev_boost_list = mev_boost_list
+        self.validators_exit_bus_oracle = validators_exit_bus_oracle
 
 
 class AragonSetup:

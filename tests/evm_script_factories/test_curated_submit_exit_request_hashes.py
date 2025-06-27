@@ -4,38 +4,38 @@ from utils.submit_exit_requests_test_helpers import create_exit_request_hash_cal
 
 
 @pytest.fixture(scope="module")
-def curated_contract(node_operator, curated_registry_stub, staking_router_stub, validator_exit_bus_oracle):
+def curated_contract(node_operator, curated_registry_stub, staking_router_stub, validators_exit_bus_oracle_stub):
     return CuratedSubmitExitRequestHashes.deploy(
-        curated_registry_stub, staking_router_stub, validator_exit_bus_oracle, {"from": node_operator.address}
+        curated_registry_stub, staking_router_stub, validators_exit_bus_oracle_stub, {"from": node_operator.address}
     )
 
 
-def test_deploy(node_operator, curated_registry_stub, staking_router_stub, validator_exit_bus_oracle):
+def test_deploy(node_operator, curated_registry_stub, staking_router_stub, validators_exit_bus_oracle_stub):
     contract = CuratedSubmitExitRequestHashes.deploy(
-        curated_registry_stub, staking_router_stub, validator_exit_bus_oracle, {"from": node_operator.address}
+        curated_registry_stub, staking_router_stub, validators_exit_bus_oracle_stub, {"from": node_operator.address}
     )
     assert contract.stakingRouter() == staking_router_stub
-    assert contract.validatorsExitBusOracle() == validator_exit_bus_oracle
+    assert contract.validatorsExitBusOracle() == validators_exit_bus_oracle_stub
     assert contract.nodeOperatorsRegistry() == curated_registry_stub
 
 
-def test_deploy_zero_staking_router(node_operator, curated_registry_stub, validator_exit_bus_oracle):
+def test_deploy_zero_staking_router(node_operator, curated_registry_stub, validators_exit_bus_oracle_stub):
     contract = CuratedSubmitExitRequestHashes.deploy(
-        curated_registry_stub, ZERO_ADDRESS, validator_exit_bus_oracle, {"from": node_operator.address}
+        curated_registry_stub, ZERO_ADDRESS, validators_exit_bus_oracle_stub, {"from": node_operator.address}
     )
     assert contract.stakingRouter() == ZERO_ADDRESS
 
 
-def test_deploy_zero_validator_exit_bus_oracle(node_operator, curated_registry_stub, staking_router_stub):
+def test_deploy_zero_validators_exit_bus_oracle_stub(node_operator, curated_registry_stub, staking_router_stub):
     contract = CuratedSubmitExitRequestHashes.deploy(
         curated_registry_stub, staking_router_stub, ZERO_ADDRESS, {"from": node_operator.address}
     )
     assert contract.validatorsExitBusOracle() == ZERO_ADDRESS
 
 
-def test_deploy_zero_node_operators_registry(node_operator, staking_router_stub, validator_exit_bus_oracle):
+def test_deploy_zero_node_operators_registry(node_operator, staking_router_stub, validators_exit_bus_oracle_stub):
     contract = CuratedSubmitExitRequestHashes.deploy(
-        ZERO_ADDRESS, staking_router_stub, validator_exit_bus_oracle, {"from": node_operator.address}
+        ZERO_ADDRESS, staking_router_stub, validators_exit_bus_oracle_stub, {"from": node_operator.address}
     )
     assert contract.nodeOperatorsRegistry() == ZERO_ADDRESS
 

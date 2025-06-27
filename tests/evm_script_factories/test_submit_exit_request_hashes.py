@@ -18,10 +18,10 @@ from utils.submit_exit_requests_test_helpers import (
             "registry_fixture": "curated_registry_stub",
             "creator_fixture": "node_operator",
             "wrong_module_id_key": "sdvt",
-            "constructor_args": lambda _, registry, staking_router_stub, validator_exit_bus_oracle: [
+            "constructor_args": lambda _, registry, staking_router_stub, validators_exit_bus_oracle_stub: [
                 registry,
                 staking_router_stub,
-                validator_exit_bus_oracle,
+                validators_exit_bus_oracle_stub,
             ],
         },
         {
@@ -30,11 +30,11 @@ from utils.submit_exit_requests_test_helpers import (
             "registry_fixture": "sdvt_registry_stub",
             "creator_fixture": "owner",
             "wrong_module_id_key": "curated",
-            "constructor_args": lambda trusted_caller, registry, staking_router_stub, validator_exit_bus_oracle: [
+            "constructor_args": lambda trusted_caller, registry, staking_router_stub, validators_exit_bus_oracle_stub: [
                 trusted_caller,
                 registry,
                 staking_router_stub,
-                validator_exit_bus_oracle,
+                validators_exit_bus_oracle_stub,
             ],
         },
     ],
@@ -54,14 +54,14 @@ def creator(module_type, node_operator, owner):
 def submit_exit_request_hashes(
     request,
     staking_router_stub,
-    validator_exit_bus_oracle,
+    validators_exit_bus_oracle_stub,
     module_type,
     node_operator,
     owner,
 ):
     registry_stub = request.getfixturevalue(module_type["registry_fixture"])
     creator = node_operator.address if module_type["creator_fixture"] == "node_operator" else owner
-    args = module_type["constructor_args"](creator, registry_stub, staking_router_stub, validator_exit_bus_oracle)
+    args = module_type["constructor_args"](creator, registry_stub, staking_router_stub, validators_exit_bus_oracle_stub)
     return module_type["ContractClass"].deploy(*args, {"from": creator})
 
 
@@ -160,7 +160,7 @@ def test_decode_calldata_is_permissionless(
 def test_create_evm_script(
     creator,
     submit_exit_hashes_factory_config,
-    validator_exit_bus_oracle,
+    validators_exit_bus_oracle_stub,
     submit_exit_request_hashes,
     exit_request_input_factory,
     module_id,
@@ -180,8 +180,8 @@ def test_create_evm_script(
     expected_evm_script = encode_call_script(
         [
             (
-                validator_exit_bus_oracle.address,
-                validator_exit_bus_oracle.submitExitRequestsHash.encode_input(exit_request_hash),
+                validators_exit_bus_oracle_stub.address,
+                validators_exit_bus_oracle_stub.submitExitRequestsHash.encode_input(exit_request_hash),
             )
         ]
     )
@@ -191,7 +191,7 @@ def test_create_evm_script(
 def test_create_evm_script_max_requests(
     creator,
     submit_exit_hashes_factory_config,
-    validator_exit_bus_oracle,
+    validators_exit_bus_oracle_stub,
     submit_exit_request_hashes,
     exit_request_input_factory,
     module_id,
@@ -212,8 +212,8 @@ def test_create_evm_script_max_requests(
     expected_evm_script = encode_call_script(
         [
             (
-                validator_exit_bus_oracle.address,
-                validator_exit_bus_oracle.submitExitRequestsHash.encode_input(exit_request_hash),
+                validators_exit_bus_oracle_stub.address,
+                validators_exit_bus_oracle_stub.submitExitRequestsHash.encode_input(exit_request_hash),
             )
         ]
     )
@@ -224,7 +224,7 @@ def test_create_evm_script_with_latest_node_operator(
     creator,
     registry,
     submit_exit_hashes_factory_config,
-    validator_exit_bus_oracle,
+    validators_exit_bus_oracle_stub,
     submit_exit_request_hashes,
     exit_request_input_factory,
     module_id,
@@ -245,8 +245,8 @@ def test_create_evm_script_with_latest_node_operator(
     expected_evm_script = encode_call_script(
         [
             (
-                validator_exit_bus_oracle.address,
-                validator_exit_bus_oracle.submitExitRequestsHash.encode_input(exit_request_hash),
+                validators_exit_bus_oracle_stub.address,
+                validators_exit_bus_oracle_stub.submitExitRequestsHash.encode_input(exit_request_hash),
             )
         ]
     )
@@ -507,35 +507,8 @@ def test_cannot_create_evm_script_with_module_id_overflow(
         )
     ]
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
-    with reverts("MODULE_ID_OVERFLOW"):
-        submit_exit_request_hashes.createEVMScript(creator, calldata)
-
-
-def test_cannot_create_evm_script_with_duplicate_requests(
-    creator,
-    submit_exit_hashes_factory_config,
-    submit_exit_request_hashes,
-    exit_request_input_factory,
-    module_id,
-):
-    exit_request_inputs = [
-        exit_request_input_factory(
-            module_id,
-            submit_exit_hashes_factory_config["node_op_id"],
-            submit_exit_hashes_factory_config["validator_index"],
-            submit_exit_hashes_factory_config["pubkeys"][0],
-            0,
-        ),
-        exit_request_input_factory(
-            module_id,
-            submit_exit_hashes_factory_config["node_op_id"],
-            submit_exit_hashes_factory_config["validator_index"] + 1,
-            submit_exit_hashes_factory_config["pubkeys"][0],
-            0,
-        ),
-    ]
-    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
-    with reverts("DUPLICATE_EXIT_REQUESTS"):
+    # module id in the staking router is rounded to uint24, so it will not find the overflowed module id
+    with reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
         submit_exit_request_hashes.createEVMScript(creator, calldata)
 
 
@@ -548,7 +521,7 @@ def test_cannot_create_evm_script_with_node_operator_id_overflow(
     module_id,
     overflowed_node_op_id,
 ):
-    registry.setDesiredNodeOperatorCount(overflowed_node_op_id)
+    registry.setDesiredNodeOperatorCount(overflowed_node_op_id + 1)
     exit_request_inputs = [
         exit_request_input_factory(
             module_id,
@@ -559,5 +532,55 @@ def test_cannot_create_evm_script_with_node_operator_id_overflow(
         )
     ]
     calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
-    with reverts("NODE_OPERATOR_ID_OVERFLOW"):
+    # node operator id in the registry is rounded to uint40, so it will not find the overflowed node operator id
+    with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
+        submit_exit_request_hashes.createEVMScript(creator, calldata)
+
+
+def test_cannot_create_evm_script_with_duplicate_requests(
+    creator,
+    submit_exit_hashes_factory_config,
+    submit_exit_request_hashes,
+    exit_request_input_factory,
+    module_id,
+):
+    request = exit_request_input_factory(
+        module_id,
+        submit_exit_hashes_factory_config["node_op_id"],
+        submit_exit_hashes_factory_config["validator_index"],
+        submit_exit_hashes_factory_config["pubkeys"][0],
+        0,
+    ).to_tuple()
+
+    calldata = create_exit_request_hash_calldata([request, request])
+    with reverts("INVALID_EXIT_REQUESTS_SORT_ORDER"):
+        submit_exit_request_hashes.createEVMScript(creator, calldata)
+
+
+def test_cannot_create_evm_script_wrong_requests_index_sort_order(
+    creator,
+    submit_exit_hashes_factory_config,
+    submit_exit_request_hashes,
+    exit_request_input_factory,
+    module_id,
+):
+    exit_request_inputs = [
+        exit_request_input_factory(
+            module_id,
+            submit_exit_hashes_factory_config["node_op_id"],
+            submit_exit_hashes_factory_config["validator_index"] + 1,  # should be less than next
+            submit_exit_hashes_factory_config["pubkeys"][0],
+            0,
+        ),
+        exit_request_input_factory(
+            module_id,
+            submit_exit_hashes_factory_config["node_op_id"],
+            submit_exit_hashes_factory_config["validator_index"],
+            submit_exit_hashes_factory_config["pubkeys"][1],
+            0,
+        ),
+    ]
+
+    calldata = create_exit_request_hash_calldata([req.to_tuple() for req in exit_request_inputs])
+    with reverts("INVALID_EXIT_REQUESTS_SORT_ORDER"):
         submit_exit_request_hashes.createEVMScript(creator, calldata)
