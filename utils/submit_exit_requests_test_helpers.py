@@ -7,7 +7,7 @@ from utils.evm_script import encode_calldata
 # Key and signature lengths for exit-request keys
 PUBKEY_SIZE = 48
 SIG_SIZE = 96
-MAX_REQUESTS = 250
+MAX_REQUESTS = 200
 DATA_FORMAT_LIST = 1
 
 

@@ -31,7 +31,7 @@ library SubmitExitRequestHashesUtils {
     /// @notice Maximum length of validator public key in bytes
     uint256 private constant PUBKEY_LENGTH = 48;
     /// @notice Maximum number of items to process in one motion
-    uint256 private constant MAX_REQUESTS_PER_MOTION = 250;
+    uint256 private constant MAX_REQUESTS_PER_MOTION = 200;
     /// @notice Data format identifier for the list of exit requests, only 1 is supported at the moment (ref: https://etherscan.io/address/0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e)
     uint256 private constant DATA_FORMAT_LIST = 1;
 
