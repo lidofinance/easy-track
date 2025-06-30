@@ -240,15 +240,18 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
     set_account_balance(contract.address)
     return contract
 
+
 @pytest.fixture(scope="module")
 def operator_grid_stub(owner, OperatorGridStub):
     # set owner as the owner of the grid for the ease of testing purposes
     default_tier_params = (1000, 200, 100, 50, 40, 10) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
     return owner.deploy(OperatorGridStub, owner, default_tier_params)
 
+
 @pytest.fixture(scope="module")
 def vault_hub_stub(owner, VaultHubStub):
     return owner.deploy(VaultHubStub, owner)
+
 
 @pytest.fixture(scope="module")
 def mev_boost_relay_allowed_list_stub(owner, agent, MEVBoostRelayAllowedListStub):
@@ -421,6 +424,10 @@ def operator_grid(lido_contracts):
 def vault_hub(lido_contracts):
     return lido_contracts.vault_hub
 
+
+@pytest.fixture(scope="module")
+def lazy_oracle(lido_contracts):
+    return lido_contracts.lido_addresses.lazy_oracle
 
 #########################
 # State Changing Fixtures

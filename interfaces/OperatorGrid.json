@@ -1,12 +1,12 @@
 [
   {
     "inputs": [],
-    "name": "LIDO_LOCATOR",
+    "name": "REGISTRY_ROLE",
     "outputs": [
       {
-        "internalType": "address",
+        "internalType": "bytes32",
         "name": "",
-        "type": "address"
+        "type": "bytes32"
       }
     ],
     "stateMutability": "view",
@@ -52,12 +52,30 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct IOperatorGrid.TierParams[]",
+        "internalType": "struct TierParams[]",
         "name": "_tierParams",
         "type": "tuple[]"
       }
     ],
     "name": "alterTiers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"
@@ -161,7 +179,7 @@
             "type": "uint256"
           }
         ],
-        "internalType": "struct IOperatorGrid.TierParams[]",
+        "internalType": "struct TierParams[]",
         "name": "_tiers",
         "type": "tuple[]"
       }

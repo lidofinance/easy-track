@@ -1,5 +1,142 @@
 [
   {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vaultDonor",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vaultAcceptor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "badDebtShares",
+        "type": "uint256"
+      }
+    ],
+    "name": "BadDebtSocialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "pubkeys",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "refundRecipient",
+        "type": "address"
+      }
+    ],
+    "name": "ForcedValidatorExitTriggered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "unsettledRedemptions",
+        "type": "uint256"
+      }
+    ],
+    "name": "RedemptionsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "preInfraFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "preLiquidityFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "preReservationFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "infraFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liquidityFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "reservationFeeBP",
+        "type": "uint256"
+      }
+    ],
+    "name": "VaultFeesUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newShareLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "VaultShareLimitUpdated",
+    "type": "event"
+  },
+  {
     "inputs": [],
     "name": "BAD_DEBT_MASTER_ROLE",
     "outputs": [
@@ -7,19 +144,6 @@
         "internalType": "bytes32",
         "name": "",
         "type": "bytes32"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
-  },
-  {
-    "inputs": [],
-    "name": "MAX_RELATIVE_SHARE_LIMIT_BP",
-    "outputs": [
-      {
-        "internalType": "uint256",
-        "name": "",
-        "type": "uint256"
       }
     ],
     "stateMutability": "view",
@@ -70,6 +194,49 @@
         "internalType": "address",
         "name": "_vault",
         "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportTotalValue",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "_reportInOutDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportCumulativeLidoFees",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportLiabilityShares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportSlashingReserve",
+        "type": "uint256"
+      }
+    ],
+    "name": "applyVaultReport",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
       }
     ],
     "name": "connectVault",
@@ -98,6 +265,24 @@
     "name": "forceValidatorExit",
     "outputs": [],
     "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
     "type": "function"
   },
   {
@@ -251,6 +436,42 @@
           }
         ],
         "internalType": "struct IVaultHub.VaultConnection",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      }
+    ],
+    "name": "vaultObligations",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint128",
+            "name": "settledLidoFees",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "unsettledLidoFees",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "redemptions",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IVaultHub.VaultObligations",
         "name": "",
         "type": "tuple"
       }

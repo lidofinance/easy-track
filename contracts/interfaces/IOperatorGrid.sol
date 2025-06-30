@@ -38,6 +38,11 @@ interface IOperatorGrid {
     // -----------------------------
     //            FUNCTIONS
     // -----------------------------
+
+    /// @notice Grants a role to an account
+    /// @param role the role to grant
+    /// @param account the account to grant the role to
+    function grantRole(bytes32 role, address account) external;
     
     /// @notice Registers a new group
     /// @param _nodeOperator address of the node operator
@@ -79,4 +84,8 @@ interface IOperatorGrid {
     /// @notice Returns the number of tiers
     /// @return Number of tiers
     function tiersCount() external view returns (uint256);
+
+    /// @notice Returns the registry role
+    /// @return bytes32 the registry role
+    function REGISTRY_ROLE() external view returns (bytes32);
 }

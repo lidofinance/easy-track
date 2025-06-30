@@ -62,6 +62,6 @@ development:
       mnemonic: brownie
       port: 8545
     host: http://127.0.0.1
-    id: hoodi-fork
+    id: hoodi-v3-fork
     name: Ganache-CLI (Hoodi Fork)
     timeout: 120

@@ -55,23 +55,41 @@ interface IVaultHub {
         int112 inOutDelta;
     }
 
+    struct VaultObligations {
+        uint128 settledLidoFees;
+        uint128 unsettledLidoFees;
+        uint128 redemptions;
+    }
+
     // -----------------------------
     //           FUNCTIONS
     // -----------------------------
 
-    /// @notice Returns the vault connection information for a given vault address
-    /// @param _vault The address of the vault to query
-    /// @return The VaultConnection struct containing vault configuration
-    function vaultConnection(address _vault) external view returns (VaultConnection memory);
-
-    /// @notice Returns the vault record information for a given vault address
-    /// @param _vault The address of the vault to query
-    /// @return The VaultRecord struct containing vault state
-    function vaultRecord(address _vault) external view returns (VaultRecord memory);
-
     /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
     /// @param _vault vault address
     function connectVault(address _vault) external;
+
+    /// @notice update of the vault data by the lazy oracle report
+    /// @param _vault the address of the vault
+    /// @param _reportTimestamp the timestamp of the report (last 32 bits of it)
+    /// @param _reportTotalValue the total value of the vault
+    /// @param _reportInOutDelta the inOutDelta of the vault
+    /// @param _reportCumulativeLidoFees the cumulative Lido fees of the vault
+    /// @param _reportLiabilityShares the liabilityShares of the vault
+    function applyVaultReport(
+        address _vault,
+        uint256 _reportTimestamp,
+        uint256 _reportTotalValue,
+        int256 _reportInOutDelta,
+        uint256 _reportCumulativeLidoFees,
+        uint256 _reportLiabilityShares,
+        uint256 _reportSlashingReserve
+    ) external;
+
+    /// @notice Grants a role to an account
+    /// @param role the role to grant
+    /// @param account the account to grant the role to
+    function grantRole(bytes32 role, address account) external;
 
     /// @notice Updates share limit for the vault
     /// @param _vault vault address
@@ -117,4 +135,57 @@ interface IVaultHub {
     /// @param _vault The address of the vault
     /// @param _redemptionsValue The value of the redemptions obligation
     function setVaultRedemptions(address _vault, uint256 _redemptionsValue) external;
+
+    // -----------------------------
+    //            VIEW FUNCTIONS
+    // -----------------------------
+
+    /// @notice Returns the vault connection information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultConnection struct containing vault configuration
+    function vaultConnection(address _vault) external view returns (VaultConnection memory);
+
+    /// @notice Returns the vault record information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultRecord struct containing vault state
+    function vaultRecord(address _vault) external view returns (VaultRecord memory);
+
+    /// @notice Returns the vault obligations information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultObligations struct containing vault obligations
+    function vaultObligations(address _vault) external view returns (VaultObligations memory);
+
+    /// @notice Returns the vault master role
+    /// @return bytes32 the vault master role
+    function VAULT_MASTER_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the bad debt master role
+    /// @return bytes32 the bad debt master role
+    function BAD_DEBT_MASTER_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the validator exit role
+    /// @return bytes32 the validator exit role
+    function VALIDATOR_EXIT_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the redemption master role
+    /// @return bytes32 the redemption master role
+    function REDEMPTION_MASTER_ROLE() external view returns (bytes32);
+
+    // -----------------------------
+    //            EVENTS
+    // -----------------------------
+
+    event VaultShareLimitUpdated(address indexed vault, uint256 newShareLimit);
+    event VaultFeesUpdated(
+        address indexed vault,
+        uint256 preInfraFeeBP,
+        uint256 preLiquidityFeeBP,
+        uint256 preReservationFeeBP,
+        uint256 infraFeeBP,
+        uint256 liquidityFeeBP,
+        uint256 reservationFeeBP
+    );
+    event ForcedValidatorExitTriggered(address indexed vault, bytes pubkeys, address refundRecipient);
+    event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
+    event RedemptionsUpdated(address indexed vault, uint256 unsettledRedemptions);
 }

@@ -19,6 +19,8 @@ from utils.config import (
     get_network_name,
 )
 
+from utils.constants import MAX_SANE_SHARE_LIMIT
+
 
 def get_trusted_caller():
     if "TRUSTED_CALLER" not in os.environ:
@@ -84,12 +86,13 @@ def deploy_operator_grid_factories(
     register_groups_in_operator_grid = RegisterGroupsInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
+        MAX_SANE_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["RegisterGroupsInOperatorGrid"] = {
         "contract": "RegisterGroupsInOperatorGrid",
         "address": register_groups_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid],
+        "constructorArgs": [trusted_caller, operator_grid, MAX_SANE_SHARE_LIMIT],
     }
 
     log.ok("Deployed RegisterGroupsInOperatorGrid", register_groups_in_operator_grid.address)
@@ -98,12 +101,13 @@ def deploy_operator_grid_factories(
     update_groups_share_limit_in_operator_grid = UpdateGroupsShareLimitInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
+        MAX_SANE_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["UpdateGroupsShareLimitInOperatorGrid"] = {
         "contract": "UpdateGroupsShareLimitInOperatorGrid",
         "address": update_groups_share_limit_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid],
+        "constructorArgs": [trusted_caller, operator_grid, MAX_SANE_SHARE_LIMIT],
     }
 
     log.ok("Deployed UpdateGroupsShareLimitInOperatorGrid", update_groups_share_limit_in_operator_grid.address)

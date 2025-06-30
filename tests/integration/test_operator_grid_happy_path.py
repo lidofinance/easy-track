@@ -11,21 +11,11 @@ def trusted_address(accounts):
     return accounts[7]
 
 
-# TODO: use real address of operator grid when it will be deployed - remove this fixture and uncomment the setup_operator_grid function
-@pytest.fixture(scope="module", autouse=True)
-def operator_grid(owner, OperatorGridStub, easy_track):
-    default_tier_params = (1000, 200, 100, 50, 40, 10) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
-    operator_grid = owner.deploy(OperatorGridStub, owner, default_tier_params)
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), easy_track.evmScriptExecutor(), {"from": owner})
-    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": owner})
-    return operator_grid
-
-
 def setup_operator_grid(owner, operator_grid, easy_track, agent):
-    evm_executor = easy_track.evmScriptExecutor()
-    # TODO: uncomment this once the operator grid is deployed
-    # operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), evm_executor, {"from": agent})
-    # operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
+    # transfer 10 ETH to agent
+    owner.transfer(agent, 10 * 10**18)
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), easy_track.evmScriptExecutor(), {"from": agent})
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
 
 
 def setup_evm_script_factory(
