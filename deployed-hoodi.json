@@ -1,0 +1,160 @@
+{
+  "EasyTrack": {
+    "contract": "EasyTrack",
+    "address": "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+    "constructorArgs": [
+      "0xEf2573966D009CcEA0Fc74451dee2193564198dc",
+      "0xBE2fD5a6Ce6460EB5e9aCC5d486697aE6402fdd2",
+      600,
+      24,
+      500
+    ]
+  },
+  "EVMScriptExecutor": {
+    "contract": "EVMScriptExecutor",
+    "address": "0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
+    "constructorArgs": [
+      "0xfB3cB48d81eC8c7f2013a8dc9fA46D2D48112c3A",
+      "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a"
+    ]
+  },
+  "IncreaseNodeOperatorStakingLimit": {
+    "contract": "IncreaseNodeOperatorStakingLimit",
+    "address": "0x0f121e4069e17a2Dc5bAbF39d769313a1e20f323",
+    "constructorArgs": ["0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5"]
+  },
+  "AddNodeOperators": {
+    "contract": "AddNodeOperators",
+    "address": "0x42f2532ab3d41dfD6030db1EC2fF3DBC8DCdf89a",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+      "0x78780e70Eae33e2935814a327f7dB6c01136cc62",
+      "0x3508A952176b3c15387C97BE809eaffB1982176a"
+    ]
+  },
+  "ActivateNodeOperators": {
+    "contract": "ActivateNodeOperators",
+    "address": "0xfA3B3EE204E1f0f165379326768667300992530e",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+      "0x78780e70Eae33e2935814a327f7dB6c01136cc62"
+    ]
+  },
+  "DeactivateNodeOperators": {
+    "contract": "DeactivateNodeOperators",
+    "address": "0x3114bEbC222Faec27DF8AB7f9bD8dF2063d7fc77",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+      "0x78780e70Eae33e2935814a327f7dB6c01136cc62"
+    ]
+  },
+  "SetVettedValidatorsLimits": {
+    "contract": "SetVettedValidatorsLimits",
+    "address": "0x956c5dC6cfc8603b2293bF8399B718cbf61a9dda",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830"
+    ]
+  },
+  "IncreaseVettedValidatorsLimit": {
+    "contract": "IncreaseVettedValidatorsLimit",
+    "address": "0xa182C68783fE52e9fF310AB053A0f67EC26b34b8",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830"
+    ]
+  },
+  "SetNodeOperatorNames": {
+    "contract": "SetNodeOperatorNames",
+    "address": "0x2F98760650922cf65f1b596635bC5835b6E561d4",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830"
+    ]
+  },
+  "SetNodeOperatorRewardAddresses": {
+    "contract": "SetNodeOperatorRewardAddresses",
+    "address": "0x3d267e4f8d9dCcc83c2DE66729e6A5B2B0856e31",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+      "0x3508A952176b3c15387C97BE809eaffB1982176a"
+    ]
+  },
+  "UpdateTargetValidatorLimits": {
+    "contract": "UpdateTargetValidatorLimits",
+    "address": "0xc3975Bc4091B585c57357990155B071111d7f4f8",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830"
+    ]
+  },
+  "ChangeNodeOperatorManagers": {
+    "contract": "ChangeNodeOperatorManagers",
+    "address": "0x8a437cd5685e270cDDb347eeEfEbD22109Fa42a9",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+      "0x78780e70Eae33e2935814a327f7dB6c01136cc62"
+    ]
+  },
+  "AllowedRecipientsBuilder_single_token": {
+    "contract": "AllowedRecipientsBuilder",
+    "address": "0xC20129f1dd4DFeD023a6d6A8de9d54A7b61af5CC",
+    "constructorArgs": [
+      "0xFdf256eED0ec8B782065E2aCDb975071033A6110",
+      "0x0534aA41907c9631fae990960bCC72d75fA7cfeD",
+      "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+      "0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b",
+      "0xd1df0cf660d531fad9eaabd3e7b4e8881e28ae2f"
+    ]
+  },
+  "AllowedRecipientsFactory_single_token": {
+    "contract": "AllowedRecipientsFactory",
+    "address": "0xFdf256eED0ec8B782065E2aCDb975071033A6110",
+    "constructorArgs": []
+  },
+  "AllowedRecipientsBuilder_multi_token": {
+    "contract": "AllowedRecipientsBuilder",
+    "address": "0xf5436129Cf9d8fa2a1cb6e591347155276550635",
+    "constructorArgs": [
+      "0x08c48Fef9Cadca882E27d2325D1785858D5c1aE3",
+      "0x0534aA41907c9631fae990960bCC72d75fA7cfeD",
+      "0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+      "0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b",
+      "0xd1df0cf660d531fad9eaabd3e7b4e8881e28ae2f"
+    ]
+  },
+  "AllowedRecipientsFactory_multi_token": {
+    "contract": "AllowedRecipientsFactory",
+    "address": "0x08c48Fef9Cadca882E27d2325D1785858D5c1aE3",
+    "constructorArgs": []
+  },
+  "AddMEVBoostRelays": {
+    "contract": "AddMEVBoostRelays",
+    "address": "0xF02DbeaA1Bbc90226CaB995db4C190DbE25983af",
+    "constructorArgs": [
+      "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
+      "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
+    ]
+  },
+  "RemoveMEVBoostRelays": {
+    "contract": "RemoveMEVBoostRelays",
+    "address": "0x7FCc2901C6C3D62784cB178B14d44445B038f736",
+    "constructorArgs": [
+      "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
+      "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
+    ]
+  },
+  "EditMEVBoostRelays": {
+    "contract": "EditMEVBoostRelays",
+    "address": "0x27A99a7104190DdA297B222104A6C70A4Ca5A17e",
+    "constructorArgs": [
+      "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
+      "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
+    ]
+  }
+}

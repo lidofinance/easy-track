@@ -1,6 +1,6 @@
 import os
 import sys
-from brownie import network, accounts
+from brownie import network, accounts, web3
 from utils import lido
 from typing import Optional
 
@@ -18,16 +18,16 @@ def get_network_name() -> Optional[str]:
 
 
 def get_is_live():
-    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "goerli-fork", "holesky-fork"]
+    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "goerli-fork", "holesky-fork", "hoodi-fork"]
     return network.show_active() not in dev_networks
 
 
 def get_deployer_account(is_live, network="mainnet", dev_ldo_transfer=True):
     if not is_live:
         deployer = accounts[0]
-        if dev_ldo_transfer:
-            contracts = lido.contracts(network=network)
-            contracts.ldo.transfer(deployer, 10**18, {"from": contracts.aragon.agent})
+        contracts = lido.contracts(network=network)
+        set_balance_in_wei(contracts.aragon.agent.address, 100 * 10**18)
+        contracts.ldo.transfer(deployer, 10**18, {"from": contracts.aragon.agent, "gas_price": "100 gwei"})
         return deployer
     if "DEPLOYER" not in os.environ:
         raise EnvironmentError("Please set DEPLOYER env variable to the deployer account name")
@@ -51,3 +51,20 @@ def get_env(name, default=None):
             return default
         raise EnvironmentError(f"Please set {name} env variable")
     return os.environ[name]
+
+def set_balance_in_wei(address, balance):
+    account = accounts.at(address, force=True)
+    providers = ["evm_setAccountBalance", "hardhat_setBalance", "anvil_setBalance"]
+
+    for provider in providers:
+        if account.balance() == balance:
+            break
+
+        try:
+            web3.provider.make_request(provider, [address, hex(balance)])
+        except ValueError as e:
+            if e.args[0].get("message") != f"Method {provider} is not supported":
+                raise e
+
+    assert account.balance() == balance, f"Failed to set balance {balance} for account: {address}"
+    return account
