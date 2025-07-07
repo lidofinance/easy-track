@@ -177,9 +177,11 @@ contract VaultHubAdapter is TrustedCaller {
     /// @param _validatorExitFeeLimit new validator exit fee limit
     function setValidatorExitFeeLimit(uint256 _validatorExitFeeLimit) external onlyTrustedCaller(msg.sender) {
         require(_validatorExitFeeLimit > 0, ERROR_ZERO_VALIDATOR_EXIT_FEE_LIMIT);
+        
+        uint256 oldFee = validatorExitFeeLimit;
         validatorExitFeeLimit = _validatorExitFeeLimit;
 
-        emit WithdrawalRequestFeeUpdated(validatorExitFeeLimit, _validatorExitFeeLimit);
+        emit WithdrawalRequestFeeUpdated(oldFee, _validatorExitFeeLimit);
     }
 
     /// @notice Function to withdraw all ETH to TrustedCaller

@@ -65,7 +65,7 @@ development:
       accounts: 10
       chain_id: 560048
       evm_version: shanghai
-      fork: $HOODI_RPC_URL
+      fork: $HOODI_RPC_URL@710000
       gas_limit: 30000000
       mnemonic: brownie
       port: 8545

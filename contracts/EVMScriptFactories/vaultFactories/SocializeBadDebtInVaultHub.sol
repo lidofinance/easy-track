@@ -115,7 +115,6 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
         
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
             require(_badDebtVaults[i] != address(0), ERROR_ZERO_BAD_DEBT_VAULT);
-            // acceptor address can't be zero - as it means to socialize bad debt to the core protocol
             require(_vaultAcceptors[i] != address(0), ERROR_ZERO_VAULT_ACCEPTOR);
             require(_maxSharesToSocialize[i] != 0, ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE);
         }
