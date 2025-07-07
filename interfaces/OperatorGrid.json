@@ -1,0 +1,284 @@
+[
+  {
+    "inputs": [],
+    "name": "REGISTRY_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256[]",
+        "name": "_tierIds",
+        "type": "uint256[]"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "shareLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reserveRatioBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "forcedRebalanceThresholdBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "infraFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "liquidityFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reservationFeeBP",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TierParams[]",
+        "name": "_tierParams",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "alterTiers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nodeOperator",
+        "type": "address"
+      }
+    ],
+    "name": "group",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "operator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint96",
+            "name": "shareLimit",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "liabilityShares",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint256[]",
+            "name": "tierIds",
+            "type": "uint256[]"
+          }
+        ],
+        "internalType": "struct IOperatorGrid.Group",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nodeOperator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_shareLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "registerGroup",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nodeOperator",
+        "type": "address"
+      },
+      {
+        "components": [
+          {
+            "internalType": "uint256",
+            "name": "shareLimit",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reserveRatioBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "forcedRebalanceThresholdBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "infraFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "liquidityFeeBP",
+            "type": "uint256"
+          },
+          {
+            "internalType": "uint256",
+            "name": "reservationFeeBP",
+            "type": "uint256"
+          }
+        ],
+        "internalType": "struct TierParams[]",
+        "name": "_tiers",
+        "type": "tuple[]"
+      }
+    ],
+    "name": "registerTiers",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "_tierId",
+        "type": "uint256"
+      }
+    ],
+    "name": "tier",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "operator",
+            "type": "address"
+          },
+          {
+            "internalType": "uint96",
+            "name": "shareLimit",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "liabilityShares",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint16",
+            "name": "reserveRatioBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "forcedRebalanceThresholdBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "infraFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "liquidityFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "reservationFeeBP",
+            "type": "uint16"
+          }
+        ],
+        "internalType": "struct IOperatorGrid.Tier",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "tiersCount",
+    "outputs": [
+      {
+        "internalType": "uint256",
+        "name": "",
+        "type": "uint256"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_nodeOperator",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_shareLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateGroupShareLimit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  }
+]

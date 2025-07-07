@@ -1,0 +1,191 @@
+// SPDX-FileCopyrightText: 2025 Lido <info@lido.fi>
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity 0.8.6;
+
+interface IVaultHub {
+    struct VaultConnection {
+        /// @notice address of the vault owner
+        address owner;
+        /// @notice maximum number of stETH shares that can be minted by vault owner
+        uint96 shareLimit;
+        /// @notice index of the vault in the list of vaults. Indexes is guaranteed to be stable only if there was no deletions.
+        /// @dev vaultIndex is always greater than 0
+        uint96 vaultIndex;
+        /// @notice if true, vault is disconnected and fee is not accrued
+        bool pendingDisconnect;
+        /// @notice share of ether that is locked on the vault as an additional reserve
+        /// e.g RR=30% means that for 1stETH minted 1/(1-0.3)=1.428571428571428571 ETH is locked on the vault
+        uint16 reserveRatioBP;
+        /// @notice if vault's reserve decreases to this threshold, it should be force rebalanced
+        uint16 forcedRebalanceThresholdBP;
+        /// @notice infra fee in basis points
+        uint16 infraFeeBP;
+        /// @notice liquidity fee in basis points
+        uint16 liquidityFeeBP;
+        /// @notice reservation fee in basis points
+        uint16 reservationFeeBP;
+        /// @notice if true, vault owner manually paused the beacon chain deposits
+        bool isBeaconDepositsManuallyPaused;
+    }
+
+    struct VaultRecord {
+        /// @notice latest report for the vault
+        Report report;
+        /// @notice amount of ether that is locked from withdrawal on the vault
+        uint128 locked;
+        /// @notice liability shares of the vault
+        uint96 liabilityShares;
+        /// @notice current inOutDelta of the vault (all deposits - all withdrawals)
+        Int112WithRefSlotCache inOutDelta;
+        /// @notice timestamp of the latest report
+        uint64 reportTimestamp;
+    }
+
+    struct Int112WithRefSlotCache {
+        int112 value;
+        int112 valueOnRefSlot;
+        uint32 refSlot;
+    }
+
+    struct Report {
+        /// @notice total value of the vault
+        uint128 totalValue;
+        /// @notice inOutDelta of the report
+        int112 inOutDelta;
+    }
+
+    struct VaultObligations {
+        uint128 settledLidoFees;
+        uint128 unsettledLidoFees;
+        uint128 redemptions;
+    }
+
+    // -----------------------------
+    //           FUNCTIONS
+    // -----------------------------
+
+    /// @notice connects a vault to the hub in permissionless way, get limits from the Operator Grid
+    /// @param _vault vault address
+    function connectVault(address _vault) external;
+
+    /// @notice update of the vault data by the lazy oracle report
+    /// @param _vault the address of the vault
+    /// @param _reportTimestamp the timestamp of the report (last 32 bits of it)
+    /// @param _reportTotalValue the total value of the vault
+    /// @param _reportInOutDelta the inOutDelta of the vault
+    /// @param _reportCumulativeLidoFees the cumulative Lido fees of the vault
+    /// @param _reportLiabilityShares the liabilityShares of the vault
+    function applyVaultReport(
+        address _vault,
+        uint256 _reportTimestamp,
+        uint256 _reportTotalValue,
+        int256 _reportInOutDelta,
+        uint256 _reportCumulativeLidoFees,
+        uint256 _reportLiabilityShares,
+        uint256 _reportSlashingReserve
+    ) external;
+
+    /// @notice Grants a role to an account
+    /// @param role the role to grant
+    /// @param account the account to grant the role to
+    function grantRole(bytes32 role, address account) external;
+
+    /// @notice Updates share limit for the vault
+    /// @param _vault vault address
+    /// @param _shareLimit new share limit
+    function updateShareLimit(address _vault, uint256 _shareLimit) external;
+
+    /// @notice Updates fees for the vault
+    /// @param _vault vault address
+    /// @param _infraFeeBP new infra fee in basis points
+    /// @param _liquidityFeeBP new liquidity fee in basis points
+    /// @param _reservationFeeBP new reservation fee in basis points
+    function updateVaultFees(
+        address _vault,
+        uint256 _infraFeeBP,
+        uint256 _liquidityFeeBP,
+        uint256 _reservationFeeBP
+    ) external;
+
+    /// @notice Transfer the bad debt from the donor vault to the acceptor vault
+    /// @param _badDebtVault address of the vault that has the bad debt
+    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
+    /// @param _maxSharesToSocialize maximum amount of shares to socialize
+    /// @dev if _vaultAcceptor is 0, the bad debt is internalized to the protocol
+    function socializeBadDebt(
+        address _badDebtVault,
+        address _vaultAcceptor,
+        uint256 _maxSharesToSocialize
+    ) external;
+
+    /// @notice Triggers validator full withdrawals for the vault using EIP-7002 permissionlessly if the vault is unhealthy
+    /// @param _vault address of the vault to exit validators from
+    /// @param _pubkeys public keys of the validators to exit
+    /// @param _refundRecipient address that will receive the refund for transaction costs
+    /// @dev    When the vault becomes unhealthy, withdrawal committee can force its validators to exit the beacon chain
+    ///         This returns the vault's deposited ETH back to vault's balance and allows to rebalance the vault
+    function forceValidatorExit(
+        address _vault,
+        bytes calldata _pubkeys,
+        address _refundRecipient
+    ) external payable;
+
+    /// @notice Accrues a redemption obligation on the vault under extreme conditions
+    /// @param _vault The address of the vault
+    /// @param _redemptionsValue The value of the redemptions obligation
+    function setVaultRedemptions(address _vault, uint256 _redemptionsValue) external;
+
+    // -----------------------------
+    //            VIEW FUNCTIONS
+    // -----------------------------
+
+    /// @notice Returns the vault connection information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultConnection struct containing vault configuration
+    function vaultConnection(address _vault) external view returns (VaultConnection memory);
+
+    /// @notice Returns the vault record information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultRecord struct containing vault state
+    function vaultRecord(address _vault) external view returns (VaultRecord memory);
+
+    /// @notice Returns the vault obligations information for a given vault address
+    /// @param _vault The address of the vault to query
+    /// @return The VaultObligations struct containing vault obligations
+    function vaultObligations(address _vault) external view returns (VaultObligations memory);
+
+    /// @notice Returns the vault master role
+    /// @return bytes32 the vault master role
+    function VAULT_MASTER_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the bad debt master role
+    /// @return bytes32 the bad debt master role
+    function BAD_DEBT_MASTER_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the validator exit role
+    /// @return bytes32 the validator exit role
+    function VALIDATOR_EXIT_ROLE() external view returns (bytes32);
+
+    /// @notice Returns the redemption master role
+    /// @return bytes32 the redemption master role
+    function REDEMPTION_MASTER_ROLE() external view returns (bytes32);
+
+    // -----------------------------
+    //            EVENTS
+    // -----------------------------
+
+    event VaultShareLimitUpdated(address indexed vault, uint256 newShareLimit);
+    event VaultFeesUpdated(
+        address indexed vault,
+        uint256 preInfraFeeBP,
+        uint256 preLiquidityFeeBP,
+        uint256 preReservationFeeBP,
+        uint256 infraFeeBP,
+        uint256 liquidityFeeBP,
+        uint256 reservationFeeBP
+    );
+    event ForcedValidatorExitTriggered(address indexed vault, bytes pubkeys, address refundRecipient);
+    event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
+    event RedemptionsUpdated(address indexed vault, uint256 unsettledRedemptions);
+}

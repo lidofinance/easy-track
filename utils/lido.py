@@ -23,6 +23,10 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
+            operator_grid="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
+            vault_hub="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
+            lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A", # fake address
+            evm_script_executor="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -42,6 +46,10 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
+            operator_grid="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
+            vault_hub="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
+            lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A", # fake address
+            evm_script_executor="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
         )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
@@ -78,9 +86,37 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
             locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
+            mev_boost_list="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
+            operator_grid="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",  # fake address
+            vault_hub="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",  # fake address
+            lazy_oracle="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
+            evm_script_executor="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
+        )
+    if network == "hoodi-v3" or network == "hoodi-v3-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl="0xF55a0c7Da6932eBd859Bd7AE896757959785340e",
+                agent="0xEB9712bf5DD2179EEacc45A62A69b156299084a7",
+                voting="0x3DF09262F937a92b9d7CC020e22709b6c6641d7d",
+                finance="0x86eAE4CBb13e5d7f8f4a3582F24F6133047672F2",
+                gov_token="0xbfd40Db0a3CB72cF936353CE4EA6cdbBeB65F1Db",
+                calls_script="0x207474d0f0Ba51A28ce911C2e77d6c93e231E8FD", # fake address
+                token_manager="0xB769867675CD2e3c2ea7b29b5Bd282dC1C00Ad66",
+                kernel="0x207BAA2a636f094eCCBaA70FDE74D31723b7709c",
+            ),
+            steth="0x2C220A2a91602dd93bEAC7b3A1773cdADE369ba1",
+            node_operators_registry="0xa38DE5874E81561F29cfa4436111852CC34aC1e1",
+            simple_dvt="0x0718D0A48D9B3Fd6E03B10249655539DB4Bf63c4",
+            staking_router="0x7DE7173aeB9CDc06E429910104BD1e61a965f567",
+            locator="0xD7c1B80fA86965B48cCA3aDcCB08E1DAEa291980",
+            mev_boost_list="0xbE861866E2Ca8f401e2b51b2cFb36A61B0Bf6840", # fake address
+            operator_grid="0x35dd33A473D492745eD5226Cf940b5b1ef4C111D",
+            vault_hub="0x26b92f0fdfeBAf43E5Ea5b5974EeBee95F17Fe08",
+            lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A",
+            evm_script_executor="0xbf91a57E194c2c7a758247eC12648Fc5651478db",
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork, hoodi, hoodi-fork, hoodi-v3, hoodi-v3-fork"""
     )
 
 
@@ -123,6 +159,8 @@ class LidoContractsSetup:
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        self.operator_grid = interface.OperatorGrid(lido_addresses.operator_grid)
+        self.vault_hub = interface.VaultHub(lido_addresses.vault_hub)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -163,7 +201,7 @@ class LidoContractsSetup:
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, mev_boost_list):
+    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, mev_boost_list, operator_grid, vault_hub, evm_script_executor, lazy_oracle):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
@@ -172,6 +210,10 @@ class LidoAddressesSetup:
         self.staking_router = staking_router
         self.locator = locator
         self.mev_boost_list = mev_boost_list
+        self.operator_grid = operator_grid
+        self.vault_hub = vault_hub
+        self.evm_script_executor = evm_script_executor
+        self.lazy_oracle = lazy_oracle
 
 
 class AragonSetup:

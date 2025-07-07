@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# Script to run all vault hub and operator grid related tests
+echo "Running VaultHub and OperatorGrid factories tests..."
+brownie test tests/evm_script_factories/test_register_group_in_operator_grid.py tests/evm_script_factories/test_register_tiers_in_operator_grid.py tests/evm_script_factories/test_update_groups_share_limit_in_operator_grid.py tests/evm_script_factories/test_alter_tiers_in_operator_grid.py tests/evm_script_factories/test_decrease_share_limits_in_vault_hub.py tests/evm_script_factories/test_decrease_vaults_fees_in_vault_hub.py tests/evm_script_factories/test_force_validator_exits_in_vault_hub.py tests/evm_script_factories/test_set_vault_redemptions_in_vault_hub.py tests/evm_script_factories/test_socialize_bad_debt_in_vault_hub.py tests/integration/test_operator_grid_happy_path.py tests/integration/test_vault_hub_happy_path.py --network hoodi-v3-fork
