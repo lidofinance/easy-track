@@ -3,9 +3,9 @@ import pytest
 import brownie
 
 from utils.evm_script import encode_call_script, encode_calldata
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
 MOTION_BUFFER_TIME = 100
-
 
 def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track):
     evm_executor = easy_track.evmScriptExecutor()
@@ -17,27 +17,30 @@ def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_tra
 
     vote_id, _ = lido_contracts.create_voting(
         evm_script=encode_call_script(
-            [
+            submit_proposals([
                 (
-                    agent.address,
-                    agent.forward.encode_input(
-                        encode_call_script(
-                            [
-                                (
-                                    mev_boost_relay_allowed_list.address,
-                                    mev_boost_relay_allowed_list.set_manager.encode_input(evm_executor),
-                                )
-                            ]
+                    [(
+                        agent.address,
+                        agent.forward.encode_input(
+                            encode_call_script(
+                                [
+                                    (
+                                        mev_boost_relay_allowed_list.address,
+                                        mev_boost_relay_allowed_list.set_manager.encode_input(evm_executor),
+                                    )
+                                ]
+                            ),
                         ),
-                    ),
+                    )], ""
                 )
-            ]
+            ])
         ),
         description="Set manager for MEV Boost Relay Allowed List to EVMScriptExecutor",
         tx_params={"from": agent.address},
     )
 
     lido_contracts.execute_voting(vote_id)
+    process_pending_proposals()
 
 
 def execute_motion(easy_track, motion_transaction, stranger):

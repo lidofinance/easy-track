@@ -2,8 +2,11 @@ from scripts.revoke_all_permissions import revoke_permissions
 from scripts.grant_executor_permissions import grant_executor_permissions
 from scripts.deploy import deploy_easy_tracks
 
+from utils import evm_script
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
-def test_revoke_permissions(accounts, lido_contracts):
+
+def test_revoke_permissions(accounts, agent, lido_contracts):
     deployer = accounts[0]
     lego_program_vault = accounts[1]
     lego_committee_multisig = accounts[2]
@@ -20,9 +23,36 @@ def test_revoke_permissions(accounts, lido_contracts):
 
     lido_permissions = lido_contracts.permissions
 
+    grant_permission_manager_voting, _ = lido_contracts.create_voting(
+        evm_script=evm_script.encode_call_script(
+            submit_proposals([([
+                (
+                    agent.address,
+                    agent.forward.encode_input(
+                        evm_script.encode_call_script(
+                            [(
+                                lido_contracts.aragon.acl.address,
+                                lido_contracts.aragon.acl.setPermissionManager.encode_input(
+                                    lido_contracts.aragon.voting,
+                                    lido_contracts.node_operators_registry,
+                                    lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE.role,
+                                ),
+                            )]
+                        )
+                    ),
+                )], "")
+            ]),
+        ),
+        description="Grant permission manager to Voting",
+        tx_params={"from": agent},
+    )
+
+    lido_contracts.execute_voting(grant_permission_manager_voting)
+    process_pending_proposals()
+
     permissions = [
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
-        lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,
+        lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE
     ]
     lido_contracts.ldo.transfer(deployer, 10**18, {"from": lido_contracts.aragon.agent})
     voting_id = grant_executor_permissions(

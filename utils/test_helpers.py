@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
 
-from brownie import chain, web3
+from brownie import chain
 
 from utils import log
+from utils.config import set_balance_in_wei
 
 CANCEL_ROLE = "0x9f959e00d95122f5cbd677010436cf273ef535b86b056afc172852144b9491d7"
 PAUSE_ROLE = "0x139c2898040ef16910dc9f44dc697df79363da767d8bc92f2e310312b816e46d"
@@ -201,4 +202,4 @@ def get_timestamp_from_date(year, month, day, hour=0, min=0, sec=0):
     return datetime(year, month, day, hour, min, sec, tzinfo=timezone.utc).timestamp()
 
 def set_account_balance(address, amount=1 * 10 ** 18):
-    web3.provider.make_request("evm_setAccountBalance", [address, amount])
+    set_balance_in_wei(address, amount)

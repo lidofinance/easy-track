@@ -22,12 +22,12 @@ def create_calldata(data):
 
 
 @pytest.fixture(scope="module")
-def deactivate_node_operators_factory(owner, node_operators_registry, acl, voting):
+def deactivate_node_operators_factory(owner, node_operators_registry, acl, voting, agent):
     acl.grantPermission(
         voting,
         node_operators_registry,
         web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": voting},
+        {"from": agent},
     )
     for id, manager in enumerate(MANAGERS):
         acl.grantPermissionP(
@@ -35,7 +35,7 @@ def deactivate_node_operators_factory(owner, node_operators_registry, acl, votin
             node_operators_registry,
             web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
             encode_permission_params([Param(0, Op.EQ, id)]),
-            {"from": voting},
+            {"from": agent},
         )
     return DeactivateNodeOperators.deploy(owner, node_operators_registry, acl, {"from": owner})
 
@@ -107,7 +107,7 @@ def test_manager_has_no_role(owner, deactivate_node_operators_factory, node_oper
 
 
 def test_manager_has_another_role_operator(
-    owner, deactivate_node_operators_factory, node_operators_registry, acl, voting
+    owner, deactivate_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has MANAGE_SIGNING_KEYS role with wrong param operator"
 
@@ -119,7 +119,7 @@ def test_manager_has_another_role_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.NEQ, operator)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager)])
@@ -128,7 +128,7 @@ def test_manager_has_another_role_operator(
 
 
 def test_manager_has_role_for_another_operator(
-    owner, deactivate_node_operators_factory, node_operators_registry, acl, voting
+    owner, deactivate_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has MANAGE_SIGNING_KEYS role with wrong param operator"
 
@@ -140,7 +140,7 @@ def test_manager_has_role_for_another_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.EQ, operator + 1)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager)])

@@ -22,12 +22,12 @@ def create_calldata(data):
 
 
 @pytest.fixture(scope="module")
-def activate_node_operators_factory(owner, node_operators_registry, acl, voting):
+def activate_node_operators_factory(owner, node_operators_registry, acl, voting, agent):
     acl.grantPermission(
         voting,
         node_operators_registry,
         web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": voting},
+        {"from": agent},
     )
     for id, manager in enumerate(MANAGERS):
         node_operators_registry.deactivateNodeOperator(id, {"from": voting})
@@ -98,14 +98,14 @@ def test_node_operator_invalid_state(owner, activate_node_operators_factory):
         activate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_manager_already_has_permission(owner, activate_node_operators_factory, node_operators_registry, acl, voting):
+def test_manager_already_has_permission(owner, activate_node_operators_factory, node_operators_registry, acl, agent):
     "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when manager has MANAGE_SIGNING_KEYS role"
 
     acl.grantPermission(
         MANAGERS[0],
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        {"from": voting},
+        {"from": agent},
     )
     CALLDATA = create_calldata([(0, MANAGERS[0])])
     with reverts("MANAGER_ALREADY_HAS_ROLE"):
@@ -113,7 +113,7 @@ def test_manager_already_has_permission(owner, activate_node_operators_factory, 
 
 
 def test_manager_already_has_permission_for_node_operator(
-    owner, activate_node_operators_factory, node_operators_registry, acl, voting
+    owner, activate_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when manager has MANAGE_SIGNING_KEYS role"
 
@@ -122,7 +122,7 @@ def test_manager_already_has_permission_for_node_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.EQ, 0)]),
-        {"from": voting},
+        {"from": agent},
     )
     CALLDATA = create_calldata([(0, MANAGERS[0])])
     with reverts("MANAGER_ALREADY_HAS_ROLE"):
@@ -130,7 +130,7 @@ def test_manager_already_has_permission_for_node_operator(
 
 
 def test_manager_already_has_permission_for_different_node_operator(
-    owner, activate_node_operators_factory, node_operators_registry, acl, voting
+    owner, activate_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when manager has MANAGE_SIGNING_KEYS role"
 
@@ -139,7 +139,7 @@ def test_manager_already_has_permission_for_different_node_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.EQ, 1)]),
-        {"from": voting},
+        {"from": agent},
     )
     CALLDATA = create_calldata([(0, MANAGERS[0])])
     with reverts("MANAGER_ALREADY_HAS_ROLE"):

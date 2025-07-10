@@ -27,11 +27,13 @@ def simple_dvt(
     nor_proxy = interface.AragonAppProxy(node_operators_registry)
     module_name = "simple-dvt-registry"
     name = web3.keccak(text=module_name).hex()
-    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": voting})
+
+    acl.grantPermission(agent, kernel, web3.keccak(text="APP_MANAGER_ROLE").hex(), {"from": agent})
+    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": agent})
 
     simple_dvt_contract = interface.NodeOperatorsRegistry(simple_DVT_tx.new_contracts[0])
 
-    simple_dvt_contract.initialize(locator, "0x01", 0, {"from": voting})
+    simple_dvt_contract.initialize(locator, "0x01", 0, {"from": agent})
 
     staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
@@ -42,7 +44,7 @@ def simple_dvt(
         simple_dvt_contract,
         web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
         agent,
-        {"from": voting},
+        {"from": agent},
     )
 
     return simple_dvt_contract
@@ -62,21 +64,21 @@ def grant_roles(acl, et_contracts, agent, voting, simple_dvt):
         simple_dvt,
         simple_dvt.SET_NODE_OPERATOR_LIMIT_ROLE(),
         agent,
-        {"from": voting},
+        {"from": agent},
     )
     acl.createPermission(
         et_contracts.evm_script_executor,
         simple_dvt,
         simple_dvt.MANAGE_SIGNING_KEYS(),
         et_contracts.evm_script_executor,
-        {"from": voting},
+        {"from": agent},
     )
     acl.createPermission(
         et_contracts.evm_script_executor,
         simple_dvt,
         simple_dvt.STAKING_ROUTER_ROLE(),
         agent,
-        {"from": voting},
+        {"from": agent},
     )
 
 
@@ -86,10 +88,11 @@ def test_simple_make_action(
     et_contracts,
     acl,
     agent,
+    voting,
     easytrack_executor,
     add_node_operators_factory,
     grant_roles,
-    lido_contracts,
+    dual_governance_admin_executor,
     stranger,
     change_node_operator_manager_factory,
 ):
@@ -127,26 +130,11 @@ def test_simple_make_action(
 
     # Renounce MANAGE_SIGNING_KEYS role manager
 
-    vote_script_calldata = encode_call_script(
-        [
-            (
-                et_contracts.evm_script_executor.address,
-                et_contracts.evm_script_executor.setEasyTrack.encode_input(agent),
-            ),
-            encode_agent_forward(
-                agent,
+    et_contracts.evm_script_executor.setEasyTrack(agent, {"from": voting})
+    set_permission_manager_calldata = (
+        et_contracts.evm_script_executor.executeEVMScript.encode_input(
+            encode_call_script(
                 [
-                    encode_execute_evm_script(
-                        et_contracts.evm_script_executor,
-                        (
-                            acl.address,
-                            acl.setPermissionManager.encode_input(
-                                agent,
-                                simple_dvt,
-                                web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-                            ),
-                        ),
-                    ),
                     (
                         acl.address,
                         acl.grantPermission.encode_input(
@@ -155,33 +143,21 @@ def test_simple_make_action(
                             simple_dvt.MANAGE_SIGNING_KEYS(),
                         ),
                     ),
-                    (
-                        acl.address,
-                        acl.setPermissionManager.encode_input(
-                            et_contracts.evm_script_executor,
-                            simple_dvt,
-                            web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-                        ),
-                    ),
-                ],
+                ]
             ),
-            (
-                et_contracts.evm_script_executor.address,
-                et_contracts.evm_script_executor.setEasyTrack.encode_input(et_contracts.easy_track),
-            ),
-        ]
+        )
     )
-
-    voting_id, _ = lido_contracts.create_voting(
-        evm_script=vote_script_calldata,
-        description="Update MANAGE_SIGNING_KEYS roles manager.",
-        tx_params={"from": lido_contracts.aragon.agent},
+    agent.execute(
+        et_contracts.evm_script_executor,
+        0,
+        set_permission_manager_calldata,
+        {"from": dual_governance_admin_executor},
     )
-
-    lido_contracts.execute_voting(voting_id)
+    et_contracts.evm_script_executor.setEasyTrack(
+        et_contracts.easy_track, {"from": voting}
+    )
 
     assert acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == et_contracts.evm_script_executor
-
     assert acl.hasPermission(agent, simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == True
 
     assert et_contracts.evm_script_executor.easyTrack() == et_contracts.easy_track

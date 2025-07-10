@@ -109,7 +109,7 @@ def test_create_evm_script_from_reward_address(
     assert evm_script == expected_evm_script
 
 
-def test_create_evm_script_from_manager(increase_vetted_validators_limit_factory, node_operators_registry, acl, voting):
+def test_create_evm_script_from_manager(increase_vetted_validators_limit_factory, node_operators_registry, acl, agent):
     "Must create correct EVMScript if all requirements are met"
     no_manager = "0x1f9090aae28b8a3dceadf281b0f12828e676c327"
     set_account_balance(no_manager)
@@ -121,7 +121,7 @@ def test_create_evm_script_from_manager(increase_vetted_validators_limit_factory
         node_operators_registry,
         node_operators_registry.MANAGE_SIGNING_KEYS(),
         encode_permission_params([Param(0, Op.EQ, 0)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     node_operators_registry.addSigningKeysOperatorBH(

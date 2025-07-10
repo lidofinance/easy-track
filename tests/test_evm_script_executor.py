@@ -1,6 +1,8 @@
 from brownie import reverts
 from eth_abi import encode
 from utils.evm_script import encode_call_script
+from utils.hardhat_helpers import get_last_block_revert_reason
+
 import constants
 
 
@@ -16,15 +18,31 @@ def test_deploy(owner, easy_track, calls_script, EVMScriptExecutor):
 def test_deploy_calls_script_not_contract(owner, accounts, easy_track, EVMScriptExecutor):
     "Must revert with message 'CALLS_SCRIPT_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
-    with reverts("CALLS_SCRIPT_IS_NOT_CONTRACT"):
-        owner.deploy(EVMScriptExecutor, not_contract, easy_track)
+    revert_reason = "CALLS_SCRIPT_IS_NOT_CONTRACT"
+
+    try:
+        with reverts(revert_reason):
+            owner.deploy(EVMScriptExecutor, not_contract.address, easy_track.address)
+    except Exception as e:
+        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
+            assert revert_reason == get_last_block_revert_reason()
+        else:
+            raise e
 
 
 def test_deploy_easy_track_not_contract(owner, accounts, calls_script, EVMScriptExecutor):
     "Must revert with message 'EASY_TRACK_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
-    with reverts("EASY_TRACK_IS_NOT_CONTRACT"):
-        owner.deploy(EVMScriptExecutor, calls_script, not_contract)
+    revert_reason = "EASY_TRACK_IS_NOT_CONTRACT"
+
+    try:
+        with reverts(revert_reason):
+            owner.deploy(EVMScriptExecutor, calls_script, not_contract)
+    except Exception as e:
+        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
+            assert revert_reason == get_last_block_revert_reason()
+        else:
+            raise e
 
 
 def test_execute_evm_script_revert_msg(

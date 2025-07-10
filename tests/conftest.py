@@ -99,6 +99,7 @@ def lido_contracts():
     set_account_balance(contracts.lido_addresses.aragon.calls_script)
     set_account_balance(contracts.lido_addresses.aragon.token_manager)
     set_account_balance(contracts.lido_addresses.aragon.kernel)
+    set_account_balance(contracts.lido_addresses.dual_governance_admin_executor)
     return contracts
 
 
@@ -134,6 +135,7 @@ def easy_track(owner, ldo, voting, EasyTrack, EVMScriptExecutor, calls_script):
         constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
     evm_script_executor = owner.deploy(EVMScriptExecutor, calls_script, contract)
+    web3.provider.make_request("anvil_impersonateAccount", [voting.address])
     contract.setEVMScriptExecutor(evm_script_executor, {"from": voting})
     set_account_balance(evm_script_executor.address)
     set_account_balance(contract.address)
@@ -357,6 +359,11 @@ def voting(lido_contracts):
 @pytest.fixture(scope="module")
 def tokens(lido_contracts):
     return lido_contracts.aragon.token_manager
+
+
+@pytest.fixture(scope="module")
+def dual_governance_admin_executor(lido_contracts):
+    return lido_contracts.dual_governance_admin_executor
 
 
 @pytest.fixture(scope="module")

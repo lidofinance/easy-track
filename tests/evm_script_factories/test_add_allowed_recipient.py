@@ -1,5 +1,6 @@
 from brownie import ZERO_ADDRESS, reverts
 from utils.evm_script import encode_calldata, encode_call_script
+from utils.hardhat_helpers import get_last_block_revert_reason
 
 EVM_SCRIPT_CALLDATA_TITLE = "TITLE"
 
@@ -17,8 +18,15 @@ def test_deploy_zero_trusted_caller(owner, AddAllowedRecipient, allowed_recipien
     "Must revert deploying a contract with zero trusted caller"
     (registry, _, _, _, _, _) = allowed_recipients_registry
 
-    with reverts("TRUSTED_CALLER_IS_ZERO_ADDRESS"):
-        owner.deploy(AddAllowedRecipient, ZERO_ADDRESS, registry)
+    revert_reason = "TRUSTED_CALLER_IS_ZERO_ADDRESS"
+    try:
+        with reverts(revert_reason):
+            owner.deploy(AddAllowedRecipient, ZERO_ADDRESS, registry)
+    except Exception as e:
+        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
+            assert revert_reason == get_last_block_revert_reason()
+        else:
+            raise e
 
 
 def test_deploy_zero_allowed_recipient_registry(owner, AddAllowedRecipient):

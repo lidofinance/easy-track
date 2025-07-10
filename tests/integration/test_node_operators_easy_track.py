@@ -3,6 +3,7 @@ import brownie
 
 import constants
 from utils import evm_script
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
 
 @pytest.mark.skip_coverage
@@ -61,22 +62,30 @@ def test_node_operators_easy_track_happy_path(
 
     add_set_staking_limit_permissions_voting_id, _ = lido_contracts.create_voting(
         evm_script=evm_script.encode_call_script(
-            [
+            submit_proposals([([
                 (
-                    acl.address,
-                    acl.grantPermission.encode_input(
-                        evm_script_executor,
-                        node_operators_registry,
-                        node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE(),
+                    agent.address,
+                    agent.forward.encode_input(
+                        evm_script.encode_call_script(
+                            [(
+                                acl.address,
+                                acl.grantPermission.encode_input(
+                                    evm_script_executor,
+                                    node_operators_registry,
+                                    node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE(),
+                                ),
+                            )]
+                        )
                     ),
-                ),
-            ]
+                )], "")
+            ]),
         ),
         description="Grant permissions to EVMScriptExecutor to set staking limits",
         tx_params={"from": agent},
     )
 
     lido_contracts.execute_voting(add_set_staking_limit_permissions_voting_id)
+    process_pending_proposals()
 
     # create vote to add test node operator
     node_operator = {"name": "test_node_operator", "address": accounts[3]}
@@ -84,18 +93,36 @@ def test_node_operators_easy_track_happy_path(
         node_operator["name"], node_operator["address"]
     )
     add_node_operator_evm_script = evm_script.encode_call_script(
-        [
-            (
-                acl.address,
-                acl.grantPermission.encode_input(
-                    voting, node_operators_registry, node_operators_registry.MANAGE_NODE_OPERATOR_ROLE()
+        submit_proposals([(
+            [
+                (
+                    agent.address,
+                    agent.forward.encode_input(
+                        evm_script.encode_call_script(
+                            [(
+                                acl.address,
+                                acl.grantPermission.encode_input(
+                                    agent,
+                                    node_operators_registry,
+                                    node_operators_registry.MANAGE_NODE_OPERATOR_ROLE(),
+                                ),
+                            )]
+                        )
+                    ),
                 ),
-            ),
-            (
-                node_operators_registry.address,
-                add_node_operator_calldata,
-            ),
-        ]
+                (
+                    agent.address,
+                    agent.forward.encode_input(
+                        evm_script.encode_call_script(
+                            [(
+                                node_operators_registry.address,
+                                add_node_operator_calldata,
+                            )]
+                        )
+                    ),
+                )
+            ], "")
+        ]),
     )
 
     add_node_operators_voting_id, _ = lido_contracts.create_voting(
@@ -106,6 +133,7 @@ def test_node_operators_easy_track_happy_path(
 
     # execute vote to add test node operator
     lido_contracts.execute_voting(add_node_operators_voting_id)
+    process_pending_proposals()
 
     # validate new node operator id
     new_node_operator_id = node_operators_registry.getNodeOperatorsCount() - 1

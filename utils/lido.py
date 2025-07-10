@@ -23,6 +23,9 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
+            dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
+            dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
+            emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316"
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -42,6 +45,9 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
+            dual_governance_admin_executor=None,
+            dual_governance=None,
+            emergency_protected_timelock=None
         )
     if network == "goerli" or network == "goerli-fork":
         return LidoAddressesSetup(
@@ -60,6 +66,9 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt=None,
             staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
             locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
+            dual_governance_admin_executor=None,
+            dual_governance=None,
+            emergency_protected_timelock=None
         )
     if network == "hoodi" or network == "hoodi-fork":
         return LidoAddressesSetup(
@@ -78,6 +87,9 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
             locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
+            dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
+            dual_governance="0x4d12b9f6aCAB54FF6a3a776BA3b8724D9B77845F",
+            emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d"
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
@@ -123,6 +135,9 @@ class LidoContractsSetup:
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
+        self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
+        self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -159,11 +174,24 @@ class LidoContractsSetup:
         brownie.chain.sleep(self.aragon.voting.voteTime())
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
+               
         voting.executeVote(voting_id, {"from": brownie.accounts[0], "priority_fee": "2 gwei"})
 
 
 class LidoAddressesSetup:
-    def __init__(self, aragon, steth, node_operators_registry, simple_dvt, staking_router, locator, mev_boost_list):
+    def __init__(
+        self,
+        aragon,
+        steth,
+        node_operators_registry,
+        simple_dvt,
+        staking_router,
+        locator,
+        mev_boost_list,
+        dual_governance_admin_executor,
+        dual_governance,
+        emergency_protected_timelock
+    ):
         self.aragon = aragon
         self.steth = steth
         self.node_operators_registry = node_operators_registry
@@ -172,6 +200,9 @@ class LidoAddressesSetup:
         self.staking_router = staking_router
         self.locator = locator
         self.mev_boost_list = mev_boost_list
+        self.dual_governance_admin_executor = dual_governance_admin_executor
+        self.dual_governance = dual_governance
+        self.emergency_protected_timelock = emergency_protected_timelock
 
 
 class AragonSetup:
