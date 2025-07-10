@@ -148,9 +148,7 @@ library SubmitExitRequestHashesUtils {
             uint256 dataWithoutPubkey = (_input.moduleId << (64 + 40)) | (_input.nodeOpId << 64) | _input.valIndex;
             
             // Check that the combined data is in ascending order. Strict comparison is used to ensure that there are no duplicates.
-            if (i > 0) {
-                require(dataWithoutPubkey > prevDataWithoutPubkey, ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER);
-            }
+            require(dataWithoutPubkey > prevDataWithoutPubkey, ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER);
             prevDataWithoutPubkey = dataWithoutPubkey;
 
             // Check that the node operator ID matches the previous request's node operator ID if a creator is specified
