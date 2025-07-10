@@ -90,7 +90,7 @@ library SubmitExitRequestHashesUtils {
     }
 
     /// @notice Validates the exit requests input data.
-    /// @param _exitRequests Array of exit requests to validate
+    /// @param _exitRequests Array of exit requests to validate (must be sorted by moduleId, nodeOpId, valIndex)
     /// @param _nodeOperatorsRegistry Address of the NodeOperatorsRegistry contract
     /// @param _stakingRouter Address of the StakingRouter contract
     /// @param _creator Address of the creator of the exit requests (used for permission checks for Curated module).
@@ -130,7 +130,7 @@ library SubmitExitRequestHashesUtils {
 
         // Prepare array for deduplication hashes
         bool shouldCheckCreator = _creator != address(0);
-        uint256 prevValIndex = firstRequest.valIndex;
+        uint256 prevDataWithoutPubkey = 0;
 
         // Iterate through all exit requests to validate them
         for (uint256 i; i < length; ) {
@@ -142,11 +142,14 @@ library SubmitExitRequestHashesUtils {
             require(_input.valPubkey.length == PUBKEY_LENGTH, ERROR_INVALID_PUBKEY_LENGTH);
             // Check that all requests have the same module ID, which ensures that all requests are for the same staking module
             require(_input.moduleId == moduleId, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE);
-            // Check that the validator public key index is in ascending order. Strict comparison is used to ensure that there are no duplicates.
-            if (i > 0) {
-                require(_input.valIndex > prevValIndex, ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER);
-                prevValIndex = _input.valIndex;
-            }
+            
+            // Compute dataWithoutPubkey for sorting validation
+            // Layout: | 128 bits: zeros | 24 bits: moduleId | 40 bits: nodeOpId | 64 bits: valIndex |
+            uint256 dataWithoutPubkey = (_input.moduleId << (64 + 40)) | (_input.nodeOpId << 64) | _input.valIndex;
+            
+            // Check that the combined data is in ascending order. Strict comparison is used to ensure that there are no duplicates.
+            require(dataWithoutPubkey > prevDataWithoutPubkey, ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER);
+            prevDataWithoutPubkey = dataWithoutPubkey;
 
             // Check that the node operator ID matches the previous request's node operator ID if a creator is specified
             // As node operators can trigger exist requests only for their own ids, they should match.

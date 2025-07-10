@@ -417,18 +417,24 @@ def test_validation_reverts_on_wrong_requests_index_sort_order(
     staking_router_stub,
 ):
     """Test that a request with a wrong validator index sort order reverts."""
+    # Add a second node operator
+    node_op_id_1 = add_node_operator(
+        sdvt_registry_stub,
+        submit_exit_hashes_factory_config["pubkeys"][1],
+    )
+
     request1 = exit_request_input_factory(
-        submit_exit_hashes_factory_config["module_ids"]["sdvt"],
-        submit_exit_hashes_factory_config["node_op_id"],
-        1,  # Validator index 1
-        submit_exit_hashes_factory_config["pubkeys"][0],
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"],  # moduleId = 2
+        node_op_id_1,  # nodeOpId = 1 (higher node operator)
+        5,  # valIndex = 5 (lower validator index)
+        submit_exit_hashes_factory_config["pubkeys"][1],
         0,
     )
     request2 = exit_request_input_factory(
-        submit_exit_hashes_factory_config["module_ids"]["sdvt"],
-        submit_exit_hashes_factory_config["node_op_id"],
-        0,  # Validator index 0 (out of order)
-        submit_exit_hashes_factory_config["pubkeys"][1],
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"],  # moduleId = 2 (same)
+        submit_exit_hashes_factory_config["node_op_id"],  # nodeOpId = 0 (lower node operator)
+        10,  # valIndex = 10 (higher validator index)
+        submit_exit_hashes_factory_config["pubkeys"][0],
         0,
     )
 
