@@ -10,5 +10,6 @@ reports/
 .pytest_cache
 node_modules
 /contracts_flattened
-logs.idea/
+logs
+.idea/
 .yarn/
