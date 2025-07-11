@@ -1,7 +1,7 @@
 from brownie import reverts
 from eth_abi import encode
 from utils.evm_script import encode_call_script
-from utils.hardhat_helpers import get_last_block_revert_reason
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 import constants
 
@@ -24,9 +24,7 @@ def test_deploy_calls_script_not_contract(owner, accounts, easy_track, EVMScript
         with reverts(revert_reason):
             owner.deploy(EVMScriptExecutor, not_contract.address, easy_track.address)
     except Exception as e:
-        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
-            assert revert_reason == get_last_block_revert_reason()
-        else:
+        if revert_reason != get_last_tx_revert_reason():
             raise e
 
 
@@ -39,9 +37,7 @@ def test_deploy_easy_track_not_contract(owner, accounts, calls_script, EVMScript
         with reverts(revert_reason):
             owner.deploy(EVMScriptExecutor, calls_script, not_contract)
     except Exception as e:
-        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
-            assert revert_reason == get_last_block_revert_reason()
-        else:
+        if revert_reason != get_last_tx_revert_reason():
             raise e
 
 

@@ -22,15 +22,15 @@ def create_calldata(data):
 
 
 @pytest.fixture(scope="module")
-def activate_node_operators_factory(owner, node_operators_registry, acl, voting, agent):
+def activate_node_operators_factory(owner, node_operators_registry, acl, agent):
     acl.grantPermission(
-        voting,
+        agent,
         node_operators_registry,
         web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
         {"from": agent},
     )
     for id, manager in enumerate(MANAGERS):
-        node_operators_registry.deactivateNodeOperator(id, {"from": voting})
+        node_operators_registry.deactivateNodeOperator(id, {"from": agent})
     return ActivateNodeOperators.deploy(owner, node_operators_registry, acl, {"from": owner})
 
 

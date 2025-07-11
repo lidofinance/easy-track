@@ -135,7 +135,6 @@ def easy_track(owner, ldo, voting, EasyTrack, EVMScriptExecutor, calls_script):
         constants.DEFAULT_OBJECTIONS_THRESHOLD,
     )
     evm_script_executor = owner.deploy(EVMScriptExecutor, calls_script, contract)
-    web3.provider.make_request("anvil_impersonateAccount", [voting.address])
     contract.setEVMScriptExecutor(evm_script_executor, {"from": voting})
     set_account_balance(evm_script_executor.address)
     set_account_balance(contract.address)

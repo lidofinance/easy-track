@@ -7,6 +7,7 @@ from utils.dual_governance import submit_proposals, process_pending_proposals
 
 MOTION_BUFFER_TIME = 100
 
+
 def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_track):
     evm_executor = easy_track.evmScriptExecutor()
     agent = lido_contracts.aragon.agent
@@ -17,23 +18,28 @@ def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_tra
 
     vote_id, _ = lido_contracts.create_voting(
         evm_script=encode_call_script(
-            submit_proposals([
-                (
-                    [(
-                        agent.address,
-                        agent.forward.encode_input(
-                            encode_call_script(
-                                [
-                                    (
-                                        mev_boost_relay_allowed_list.address,
-                                        mev_boost_relay_allowed_list.set_manager.encode_input(evm_executor),
-                                    )
-                                ]
-                            ),
-                        ),
-                    )], ""
-                )
-            ])
+            submit_proposals(
+                [
+                    (
+                        [
+                            (
+                                agent.address,
+                                agent.forward.encode_input(
+                                    encode_call_script(
+                                        [
+                                            (
+                                                mev_boost_relay_allowed_list.address,
+                                                mev_boost_relay_allowed_list.set_manager.encode_input(evm_executor),
+                                            )
+                                        ]
+                                    ),
+                                ),
+                            )
+                        ],
+                        "Set manager for MEV Boost Relay Allowed List to EVMScriptExecutor",
+                    )
+                ]
+            )
         ),
         description="Set manager for MEV Boost Relay Allowed List to EVMScriptExecutor",
         tx_params={"from": agent.address},

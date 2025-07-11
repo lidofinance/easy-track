@@ -22,11 +22,6 @@ ldo_vote_executors_for_tests = {
         "0xb8d83908aab38a159f3da47a59d84db8e1838712",
         "0xa2dfc431297aee387c05beef507e5335e684fbcd",
     ],
-    "goerli": [
-        "0xa5f1d7d49f581136cf6e58b32cbe9a2039c48ba1",
-        "0x4333218072d5d7008546737786663c38b4d561a4",
-        "0xfda7e01b2718c511bf016030010572e833c7ae6a",
-    ],
     "holesky": [
         "0xaa6bfBCD634EE744CB8FE522b29ADD23124593D3",
         "0xba59a84c6440e8cccfdb5448877e26f1a431fc8b",

@@ -23,12 +23,6 @@ def create_calldata(data):
 
 @pytest.fixture(scope="module")
 def deactivate_node_operators_factory(owner, node_operators_registry, acl, voting, agent):
-    acl.grantPermission(
-        voting,
-        node_operators_registry,
-        web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": agent},
-    )
     for id, manager in enumerate(MANAGERS):
         acl.grantPermissionP(
             manager,
@@ -88,17 +82,17 @@ def test_operator_id_out_of_range(owner, deactivate_node_operators_factory, node
         deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_node_operator_invalid_state(owner, deactivate_node_operators_factory, node_operators_registry, voting):
+def test_node_operator_invalid_state(owner, deactivate_node_operators_factory, node_operators_registry, agent):
     "Must revert with message 'WRONG_OPERATOR_ACTIVE_STATE' when operator already active"
 
-    node_operators_registry.deactivateNodeOperator(0, {"from": voting})
+    node_operators_registry.deactivateNodeOperator(0, {"from": agent})
 
     with reverts("WRONG_OPERATOR_ACTIVE_STATE"):
         CALLDATA = create_calldata([(0, MANAGERS[0])])
         deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_manager_has_no_role(owner, deactivate_node_operators_factory, node_operators_registry, acl, voting):
+def test_manager_has_no_role(owner, deactivate_node_operators_factory):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has no MANAGE_SIGNING_KEYS role"
 
     CALLDATA = create_calldata([(2, MANAGERS[0])])
@@ -177,7 +171,7 @@ def test_create_evm_script(owner, deactivate_node_operators_factory, node_operat
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(node_operators_registry, deactivate_node_operators_factory):
+def test_decode_evm_script_call_data(deactivate_node_operators_factory):
     "Must decode EVMScript call data correctly"
     input_params = [(id, manager) for id, manager in enumerate(MANAGERS)]
 

@@ -911,22 +911,29 @@ def test_set_limit_parameters_by_aragon_agent_via_voting(lido_contracts, allowed
     set_limit_parameters_voting_id, _ = lido_contracts.create_voting(
         evm_script=evm_script.encode_call_script(
             submit_proposals(
-                [([
+                [
                     (
-                        lido_contracts.aragon.agent.address,
-                        lido_contracts.aragon.agent.forward.encode_input(
-                            evm_script.encode_call_script(
-                                [(
-                                    allowed_recipients_registry.address,
-                                    allowed_recipients_registry.setLimitParameters.encode_input(
-                                        period_limit,
-                                        period_duration,
+                        [
+                            (
+                                lido_contracts.aragon.agent.address,
+                                lido_contracts.aragon.agent.forward.encode_input(
+                                    evm_script.encode_call_script(
+                                        [
+                                            (
+                                                allowed_recipients_registry.address,
+                                                allowed_recipients_registry.setLimitParameters.encode_input(
+                                                    period_limit,
+                                                    period_duration,
+                                                ),
+                                            )
+                                        ]
                                     )
-                                )]
+                                ),
                             )
-                        ),
+                        ],
+                        "Set limit parameters",
                     )
-                ],"")]
+                ]
             )
         ),
         description="Set limit parameters",

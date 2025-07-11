@@ -1,6 +1,6 @@
 from brownie import ZERO_ADDRESS, reverts
 from utils.evm_script import encode_calldata, encode_call_script
-from utils.hardhat_helpers import get_last_block_revert_reason
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 
 def test_deploy(owner, RemoveAllowedRecipient, allowed_recipients_registry):
@@ -21,9 +21,7 @@ def test_deploy_zero_trusted_caller(owner, RemoveAllowedRecipient, allowed_recip
         with reverts(revert_reason):
             owner.deploy(RemoveAllowedRecipient, ZERO_ADDRESS, registry)
     except Exception as e:
-        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
-            assert revert_reason == get_last_block_revert_reason()
-        else:
+        if revert_reason != get_last_tx_revert_reason():
             raise e
 
 

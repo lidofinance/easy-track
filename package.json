@@ -4,6 +4,7 @@
   "repository": "git@github.com:lidofinance/easy-track.git",
   "author": "Bogdan Kovtun <psirex48@gmail.com>",
   "license": "GPL-3.0",
+  "packageManager": "npm@10.5.0",
   "dependencies": {
     "@openzeppelin/contracts-v4.3.2": "npm:@openzeppelin/contracts@4.3.2",
     "ethlint": "^1.2.5",
@@ -20,7 +21,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn lint:fix"
+      "pre-commit": "npm run lint:fix"
     }
   },
   "devDependencies": {

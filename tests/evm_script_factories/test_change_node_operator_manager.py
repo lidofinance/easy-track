@@ -27,13 +27,7 @@ def create_calldata(data):
 
 
 @pytest.fixture(scope="module")
-def change_node_operator_managers_factory(owner, node_operators_registry, acl, voting, agent):
-    acl.grantPermission(
-        voting,
-        node_operators_registry,
-        web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": agent},
-    )
+def change_node_operator_managers_factory(owner, node_operators_registry, acl, agent):
     for id, manager in enumerate(MANAGERS):
         acl.grantPermissionP(
             manager,

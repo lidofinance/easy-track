@@ -3,6 +3,7 @@ from eth_abi import encode
 from brownie import web3, interface
 from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.evm_script import encode_call_script
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
 clusters = [
     {
@@ -37,7 +38,9 @@ def simple_dvt(
 
     staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
-    staking_router.addStakingModule("Simple DVT", simple_dvt_contract, 10_000, 10_000, 500, 500, 150, 25, {"from": agent})
+    staking_router.addStakingModule(
+        "Simple DVT", simple_dvt_contract, 10_000, 10_000, 500, 500, 150, 25, {"from": agent}
+    )
 
     acl.createPermission(
         agent,
@@ -51,7 +54,7 @@ def simple_dvt(
 
 
 @pytest.fixture(scope="module")
-def grant_roles(acl, et_contracts, agent, voting, simple_dvt):
+def grant_roles(acl, et_contracts, agent, simple_dvt):
     # Grant roles
     acl.grantPermission(
         et_contracts.evm_script_executor,
@@ -92,6 +95,7 @@ def test_simple_make_action(
     easytrack_executor,
     add_node_operators_factory,
     grant_roles,
+    lido_contracts,
     dual_governance_admin_executor,
     stranger,
     change_node_operator_manager_factory,
@@ -131,31 +135,54 @@ def test_simple_make_action(
     # Renounce MANAGE_SIGNING_KEYS role manager
 
     et_contracts.evm_script_executor.setEasyTrack(agent, {"from": voting})
-    set_permission_manager_calldata = (
-        et_contracts.evm_script_executor.executeEVMScript.encode_input(
-            encode_call_script(
+
+    set_permission_manager_calldata = et_contracts.evm_script_executor.executeEVMScript.encode_input(
+        encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.grantPermission.encode_input(
+                        agent.address,
+                        simple_dvt,
+                        simple_dvt.MANAGE_SIGNING_KEYS(),
+                    ),
+                ),
+            ]
+        ),
+    )
+    vote_id, _ = lido_contracts.create_voting(
+        evm_script=encode_call_script(
+            submit_proposals(
                 [
                     (
-                        acl.address,
-                        acl.grantPermission.encode_input(
-                            agent.address,
-                            simple_dvt,
-                            simple_dvt.MANAGE_SIGNING_KEYS(),
-                        ),
-                    ),
+                        [
+                            (
+                                agent.address,
+                                agent.forward.encode_input(
+                                    encode_call_script(
+                                        [
+                                            (
+                                                et_contracts.evm_script_executor.address,
+                                                set_permission_manager_calldata
+                                            )
+                                        ]
+                                    )
+                                ),
+                            )
+                        ],
+                        "Grant MANAGE_SIGNING_KEYS permission to agent on SDVT",
+                    )
                 ]
             ),
-        )
+        ),
+        description="Grant MANAGE_SIGNING_KEYS permission to agent on SDVT",
+        tx_params={"from": agent},
     )
-    agent.execute(
-        et_contracts.evm_script_executor,
-        0,
-        set_permission_manager_calldata,
-        {"from": dual_governance_admin_executor},
-    )
-    et_contracts.evm_script_executor.setEasyTrack(
-        et_contracts.easy_track, {"from": voting}
-    )
+
+    lido_contracts.execute_voting(vote_id)
+    process_pending_proposals()
+    
+    et_contracts.evm_script_executor.setEasyTrack(et_contracts.easy_track, {"from": voting})
 
     assert acl.getPermissionManager(simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == et_contracts.evm_script_executor
     assert acl.hasPermission(agent, simple_dvt, simple_dvt.MANAGE_SIGNING_KEYS()) == True

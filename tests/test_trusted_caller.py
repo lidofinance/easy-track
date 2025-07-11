@@ -1,5 +1,5 @@
 from brownie import reverts, ZERO_ADDRESS
-from utils.hardhat_helpers import get_last_block_revert_reason
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 
 def test_deploy_zero_address(owner, TrustedCaller):
@@ -9,9 +9,7 @@ def test_deploy_zero_address(owner, TrustedCaller):
         with reverts(revert_reason):
             owner.deploy(TrustedCaller, ZERO_ADDRESS)
     except Exception as e:
-        if isinstance(e, ValueError) and "is not a valid ETH address" in str(e):
-            assert revert_reason == get_last_block_revert_reason()
-        else:
+        if revert_reason != get_last_tx_revert_reason():
             raise e
 
 def test_deploy(owner, accounts, TrustedCaller):

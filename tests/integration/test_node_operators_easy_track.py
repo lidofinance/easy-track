@@ -62,25 +62,34 @@ def test_node_operators_easy_track_happy_path(
 
     add_set_staking_limit_permissions_voting_id, _ = lido_contracts.create_voting(
         evm_script=evm_script.encode_call_script(
-            submit_proposals([([
-                (
-                    agent.address,
-                    agent.forward.encode_input(
-                        evm_script.encode_call_script(
-                            [(
-                                acl.address,
-                                acl.grantPermission.encode_input(
-                                    evm_script_executor,
-                                    node_operators_registry,
-                                    node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE(),
+            submit_proposals(
+                [
+                    (
+                        [
+                            (
+                                agent.address,
+                                agent.forward.encode_input(
+                                    evm_script.encode_call_script(
+                                        [
+                                            (
+                                                acl.address,
+                                                acl.grantPermission.encode_input(
+                                                    evm_script_executor,
+                                                    node_operators_registry,
+                                                    node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE(),
+                                                ),
+                                            )
+                                        ]
+                                    )
                                 ),
-                            )]
-                        )
-                    ),
-                )], "")
-            ]),
+                            )
+                        ],
+                        "Grant SET_NODE_OPERATOR_LIMIT_ROLE permission to EVMScriptExecutor",
+                    )
+                ]
+            ),
         ),
-        description="Grant permissions to EVMScriptExecutor to set staking limits",
+        description="Grant SET_NODE_OPERATOR_LIMIT_ROLE permission to EVMScriptExecutor",
         tx_params={"from": agent},
     )
 
@@ -93,36 +102,45 @@ def test_node_operators_easy_track_happy_path(
         node_operator["name"], node_operator["address"]
     )
     add_node_operator_evm_script = evm_script.encode_call_script(
-        submit_proposals([(
+        submit_proposals(
             [
                 (
-                    agent.address,
-                    agent.forward.encode_input(
-                        evm_script.encode_call_script(
-                            [(
-                                acl.address,
-                                acl.grantPermission.encode_input(
-                                    agent,
-                                    node_operators_registry,
-                                    node_operators_registry.MANAGE_NODE_OPERATOR_ROLE(),
-                                ),
-                            )]
-                        )
-                    ),
-                ),
-                (
-                    agent.address,
-                    agent.forward.encode_input(
-                        evm_script.encode_call_script(
-                            [(
-                                node_operators_registry.address,
-                                add_node_operator_calldata,
-                            )]
-                        )
-                    ),
+                    [
+                        (
+                            agent.address,
+                            agent.forward.encode_input(
+                                evm_script.encode_call_script(
+                                    [
+                                        (
+                                            acl.address,
+                                            acl.grantPermission.encode_input(
+                                                agent,
+                                                node_operators_registry,
+                                                node_operators_registry.MANAGE_NODE_OPERATOR_ROLE(),
+                                            ),
+                                        )
+                                    ]
+                                )
+                            ),
+                        ),
+                        (
+                            agent.address,
+                            agent.forward.encode_input(
+                                evm_script.encode_call_script(
+                                    [
+                                        (
+                                            node_operators_registry.address,
+                                            add_node_operator_calldata,
+                                        )
+                                    ]
+                                )
+                            ),
+                        ),
+                    ],
+                    "Grant MANAGE_NODE_OPERATOR_ROLE permission to agent and add node operator",
                 )
-            ], "")
-        ]),
+            ]
+        ),
     )
 
     add_node_operators_voting_id, _ = lido_contracts.create_voting(

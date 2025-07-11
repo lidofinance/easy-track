@@ -4,6 +4,7 @@ from brownie import web3, interface
 from utils.evm_script import encode_call_script
 from utils.permission_parameters import Op, Param, encode_permission_params
 from utils.test_helpers import set_account_balance
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
 clusters = [
     {
@@ -32,7 +33,6 @@ signing_keys = {
 def simple_dvt(
     node_operators_registry,
     kernel,
-    voting,
     locator,
     staking_router,
     agent,
@@ -79,7 +79,7 @@ def test_simple_dvt_scenario(
     acl,
     agent,
     easytrack_executor,
-    dual_governance_admin_executor,
+    lido_contracts,
     add_node_operators_factory,
     activate_node_operators_factory,
     deactivate_node_operators_factory,
@@ -372,30 +372,53 @@ def test_simple_dvt_scenario(
     )
 
     # Renounce MANAGE_SIGNING_KEYS role manager
-    set_permission_manager_calldata = (
-        et_contracts.evm_script_executor.executeEVMScript.encode_input(
-            encode_call_script(
+    et_contracts.evm_script_executor.setEasyTrack(agent, {"from": voting})
+
+    set_permission_manager_calldata = et_contracts.evm_script_executor.executeEVMScript.encode_input(
+        encode_call_script(
+            [
+                (
+                    acl.address,
+                    acl.setPermissionManager.encode_input(
+                        agent.address,
+                        simple_dvt.address,
+                        web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
+                    ),
+                ),
+            ]
+        ),
+    )
+    vote_id, _ = lido_contracts.create_voting(
+        evm_script=encode_call_script(
+            submit_proposals(
                 [
                     (
-                        acl.address,
-                        acl.setPermissionManager.encode_input(
-                            agent,
-                            simple_dvt,
-                            web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-                        ),
+                        [
+                            (
+                                agent.address,
+                                agent.forward.encode_input(
+                                    encode_call_script(
+                                        [
+                                            (
+                                                et_contracts.evm_script_executor.address,
+                                                set_permission_manager_calldata
+                                            )
+                                        ]
+                                    )
+                                ),
+                            )
+                        ],
+                        "Set permission manager of MANAGE_SIGNING_KEYS to agent on SDVT",
                     )
                 ]
             ),
-        )
+        ),
+        description="Set permission manager of MANAGE_SIGNING_KEYS to agent on SDVT",
+        tx_params={"from": agent},
     )
 
-    et_contracts.evm_script_executor.setEasyTrack(agent, {"from": voting})
-    agent.execute(
-        et_contracts.evm_script_executor,
-        0,
-        set_permission_manager_calldata,
-        {"from": dual_governance_admin_executor},
-    )
+    lido_contracts.execute_voting(vote_id)
+    process_pending_proposals()
     et_contracts.evm_script_executor.setEasyTrack(
         et_contracts.easy_track, {"from": voting}
     )
