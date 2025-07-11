@@ -133,9 +133,9 @@ Script requires next ENV variables to be set:
 
 ## Tests
 
-Set infura project ID
+Set rpc url:
 ```bash
-export WEB3_INFURA_PROJECT_ID=<YOUR_PROJECT_ID>
+export MAINNET_RPC_URL=<YOUR_RPC_URL>
 ```
 
 The fastest way to run the tests is:
