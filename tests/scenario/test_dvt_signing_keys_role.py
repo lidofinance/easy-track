@@ -19,7 +19,6 @@ clusters = [
 def simple_dvt(
     node_operators_registry,
     kernel,
-    voting,
     locator,
     staking_router,
     agent,
@@ -94,9 +93,7 @@ def test_simple_make_action(
     voting,
     easytrack_executor,
     add_node_operators_factory,
-    grant_roles,
     lido_contracts,
-    dual_governance_admin_executor,
     stranger,
     change_node_operator_manager_factory,
 ):

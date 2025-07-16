@@ -60,7 +60,8 @@ To use the tools that this project provides, please pull the repository from Git
 ```bash
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
-npm install
+nvm install
+npm ci
 
 poetry install
 poetry run brownie networks import network-config.yaml True

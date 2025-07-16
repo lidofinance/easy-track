@@ -51,7 +51,26 @@ def addresses(network="mainnet"):
                 reward_programs_registry=None,
             ),
         )
-    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, holesky.""")
+    if network == "hoodi" or network == "hoodi-fork":
+        return EasyTrackSetup(
+            easy_track="0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+            evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
+            increase_node_operator_staking_limit=None,
+            top_up_lego_program=None,
+            reward_programs=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+            referral_partners=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+        )
+    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, hoodi, holesky.""")
 
 
 def contract_or_none(contract: Contract, addr: Optional[str]) -> Optional[Contract]:

@@ -72,7 +72,7 @@ def addresses(network=DEFAULT_NETWORK):
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d"
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
 
 
@@ -85,8 +85,10 @@ def allowed_recipients_builder(network=DEFAULT_NETWORK):
         return brownie.AllowedRecipientsBuilder.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
     if network == "holesky" or network == "holesky-fork":
         return brownie.AllowedRecipientsBuilder.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
+    if network == "hoodi" or network == "hoodi-fork":
+        return brownie.AllowedRecipientsBuilder.at("0xC20129f1dd4DFeD023a6d6A8de9d54A7b61af5CC")
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
 
 

@@ -27,6 +27,11 @@ ldo_vote_executors_for_tests = {
         "0xba59a84c6440e8cccfdb5448877e26f1a431fc8b",
         "0x1d835790d93a28fb30d998c0cb27426e5d2d7c8c",
     ],
+    "hoodi": [
+        "0xD500a8aDB182F55741E267730dfbfb4F1944C205",
+        "0x0534aA41907c9631fae990960bCC72d75fA7cfeD",
+        "0xc3C65cB7aa6D36F051f875708b8E17f9a0B210eD",
+    ],
 }
 
 
