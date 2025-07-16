@@ -3,14 +3,16 @@ from typing import Optional
 
 import pytest
 import brownie
-from brownie import chain, history, network
-from brownie import web3
+from brownie import chain, network, NodeOperatorsRegistryStub, web3
+from eth_abi import encode
 
 import constants
 from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
 from utils.test_helpers import set_account_balance
+from utils.submit_exit_requests_test_helpers import MAX_REQUESTS
+from utils.submit_exit_requests_test_helpers import make_test_bytes
 
 ####################################
 # Brownie Blockchain State Snapshots
@@ -155,6 +157,12 @@ def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProg
         [voting, evm_script_executor_stub],
         [voting, evm_script_executor_stub],
     )
+
+
+@pytest.fixture(scope="module")
+def validators_exit_bus_oracle(lido_contracts):
+    """Validator exit bus oracle contract."""
+    return lido_contracts.validators_exit_bus_oracle
 
 
 ############
@@ -321,6 +329,54 @@ def top_up_allowed_recipients(
     return top_up_factory
 
 
+@pytest.fixture(scope="module")
+def validators_exit_bus_oracle_stub(owner, ValidatorExitBusOracleStub):
+    return owner.deploy(ValidatorExitBusOracleStub)
+
+
+@pytest.fixture(scope="module")
+def submit_exit_request_hashes_utils_wrapper(owner, SubmitExitRequestHashesUtilsWrapper):
+    """A wrapper for validator exit request utilities."""
+    return owner.deploy(SubmitExitRequestHashesUtilsWrapper)
+
+
+@pytest.fixture(scope="module")
+def staking_router_stub(owner, StakingRouterStub):
+    """A stub for the staking router, used in tests."""
+    return owner.deploy(StakingRouterStub)
+
+
+@pytest.fixture(scope="module")
+def sdvt_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+    registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
+    staking_router_stub.setStakingModule(
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"], registry.address, {"from": owner}
+    )
+
+    registry.setSigningKeys(
+        submit_exit_hashes_factory_config["node_op_id"],
+        b"".join(submit_exit_hashes_factory_config["pubkeys"]),
+    )
+
+    return registry
+
+
+@pytest.fixture(scope="module")
+def curated_registry_stub(owner, node_operator, staking_router_stub, submit_exit_hashes_factory_config):
+    """A stub for the curated registry, used in tests."""
+    registry = NodeOperatorsRegistryStub.deploy(node_operator, {"from": owner})
+    staking_router_stub.setStakingModule(
+        submit_exit_hashes_factory_config["module_ids"]["curated"], registry.address, {"from": owner}
+    )
+
+    registry.setSigningKeys(
+        submit_exit_hashes_factory_config["node_op_id"],
+        b"".join(submit_exit_hashes_factory_config["pubkeys"]),
+    )
+
+    return registry
+
+
 ##########
 # INTERFACES
 ##########
@@ -392,6 +448,16 @@ def staking_router(lido_contracts):
 @pytest.fixture(scope="module")
 def locator(lido_contracts):
     return lido_contracts.locator
+
+
+@pytest.fixture(scope="module")
+def sdvt_registry(lido_contracts):
+    return lido_contracts.simple_dvt
+
+
+@pytest.fixture(scope="module")
+def curated_registry(lido_contracts):
+    return lido_contracts.curated_module
 
 
 @pytest.fixture(scope="module")
@@ -479,6 +545,54 @@ def vote_id_from_env() -> Optional[int]:
 @pytest.fixture(scope="module")
 def bokkyPooBahsDateTimeContract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def submit_exit_hashes_factory_config():
+    pubkeys = []
+    for i in range(1, MAX_REQUESTS + 1):
+        pubkeys.append(make_test_bytes(i))
+
+    return {
+        "pubkeys": pubkeys,
+        "data_format": 1,
+        "max_requests_per_motion": MAX_REQUESTS,
+        "max_pubkey_length": 48,
+        "node_op_id": 0,
+        "validator_index": 0,
+        "module_ids": {
+            "curated": 1,
+            "sdvt": 2,
+        },
+    }
+
+
+class ExitRequestInput:
+    def __init__(self, module_id, node_op_id, val_index, val_pubkey, val_pubkey_index):
+        self.module_id = module_id
+        self.node_op_id = node_op_id
+        self.val_index = val_index
+        self.val_pubkey = val_pubkey
+        self.val_pubkey_index = val_pubkey_index
+
+    def to_tuple(self):
+        return (self.module_id, self.node_op_id, self.val_index, self.val_pubkey, self.val_pubkey_index)
+
+
+@pytest.fixture(scope="module")
+def exit_request_input_factory():
+    """Factory for creating ExitRequestInput instances."""
+
+    def factory(module_id, node_op_id, val_index, val_pubkey, val_pubkey_index):
+        return ExitRequestInput(
+            module_id=module_id,
+            node_op_id=node_op_id,
+            val_index=val_index,
+            val_pubkey=val_pubkey,
+            val_pubkey_index=val_pubkey_index,
+        )
+
+    return factory
 
 
 @pytest.fixture(scope="module")

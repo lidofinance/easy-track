@@ -200,5 +200,6 @@ def advance_chain_time_to_middle_of_the_next_period(period_duration: int):
 def get_timestamp_from_date(year, month, day, hour=0, min=0, sec=0):
     return datetime(year, month, day, hour, min, sec, tzinfo=timezone.utc).timestamp()
 
-def set_account_balance(address, amount=1 * 10 ** 18):
+
+def set_account_balance(address, amount=1 * 10**18):
     web3.provider.make_request("evm_setAccountBalance", [address, amount])

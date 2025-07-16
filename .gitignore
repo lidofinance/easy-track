@@ -11,3 +11,5 @@ reports/
 node_modules
 /contracts_flattened
 logs
+.idea/
+.yarn/
