@@ -82,6 +82,9 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
             locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
+            curated_module="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
+            mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
+            validators_exit_bus_oracle="0x8664d394C2B3278F26A1B44B967aEf99707eeAB2",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
