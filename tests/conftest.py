@@ -11,6 +11,7 @@ from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
 from utils.test_helpers import set_account_balance
+from utils.submit_exit_requests_test_helpers import MAX_REQUESTS
 from utils.submit_exit_requests_test_helpers import make_test_bytes
 
 ####################################
@@ -156,6 +157,12 @@ def reward_programs_registry(owner, voting, evm_script_executor_stub, RewardProg
         [voting, evm_script_executor_stub],
         [voting, evm_script_executor_stub],
     )
+
+
+@pytest.fixture(scope="module")
+def validators_exit_bus_oracle(lido_contracts):
+    """Validator exit bus oracle contract."""
+    return lido_contracts.validators_exit_bus_oracle
 
 
 ############
@@ -323,7 +330,7 @@ def top_up_allowed_recipients(
 
 
 @pytest.fixture(scope="module")
-def validator_exit_bus_oracle(owner, ValidatorExitBusOracleStub):
+def validators_exit_bus_oracle_stub(owner, ValidatorExitBusOracleStub):
     return owner.deploy(ValidatorExitBusOracleStub)
 
 
@@ -543,13 +550,13 @@ def bokkyPooBahsDateTimeContract():
 @pytest.fixture(scope="module")
 def submit_exit_hashes_factory_config():
     pubkeys = []
-    for i in range(1, 201):
+    for i in range(1, MAX_REQUESTS + 1):
         pubkeys.append(make_test_bytes(i))
 
     return {
         "pubkeys": pubkeys,
         "data_format": 1,
-        "max_requests_per_motion": 200,
+        "max_requests_per_motion": MAX_REQUESTS,
         "max_pubkey_length": 48,
         "node_op_id": 0,
         "validator_index": 0,

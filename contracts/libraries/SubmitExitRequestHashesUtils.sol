@@ -5,8 +5,6 @@ pragma solidity ^0.8.4;
 
 import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IStakingRouter.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IValidatorsExitBusOracle.sol";
 import "../interfaces/IStakingRouter.sol";
 
 /// @author swissarmytowel
@@ -45,10 +43,11 @@ library SubmitExitRequestHashesUtils {
     string private constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
     string private constant ERROR_MAX_REQUESTS_PER_MOTION_EXCEEDED =
         "MAX_REQUESTS_PER_MOTION_EXCEEDED";
-    string private constant ERROR_DUPLICATE_EXIT_REQUESTS = "DUPLICATE_EXIT_REQUESTS";
     // Error messages for validator public key validation
     string private constant ERROR_INVALID_PUBKEY = "INVALID_PUBKEY";
     string private constant ERROR_INVALID_PUBKEY_LENGTH = "INVALID_PUBKEY_LENGTH";
+    string private constant ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER =
+        "INVALID_EXIT_REQUESTS_SORT_ORDER";
 
     // Error messages for node operator ID validation
     string private constant ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST =
@@ -57,10 +56,6 @@ library SubmitExitRequestHashesUtils {
         "EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR";
     string private constant ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE =
         "EXECUTOR_NOT_PERMISSIONED_ON_MODULE";
-
-    // Error messages for integer overflows
-    string private constant ERROR_MODULE_ID_OVERFLOW = "MODULE_ID_OVERFLOW";
-    string private constant ERROR_NODE_OP_ID_OVERFLOW = "NODE_OPERATOR_ID_OVERFLOW";
 
     // -------------
     // INTERNAL METHODS
@@ -95,7 +90,7 @@ library SubmitExitRequestHashesUtils {
     }
 
     /// @notice Validates the exit requests input data.
-    /// @param _exitRequests Array of exit requests to validate
+    /// @param _exitRequests Array of exit requests to validate (must be sorted by moduleId, nodeOpId, valIndex)
     /// @param _nodeOperatorsRegistry Address of the NodeOperatorsRegistry contract
     /// @param _stakingRouter Address of the StakingRouter contract
     /// @param _creator Address of the creator of the exit requests (used for permission checks for Curated module).
@@ -134,22 +129,27 @@ library SubmitExitRequestHashesUtils {
         uint256 nodeOperatorsCount = _nodeOperatorsRegistry.getNodeOperatorsCount();
 
         // Prepare array for deduplication hashes
-        bytes32[] memory seenPubkeyHashes = new bytes32[](length);
         bool shouldCheckCreator = _creator != address(0);
+        uint256 prevDataWithoutPubkey = 0;
 
         // Iterate through all exit requests to validate them
         for (uint256 i; i < length; ) {
             ExitRequestInput memory _input = _exitRequests[i];
 
-            // Check that the module ID, node operator ID, are within the valid ranges as they are stored as uint256 but have smaller limits
-            require(_input.moduleId <= type(uint24).max, ERROR_MODULE_ID_OVERFLOW);
-            require(_input.nodeOpId <= type(uint40).max, ERROR_NODE_OP_ID_OVERFLOW);
             // Node operator ids are ordered from 0 to nodeOperatorsCount - 1, so we check that the id is less than the count
             require(_input.nodeOpId < nodeOperatorsCount, ERROR_NODE_OPERATOR_ID_DOES_NOT_EXIST);
             // Check that the validator public key is exactly 48 bytes long
             require(_input.valPubkey.length == PUBKEY_LENGTH, ERROR_INVALID_PUBKEY_LENGTH);
             // Check that all requests have the same module ID, which ensures that all requests are for the same staking module
             require(_input.moduleId == moduleId, ERROR_EXECUTOR_NOT_PERMISSIONED_ON_MODULE);
+            
+            // Compute dataWithoutPubkey for sorting validation
+            // Layout: | 128 bits: zeros | 24 bits: moduleId | 40 bits: nodeOpId | 64 bits: valIndex |
+            uint256 dataWithoutPubkey = (_input.moduleId << (64 + 40)) | (_input.nodeOpId << 64) | _input.valIndex;
+            
+            // Check that the combined data is in ascending order. Strict comparison is used to ensure that there are no duplicates.
+            require(dataWithoutPubkey > prevDataWithoutPubkey, ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER);
+            prevDataWithoutPubkey = dataWithoutPubkey;
 
             // Check that the node operator ID matches the previous request's node operator ID if a creator is specified
             // As node operators can trigger exist requests only for their own ids, they should match.
@@ -172,16 +172,6 @@ library SubmitExitRequestHashesUtils {
 
             // Compare the keccak256 hash of the provided public key with the keccak256 hash of the signing key
             require(keccak256(key) == providedPubkeyHash, ERROR_INVALID_PUBKEY);
-
-            for (uint256 j; j < i; ) {
-                require(seenPubkeyHashes[j] != providedPubkeyHash, ERROR_DUPLICATE_EXIT_REQUESTS);
-
-                unchecked {
-                    ++j;
-                }
-            }
-
-            seenPubkeyHashes[i] = providedPubkeyHash;
 
             unchecked {
                 ++i;

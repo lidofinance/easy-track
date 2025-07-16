@@ -52,7 +52,7 @@ def test_validation_passes_on_correct_request_multiple(
     request2 = exit_request_input_factory(
         submit_exit_hashes_factory_config["module_ids"]["sdvt"],
         node_op_id2,  # Use a different node operator ID
-        submit_exit_hashes_factory_config["validator_index"],
+        submit_exit_hashes_factory_config["validator_index"] + 1,
         submit_exit_hashes_factory_config["pubkeys"][1],
         0,
     )
@@ -113,7 +113,7 @@ def test_validation_reverts_if_creator_not_node_operator_multiple(
     request2 = exit_request_input_factory(
         submit_exit_hashes_factory_config["module_ids"]["curated"],
         node_op_id,  # Use a different node operator ID
-        submit_exit_hashes_factory_config["validator_index"],
+        submit_exit_hashes_factory_config["validator_index"] + 1,
         submit_exit_hashes_factory_config["pubkeys"][1],
         0,
     )
@@ -403,9 +403,47 @@ def test_validation_reverts_on_duplicate_exit_requests(
     # Create a list with duplicates
     requests_with_duplicates = [request.to_tuple(), request.to_tuple()]
 
-    with reverts("DUPLICATE_EXIT_REQUESTS"):
+    with reverts("INVALID_EXIT_REQUESTS_SORT_ORDER"):
         submit_exit_request_hashes_utils_wrapper.validateExitRequests(
             requests_with_duplicates, sdvt_registry_stub, staking_router_stub, ZERO_ADDRESS
+        )
+
+
+def test_validation_reverts_on_wrong_requests_index_sort_order(
+    submit_exit_request_hashes_utils_wrapper,
+    exit_request_input_factory,
+    submit_exit_hashes_factory_config,
+    sdvt_registry_stub,
+    staking_router_stub,
+):
+    """Test that a request with a wrong validator index sort order reverts."""
+    # Add a second node operator
+    node_op_id_1 = add_node_operator(
+        sdvt_registry_stub,
+        submit_exit_hashes_factory_config["pubkeys"][1],
+    )
+
+    request1 = exit_request_input_factory(
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"],  # moduleId = 2
+        node_op_id_1,  # nodeOpId = 1 (higher node operator)
+        5,  # valIndex = 5 (lower validator index)
+        submit_exit_hashes_factory_config["pubkeys"][1],
+        0,
+    )
+    request2 = exit_request_input_factory(
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"],  # moduleId = 2 (same)
+        submit_exit_hashes_factory_config["node_op_id"],  # nodeOpId = 0 (lower node operator)
+        10,  # valIndex = 10 (higher validator index)
+        submit_exit_hashes_factory_config["pubkeys"][0],
+        0,
+    )
+
+    with reverts("INVALID_EXIT_REQUESTS_SORT_ORDER"):
+        submit_exit_request_hashes_utils_wrapper.validateExitRequests(
+            [request1.to_tuple(), request2.to_tuple()],
+            sdvt_registry_stub,
+            staking_router_stub,
+            ZERO_ADDRESS,
         )
 
 
@@ -432,7 +470,8 @@ def test_validation_reverts_on_module_id_overflow(
         0,
     )
 
-    with reverts("MODULE_ID_OVERFLOW"):
+    # module id in the staking router is rounded to uint24, so it will not find the overflowed module id
+    with reverts("EXECUTOR_NOT_PERMISSIONED_ON_MODULE"):
         submit_exit_request_hashes_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
             sdvt_registry_stub,
@@ -451,7 +490,9 @@ def test_validation_reverts_on_node_op_id_overflow(
     """Test that a request with a nodeOpId exceeding uint40 reverts."""
     invalid_node_op_id = 2**40  # Set the nodeOpId to a value that exceeds uint40
 
-    sdvt_registry_stub.setDesiredNodeOperatorCount(invalid_node_op_id)  # Set the count to a value that exceeds uint40
+    sdvt_registry_stub.setDesiredNodeOperatorCount(
+        invalid_node_op_id + 1
+    )  # Set the count to a value that exceeds uint40
 
     # Create a request with nodeOpId exceeding uint40
     request = exit_request_input_factory(
@@ -462,7 +503,8 @@ def test_validation_reverts_on_node_op_id_overflow(
         0,
     )
 
-    with reverts("NODE_OPERATOR_ID_OVERFLOW"):
+    # node operator id in the registry is rounded to uint40, so it will not find the overflowed node operator id
+    with reverts("NODE_OPERATOR_ID_DOES_NOT_EXIST"):
         submit_exit_request_hashes_utils_wrapper.validateExitRequests(
             [request.to_tuple()],
             sdvt_registry_stub,
