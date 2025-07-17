@@ -33,7 +33,7 @@ RECIPIENT_TITLE = "New Allowed Recipient"
 # ------------
 
 
-def test_registry_initial_state(AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract):
+def test_registry_initial_state(AllowedRecipientsRegistry, owner, bokkyPooBahsDateTimeContract):
     add_recipient_role_holder = accounts[6]
     remove_recipient_role_holder = accounts[7]
     set_parameters_role_holder = accounts[8]
@@ -74,7 +74,7 @@ def test_registry_initial_state(AllowedRecipientsRegistry, accounts, owner, bokk
     assert len(registry.getAllowedRecipients()) == 0
 
 
-def test_registry_zero_admin_allowed(AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract):
+def test_registry_zero_admin_allowed(AllowedRecipientsRegistry, owner, bokkyPooBahsDateTimeContract):
     """Checking no revert"""
     owner.deploy(
         AllowedRecipientsRegistry,
@@ -87,7 +87,7 @@ def test_registry_zero_admin_allowed(AllowedRecipientsRegistry, accounts, owner,
     )
 
 
-def test_registry_none_role_holders_allowed(AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract):
+def test_registry_none_role_holders_allowed(AllowedRecipientsRegistry, owner, bokkyPooBahsDateTimeContract):
     """Checking no revert"""
     owner.deploy(
         AllowedRecipientsRegistry,
@@ -101,7 +101,7 @@ def test_registry_none_role_holders_allowed(AllowedRecipientsRegistry, accounts,
 
 
 def test_registry_zero_booky_poo_bahs_data_time_address_allowed(
-    AllowedRecipientsRegistry, accounts, owner, bokkyPooBahsDateTimeContract
+    AllowedRecipientsRegistry, owner
 ):
     """Checking no revert"""
     owner.deploy(
@@ -195,7 +195,7 @@ def test_rights_are_not_shared_by_different_roles(
             registry.updateSpentAmount(1, {"from": caller})
 
 
-def test_multiple_role_holders(AllowedRecipientsRegistry, owner, voting, accounts, bokkyPooBahsDateTimeContract):
+def test_multiple_role_holders(AllowedRecipientsRegistry, owner, voting, bokkyPooBahsDateTimeContract):
     deployer = owner
     add_role_holders = (accounts[2], accounts[3])
     remove_role_holders = (accounts[4], accounts[5])
@@ -213,7 +213,7 @@ def test_multiple_role_holders(AllowedRecipientsRegistry, owner, voting, account
     )
     recipient_title = "New Allowed Recipient"
 
-    for caller in accounts:
+    for caller in accounts[0:20]:
         if not caller in add_role_holders:
             with reverts(access_revert_message(caller, ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)):
                 registry.addRecipient(caller, recipient_title, {"from": caller})
@@ -223,14 +223,14 @@ def test_multiple_role_holders(AllowedRecipientsRegistry, owner, voting, account
     for recipient in accounts[5:10]:
         registry.addRecipient(recipient, recipient_title, {"from": add_role_holders[1]})
 
-    for caller in accounts:
+    for caller in accounts[0:20]:
         if caller in remove_role_holders:
             registry.removeRecipient(caller, {"from": caller})
         else:
             with reverts(access_revert_message(caller, REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)):
                 registry.removeRecipient(caller, {"from": caller})
 
-    for caller in accounts:
+    for caller in accounts[0:20]:
         if caller in set_parameters_role_holders:
             registry.setLimitParameters(5, 1, {"from": caller})
         else:
@@ -241,7 +241,7 @@ def test_multiple_role_holders(AllowedRecipientsRegistry, owner, voting, account
             with reverts(access_revert_message(caller, SET_PARAMETERS_ROLE)):
                 registry.unsafeSetSpentAmount(0, {"from": caller})
 
-    for caller in accounts:
+    for caller in accounts[0:20]:
         if caller in update_limit_role_holders:
             registry.updateSpentAmount(1, {"from": caller})
         else:
@@ -295,7 +295,7 @@ def test_set_date_time_contract(limits_checker):
     )
 
 
-def test_fail_if_set_same_time_contract(limits_checker, accounts):
+def test_fail_if_set_same_time_contract(limits_checker):
     (limits_checker, set_parameters_role_holder, _) = limits_checker
     current_address = limits_checker.bokkyPooBahsDateTimeContract()
     with reverts("SAME_DATE_TIME_CONTRACT_ADDRESS"):

@@ -1,5 +1,6 @@
 from brownie import ZERO_ADDRESS, reverts
 from utils.evm_script import encode_calldata, encode_call_script
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 
 def test_deploy(owner, RemoveAllowedRecipient, allowed_recipients_registry):
@@ -15,8 +16,13 @@ def test_deploy_zero_trusted_caller(owner, RemoveAllowedRecipient, allowed_recip
     "Must revert deploying a contract with zero trusted caller"
     (registry, _, _, _, _, _) = allowed_recipients_registry
 
-    with reverts("TRUSTED_CALLER_IS_ZERO_ADDRESS"):
-        owner.deploy(RemoveAllowedRecipient, ZERO_ADDRESS, registry)
+    revert_reason = "TRUSTED_CALLER_IS_ZERO_ADDRESS"
+    try:
+        with reverts(revert_reason):
+            owner.deploy(RemoveAllowedRecipient, ZERO_ADDRESS, registry)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
 
 
 def test_deploy_zero_allowed_recipient_registry(owner, RemoveAllowedRecipient):

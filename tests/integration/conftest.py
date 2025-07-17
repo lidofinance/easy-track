@@ -5,7 +5,7 @@ import json
 import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
-from utils.config import get_network_name
+from utils.config import get_network_name, set_balance_in_wei
 from dataclasses import dataclass
 
 #####
@@ -334,9 +334,11 @@ def top_up_allowed_recipients_evm_script_factory(
 def rmc_factories_multisig():
     network_name = get_network_name()
     if network_name == "mainnet" or network_name == "mainnet-fork":
-        return "0x98be4a407Bff0c125e25fBE9Eb1165504349c37d"
+        address = "0x98be4a407Bff0c125e25fBE9Eb1165504349c37d"
     else:
-        return "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"  # QA multisig
+        address = "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A"  # QA multisig
+    set_balance_in_wei(address, 10**18)
+    return address
 
 
 @pytest.fixture(scope="module")

@@ -4,6 +4,7 @@ from brownie import reverts
 from brownie.network import chain
 
 from utils import evm_script, test_helpers
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
 MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
@@ -909,19 +910,31 @@ def test_set_limit_parameters_by_aragon_agent_via_voting(lido_contracts, allowed
 
     set_limit_parameters_voting_id, _ = lido_contracts.create_voting(
         evm_script=evm_script.encode_call_script(
-            [
-                (
-                    lido_contracts.aragon.agent.address,
-                    lido_contracts.aragon.agent.execute.encode_input(
-                        allowed_recipients_registry,
-                        0,
-                        allowed_recipients_registry.setLimitParameters.encode_input(
-                            period_limit,
-                            period_duration,
-                        ),
-                    ),
-                )
-            ]
+            submit_proposals(
+                [
+                    (
+                        [
+                            (
+                                lido_contracts.aragon.agent.address,
+                                lido_contracts.aragon.agent.forward.encode_input(
+                                    evm_script.encode_call_script(
+                                        [
+                                            (
+                                                allowed_recipients_registry.address,
+                                                allowed_recipients_registry.setLimitParameters.encode_input(
+                                                    period_limit,
+                                                    period_duration,
+                                                ),
+                                            )
+                                        ]
+                                    )
+                                ),
+                            )
+                        ],
+                        "Set limit parameters",
+                    )
+                ]
+            )
         ),
         description="Set limit parameters",
         tx_params={"from": lido_contracts.aragon.agent},
@@ -929,6 +942,7 @@ def test_set_limit_parameters_by_aragon_agent_via_voting(lido_contracts, allowed
 
     # execute voting to add permissions to EVM script executor to create payments
     lido_contracts.execute_voting(set_limit_parameters_voting_id)
+    process_pending_proposals()
 
     assert allowed_recipients_registry.getLimitParameters() == (
         period_limit,

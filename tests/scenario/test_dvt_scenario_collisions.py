@@ -51,7 +51,6 @@ address4 = table[no4]["address"]
 def simple_dvt(
     node_operators_registry,
     kernel,
-    voting,
     locator,
     staking_router,
     agent,
@@ -60,11 +59,13 @@ def simple_dvt(
     nor_proxy = interface.AragonAppProxy(node_operators_registry)
     module_name = "simple-dvt-registry"
     name = web3.keccak(text=module_name).hex()
-    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": voting})
+
+    acl.grantPermission(agent, kernel, web3.keccak(text="APP_MANAGER_ROLE").hex(), {"from": agent})
+    simple_DVT_tx = kernel.newAppInstance(name, nor_proxy.implementation(), {"from": agent})
 
     simple_dvt_contract = interface.NodeOperatorsRegistry(simple_DVT_tx.new_contracts[0])
 
-    simple_dvt_contract.initialize(locator, "0x01", 0, {"from": voting})
+    simple_dvt_contract.initialize(locator, "0x01", 0, {"from": agent})
 
     staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
@@ -75,7 +76,7 @@ def simple_dvt(
         simple_dvt_contract,
         web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
         agent,
-        {"from": voting},
+        {"from": agent},
     )
 
     return simple_dvt_contract
@@ -131,7 +132,6 @@ def prepare_increase_vetted_validators_limit_calldata(id_operator, vetted_limit)
 
 def test_simple_dvt_scenario(
     simple_dvt,
-    voting,
     commitee_multisig,
     et_contracts,
     acl,
@@ -159,21 +159,21 @@ def test_simple_dvt_scenario(
         simple_dvt,
         simple_dvt.SET_NODE_OPERATOR_LIMIT_ROLE(),
         agent,
-        {"from": voting},
+        {"from": agent},
     )
     acl.createPermission(
         et_contracts.evm_script_executor,
         simple_dvt,
         simple_dvt.MANAGE_SIGNING_KEYS(),
         et_contracts.evm_script_executor,
-        {"from": voting},
+        {"from": agent},
     )
     acl.createPermission(
         et_contracts.evm_script_executor,
         simple_dvt,
         simple_dvt.STAKING_ROUTER_ROLE(),
         agent,
-        {"from": voting},
+        {"from": agent},
     )
 
     # 1) AddNodeOperators - AddNodeOperators -> NODE_OPERATORS_COUNT_MISMATCH

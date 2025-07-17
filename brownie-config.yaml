@@ -1,16 +1,7 @@
 networks:
-  default: development
+  default: mainnet-fork
   development:
-    cmd: ./ganache.sh
-    host: http://127.0.0.1
-    timeout: 120
-    cmd_settings:
-        accounts: 10
-        evm_version: berlin
-        fork: mainnet
-        gas_limit: 30000000
-        mnemonic: brownie
-        port: 8545
+    priority_fee: auto
 compiler:
   solc:
     version: 0.8.6

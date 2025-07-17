@@ -22,20 +22,14 @@ def create_calldata(data):
 
 
 @pytest.fixture(scope="module")
-def deactivate_node_operators_factory(owner, node_operators_registry, acl, voting):
-    acl.grantPermission(
-        voting,
-        node_operators_registry,
-        web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": voting},
-    )
+def deactivate_node_operators_factory(owner, node_operators_registry, acl, voting, agent):
     for id, manager in enumerate(MANAGERS):
         acl.grantPermissionP(
             manager,
             node_operators_registry,
             web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
             encode_permission_params([Param(0, Op.EQ, id)]),
-            {"from": voting},
+            {"from": agent},
         )
     return DeactivateNodeOperators.deploy(owner, node_operators_registry, acl, {"from": owner})
 
@@ -88,17 +82,17 @@ def test_operator_id_out_of_range(owner, deactivate_node_operators_factory, node
         deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_node_operator_invalid_state(owner, deactivate_node_operators_factory, node_operators_registry, voting):
+def test_node_operator_invalid_state(owner, deactivate_node_operators_factory, node_operators_registry, agent):
     "Must revert with message 'WRONG_OPERATOR_ACTIVE_STATE' when operator already active"
 
-    node_operators_registry.deactivateNodeOperator(0, {"from": voting})
+    node_operators_registry.deactivateNodeOperator(0, {"from": agent})
 
     with reverts("WRONG_OPERATOR_ACTIVE_STATE"):
         CALLDATA = create_calldata([(0, MANAGERS[0])])
         deactivate_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_manager_has_no_role(owner, deactivate_node_operators_factory, node_operators_registry, acl, voting):
+def test_manager_has_no_role(owner, deactivate_node_operators_factory):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has no MANAGE_SIGNING_KEYS role"
 
     CALLDATA = create_calldata([(2, MANAGERS[0])])
@@ -107,7 +101,7 @@ def test_manager_has_no_role(owner, deactivate_node_operators_factory, node_oper
 
 
 def test_manager_has_another_role_operator(
-    owner, deactivate_node_operators_factory, node_operators_registry, acl, voting
+    owner, deactivate_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has MANAGE_SIGNING_KEYS role with wrong param operator"
 
@@ -119,7 +113,7 @@ def test_manager_has_another_role_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.NEQ, operator)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager)])
@@ -128,7 +122,7 @@ def test_manager_has_another_role_operator(
 
 
 def test_manager_has_role_for_another_operator(
-    owner, deactivate_node_operators_factory, node_operators_registry, acl, voting
+    owner, deactivate_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_HAS_NO_ROLE' when manager has MANAGE_SIGNING_KEYS role with wrong param operator"
 
@@ -140,7 +134,7 @@ def test_manager_has_role_for_another_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.EQ, operator + 1)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager)])
@@ -177,7 +171,7 @@ def test_create_evm_script(owner, deactivate_node_operators_factory, node_operat
     assert evm_script == expected_evm_script
 
 
-def test_decode_evm_script_call_data(node_operators_registry, deactivate_node_operators_factory):
+def test_decode_evm_script_call_data(deactivate_node_operators_factory):
     "Must decode EVMScript call data correctly"
     input_params = [(id, manager) for id, manager in enumerate(MANAGERS)]
 
