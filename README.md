@@ -151,6 +151,8 @@ Run tests with coverage and gas profiling:
 brownie test --network mainnet-fork --coverage --gas
 ```
 
+> Note: Holesky support will be removed in upcoming upgrades.
+
 ### Coverage notes
 
 #### Immutable issues
