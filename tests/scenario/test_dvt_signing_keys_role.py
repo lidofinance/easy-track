@@ -91,6 +91,7 @@ def test_simple_make_action(
     acl,
     agent,
     voting,
+    grant_roles,
     easytrack_executor,
     add_node_operators_factory,
     lido_contracts,
