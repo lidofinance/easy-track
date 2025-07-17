@@ -122,8 +122,15 @@ def main():
     log.nb("All factories have been deployed.")
     log.nb("Saving artifacts...")
 
-    with open(f"deployed-csm-{network_name}.json", "w") as outfile:
-        json.dump(deployment_artifacts, outfile)
+    artifacts_path = f"deployed-csm-{network_name}.json"
+
+    if os.path.exists(artifacts_path):
+        with open(artifacts_path, "r") as previous_artifacts:
+            existing_artifacts = json.load(previous_artifacts)
+        deployment_artifacts.update(existing_artifacts)
+
+    with open(artifacts_path, "w") as outfile:
+        json.dump(deployment_artifacts, outfile, indent=4)
 
     if get_is_live() and get_env("FORCE_VERIFY", False):
         log.nb("Starting code verification.")
