@@ -1,4 +1,4 @@
-from brownie import chain, network, AllowedRecipientsRegistry, TopUpAllowedRecipients
+from brownie import chain, network, AllowedRecipientsRegistry, TopUpAllowedRecipientsSingleToken
 
 from utils import lido, deployed_easy_track, deployed_date_time, log, deployment
 from hexbytes import HexBytes
@@ -13,7 +13,7 @@ GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
 
-deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
+deploy_config = deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(
     period=0,
     spent_amount=0,
     title="",
@@ -59,7 +59,7 @@ def main():
     log.br()
 
     registry = AllowedRecipientsRegistry.at(registry_address)
-    top_up_allowed_recipients = TopUpAllowedRecipients.at(add_allowed_recipient_address)
+    top_up_allowed_recipients = TopUpAllowedRecipientsSingleToken.at(add_allowed_recipient_address)
 
     assert top_up_allowed_recipients.easyTrack() == et_contracts.easy_track
     assert top_up_allowed_recipients.finance() == contracts.aragon.finance

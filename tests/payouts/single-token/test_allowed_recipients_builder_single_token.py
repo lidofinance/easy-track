@@ -9,16 +9,16 @@ DEFAULT_ADMIN_ROLE = "0x00"
 
 
 @pytest.fixture(scope="module")
-def allowed_recipients_factory(owner, AllowedRecipientsFactory):
+def allowed_recipients_factory(owner, AllowedRecipientsFactorySingleToken):
     return owner.deploy(
-        AllowedRecipientsFactory,
+        AllowedRecipientsFactorySingleToken,
     )
 
 
 @pytest.fixture(scope="module")
 def allowed_recipients_builder(
     owner,
-    AllowedRecipientsBuilder,
+    AllowedRecipientsBuilderSingleToken,
     allowed_recipients_factory,
     agent,
     finance,
@@ -26,7 +26,7 @@ def allowed_recipients_builder(
     bokkyPooBahsDateTimeContract,
 ):
     return owner.deploy(
-        AllowedRecipientsBuilder,
+        AllowedRecipientsBuilderSingleToken,
         allowed_recipients_factory,
         agent,
         easy_track,
@@ -59,7 +59,7 @@ def test_deploy_top_up_allowed_recipients(
     ldo,
     finance,
     easy_track,
-    TopUpAllowedRecipients,
+    TopUpAllowedRecipientsSingleToken,
 ):
     trusted_caller = accounts[3]
     registry = accounts[4]
@@ -75,7 +75,7 @@ def test_deploy_top_up_allowed_recipients(
     assert tx.events["TopUpAllowedRecipientsDeployed"]["token"] == ldo
     assert tx.events["TopUpAllowedRecipientsDeployed"]["easyTrack"] == easy_track
 
-    topUpAllowedRecipients = Contract.from_abi("TopUpAllowedRecipients", top_up_address, TopUpAllowedRecipients.abi)
+    topUpAllowedRecipients = Contract.from_abi("TopUpAllowedRecipientsSingleToken", top_up_address, TopUpAllowedRecipientsSingleToken.abi)
     assert topUpAllowedRecipients.token() == ldo
     assert topUpAllowedRecipients.allowedRecipientsRegistry() == registry
     assert topUpAllowedRecipients.trustedCaller() == trusted_caller
@@ -210,7 +210,7 @@ def test_deploy_full_setup(
     AllowedRecipientsRegistry,
     AddAllowedRecipient,
     RemoveAllowedRecipient,
-    TopUpAllowedRecipients,
+    TopUpAllowedRecipientsSingleToken,
 ):
 
     recipients = [
@@ -250,7 +250,7 @@ def test_deploy_full_setup(
 
     registry = Contract.from_abi("AllowedRecipientsRegistry", registry_address, AllowedRecipientsRegistry.abi)
 
-    top_up_allowed_recipients = Contract.from_abi("TopUpAllowedRecipients", top_up_address, TopUpAllowedRecipients.abi)
+    top_up_allowed_recipients = Contract.from_abi("TopUpAllowedRecipientsSingleToken", top_up_address, TopUpAllowedRecipientsSingleToken.abi)
 
     add_allowed_recipient = Contract.from_abi("AddAllowedRecipient", add_recipient_address, AddAllowedRecipient.abi)
 
@@ -305,7 +305,7 @@ def test_deploy_deploy_single_recipient_top_up_only_setup(
     stranger,
     evm_script_executor,
     AllowedRecipientsRegistry,
-    TopUpAllowedRecipients,
+    TopUpAllowedRecipientsSingleToken,
 ):
 
     recipient = accounts[2]
@@ -323,7 +323,7 @@ def test_deploy_deploy_single_recipient_top_up_only_setup(
 
     registry = Contract.from_abi("AllowedRecipientsRegistry", registry_address, AllowedRecipientsRegistry.abi)
 
-    top_up_allowed_recipients = Contract.from_abi("TopUpAllowedRecipients", top_up_address, TopUpAllowedRecipients.abi)
+    top_up_allowed_recipients = Contract.from_abi("TopUpAllowedRecipientsSingleToken", top_up_address, TopUpAllowedRecipientsSingleToken.abi)
 
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
     assert top_up_allowed_recipients.token() == ldo

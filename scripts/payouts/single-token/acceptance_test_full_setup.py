@@ -2,7 +2,7 @@ from brownie import (
     chain,
     network,
     AllowedRecipientsRegistry,
-    TopUpAllowedRecipients,
+    TopUpAllowedRecipientsSingleToken,
     AddAllowedRecipient,
     RemoveAllowedRecipient,
 )
@@ -19,7 +19,7 @@ DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000000000
 GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
-deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
+deploy_config = deployment.AllowedRecipientsSingleTokenFullSetupDeployConfig(
     token="",
     limit=0,
     period=1,
@@ -71,7 +71,7 @@ def main():
     log.br()
 
     registry = AllowedRecipientsRegistry.at(registry_address)
-    top_up_allowed_recipients = TopUpAllowedRecipients.at(top_up_address)
+    top_up_allowed_recipients = TopUpAllowedRecipientsSingleToken.at(top_up_address)
     add_allowed_recipient = AddAllowedRecipient.at(add_allowed_recipient_address)
     remove_allowed_recipient = RemoveAllowedRecipient.at(remove_allowed_recipient_address)
 
