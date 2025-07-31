@@ -176,7 +176,7 @@ def advance_chain_time_to_n_seconds_before_current_period_end(period_duration: i
     ), f"cannot move chain time {seconds_before} seconds before current period \
          end, because there {seconds_till_period_end} seconds left till current period end"
 
-    chain.sleep(seconds_till_period_end - seconds_before)
+    chain.mine(1, chain_now + seconds_till_period_end)
     assert chain.time() + seconds_before + 1 >= first_second_of_next_period
 
 
@@ -189,7 +189,7 @@ def advance_chain_time_to_beginning_of_the_next_period(period_duration: int):
 
     chain_now = chain.time()
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
-    chain.sleep(first_second_of_next_period - chain_now)
+    chain.mine(1, first_second_of_next_period)
     assert chain.time() >= first_second_of_next_period
 
 
@@ -199,7 +199,7 @@ def advance_chain_time_to_middle_of_the_next_period(period_duration: int):
     chain_now = chain.time()
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
     half_period_size_seconds_to_skip = int((first_second_of_next_period - chain_now) / 2)
-    chain.sleep(half_period_size_seconds_to_skip)
+    chain.mine(1, chain_now + half_period_size_seconds_to_skip)
     assert chain.time() >= chain_now + half_period_size_seconds_to_skip
 
 
