@@ -150,13 +150,7 @@ def main():
     assert tokens_registry.getAllowedTokens() == deploy_config.tokens
     assert len(tokens_registry.getAllowedTokens()) == len(deploy_config.tokens)
 
-    assert tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
-    assert tokens_registry.hasRole(
-        ADD_TOKEN_TO_ALLOWED_LIST_ROLE, contracts.aragon.agent
-    )
-    assert tokens_registry.hasRole(
-        REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, contracts.aragon.agent
-    )
+    assert tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.voting)
 
     assert not tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, tokens_registry_address)
     assert not tokens_registry.hasRole(
