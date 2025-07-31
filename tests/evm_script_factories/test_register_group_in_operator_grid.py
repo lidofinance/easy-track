@@ -47,9 +47,9 @@ def test_zero_node_operator(owner, stranger, register_groups_in_operator_grid_fa
 
 
 def test_default_tier_operator(owner, stranger, register_groups_in_operator_grid_factory):
-    "Must revert with message 'DEFAULT_TIER_OPERATOR' if any operator is DEFAULT_TIER_OPERATOR"
+    "Must revert with message 'DEFAULT_TIER_OPERATOR' if operator is DEFAULT_TIER_OPERATOR"
     DEFAULT_TIER_OPERATOR = register_groups_in_operator_grid_factory.DEFAULT_TIER_OPERATOR()
-    CALLDATA = create_calldata([DEFAULT_TIER_OPERATOR, stranger.address], [1000, 2000], [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]])
+    CALLDATA = create_calldata([DEFAULT_TIER_OPERATOR], [1000], [[(1000, 200, 100, 50, 40, 10)]])
     with reverts('DEFAULT_TIER_OPERATOR'):
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
@@ -150,3 +150,40 @@ def test_group_share_limit_too_high(owner, register_groups_in_operator_grid_fact
     CALLDATA = create_calldata([operator], [share_limit], tiers)
     with reverts('GROUP_SHARE_LIMIT_TOO_HIGH'):
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_ascending_order_in_operators_array_duplicate(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'ASCENDING_ORDER_IN_OPERATORS_ARRAY' if operators array contains duplicates"
+    operator = "0x0000000000000000000000000000000000000001"
+    operators = [operator, operator]  # Duplicate operators
+    share_limits = [1000, 2000]
+    tiers = [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]]
+    CALLDATA = create_calldata(operators, share_limits, tiers)
+    with reverts('ASCENDING_ORDER_IN_OPERATORS_ARRAY'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_ascending_order_in_operators_array_wrong_order(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'ASCENDING_ORDER_IN_OPERATORS_ARRAY' if operators array is not in ascending order"
+    operator1 = "0x0000000000000000000000000000000000000002"
+    operator2 = "0x0000000000000000000000000000000000000001"
+    operators = [operator1, operator2]  # Wrong order (descending instead of ascending)
+    share_limits = [1000, 2000]
+    tiers = [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]]
+    CALLDATA = create_calldata(operators, share_limits, tiers)
+    with reverts('ASCENDING_ORDER_IN_OPERATORS_ARRAY'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_correct_ascending_order_in_operators_array(owner, register_groups_in_operator_grid_factory):
+    "Must pass validation if operators array is in correct ascending order"
+    operator1 = "0x0000000000000000000000000000000000000001"
+    operator2 = "0x0000000000000000000000000000000000000002"
+    operators = [operator1, operator2]  # Correct ascending order
+    share_limits = [1000, 2000]
+    tiers = [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]]
+    CALLDATA = create_calldata(operators, share_limits, tiers)
+    
+    # Should not revert - just create the script successfully
+    evm_script = register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+    assert len(evm_script) > 0

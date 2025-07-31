@@ -54,7 +54,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
-    /// @param _creator Address who creates EVMScript and will receive refunds
+    /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address[] _vaults, bytes[] _pubkeys
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external

@@ -33,6 +33,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_LIQUIDITY_FEE_TOO_HIGH = "LIQUIDITY_FEE_TOO_HIGH";
     string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
     string private constant ERROR_ZERO_MAX_SHARE_LIMIT = "ZERO_MAX_SHARE_LIMIT";
+    string private constant ERROR_ASCENDING_ORDER_IN_OPERATORS_ARRAY = "ASCENDING_ORDER_IN_OPERATORS_ARRAY";
 
     // -------------
     // VARIABLES
@@ -74,6 +75,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Creates EVMScript to register multiple groups and their tiers in OperatorGrid
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: (address[] _nodeOperators, uint256[] _shareLimits, TierParams[][] _tiers)
+    /// @dev Node operators must be in ascending order (no duplicates allowed)
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -142,6 +144,11 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             _nodeOperators.length == _tiers.length,
             ERROR_ARRAY_LENGTH_MISMATCH
         );
+
+        // Check for ascending order in node operators array (no duplicates allowed)
+        for (uint256 i = 0; i < _nodeOperators.length - 1; i++) {
+            require(_nodeOperators[i] < _nodeOperators[i+1], ERROR_ASCENDING_ORDER_IN_OPERATORS_ARRAY);
+        }
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
