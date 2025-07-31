@@ -12,7 +12,7 @@ from utils import (
 )
 
 
-deploy_config = deployment.AllowedRecipientsFullSetupDeployConfig(
+deploy_config = deployment.AllowedRecipientsSingleTokenFullSetupDeployConfig(
     token="",
     limit=0,
     period=1,

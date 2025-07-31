@@ -8,7 +8,7 @@ from utils.config import (
 from utils import lido, log, deployment
 
 
-deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
+deploy_config = deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(
     period=0,
     spent_amount=0,
     title="",

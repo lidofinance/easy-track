@@ -4,11 +4,9 @@ from utils.config import (
     get_is_live,
     get_deployer_account,
     prompt_bool,
-    get_network_name,
 )
-from utils import lido, deployed_easy_track, log, deployment
+from utils import lido, log, deployment
 
-from brownie import AllowedRecipientsBuilder
 
 '''
 
@@ -35,7 +33,7 @@ The "tokens_registry" parameter of the deploy_config is used primarily to verify
 Please make sure you have filled deploy_config correctly.
 '''
 
-deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
+deploy_config = deployment.AllowedRecipientsMultiTokenSingleRecipientSetupDeployConfig(
     tokens=["", ""], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
     tokens_registry="", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
     limit=0, # budget amount, ex. 1_000_000 * 10 ** 18,
