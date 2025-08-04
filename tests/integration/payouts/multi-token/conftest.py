@@ -711,30 +711,58 @@ def registries(
 @pytest.fixture(scope="module")
 def add_allowed_token(registries, lido_contracts):
     (_, allowed_tokens_registry) = registries
-    allowed_tokens_registry.grantRole(
+
+    agent = lido_contracts.aragon.agent
+    voting = lido_contracts.aragon.voting
+
+    if not allowed_tokens_registry.hasRole(
         allowed_tokens_registry.ADD_TOKEN_TO_ALLOWED_LIST_ROLE(),
-        lido_contracts.aragon.agent,
-        {"from": lido_contracts.aragon.voting},
-    )
+        agent,
+    ):
+        admin_role_holder = agent if allowed_tokens_registry.hasRole(
+            allowed_tokens_registry.DEFAULT_ADMIN_ROLE(),
+            agent,
+        ) else voting
+        
+        allowed_tokens_registry.grantRole(
+            allowed_tokens_registry.ADD_TOKEN_TO_ALLOWED_LIST_ROLE(),
+            agent,
+            {"from": admin_role_holder},
+        )
+
     def _add_allowed_token(token):
         if (allowed_tokens_registry.isTokenAllowed(token)):
             return
-        allowed_tokens_registry.addToken(token, {"from": lido_contracts.aragon.agent})
+        allowed_tokens_registry.addToken(token, {"from": agent})
         assert allowed_tokens_registry.isTokenAllowed(token)
     return _add_allowed_token
 
 @pytest.fixture(scope="module")
 def remove_allowed_token(registries, lido_contracts):
     (_, allowed_tokens_registry) = registries
-    allowed_tokens_registry.grantRole(
+
+    agent = lido_contracts.aragon.agent
+    voting = lido_contracts.aragon.voting
+
+    if not allowed_tokens_registry.hasRole(
         allowed_tokens_registry.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE(),
-        lido_contracts.aragon.agent,
-        {"from": lido_contracts.aragon.voting},
-    )
+        agent,
+    ):
+        admin_role_holder = agent if allowed_tokens_registry.hasRole(
+            allowed_tokens_registry.DEFAULT_ADMIN_ROLE(),
+            agent,
+        ) else voting
+        
+        allowed_tokens_registry.grantRole(
+            allowed_tokens_registry.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE(),
+            agent,
+            {"from": admin_role_holder},
+        )
+
     def _remove_allowed_token(token):
         if not allowed_tokens_registry.isTokenAllowed(token):
             return
-        allowed_tokens_registry.removeToken(token, {"from": lido_contracts.aragon.agent})
+        allowed_tokens_registry.removeToken(token, {"from": agent})
         assert not allowed_tokens_registry.isTokenAllowed(token)
     return _remove_allowed_token
 
