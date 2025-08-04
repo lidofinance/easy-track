@@ -102,8 +102,9 @@ def main():
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, contracts.aragon.agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
 
-    assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
-    assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
+    if deploy_config.grant_rights:
+        assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+        assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
     assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
