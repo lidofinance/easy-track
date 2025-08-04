@@ -711,6 +711,11 @@ def registries(
 @pytest.fixture(scope="module")
 def add_allowed_token(registries, lido_contracts):
     (_, allowed_tokens_registry) = registries
+    allowed_tokens_registry.grantRole(
+        allowed_tokens_registry.ADD_TOKEN_TO_ALLOWED_LIST_ROLE(),
+        lido_contracts.aragon.agent,
+        {"from": lido_contracts.aragon.voting},
+    )
     def _add_allowed_token(token):
         if (allowed_tokens_registry.isTokenAllowed(token)):
             return
@@ -721,6 +726,11 @@ def add_allowed_token(registries, lido_contracts):
 @pytest.fixture(scope="module")
 def remove_allowed_token(registries, lido_contracts):
     (_, allowed_tokens_registry) = registries
+    allowed_tokens_registry.grantRole(
+        allowed_tokens_registry.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE(),
+        lido_contracts.aragon.agent,
+        {"from": lido_contracts.aragon.voting},
+    )
     def _remove_allowed_token(token):
         if not allowed_tokens_registry.isTokenAllowed(token):
             return
