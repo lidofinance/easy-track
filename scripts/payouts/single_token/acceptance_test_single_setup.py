@@ -1,11 +1,4 @@
-from brownie import (
-    chain,
-    network,
-    AllowedRecipientsRegistry,
-    TopUpAllowedRecipientsSingleToken,
-    AddAllowedRecipient,
-    RemoveAllowedRecipient,
-)
+from brownie import chain, network, AllowedRecipientsRegistry, TopUpAllowedRecipientsSingleToken
 
 from utils import lido, deployed_easy_track, deployed_date_time, log, deployment
 from hexbytes import HexBytes
@@ -19,20 +12,22 @@ DEFAULT_ADMIN_ROLE = "0x00000000000000000000000000000000000000000000000000000000
 GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
-deploy_config = deployment.AllowedRecipientsSingleTokenFullSetupDeployConfig(
-    token="",
-    limit=0,
-    period=1,
+
+deploy_config = deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(
+    period=3,
     spent_amount=0,
-    trusted_caller="",
-    titles=[],
-    recipients=[],
+    title="Test funder",
+    limit=2000 * 10**18,
+    token="0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942",
 )
 
-deployment_tx_hash = ""
+deployment_tx_hash = "0xb40d10ba5b5ab04961615a644ed791c5a99572e9084fd144bf3983e6780deb07"
 
-
-def main():
+def main(
+    deploy_config: deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig = deploy_config,
+    deployment_tx_hash: str = deployment_tx_hash,
+):
     network_name = network.show_active()
 
     tx = chain.get_transaction(deployment_tx_hash)
@@ -44,51 +39,39 @@ def main():
     evm_script_executor = et_contracts.evm_script_executor
 
     registry_address = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
-    top_up_address = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-    add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
-    remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
+    add_allowed_recipient_address = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
+    log.br()
+
+    log.nb("tx of creation", deployment_tx_hash)
 
     log.br()
 
-    log.nb("Agent", contracts.aragon.agent)
-    log.nb("Easy Track EVM Script Executor", evm_script_executor)
-
-    log.br()
-
-    log.nb("recipients", deploy_config.recipients)
     log.nb("trusted_caller", deploy_config.trusted_caller)
+    log.nb("token", deploy_config.token)
     log.nb("limit", deploy_config.limit)
+    log.nb("title", deploy_config.title)
     log.nb("period", deploy_config.period)
     log.nb("spent_amount", deploy_config.spent_amount)
 
     log.br()
 
     log.nb("AllowedRecipientsRegistryDeployed", registry_address)
-    log.nb("TopUpAllowedRecipientsDeployed", top_up_address)
-    log.nb("AddAllowedRecipientDeployed", add_allowed_recipient_address)
-    log.nb("RemoveAllowedRecipientDeployed", remove_allowed_recipient_address)
+    log.nb("TopUpAllowedRecipientsDeployed", add_allowed_recipient_address)
 
     log.br()
 
     registry = AllowedRecipientsRegistry.at(registry_address)
-    top_up_allowed_recipients = TopUpAllowedRecipientsSingleToken.at(top_up_address)
-    add_allowed_recipient = AddAllowedRecipient.at(add_allowed_recipient_address)
-    remove_allowed_recipient = RemoveAllowedRecipient.at(remove_allowed_recipient_address)
+    top_up_allowed_recipients = TopUpAllowedRecipientsSingleToken.at(add_allowed_recipient_address)
 
-    assert registry.bokkyPooBahsDateTimeContract() == date_time_contract
     assert top_up_allowed_recipients.easyTrack() == et_contracts.easy_track
     assert top_up_allowed_recipients.finance() == contracts.aragon.finance
     assert top_up_allowed_recipients.token() == deploy_config.token
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == registry
     assert top_up_allowed_recipients.trustedCaller() == deploy_config.trusted_caller
-    assert add_allowed_recipient.allowedRecipientsRegistry() == registry
-    assert add_allowed_recipient.trustedCaller() == deploy_config.trusted_caller
-    assert remove_allowed_recipient.allowedRecipientsRegistry() == registry
-    assert remove_allowed_recipient.trustedCaller() == deploy_config.trusted_caller
 
-    assert len(registry.getAllowedRecipients()) == len(deploy_config.recipients)
-    for recipient in deploy_config.recipients:
-        assert registry.isRecipientAllowed(recipient)
+    assert registry.bokkyPooBahsDateTimeContract() == date_time_contract
+    assert len(registry.getAllowedRecipients()) == 1
+    assert registry.isRecipientAllowed(deploy_config.trusted_caller)
 
     registryLimit, registryPeriodDuration = registry.getLimitParameters()
     assert registryLimit == deploy_config.limit
@@ -102,9 +85,8 @@ def main():
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, contracts.aragon.agent)
     assert registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
 
-    if deploy_config.grant_rights:
-        assert registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
-        assert registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert not registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, evm_script_executor)
+    assert not registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, evm_script_executor)
     assert registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, evm_script_executor)
     assert not registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)

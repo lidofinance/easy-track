@@ -74,14 +74,14 @@ def deployed_contracts():
     To run tests on deployed contracts, set their address below
     """
     return {
-        "EasyTrack": "",
+        "EasyTrack": "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea",
         "AllowedRecipientsFactory": "",
         "AllowedRecipientsBuilder": "",
-        "AllowedRecipientsRegistry": "",
-        "AllowedTokensRegistry": "",
+        "AllowedRecipientsRegistry": "0x95331A94047933b00DAF22118EC4cB24d50Ccfd0",
+        "AllowedTokensRegistry": "0x4AC40c34f8992bb1e5E856A448792158022551ca",
         "AddAllowedRecipient": "",
         "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipients": "",
+        "TopUpAllowedRecipients": "0x90d55CA601d4c3fB116cf6E326A55f6D6DA600BF",
     }
 
 

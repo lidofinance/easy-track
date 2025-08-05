@@ -5,18 +5,17 @@ from utils.config import (
     get_deployer_account,
     prompt_bool,
 )
-from utils import (
-    log,
-    lido,
-    deployment,
-)
+from utils import lido, log, deployment
+
+from scripts.payouts.multi_token.acceptance_test_single_setup import main as run_acceptance_test
+
 
 '''
 
 Please fill out deploy_config before running the script.
 
 A. If you want a new token registry to be created when the script is executed:
-- fill in the "tokens" parameter in the deploy_config with a list of tokens to be added to the registry
+- fill in the "tokens" parameter in the deploy_config with a list of tokens to be added to the registry 
 - leave the "tokens_registry" parameter empty
 
     Example:
@@ -30,23 +29,22 @@ B. If you prefer to use an existing token registry when the script is executed:
     Example:
     tokens=["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
     tokens_registry = "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666",
+    
 
 The "tokens_registry" parameter of the deploy_config is used primarily to verify the method of contracts deployment. 
 Please make sure you have filled deploy_config correctly.
-
 '''
 
-deploy_config = deployment.AllowedRecipientsMultiTokenFullSetupDeployConfig(
-    tokens=["", ""],  # the list of tokens in which transfers can be made,  ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
-    tokens_registry="",  # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
-    limit=0,  # budget amount, ex. 1_000_000 * 10 ** 18,
-    period=1,  # budget period duration in month, ex. 3
+deploy_config = deployment.AllowedRecipientsMultiTokenSingleRecipientSetupDeployConfig(
+    tokens=["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xdAC17F958D2ee523a2206206994597C13D831ec7", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens_registry="0x4AC40c34f8992bb1e5E856A448792158022551ca", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    limit= 2000 * 10 ** 18,
+    period=3, # budget period duration in month, ex. 3
     spent_amount=0, # budget already spent, ex. 0
-    titles=["", ""], # allowed recipients titles, ex. ["LEGO LDO funder", "LEGO Stables funder"]
-    recipients=["", ""], # allowed recipients addresses, ex. ["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"]
-    trusted_caller="", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
-    grant_rights = False, # permissions to execute AddAllowedRecipient / RemoveAllowedRecipient methods on behalf of trusted_caller
+    title="Test funder",
+    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942"
 )
+tokens_registry_deploy_tx_hash = "0xb29ee752d1b66a293be52a96b78e01408e1ad84f0d047128b953ba55887640be" # If tokens_registry is not empty, this tx hash should be specified
 
 def main():
 
@@ -71,7 +69,7 @@ def main():
 
     log.br()
 
-    log.nb("Current network", network_name, color_hl=log.color_magenta)
+    log.nb("Current network", network.show_active(), color_hl=log.color_magenta)
     log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.ok("Chain id", chain.id)
     log.ok("Deployer", deployer)
@@ -87,9 +85,8 @@ def main():
     log.ok("Limit", deploy_config.limit)
     log.ok("Period", deploy_config.period)
     log.ok("Spent amount", deploy_config.spent_amount)
-    log.ok("Titles", deploy_config.titles)
-    log.ok("Recipients", deploy_config.recipients)
-    log.ok("Trusted caller", deploy_config.trusted_caller)
+    log.ok("Title", deploy_config.title)
+    log.ok("Trusted caller/recipient", deploy_config.trusted_caller)
     log.br()
 
     print("Proceed? [yes/no]: ")
@@ -101,69 +98,60 @@ def main():
     tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
 
     if new_token_registry_is_required:
-        tx = allowed_recipients_builder.deployFullSetup(
+        tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
             deploy_config.trusted_caller,
+            deploy_config.title,
+            deploy_config.tokens,
             deploy_config.limit,
             deploy_config.period,
-            deploy_config.tokens,
-            deploy_config.recipients,
-            deploy_config.titles,
             deploy_config.spent_amount,
             tx_params,
         )
-        print(tx.events)
 
         allowed_recipients_registry_address = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
-        allowed_tokens_registry_address = tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
+        allowed_tokens_registry_address = tx.events['AllowedTokensRegistryDeployed']['allowedTokensRegistry']
         top_up_allowed_recipients_address = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-        add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
-        remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
 
+        top_up_allowed_recipients_deploy_tx_hash = tx.txid
+        recipients_registry_deploy_tx_hash = tx.txid
+        tokens_registry_deploy_tx_hash = tx.txid
     else:
         allowed_tokens_registry_address = deploy_config.tokens_registry
 
-        tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
+        recipients_registry_deploy_tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
             deploy_config.limit,
             deploy_config.period,
-            deploy_config.recipients,
-            deploy_config.titles,
+            [deploy_config.trusted_caller],
+            [deploy_config.title],
             deploy_config.spent_amount,
-            deploy_config.grant_rights,
+            False,
             tx_params,
         )
+        recipients_registry_deploy_tx_hash = recipients_registry_deploy_tx.txid
+        allowed_recipients_registry_address = recipients_registry_deploy_tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
 
-        allowed_recipients_registry_address = tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
-
-        tx = allowed_recipients_builder.deployAddAllowedRecipient(
+        top_up_allowed_recipients_deploy_tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
             deploy_config.trusted_caller,
             allowed_recipients_registry_address,
+            allowed_tokens_registry_address,
             tx_params,
         )
+        top_up_allowed_recipients_deploy_tx_hash = top_up_allowed_recipients_deploy_tx.txid
+        top_up_allowed_recipients_address = top_up_allowed_recipients_deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
+        tokens_registry_deploy_tx_hash = globals()["tokens_registry_deploy_tx_hash"]
 
-        add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
-
-        tx = allowed_recipients_builder.deployRemoveAllowedRecipient(
-            deploy_config.trusted_caller,
-            allowed_recipients_registry_address,
-            tx_params,
-        )
-
-        remove_allowed_recipient_address=tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
-
-        tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
-            deploy_config.trusted_caller,
-            allowed_recipients_registry_address,
-            deploy_config.tokens_registry,
-            tx_params,
-        )
-
-        top_up_allowed_recipients_address = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-
-    log.ok("Allowed recipients Easy Track contracts have been deployed!")
+    log.ok("New contracts have been deployed!")
     log.nb("Deployed AllowedRecipientsRegistry", allowed_recipients_registry_address)
     log.nb("Deployed AllowedTokensRegistry" if new_token_registry_is_required else "Used AllowedTokensRegistry", allowed_tokens_registry_address)
-    log.nb("Deployed AddAllowedRecipient", add_allowed_recipient_address)
-    log.nb("Deployed RemoveAllowedRecipient", remove_allowed_recipient_address)
     log.nb("Deployed TopUpAllowedRecipients", top_up_allowed_recipients_address)
 
     log.br()
+
+    log.nb("Running acceptance test...")
+
+    run_acceptance_test(
+        deploy_config,
+        recipients_registry_deploy_tx_hash,
+        tokens_registry_deploy_tx_hash,
+        top_up_allowed_recipients_deploy_tx_hash,
+    )

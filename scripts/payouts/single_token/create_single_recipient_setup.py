@@ -6,17 +6,17 @@ from utils.config import (
     prompt_bool,
 )
 from utils import lido, log, deployment
+from scripts.payouts.single_token.acceptance_test_single_setup import main as run_acceptance_test
 
 
 deploy_config = deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(
-    period=0,
+    period=3,
     spent_amount=0,
-    title="",
-    limit=0,
-    token="",
-    trusted_caller="",
+    title="Test funder",
+    limit=2000 * 10**18,
+    token="0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942",
 )
-
 
 def main():
     network_name = network.show_active()
@@ -65,3 +65,7 @@ def main():
     log.nb("Deployed TopUpAllowedRecipientsDeployed", topUpAddress)
 
     log.br()
+
+    log.nb("Running acceptance test...")
+
+    run_acceptance_test(deploy_config, tx.txid)

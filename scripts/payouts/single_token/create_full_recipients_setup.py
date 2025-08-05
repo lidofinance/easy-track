@@ -10,16 +10,17 @@ from utils import (
     lido,
     deployment,
 )
+from scripts.payouts.single_token.acceptance_test_full_setup import main as run_acceptance_test
 
 
 deploy_config = deployment.AllowedRecipientsSingleTokenFullSetupDeployConfig(
-    token="",
-    limit=0,
-    period=1,
+    token="0x6B175474E89094C44Da98b954EedeAC495271d0F",
+    limit=2000 * 10**18,
+    period=3,
     spent_amount=0,
-    trusted_caller="",
-    titles=[],
-    recipients=[],
+    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942",
+    titles=["Test funder"],
+    recipients=["0x606f77BF3dd6Ed9790D9771C7003f269a385D942"],
 )
 
 
@@ -76,3 +77,7 @@ def main():
     log.nb("Deployed TopUpAllowedRecipients", top_up_allowed_recipients_address)
 
     log.br()
+
+    log.nb("Running acceptance test...")
+
+    run_acceptance_test(deploy_config, tx.txid)

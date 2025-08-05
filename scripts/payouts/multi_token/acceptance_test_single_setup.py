@@ -21,15 +21,14 @@ from hexbytes import HexBytes
 GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
-
 deploy_config = deployment.AllowedRecipientsMultiTokenSingleRecipientSetupDeployConfig(
-    tokens = ["", "", ""], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
-    tokens_registry = "", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
-    limit = "", # budget amount, ex. 1_000_000 * 10 ** 18,
-    period = "", # budget period duration in month, ex. 3
-    spent_amount = "", # budget already spent, ex. 0
-    title = "", # only recipient's / trusted caller's title, ex. "LEGO LDO funder",
-    trusted_caller = "", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
+    tokens=[],
+    tokens_registry="",
+    limit=0,
+    period=0,
+    spent_amount=0,
+    title="",
+    trusted_caller="",
 )
 
 recipients_registry_deploy_tx_hash = ""
@@ -37,7 +36,12 @@ tokens_registry_deploy_tx_hash = ""
 top_up_allowed_recipients_deploy_tx_hash = ""
 
 
-def main():
+def main(
+    deploy_config: deployment.AllowedRecipientsMultiTokenSingleRecipientSetupDeployConfig = deploy_config,
+    recipients_registry_deploy_tx_hash: str = recipients_registry_deploy_tx_hash,
+    tokens_registry_deploy_tx_hash: str = tokens_registry_deploy_tx_hash,
+    top_up_allowed_recipients_deploy_tx_hash: str = top_up_allowed_recipients_deploy_tx_hash,
+):
     network_name = network.show_active()
 
     recipients_registry_deploy_tx = chain.get_transaction(
@@ -84,6 +88,7 @@ def main():
     log.nb("AllowedRecipientsRegistryDeployed", recipients_registry_address)
     log.nb("AllowedTokensRegistryDeployed", tokens_registry_address)
     log.nb("TopUpAllowedRecipientsDeployed", top_up_allowed_recipient_address)
+    log.nb("AllowedTokensRegistryDeployed", tokens_registry_address)
 
     log.br()
 
@@ -93,8 +98,19 @@ def main():
     )
     tokens_registry = AllowedTokensRegistry.at(tokens_registry_address)
 
+    #####################
+    # TopUpAllowedRecipients checks
+    #####################
+
     assert top_up_allowed_recipients.allowedRecipientsRegistry() == recipients_registry
+    assert top_up_allowed_recipients.allowedTokensRegistry() == tokens_registry
     assert top_up_allowed_recipients.trustedCaller() == deploy_config.trusted_caller
+    assert top_up_allowed_recipients.finance() == contracts.aragon.finance
+    assert top_up_allowed_recipients.easyTrack() == et_contracts.easy_track
+
+    #####################
+    # RecipientsRegistry checks
+    #####################
 
     assert len(recipients_registry.getAllowedRecipients()) == 1
     assert recipients_registry.isRecipientAllowed(deploy_config.trusted_caller)
@@ -128,21 +144,9 @@ def main():
     assert not recipients_registry.hasRole(SET_PARAMETERS_ROLE, evm_script_executor)
     assert not recipients_registry.hasRole(DEFAULT_ADMIN_ROLE, evm_script_executor)
 
-    assert not recipients_registry.hasRole(
-        ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, recipients_registry_address
-    )
-    assert not recipients_registry.hasRole(
-        REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, recipients_registry_address
-    )
-    assert not recipients_registry.hasRole(
-        SET_PARAMETERS_ROLE, recipients_registry_address
-    )
-    assert not recipients_registry.hasRole(
-        UPDATE_SPENT_AMOUNT_ROLE, recipients_registry_address
-    )
-    assert not recipients_registry.hasRole(
-        DEFAULT_ADMIN_ROLE, recipients_registry_address
-    )
+    #####################
+    # TokensRegistry checks
+    #####################
 
     for token in deploy_config.tokens:
         assert tokens_registry.isTokenAllowed(token)
@@ -150,15 +154,17 @@ def main():
     assert tokens_registry.getAllowedTokens() == deploy_config.tokens
     assert len(tokens_registry.getAllowedTokens()) == len(deploy_config.tokens)
 
-    assert tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.voting)
+    is_admin_role_on_agent = tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.agent)
+    is_admin_role_on_voting = tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, contracts.aragon.voting)
 
-    assert not tokens_registry.hasRole(DEFAULT_ADMIN_ROLE, tokens_registry_address)
-    assert not tokens_registry.hasRole(
-        ADD_TOKEN_TO_ALLOWED_LIST_ROLE, tokens_registry_address
-    )
-    assert not tokens_registry.hasRole(
-        REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, tokens_registry_address
-    )
+    assert is_admin_role_on_agent or is_admin_role_on_voting
+
+    if is_admin_role_on_agent:
+        log.warning("DEFAULT_ADMIN_ROLE is on agent - after DG release this role should be on voting")
+
+    #####################
+    # Role checks
+    #####################
 
     registry_roles_holders = {
         ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE: [],
