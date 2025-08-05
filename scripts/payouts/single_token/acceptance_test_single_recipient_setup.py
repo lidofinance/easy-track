@@ -14,15 +14,15 @@ REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a
 
 
 deploy_config = deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(
-    period=3,
+    period=1,
     spent_amount=0,
-    title="Test funder",
-    limit=2000 * 10**18,
-    token="0x6B175474E89094C44Da98b954EedeAC495271d0F",
-    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942",
+    title="",
+    limit=0,
+    token="",
+    trusted_caller="",
 )
 
-deployment_tx_hash = "0xb40d10ba5b5ab04961615a644ed791c5a99572e9084fd144bf3983e6780deb07"
+deployment_tx_hash = ""
 
 def main(
     deploy_config: deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig = deploy_config,

@@ -100,6 +100,7 @@ def main(
     log.nb("recipients", deploy_config.recipients)
     log.nb("trusted_caller", deploy_config.trusted_caller)
     log.nb("limit", deploy_config.limit)
+    log.nb("titles", deploy_config.titles)
     log.nb("period", deploy_config.period)
     log.nb("spent_amount", deploy_config.spent_amount)
 

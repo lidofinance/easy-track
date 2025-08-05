@@ -38,24 +38,17 @@ Please make sure you have filled deploy_config correctly.
 """
 
 deploy_config = deployment.AllowedRecipientsMultiTokenFullSetupDeployConfig(
-    tokens=[
-        "0x6B175474E89094C44Da98b954EedeAC495271d0F",
-        "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
-    ],  # the list of tokens in which transfers can be made,  ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens=[],  # the list of tokens in which transfers can be made,  ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
     tokens_registry="",  # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
-    limit=2000 * 10**18,  # budget amount, ex. 1_000_000 * 10 ** 18,
-    period=3,  # budget period duration in month, ex. 3
+    limit=0,  # budget amount, ex. 1_000_000 * 10 ** 18,
+    period=1,  # budget period duration in month, ex. 3
     spent_amount=0,  # budget already spent, ex. 0
-    titles=["Test funder", "Test funder"],  # allowed recipients titles, ex. ["LEGO LDO funder", "LEGO Stables funder"]
-    recipients=[
-        "0x606f77BF3dd6Ed9790D9771C7003f269a385D942",
-        "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-    ],  # allowed recipients addresses, ex. ["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"]
-    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942",  # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
+    titles=[],  # allowed recipients titles, ex. ["LEGO LDO funder", "LEGO Stables funder"]
+    recipients=[],  # allowed recipients addresses, ex. ["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"]
+    trusted_caller="",  # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
     grant_rights=False,  # permissions to execute AddAllowedRecipient / RemoveAllowedRecipient methods on behalf of trusted_caller
 )
-tokens_registry_deploy_tx_hash = "0xb29ee752d1b66a293be52a96b78e01408e1ad84f0d047128b953ba55887640be"  # If tokens_registry is not empty, this tx hash should be specified
+tokens_registry_deploy_tx_hash = ""  # If tokens_registry is not empty, this tx hash should be specified
 
 
 def main():

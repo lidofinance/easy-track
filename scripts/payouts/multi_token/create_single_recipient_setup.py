@@ -7,7 +7,7 @@ from utils.config import (
 )
 from utils import lido, log, deployment
 
-from scripts.payouts.multi_token.acceptance_test_single_setup import main as run_acceptance_test
+from scripts.payouts.multi_token.acceptance_test_single_recipient_setup import main as run_acceptance_test
 
 
 '''
@@ -36,15 +36,15 @@ Please make sure you have filled deploy_config correctly.
 '''
 
 deploy_config = deployment.AllowedRecipientsMultiTokenSingleRecipientSetupDeployConfig(
-    tokens=["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xdAC17F958D2ee523a2206206994597C13D831ec7", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
-    tokens_registry="0x4AC40c34f8992bb1e5E856A448792158022551ca", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
-    limit= 2000 * 10 ** 18,
-    period=3, # budget period duration in month, ex. 3
+    tokens=[], # the list of tokens in which transfers can be made, ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens_registry="", # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    limit=0, # budget amount, ex. 1_000_000 * 10 ** 18,
+    period=1, # budget period duration in month, ex. 3
     spent_amount=0, # budget already spent, ex. 0
-    title="Test funder",
-    trusted_caller="0x606f77BF3dd6Ed9790D9771C7003f269a385D942"
+    title="",
+    trusted_caller=""
 )
-tokens_registry_deploy_tx_hash = "0xb29ee752d1b66a293be52a96b78e01408e1ad84f0d047128b953ba55887640be" # If tokens_registry is not empty, this tx hash should be specified
+tokens_registry_deploy_tx_hash = "" # If tokens_registry is not empty, this tx hash should be specified
 
 def main():
 
