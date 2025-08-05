@@ -251,7 +251,6 @@ def test_top_up_single_recipient(
 def test_top_up_single_recipient_several_times_in_period(
     recipients,
     registries,
-    lido_contracts,
     add_allowed_token,
     allowed_recipients_limit_params,
     add_allowed_recipient_by_motion,

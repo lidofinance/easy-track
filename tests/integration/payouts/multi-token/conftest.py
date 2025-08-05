@@ -39,7 +39,18 @@ def stranger(accounts):
 
 @pytest.fixture(scope="module")
 def dai_ward():
-    return brownie.accounts.at("0x9759A6Ac90977b93B58547b4A71c78317f391A28", force=True)
+    network = brownie.network.show_active()
+    
+    if network in ["mainnet", "mainnet-fork"]:
+        return brownie.accounts.at("0x9759A6Ac90977b93B58547b4A71c78317f391A28", force=True)
+    if network in ["holesky", "holesky-fork"]:
+        return brownie.accounts.at("0xd4090CA1134F8dE1450B8246916F73d212efdEf6", force=True)
+    if network in ["hoodi", "hoodi-fork"]:
+        return brownie.accounts.at("0x96a0896C77DD3729E3f1602e430af4f402bb1b44", force=True)
+
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
+    )
 
 
 @pytest.fixture(scope="module")
@@ -74,14 +85,14 @@ def deployed_contracts():
     To run tests on deployed contracts, set their address below
     """
     return {
-        "EasyTrack": "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea",
+        "EasyTrack": "",
         "AllowedRecipientsFactory": "",
         "AllowedRecipientsBuilder": "",
-        "AllowedRecipientsRegistry": "0x95331A94047933b00DAF22118EC4cB24d50Ccfd0",
-        "AllowedTokensRegistry": "0x4AC40c34f8992bb1e5E856A448792158022551ca",
+        "AllowedRecipientsRegistry": "",
+        "AllowedTokensRegistry": "",
         "AddAllowedRecipient": "",
         "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipients": "0x90d55CA601d4c3fB116cf6E326A55f6D6DA600BF",
+        "TopUpAllowedRecipients": "",
     }
 
 
@@ -700,11 +711,6 @@ def registries(
             easy_track.evmScriptExecutor(),
             {"from": lido_contracts.aragon.agent},
         )
-
-    # dai_ward = "0x9759A6Ac90977b93B58547b4A71c78317f391A28"
-    test = "0x075e72a5eDf65F0A5f44699c7654C1a76941Ddc8"
-
-    interface.ERC20(dai).transfer(lido_contracts.aragon.agent, interface.ERC20(dai).balanceOf(test), {"from": test})
 
     return (allowed_recipients_registry, allowed_tokens_registry)
 

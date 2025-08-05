@@ -88,7 +88,6 @@ def main(
     log.nb("AllowedRecipientsRegistryDeployed", recipients_registry_address)
     log.nb("AllowedTokensRegistryDeployed", tokens_registry_address)
     log.nb("TopUpAllowedRecipientsDeployed", top_up_allowed_recipient_address)
-    log.nb("AllowedTokensRegistryDeployed", tokens_registry_address)
 
     log.br()
 
