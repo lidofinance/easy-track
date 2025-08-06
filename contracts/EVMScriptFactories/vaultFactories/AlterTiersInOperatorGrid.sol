@@ -34,7 +34,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     /// @dev max value for fees in basis points - it's about 650%
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
-    uint256 internal constant TOTAL_BASIS_POINTS = 10000;
+    uint256 internal constant MAX_RESERVE_RATIO_BP = 9999;
     uint256 internal constant DEFAULT_TIER_ID = 0;
 
     // -------------
@@ -120,7 +120,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             }
 
             require(_tierParams[i].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
-            require(_tierParams[i].reserveRatioBP <= TOTAL_BASIS_POINTS, ERROR_RESERVE_RATIO_TOO_HIGH);
+            require(_tierParams[i].reserveRatioBP <= MAX_RESERVE_RATIO_BP, ERROR_RESERVE_RATIO_TOO_HIGH);
 
             require(_tierParams[i].forcedRebalanceThresholdBP != 0, ERROR_ZERO_FORCED_REBALANCE_THRESHOLD);
             require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);

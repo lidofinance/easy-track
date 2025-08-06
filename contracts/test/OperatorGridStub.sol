@@ -18,7 +18,6 @@ contract OperatorGridStub is AccessControl {
     bytes32 public constant REGISTRY_ROLE = keccak256("vaults.OperatorsGrid.Registry");
     uint256 public constant DEFAULT_TIER_ID = 0;
     address public constant DEFAULT_TIER_OPERATOR = address(uint160(type(uint160).max));
-    uint256 internal constant TOTAL_BASIS_POINTS = 100_00;
 
     struct Group {
         address operator;
