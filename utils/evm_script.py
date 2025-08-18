@@ -23,4 +23,12 @@ def encode_call_script(actions, spec_id=1):
 
 
 def encode_calldata(signature, values):
-    return "0x" + eth_abi.encode(signature, values).hex()
+    if isinstance(signature, str):
+        if signature.startswith('(') and signature.endswith(')'):
+            types = signature[1:-1].split(',')
+        else:
+            types = [signature]
+    else:
+        types = signature
+    
+    return "0x" + eth_abi.encode(types, values).hex()

@@ -6,10 +6,11 @@ from utils.config import (
     prompt_bool,
 )
 from utils import lido, log, deployment
+from scripts.payouts.single_token.acceptance_test_single_recipient_setup import main as run_acceptance_test
 
 
-deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
-    period=0,
+deploy_config = deployment.AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(
+    period=1,
     spent_amount=0,
     title="",
     limit=0,
@@ -17,11 +18,10 @@ deploy_config = deployment.AllowedRecipientsSingleRecipientSetupDeployConfig(
     trusted_caller="",
 )
 
-
 def main():
     network_name = network.show_active()
     deployer = get_deployer_account(get_is_live(), network=network_name)
-    allowed_recipients_builder = lido.allowed_recipients_builder(network=network_name)
+    allowed_recipients_builder = lido.allowed_recipients_builder_single_token(network=network_name)
 
     log.br()
 
@@ -65,3 +65,7 @@ def main():
     log.nb("Deployed TopUpAllowedRecipientsDeployed", topUpAddress)
 
     log.br()
+
+    log.nb("Running acceptance test...")
+
+    run_acceptance_test(deploy_config, tx.txid)
