@@ -1,1 +1,12 @@
-{"CSMSettleElStealingPenalty": {"contract": "CSMSettleElStealingPenalty", "address": "0x07696EA8A5b53C3E35d9cce10cc62c6c79C4691D", "constructorArgs": ["0xc4DAB3a3ef68C6DFd8614a870D64D475bA44F164", "0x4562c3e63c2e586cD1651B958C22F88135aCAd4f"]}}
+{
+    "CSMSettleElStealingPenalty": {
+        "contract": "CSMSettleElStealingPenalty",
+        "address": "0x07696EA8A5b53C3E35d9cce10cc62c6c79C4691D",
+        "constructorArgs": ["0xc4DAB3a3ef68C6DFd8614a870D64D475bA44F164", "0x4562c3e63c2e586cD1651B958C22F88135aCAd4f"]
+    },
+    "CSMSetVettedGateTree": {
+        "contract": "CSMSetVettedGateTree",
+        "address": "0x26CDa8f9D84956efC743c8432658Ae9a5B7939da",
+        "constructorArgs": ["0xc4DAB3a3ef68C6DFd8614a870D64D475bA44F164", "IdentifiedCommunityStakerSetTreeParams", "0x92A5aB5e4f98e67Fb7295fe439A652d0E51033bf"]
+    }
+}
