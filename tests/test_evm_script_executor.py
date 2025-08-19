@@ -1,6 +1,8 @@
 from brownie import reverts
-from eth_abi import encode_single
+from eth_abi import encode
 from utils.evm_script import encode_call_script
+from utils.hardhat_helpers import get_last_tx_revert_reason
+
 import constants
 
 
@@ -13,22 +15,30 @@ def test_deploy(owner, easy_track, calls_script, EVMScriptExecutor):
     assert contract.easyTrack() == easy_track
 
 
-def test_deploy_calls_script_not_contract(
-    owner, accounts, easy_track, EVMScriptExecutor
-):
+def test_deploy_calls_script_not_contract(owner, accounts, easy_track, EVMScriptExecutor):
     "Must revert with message 'CALLS_SCRIPT_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
-    with reverts("CALLS_SCRIPT_IS_NOT_CONTRACT"):
-        owner.deploy(EVMScriptExecutor, not_contract, easy_track)
+    revert_reason = "CALLS_SCRIPT_IS_NOT_CONTRACT"
+
+    try:
+        with reverts(revert_reason):
+            owner.deploy(EVMScriptExecutor, not_contract.address, easy_track.address)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
 
 
-def test_deploy_easy_track_not_contract(
-    owner, accounts, calls_script, EVMScriptExecutor
-):
+def test_deploy_easy_track_not_contract(owner, accounts, calls_script, EVMScriptExecutor):
     "Must revert with message 'EASY_TRACK_IS_NOT_CONTRACT'"
     not_contract = accounts[6]
-    with reverts("EASY_TRACK_IS_NOT_CONTRACT"):
-        owner.deploy(EVMScriptExecutor, calls_script, not_contract)
+    revert_reason = "EASY_TRACK_IS_NOT_CONTRACT"
+
+    try:
+        with reverts(revert_reason):
+            owner.deploy(EVMScriptExecutor, calls_script, not_contract)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
 
 
 def test_execute_evm_script_revert_msg(
@@ -46,7 +56,7 @@ def test_execute_evm_script_revert_msg(
                         increase_node_operator_staking_limit.address,
                         increase_node_operator_staking_limit.createEVMScript.encode_input(
                             node_operator,
-                            "0x" + encode_single("(uint256,uint256)", [1, 500]).hex(),
+                            "0x" + encode(["uint256", "uint256"], [1, 500]).hex(),
                         ),
                     )
                 ]
@@ -55,27 +65,20 @@ def test_execute_evm_script_revert_msg(
         )
 
 
-def test_execute_evm_script_output(
-    easy_track, evm_script_executor, node_operators_registry_stub
-):
+def test_execute_evm_script_output(easy_track, evm_script_executor, node_operators_registry_stub):
     "Must return empty bytes and emit ScriptExecuted(_caller, _evmScript) event"
     assert node_operators_registry_stub.stakingLimit() == 200
     evm_script = encode_call_script(
         [
             (
                 node_operators_registry_stub.address,
-                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(
-                    1, 500
-                ),
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(1, 500),
             )
         ]
     )
 
     # validate return value
-    assert (
-        evm_script_executor.executeEVMScript.call(evm_script, {"from": easy_track})
-        == "0x"
-    )
+    assert evm_script_executor.executeEVMScript.call(evm_script, {"from": easy_track}) == "0x"
 
     tx = evm_script_executor.executeEVMScript(evm_script, {"from": easy_track})
 
@@ -85,9 +88,7 @@ def test_execute_evm_script_output(
     assert node_operators_registry_stub.stakingLimit() == 500
 
 
-def test_execute_evm_script_caller_validation(
-    stranger, easy_track, evm_script_executor, node_operators_registry_stub
-):
+def test_execute_evm_script_caller_validation(stranger, easy_track, evm_script_executor, node_operators_registry_stub):
     "Must accept calls to executeEVMScript only from EasyTrack contracts"
     with reverts("CALLER_IS_FORBIDDEN"):
         evm_script_executor.executeEVMScript("0x", {"from": stranger})
@@ -96,9 +97,7 @@ def test_execute_evm_script_caller_validation(
         [
             (
                 node_operators_registry_stub.address,
-                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(
-                    1, 500
-                ),
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(1, 500),
             )
         ]
     )
@@ -114,9 +113,7 @@ def test_set_easy_track_called_by_stranger(accounts, stranger, evm_script_execut
         evm_script_executor.setEasyTrack(new_easy_track, {"from": stranger})
 
 
-def test_set_easy_track_called_by_owner(
-    accounts, owner, ldo, voting, evm_script_executor, easy_track, EasyTrack
-):
+def test_set_easy_track_called_by_owner(accounts, owner, ldo, voting, evm_script_executor, easy_track, EasyTrack):
     "Must set new easyTrack value and emit EasyTrackChanged(address _previousEasyTrack, address _newEasyTrack) event"
     assert evm_script_executor.easyTrack() == easy_track
 

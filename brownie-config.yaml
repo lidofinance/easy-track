@@ -1,24 +1,12 @@
 networks:
-  default: development
+  default: mainnet-fork
   development:
-    cmd: ganache-cli
-    host: http://127.0.0.1
-    timeout: 120
-    cmd_settings:
-      port: 8545
-      gas_limit: 12000000
-      accounts: 10
-      evm_version: istanbul
-      mnemonic: brownie
-      fork: mainnet
-
-dependencies:
-  - OpenZeppelin/openzeppelin-contracts@4.3.2
-
-# path remapping to support OpenZepplin imports with NPM-style path
+    priority_fee: auto
 compiler:
   solc:
     version: 0.8.6
+    remappings:
+      - OpenZeppelin/openzeppelin-contracts@4.3.2=./dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2
 reports:
   exclude_paths:
     - contracts/test/**/*

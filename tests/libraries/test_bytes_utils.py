@@ -36,7 +36,7 @@ def uint32_at_testcases(owner, request):
         (one, 0, 1),
         (zero, 0, 0),
         (empty, 0, 0),
-        (max_value, 0, 2 ** 32 - 1),
+        (max_value, 0, 2**32 - 1),
         (long_word, 3, 16),
     ][request.param]
 
@@ -53,8 +53,8 @@ def uint256_at_testcases(owner, request):
         (one, 0, 1),
         (zero, 0, 0),
         (empty, 0, 0),
-        (max_value, 0, 2 ** 256 - 1),
-        (long_word, 4, 2 ** 256 - 1),
+        (max_value, 0, 2**256 - 1),
+        (long_word, 4, 2**256 - 1),
     ][request.param]
 
 

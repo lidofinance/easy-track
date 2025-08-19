@@ -1,5 +1,5 @@
 import pytest
-from eth_abi import encode_single
+from eth_abi import encode
 from utils.evm_script import encode_call_script
 from brownie import reverts
 
@@ -21,15 +21,9 @@ def test_create_evm_script_one_address_single_call(
     method_id = node_operators_registry_stub.setNodeOperatorStakingLimit.signature
     method_call_data = encode_set_node_operator_staking_limit_calldata(1, 300)
     expected_evm_script = encode_call_script(
-        [
-            create_method_calldata(
-                node_operators_registry_stub, "setNodeOperatorStakingLimit", [1, 300]
-            )
-        ]
+        [create_method_calldata(node_operators_registry_stub, "setNodeOperatorStakingLimit", [1, 300])]
     )
-    evm_script = evm_script_creator_wrapper.createEVMScript["address,bytes4,bytes"](
-        to, method_id, method_call_data
-    )
+    evm_script = evm_script_creator_wrapper.createEVMScript["address,bytes4,bytes"](to, method_id, method_call_data)
 
     assert evm_script == expected_evm_script
 
@@ -49,20 +43,12 @@ def test_create_evm_script_one_address_multiple_calls_same_method(
     ]
     expected_evm_script = encode_call_script(
         [
-            create_method_calldata(
-                node_operators_registry_stub, "setNodeOperatorStakingLimit", [1, 300]
-            ),
-            create_method_calldata(
-                node_operators_registry_stub, "setNodeOperatorStakingLimit", [2, 500]
-            ),
-            create_method_calldata(
-                node_operators_registry_stub, "setNodeOperatorStakingLimit", [3, 600]
-            ),
+            create_method_calldata(node_operators_registry_stub, "setNodeOperatorStakingLimit", [1, 300]),
+            create_method_calldata(node_operators_registry_stub, "setNodeOperatorStakingLimit", [2, 500]),
+            create_method_calldata(node_operators_registry_stub, "setNodeOperatorStakingLimit", [3, 600]),
         ]
     )
-    evm_script = evm_script_creator_wrapper.createEVMScript["address,bytes4,bytes[]"](
-        to, method_id, method_call_data
-    )
+    evm_script = evm_script_creator_wrapper.createEVMScript["address,bytes4,bytes[]"](to, method_id, method_call_data)
 
     assert evm_script == expected_evm_script
 
@@ -115,9 +101,7 @@ def test_create_evm_script_one_address_different_methods(
             reward_programs_registry.removeRewardProgram.signature,
         ],
         [
-            encode_add_reward_program_calldata(
-                reward_program_to_add.address, new_reward_program_title
-            ),
+            encode_add_reward_program_calldata(reward_program_to_add.address, new_reward_program_title),
             encode_remove_reward_program_calldata(reward_program_to_remove.address),
         ],
     )
@@ -183,34 +167,25 @@ def test_create_evm_script_many_addresses(
     ]
     expected_evm_script = encode_call_script(
         [
-            create_method_calldata(
-                node_operators_registry_stub, "setNodeOperatorStakingLimit", [1, 300]
-            ),
-            create_method_calldata(
-                reward_programs_registry, "removeRewardProgram", [reward_program]
-            ),
-            create_method_calldata(
-                node_operators_registry_stub, "setNodeOperatorStakingLimit", [3, 600]
-            ),
+            create_method_calldata(node_operators_registry_stub, "setNodeOperatorStakingLimit", [1, 300]),
+            create_method_calldata(reward_programs_registry, "removeRewardProgram", [reward_program]),
+            create_method_calldata(node_operators_registry_stub, "setNodeOperatorStakingLimit", [3, 600]),
         ]
     )
-    evm_script = evm_script_creator_wrapper.createEVMScript[
-        "address[],bytes4[],bytes[]"
-    ](to, method_id, method_call_data)
+    evm_script = evm_script_creator_wrapper.createEVMScript["address[],bytes4[],bytes[]"](
+        to, method_id, method_call_data
+    )
 
     assert evm_script == expected_evm_script
 
 
 def encode_remove_reward_program_calldata(reward_program):
-    return "0x" + encode_single("(address)", [reward_program]).hex()
+    return "0x" + encode(["address"], [reward_program]).hex()
 
 
 def encode_add_reward_program_calldata(reward_program, title):
-    return "0x" + encode_single("(address,string)", [reward_program, title]).hex()
+    return "0x" + encode(["address", "string"], [reward_program, title]).hex()
 
 
 def encode_set_node_operator_staking_limit_calldata(node_operator_id, staking_limit):
-    return (
-        "0x"
-        + encode_single("(uint256,uint256)", [node_operator_id, staking_limit]).hex()
-    )
+    return "0x" + encode(["uint256", "uint256"], [node_operator_id, staking_limit]).hex()

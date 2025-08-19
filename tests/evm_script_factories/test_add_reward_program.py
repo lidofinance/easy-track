@@ -1,15 +1,10 @@
-from eth_abi import encode_single
+from eth_abi import encode
 from brownie import reverts
 from utils.evm_script import encode_call_script
 
 REWARD_PROGRAM_ADDRESS = "0xFFfFfFffFFfffFFfFFfFFFFFffFFFffffFfFFFfF"
 REWARD_PROGRAM_TITLE = "New Reward Program"
-EVM_SCRIPT_CALL_DATA = (
-    "0x"
-    + encode_single(
-        "(address,string)", [REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE]
-    ).hex()
-)
+EVM_SCRIPT_CALLDATA = "0x" + encode(["address", "string"], [REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE]).hex()
 
 
 def test_deploy(owner, reward_programs_registry, AddRewardProgram):
@@ -22,7 +17,7 @@ def test_deploy(owner, reward_programs_registry, AddRewardProgram):
 def test_create_evm_script_called_by_stranger(stranger, add_reward_program):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
-        add_reward_program.createEVMScript(stranger, EVM_SCRIPT_CALL_DATA)
+        add_reward_program.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
 
 def test_create_evm_script_reward_program_already_added(
@@ -38,20 +33,18 @@ def test_create_evm_script_reward_program_already_added(
     with reverts("REWARD_PROGRAM_ALREADY_ADDED"):
         add_reward_program.createEVMScript(
             owner,
-            EVM_SCRIPT_CALL_DATA,
+            EVM_SCRIPT_CALLDATA,
         )
 
 
 def test_create_evm_script(owner, add_reward_program, reward_programs_registry):
     "Must create correct EVMScript if all requirements are met"
-    evm_script = add_reward_program.createEVMScript(owner, EVM_SCRIPT_CALL_DATA)
+    evm_script = add_reward_program.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
         [
             (
                 reward_programs_registry.address,
-                reward_programs_registry.addRewardProgram.encode_input(
-                    REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE
-                ),
+                reward_programs_registry.addRewardProgram.encode_input(REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE),
             )
         ]
     )
@@ -61,7 +54,7 @@ def test_create_evm_script(owner, add_reward_program, reward_programs_registry):
 
 def test_decode_evm_script_call_data(add_reward_program):
     "Must decode EVMScript call data correctly"
-    assert add_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALL_DATA) == (
+    assert add_reward_program.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA) == (
         REWARD_PROGRAM_ADDRESS,
         REWARD_PROGRAM_TITLE,
     )

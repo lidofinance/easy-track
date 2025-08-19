@@ -4,9 +4,11 @@
   "repository": "git@github.com:lidofinance/easy-track.git",
   "author": "Bogdan Kovtun <psirex48@gmail.com>",
   "license": "GPL-3.0",
+  "packageManager": "npm@10.5.0",
   "dependencies": {
-    "@openzeppelin/contracts": "^4.3.2",
+    "@openzeppelin/contracts-v4.3.2": "npm:@openzeppelin/contracts@4.3.2",
     "ethlint": "^1.2.5",
+    "hardhat": "2.25.0",
     "husky": "^6.0.0",
     "prettier": "^2.3.0",
     "prettier-plugin-solidity": "^1.0.0-beta.10",
@@ -15,12 +17,11 @@
   "scripts": {
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
     "lint:check": "prettier --check **/*.sol **/*.json",
-    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",
-    "postinstall": "node postinstall.js"
+    "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose"
   },
   "husky": {
     "hooks": {
-      "pre-commit": "yarn lint:fix"
+      "pre-commit": "npm run lint:fix"
     }
   },
   "devDependencies": {

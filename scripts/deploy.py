@@ -9,7 +9,13 @@ from utils.constants import (
 
 
 def main():
-    contracts = lido.contracts()
+    active_network = network.show_active()
+
+    if not active_network:
+        print("Network is not set properly. Aborting...")
+        return
+
+    contracts = lido.contracts(active_network)
     deployer = get_deployer_account(get_is_live())
 
     # address of Lido's LEGO program
@@ -21,7 +27,7 @@ def main():
     # address to grant PAUSE_ROLE (optional)
     pause_address = get_env("PAUSE_ADDRESS")
 
-    print(f"Current network: {network.show_active()} (chain id: {chain.id})")
+    print(f"Current network: {active_network} (chain id: {chain.id})")
     print(f"Deployer: {deployer}")
     print(f"Governance Token: {contracts.ldo}")
     print(f"Motion Duration: {INITIAL_MOTION_DURATION} seconds")
@@ -44,7 +50,7 @@ def main():
 
     tx_params = {
         "from": deployer,
-        "gas_price": "100 gwei"
+        "gas_price": "100 gwei",
         # "priority_fee": "4 gwei",
     }
 
@@ -75,16 +81,14 @@ def deploy_easy_tracks(
         tx_params=tx_params,
     )
     evm_script_executor = deployment.deploy_evm_script_executor(
-        aragon_voting=lido_contracts.aragon.voting,
+        owner=lido_contracts.aragon.voting,
         easy_track=easy_track,
         aragon_calls_script=lido_contracts.aragon.calls_script,
         tx_params=tx_params,
     )
-    increase_node_operators_staking_limit = (
-        deployment.deploy_increase_node_operator_staking_limit(
-            node_operators_registry=lido_contracts.node_operators_registry,
-            tx_params=tx_params,
-        )
+    increase_node_operators_staking_limit = deployment.deploy_increase_node_operator_staking_limit(
+        node_operators_registry=lido_contracts.node_operators_registry,
+        tx_params=tx_params,
     )
     top_up_lego_program = deployment.deploy_top_up_lego_program(
         finance=lido_contracts.aragon.finance,

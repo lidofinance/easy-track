@@ -10,3 +10,5 @@ reports/
 .pytest_cache
 node_modules
 /contracts_flattened
+logs
+cache
