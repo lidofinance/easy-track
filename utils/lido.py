@@ -129,6 +129,16 @@ def allowed_recipients_builder_multi_token(network=DEFAULT_NETWORK):
     )
 
 
+def allowed_recipients_builder_many_tokens(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return brownie.interface.AllowedRecipientsBuilderMultipleTokens(
+            "0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF"
+        )
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork"""
+    )
+
+
 class LidoContractsSetup:
     def __init__(self, interface, lido_addresses):
         self.lido_addresses = lido_addresses
@@ -307,7 +317,6 @@ class NodeOperatorsRegistryPermissions:
         self.MANAGE_NODE_OPERATOR_ROLE = Permission(node_operators_registry_app, "MANAGE_NODE_OPERATOR_ROLE")
         self.MANAGE_SIGNING_KEYS = Permission(node_operators_registry_app, "MANAGE_SIGNING_KEYS")
         self.SET_NODE_OPERATOR_LIMIT_ROLE = Permission(node_operators_registry_app, "SET_NODE_OPERATOR_LIMIT_ROLE")
-
 
 class TokenManagerPermissions:
     def __init__(self, token_manager_app):
