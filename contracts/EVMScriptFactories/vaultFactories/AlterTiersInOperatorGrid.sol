@@ -112,7 +112,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {
             // reverts if tier does not exist in the operator grid
-            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]); 
+            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]);
 
             if (_tierIds[i] != DEFAULT_TIER_ID) {
                 IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
