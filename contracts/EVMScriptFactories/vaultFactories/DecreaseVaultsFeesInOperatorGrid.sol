@@ -6,11 +6,11 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHubAdapter.sol";
+import "../../interfaces/IVaultsAdapter.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to update fees for multiple vaults in VaultHub
-contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to update fees for multiple vaults in OperatorGrid
+contract DecreaseVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERROR MESSAGES
@@ -35,8 +35,8 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub adapter
-    IVaultHubAdapter public immutable vaultHubAdapter;
+    /// @notice Address of Vaults adapter
+    IVaultsAdapter public immutable vaultsAdapter;
 
     // -------------
     // CONSTRUCTOR
@@ -44,16 +44,16 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
-    {   
+    {
         require(_adapter != address(0), ERROR_ZERO_ADAPTER);
-        vaultHubAdapter = IVaultHubAdapter(_adapter);
+        vaultsAdapter = IVaultsAdapter(_adapter);
     }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to update fees for multiple vaults in VaultHub
+    /// @notice Creates EVMScript to update fees for multiple vaults in OperatorGrid
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _infraFeesBP, uint256[] _liquidityFeesBP, uint256[] _reservationFeesBP
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
@@ -72,8 +72,8 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _infraFeesBP, _liquidityFeesBP, _reservationFeesBP);
 
-        address toAddress = address(vaultHubAdapter);
-        bytes4 methodId = vaultHubAdapter.updateVaultFees.selector;
+        address toAddress = address(vaultsAdapter);
+        bytes4 methodId = vaultsAdapter.updateVaultFees.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -124,7 +124,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             _vaults.length == _reservationFeesBP.length,
             ERROR_ARRAY_LENGTH_MISMATCH
         );
-        
+
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
             require(_infraFeesBP[i] <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);

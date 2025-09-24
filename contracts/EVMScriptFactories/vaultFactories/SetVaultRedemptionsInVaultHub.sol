@@ -9,7 +9,7 @@ import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to set vault redemptions for multiple vaults in VaultHub
+/// @notice Creates EVMScript to set liability shares target for multiple vaults in VaultHub
 contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
@@ -44,9 +44,9 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to set vault redemptions for multiple vaults in VaultHub
+    /// @notice Creates EVMScript to set liability shares target for multiple vaults in VaultHub
     /// @param _creator Address who creates EVMScript and will receive refunds
-    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _redemptionsValues
+    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _liabilitySharesTargets
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
         external
         view
@@ -56,19 +56,19 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
     {
         (
             address[] memory _vaults,
-            uint256[] memory _redemptionsValues
+            uint256[] memory _liabilitySharesTargets
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(_vaults, _redemptionsValues);
+        _validateInputData(_vaults, _liabilitySharesTargets);
 
         address toAddress = address(vaultHub);
-        bytes4 methodId = IVaultHub.setVaultRedemptions.selector;
+        bytes4 methodId = IVaultHub.setLiabilitySharesTarget.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
             calldataArray[i] = abi.encode(
                 _vaults[i],
-                _redemptionsValues[i]
+                _liabilitySharesTargets[i]
             );
         }
 
@@ -76,8 +76,8 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _redemptionsValues
-    /// @return Vault addresses and redemptions values
+    /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _liabilitySharesTargets
+    /// @return Vault addresses and liability shares targets
     function decodeEVMScriptCallData(bytes calldata _evmScriptCallData)
         external
         pure
@@ -100,13 +100,13 @@ contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     function _validateInputData(
         address[] memory _vaults,
-        uint256[] memory _redemptionsValues
+        uint256[] memory _liabilitySharesTargets
     ) private pure {
         require(_vaults.length > 0, ERROR_EMPTY_VAULTS);
-        require(_vaults.length == _redemptionsValues.length, ERROR_ARRAY_LENGTH_MISMATCH);
-        
+        require(_vaults.length == _liabilitySharesTargets.length, ERROR_ARRAY_LENGTH_MISMATCH);
+
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
         }
     }
-} 
+}

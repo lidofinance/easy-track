@@ -43,7 +43,7 @@ interface IOperatorGrid {
     /// @param role the role to grant
     /// @param account the account to grant the role to
     function grantRole(bytes32 role, address account) external;
-    
+
     /// @notice Registers a new group
     /// @param _nodeOperator address of the node operator
     /// @param _shareLimit Maximum share limit for the group
@@ -67,6 +67,23 @@ interface IOperatorGrid {
     /// @param _tierParams array of new tier params
     function alterTiers(uint256[] calldata _tierIds, TierParams[] calldata _tierParams) external;
 
+    /// @notice updates fees for the vault
+    /// @param _vault vault address
+    /// @param _infraFeeBP new infra fee in basis points
+    /// @param _liquidityFeeBP new liquidity fee in basis points
+    /// @param _reservationFeeBP new reservation fee in basis points
+    function updateVaultFees(
+        address _vault,
+        uint256 _infraFeeBP,
+        uint256 _liquidityFeeBP,
+        uint256 _reservationFeeBP
+    ) external;
+
+    /// @notice Updates if the vault is in jail
+    /// @param _vault vault address
+    /// @param _isInJail true if the vault is in jail, false otherwise
+    function setVaultJailStatus(address _vault, bool _isInJail) external;
+
     // -----------------------------
     //            VIEW FUNCTIONS
     // -----------------------------
@@ -85,7 +102,39 @@ interface IOperatorGrid {
     /// @return Number of tiers
     function tiersCount() external view returns (uint256);
 
+    /// @notice Returns true if the vault is in jail
+    /// @param _vault address of the vault
+    /// @return true if the vault is in jail
+    function isVaultInJail(address _vault) external view returns (bool);
+
     /// @notice Returns the registry role
     /// @return bytes32 the registry role
     function REGISTRY_ROLE() external view returns (bytes32);
+
+    // -----------------------------
+    //            EVENTS
+    // -----------------------------
+    event GroupAdded(address indexed nodeOperator, uint256 shareLimit);
+    event GroupShareLimitUpdated(address indexed nodeOperator, uint256 shareLimit);
+    event TierAdded(
+        address indexed nodeOperator,
+        uint256 indexed tierId,
+        uint256 shareLimit,
+        uint256 reserveRatioBP,
+        uint256 forcedRebalanceThresholdBP,
+        uint256 infraFeeBP,
+        uint256 liquidityFeeBP,
+        uint256 reservationFeeBP
+    );
+    event TierChanged(address indexed vault, uint256 indexed tierId, uint256 shareLimit);
+    event TierUpdated(
+      uint256 indexed tierId,
+      uint256 shareLimit,
+      uint256 reserveRatioBP,
+      uint256 forcedRebalanceThresholdBP,
+      uint256 infraFeeBP,
+      uint256 liquidityFeeBP,
+      uint256 reservationFeeBP
+    );
+    event VaultJailStatusUpdated(address indexed vault, bool isInJail);
 }

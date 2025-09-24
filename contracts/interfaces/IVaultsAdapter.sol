@@ -3,9 +3,9 @@
 
 pragma solidity 0.8.6;
 
-/// @title Interface for VaultHubAdapter
-/// @notice Adapter for VaultHub to be used in EVMScriptFactories
-interface IVaultHubAdapter {
+/// @title Interface for VaultsAdapter
+/// @notice Adapter for VaultHub and OperatorGrid to be used in EVMScriptFactories
+interface IVaultsAdapter {
     // -------------
     // VIEW FUNCTIONS
     // -------------
@@ -17,7 +17,7 @@ interface IVaultHubAdapter {
     // EXTERNAL FUNCTIONS
     // -------------
 
-    /// @notice Function to update vault fees in VaultHub
+    /// @notice Function to update vault fees in OperatorGrid
     /// @param _vault Address of the vault to update fees for
     /// @param _infraFeeBP New infra fee in basis points
     /// @param _liquidityFeeBP New liquidity fee in basis points
@@ -29,10 +29,15 @@ interface IVaultHubAdapter {
         uint256 _reservationFeeBP
     ) external;
 
-    /// @notice Updates share limit for a vault
+    /// @notice Sets jail status for a vault in OperatorGrid
     /// @param _vault address of the vault to update
-    /// @param _shareLimit new share limit value
-    function updateShareLimit(address _vault, uint256 _shareLimit) external;
+    /// @param _isInJail jail status to set
+    function setVaultJailStatus(address _vault, bool _isInJail) external;
+
+    /// @notice Sets liability shares target for a vault
+    /// @param _vault address of the vault to update
+    /// @param _liabilitySharesTarget new liability shares target value
+    function setLiabilitySharesTarget(address _vault, uint256 _liabilitySharesTarget) external;
 
     /// @notice Socializes bad debt for a vault
     /// @param _badDebtVault address of the vault that has the bad debt
@@ -58,4 +63,4 @@ interface IVaultHubAdapter {
 
     /// @notice Function to withdraw all ETH to TrustedCaller
     function withdrawETH(address _recipient) external;
-} 
+}

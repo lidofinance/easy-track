@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHubAdapter.sol";
+import "../../interfaces/IVaultsAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to socialize bad debt for multiple vaults in VaultHub
@@ -27,8 +27,8 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub adapter
-    IVaultHubAdapter public immutable vaultHubAdapter;
+    /// @notice Address of Vaults adapter
+    IVaultsAdapter public immutable vaultsAdapter;
 
     // -------------
     // CONSTRUCTOR
@@ -38,7 +38,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
         TrustedCaller(_trustedCaller)
     {
         require(_adapter != address(0), ERROR_ZERO_ADAPTER);
-        vaultHubAdapter = IVaultHubAdapter(_adapter);
+        vaultsAdapter = IVaultsAdapter(_adapter);
     }
 
     // -------------
@@ -63,8 +63,8 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_badDebtVaults, _vaultAcceptors, _maxSharesToSocialize);
 
-        address toAddress = address(vaultHubAdapter);
-        bytes4 methodId = vaultHubAdapter.socializeBadDebt.selector;
+        address toAddress = address(vaultsAdapter);
+        bytes4 methodId = vaultsAdapter.socializeBadDebt.selector;
         bytes[] memory calldataArray = new bytes[](_badDebtVaults.length);
 
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
@@ -112,11 +112,11 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
             _badDebtVaults.length == _maxSharesToSocialize.length,
             ERROR_ARRAY_LENGTH_MISMATCH
         );
-        
+
         for (uint256 i = 0; i < _badDebtVaults.length; i++) {
             require(_badDebtVaults[i] != address(0), ERROR_ZERO_BAD_DEBT_VAULT);
             require(_vaultAcceptors[i] != address(0), ERROR_ZERO_VAULT_ACCEPTOR);
             require(_maxSharesToSocialize[i] != 0, ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE);
         }
     }
-} 
+}

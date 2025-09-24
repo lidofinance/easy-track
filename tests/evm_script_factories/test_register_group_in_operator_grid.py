@@ -73,7 +73,7 @@ def test_create_evm_script(owner, accounts, register_groups_in_operator_grid_fac
     "Must create correct EVMScript if all requirements are met"
     operator1 = accounts[5]
     operator2 = accounts[6]
-    
+
     operators = [operator1.address, operator2.address]
     share_limits = [1000, 3000]
     tiers = [
@@ -113,11 +113,11 @@ def test_decode_evm_script_call_data(accounts, register_groups_in_operator_grid_
 
     EVM_SCRIPT_CALLDATA = create_calldata(operators, share_limits, tiers)
     decoded_operators, decoded_share_limits, decoded_tiers = register_groups_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_operators) == len(operators)
     assert len(decoded_share_limits) == len(share_limits)
     assert len(decoded_tiers) == len(tiers)
-    
+
     for i in range(len(operators)):
         assert decoded_operators[i] == operators[i]
         assert decoded_share_limits[i] == share_limits[i]
@@ -183,7 +183,7 @@ def test_correct_ascending_order_in_operators_array(owner, register_groups_in_op
     share_limits = [1000, 2000]
     tiers = [[(1000, 200, 100, 50, 40, 10)], [(1000, 200, 100, 50, 40, 10)]]
     CALLDATA = create_calldata(operators, share_limits, tiers)
-    
+
     # Should not revert - just create the script successfully
     evm_script = register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
     assert len(evm_script) > 0

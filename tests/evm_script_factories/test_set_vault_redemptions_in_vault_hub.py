@@ -3,8 +3,8 @@ from brownie import reverts, SetVaultRedemptionsInVaultHub, ZERO_ADDRESS # type:
 
 from utils.evm_script import encode_call_script, encode_calldata
 
-def create_calldata(vaults, redemptions_values):
-    return encode_calldata(["address[]", "uint256[]"], [vaults, redemptions_values])
+def create_calldata(vaults, liability_shares_targets):
+    return encode_calldata(["address[]", "uint256[]"], [vaults, liability_shares_targets])
 
 @pytest.fixture(scope="module")
 def set_vault_redemptions_factory(owner, vault_hub_stub):
@@ -44,11 +44,11 @@ def test_create_evm_script(owner, accounts, set_vault_redemptions_factory, vault
     "Must create correct EVMScript if all requirements are met"
     vault1 = accounts[5]
     vault2 = accounts[6]
-    
+
     vaults = [vault1.address, vault2.address]
-    redemptions_values = [100, 200]
-    
-    EVM_SCRIPT_CALLDATA = create_calldata(vaults, redemptions_values)
+    liability_shares_targets = [100, 200]
+
+    EVM_SCRIPT_CALLDATA = create_calldata(vaults, liability_shares_targets)
     evm_script = set_vault_redemptions_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
     # Create expected EVMScript with individual calls for each vault
@@ -56,7 +56,7 @@ def test_create_evm_script(owner, accounts, set_vault_redemptions_factory, vault
     for i in range(len(vaults)):
         expected_calls.append((
             vault_hub_stub.address,
-            vault_hub_stub.setVaultRedemptions.encode_input(vaults[i], redemptions_values[i])
+            vault_hub_stub.setLiabilitySharesTarget.encode_input(vaults[i], liability_shares_targets[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 
@@ -65,12 +65,12 @@ def test_create_evm_script(owner, accounts, set_vault_redemptions_factory, vault
 def test_decode_evm_script_call_data(accounts, set_vault_redemptions_factory):
     "Must decode EVMScript call data correctly"
     vaults = [accounts[5].address, accounts[6].address]
-    redemptions_values = [100, 200]
-    EVM_SCRIPT_CALLDATA = create_calldata(vaults, redemptions_values)
-    decoded_vaults, decoded_redemptions_values = set_vault_redemptions_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+    liability_shares_targets = [100, 200]
+    EVM_SCRIPT_CALLDATA = create_calldata(vaults, liability_shares_targets)
+    decoded_vaults, decoded_liability_shares_targets = set_vault_redemptions_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
+
     assert len(decoded_vaults) == len(vaults)
-    assert len(decoded_redemptions_values) == len(redemptions_values)
+    assert len(decoded_liability_shares_targets) == len(liability_shares_targets)
     for i in range(len(vaults)):
         assert decoded_vaults[i] == vaults[i]
-        assert decoded_redemptions_values[i] == redemptions_values[i] 
+        assert decoded_liability_shares_targets[i] == liability_shares_targets[i]

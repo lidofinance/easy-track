@@ -5,15 +5,18 @@ pragma solidity 0.8.6;
 
 interface IVaultHub {
     struct VaultConnection {
+        // ### 1st slot
         /// @notice address of the vault owner
         address owner;
         /// @notice maximum number of stETH shares that can be minted by vault owner
         uint96 shareLimit;
-        /// @notice index of the vault in the list of vaults. Indexes is guaranteed to be stable only if there was no deletions.
+        // ### 2nd slot
+        /// @notice index of the vault in the list of vaults. Indexes are not guaranteed to be stable.
         /// @dev vaultIndex is always greater than 0
         uint96 vaultIndex;
-        /// @notice if true, vault is disconnected and fee is not accrued
-        bool pendingDisconnect;
+        /// @notice timestamp of the block when disconnection was initiated
+        /// equal 0 if vault is disconnected and max(uint48) - for connected ,
+        uint48 disconnectInitiatedTs;
         /// @notice share of ether that is locked on the vault as an additional reserve
         /// e.g RR=30% means that for 1stETH minted 1/(1-0.3)=1.428571428571428571 ETH is locked on the vault
         uint16 reserveRatioBP;
@@ -27,38 +30,47 @@ interface IVaultHub {
         uint16 reservationFeeBP;
         /// @notice if true, vault owner manually paused the beacon chain deposits
         bool isBeaconDepositsManuallyPaused;
+        /// 24 bits gap
     }
 
     struct VaultRecord {
+        // ### 1st slot
         /// @notice latest report for the vault
         Report report;
-        /// @notice amount of ether that is locked from withdrawal on the vault
-        uint128 locked;
+        // ### 2nd slot
+        /// @notice max number of shares that was minted by the vault in current Oracle period
+        /// (used to calculate the locked value on the vault)
+        uint96 maxLiabilityShares;
         /// @notice liability shares of the vault
         uint96 liabilityShares;
-        /// @notice current inOutDelta of the vault (all deposits - all withdrawals)
-        Int112WithRefSlotCache inOutDelta;
-        /// @notice timestamp of the latest report
-        uint64 reportTimestamp;
+        // ### 3rd and 4th slots
+        /// @notice inOutDelta of the vault (all deposits - all withdrawals)
+        Int104WithCache[2] inOutDelta;
+        // ### 5th slot
+        /// @notice the minimal value that the reserve part of the locked can be
+        uint128 minimalReserve;
+        /// @notice part of liability shares reserved to be burnt as Lido core redemptions
+        uint128 redemptionShares;
+        // ### 6th slot
+        /// @notice cumulative value for Lido fees that accrued on the vault
+        uint128 cumulativeLidoFees;
+        /// @notice cumulative value for Lido fees that were settled on the vault
+        uint128 settledLidoFees;
     }
 
-    struct Int112WithRefSlotCache {
-        int112 value;
-        int112 valueOnRefSlot;
-        uint32 refSlot;
+    struct Int104WithCache {
+        int104 value;
+        int104 valueOnRefSlot;
+        uint48 refSlot;
     }
 
     struct Report {
         /// @notice total value of the vault
-        uint128 totalValue;
+        uint104 totalValue;
         /// @notice inOutDelta of the report
-        int112 inOutDelta;
-    }
-
-    struct VaultObligations {
-        uint128 settledLidoFees;
-        uint128 unsettledLidoFees;
-        uint128 redemptions;
+        int104 inOutDelta;
+        /// @notice timestamp (in seconds)
+        uint48 timestamp;
     }
 
     // -----------------------------
@@ -75,7 +87,9 @@ interface IVaultHub {
     /// @param _reportTotalValue the total value of the vault
     /// @param _reportInOutDelta the inOutDelta of the vault
     /// @param _reportCumulativeLidoFees the cumulative Lido fees of the vault
-    /// @param _reportLiabilityShares the liabilityShares of the vault
+    /// @param _reportLiabilityShares the liabilityShares of the vault on refSlot
+    /// @param _reportMaxLiabilityShares the maxLiabilityShares of the vault on refSlot
+    /// @param _reportSlashingReserve the slashingReserve of the vault
     function applyVaultReport(
         address _vault,
         uint256 _reportTimestamp,
@@ -83,6 +97,7 @@ interface IVaultHub {
         int256 _reportInOutDelta,
         uint256 _reportCumulativeLidoFees,
         uint256 _reportLiabilityShares,
+        uint256 _reportMaxLiabilityShares,
         uint256 _reportSlashingReserve
     ) external;
 
@@ -91,50 +106,32 @@ interface IVaultHub {
     /// @param account the account to grant the role to
     function grantRole(bytes32 role, address account) external;
 
-    /// @notice Updates share limit for the vault
-    /// @param _vault vault address
-    /// @param _shareLimit new share limit
-    function updateShareLimit(address _vault, uint256 _shareLimit) external;
-
-    /// @notice Updates fees for the vault
-    /// @param _vault vault address
-    /// @param _infraFeeBP new infra fee in basis points
-    /// @param _liquidityFeeBP new liquidity fee in basis points
-    /// @param _reservationFeeBP new reservation fee in basis points
-    function updateVaultFees(
-        address _vault,
-        uint256 _infraFeeBP,
-        uint256 _liquidityFeeBP,
-        uint256 _reservationFeeBP
-    ) external;
+    /// @notice updates a redemption shares on the vault
+    /// @param _vault The address of the vault
+    /// @param _liabilitySharesTarget maximum amount of liabilityShares that will be preserved, the rest will be
+    ///         marked as redemptionShares. If value is greater than liabilityShares, redemptionShares are set to 0
+    function setLiabilitySharesTarget(address _vault, uint256 _liabilitySharesTarget) external;
 
     /// @notice Transfer the bad debt from the donor vault to the acceptor vault
     /// @param _badDebtVault address of the vault that has the bad debt
-    /// @param _vaultAcceptor address of the vault that will accept the bad debt or 0 if the bad debt is internalized to the protocol
+    /// @param _vaultAcceptor address of the vault that will accept the bad debt
     /// @param _maxSharesToSocialize maximum amount of shares to socialize
-    /// @dev if _vaultAcceptor is 0, the bad debt is internalized to the protocol
+    /// @return number of shares that was socialized
     function socializeBadDebt(
         address _badDebtVault,
         address _vaultAcceptor,
         uint256 _maxSharesToSocialize
-    ) external;
+    ) external returns (uint256);
 
-    /// @notice Triggers validator full withdrawals for the vault using EIP-7002 permissionlessly if the vault is unhealthy
+    /// @notice Triggers validator full withdrawals for the vault using EIP-7002 if the vault has obligations shortfall
     /// @param _vault address of the vault to exit validators from
-    /// @param _pubkeys public keys of the validators to exit
+    /// @param _pubkeys array of public keys of the validators to exit
     /// @param _refundRecipient address that will receive the refund for transaction costs
-    /// @dev    When the vault becomes unhealthy, withdrawal committee can force its validators to exit the beacon chain
-    ///         This returns the vault's deposited ETH back to vault's balance and allows to rebalance the vault
     function forceValidatorExit(
         address _vault,
         bytes calldata _pubkeys,
         address _refundRecipient
     ) external payable;
-
-    /// @notice Accrues a redemption obligation on the vault under extreme conditions
-    /// @param _vault The address of the vault
-    /// @param _redemptionsValue The value of the redemptions obligation
-    function setVaultRedemptions(address _vault, uint256 _redemptionsValue) external;
 
     // -----------------------------
     //            VIEW FUNCTIONS
@@ -150,14 +147,11 @@ interface IVaultHub {
     /// @return The VaultRecord struct containing vault state
     function vaultRecord(address _vault) external view returns (VaultRecord memory);
 
-    /// @notice Returns the vault obligations information for a given vault address
-    /// @param _vault The address of the vault to query
-    /// @return The VaultObligations struct containing vault obligations
-    function vaultObligations(address _vault) external view returns (VaultObligations memory);
-
-    /// @notice Returns the vault master role
-    /// @return bytes32 the vault master role
-    function VAULT_MASTER_ROLE() external view returns (bytes32);
+    /// @notice returns the vault's current obligations toward the protocol
+    /// @param _vault vault address
+    /// @return sharesToBurn amount of shares to burn / rebalance
+    /// @return feesToSettle amount of Lido fees to settle
+    function obligations(address _vault) external view returns (uint256 sharesToBurn, uint256 feesToSettle);
 
     /// @notice Returns the bad debt master role
     /// @return bytes32 the bad debt master role
@@ -175,7 +169,6 @@ interface IVaultHub {
     //            EVENTS
     // -----------------------------
 
-    event VaultShareLimitUpdated(address indexed vault, uint256 newShareLimit);
     event VaultFeesUpdated(
         address indexed vault,
         uint256 preInfraFeeBP,
@@ -187,5 +180,5 @@ interface IVaultHub {
     );
     event ForcedValidatorExitTriggered(address indexed vault, bytes pubkeys, address refundRecipient);
     event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
-    event RedemptionsUpdated(address indexed vault, uint256 unsettledRedemptions);
+    event VaultRedemptionSharesUpdated(address indexed vault, uint256 redemptionShares);
 }

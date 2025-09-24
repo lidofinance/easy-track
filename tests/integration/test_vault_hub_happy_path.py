@@ -1,7 +1,7 @@
 import pytest
 import brownie
 
-from brownie import VaultHubAdapter, ForceTransfer # type: ignore
+from brownie import VaultsAdapter, ForceTransfer # type: ignore
 from utils.evm_script import encode_calldata
 from utils.test_helpers import assert_event_exists
 
@@ -14,8 +14,8 @@ def trusted_address(accounts):
 
 
 @pytest.fixture(scope="module", autouse=True)
-def adapter(owner, vault_hub, easy_track, trusted_address, agent):
-    adapter = VaultHubAdapter.deploy(trusted_address, vault_hub, easy_track.evmScriptExecutor(), 1000000000000000000, {"from": owner})
+def adapter(owner, vault_hub, operator_grid, easy_track, trusted_address, agent):
+    adapter = VaultsAdapter.deploy(trusted_address, vault_hub, operator_grid, easy_track.evmScriptExecutor(), 1000000000000000000, {"from": owner})
     # send 10 ETH to adapter
     owner.transfer(adapter, 10 * 10 ** 18)
     # grant all needed roles to adapter
@@ -100,12 +100,12 @@ def create_enact_and_check_update_vaults_fees_motion(
     infra_fees_bp,
     liquidity_fees_bp,
     reservation_fees_bp,
-):    
+):
     # Create and execute motion to update fees
     motion_transaction = easy_track.createMotion(
         update_vaults_fees_factory.address,
         encode_calldata(
-            ["address[]", "uint256[]", "uint256[]", "uint256[]"], 
+            ["address[]", "uint256[]", "uint256[]", "uint256[]"],
             [vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_bp]
         ),
         {"from": trusted_address},
@@ -150,7 +150,7 @@ def create_enact_and_check_force_validator_exits_motion(
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
-    
+
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
     assert len(tx.events["ForcedValidatorExitTriggered"]) == len(vault_addresses)
@@ -169,7 +169,7 @@ def create_enact_and_check_set_vault_redemptions_motion(
     set_vault_redemptions_factory,
     vaults,
     redemptions_values,
-):    
+):
     # Create and execute motion to set vault redemptions
     motion_transaction = easy_track.createMotion(
         set_vault_redemptions_factory.address,
@@ -185,7 +185,7 @@ def create_enact_and_check_set_vault_redemptions_motion(
     for i, vault_address in enumerate(vaults):
         obligations = vault_hub.vaultObligations(vault_address)
         assert obligations[2] == redemptions_values[i]  # redemptions
-    
+
     # Check that events were emitted
     assert len(tx.events["RedemptionsUpdated"]) == len(vaults)
     for i, event in enumerate(tx.events["RedemptionsUpdated"]):
@@ -215,7 +215,7 @@ def create_enact_and_check_socialize_bad_debt_motion(
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
-    
+
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
     # Check that events were emitted for failed socializations
@@ -238,10 +238,10 @@ def test_update_share_limits_happy_path(
     vault_hub,
     vaults,
     adapter,
-):  
+):
     factory_instance = deployer.deploy(DecreaseShareLimitsInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHubAdapter() == adapter
+    assert factory_instance.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
@@ -280,10 +280,10 @@ def test_update_vaults_fees_happy_path(
     vault_hub,
     adapter,
     vaults,
-):  
+):
     factory_instance = deployer.deploy(DecreaseVaultsFeesInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHubAdapter() == adapter
+    assert factory_instance.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
@@ -325,10 +325,10 @@ def test_force_validator_exits_happy_path(
     vaults,
     adapter,
     lazy_oracle,
-):  
+):
     factory_instance = deployer.deploy(ForceValidatorExitsInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHubAdapter() == adapter
+    assert factory_instance.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
@@ -347,13 +347,13 @@ def test_force_validator_exits_happy_path(
     forceTransfer = ForceTransfer.deploy({"from": owner})
     forceTransfer.transfer(lazy_oracle, {"from": owner, "value": 10 * 10**18})
     vault_hub.applyVaultReport(
-        vaults[0], 
-        1750427149, 
-        699867039001672206, 
-        3600000000000000000, 
-        0, 
-        799867039001672206, 
-        0, 
+        vaults[0],
+        1750427149,
+        699867039001672206,
+        3600000000000000000,
+        0,
+        799867039001672206,
+        0,
         {"from": lazy_oracle})
 
     create_enact_and_check_force_validator_exits_motion(
@@ -381,7 +381,7 @@ def test_set_vault_redemptions_happy_path(
     vault_hub,
     agent,
     vaults,
-):  
+):
     # transfer 10 ETH to agent
     owner.transfer(agent, 10 * 10**18)
     vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), easy_track.evmScriptExecutor(), {"from": agent})
@@ -429,7 +429,7 @@ def test_socialize_bad_debt_happy_path(
 ):
     factory_instance = deployer.deploy(SocializeBadDebtInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHubAdapter() == adapter
+    assert factory_instance.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
@@ -448,13 +448,13 @@ def test_socialize_bad_debt_happy_path(
     forceTransfer = ForceTransfer.deploy({"from": owner})
     forceTransfer.transfer(lazy_oracle, {"from": owner, "value": 10 * 10**18})
     vault_hub.applyVaultReport(
-        vaults[0], 
-        1750427149, 
-        699867039001672206, 
-        3600000000000000000, 
-        0, 
-        799867039001672206, 
-        0, 
+        vaults[0],
+        1750427149,
+        699867039001672206,
+        3600000000000000000,
+        0,
+        799867039001672206,
+        0,
         {"from": lazy_oracle})
 
     create_enact_and_check_socialize_bad_debt_motion(
