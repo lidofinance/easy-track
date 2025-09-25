@@ -1,5 +1,6 @@
 import json
 import os
+from time import sleep
 
 from brownie import (
     chain,
@@ -152,8 +153,11 @@ def deploy_operator_grid_factories(
     log.ok("Deployment artifacts have been saved to", filename)
 
     RegisterGroupsInOperatorGrid.publish_source(register_groups_in_operator_grid)
+    sleep(2)
     UpdateGroupsShareLimitInOperatorGrid.publish_source(update_groups_share_limit_in_operator_grid)
+    sleep(2)
     RegisterTiersInOperatorGrid.publish_source(register_tiers_in_operator_grid)
+    sleep(2)
     AlterTiersInOperatorGrid.publish_source(alter_tiers_in_operator_grid)
 
     log.br()
