@@ -10,7 +10,7 @@ import "../../interfaces/IVaultHub.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to set liability shares target for multiple vaults in VaultHub
-contract SetVaultRedemptionsInVaultHub is TrustedCaller, IEVMScriptFactory {
+contract SetLiabilitySharesTargetInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERROR MESSAGES

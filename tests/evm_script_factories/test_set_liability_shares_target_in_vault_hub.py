@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SetVaultRedemptionsInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SetLiabilitySharesTargetInVaultHub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,40 +7,40 @@ def create_calldata(vaults, liability_shares_targets):
     return encode_calldata(["address[]", "uint256[]"], [vaults, liability_shares_targets])
 
 @pytest.fixture(scope="module")
-def set_vault_redemptions_factory(owner, vault_hub_stub):
-    factory = SetVaultRedemptionsInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
+def set_liability_shares_target_factory(owner, vault_hub_stub):
+    factory = SetLiabilitySharesTargetInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
     return factory
 
-def test_deploy(owner, vault_hub_stub, set_vault_redemptions_factory):
+def test_deploy(owner, vault_hub_stub, set_liability_shares_target_factory):
     "Must deploy contract with correct data"
-    assert set_vault_redemptions_factory.trustedCaller() == owner
-    assert set_vault_redemptions_factory.vaultHub() == vault_hub_stub
+    assert set_liability_shares_target_factory.trustedCaller() == owner
+    assert set_liability_shares_target_factory.vaultHub() == vault_hub_stub
 
-def test_create_evm_script_called_by_stranger(stranger, set_vault_redemptions_factory):
+def test_create_evm_script_called_by_stranger(stranger, set_liability_shares_target_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     EVM_SCRIPT_CALLDATA = "0x"
     with reverts("CALLER_IS_FORBIDDEN"):
-        set_vault_redemptions_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
+        set_liability_shares_target_factory.createEVMScript(stranger, EVM_SCRIPT_CALLDATA)
 
-def test_empty_vaults_array(owner, set_vault_redemptions_factory):
+def test_empty_vaults_array(owner, set_liability_shares_target_factory):
     "Must revert with message 'EMPTY_VAULTS' if vaults array is empty"
     EMPTY_CALLDATA = create_calldata([], [])
     with reverts('EMPTY_VAULTS'):
-        set_vault_redemptions_factory.createEVMScript(owner, EMPTY_CALLDATA)
+        set_liability_shares_target_factory.createEVMScript(owner, EMPTY_CALLDATA)
 
-def test_array_length_mismatch(owner, stranger, set_vault_redemptions_factory):
+def test_array_length_mismatch(owner, stranger, set_liability_shares_target_factory):
     "Must revert with message 'ARRAY_LENGTH_MISMATCH' if arrays have different lengths"
     CALLDATA = create_calldata([stranger.address], [100, 200])
     with reverts('ARRAY_LENGTH_MISMATCH'):
-        set_vault_redemptions_factory.createEVMScript(owner, CALLDATA)
+        set_liability_shares_target_factory.createEVMScript(owner, CALLDATA)
 
-def test_zero_vault_address(owner, stranger, set_vault_redemptions_factory):
+def test_zero_vault_address(owner, stranger, set_liability_shares_target_factory):
     "Must revert with message 'ZERO_VAULT' if any vault is zero address"
     CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [100, 200])
     with reverts('ZERO_VAULT'):
-        set_vault_redemptions_factory.createEVMScript(owner, CALLDATA)
+        set_liability_shares_target_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script(owner, accounts, set_vault_redemptions_factory, vault_hub_stub):
+def test_create_evm_script(owner, accounts, set_liability_shares_target_factory, vault_hub_stub):
     "Must create correct EVMScript if all requirements are met"
     vault1 = accounts[5]
     vault2 = accounts[6]
@@ -49,7 +49,7 @@ def test_create_evm_script(owner, accounts, set_vault_redemptions_factory, vault
     liability_shares_targets = [100, 200]
 
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, liability_shares_targets)
-    evm_script = set_vault_redemptions_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+    evm_script = set_liability_shares_target_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
     # Create expected EVMScript with individual calls for each vault
     expected_calls = []
@@ -62,12 +62,12 @@ def test_create_evm_script(owner, accounts, set_vault_redemptions_factory, vault
 
     assert evm_script == expected_evm_script
 
-def test_decode_evm_script_call_data(accounts, set_vault_redemptions_factory):
+def test_decode_evm_script_call_data(accounts, set_liability_shares_target_factory):
     "Must decode EVMScript call data correctly"
     vaults = [accounts[5].address, accounts[6].address]
     liability_shares_targets = [100, 200]
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, liability_shares_targets)
-    decoded_vaults, decoded_liability_shares_targets = set_vault_redemptions_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
+    decoded_vaults, decoded_liability_shares_targets = set_liability_shares_target_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
 
     assert len(decoded_vaults) == len(vaults)
     assert len(decoded_liability_shares_targets) == len(liability_shares_targets)

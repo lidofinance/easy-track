@@ -113,7 +113,7 @@ def addresses(network=DEFAULT_NETWORK):
             operator_grid="0xe9c7B88eEc76bCBa96eeFF0e2805B68B9b10eB46",
             vault_hub="0xEC04a1A1D07E450001Bf778d85416b90d762B18A",
             lazy_oracle="0x2dDcFF3AfeD6361E7CD4b09aaEA9c87eD39C503b",
-            evm_script_executor="0xbf91a57E194c2c7a758247eC12648Fc5651478db", # old address - no real address provided
+            evm_script_executor="0xc2764655e3fe0bd2D3C710D74Fa5a89162099FD8",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork, hoodi, hoodi-fork, hoodi-v3, hoodi-v3-fork"""
@@ -159,8 +159,8 @@ class LidoContractsSetup:
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
-        self.operator_grid = interface.OperatorGrid(lido_addresses.operator_grid)
-        self.vault_hub = interface.VaultHub(lido_addresses.vault_hub)
+        self.operator_grid = interface.IOperatorGrid(lido_addresses.operator_grid)
+        self.vault_hub = interface.IVaultHub(lido_addresses.vault_hub)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting

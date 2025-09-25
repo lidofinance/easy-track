@@ -1,6 +1,7 @@
 import pytest
 import brownie
 
+from brownie import VaultsAdapter # type: ignore
 from utils.evm_script import encode_calldata
 
 MOTION_BUFFER_TIME = 100
@@ -9,6 +10,21 @@ MOTION_BUFFER_TIME = 100
 @pytest.fixture(scope="module")
 def trusted_address(accounts):
     return accounts[7]
+
+@pytest.fixture(scope="module", autouse=True)
+def adapter(owner, vault_hub, operator_grid, easy_track, trusted_address, agent):
+    adapter = VaultsAdapter.deploy(trusted_address, vault_hub, operator_grid, easy_track.evmScriptExecutor(), 1000000000000000000, {"from": owner})
+    # send 10 ETH to adapter
+    owner.transfer(adapter, 10 * 10 ** 18)
+    # grant all needed roles to adapter
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), adapter, {"from": agent})
+    return adapter
+
+@pytest.fixture(scope="module")
+def vaults(accounts):
+    # real vaults from Hoodi
+    vaults = ["0x08bb216533b82B02D8BA713B075467aC1F9F3C53"]
+    return vaults
 
 
 def setup_operator_grid(owner, operator_grid, easy_track, agent):
@@ -22,6 +38,8 @@ def setup_evm_script_factory(
     factory_instance, permissions, easy_track, trusted_address, voting, deployer, operator_grid
 ):
     num_factories_before = len(easy_track.getEVMScriptFactories())
+    print(f"factory_instance: {factory_instance}")
+    print(f"permissions: {permissions}")
     easy_track.addEVMScriptFactory(factory_instance, permissions, {"from": voting})
     evm_script_factories = easy_track.getEVMScriptFactories()
 
@@ -35,12 +53,13 @@ def execute_motion(easy_track, motion_transaction, stranger):
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
     motions = easy_track.getMotions()
     assert len(motions) == 1
-    easy_track.enactMotion(
+    tx = easy_track.enactMotion(
         motions[0][0],
         motion_transaction.events["MotionCreated"]["_evmScriptCallData"],
         {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
+    return tx
 
 
 def create_enact_and_check_register_group_motion(
@@ -104,13 +123,13 @@ def create_enact_and_check_update_share_limits_motion(
     # First register the group to update
     for i, operator_address in enumerate(operator_addresses):
         operator_grid.registerGroup(operator_address, new_share_limits[i]*2, {"from": owner})
-    
+
     # Check initial state
     for i, operator_address in enumerate(operator_addresses):
         group = operator_grid.group(operator_address)
         assert group[0] == operator_address  # operator
         assert group[1] == new_share_limits[i]*2  # shareLimit
-    
+
     # Create and execute motion to update share limit
     motion_transaction = easy_track.createMotion(
         update_share_limits_factory.address,
@@ -142,12 +161,12 @@ def create_enact_and_check_register_tiers_motion(
     # First register the groups to add tiers to
     for operator_address in operator_addresses:
         operator_grid.registerGroup(operator_address, 1000, {"from": owner})
-    
+
     # Check initial state - no tiers
     for operator_address in operator_addresses:
         group = operator_grid.group(operator_address)
         assert len(group[3]) == 0  # tiersId array should be empty
-    
+
     # Create and execute motion to register tiers
     motion_transaction = easy_track.createMotion(
         register_tiers_factory.address,
@@ -225,6 +244,82 @@ def create_enact_and_check_alter_tiers_motion(
         assert tier[6] == new_tier_params[i][4]  # liquidityFeeBP
         assert tier[7] == new_tier_params[i][5]  # reservationFeeBP
 
+
+def create_enact_and_check_set_jail_status_motion(
+    owner,
+    easy_track,
+    operator_grid,
+    stranger,
+    trusted_address,
+    set_jail_status_factory,
+    vaults,
+    jail_statuses,
+):
+    # Create and execute motion to set jail status
+    motion_transaction = easy_track.createMotion(
+        set_jail_status_factory.address,
+        encode_calldata(["address[]", "bool[]"], [vaults, jail_statuses]),
+        {"from": trusted_address},
+    )
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+
+    tx = execute_motion(easy_track, motion_transaction, stranger)
+
+    # Check final state
+    for i, vault in enumerate(vaults):
+        is_in_jail = operator_grid.isVaultInJail(vault)
+        assert is_in_jail == jail_statuses[i]
+
+    # Check that events were emitted
+    assert len(tx.events["VaultJailStatusUpdated"]) == len(vaults)
+    for i, event in enumerate(tx.events["VaultJailStatusUpdated"]):
+        assert event["vault"] == vaults[i]
+        assert event["isInJail"] == jail_statuses[i]
+
+
+def create_enact_and_check_update_vaults_fees_motion(
+    owner,
+    easy_track,
+    operator_grid,
+    stranger,
+    trusted_address,
+    update_vaults_fees_factory,
+    vaults,
+    infra_fees_bp,
+    liquidity_fees_bp,
+    reservation_fees_bp,
+):
+    # Create and execute motion to update fees
+    motion_transaction = easy_track.createMotion(
+        update_vaults_fees_factory.address,
+        encode_calldata(
+            ["address[]", "uint256[]", "uint256[]", "uint256[]"],
+            [vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_bp]
+        ),
+        {"from": trusted_address},
+    )
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+
+    tx = execute_motion(easy_track, motion_transaction, stranger)
+
+    # Check final state via operator grid
+    for i, vault_address in enumerate(vaults):
+        vault_fees = operator_grid.vaultFees(vault_address)
+        assert vault_fees[0] == infra_fees_bp[i]
+        assert vault_fees[1] == liquidity_fees_bp[i]
+        assert vault_fees[2] == reservation_fees_bp[i]
+
+    # Check that events were emitted
+    assert len(tx.events["VaultFeesUpdated"]) == len(vaults)
+    for i, event in enumerate(tx.events["VaultFeesUpdated"]):
+        assert event["vault"] == vaults[i]
+        assert event["infraFeeBP"] == infra_fees_bp[i]
+        assert event["liquidityFeeBP"] == liquidity_fees_bp[i]
+        assert event["reservationFeeBP"] == reservation_fees_bp[i]
+
+
 @pytest.mark.skip_coverage
 def test_register_group_happy_path(
     owner,
@@ -245,6 +340,7 @@ def test_register_group_happy_path(
     assert factory_instance.maxSaneShareLimit() == 10000
 
     permission = operator_grid.address + operator_grid.registerGroup.signature[2:] + operator_grid.address[2:] + operator_grid.registerTiers.signature[2:]
+    print("register_group_happy_path")
     register_group_factory = setup_evm_script_factory(
         factory_instance,
         permission,
@@ -306,6 +402,7 @@ def test_update_groups_share_limit_happy_path(
     assert factory_instance.maxSaneShareLimit() == 10000
 
     permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
+    print("update_groups_share_limit_happy_path")
     update_share_limits_factory = setup_evm_script_factory(
         factory_instance,
         permission,
@@ -347,6 +444,7 @@ def test_register_tiers_happy_path(
     assert factory_instance.operatorGrid() == operator_grid
 
     permission = operator_grid.address + operator_grid.registerTiers.signature[2:]
+    print("register_tiers_happy_path")
     register_tiers_factory = setup_evm_script_factory(
         factory_instance,
         permission,
@@ -406,6 +504,7 @@ def test_alter_tiers_happy_path(
     assert factory_instance.operatorGrid() == operator_grid
 
     permission = operator_grid.address + operator_grid.alterTiers.signature[2:]
+    print("alter_tiers_happy_path")
     alter_tiers_factory = setup_evm_script_factory(
         factory_instance,
         permission,
@@ -428,4 +527,95 @@ def test_alter_tiers_happy_path(
         alter_tiers_factory,
         [1, 2],  # tier IDs to alter
         new_tier_params,
+    )
+
+
+@pytest.mark.skip_coverage
+def test_set_jail_status_happy_path(
+    owner,
+    SetJailStatusInOperatorGrid,
+    easy_track,
+    trusted_address,
+    voting,
+    deployer,
+    stranger,
+    operator_grid,
+    adapter,
+):
+    factory_instance = deployer.deploy(SetJailStatusInOperatorGrid, trusted_address, adapter)
+    assert factory_instance.trustedCaller() == trusted_address
+    assert factory_instance.vaultsAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == trusted_address
+    assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
+
+    permission = adapter.address + adapter.setVaultJailStatus.signature[2:]
+
+    print("set_jail_status_happy_path")
+    setup_evm_script_factory(
+        factory_instance,
+        permission,
+        easy_track,
+        trusted_address,
+        voting,
+        deployer,
+        operator_grid,
+    )
+
+    create_enact_and_check_set_jail_status_motion(
+        owner,
+        easy_track,
+        operator_grid,
+        stranger,
+        trusted_address,
+        factory_instance,
+        ["0x08bb216533b82B02D8BA713B075467aC1F9F3C53"],  # vault addresses
+        [True],  # jail statuses
+    )
+
+
+@pytest.mark.skip_coverage
+def test_update_vaults_fees_happy_path(
+    owner,
+    DecreaseVaultsFeesInOperatorGrid,
+    easy_track,
+    trusted_address,
+    voting,
+    deployer,
+    stranger,
+    operator_grid,
+    vaults,
+    adapter,
+):
+    factory_instance = deployer.deploy(DecreaseVaultsFeesInOperatorGrid, trusted_address, adapter)
+    assert factory_instance.trustedCaller() == trusted_address
+    assert factory_instance.vaultsAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == trusted_address
+    assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
+
+    permission = adapter.address + adapter.updateVaultFees.signature[2:]
+
+    print("update_vaults_fees_happy_path")
+    setup_evm_script_factory(
+        factory_instance,
+        permission,
+        easy_track,
+        trusted_address,
+        voting,
+        deployer,
+        operator_grid,
+    )
+
+    create_enact_and_check_update_vaults_fees_motion(
+        owner,
+        easy_track,
+        operator_grid,
+        stranger,
+        trusted_address,
+        factory_instance,
+        vaults,
+        [1],  # infra fees BP
+        [1],  # liquidity fees BP
+        [0],  # reservation fees BP
     )
