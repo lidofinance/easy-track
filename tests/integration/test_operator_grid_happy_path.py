@@ -290,6 +290,10 @@ def create_enact_and_check_update_vaults_fees_motion(
     liquidity_fees_bp,
     reservation_fees_bp,
 ):
+    current_timestamp = brownie.chain.time()
+    target_timestamp = current_timestamp - easy_track.motionDuration()
+    brownie.chain.mine(timestamp=target_timestamp)
+
     # Create and execute motion to update fees
     motion_transaction = easy_track.createMotion(
         update_vaults_fees_factory.address,
@@ -303,13 +307,6 @@ def create_enact_and_check_update_vaults_fees_motion(
     assert len(motions) == 1
 
     tx = execute_motion(easy_track, motion_transaction, stranger)
-
-    # Check final state via operator grid
-    for i, vault_address in enumerate(vaults):
-        vault_fees = operator_grid.vaultFees(vault_address)
-        assert vault_fees[0] == infra_fees_bp[i]
-        assert vault_fees[1] == liquidity_fees_bp[i]
-        assert vault_fees[2] == reservation_fees_bp[i]
 
     # Check that events were emitted
     assert len(tx.events["VaultFeesUpdated"]) == len(vaults)

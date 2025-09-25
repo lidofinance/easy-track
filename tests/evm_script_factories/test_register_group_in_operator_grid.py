@@ -71,10 +71,10 @@ def test_group_exists(owner, stranger, register_groups_in_operator_grid_factory,
 
 def test_create_evm_script(owner, accounts, register_groups_in_operator_grid_factory, operator_grid_stub):
     "Must create correct EVMScript if all requirements are met"
-    operator1 = accounts[5]
-    operator2 = accounts[6]
+    operator1 = "0x0000000000000000000000000000000000000001"
+    operator2 = "0x0000000000000000000000000000000000000002"
 
-    operators = [operator1.address, operator2.address]
+    operators = [operator1, operator2]
     share_limits = [1000, 3000]
     tiers = [
         [(1000, 200, 100, 50, 40, 10)],  # Tiers for operator1
