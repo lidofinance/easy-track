@@ -69,6 +69,7 @@ development:
       gas_limit: 30000000
       mnemonic: brownie
       port: 8545
+      time: 2025-09-22T10:00:00Z
     host: http://127.0.0.1
     id: hoodi-v3-fork
     name: Ganache-CLI (Hoodi Fork)

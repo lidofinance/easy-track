@@ -290,10 +290,6 @@ def create_enact_and_check_update_vaults_fees_motion(
     liquidity_fees_bp,
     reservation_fees_bp,
 ):
-    current_timestamp = brownie.chain.time()
-    target_timestamp = current_timestamp - easy_track.motionDuration()
-    brownie.chain.mine(timestamp=target_timestamp)
-
     # Create and execute motion to update fees
     motion_transaction = easy_track.createMotion(
         update_vaults_fees_factory.address,
