@@ -17,7 +17,7 @@ def test_deploy(owner, operator_grid_stub, alter_tiers_in_operator_grid_factory)
     "Must deploy contract with correct data"
     assert alter_tiers_in_operator_grid_factory.trustedCaller() == owner
     assert alter_tiers_in_operator_grid_factory.operatorGrid() == operator_grid_stub
-    assert alter_tiers_in_operator_grid_factory.maxShareLimit() == 1000 * 10**18
+    assert alter_tiers_in_operator_grid_factory.defaultTierMaxShareLimit() == 1000 * 10**18
 
 
 def test_create_evm_script_called_by_stranger(stranger, alter_tiers_in_operator_grid_factory):

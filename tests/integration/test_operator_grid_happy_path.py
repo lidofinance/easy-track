@@ -496,7 +496,7 @@ def test_alter_tiers_happy_path(
     factory_instance = deployer.deploy(AlterTiersInOperatorGrid, trusted_address, operator_grid, max_share_limit)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.operatorGrid() == operator_grid
-    assert factory_instance.maxShareLimit() == max_share_limit
+    assert factory_instance.defaultTierMaxShareLimit() == max_share_limit
 
     permission = operator_grid.address + operator_grid.alterTiers.signature[2:]
     print("alter_tiers_happy_path")

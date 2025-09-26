@@ -153,6 +153,11 @@ interface IVaultHub {
     /// @return feesToSettle amount of Lido fees to settle
     function obligations(address _vault) external view returns (uint256 sharesToBurn, uint256 feesToSettle);
 
+    /// @notice Returns true if vault is pending for disconnect, false if vault is connected or disconnected
+    /// @param _vault vault address
+    /// @return true if vault is pending for disconnect
+    function isPendingDisconnect(address _vault) external view returns (bool);
+
     /// @notice Returns the bad debt master role
     /// @return bytes32 the bad debt master role
     function BAD_DEBT_MASTER_ROLE() external view returns (bytes32);

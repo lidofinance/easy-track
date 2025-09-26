@@ -54,6 +54,8 @@ contract VaultHubStub is AccessControl {
     bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
     bytes32 public constant REDEMPTION_MASTER_ROLE = keccak256("vaults.VaultHub.RedemptionMasterRole");
     bytes32 public constant BAD_DEBT_MASTER_ROLE = keccak256("vaults.VaultHub.BadDebtMasterRole");
+    /// @dev special value for `disconnectTimestamp` storage means the vault is not marked for disconnect
+    uint48 internal immutable DISCONNECT_NOT_INITIATED = type(uint48).max;
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
@@ -69,7 +71,7 @@ contract VaultHubStub is AccessControl {
             msg.sender,
             1000,
             vaultIndex++,
-            type(uint48).max, // Connected vault - max value indicates connected
+            DISCONNECT_NOT_INITIATED, // Connected vault - max value indicates connected
             100,
             50,
             1000,
@@ -104,6 +106,12 @@ contract VaultHubStub is AccessControl {
     /// @return true if the vault is connected to the hub
     function isVaultConnected(address _vault) external view returns (bool) {
         return connections[_vault].vaultIndex != 0;
+    }
+
+    /// @return true if vault is pending for disconnect, false if vault is connected or disconnected
+    function isPendingDisconnect(address _vault) external view returns (bool) {
+        // For stub purposes, always return false
+        return false;
     }
 
 

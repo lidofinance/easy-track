@@ -97,8 +97,9 @@ contract VaultsAdapter is TrustedCaller {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
+        bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
         if (connection.vaultIndex == 0 || // vault is not connected to hub
-            connection.disconnectInitiatedTs != type(uint48).max || // vault is disconnecting
+            isPendingDisconnect || // vault is disconnecting
             _infraFeeBP > connection.infraFeeBP ||
             _liquidityFeeBP > connection.liquidityFeeBP ||
             _reservationFeeBP > connection.reservationFeeBP) {
@@ -116,8 +117,9 @@ contract VaultsAdapter is TrustedCaller {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
+        bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
         if (connection.vaultIndex == 0 || // vault is not connected to hub
-            connection.disconnectInitiatedTs != type(uint48).max || // vault is disconnecting
+            isPendingDisconnect || // vault is disconnecting
             operatorGrid.isVaultInJail(_vault) == _isInJail) { // status is already the same
             emit VaultJailStatusUpdateFailed(_vault, _isInJail);
             return;
@@ -133,8 +135,9 @@ contract VaultsAdapter is TrustedCaller {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
+        bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
         if (connection.vaultIndex == 0 || // vault is not connected to hub
-            connection.disconnectInitiatedTs != type(uint48).max) { // vault is disconnecting
+            isPendingDisconnect) { // vault is disconnecting
             emit LiabilitySharesTargetUpdateFailed(_vault, _liabilitySharesTarget);
             return;
         }
