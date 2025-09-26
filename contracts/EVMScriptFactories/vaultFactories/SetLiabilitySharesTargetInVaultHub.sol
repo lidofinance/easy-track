@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHub.sol";
+import "../../interfaces/IVaultsAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to set liability shares target for multiple vaults in VaultHub
@@ -16,7 +16,7 @@ contract SetLiabilitySharesTargetInVaultHub is TrustedCaller, IEVMScriptFactory 
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
+    string private constant ERROR_ZERO_ADAPTER = "ZERO_ADAPTER";
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
@@ -25,19 +25,19 @@ contract SetLiabilitySharesTargetInVaultHub is TrustedCaller, IEVMScriptFactory 
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
+    /// @notice Address of Vaults adapter
+    IVaultsAdapter public immutable vaultsAdapter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub)
+    constructor(address _trustedCaller, address _adapter)
         TrustedCaller(_trustedCaller)
     {
-        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
+        require(_adapter != address(0), ERROR_ZERO_ADAPTER);
 
-        vaultHub = IVaultHub(_vaultHub);
+        vaultsAdapter = IVaultsAdapter(_adapter);
     }
 
     // -------------
@@ -61,8 +61,8 @@ contract SetLiabilitySharesTargetInVaultHub is TrustedCaller, IEVMScriptFactory 
 
         _validateInputData(_vaults, _liabilitySharesTargets);
 
-        address toAddress = address(vaultHub);
-        bytes4 methodId = IVaultHub.setLiabilitySharesTarget.selector;
+        address toAddress = address(vaultsAdapter);
+        bytes4 methodId = IVaultsAdapter.setLiabilitySharesTarget.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {

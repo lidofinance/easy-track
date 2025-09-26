@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SetLiabilitySharesTargetInVaultHub, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SetLiabilitySharesTargetInVaultHub, VaultsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,14 +7,22 @@ def create_calldata(vaults, liability_shares_targets):
     return encode_calldata(["address[]", "uint256[]"], [vaults, liability_shares_targets])
 
 @pytest.fixture(scope="module")
-def set_liability_shares_target_factory(owner, vault_hub_stub):
-    factory = SetLiabilitySharesTargetInVaultHub.deploy(owner, vault_hub_stub, {"from": owner})
+def adapter(owner, vault_hub_stub, operator_grid_stub):
+    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
+    return adapter
+
+@pytest.fixture(scope="module")
+def set_liability_shares_target_factory(owner, adapter):
+    factory = SetLiabilitySharesTargetInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, vault_hub_stub, set_liability_shares_target_factory):
+def test_deploy(owner, set_liability_shares_target_factory, adapter, vault_hub_stub):
     "Must deploy contract with correct data"
     assert set_liability_shares_target_factory.trustedCaller() == owner
-    assert set_liability_shares_target_factory.vaultHub() == vault_hub_stub
+    assert set_liability_shares_target_factory.vaultsAdapter() == adapter
+    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.trustedCaller() == owner
+    assert adapter.evmScriptExecutor() == owner
 
 def test_create_evm_script_called_by_stranger(stranger, set_liability_shares_target_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -40,7 +48,7 @@ def test_zero_vault_address(owner, stranger, set_liability_shares_target_factory
     with reverts('ZERO_VAULT'):
         set_liability_shares_target_factory.createEVMScript(owner, CALLDATA)
 
-def test_create_evm_script(owner, accounts, set_liability_shares_target_factory, vault_hub_stub):
+def test_create_evm_script(owner, accounts, set_liability_shares_target_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
     vault1 = accounts[5]
     vault2 = accounts[6]
@@ -55,8 +63,8 @@ def test_create_evm_script(owner, accounts, set_liability_shares_target_factory,
     expected_calls = []
     for i in range(len(vaults)):
         expected_calls.append((
-            vault_hub_stub.address,
-            vault_hub_stub.setLiabilitySharesTarget.encode_input(vaults[i], liability_shares_targets[i])
+            adapter.address,
+            adapter.setLiabilitySharesTarget.encode_input(vaults[i], liability_shares_targets[i])
         ))
     expected_evm_script = encode_call_script(expected_calls)
 

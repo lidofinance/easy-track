@@ -21,6 +21,7 @@ def adapter(owner, vault_hub, operator_grid, easy_track, trusted_address, agent)
     # grant all needed roles to adapter
     vault_hub.grantRole(vault_hub.BAD_DEBT_MASTER_ROLE(), adapter, {"from": agent})
     vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), adapter, {"from": agent})
+    vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), adapter, {"from": agent})
     return adapter
 
 
@@ -107,7 +108,7 @@ def create_enact_and_check_set_liability_shares_target_motion(
 
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
-    # Check that events were emitted
+    # Check that events were emitted from VaultHub via adapter
     assert len(tx.events["VaultRedemptionSharesUpdated"]) == len(vaults)
     for i, event in enumerate(tx.events["VaultRedemptionSharesUpdated"]):
         assert event["vault"] == vaults[i]
@@ -217,17 +218,13 @@ def test_set_liability_shares_target_happy_path(
     vault_hub,
     agent,
     vaults,
+    adapter,
 ):
-    # transfer 10 ETH to agent
-    owner.transfer(agent, 10 * 10**18)
-    vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), easy_track.evmScriptExecutor(), {"from": agent})
-    vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), owner, {"from": agent})
-
-    factory_instance = deployer.deploy(SetLiabilitySharesTargetInVaultHub, trusted_address, vault_hub)
+    factory_instance = deployer.deploy(SetLiabilitySharesTargetInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.vaultHub() == vault_hub
+    assert factory_instance.vaultsAdapter() == adapter
 
-    permission = vault_hub.address + vault_hub.setLiabilitySharesTarget.signature[2:]
+    permission = adapter.address + adapter.setLiabilitySharesTarget.signature[2:]
 
     print("set_liability_shares_target_happy_path")
     setup_evm_script_factory(
