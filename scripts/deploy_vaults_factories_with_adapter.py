@@ -161,13 +161,13 @@ def deploy_vault_hub_factories(
     # SetLiabilitySharesTargetInVaultHub
     set_liability_shares_target_in_vault_hub = SetLiabilitySharesTargetInVaultHub.deploy(
         trusted_caller,
-        vault_hub,
+        adapter.address,
         tx_params,
     )
     deployment_artifacts["SetLiabilitySharesTargetInVaultHub"] = {
         "contract": "SetLiabilitySharesTargetInVaultHub",
         "address": set_liability_shares_target_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, vault_hub],
+        "constructorArgs": [trusted_caller, adapter.address],
     }
 
     log.ok("Deployed SetLiabilitySharesTargetInVaultHub", set_liability_shares_target_in_vault_hub.address)

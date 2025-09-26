@@ -144,8 +144,8 @@ def test_tier_share_limit_too_high(owner, register_groups_in_operator_grid_facto
 def test_group_share_limit_too_high(owner, register_groups_in_operator_grid_factory):
     "Must revert with message 'GROUP_SHARE_LIMIT_TOO_HIGH' if the group's share limit exceeds the maximum allowed"
     operator = "0x0000000000000000000000000000000000000001"
-    max_sane_share_limit = register_groups_in_operator_grid_factory.maxShareLimit()
-    share_limit = max_sane_share_limit + 1  # Exceeds maximum allowed
+    max_share_limit = register_groups_in_operator_grid_factory.maxShareLimit()
+    share_limit = max_share_limit + 1  # Exceeds maximum allowed
     tiers = [[(1000, 200, 100, 50, 40, 10)]]
     CALLDATA = create_calldata([operator], [share_limit], tiers)
     with reverts('GROUP_SHARE_LIMIT_TOO_HIGH'):

@@ -61,10 +61,10 @@ def test_share_limit_too_high(owner, accounts, update_groups_share_limit_in_oper
     operator_grid_stub.registerGroup(operator, 5000, {"from": owner})
 
     # Get maxShareLimit from the factory (10000 based on deployment)
-    max_sane_share_limit = update_groups_share_limit_in_operator_grid_factory.maxShareLimit()
+    max_share_limit = update_groups_share_limit_in_operator_grid_factory.maxShareLimit()
 
     # Try to set share limit higher than maxShareLimit
-    CALLDATA = create_calldata([operator.address], [max_sane_share_limit + 1])
+    CALLDATA = create_calldata([operator.address], [max_share_limit + 1])
     with reverts('SHARE_LIMIT_TOO_HIGH'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 

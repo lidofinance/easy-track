@@ -97,6 +97,37 @@ Next optional variables can be set:
 - `UNPAUSE_ADDRESS` - address to grant UNPAUSE_ROLE
 - `CANCEL_ADDRESS` - address to grant CANCEL_ROLE
 
+### `deploy_vaults_factories_base.py`
+
+Contains script to deploy base OperatorGrid EVM Script factories for vault management.
+Script deploys factories for:
+
+- RegisterGroupsInOperatorGrid - for registering new operator groups
+- UpdateGroupsShareLimitInOperatorGrid - for updating group share limits
+- RegisterTiersInOperatorGrid - for registering new tiers
+- AlterTiersInOperatorGrid - for altering existing tier parameters
+
+Script requires next ENV variables to be set:
+
+- `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
+- `TRUSTED_CALLER` - address of the trusted caller (usually EasyTrack contract)
+
+### `deploy_vaults_factories_with_adapter.py`
+
+Contains script to deploy vault-specific EVM Script factories that work through VaultsAdapter.
+Script deploys VaultsAdapter and factories for:
+
+- SetJailStatusInOperatorGrid - for setting jail status of vaults
+- DecreaseVaultsFeesInOperatorGrid - for decreasing vault fees
+- ForceValidatorExitsInVaultHub - for forcing validator exits
+- SocializeBadDebtInVaultHub - for socializing bad debt
+- SetLiabilitySharesTargetInVaultHub - for setting liability shares target
+
+Script requires next ENV variables to be set:
+
+- `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
+- `TRUSTED_CALLER` - address of the trusted caller (usually EasyTrack contract)
+
 ### `final_check.py`
 
 Contains script to validate deployed setup of EasyTrack in mainnet network.
