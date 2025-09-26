@@ -334,7 +334,7 @@ def test_register_group_happy_path(
     factory_instance = deployer.deploy(RegisterGroupsInOperatorGrid, trusted_address, operator_grid, 10000)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.operatorGrid() == operator_grid
-    assert factory_instance.maxSaneShareLimit() == 10000
+    assert factory_instance.maxShareLimit() == 10000
 
     permission = operator_grid.address + operator_grid.registerGroup.signature[2:] + operator_grid.address[2:] + operator_grid.registerTiers.signature[2:]
     print("register_group_happy_path")
@@ -396,7 +396,7 @@ def test_update_groups_share_limit_happy_path(
     factory_instance = deployer.deploy(UpdateGroupsShareLimitInOperatorGrid, trusted_address, operator_grid, 10000)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.operatorGrid() == operator_grid
-    assert factory_instance.maxSaneShareLimit() == 10000
+    assert factory_instance.maxShareLimit() == 10000
 
     permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
     print("update_groups_share_limit_happy_path")
@@ -496,9 +496,11 @@ def test_alter_tiers_happy_path(
 ):
     setup_operator_grid(owner, operator_grid, easy_track, agent)
 
-    factory_instance = deployer.deploy(AlterTiersInOperatorGrid, trusted_address, operator_grid)
+    max_share_limit = 1000 * 10**18  # 1000 ETH for testing
+    factory_instance = deployer.deploy(AlterTiersInOperatorGrid, trusted_address, operator_grid, max_share_limit)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.maxShareLimit() == max_share_limit
 
     permission = operator_grid.address + operator_grid.alterTiers.signature[2:]
     print("alter_tiers_happy_path")

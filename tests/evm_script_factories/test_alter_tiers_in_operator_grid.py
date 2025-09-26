@@ -7,7 +7,8 @@ def create_calldata(tier_ids, tier_params):
 
 @pytest.fixture(scope="module")
 def alter_tiers_in_operator_grid_factory(owner, operator_grid_stub):
-    factory = AlterTiersInOperatorGrid.deploy(owner, operator_grid_stub, {"from": owner})
+    max_share_limit = 1000 * 10**18  # 1000 ETH for testing
+    factory = AlterTiersInOperatorGrid.deploy(owner, operator_grid_stub, max_share_limit, {"from": owner})
     operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
     return factory
 
@@ -16,6 +17,7 @@ def test_deploy(owner, operator_grid_stub, alter_tiers_in_operator_grid_factory)
     "Must deploy contract with correct data"
     assert alter_tiers_in_operator_grid_factory.trustedCaller() == owner
     assert alter_tiers_in_operator_grid_factory.operatorGrid() == operator_grid_stub
+    assert alter_tiers_in_operator_grid_factory.maxShareLimit() == 1000 * 10**18
 
 
 def test_create_evm_script_called_by_stranger(stranger, alter_tiers_in_operator_grid_factory):
@@ -88,10 +90,10 @@ def test_decode_evm_script_call_data(alter_tiers_in_operator_grid_factory):
 
     EVM_SCRIPT_CALLDATA = create_calldata(tier_ids, tier_params)
     decoded_tier_ids, decoded_tier_params = alter_tiers_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_tier_ids) == len(tier_ids)
     assert len(decoded_tier_params) == len(tier_params)
-    
+
     for i in range(len(tier_ids)):
         assert decoded_tier_ids[i] == tier_ids[i]
         assert decoded_tier_params[i][0] == tier_params[i][0]  # shareLimit
@@ -231,7 +233,7 @@ def test_fees_less_than_uint16_max(owner, alter_tiers_in_operator_grid_factory, 
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("RESERVATION_FEE_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
-    
+
 
 
 def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
@@ -247,3 +249,31 @@ def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_gr
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("TIER_SHARE_LIMIT_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_default_tier_share_limit_exceeds_max_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if default tier share limit exceeds max share limit"
+    # Default tier (tier ID 0) is already created in OperatorGridStub constructor
+    # We can directly test altering it
+
+    tier_ids = [0]  # Default tier ID
+    max_share_limit = 1000 * 10**18  # This is what we set in the fixture
+    tier_params = [(max_share_limit + 1, 200, 100, 50, 40, 10)]  # shareLimit > maxShareLimit
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("TIER_SHARE_LIMIT_TOO_HIGH"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_default_tier_share_limit_at_max_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+    "Must not revert if default tier share limit equals max share limit"
+    # Default tier (tier ID 0) is already created in OperatorGridStub constructor
+    # We can directly test altering it
+
+    tier_ids = [0]  # Default tier ID
+    max_share_limit = 1000 * 10**18  # This is what we set in the fixture
+    tier_params = [(max_share_limit, 200, 100, 50, 40, 10)]  # shareLimit = maxShareLimit
+    CALLDATA = create_calldata(tier_ids, tier_params)
+
+    # Should not revert
+    evm_script = alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+    assert len(evm_script) > 0

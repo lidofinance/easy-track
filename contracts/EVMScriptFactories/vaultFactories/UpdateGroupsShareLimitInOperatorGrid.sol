@@ -32,20 +32,20 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
     IOperatorGrid public immutable operatorGrid;
 
     /// @notice Maximum sane share limit (percent from Lido total shares)
-    uint256 public immutable maxSaneShareLimit;
+    uint256 public immutable maxShareLimit;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid, uint256 _maxSaneShareLimit)
+    constructor(address _trustedCaller, address _operatorGrid, uint256 _maxShareLimit)
         TrustedCaller(_trustedCaller)
     {
         require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
-        require(_maxSaneShareLimit > 0, ERROR_ZERO_MAX_SHARE_LIMIT);
+        require(_maxShareLimit > 0, ERROR_ZERO_MAX_SHARE_LIMIT);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
-        maxSaneShareLimit = _maxSaneShareLimit;
+        maxShareLimit = _maxShareLimit;
     }
 
     // -------------
@@ -106,7 +106,7 @@ contract UpdateGroupsShareLimitInOperatorGrid is TrustedCaller, IEVMScriptFactor
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);
-            require(_shareLimits[i] <= maxSaneShareLimit, ERROR_SHARE_LIMIT_TOO_HIGH);
+            require(_shareLimits[i] <= maxShareLimit, ERROR_SHARE_LIMIT_TOO_HIGH);
 
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
             require(group.operator != address(0), ERROR_GROUP_NOT_EXISTS);

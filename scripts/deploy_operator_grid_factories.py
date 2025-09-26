@@ -131,12 +131,13 @@ def deploy_operator_grid_factories(
     alter_tiers_in_operator_grid = AlterTiersInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
+        MAX_SANE_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["AlterTiersInOperatorGrid"] = {
         "contract": "AlterTiersInOperatorGrid",
         "address": alter_tiers_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid],
+        "constructorArgs": [trusted_caller, operator_grid, MAX_SANE_SHARE_LIMIT],
     }
 
     log.ok("Deployed AlterTiersInOperatorGrid", alter_tiers_in_operator_grid.address)

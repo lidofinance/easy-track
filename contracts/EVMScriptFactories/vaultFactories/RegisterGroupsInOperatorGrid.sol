@@ -32,7 +32,6 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_INFRA_FEE_TOO_HIGH = "INFRA_FEE_TOO_HIGH";
     string private constant ERROR_LIQUIDITY_FEE_TOO_HIGH = "LIQUIDITY_FEE_TOO_HIGH";
     string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
-    string private constant ERROR_ZERO_MAX_SHARE_LIMIT = "ZERO_MAX_SHARE_LIMIT";
     string private constant ERROR_ASCENDING_ORDER_IN_OPERATORS_ARRAY = "ASCENDING_ORDER_IN_OPERATORS_ARRAY";
 
     // -------------
@@ -43,7 +42,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     IOperatorGrid public immutable operatorGrid;
 
     /// @notice Maximum sane share limit (percent from Lido total shares)
-    uint256 public immutable maxSaneShareLimit;
+    uint256 public immutable maxShareLimit;
 
     // -------------
     // CONSTANTS
@@ -58,14 +57,13 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid, uint256 _maxSaneShareLimit)
+    constructor(address _trustedCaller, address _operatorGrid, uint256 _maxShareLimit)
         TrustedCaller(_trustedCaller)
     {
         require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
-        require(_maxSaneShareLimit > 0, ERROR_ZERO_MAX_SHARE_LIMIT);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
-        maxSaneShareLimit = _maxSaneShareLimit;
+        maxShareLimit = _maxShareLimit;
     }
 
     // -------------
@@ -90,7 +88,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         _validateInputData(_nodeOperators, _shareLimits, _tiers);
-        
+
         // Each group requires 2 calls (registerGroup and registerTiers)
         uint256 totalCalls = _nodeOperators.length * 2;
         address toAddress = address(operatorGrid);
@@ -158,7 +156,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             IOperatorGrid.Group memory group = operatorGrid.group(_nodeOperators[i]);
             require(group.operator == address(0), ERROR_GROUP_EXISTS);
 
-            require(_shareLimits[i] <= maxSaneShareLimit, ERROR_GROUP_SHARE_LIMIT_TOO_HIGH);
+            require(_shareLimits[i] <= maxShareLimit, ERROR_GROUP_SHARE_LIMIT_TOO_HIGH);
 
             // Validate tier parameters
             for (uint256 j = 0; j < _tiers[i].length; j++) {
