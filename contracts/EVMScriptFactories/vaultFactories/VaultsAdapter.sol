@@ -156,18 +156,19 @@ contract VaultsAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        // reverts if vault is disconnected or a few other reasons from VaultHub logic
-        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) {
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the socializeBadDebt() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the socializeBadDebt() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
+        IVaultHub.VaultConnection memory badDebtConnection = vaultHub.vaultConnection(_badDebtVault);
+        IVaultHub.VaultConnection memory acceptorConnection = vaultHub.vaultConnection(_vaultAcceptor);
+        bool badDebtPendingDisconnect = vaultHub.isPendingDisconnect(_badDebtVault);
+        bool acceptorPendingDisconnect = vaultHub.isPendingDisconnect(_vaultAcceptor);
+        if (badDebtConnection.vaultIndex == 0 || // vault is not connected to hub
+            acceptorConnection.vaultIndex == 0 || // vault is not connected to hub
+            badDebtPendingDisconnect || // vault is disconnecting
+            acceptorPendingDisconnect) { // vault is disconnecting
             emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
+            return;
         }
+
+        vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
     }
 
     /// @notice Function to force validator exits in VaultHub
@@ -186,18 +187,15 @@ contract VaultsAdapter is TrustedCaller {
         uint256 value = fee * numKeys;
         require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
 
-        // reverts if vault is disconnected or healthy
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the forceValidatorExit() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the forceValidatorExit() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
+        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
+        bool pendingDisconnect = vaultHub.isPendingDisconnect(_vault);
+        if (connection.vaultIndex == 0 || // vault is not connected to hub
+            pendingDisconnect) { // vault is disconnecting
             emit ForceValidatorExitFailed(_vault, _pubkeys);
+            return;
         }
+
+        vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this));
     }
 
     /// @notice Function to set the validator exit fee limit

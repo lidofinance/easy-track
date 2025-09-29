@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SocializeBadDebtInVaultHub, VaultsAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SocializeBadDebtInVaultHub, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -59,10 +59,10 @@ def test_zero_vault_acceptor_address(owner, stranger, socialize_bad_debt_factory
 
 def test_create_evm_script(owner, accounts, socialize_bad_debt_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
-    bad_debt_vault1 = accounts[5]
-    bad_debt_vault2 = accounts[6]
-    vault_acceptor1 = accounts[7]
-    vault_acceptor2 = accounts[8]
+    bad_debt_vault1 = StakingVaultStub.deploy(accounts[5], {"from": owner})
+    bad_debt_vault2 = StakingVaultStub.deploy(accounts[6], {"from": owner})
+    vault_acceptor1 = StakingVaultStub.deploy(accounts[5], {"from": owner})
+    vault_acceptor2 = StakingVaultStub.deploy(accounts[6], {"from": owner})
 
     bad_debt_vaults = [bad_debt_vault1.address, bad_debt_vault2.address]
     vault_acceptors = [vault_acceptor1.address, vault_acceptor2.address]

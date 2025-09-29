@@ -7,6 +7,7 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IVaultsAdapter.sol";
+import "../../interfaces/IStakingVault.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to socialize bad debt for multiple vaults in VaultHub
@@ -22,6 +23,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_BAD_DEBT_VAULT = "ZERO_BAD_DEBT_VAULT";
     string private constant ERROR_ZERO_VAULT_ACCEPTOR = "ZERO_VAULT_ACCEPTOR";
     string private constant ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE = "ZERO_MAX_SHARES_TO_SOCIALIZE";
+    string private constant ERROR_INVALID_NODE_OPERATOR = "INVALID_NODE_OPERATOR";
 
     // -------------
     // VARIABLES
@@ -105,7 +107,7 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
         address[] memory _badDebtVaults,
         address[] memory _vaultAcceptors,
         uint256[] memory _maxSharesToSocialize
-    ) private pure {
+    ) private view {
         require(_badDebtVaults.length > 0, ERROR_EMPTY_BAD_DEBT_VAULTS);
         require(
             _badDebtVaults.length == _vaultAcceptors.length &&
@@ -117,6 +119,10 @@ contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
             require(_badDebtVaults[i] != address(0), ERROR_ZERO_BAD_DEBT_VAULT);
             require(_vaultAcceptors[i] != address(0), ERROR_ZERO_VAULT_ACCEPTOR);
             require(_maxSharesToSocialize[i] != 0, ERROR_ZERO_MAX_SHARES_TO_SOCIALIZE);
+
+            address badDebtNodeOperator = IStakingVault(_badDebtVaults[i]).nodeOperator();
+            address acceptorNodeOperator = IStakingVault(_vaultAcceptors[i]).nodeOperator();
+            require(badDebtNodeOperator == acceptorNodeOperator, ERROR_INVALID_NODE_OPERATOR);
         }
     }
 }
