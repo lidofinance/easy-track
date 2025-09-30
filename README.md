@@ -118,7 +118,7 @@ Contains script to deploy vault-specific EVM Script factories that work through 
 Script deploys VaultsAdapter and factories for:
 
 - SetJailStatusInOperatorGrid - for setting jail status of vaults
-- DecreaseVaultsFeesInOperatorGrid - for decreasing vault fees
+- UpdateVaultsFeesInOperatorGrid - for updating vault fees
 - ForceValidatorExitsInVaultHub - for forcing validator exits
 - SocializeBadDebtInVaultHub - for socializing bad debt
 - SetLiabilitySharesTargetInVaultHub - for setting liability shares target

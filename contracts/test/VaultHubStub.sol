@@ -47,6 +47,7 @@ contract VaultHubStub is AccessControl {
     mapping(address => VaultConnection) connections;
     mapping(address => VaultRecord) records;
     mapping(address => VaultObligations) obligations;
+    mapping(address => uint256) obligationsShortfallValues; // vault address => shortfall value
 
     uint96 public vaultIndex = 1;
 
@@ -89,6 +90,7 @@ contract VaultHubStub is AccessControl {
         );
 
         obligations[_vault] = VaultObligations(0, 0, 0);
+        obligationsShortfallValues[_vault] = 1000000000000000000; // 1 ETH default shortfall
     }
 
     function vaultConnection(address _vault) external view returns (VaultConnection memory) {
@@ -112,6 +114,20 @@ contract VaultHubStub is AccessControl {
     function isPendingDisconnect(address _vault) external view returns (bool) {
         // For stub purposes, always return false
         return false;
+    }
+
+    /// @notice Returns the obligations shortfall value for a vault
+    /// @param _vault vault address
+    /// @return ether amount or UINT256_MAX if it's impossible to cover obligations shortfall
+    function obligationsShortfallValue(address _vault) external view returns (uint256) {
+        return obligationsShortfallValues[_vault];
+    }
+
+    /// @notice Sets the obligations shortfall value for a vault (for testing purposes)
+    /// @param _vault vault address
+    /// @param _shortfallValue shortfall value to set
+    function setObligationsShortfallValue(address _vault, uint256 _shortfallValue) external {
+        obligationsShortfallValues[_vault] = _shortfallValue;
     }
 
 

@@ -153,6 +153,12 @@ interface IVaultHub {
     /// @return feesToSettle amount of Lido fees to settle
     function obligations(address _vault) external view returns (uint256 sharesToBurn, uint256 feesToSettle);
 
+    /// @notice calculate ether amount required to cover obligations shortfall of the vault
+    /// @param _vault vault address
+    /// @return ether amount or UINT256_MAX if it's impossible to cover obligations shortfall
+    /// @dev returns 0 if the vault is not connected
+    function obligationsShortfallValue(address _vault) external view returns (uint256);
+
     /// @notice Returns true if vault is pending for disconnect, false if vault is connected or disconnected
     /// @param _vault vault address
     /// @return true if vault is pending for disconnect

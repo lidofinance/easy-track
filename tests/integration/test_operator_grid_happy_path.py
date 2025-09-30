@@ -572,7 +572,7 @@ def test_set_jail_status_happy_path(
 @pytest.mark.skip_coverage
 def test_update_vaults_fees_happy_path(
     owner,
-    DecreaseVaultsFeesInOperatorGrid,
+    UpdateVaultsFeesInOperatorGrid,
     easy_track,
     trusted_address,
     voting,
@@ -582,7 +582,7 @@ def test_update_vaults_fees_happy_path(
     vaults,
     adapter,
 ):
-    factory_instance = deployer.deploy(DecreaseVaultsFeesInOperatorGrid, trusted_address, adapter)
+    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000

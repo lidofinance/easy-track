@@ -128,3 +128,25 @@ def test_withdraw_eth_success(owner, adapter):
 
     # Check event
     assert len(tx.events) == 0, "No events should be emitted"
+
+def test_force_validator_exit_fails_when_no_obligations_shortfall(owner, stranger, adapter, vault_hub_stub):
+    "Must emit ForceValidatorExitFailed when obligationsShortfallValue == 0"
+    vault = stranger.address
+    pubkeys = b"01" * 48  # 48 bytes pubkey
+
+    # Register vault first
+    vault_hub_stub.connectVault(vault, {"from": owner})
+
+    # Set obligations shortfall to 0 (no shortfall)
+    vault_hub_stub.setObligationsShortfallValue(vault, 0, {"from": owner})
+
+    # Try to force validator exit - should fail
+    tx = adapter.forceValidatorExit(vault, pubkeys, {"from": owner})
+
+    # Should emit ForceValidatorExitFailed event
+    assert "ForceValidatorExitFailed" in tx.events
+    assert tx.events["ForceValidatorExitFailed"]["vault"] == vault
+    assert tx.events["ForceValidatorExitFailed"]["pubkeys"] == "0x" + pubkeys.hex()
+
+    # Should NOT emit ForcedValidatorExitTriggered event (from VaultHub)
+    assert "ForcedValidatorExitTriggered" not in tx.events

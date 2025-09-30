@@ -11,6 +11,7 @@ import "../../interfaces/IStakingVault.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to socialize bad debt for multiple vaults in VaultHub
+/// @notice This motion might be temporary non-enactable, requiring a fresh report to be presented for each vault
 contract SocializeBadDebtInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------

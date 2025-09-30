@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SetJailStatusInOperatorGrid, VaultsAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SetJailStatusInOperatorGrid, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -48,10 +48,23 @@ def test_zero_vault_address(owner, stranger, set_jail_status_factory):
     with reverts('ZERO_VAULT'):
         set_jail_status_factory.createEVMScript(owner, CALLDATA)
 
+def test_different_node_operators(owner, accounts, set_jail_status_factory):
+    "Must revert with message 'INVALID_NODE_OPERATOR' if vaults have different node operators"
+    # Create two vaults with different node operators
+    vault1 = StakingVaultStub.deploy(accounts[5], {"from": owner})  # node operator: accounts[5]
+    vault2 = StakingVaultStub.deploy(accounts[6], {"from": owner})  # node operator: accounts[6]
+
+    vaults = [vault1.address, vault2.address]
+    jail_statuses = [True, False]
+
+    CALLDATA = create_calldata(vaults, jail_statuses)
+    with reverts('INVALID_NODE_OPERATOR'):
+        set_jail_status_factory.createEVMScript(owner, CALLDATA)
+
 def test_create_evm_script(owner, accounts, set_jail_status_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
-    vault1 = accounts[5]
-    vault2 = accounts[6]
+    vault1 = StakingVaultStub.deploy(accounts[5], {"from": owner})
+    vault2 = StakingVaultStub.deploy(accounts[5], {"from": owner})
 
     vaults = [vault1.address, vault2.address]
     jail_statuses = [True, False]

@@ -98,11 +98,13 @@ contract VaultsAdapter is TrustedCaller {
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
         bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
+        (,uint256 tierId,,,,,,) = operatorGrid.vaultInfo(_vault);
+        IOperatorGrid.Tier memory tier = operatorGrid.tier(tierId);
         if (connection.vaultIndex == 0 || // vault is not connected to hub
             isPendingDisconnect || // vault is disconnecting
-            _infraFeeBP > connection.infraFeeBP ||
-            _liquidityFeeBP > connection.liquidityFeeBP ||
-            _reservationFeeBP > connection.reservationFeeBP) {
+            _infraFeeBP > tier.infraFeeBP ||
+            _liquidityFeeBP > tier.liquidityFeeBP ||
+            _reservationFeeBP > tier.reservationFeeBP) {
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
             return;
         }
@@ -189,8 +191,10 @@ contract VaultsAdapter is TrustedCaller {
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
         bool pendingDisconnect = vaultHub.isPendingDisconnect(_vault);
+        uint256 obligationsShortfall = vaultHub.obligationsShortfallValue(_vault);
         if (connection.vaultIndex == 0 || // vault is not connected to hub
-            pendingDisconnect) { // vault is disconnecting
+            pendingDisconnect || // vault is disconnecting
+            obligationsShortfall == 0) { // vault has no obligations shortfall
             emit ForceValidatorExitFailed(_vault, _pubkeys);
             return;
         }

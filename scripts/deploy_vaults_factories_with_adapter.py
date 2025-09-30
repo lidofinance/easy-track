@@ -6,7 +6,7 @@ from brownie import (
     chain,
     network,
     SetJailStatusInOperatorGrid,
-    DecreaseVaultsFeesInOperatorGrid,
+    UpdateVaultsFeesInOperatorGrid,
     ForceValidatorExitsInVaultHub,
     SocializeBadDebtInVaultHub,
     SetLiabilitySharesTargetInVaultHub,
@@ -116,19 +116,19 @@ def deploy_vault_hub_factories(
 
     log.ok("Deployed SetJailStatusInOperatorGrid", set_jail_status_in_operator_grid.address)
 
-    # DecreaseVaultsFeesInOperatorGrid
-    decrease_vaults_fees_in_operator_grid = DecreaseVaultsFeesInOperatorGrid.deploy(
+    # UpdateVaultsFeesInOperatorGrid
+    update_vaults_fees_in_operator_grid = UpdateVaultsFeesInOperatorGrid.deploy(
         trusted_caller,
         adapter.address,
         tx_params,
     )
-    deployment_artifacts["DecreaseVaultsFeesInOperatorGrid"] = {
-        "contract": "DecreaseVaultsFeesInOperatorGrid",
-        "address": decrease_vaults_fees_in_operator_grid.address,
+    deployment_artifacts["UpdateVaultsFeesInOperatorGrid"] = {
+        "contract": "UpdateVaultsFeesInOperatorGrid",
+        "address": update_vaults_fees_in_operator_grid.address,
         "constructorArgs": [trusted_caller, adapter.address],
     }
 
-    log.ok("Deployed DecreaseVaultsFeesInOperatorGrid", decrease_vaults_fees_in_operator_grid.address)
+    log.ok("Deployed UpdateVaultsFeesInOperatorGrid", update_vaults_fees_in_operator_grid.address)
 
     # ForceValidatorExitsInVaultHub
     force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
@@ -187,7 +187,7 @@ def deploy_vault_hub_factories(
     sleep(2)
     SetJailStatusInOperatorGrid.publish_source(set_jail_status_in_operator_grid)
     sleep(2)
-    DecreaseVaultsFeesInOperatorGrid.publish_source(decrease_vaults_fees_in_operator_grid)
+    UpdateVaultsFeesInOperatorGrid.publish_source(update_vaults_fees_in_operator_grid)
     sleep(2)
     ForceValidatorExitsInVaultHub.publish_source(force_validator_exits_in_vault_hub)
     sleep(2)

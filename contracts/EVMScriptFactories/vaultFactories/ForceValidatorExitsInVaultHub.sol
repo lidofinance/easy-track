@@ -10,6 +10,7 @@ import "../../interfaces/IVaultsAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
+/// @notice This motion might be temporary non-enactable, requiring a fresh report to be presented for each vault
 contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------

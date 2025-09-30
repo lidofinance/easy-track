@@ -111,6 +111,30 @@ interface IOperatorGrid {
     /// @return bytes32 the registry role
     function REGISTRY_ROLE() external view returns (bytes32);
 
+    /// @notice Get vault limits
+    /// @param _vault address of the vault
+    /// @return nodeOperator node operator of the vault
+    /// @return tierId tier id of the vault
+    /// @return shareLimit share limit of the vault
+    /// @return reserveRatioBP reserve ratio of the vault
+    /// @return forcedRebalanceThresholdBP forced rebalance threshold of the vault
+    /// @return infraFeeBP infra fee of the vault
+    /// @return liquidityFeeBP liquidity fee of the vault
+    /// @return reservationFeeBP reservation fee of the vault
+    function vaultInfo(address _vault)
+        external
+        view
+        returns (
+            address nodeOperator,
+            uint256 tierId,
+            uint256 shareLimit,
+            uint256 reserveRatioBP,
+            uint256 forcedRebalanceThresholdBP,
+            uint256 infraFeeBP,
+            uint256 liquidityFeeBP,
+            uint256 reservationFeeBP
+        );
+
     // -----------------------------
     //            EVENTS
     // -----------------------------

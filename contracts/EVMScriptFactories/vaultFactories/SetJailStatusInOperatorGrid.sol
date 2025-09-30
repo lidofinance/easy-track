@@ -7,6 +7,7 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IVaultsAdapter.sol";
+import "../../interfaces/IStakingVault.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to set jail status for multiple vaults in OperatorGrid
@@ -20,6 +21,7 @@ contract SetJailStatusInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
+    string private constant ERROR_INVALID_NODE_OPERATOR = "INVALID_NODE_OPERATOR";
 
     // -------------
     // VARIABLES
@@ -94,12 +96,15 @@ contract SetJailStatusInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(
         address[] memory _vaults,
         bool[] memory _jailStatuses
-    ) private pure {
+    ) private view {
         require(_vaults.length > 0, ERROR_EMPTY_VAULTS);
         require(_vaults.length == _jailStatuses.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
-        for (uint256 i = 0; i < _vaults.length; i++) {
+        require(_vaults[0] != address(0), ERROR_ZERO_VAULT);
+        address nodeOperator = IStakingVault(_vaults[0]).nodeOperator();
+        for (uint256 i = 1; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
+            require(IStakingVault(_vaults[i]).nodeOperator() == nodeOperator, ERROR_INVALID_NODE_OPERATOR);
         }
     }
 }

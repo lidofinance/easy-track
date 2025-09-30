@@ -10,7 +10,8 @@ import "../../interfaces/IVaultsAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to update fees for multiple vaults in OperatorGrid
-contract DecreaseVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
+/// @notice This motion might be temporary non-enactable, requiring a fresh report to be presented for each vault
+contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERROR MESSAGES

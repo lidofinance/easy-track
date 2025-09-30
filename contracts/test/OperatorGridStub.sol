@@ -40,6 +40,7 @@ contract OperatorGridStub is AccessControl {
     Tier[] tiers;
     mapping(address => Group) groups;
     mapping(address => bool) vaultJailStatus;
+    mapping(address => uint256) vaultTiers; // vault address => tier ID
     address[] nodeOperators;
 
     constructor(address _admin, TierParams memory _defaultTierParams) {
@@ -166,6 +167,24 @@ contract OperatorGridStub is AccessControl {
     /// @return true if the vault is in jail
     function isVaultInJail(address _vault) external view returns (bool) {
         return vaultJailStatus[_vault];
+    }
+
+    /// @notice Sets the tier for a vault (for testing purposes)
+    /// @param _vault address of the vault
+    /// @param _tierId tier ID to assign
+    function setVaultTier(address _vault, uint256 _tierId) external onlyRole(REGISTRY_ROLE) {
+        require(_tierId < tiers.length, "Tier does not exist");
+        vaultTiers[_vault] = _tierId;
+    }
+
+    /// @notice Returns vault information including tier ID
+    /// @param _vault address of the vault
+    /// @return vault info tuple (simplified version for testing)
+    function vaultInfo(address _vault) external view returns (
+        address, uint256, uint256, uint256, uint256, uint256, uint256, uint256
+    ) {
+        uint256 tierId = vaultTiers[_vault]; // defaults to 0 (DEFAULT_TIER_ID)
+        return (address(0), tierId, 0, 0, 0, 0, 0, 0);
     }
 
     event VaultJailStatusUpdated(address indexed vault, bool isInJail);
