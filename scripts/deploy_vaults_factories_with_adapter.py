@@ -120,12 +120,13 @@ def deploy_vault_hub_factories(
     update_vaults_fees_in_operator_grid = UpdateVaultsFeesInOperatorGrid.deploy(
         trusted_caller,
         adapter.address,
+        operator_grid,
         tx_params,
     )
     deployment_artifacts["UpdateVaultsFeesInOperatorGrid"] = {
         "contract": "UpdateVaultsFeesInOperatorGrid",
         "address": update_vaults_fees_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, adapter.address],
+        "constructorArgs": [trusted_caller, adapter.address, operator_grid],
     }
 
     log.ok("Deployed UpdateVaultsFeesInOperatorGrid", update_vaults_fees_in_operator_grid.address)
