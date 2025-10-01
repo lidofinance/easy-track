@@ -59,7 +59,7 @@ contract VaultsAdapter is TrustedCaller {
     event LiabilitySharesTargetUpdateFailed(address indexed vault, uint256 liabilitySharesTarget);
     event BadDebtSocializationFailed(address indexed badDebtVault, address indexed vaultAcceptor, uint256 maxSharesToSocialize);
     event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
-    event WithdrawalRequestFeeUpdated(uint256 oldFee, uint256 newFee);
+    event ValidatorExitFeeLimitUpdated(uint256 oldFee, uint256 newFee);
 
     // -------------
     // CONSTRUCTOR
@@ -192,7 +192,7 @@ contract VaultsAdapter is TrustedCaller {
         uint256 oldFee = validatorExitFeeLimit;
         validatorExitFeeLimit = _validatorExitFeeLimit;
 
-        emit WithdrawalRequestFeeUpdated(oldFee, _validatorExitFeeLimit);
+        emit ValidatorExitFeeLimitUpdated(oldFee, _validatorExitFeeLimit);
     }
 
     /// @notice Function to withdraw all ETH to TrustedCaller
