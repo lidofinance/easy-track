@@ -164,6 +164,9 @@ interface IVaultHub {
     /// @return true if vault is pending for disconnect
     function isPendingDisconnect(address _vault) external view returns (bool);
 
+    /// @return true if the vault is connected to the hub or pending to be disconnected
+    function isVaultConnected(address _vault) external view returns (bool);
+
     /// @notice Returns the bad debt master role
     /// @return bytes32 the bad debt master role
     function BAD_DEBT_MASTER_ROLE() external view returns (bytes32);

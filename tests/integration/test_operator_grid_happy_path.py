@@ -582,9 +582,10 @@ def test_update_vaults_fees_happy_path(
     vaults,
     adapter,
 ):
-    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter)
+    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter, operator_grid)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.vaultsAdapter() == adapter
+    assert factory_instance.operatorGrid() == operator_grid
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()

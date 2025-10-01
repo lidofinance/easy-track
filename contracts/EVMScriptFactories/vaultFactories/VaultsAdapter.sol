@@ -96,10 +96,8 @@ contract VaultsAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
-        if (connection.vaultIndex == 0 || // vault is not connected to hub
-            isPendingDisconnect) { // vault is disconnecting
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault)) { // vault is disconnecting
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
             return;
         }
@@ -113,10 +111,8 @@ contract VaultsAdapter is TrustedCaller {
     function setVaultJailStatus(address _vault, bool _isInJail) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
-        if (connection.vaultIndex == 0 || // vault is not connected to hub
-            isPendingDisconnect || // vault is disconnecting
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
             operatorGrid.isVaultInJail(_vault) == _isInJail) { // status is already the same
             emit VaultJailStatusUpdateFailed(_vault, _isInJail);
             return;
@@ -131,10 +127,8 @@ contract VaultsAdapter is TrustedCaller {
     function setLiabilitySharesTarget(address _vault, uint256 _liabilitySharesTarget) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
-        if (connection.vaultIndex == 0 || // vault is not connected to hub
-            isPendingDisconnect) { // vault is disconnecting
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault)) { // vault is disconnecting
             emit LiabilitySharesTargetUpdateFailed(_vault, _liabilitySharesTarget);
             return;
         }
@@ -153,14 +147,10 @@ contract VaultsAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub.VaultConnection memory badDebtConnection = vaultHub.vaultConnection(_badDebtVault);
-        IVaultHub.VaultConnection memory acceptorConnection = vaultHub.vaultConnection(_vaultAcceptor);
-        bool badDebtPendingDisconnect = vaultHub.isPendingDisconnect(_badDebtVault);
-        bool acceptorPendingDisconnect = vaultHub.isPendingDisconnect(_vaultAcceptor);
-        if (badDebtConnection.vaultIndex == 0 || // vault is not connected to hub
-            acceptorConnection.vaultIndex == 0 || // vault is not connected to hub
-            badDebtPendingDisconnect || // vault is disconnecting
-            acceptorPendingDisconnect) { // vault is disconnecting
+        if (!vaultHub.isVaultConnected(_badDebtVault) || // vault is not connected to hub
+            !vaultHub.isVaultConnected(_vaultAcceptor) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_badDebtVault) || // vault is disconnecting
+            vaultHub.isPendingDisconnect(_vaultAcceptor)) { // vault is disconnecting
             emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
             return;
         }
@@ -184,12 +174,9 @@ contract VaultsAdapter is TrustedCaller {
         uint256 value = fee * numKeys;
         require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
 
-        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        bool pendingDisconnect = vaultHub.isPendingDisconnect(_vault);
-        uint256 obligationsShortfall = vaultHub.obligationsShortfallValue(_vault);
-        if (connection.vaultIndex == 0 || // vault is not connected to hub
-            pendingDisconnect || // vault is disconnecting
-            obligationsShortfall == 0) { // vault has no obligations shortfall
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
+            vaultHub.obligationsShortfallValue(_vault) == 0) { // vault has no obligations shortfall
             emit ForceValidatorExitFailed(_vault, _pubkeys);
             return;
         }
