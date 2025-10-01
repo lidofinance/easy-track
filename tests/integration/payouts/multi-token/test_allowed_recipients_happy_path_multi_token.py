@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from brownie import (
     chain,
     reverts,
+    AllowedTokensRegistry,
     AllowedRecipientsRegistry,
     TopUpAllowedRecipients,
     AddAllowedRecipient,
@@ -15,8 +16,10 @@ MAX_SECONDS_IN_MONTH = 31 * 24 * 60 * 60
 
 @dataclass
 class SingleRecipientTopUpOnlySetup:
+    allowed_tokens_registry: AllowedTokensRegistry
     allowed_recipients_registry: AllowedRecipientsRegistry
     top_up_allowed_recipients_evm_script_factory: TopUpAllowedRecipients
+    allowed_tokens: list[str]
 
 
 @dataclass
@@ -38,6 +41,7 @@ def new_recipient(recipients):
 @pytest.fixture(scope="module")
 def single_recipient_top_up_only_setup(
     AllowedRecipientsRegistry,
+    AllowedTokensRegistry,
     TopUpAllowedRecipients,
     easy_track,
     lido_contracts,
@@ -45,12 +49,15 @@ def single_recipient_top_up_only_setup(
     allowed_recipients_builder,
     allowed_recipients_default_params,
     deployer,
+    dai,
+    usdc,
 ):
+    allowed_tokens = [dai, usdc]
 
     deploy_tx = allowed_recipients_builder.deploySingleRecipientTopUpOnlySetup(
         allowed_recipient.address,
         allowed_recipient.title,
-        lido_contracts.ldo,
+        allowed_tokens,
         allowed_recipients_default_params.limit,
         allowed_recipients_default_params.period_duration_months,
         allowed_recipients_default_params.spent_amount,
@@ -58,23 +65,39 @@ def single_recipient_top_up_only_setup(
     )
 
     allowed_recipients_registry = AllowedRecipientsRegistry.at(
-        deploy_tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+        deploy_tx.events["AllowedRecipientsRegistryDeployed"][
+            "allowedRecipientsRegistry"
+        ]
+    )
+    allowed_tokens_registry = AllowedTokensRegistry.at(
+        deploy_tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
     )
     top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
         deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
+
     easy_track.addEVMScriptFactory(
         top_up_allowed_recipients_evm_script_factory,
-        deployment.create_permission(lido_contracts.aragon.finance, "newImmediatePayment")
-        + deployment.create_permission(allowed_recipients_registry, "updateSpentAmount")[2:],
+        deployment.create_permission(
+            lido_contracts.aragon.finance, "newImmediatePayment"
+        )
+        + deployment.create_permission(
+            allowed_recipients_registry, "updateSpentAmount"
+        )[2:],
         {"from": lido_contracts.aragon.voting},
     )
-    return SingleRecipientTopUpOnlySetup(allowed_recipients_registry, top_up_allowed_recipients_evm_script_factory)
+    return SingleRecipientTopUpOnlySetup(
+        allowed_tokens_registry=allowed_tokens_registry,
+        allowed_recipients_registry=allowed_recipients_registry,
+        top_up_allowed_recipients_evm_script_factory=top_up_allowed_recipients_evm_script_factory,
+        allowed_tokens=allowed_tokens
+    )
 
 
 @pytest.fixture(scope="module")
 def full_setup(
     AllowedRecipientsRegistry,
+    AllowedTokensRegistry,
     AddAllowedRecipient,
     TopUpAllowedRecipients,
     RemoveAllowedRecipient,
@@ -84,12 +107,15 @@ def full_setup(
     lido_contracts,
     allowed_recipients_default_params,
     deployer,
+    dai,
+    usdc,
 ):
+    allowed_tokens = [dai, usdc]
     deploy_tx = allowed_recipients_builder.deployFullSetup(
         trusted_caller,
-        lido_contracts.ldo,
         allowed_recipients_default_params.limit,
         allowed_recipients_default_params.period_duration_months,
+        [dai, usdc],
         [],
         [],
         allowed_recipients_default_params.spent_amount,
@@ -97,11 +123,16 @@ def full_setup(
     )
 
     allowed_recipients_registry = AllowedRecipientsRegistry.at(
-        deploy_tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"]
+        deploy_tx.events["AllowedRecipientsRegistryDeployed"][
+            "allowedRecipientsRegistry"
+        ]
+    )
+    allowed_tokens_registry = AllowedTokensRegistry.at(
+        deploy_tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
     )
 
     add_allowed_recipient_evm_script_factory = AddAllowedRecipient.at(
-        deploy_tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
+        deploy_tx.events["AddAllowedRecipientDeployed"][0]["addAllowedRecipient"]
     )
 
     easy_track.addEVMScriptFactory(
@@ -113,6 +144,7 @@ def full_setup(
     remove_allowed_recipient_evm_script_factory = RemoveAllowedRecipient.at(
         deploy_tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
     )
+    
     easy_track.addEVMScriptFactory(
         remove_allowed_recipient_evm_script_factory,
         deployment.create_permission(allowed_recipients_registry, "removeRecipient"),
@@ -122,18 +154,25 @@ def full_setup(
     top_up_allowed_recipients_evm_script_factory = TopUpAllowedRecipients.at(
         deploy_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
     )
+
     easy_track.addEVMScriptFactory(
         top_up_allowed_recipients_evm_script_factory,
-        deployment.create_permission(lido_contracts.aragon.finance, "newImmediatePayment")
-        + deployment.create_permission(allowed_recipients_registry, "updateSpentAmount")[2:],
+        deployment.create_permission(
+            lido_contracts.aragon.finance, "newImmediatePayment"
+        )
+        + deployment.create_permission(
+            allowed_recipients_registry, "updateSpentAmount"
+        )[2:],
         {"from": lido_contracts.aragon.voting},
     )
 
     return FullSetup(
-        allowed_recipients_registry,
-        top_up_allowed_recipients_evm_script_factory,
-        add_allowed_recipient_evm_script_factory,
-        remove_allowed_recipient_evm_script_factory,
+        allowed_tokens_registry=allowed_tokens_registry,
+        allowed_recipients_registry=allowed_recipients_registry,
+        top_up_allowed_recipients_evm_script_factory=top_up_allowed_recipients_evm_script_factory,
+        allowed_tokens=allowed_tokens,
+        add_allowed_recipient_evm_script_factory=add_allowed_recipient_evm_script_factory,
+        remove_allowed_recipient_evm_script_factory=remove_allowed_recipient_evm_script_factory,
     )
 
 
@@ -146,22 +185,30 @@ def test_single_recipient_top_up_only_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 50 * 10**18
-    second_top_up_amount = 100 * 10**18
+    first_top_up_amount = 100 * 10**18
+    second_top_up_amount = 100 * 10**6
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
     )
 
-    allowed_recipients_registry = single_recipient_top_up_only_setup.allowed_recipients_registry
+    allowed_recipients_registry = (
+        single_recipient_top_up_only_setup.allowed_recipients_registry
+    )
+    allowed_tokens_registry = (
+        single_recipient_top_up_only_setup.allowed_tokens_registry
+    )
     top_up_allowed_recipients_evm_script_factory = (
         single_recipient_top_up_only_setup.top_up_allowed_recipients_evm_script_factory
     )
+
+    [dai, usdc] = single_recipient_top_up_only_setup.allowed_tokens
 
     # Top up allowed recipient
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
+        dai,
         [allowed_recipient.address],
         [first_top_up_amount],
     )
@@ -169,7 +216,9 @@ def test_single_recipient_top_up_only_setup_happy_path(
     # Validate Aragon Agent can remove recipient
     assert allowed_recipients_registry.isRecipientAllowed(allowed_recipient.address)
 
-    allowed_recipients_registry.removeRecipient(allowed_recipient.address, {"from": lido_contracts.aragon.agent})
+    allowed_recipients_registry.removeRecipient(
+        allowed_recipient.address, {"from": lido_contracts.aragon.agent}
+    )
 
     assert not allowed_recipients_registry.isRecipientAllowed(allowed_recipient.address)
 
@@ -200,16 +249,35 @@ def test_single_recipient_top_up_only_setup_happy_path(
             allowed_recipients_registry.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE(),
         )
     ):
-        allowed_recipients_registry.removeRecipient(new_recipient.address, {"from": evm_script_executor})
+        allowed_recipients_registry.removeRecipient(
+            new_recipient.address, {"from": evm_script_executor}
+        )
+
+    # Validate Aragon Agent can remove token
+    assert allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.removeToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    # Validate Aragon Agent can add token
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.addToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert allowed_tokens_registry.isTokenAllowed(dai)
 
     # wait next period
 
-    chain.sleep(allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH)
+    chain.sleep(
+        allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH
+    )
 
     # Top up newly added recipient
 
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
+        usdc,
         [new_recipient.address],
         [second_top_up_amount],
     )
@@ -218,6 +286,7 @@ def test_single_recipient_top_up_only_setup_happy_path(
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
             top_up_allowed_recipients_evm_script_factory,
+            usdc,
             [new_recipient.address],
             [1],
         )
@@ -233,15 +302,21 @@ def test_full_setup_happy_path(
     allowed_recipient,
     new_recipient,
 ):
-    first_top_up_amount = 50 * 10**18
+    first_top_up_amount = 50 * 10**6
     second_top_up_amount = 100 * 10**18
+
+    print(full_setup)
+
+    [dai, usdc] = full_setup.allowed_tokens
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(
         allowed_recipients_default_params.period_duration_months
     )
 
     # Add allowed recipient by motion
-    add_allowed_recipient_evm_script_factory = full_setup.add_allowed_recipient_evm_script_factory
+    add_allowed_recipient_evm_script_factory = (
+        full_setup.add_allowed_recipient_evm_script_factory
+    )
     add_allowed_recipient_by_motion(
         add_allowed_recipient_evm_script_factory,
         allowed_recipient.address,
@@ -249,16 +324,23 @@ def test_full_setup_happy_path(
     )
 
     # Top up allowed recipient by motion
-    top_up_allowed_recipients_evm_script_factory = full_setup.top_up_allowed_recipients_evm_script_factory
+    top_up_allowed_recipients_evm_script_factory = (
+        full_setup.top_up_allowed_recipients_evm_script_factory
+    )
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
+        usdc,
         [allowed_recipient.address],
         [first_top_up_amount],
     )
 
     # Remove allowed recipient by motion
-    remove_allowed_recipient_evm_script_factory = full_setup.remove_allowed_recipient_evm_script_factory
-    remove_allowed_recipient_by_motion(remove_allowed_recipient_evm_script_factory, allowed_recipient.address)
+    remove_allowed_recipient_evm_script_factory = (
+        full_setup.remove_allowed_recipient_evm_script_factory
+    )
+    remove_allowed_recipient_by_motion(
+        remove_allowed_recipient_evm_script_factory, allowed_recipient.address
+    )
 
     # Aragon's Agent can add new recipients
     allowed_recipients_registry = full_setup.allowed_recipients_registry
@@ -271,13 +353,33 @@ def test_full_setup_happy_path(
     )
     assert allowed_recipients_registry.isRecipientAllowed(new_recipient.address)
 
+    # Validate Aragon Agent can remove token
+    allowed_tokens_registry = full_setup.allowed_tokens_registry
+    assert allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.removeToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    # Validate Aragon Agent can add token
+    assert not allowed_tokens_registry.isTokenAllowed(dai)
+
+    allowed_tokens_registry.addToken(dai, {"from": lido_contracts.aragon.agent})
+
+    assert allowed_tokens_registry.isTokenAllowed(dai)
+
     # Wait for next period
-    chain.sleep(allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH)
+    chain.sleep(
+        allowed_recipients_default_params.period_duration_months * MAX_SECONDS_IN_MONTH
+    )
 
     # Top up newly allowed recipient by motion
-    top_up_allowed_recipients_evm_script_factory = full_setup.top_up_allowed_recipients_evm_script_factory
+    top_up_allowed_recipients_evm_script_factory = (
+        full_setup.top_up_allowed_recipients_evm_script_factory
+    )
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
+        dai,
         [new_recipient.address],
         [second_top_up_amount],
     )
@@ -286,6 +388,7 @@ def test_full_setup_happy_path(
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
             top_up_allowed_recipients_evm_script_factory,
+            dai,
             [new_recipient.address],
             [1],
         )

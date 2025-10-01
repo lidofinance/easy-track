@@ -52,18 +52,18 @@ def test_non_sorted_calldata(owner, set_vetted_validators_limits_factory):
 
 
 def test_non_active_operator_calldata(
-    owner, set_vetted_validators_limits_factory, node_operators_registry, voting, acl
+    owner, set_vetted_validators_limits_factory, node_operators_registry, agent, acl
 ):
     "Must revert with message 'NODE_OPERATOR_IS_NOT_ACTIVE' when operator isn't active"
     acl.grantPermission(
-        voting,
+        agent,
         node_operators_registry,
         web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": voting},
+        {"from": agent},
     )
 
     input_params = [(0, 1), (1, 1)]
-    node_operators_registry.deactivateNodeOperator(0, {"from": voting})
+    node_operators_registry.deactivateNodeOperator(0, {"from": agent})
 
     with reverts("NODE_OPERATOR_IS_NOT_ACTIVE"):
 

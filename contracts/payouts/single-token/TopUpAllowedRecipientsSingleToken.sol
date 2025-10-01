@@ -3,15 +3,15 @@
 
 pragma solidity ^0.8.4;
 
-import "../TrustedCaller.sol";
-import "../AllowedRecipientsRegistry.sol";
-import "../interfaces/IFinance.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../EasyTrack.sol";
+import "contracts/TrustedCaller.sol";
+import "contracts/AllowedRecipientsRegistry.sol";
+import "contracts/interfaces/IFinance.sol";
+import "contracts/libraries/EVMScriptCreator.sol";
+import "contracts/interfaces/IEVMScriptFactory.sol";
+import "contracts/EasyTrack.sol";
 
 /// @notice Creates EVMScript to top up allowed recipients addresses within the current spendable balance
-contract TopUpAllowedRecipients is TrustedCaller, IEVMScriptFactory {
+contract TopUpAllowedRecipientsSingleToken is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------

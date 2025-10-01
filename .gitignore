@@ -11,3 +11,4 @@ reports/
 node_modules
 /contracts_flattened
 logs
+cache

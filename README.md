@@ -60,7 +60,8 @@ To use the tools that this project provides, please pull the repository from Git
 ```bash
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
-yarn install
+nvm install
+npm ci
 
 poetry install
 poetry run brownie networks import network-config.yaml True
@@ -164,9 +165,9 @@ Script requires next ENV variables to be set:
 
 ## Tests
 
-Set infura project ID
+Set rpc url:
 ```bash
-export WEB3_INFURA_PROJECT_ID=<YOUR_PROJECT_ID>
+export MAINNET_RPC_URL=<YOUR_RPC_URL>
 ```
 
 The fastest way to run the tests is:
@@ -186,6 +187,8 @@ Run tests only for stVaults factories on Hoodi fork:
 export HOODI_RPC_URL=<YOUR_HOODI_RPC_URL>
 ./scripts/run_vaults_tests.sh
 ```
+
+> Note: Holesky support will be removed in upcoming upgrades.
 
 ### Coverage notes
 

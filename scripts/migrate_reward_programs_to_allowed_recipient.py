@@ -14,9 +14,6 @@ from brownie import AllowedRecipientsBuilder
 def main():
     network_name = get_network_name()
 
-    if not (network_name == "goerli" or network_name == "goerli-fork"):
-        raise EnvironmentError("network is not supported")
-
     if not (network_name == "holesky" or network_name == "holesky-fork"):
         raise EnvironmentError("network is not supported")
 

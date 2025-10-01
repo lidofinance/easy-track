@@ -11,6 +11,7 @@ from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils import deployed_date_time
 from utils.test_helpers import set_account_balance
+from utils.lido import external_contracts
 
 ####################################
 # Brownie Blockchain State Snapshots
@@ -99,6 +100,7 @@ def lido_contracts():
     set_account_balance(contracts.lido_addresses.aragon.calls_script)
     set_account_balance(contracts.lido_addresses.aragon.token_manager)
     set_account_balance(contracts.lido_addresses.aragon.kernel)
+    set_account_balance(contracts.lido_addresses.dual_governance_admin_executor)
     return contracts
 
 
@@ -316,19 +318,34 @@ def allowed_recipients_registry(AllowedRecipientsRegistry, bokkyPooBahsDateTimeC
 
 
 @pytest.fixture(scope="module")
-def top_up_allowed_recipients(
+def allowed_tokens_registry(AllowedTokensRegistry, owner, accounts):
+    add_token_role_holder = accounts[6]
+    remove_token_role_holder = accounts[7]
+
+    registry = owner.deploy(
+        AllowedTokensRegistry,
+        owner,
+        [add_token_role_holder],
+        [remove_token_role_holder],
+    )
+
+    return (registry, owner, add_token_role_holder, remove_token_role_holder)
+
+
+@pytest.fixture(scope="module")
+def top_up_allowed_recipients_single_token(
     allowed_recipients_registry,
     accounts,
     finance,
     ldo,
     easy_track,
-    TopUpAllowedRecipients,
+    TopUpAllowedRecipientsSingleToken,
 ):
     (registry, owner, _, _, _, _) = allowed_recipients_registry
 
     trusted_caller = accounts[4]
 
-    top_up_factory = owner.deploy(TopUpAllowedRecipients, trusted_caller, registry, finance, ldo, easy_track)
+    top_up_factory = owner.deploy(TopUpAllowedRecipientsSingleToken, trusted_caller, registry, finance, ldo, easy_track)
     set_account_balance(top_up_factory.address)
     return top_up_factory
 
@@ -346,6 +363,15 @@ def ldo(lido_contracts):
 @pytest.fixture(scope="module")
 def steth(lido_contracts):
     return lido_contracts.steth
+
+
+@pytest.fixture(scope="module")
+def usdc():
+    return external_contracts(network=brownie.network.show_active())["usdc"]
+
+@pytest.fixture(scope="module")
+def dai():
+    return external_contracts(network=brownie.network.show_active())["dai"]
 
 
 @pytest.fixture(scope="module")
@@ -369,6 +395,11 @@ def voting(lido_contracts):
 @pytest.fixture(scope="module")
 def tokens(lido_contracts):
     return lido_contracts.aragon.token_manager
+
+
+@pytest.fixture(scope="module")
+def dual_governance_admin_executor(lido_contracts):
+    return lido_contracts.dual_governance_admin_executor
 
 
 @pytest.fixture(scope="module")
