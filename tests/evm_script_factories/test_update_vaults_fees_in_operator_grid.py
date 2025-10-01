@@ -1,31 +1,37 @@
 import pytest
-from brownie import reverts, DecreaseVaultsFeesInVaultHub, VaultHubAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, UpdateVaultsFeesInOperatorGrid, VaultsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_bp):
     return encode_calldata(
-        ["address[]", "uint256[]", "uint256[]", "uint256[]"], 
+        ["address[]", "uint256[]", "uint256[]", "uint256[]"],
         [vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_bp]
     )
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub):
-    adapter = VaultHubAdapter.deploy(owner, vault_hub_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, vault_hub_stub, operator_grid_stub):
+    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
     return adapter
 
 @pytest.fixture(scope="module")
-def update_vaults_fees_factory(owner, adapter):
-    factory = DecreaseVaultsFeesInVaultHub.deploy(owner, adapter, {"from": owner})
+def update_vaults_fees_factory(owner, adapter, operator_grid_stub):
+    factory = UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, operator_grid_stub, {"from": owner})
     return factory
 
-def test_deploy(owner, update_vaults_fees_factory, adapter, vault_hub_stub):
+def test_deploy(owner, update_vaults_fees_factory, adapter, vault_hub_stub, operator_grid_stub):
     "Must deploy contract with correct data"
     assert update_vaults_fees_factory.trustedCaller() == owner
-    assert update_vaults_fees_factory.vaultHubAdapter() == adapter
+    assert update_vaults_fees_factory.vaultsAdapter() == adapter
+    assert update_vaults_fees_factory.operatorGrid() == operator_grid_stub
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
+
+def test_deploy_with_zero_operator_grid(owner, adapter):
+    "Must revert with message 'ZERO_OPERATOR_GRID' if operator grid is zero address"
+    with reverts('ZERO_OPERATOR_GRID'):
+        UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, ZERO_ADDRESS, {"from": owner})
 
 def test_create_evm_script_called_by_stranger(stranger, update_vaults_fees_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -45,12 +51,12 @@ def test_array_length_mismatch(owner, stranger, update_vaults_fees_factory):
     CALLDATA1 = create_calldata([stranger.address], [1000, 2000], [1000], [1000])
     with reverts('ARRAY_LENGTH_MISMATCH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA1)
-    
+
     # Different lengths for liquidity fees
     CALLDATA2 = create_calldata([stranger.address], [1000], [1000, 2000], [1000])
     with reverts('ARRAY_LENGTH_MISMATCH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA2)
-    
+
     # Different lengths for reservation fees
     CALLDATA3 = create_calldata([stranger.address], [1000], [1000], [1000, 2000])
     with reverts('ARRAY_LENGTH_MISMATCH'):
@@ -58,27 +64,28 @@ def test_array_length_mismatch(owner, stranger, update_vaults_fees_factory):
 
 def test_zero_vault_address(owner, stranger, update_vaults_fees_factory):
     "Must revert with message 'ZERO_VAULT' if any vault is zero address"
-    CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [1000, 1000], [1000, 1000], [1000, 1000])
+    CALLDATA = create_calldata([ZERO_ADDRESS, stranger.address], [30, 30], [30, 30], [5, 5])
     with reverts('ZERO_VAULT'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA)
 
-def test_fees_exceed_100_percent(owner, stranger, update_vaults_fees_factory, vault_hub_stub):
-    "Must revert if any fee exceeds 100%"
+def test_fees_exceed_tier_limits(owner, stranger, update_vaults_fees_factory, vault_hub_stub, operator_grid_stub):
+    "Must revert if any fee exceeds tier limits"
     # Register vault first
     vault_hub_stub.connectVault(stranger)
-    
-    # Test infra fee exceeds 100%
-    CALLDATA1 = create_calldata([stranger.address], [70001], [1000], [1000])
+
+    # Default tier has limits: infra=50, liquidity=40, reservation=10 (from stub)
+    # Test infra fee exceeds tier limit
+    CALLDATA1 = create_calldata([stranger.address], [51], [30], [5])  # 51 > 50, others within limits
     with reverts('INFRA_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA1)
-    
-    # Test liquidity fee exceeds 100%
-    CALLDATA2 = create_calldata([stranger.address], [1000], [70001], [1000])
+
+    # Test liquidity fee exceeds tier limit
+    CALLDATA2 = create_calldata([stranger.address], [30], [41], [5])  # 41 > 40, others within limits
     with reverts('LIQUIDITY_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA2)
-    
-    # Test reservation fee exceeds 100%
-    CALLDATA3 = create_calldata([stranger.address], [1000], [1000], [70001])
+
+    # Test reservation fee exceeds tier limit
+    CALLDATA3 = create_calldata([stranger.address], [30], [30], [11])  # 11 > 10, others within limits
     with reverts('RESERVATION_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA3)
 
@@ -86,12 +93,12 @@ def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_fact
     "Must create correct EVMScript for a single vault if all requirements are met"
     # Register vault first
     vault_hub_stub.connectVault(stranger)
-    
+
     vaults = [stranger.address]
-    infra_fees = [2000]
-    liquidity_fees = [3000]
-    reservation_fees = [1000]
-    
+    infra_fees = [20]  # within tier limit of 50
+    liquidity_fees = [30]  # within tier limit of 40
+    reservation_fees = [5]  # within tier limit of 10
+
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
     evm_script = update_vaults_fees_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
@@ -118,12 +125,12 @@ def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_f
     vault2 = accounts[2]
     vault_hub_stub.connectVault(vault1)
     vault_hub_stub.connectVault(vault2)
-    
+
     vaults = [vault1.address, vault2.address]
-    infra_fees = [2000, 1500]
-    liquidity_fees = [3000, 2500]
-    reservation_fees = [1000, 500]
-    
+    infra_fees = [20, 15]  # within tier limit of 50
+    liquidity_fees = [30, 25]  # within tier limit of 40
+    reservation_fees = [5, 8]  # within tier limit of 10
+
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
     evm_script = update_vaults_fees_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
@@ -146,20 +153,65 @@ def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_f
 def test_decode_evm_script_call_data(accounts, update_vaults_fees_factory):
     "Must decode EVMScript call data correctly"
     vaults = [accounts[1].address, accounts[2].address]
-    infra_fees = [2000, 1500]
-    liquidity_fees = [3000, 2500]
-    reservation_fees = [1000, 500]
-    
+    infra_fees = [20, 15]  # within tier limit of 50
+    liquidity_fees = [30, 25]  # within tier limit of 40
+    reservation_fees = [5, 8]  # within tier limit of 10
+
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
     decoded_vaults, decoded_infra_fees, decoded_liquidity_fees, decoded_reservation_fees = update_vaults_fees_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_vaults) == len(vaults)
     assert len(decoded_infra_fees) == len(infra_fees)
     assert len(decoded_liquidity_fees) == len(liquidity_fees)
     assert len(decoded_reservation_fees) == len(reservation_fees)
-    
+
     for i in range(len(vaults)):
         assert decoded_vaults[i] == vaults[i]
         assert decoded_infra_fees[i] == infra_fees[i]
         assert decoded_liquidity_fees[i] == liquidity_fees[i]
         assert decoded_reservation_fees[i] == reservation_fees[i]
+
+def test_can_create_evm_script_with_fees_up_to_tier_limits(owner, stranger, update_vaults_fees_factory, vault_hub_stub, operator_grid_stub, adapter):
+    "Must allow creating EVMScript with fees up to tier limits"
+    vault = stranger.address
+
+    # Register vault first
+    vault_hub_stub.connectVault(vault)
+
+    # Create a custom tier with higher fee limits
+    node_operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(node_operator, 10000, {"from": owner})
+
+    # Tier with fees: infra=5000, liquidity=4000, reservation=3000 (in basis points)
+    tier_params = (10000, 200, 100, 5000, 4000, 3000)
+    operator_grid_stub.registerTiers(node_operator, [tier_params], {"from": owner})
+
+    # Set vault to use tier 1 (the newly created tier)
+    operator_grid_stub.setVaultTier(vault, 1, {"from": owner})
+
+    # Step 1: Create EVMScript with fees at tier limits - should succeed
+    tier_infra_fee = 5000       # exactly at tier limit
+    tier_liquidity_fee = 4000   # exactly at tier limit
+    tier_reservation_fee = 3000 # exactly at tier limit
+
+    vaults = [vault]
+    infra_fees = [tier_infra_fee]
+    liquidity_fees = [tier_liquidity_fee]
+    reservation_fees = [tier_reservation_fee]
+
+    EVM_SCRIPT_CALLDATA = create_calldata(vaults, infra_fees, liquidity_fees, reservation_fees)
+    evm_script = update_vaults_fees_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+    # Should create EVMScript successfully
+    expected_calls = [(
+        adapter.address,
+        adapter.updateVaultFees.encode_input(vault, tier_infra_fee, tier_liquidity_fee, tier_reservation_fee)
+    )]
+    expected_evm_script = encode_call_script(expected_calls)
+    assert evm_script == expected_evm_script
+
+    # Step 2: Try to exceed tier limits in factory - should fail
+    over_tier_infra_fee = 5001  # exceeds tier limit of 5000
+    CALLDATA_EXCEED = create_calldata([vault], [over_tier_infra_fee], [tier_liquidity_fee], [tier_reservation_fee])
+    with reverts('INFRA_FEE_TOO_HIGH'):
+        update_vaults_fees_factory.createEVMScript(owner, CALLDATA_EXCEED)

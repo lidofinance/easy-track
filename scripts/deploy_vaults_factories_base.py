@@ -1,5 +1,6 @@
 import json
 import os
+from time import sleep
 
 from brownie import (
     chain,
@@ -19,7 +20,7 @@ from utils.config import (
     get_network_name,
 )
 
-from utils.constants import MAX_SANE_SHARE_LIMIT
+from utils.constants import MAX_GROUP_SHARE_LIMIT, MAX_DEFAULT_TIER_SHARE_LIMIT
 
 
 def get_trusted_caller():
@@ -86,13 +87,13 @@ def deploy_operator_grid_factories(
     register_groups_in_operator_grid = RegisterGroupsInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
-        MAX_SANE_SHARE_LIMIT,
+        MAX_GROUP_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["RegisterGroupsInOperatorGrid"] = {
         "contract": "RegisterGroupsInOperatorGrid",
         "address": register_groups_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid, MAX_SANE_SHARE_LIMIT],
+        "constructorArgs": [trusted_caller, operator_grid, MAX_GROUP_SHARE_LIMIT],
     }
 
     log.ok("Deployed RegisterGroupsInOperatorGrid", register_groups_in_operator_grid.address)
@@ -101,13 +102,13 @@ def deploy_operator_grid_factories(
     update_groups_share_limit_in_operator_grid = UpdateGroupsShareLimitInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
-        MAX_SANE_SHARE_LIMIT,
+        MAX_GROUP_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["UpdateGroupsShareLimitInOperatorGrid"] = {
         "contract": "UpdateGroupsShareLimitInOperatorGrid",
         "address": update_groups_share_limit_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid, MAX_SANE_SHARE_LIMIT],
+        "constructorArgs": [trusted_caller, operator_grid, MAX_GROUP_SHARE_LIMIT],
     }
 
     log.ok("Deployed UpdateGroupsShareLimitInOperatorGrid", update_groups_share_limit_in_operator_grid.address)
@@ -130,12 +131,13 @@ def deploy_operator_grid_factories(
     alter_tiers_in_operator_grid = AlterTiersInOperatorGrid.deploy(
         trusted_caller,
         operator_grid,
+        MAX_DEFAULT_TIER_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["AlterTiersInOperatorGrid"] = {
         "contract": "AlterTiersInOperatorGrid",
         "address": alter_tiers_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid],
+        "constructorArgs": [trusted_caller, operator_grid, MAX_DEFAULT_TIER_SHARE_LIMIT],
     }
 
     log.ok("Deployed AlterTiersInOperatorGrid", alter_tiers_in_operator_grid.address)
@@ -152,8 +154,11 @@ def deploy_operator_grid_factories(
     log.ok("Deployment artifacts have been saved to", filename)
 
     RegisterGroupsInOperatorGrid.publish_source(register_groups_in_operator_grid)
+    sleep(2)
     UpdateGroupsShareLimitInOperatorGrid.publish_source(update_groups_share_limit_in_operator_grid)
+    sleep(2)
     RegisterTiersInOperatorGrid.publish_source(register_tiers_in_operator_grid)
+    sleep(2)
     AlterTiersInOperatorGrid.publish_source(alter_tiers_in_operator_grid)
 
     log.br()

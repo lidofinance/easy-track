@@ -6,17 +6,20 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHubAdapter.sol";
+import "../../interfaces/IVaultsAdapter.sol";
+import "../../interfaces/IOperatorGrid.sol";
 
 /// @author dry914
-/// @notice Creates EVMScript to update fees for multiple vaults in VaultHub
-contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to update fees for multiple vaults in OperatorGrid
+/// @notice This motion might be temporary non-enactable, requiring a fresh report to be presented for each vault
+contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERROR MESSAGES
     // -------------
 
     string private constant ERROR_ZERO_ADAPTER = "ZERO_ADAPTER";
+    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
@@ -25,35 +28,33 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
 
     // -------------
-    // CONSTANTS
-    // -------------
-
-    /// @dev max value for fees in basis points - it's about 650%
-    uint256 internal constant MAX_FEE_BP = type(uint16).max;
-
-    // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub adapter
-    IVaultHubAdapter public immutable vaultHubAdapter;
+    /// @notice Address of Vaults adapter
+    IVaultsAdapter public immutable vaultsAdapter;
+
+    /// @notice Address of OperatorGrid
+    IOperatorGrid public immutable operatorGrid;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _adapter)
+    constructor(address _trustedCaller, address _adapter, address _operatorGrid)
         TrustedCaller(_trustedCaller)
-    {   
+    {
         require(_adapter != address(0), ERROR_ZERO_ADAPTER);
-        vaultHubAdapter = IVaultHubAdapter(_adapter);
+        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        vaultsAdapter = IVaultsAdapter(_adapter);
+        operatorGrid = IOperatorGrid(_operatorGrid);
     }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to update fees for multiple vaults in VaultHub
+    /// @notice Creates EVMScript to update fees for multiple vaults in OperatorGrid
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: address[] _vaults, uint256[] _infraFeesBP, uint256[] _liquidityFeesBP, uint256[] _reservationFeesBP
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
@@ -72,8 +73,8 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _infraFeesBP, _liquidityFeesBP, _reservationFeesBP);
 
-        address toAddress = address(vaultHubAdapter);
-        bytes4 methodId = vaultHubAdapter.updateVaultFees.selector;
+        address toAddress = address(vaultsAdapter);
+        bytes4 methodId = vaultsAdapter.updateVaultFees.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -116,7 +117,7 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
         uint256[] memory _infraFeesBP,
         uint256[] memory _liquidityFeesBP,
         uint256[] memory _reservationFeesBP
-    ) private pure {
+    ) private view {
         require(_vaults.length > 0, ERROR_EMPTY_VAULTS);
         require(
             _vaults.length == _infraFeesBP.length &&
@@ -124,12 +125,15 @@ contract DecreaseVaultsFeesInVaultHub is TrustedCaller, IEVMScriptFactory {
             _vaults.length == _reservationFeesBP.length,
             ERROR_ARRAY_LENGTH_MISMATCH
         );
-        
+
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), ERROR_ZERO_VAULT);
-            require(_infraFeesBP[i] <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
-            require(_liquidityFeesBP[i] <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
-            require(_reservationFeesBP[i] <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
+
+            (,,,,,uint256 tierInfraFeeBP,uint256 tierLiquidityFeeBP,uint256 tierReservationFeeBP
+                ) = operatorGrid.vaultTierInfo(_vaults[i]);
+            require(_infraFeesBP[i] <= tierInfraFeeBP, ERROR_INFRA_FEE_TOO_HIGH);
+            require(_liquidityFeesBP[i] <= tierLiquidityFeeBP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
+            require(_reservationFeesBP[i] <= tierReservationFeeBP, ERROR_RESERVATION_FEE_TOO_HIGH);
             // more checks in adapter function to prevent motion failure in case vault disconnected while motion is in progress
         }
     }

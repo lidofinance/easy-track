@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SocializeBadDebtInVaultHub, VaultHubAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SocializeBadDebtInVaultHub, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -10,8 +10,8 @@ def create_calldata(bad_debt_vaults, vault_acceptors, max_shares_to_socialize):
     )
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub):
-    adapter = VaultHubAdapter.deploy(owner, vault_hub_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, vault_hub_stub, operator_grid_stub):
+    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
     return adapter
 
 @pytest.fixture(scope="module")
@@ -22,7 +22,7 @@ def socialize_bad_debt_factory(owner, adapter):
 def test_deploy(owner, socialize_bad_debt_factory, adapter, vault_hub_stub):
     "Must deploy contract with correct data"
     assert socialize_bad_debt_factory.trustedCaller() == owner
-    assert socialize_bad_debt_factory.vaultHubAdapter() == adapter
+    assert socialize_bad_debt_factory.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
@@ -59,15 +59,15 @@ def test_zero_vault_acceptor_address(owner, stranger, socialize_bad_debt_factory
 
 def test_create_evm_script(owner, accounts, socialize_bad_debt_factory, adapter):
     "Must create correct EVMScript if all requirements are met"
-    bad_debt_vault1 = accounts[5]
-    bad_debt_vault2 = accounts[6]
-    vault_acceptor1 = accounts[7]
-    vault_acceptor2 = accounts[8]
-    
+    bad_debt_vault1 = StakingVaultStub.deploy(accounts[5], {"from": owner})
+    bad_debt_vault2 = StakingVaultStub.deploy(accounts[6], {"from": owner})
+    vault_acceptor1 = StakingVaultStub.deploy(accounts[5], {"from": owner})
+    vault_acceptor2 = StakingVaultStub.deploy(accounts[6], {"from": owner})
+
     bad_debt_vaults = [bad_debt_vault1.address, bad_debt_vault2.address]
     vault_acceptors = [vault_acceptor1.address, vault_acceptor2.address]
     max_shares_to_socialize = [100, 200]
-    
+
     EVM_SCRIPT_CALLDATA = create_calldata(bad_debt_vaults, vault_acceptors, max_shares_to_socialize)
     evm_script = socialize_bad_debt_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
@@ -93,11 +93,11 @@ def test_decode_evm_script_call_data(accounts, socialize_bad_debt_factory):
     max_shares_to_socialize = [100, 200]
     EVM_SCRIPT_CALLDATA = create_calldata(bad_debt_vaults, vault_acceptors, max_shares_to_socialize)
     decoded_bad_debt_vaults, decoded_vault_acceptors, decoded_max_shares = socialize_bad_debt_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_bad_debt_vaults) == len(bad_debt_vaults)
     assert len(decoded_vault_acceptors) == len(vault_acceptors)
     assert len(decoded_max_shares) == len(max_shares_to_socialize)
     for i in range(len(bad_debt_vaults)):
         assert decoded_bad_debt_vaults[i] == bad_debt_vaults[i]
         assert decoded_vault_acceptors[i] == vault_acceptors[i]
-        assert decoded_max_shares[i] == max_shares_to_socialize[i] 
+        assert decoded_max_shares[i] == max_shares_to_socialize[i]

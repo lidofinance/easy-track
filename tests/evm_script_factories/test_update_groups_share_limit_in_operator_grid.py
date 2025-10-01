@@ -54,17 +54,17 @@ def test_group_not_exists(owner, stranger, accounts, update_groups_share_limit_i
 
 
 def test_share_limit_too_high(owner, accounts, update_groups_share_limit_in_operator_grid_factory, operator_grid_stub):
-    "Must revert with message 'SHARE_LIMIT_TOO_HIGH' if any share limit exceeds maxSaneShareLimit"
+    "Must revert with message 'SHARE_LIMIT_TOO_HIGH' if any share limit exceeds maxShareLimit"
     operator = accounts[5]
-    
+
     # Register operator first
     operator_grid_stub.registerGroup(operator, 5000, {"from": owner})
-    
-    # Get maxSaneShareLimit from the factory (10000 based on deployment)
-    max_sane_share_limit = update_groups_share_limit_in_operator_grid_factory.maxSaneShareLimit()
-    
-    # Try to set share limit higher than maxSaneShareLimit
-    CALLDATA = create_calldata([operator.address], [max_sane_share_limit + 1])
+
+    # Get maxShareLimit from the factory (10000 based on deployment)
+    max_share_limit = update_groups_share_limit_in_operator_grid_factory.maxShareLimit()
+
+    # Try to set share limit higher than maxShareLimit
+    CALLDATA = create_calldata([operator.address], [max_share_limit + 1])
     with reverts('SHARE_LIMIT_TOO_HIGH'):
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
@@ -73,11 +73,11 @@ def test_create_evm_script(owner, accounts, update_groups_share_limit_in_operato
     "Must create correct EVMScript if all requirements are met"
     operator1 = accounts[5]
     operator2 = accounts[6]
-    
+
     # Register operators
     operator_grid_stub.registerGroup(operator1, 1000, {"from": owner})
     operator_grid_stub.registerGroup(operator2, 1500, {"from": owner})
-    
+
     operators = [operator1.address, operator2.address]
     share_limits = [2000, 3000]
 
@@ -103,10 +103,10 @@ def test_decode_evm_script_call_data(accounts, update_groups_share_limit_in_oper
 
     EVM_SCRIPT_CALLDATA = create_calldata(operators, share_limits)
     decoded_operators, decoded_share_limits = update_groups_share_limit_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_operators) == len(operators)
     assert len(decoded_share_limits) == len(share_limits)
-    
+
     for i in range(len(operators)):
         assert decoded_operators[i] == operators[i]
         assert decoded_share_limits[i] == share_limits[i]

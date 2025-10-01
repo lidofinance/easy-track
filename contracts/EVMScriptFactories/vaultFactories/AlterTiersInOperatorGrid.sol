@@ -44,16 +44,20 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Address of OperatorGrid
     IOperatorGrid public immutable operatorGrid;
 
+    /// @notice Maximum share limit
+    uint256 public immutable defaultTierMaxShareLimit;
+
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid)
+    constructor(address _trustedCaller, address _operatorGrid, uint256 _defaultTierMaxShareLimit)
         TrustedCaller(_trustedCaller)
     {
         require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
 
         operatorGrid = IOperatorGrid(_operatorGrid);
+        defaultTierMaxShareLimit = _defaultTierMaxShareLimit;
     }
 
     // -------------
@@ -112,9 +116,11 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {
             // reverts if tier does not exist in the operator grid
-            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]); 
+            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]);
 
-            if (_tierIds[i] != DEFAULT_TIER_ID) {
+            if (_tierIds[i] == DEFAULT_TIER_ID) {
+                require(_tierParams[i].shareLimit <= defaultTierMaxShareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
+            } else {
                 IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
                 require(_tierParams[i].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
             }

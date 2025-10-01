@@ -5,10 +5,11 @@ pragma solidity 0.8.6;
 
 import "../../TrustedCaller.sol";
 import "../../interfaces/IVaultHub.sol";
+import "../../interfaces/IOperatorGrid.sol";
 
 /// @author dry914
-/// @notice Adapter for VaultHub to be used in EVMScriptFactories
-contract VaultHubAdapter is TrustedCaller {
+/// @notice Adapter for VaultHub and OperatorGrid to be used in EVMScriptFactories
+contract VaultsAdapter is TrustedCaller {
     // -------------
     // ERROR MESSAGES
     // -------------
@@ -19,6 +20,7 @@ contract VaultHubAdapter is TrustedCaller {
     string private constant ERROR_NO_ETH_TO_WITHDRAW = "NO_ETH_TO_WITHDRAW";
     string private constant ERROR_ETH_TRANSFER_FAILED = "ETH_TRANSFER_FAILED";
     string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
+    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
     string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
     string private constant ERROR_ZERO_VALIDATOR_EXIT_FEE_LIMIT = "ZERO_VALIDATOR_EXIT_FEE_LIMIT";
     string private constant ERROR_VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED = "VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED";
@@ -28,7 +30,7 @@ contract VaultHubAdapter is TrustedCaller {
     // -------------
     // CONSTANTS
     // -------------
-    
+
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
     address public constant WITHDRAWAL_REQUEST_PREDEPLOY_ADDRESS = 0x00000961Ef480Eb55e80D19ad83579A64c007002;
 
@@ -38,6 +40,9 @@ contract VaultHubAdapter is TrustedCaller {
 
     /// @notice Address of VaultHub
     IVaultHub public immutable vaultHub;
+
+    /// @notice Address of OperatorGrid
+    IOperatorGrid public immutable operatorGrid;
 
     /// @notice Address of the EVMScriptExecutor
     address public immutable evmScriptExecutor;
@@ -49,8 +54,9 @@ contract VaultHubAdapter is TrustedCaller {
     // EVENTS
     // -------------
 
-    event ShareLimitUpdateFailed(address indexed vault, uint256 shareLimit);
+    event VaultJailStatusUpdateFailed(address indexed vault, bool isInJail);
     event VaultFeesUpdateFailed(address indexed vault, uint256 infraFeeBP, uint256 liquidityFeeBP, uint256 reservationFeeBP);
+    event LiabilitySharesTargetUpdateFailed(address indexed vault, uint256 liabilitySharesTarget);
     event BadDebtSocializationFailed(address indexed badDebtVault, address indexed vaultAcceptor, uint256 maxSharesToSocialize);
     event ForceValidatorExitFailed(address indexed vault, bytes pubkeys);
     event WithdrawalRequestFeeUpdated(uint256 oldFee, uint256 newFee);
@@ -59,14 +65,16 @@ contract VaultHubAdapter is TrustedCaller {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub, address _evmScriptExecutor, uint256 _validatorExitFeeLimit)
+    constructor(address _trustedCaller, address _vaultHub, address _operatorGrid, address _evmScriptExecutor, uint256 _validatorExitFeeLimit)
         TrustedCaller(_trustedCaller)
-    {   
+    {
         require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
+        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
         require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
         require(_validatorExitFeeLimit > 0, ERROR_ZERO_VALIDATOR_EXIT_FEE_LIMIT);
 
         vaultHub = IVaultHub(_vaultHub);
+        operatorGrid = IOperatorGrid(_operatorGrid);
         evmScriptExecutor = _evmScriptExecutor;
         validatorExitFeeLimit = _validatorExitFeeLimit;
     }
@@ -75,7 +83,7 @@ contract VaultHubAdapter is TrustedCaller {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Function to update vault fees in VaultHub
+    /// @notice Function to update vault fees in OperatorGrid
     /// @param _vault Address of the vault to update fees for
     /// @param _infraFeeBP New infra fee in basis points
     /// @param _liquidityFeeBP New liquidity fee in basis points
@@ -88,34 +96,44 @@ contract VaultHubAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        if (connection.vaultIndex == 0 || // vault is not connected to hub
-            connection.pendingDisconnect || // vault is disconnecting
-            _infraFeeBP > connection.infraFeeBP ||
-            _liquidityFeeBP > connection.liquidityFeeBP ||
-            _reservationFeeBP > connection.reservationFeeBP) {
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault)) { // vault is disconnecting
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
             return;
         }
 
-        vaultHub.updateVaultFees(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
+        operatorGrid.updateVaultFees(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
     }
 
-    /// @notice Updates share limit for a vault
+    /// @notice Sets jail status for a vault in OperatorGrid
     /// @param _vault address of the vault to update
-    /// @param _shareLimit new share limit value
-    function updateShareLimit(address _vault, uint256 _shareLimit) external {
+    /// @param _isInJail jail status to set
+    function setVaultJailStatus(address _vault, bool _isInJail) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
-        if (connection.vaultIndex == 0 || // vault is not connected to hub
-            connection.pendingDisconnect || // vault is disconnecting
-            _shareLimit > connection.shareLimit) {
-            emit ShareLimitUpdateFailed(_vault, _shareLimit);
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
+            operatorGrid.isVaultInJail(_vault) == _isInJail) { // status is already the same
+            emit VaultJailStatusUpdateFailed(_vault, _isInJail);
             return;
         }
 
-        vaultHub.updateShareLimit(_vault, _shareLimit);
+        operatorGrid.setVaultJailStatus(_vault, _isInJail);
+    }
+
+    /// @notice Sets liability shares target for a vault
+    /// @param _vault address of the vault to update
+    /// @param _liabilitySharesTarget new liability shares target value
+    function setLiabilitySharesTarget(address _vault, uint256 _liabilitySharesTarget) external {
+        require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
+
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault)) { // vault is disconnecting
+            emit LiabilitySharesTargetUpdateFailed(_vault, _liabilitySharesTarget);
+            return;
+        }
+
+        vaultHub.setLiabilitySharesTarget(_vault, _liabilitySharesTarget);
     }
 
     /// @notice Socializes bad debt for a vault
@@ -129,18 +147,15 @@ contract VaultHubAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        // reverts if vault is disconnected or a few other reasons from VaultHub logic
-        try vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize) {
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the socializeBadDebt() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the socializeBadDebt() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
+        if (!vaultHub.isVaultConnected(_badDebtVault) || // vault is not connected to hub
+            !vaultHub.isVaultConnected(_vaultAcceptor) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_badDebtVault) || // vault is disconnecting
+            vaultHub.isPendingDisconnect(_vaultAcceptor)) { // vault is disconnecting
             emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
+            return;
         }
+
+        vaultHub.socializeBadDebt(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
     }
 
     /// @notice Function to force validator exits in VaultHub
@@ -159,25 +174,21 @@ contract VaultHubAdapter is TrustedCaller {
         uint256 value = fee * numKeys;
         require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
 
-        // reverts if vault is disconnected or healthy
-        try vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this)) {
-        } catch (bytes memory lowLevelRevertData) {
-            /// @dev This check is required to prevent incorrect gas estimation of the method.
-            ///      Without it, Ethereum nodes that use binary search for gas estimation may
-            ///      return an invalid value when the forceValidatorExit() reverts because of the
-            ///      "out of gas" error.
-            ///      Here we assume that the forceValidatorExit() method doesn't have reverts with
-            ///      empty error data except "out of gas".
-            require(lowLevelRevertData.length != 0, ERROR_OUT_OF_GAS);
+        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
+            vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
+            vaultHub.obligationsShortfallValue(_vault) == 0) { // vault has no obligations shortfall
             emit ForceValidatorExitFailed(_vault, _pubkeys);
+            return;
         }
+
+        vaultHub.forceValidatorExit{value: value}(_vault, _pubkeys, address(this));
     }
 
     /// @notice Function to set the validator exit fee limit
     /// @param _validatorExitFeeLimit new validator exit fee limit
     function setValidatorExitFeeLimit(uint256 _validatorExitFeeLimit) external onlyTrustedCaller(msg.sender) {
         require(_validatorExitFeeLimit > 0, ERROR_ZERO_VALIDATOR_EXIT_FEE_LIMIT);
-        
+
         uint256 oldFee = validatorExitFeeLimit;
         validatorExitFeeLimit = _validatorExitFeeLimit;
 

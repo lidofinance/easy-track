@@ -10,7 +10,7 @@ contract VaultHubStub is AccessControl {
         address owner;
         uint96 shareLimit;
         uint96 vaultIndex;
-        bool pendingDisconnect;
+        uint48 disconnectInitiatedTs;
         uint16 reserveRatioBP;
         uint16 forcedRebalanceThresholdBP;
         uint16 infraFeeBP;
@@ -47,6 +47,7 @@ contract VaultHubStub is AccessControl {
     mapping(address => VaultConnection) connections;
     mapping(address => VaultRecord) records;
     mapping(address => VaultObligations) obligations;
+    mapping(address => uint256) obligationsShortfallValues; // vault address => shortfall value
 
     uint96 public vaultIndex = 1;
 
@@ -54,6 +55,8 @@ contract VaultHubStub is AccessControl {
     bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
     bytes32 public constant REDEMPTION_MASTER_ROLE = keccak256("vaults.VaultHub.RedemptionMasterRole");
     bytes32 public constant BAD_DEBT_MASTER_ROLE = keccak256("vaults.VaultHub.BadDebtMasterRole");
+    /// @dev special value for `disconnectTimestamp` storage means the vault is not marked for disconnect
+    uint48 internal immutable DISCONNECT_NOT_INITIATED = type(uint48).max;
 
     constructor(address _admin) {
         require(_admin != address(0), "Zero admin address");
@@ -69,7 +72,7 @@ contract VaultHubStub is AccessControl {
             msg.sender,
             1000,
             vaultIndex++,
-            false,
+            DISCONNECT_NOT_INITIATED, // Connected vault - max value indicates connected
             100,
             50,
             1000,
@@ -87,6 +90,7 @@ contract VaultHubStub is AccessControl {
         );
 
         obligations[_vault] = VaultObligations(0, 0, 0);
+        obligationsShortfallValues[_vault] = 1000000000000000000; // 1 ETH default shortfall
     }
 
     function vaultConnection(address _vault) external view returns (VaultConnection memory) {
@@ -106,35 +110,26 @@ contract VaultHubStub is AccessControl {
         return connections[_vault].vaultIndex != 0;
     }
 
-    function updateShareLimit(address _vault, uint256 _shareLimit) external onlyRole(VAULT_MASTER_ROLE) {
-        connections[_vault].shareLimit = uint96(_shareLimit);
-        emit VaultShareLimitUpdated(_vault, _shareLimit);
+    /// @return true if vault is pending for disconnect, false if vault is connected or disconnected
+    function isPendingDisconnect(address _vault) external view returns (bool) {
+        // For stub purposes, always return false
+        return false;
     }
 
-    function updateVaultFees(
-        address _vault,
-        uint256 _infraFeeBP,
-        uint256 _liquidityFeeBP,
-        uint256 _reservationFeeBP
-    ) external onlyRole(VAULT_MASTER_ROLE) {
-        uint16 preInfraFeeBP = connections[_vault].infraFeeBP;
-        uint16 preLiquidityFeeBP = connections[_vault].liquidityFeeBP;
-        uint16 preReservationFeeBP = connections[_vault].reservationFeeBP;
-
-        connections[_vault].infraFeeBP = uint16(_infraFeeBP);
-        connections[_vault].liquidityFeeBP = uint16(_liquidityFeeBP);
-        connections[_vault].reservationFeeBP = uint16(_reservationFeeBP);
-
-        emit VaultFeesUpdated(
-            _vault,
-            preInfraFeeBP,
-            preLiquidityFeeBP,
-            preReservationFeeBP,
-            _infraFeeBP,
-            _liquidityFeeBP,
-            _reservationFeeBP
-        );
+    /// @notice Returns the obligations shortfall value for a vault
+    /// @param _vault vault address
+    /// @return ether amount or UINT256_MAX if it's impossible to cover obligations shortfall
+    function obligationsShortfallValue(address _vault) external view returns (uint256) {
+        return obligationsShortfallValues[_vault];
     }
+
+    /// @notice Sets the obligations shortfall value for a vault (for testing purposes)
+    /// @param _vault vault address
+    /// @param _shortfallValue shortfall value to set
+    function setObligationsShortfallValue(address _vault, uint256 _shortfallValue) external {
+        obligationsShortfallValues[_vault] = _shortfallValue;
+    }
+
 
     function forceValidatorExit(
         address _vault,
@@ -160,15 +155,15 @@ contract VaultHubStub is AccessControl {
         emit BadDebtSocialized(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
     }
 
-    function setVaultRedemptions(
+    function setLiabilitySharesTarget(
         address _vault,
-        uint256 _redemptionsValue
+        uint256 _liabilitySharesTarget
     ) external onlyRole(REDEMPTION_MASTER_ROLE) {
-        obligations[_vault].redemptions = uint128(_redemptionsValue);
-        emit RedemptionsUpdated(_vault, _redemptionsValue);
+        // Stub implementation - in real implementation this would calculate redemptionShares
+        // based on current liabilityShares and the target
+        emit VaultRedemptionSharesUpdated(_vault, _liabilitySharesTarget);
     }
 
-    event VaultShareLimitUpdated(address indexed vault, uint256 newShareLimit);
     event VaultFeesUpdated(
         address indexed vault,
         uint256 preInfraFeeBP,
@@ -180,5 +175,5 @@ contract VaultHubStub is AccessControl {
     );
     event ForcedValidatorExitTriggered(address indexed vault, bytes pubkeys, address refundRecipient);
     event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
-    event RedemptionsUpdated(address indexed vault, uint256 unsettledRedemptions);
+    event VaultRedemptionSharesUpdated(address indexed vault, uint256 redemptionShares);
 }

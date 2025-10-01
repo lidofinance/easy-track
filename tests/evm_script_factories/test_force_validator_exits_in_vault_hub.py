@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, ForceValidatorExitsInVaultHub, VaultHubAdapter, ZERO_ADDRESS # type: ignore
+from brownie import reverts, ForceValidatorExitsInVaultHub, VaultsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,8 +7,8 @@ def create_calldata(vaults, pubkeys):
     return encode_calldata(["address[]", "bytes[]"], [vaults, pubkeys])
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub):
-    adapter = VaultHubAdapter.deploy(owner, vault_hub_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, vault_hub_stub, operator_grid_stub):
+    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
     # send 10 ETH to adapter
     owner.transfer(adapter, 10 * 10 ** 18)
     return adapter
@@ -21,7 +21,7 @@ def force_validator_exits_factory(owner, adapter):
 def test_deploy(owner, force_validator_exits_factory, adapter, vault_hub_stub):
     "Must deploy contract with correct data"
     assert force_validator_exits_factory.trustedCaller() == owner
-    assert force_validator_exits_factory.vaultHubAdapter() == adapter
+    assert force_validator_exits_factory.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
@@ -66,10 +66,10 @@ def test_create_evm_script(owner, accounts, force_validator_exits_factory, adapt
     "Must create correct EVMScript if all requirements are met"
     vault1 = accounts[5]
     vault2 = accounts[6]
-    
+
     vaults = [vault1.address, vault2.address]
     pubkeys = [b"01" * 48, b"02" * 48]  # 48 bytes per pubkey
-    
+
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, pubkeys)
     evm_script = force_validator_exits_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
@@ -90,7 +90,7 @@ def test_decode_evm_script_call_data(accounts, force_validator_exits_factory):
     pubkeys = [b"01" * 48, b"02" * 48]
     EVM_SCRIPT_CALLDATA = create_calldata(vaults, pubkeys)
     decoded_vaults, decoded_pubkeys = force_validator_exits_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_vaults) == len(vaults)
     assert len(decoded_pubkeys) == len(pubkeys)
     for i in range(len(vaults)):
@@ -112,19 +112,41 @@ def test_withdraw_eth_success(owner, adapter):
     "Must successfully withdraw ETH to trusted caller"
     # Send some ETH to the adapter
     owner.transfer(adapter, "1 ether")
-    
+
     # Get initial balances
     initial_owner_balance = owner.balance()
     initial_balance = adapter.balance()
-    
+
     # Withdraw ETH
     tx = adapter.withdrawETH(owner.address, {"from": owner})
-    
+
     # Check final balances
     assert adapter.balance() == 0, "Factory should have 0 ETH after withdrawal"
     # Account for gas costs in the owner's final balance
     gas_cost = tx.gas_used * tx.gas_price
     assert owner.balance() == initial_owner_balance + initial_balance - gas_cost, "Owner should receive all ETH minus gas costs"
-    
+
     # Check event
     assert len(tx.events) == 0, "No events should be emitted"
+
+def test_force_validator_exit_fails_when_no_obligations_shortfall(owner, stranger, adapter, vault_hub_stub):
+    "Must emit ForceValidatorExitFailed when obligationsShortfallValue == 0"
+    vault = stranger.address
+    pubkeys = b"01" * 48  # 48 bytes pubkey
+
+    # Register vault first
+    vault_hub_stub.connectVault(vault, {"from": owner})
+
+    # Set obligations shortfall to 0 (no shortfall)
+    vault_hub_stub.setObligationsShortfallValue(vault, 0, {"from": owner})
+
+    # Try to force validator exit - should fail
+    tx = adapter.forceValidatorExit(vault, pubkeys, {"from": owner})
+
+    # Should emit ForceValidatorExitFailed event
+    assert "ForceValidatorExitFailed" in tx.events
+    assert tx.events["ForceValidatorExitFailed"]["vault"] == vault
+    assert tx.events["ForceValidatorExitFailed"]["pubkeys"] == "0x" + pubkeys.hex()
+
+    # Should NOT emit ForcedValidatorExitTriggered event (from VaultHub)
+    assert "ForcedValidatorExitTriggered" not in tx.events

@@ -6,10 +6,11 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
-import "../../interfaces/IVaultHubAdapter.sol";
+import "../../interfaces/IVaultsAdapter.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to force validator exits for multiple vaults in VaultHub
+/// @notice This motion might be temporary non-enactable, requiring a fresh report to be presented for each vault
 contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
     // -------------
@@ -35,8 +36,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
     /// @notice The length of the public key in bytes
     uint256 private constant PUBLIC_KEY_LENGTH = 48;
 
-    /// @notice Address of VaultHub adapter
-    IVaultHubAdapter public immutable vaultHubAdapter;
+    /// @notice Address of Vaults adapter
+    IVaultsAdapter public immutable vaultsAdapter;
 
     // -------------
     // CONSTRUCTOR
@@ -46,7 +47,7 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
         TrustedCaller(_trustedCaller)
     {
         require(_adapter != address(0), ERROR_ZERO_ADAPTER);
-        vaultHubAdapter = IVaultHubAdapter(_adapter);
+        vaultsAdapter = IVaultsAdapter(_adapter);
     }
 
     // -------------
@@ -70,8 +71,8 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_vaults, _pubkeys);
 
-        address toAddress = address(vaultHubAdapter);
-        bytes4 methodId = vaultHubAdapter.forceValidatorExit.selector;
+        address toAddress = address(vaultsAdapter);
+        bytes4 methodId = vaultsAdapter.forceValidatorExit.selector;
         bytes[] memory calldataArray = new bytes[](_vaults.length);
 
         for (uint256 i = 0; i < _vaults.length; i++) {
@@ -124,9 +125,9 @@ contract ForceValidatorExitsInVaultHub is TrustedCaller, IEVMScriptFactory {
 
         // check if the validator exit fee limit is exceeded
         uint256 fee = _getWithdrawalRequestFee();
-        require(fee <= vaultHubAdapter.validatorExitFeeLimit(), ERROR_VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED);
+        require(fee <= vaultsAdapter.validatorExitFeeLimit(), ERROR_VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED);
         // check if we have enough balance to pay for the validator exits
-        require(numKeys * fee <= address(vaultHubAdapter).balance, ERROR_NOT_ENOUGH_ETH);
+        require(numKeys * fee <= address(vaultsAdapter).balance, ERROR_NOT_ENOUGH_ETH);
     }
 
     /// @dev Retrieves the current EIP-7002 withdrawal fee.

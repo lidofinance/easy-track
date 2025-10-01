@@ -39,6 +39,8 @@ contract OperatorGridStub is AccessControl {
 
     Tier[] tiers;
     mapping(address => Group) groups;
+    mapping(address => bool) vaultJailStatus;
+    mapping(address => uint256) vaultTiers; // vault address => tier ID
     address[] nodeOperators;
 
     constructor(address _admin, TierParams memory _defaultTierParams) {
@@ -76,7 +78,7 @@ contract OperatorGridStub is AccessControl {
     function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external onlyRole(REGISTRY_ROLE) {
         require(_nodeOperator != address(0), "Zero node operator address");
         require(groups[_nodeOperator].operator != address(0), "Group does not exist");
-        
+
         groups[_nodeOperator].shareLimit = uint96(_shareLimit);
     }
 
@@ -123,7 +125,7 @@ contract OperatorGridStub is AccessControl {
         require(_tierIds.length == _tierParams.length, "Array length mismatch");
 
         uint256 length = _tierIds.length;
-        
+
         for (uint256 i = 0; i < length; i++) {
             require(_tierIds[i] < tiers.length, "Tier does not exist");
 
@@ -136,4 +138,68 @@ contract OperatorGridStub is AccessControl {
             tier_.reservationFeeBP = uint16(_tierParams[i].reservationFeeBP);
         }
     }
+
+    /// @notice updates fees for the vault
+    /// @param _vault vault address
+    /// @param _infraFeeBP new infra fee in basis points
+    /// @param _liquidityFeeBP new liquidity fee in basis points
+    /// @param _reservationFeeBP new reservation fee in basis points
+    function updateVaultFees(
+        address _vault,
+        uint256 _infraFeeBP,
+        uint256 _liquidityFeeBP,
+        uint256 _reservationFeeBP
+    ) external {
+        // Stub implementation - just accepts the call
+        // In real implementation this would update vault fees in the VaultHub
+    }
+
+    /// @notice Updates if the vault is in jail
+    /// @param _vault vault address
+    /// @param _isInJail true if the vault is in jail, false otherwise
+    function setVaultJailStatus(address _vault, bool _isInJail) external {
+        vaultJailStatus[_vault] = _isInJail;
+        emit VaultJailStatusUpdated(_vault, _isInJail);
+    }
+
+    /// @notice Returns true if the vault is in jail
+    /// @param _vault address of the vault
+    /// @return true if the vault is in jail
+    function isVaultInJail(address _vault) external view returns (bool) {
+        return vaultJailStatus[_vault];
+    }
+
+    /// @notice Sets the tier for a vault (for testing purposes)
+    /// @param _vault address of the vault
+    /// @param _tierId tier ID to assign
+    function setVaultTier(address _vault, uint256 _tierId) external onlyRole(REGISTRY_ROLE) {
+        require(_tierId < tiers.length, "Tier does not exist");
+        vaultTiers[_vault] = _tierId;
+    }
+
+    /// @notice Returns vault information including tier ID
+    /// @param _vault address of the vault
+    /// @return vault info tuple (simplified version for testing)
+    function vaultTierInfo(address _vault) external view returns (
+        address, uint256, uint256, uint256, uint256, uint256, uint256, uint256
+    ) {
+        uint256 tierId = vaultTiers[_vault]; // defaults to 0 (DEFAULT_TIER_ID)
+        if (tierId < tiers.length) {
+            Tier memory tier = tiers[tierId];
+            return (
+                tier.operator,
+                tierId,
+                tier.shareLimit,
+                tier.reserveRatioBP,
+                tier.forcedRebalanceThresholdBP,
+                tier.infraFeeBP,
+                tier.liquidityFeeBP,
+                tier.reservationFeeBP
+            );
+        }
+        // Default tier values for testing
+        return (DEFAULT_TIER_OPERATOR, 0, 1000, 200, 100, 50, 40, 10);
+    }
+
+    event VaultJailStatusUpdated(address indexed vault, bool isInJail);
 }
