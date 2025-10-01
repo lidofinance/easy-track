@@ -98,13 +98,8 @@ contract VaultsAdapter is TrustedCaller {
 
         IVaultHub.VaultConnection memory connection = vaultHub.vaultConnection(_vault);
         bool isPendingDisconnect = vaultHub.isPendingDisconnect(_vault);
-        (,uint256 tierId,,,,,,) = operatorGrid.vaultInfo(_vault);
-        IOperatorGrid.Tier memory tier = operatorGrid.tier(tierId);
         if (connection.vaultIndex == 0 || // vault is not connected to hub
-            isPendingDisconnect || // vault is disconnecting
-            _infraFeeBP > tier.infraFeeBP ||
-            _liquidityFeeBP > tier.liquidityFeeBP ||
-            _reservationFeeBP > tier.reservationFeeBP) {
+            isPendingDisconnect) { // vault is disconnecting
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
             return;
         }

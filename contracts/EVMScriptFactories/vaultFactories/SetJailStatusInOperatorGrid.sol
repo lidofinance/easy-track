@@ -11,6 +11,7 @@ import "../../interfaces/IStakingVault.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to set jail status for multiple vaults in OperatorGrid
+/// @notice Can be used only with a single node operator for each vault
 contract SetJailStatusInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
     // -------------

@@ -180,11 +180,25 @@ contract OperatorGridStub is AccessControl {
     /// @notice Returns vault information including tier ID
     /// @param _vault address of the vault
     /// @return vault info tuple (simplified version for testing)
-    function vaultInfo(address _vault) external view returns (
+    function vaultTierInfo(address _vault) external view returns (
         address, uint256, uint256, uint256, uint256, uint256, uint256, uint256
     ) {
         uint256 tierId = vaultTiers[_vault]; // defaults to 0 (DEFAULT_TIER_ID)
-        return (address(0), tierId, 0, 0, 0, 0, 0, 0);
+        if (tierId < tiers.length) {
+            Tier memory tier = tiers[tierId];
+            return (
+                tier.operator,
+                tierId,
+                tier.shareLimit,
+                tier.reserveRatioBP,
+                tier.forcedRebalanceThresholdBP,
+                tier.infraFeeBP,
+                tier.liquidityFeeBP,
+                tier.reservationFeeBP
+            );
+        }
+        // Default tier values for testing
+        return (DEFAULT_TIER_OPERATOR, 0, 1000, 200, 100, 50, 40, 10);
     }
 
     event VaultJailStatusUpdated(address indexed vault, bool isInJail);
