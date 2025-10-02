@@ -137,6 +137,15 @@ interface IVaultHub {
     //            VIEW FUNCTIONS
     // -----------------------------
 
+    /// @notice returns the number of vaults connected to the hub
+    /// @dev since index 0 is reserved for not connected vaults, it's always 1 less than the vaults array length
+    function vaultsCount() external view returns (uint256);
+
+    /// @notice returns the vault address by its index
+    /// @param _index index of the vault in the 1-based list of vaults. possible range [1, vaultsCount()]
+    /// @dev Indexes are guaranteed to be stable only in one transaction.
+    function vaultByIndex(uint256 _index) external view returns (address);
+
     /// @notice Returns the vault connection information for a given vault address
     /// @param _vault The address of the vault to query
     /// @return The VaultConnection struct containing vault configuration

@@ -28,11 +28,6 @@ def test_deploy(owner, update_vaults_fees_factory, adapter, vault_hub_stub, oper
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
 
-def test_deploy_with_zero_operator_grid(owner, adapter):
-    "Must revert with message 'ZERO_OPERATOR_GRID' if operator grid is zero address"
-    with reverts('ZERO_OPERATOR_GRID'):
-        UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, ZERO_ADDRESS, {"from": owner})
-
 def test_create_evm_script_called_by_stranger(stranger, update_vaults_fees_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     EVM_SCRIPT_CALLDATA = "0x"

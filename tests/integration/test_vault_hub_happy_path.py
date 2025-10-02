@@ -25,11 +25,13 @@ def adapter(owner, vault_hub, operator_grid, easy_track, trusted_address, agent)
     return adapter
 
 
-@pytest.fixture(scope="module")
-def vaults(accounts):
-    # real vaults from Hoodi
-    vaults = ["0x08bb216533b82B02D8BA713B075467aC1F9F3C53", "0x20e13020Ba6A6E9BF5FA470B02df21Fd3E97e49E"]
-    return vaults
+@pytest.fixture(scope="module", autouse=True)
+def vaults(owner, accounts, vault_factory, vault_hub):
+    tx = vault_factory.createVaultWithDashboard(accounts[0], accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
+    vault1 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
+    tx = vault_factory.createVaultWithDashboard(accounts[0], accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
+    vault2 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
+    return [vault1, vault2]
 
 
 def setup_evm_script_factory(

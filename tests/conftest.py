@@ -460,6 +460,12 @@ def vault_hub(lido_contracts):
 def lazy_oracle(lido_contracts):
     return lido_contracts.lido_addresses.lazy_oracle
 
+
+@pytest.fixture(scope="module")
+def vault_factory(lido_contracts):
+    return lido_contracts.vault_factory
+
+
 #########################
 # State Changing Fixtures
 #########################

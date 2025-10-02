@@ -20,11 +20,11 @@ def adapter(owner, vault_hub, operator_grid, easy_track, trusted_address, agent)
     operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), adapter, {"from": agent})
     return adapter
 
-@pytest.fixture(scope="module")
-def vaults(accounts):
-    # real vaults from Hoodi
-    vaults = ["0x08bb216533b82B02D8BA713B075467aC1F9F3C53"]
-    return vaults
+@pytest.fixture(scope="module", autouse=True)
+def vaults(owner, accounts, vault_factory, vault_hub):
+    tx = vault_factory.createVaultWithDashboard(accounts[0], accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
+    vault1 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
+    return [vault1]
 
 
 def setup_operator_grid(owner, operator_grid, easy_track, agent):
@@ -536,6 +536,7 @@ def test_set_jail_status_happy_path(
     stranger,
     operator_grid,
     adapter,
+    vaults,
 ):
     factory_instance = deployer.deploy(SetJailStatusInOperatorGrid, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
@@ -564,7 +565,7 @@ def test_set_jail_status_happy_path(
         stranger,
         trusted_address,
         factory_instance,
-        ["0x08bb216533b82B02D8BA713B075467aC1F9F3C53"],  # vault addresses
+        vaults,
         [True],  # jail statuses
     )
 
@@ -611,7 +612,7 @@ def test_update_vaults_fees_happy_path(
         trusted_address,
         factory_instance,
         vaults,
-        [1],  # infra fees BP
-        [1],  # liquidity fees BP
+        [0],  # infra fees BP
+        [0],  # liquidity fees BP
         [0],  # reservation fees BP
     )

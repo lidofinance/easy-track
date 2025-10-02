@@ -30,6 +30,7 @@ def addresses(network=DEFAULT_NETWORK):
             vault_hub="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
             lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A", # fake address
             evm_script_executor="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
+            vault_factory="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -56,6 +57,7 @@ def addresses(network=DEFAULT_NETWORK):
             vault_hub="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
             lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A", # fake address
             evm_script_executor="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
+            vault_factory="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
         )
     if network == "hoodi" or network == "hoodi-fork":
         return LidoAddressesSetup(
@@ -82,32 +84,34 @@ def addresses(network=DEFAULT_NETWORK):
             vault_hub="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",  # fake address
             lazy_oracle="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
             evm_script_executor="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
+            vault_factory="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
         )
     if network == "hoodi-v3" or network == "hoodi-v3-fork":
         return LidoAddressesSetup(
             aragon=AragonSetup(
-                acl="0xC814Fb6bfA97b986cCfFA239fd5c589BC5db3780",
-                agent="0x5d14995831aC97E356dfA7034077b13C85E5Ce79",
-                voting="0x7FcCF000F63827B051BAdc3B65ae84b66cDed742",
-                finance="0xF757631549a368b9a74Ea8BAeaC21e2B78563F32",
-                gov_token="0x74A54aa8482e91D3587994E939f6659feA18BCea",
-                calls_script="0x8728C722d0B6690524897292651050943D0348b3",
-                token_manager="0x8d3e0f32d0BcD11CcD3c1b2b1fC97605e53d486E",
-                kernel="0x13cA8211423CFfA27d5b94F1B343AC2E23564B26",
+                acl="0x626aD4EafdcaC3aCe157fC6ce920f00174e7D6A5",
+                agent="0xc87a9BaBE28c44bc3C13B126D4a122Cd43A0bbd2",
+                voting="0x8E06aB2F53F77E66bd61DedAe01c04c331b8Fd7A",
+                finance="0x508DCC9CA7779C6Aaa0E71c0FaD3c2ADc840B01F",
+                gov_token="0x83375563a486B62Ad8eAbCf1d3B4901f3Dfc0466",
+                calls_script="0x77c69687f2190c0C76bE55798f8ebA89434FE446",
+                token_manager="0xB7c9b7E1E60d6778adDe02502A5a52F4Ff0F541F",
+                kernel="0x5D6146FA4289611289F76b3D0525dC011fbDAE15",
             ),
-            steth="0xF6AAf706b8A43Ee0e7bBE434662E4974186b0Db9",
-            node_operators_registry="0x5965b291Ed6373294233A9C6b3Ee693Dd3c74102",
-            simple_dvt="0xB7Dff79c1bb6A42f1a10F080E63A8c684992BB6D",
-            staking_router="0x8B4c8Fde9811a0389b3CC5C7462e48CF78024AE1",
-            locator="0x861051869BE0240988918641A9417B10bf4Eed6a",
+            steth="0x46e0C0Cb0fcBd910D3d53a6b70E1c47F6B2E2996",
+            node_operators_registry="0xC95517df64804c9f6E51465ED77B22a951bbe18e",
+            simple_dvt="0xd6150f8885aaCDA62CC10f18077876868Dd091f6",
+            staking_router="0x2fe4E1BD4a936d984f74967cCdFDb6D40BdB5790",
+            locator="0x1C17D285Fa99Ae0b73ea3D0688b7190A1e02AA51",
             mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
             dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
-            operator_grid="0xe9c7B88eEc76bCBa96eeFF0e2805B68B9b10eB46",
-            vault_hub="0xEC04a1A1D07E450001Bf778d85416b90d762B18A",
-            lazy_oracle="0x2dDcFF3AfeD6361E7CD4b09aaEA9c87eD39C503b",
+            operator_grid="0x8e864bb116452ea9869652e74C6657Ce92587043",
+            vault_hub="0x2c523D6FC4749432C5501734146458Bbd8f64E8C",
+            lazy_oracle="0x0c031620Cc5344eDC7C95a7083459a8C9DecAF24",
             evm_script_executor="0xc2764655e3fe0bd2D3C710D74Fa5a89162099FD8",
+            vault_factory="0x0b58379EC721162d4F5f218220a6f299B4EcC8E9",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork, hoodi-v3, hoodi-v3-fork"""
@@ -195,6 +199,7 @@ class LidoContractsSetup:
         self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
         self.operator_grid = interface.IOperatorGrid(lido_addresses.operator_grid)
         self.vault_hub = interface.IVaultHub(lido_addresses.vault_hub)
+        self.vault_factory = interface.IVaultFactory(lido_addresses.vault_factory)
 
 
     def create_voting(self, evm_script, description, tx_params=None):
@@ -252,7 +257,8 @@ class LidoAddressesSetup:
         operator_grid,
         vault_hub,
         evm_script_executor,
-        lazy_oracle
+        lazy_oracle,
+        vault_factory
     ):
         self.aragon = aragon
         self.steth = steth
@@ -269,6 +275,7 @@ class LidoAddressesSetup:
         self.vault_hub = vault_hub
         self.evm_script_executor = evm_script_executor
         self.lazy_oracle = lazy_oracle
+        self.vault_factory = vault_factory
 
 
 class AragonSetup:
