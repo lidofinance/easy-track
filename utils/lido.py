@@ -26,7 +26,7 @@ def addresses(network=DEFAULT_NETWORK):
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
             validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
             dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
-            dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
+            dual_governance="0xC1db28B3301331277e307FDCfF8DE28242A4486E",
             emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316"
         )
     if network == "holesky" or network == "holesky-fork":
