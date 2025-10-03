@@ -91,26 +91,30 @@ contract NodeOperatorsRegistryStub {
 
     function setNodeOperatorStakingLimit(uint256 _id, uint64 _stakingLimit) external {
         stakingLimit = _stakingLimit;
+        _nodeOperators[_id].stakingLimit = _stakingLimit;
     }
 
     function setId(uint256 _id) public {
         id = _id;
     }
 
-    function setActive(bool _active) public {
+    function setActive(uint256 _id, bool _active) public {
         active = _active;
+        _nodeOperators[_id].active = _active;
     }
 
     function setRewardAddress(address _rewardAddress) public {
         rewardAddress = _rewardAddress;
     }
 
-    function setStakingLimit(uint64 _stakingLimit) public {
+    function setStakingLimit(uint256 _id, uint64 _stakingLimit) public {
         stakingLimit = _stakingLimit;
+        _nodeOperators[_id].stakingLimit = _stakingLimit;
     }
 
-    function setTotalSigningKeys(uint64 _totalSigningKeys) public {
+    function setTotalSigningKeys(uint256 _id, uint64 _totalSigningKeys) public {
         totalSigningKeys = _totalSigningKeys;
+        _nodeOperators[_id].totalSigningKeys = _totalSigningKeys;
     }
 
     function getNodeOperatorsCount() external view returns (uint256) {
