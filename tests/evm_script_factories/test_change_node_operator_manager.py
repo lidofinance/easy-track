@@ -27,20 +27,14 @@ def create_calldata(data):
 
 
 @pytest.fixture(scope="module")
-def change_node_operator_managers_factory(owner, node_operators_registry, acl, voting):
-    acl.grantPermission(
-        voting,
-        node_operators_registry,
-        web3.keccak(text="MANAGE_NODE_OPERATOR_ROLE").hex(),
-        {"from": voting},
-    )
+def change_node_operator_managers_factory(owner, node_operators_registry, acl, agent):
     for id, manager in enumerate(MANAGERS):
         acl.grantPermissionP(
             manager,
             node_operators_registry,
             web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
             encode_permission_params([Param(0, Op.EQ, id)]),
-            {"from": voting},
+            {"from": agent},
         )
 
     return ChangeNodeOperatorManagers.deploy(owner, node_operators_registry, acl, {"from": owner})
@@ -118,7 +112,7 @@ def test_manager_has_no_role(owner, change_node_operator_managers_factory):
 
 
 def test_manager_has_another_role_operator(
-    owner, change_node_operator_managers_factory, node_operators_registry, acl, voting
+    owner, change_node_operator_managers_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'OLD_MANAGER_HAS_NO_ROLE' when manager has MANAGE_SIGNING_KEYS role with wrong param operator"
 
@@ -131,7 +125,7 @@ def test_manager_has_another_role_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.NEQ, operator)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager, new_manager)])
@@ -140,7 +134,7 @@ def test_manager_has_another_role_operator(
 
 
 def test_manager_has_role_for_another_operator(
-    owner, change_node_operator_managers_factory, node_operators_registry, acl, voting
+    owner, change_node_operator_managers_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'OLD_MANAGER_HAS_NO_ROLE' when manager has MANAGE_SIGNING_KEYS role with wrong param operator"
 
@@ -153,7 +147,7 @@ def test_manager_has_role_for_another_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.EQ, operator + 1)]),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager, new_manager)])
@@ -162,7 +156,7 @@ def test_manager_has_role_for_another_operator(
 
 
 def test_old_manager_has_general_permission(
-    owner, change_node_operator_managers_factory, node_operators_registry, acl, voting
+    owner, change_node_operator_managers_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'OLD_MANAGER_HAS_NO_ROLE' when manager has general MANAGE_SIGNING_KEYS role"
 
@@ -174,7 +168,7 @@ def test_old_manager_has_general_permission(
         manager,
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        {"from": voting},
+        {"from": agent},
     )
 
     CALLDATA = create_calldata([(operator, manager, new_manager)])
@@ -199,14 +193,14 @@ def test_new_manager_has_permission(owner, change_node_operator_managers_factory
 
 
 def test_new_manager_has_general_permission(
-    owner, change_node_operator_managers_factory, acl, voting, node_operators_registry
+    owner, change_node_operator_managers_factory, acl, agent, node_operators_registry
 ):
     "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when new manager already has general permission"
     acl.grantPermission(
         NEW_MANAGERS[0],
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        {"from": voting},
+        {"from": agent},
     )
     CALLDATA = create_calldata([(0, MANAGERS[0], NEW_MANAGERS[0])])
     with reverts("MANAGER_ALREADY_HAS_ROLE"):

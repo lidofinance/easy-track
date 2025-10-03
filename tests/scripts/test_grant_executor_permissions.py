@@ -1,8 +1,11 @@
 from scripts.grant_executor_permissions import grant_executor_permissions
 from scripts.deploy import deploy_easy_tracks
 
+from utils import evm_script
+from utils.dual_governance import submit_proposals, process_pending_proposals
 
-def test_grant_executor_permissions(accounts, lido_contracts):
+
+def test_grant_executor_permissions(accounts, agent, lido_contracts):
     deployer = accounts[0]
     lego_program_vault = accounts[1]
     lego_committee_multisig = accounts[2]
@@ -18,6 +21,43 @@ def test_grant_executor_permissions(accounts, lido_contracts):
     )[1]
 
     lido_permissions = lido_contracts.permissions
+
+    grant_permission_manager_voting, _ = lido_contracts.create_voting(
+        evm_script=evm_script.encode_call_script(
+            submit_proposals(
+                [
+                    (
+                        [
+                            (
+                                agent.address,
+                                agent.forward.encode_input(
+                                    evm_script.encode_call_script(
+                                        [
+                                            (
+                                                lido_contracts.aragon.acl.address,
+                                                lido_contracts.aragon.acl.setPermissionManager.encode_input(
+                                                    lido_contracts.aragon.voting,
+                                                    lido_contracts.node_operators_registry,
+                                                    lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE.role,
+                                                ),
+                                            )
+                                        ]
+                                    )
+                                ),
+                            )
+                        ],
+                        "Grant permission manager to Voting",
+                    )
+                ]
+            ),
+        ),
+        description="Grant permission manager to Voting",
+        tx_params={"from": agent},
+    )
+
+    lido_contracts.execute_voting(grant_permission_manager_voting)
+    process_pending_proposals()
+
     required_permissions = [
         lido_permissions.finance.CREATE_PAYMENTS_ROLE,
         lido_permissions.node_operators_registry.SET_NODE_OPERATOR_LIMIT_ROLE,

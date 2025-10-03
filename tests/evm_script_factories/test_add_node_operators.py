@@ -83,7 +83,7 @@ def test_manager_has_duplicate(owner, add_node_operators_factory, node_operators
         add_node_operators_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_manager_already_has_permission(owner, add_node_operators_factory, node_operators_registry, acl, voting):
+def test_manager_already_has_permission(owner, add_node_operators_factory, node_operators_registry, acl, agent):
     "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when manager has MANAGE_SIGNING_KEYS role"
     no_count = node_operators_registry.getNodeOperatorsCount()
 
@@ -91,7 +91,7 @@ def test_manager_already_has_permission(owner, add_node_operators_factory, node_
         MANAGERS[0],
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
-        {"from": voting},
+        {"from": agent},
     )
 
     with reverts("MANAGER_ALREADY_HAS_ROLE"):
@@ -107,7 +107,7 @@ def test_manager_already_has_permission(owner, add_node_operators_factory, node_
 
 
 def test_manager_already_has_permission_for_node_operator(
-    owner, add_node_operators_factory, node_operators_registry, acl, voting
+    owner, add_node_operators_factory, node_operators_registry, acl, agent
 ):
     "Must revert with message 'MANAGER_ALREADY_HAS_ROLE' when manager has MANAGE_SIGNING_KEYS role with parameter"
     no_count = node_operators_registry.getNodeOperatorsCount()
@@ -117,7 +117,7 @@ def test_manager_already_has_permission_for_node_operator(
         node_operators_registry,
         web3.keccak(text="MANAGE_SIGNING_KEYS").hex(),
         encode_permission_params([Param(0, Op.EQ, 0)]),
-        {"from": voting},
+        {"from": agent},
     )
     with reverts("MANAGER_ALREADY_HAS_ROLE"):
         CALLDATA = create_calldata(

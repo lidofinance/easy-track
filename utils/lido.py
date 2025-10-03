@@ -25,6 +25,9 @@ def addresses(network=DEFAULT_NETWORK):
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
             validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
+            dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
+            dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
+            emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316"
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -46,24 +49,9 @@ def addresses(network=DEFAULT_NETWORK):
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
             curated_module="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
             validators_exit_bus_oracle="0xffDDF7025410412deaa05E3E1cE68FE53208afcb",
-        )
-    if network == "goerli" or network == "goerli-fork":
-        return LidoAddressesSetup(
-            aragon=AragonSetup(
-                acl="0xb3cf58412a00282934d3c3e73f49347567516e98",
-                agent="0x4333218072d5d7008546737786663c38b4d561a4",
-                voting="0xbc0B67b4553f4CF52a913DE9A6eD0057E2E758Db",
-                finance="0x75c7b1d23f1cad7fb4d60281d7069e46440bc179",
-                gov_token="0x56340274fB5a72af1A3C6609061c451De7961Bd4",
-                calls_script="0x1b4fb0c1357afd3f267c5e897ecfec75938c7436",
-                token_manager="0xdfe76d11b365f5e0023343a367f0b311701b3bc1",
-                kernel="0x1dD91b354Ebd706aB3Ac7c727455C7BAA164945A",
-            ),
-            steth="0x1643e812ae58766192cf7d2cf9567df2c37e9b7f",
-            node_operators_registry="0x9d4af1ee19dad8857db3a45b0374c81c8a1c6320",
-            simple_dvt=None,
-            staking_router="0xa3Dbd317E53D363176359E10948BA0b1c0A4c820",
-            locator="0x1eDf09b5023DC86737b59dE68a8130De878984f5",
+            dual_governance_admin_executor="0x8BD0a916faDa88Ba3accb595a3Acd28F467130e8",
+            dual_governance="0x490bf377734CA134A8E207525E8576745652212e",
+            emergency_protected_timelock="0xe9c5FfEAd0668AFdBB9aac16163840d649DB76DD",
         )
     if network == "hoodi" or network == "hoodi-fork":
         return LidoAddressesSetup(
@@ -85,9 +73,12 @@ def addresses(network=DEFAULT_NETWORK):
             curated_module="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
             mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
             validators_exit_bus_oracle="0x8664d394C2B3278F26A1B44B967aEf99707eeAB2",
+            dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
+            dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
+            emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d"
         )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork goerli, goerli-fork, holesky, holesky-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
 
 
@@ -95,15 +86,52 @@ def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
 
-def allowed_recipients_builder(network=DEFAULT_NETWORK):
+def external_contracts(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
-        return brownie.AllowedRecipientsBuilder.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
+        return {
+            "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "dai": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "usdt": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        }
     if network == "holesky" or network == "holesky-fork":
-        return brownie.AllowedRecipientsBuilder.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
-    if network == "goerli" or network == "goerli-fork":
-        return brownie.AllowedRecipientsBuilder.at("0x1082512D1d60a0480445353eb55de451D261b684")
+        return {
+            "usdc": "0x9715b2786f1053294fc8952df923b95cab9aac42",
+            "dai": "0x2eb8e9198e647f80ccf62a5e291bcd4a5a3ca68c",
+            "usdt": "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551",
+        }
+    if network == "hoodi" or network == "hoodi-fork":
+        return {
+            "usdc": "0x97bb030B93faF4684eAC76bA0bf3be5ec7140F36",
+            "dai": "0x17fc691f6EF57D2CA719d30b8fe040123d4ee319",
+            "usdt": "0x64f1904d1b419c6889BDf3238e31A138E258eA68",
+        }
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork, goerli, goerli-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"""
+    )
+
+
+def allowed_recipients_builder_single_token(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return brownie.AllowedRecipientsBuilderSingleToken.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilderSingleToken.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
+    if network == "hoodi" or network == "hoodi-fork":
+        return brownie.AllowedRecipientsBuilderSingleToken.at("0xC20129f1dd4DFeD023a6d6A8de9d54A7b61af5CC")
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
+    )
+
+
+
+def allowed_recipients_builder_multi_token(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return brownie.AllowedRecipientsBuilder.at("0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF")
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilder.at("0x983dF2EA3A7Dce9D60bD06f5C5dCc44a138eBA89")
+    if network == "hoodi" or network == "hoodi-fork":
+        return brownie.AllowedRecipientsBuilder.at("0xf5436129Cf9d8fa2a1cb6e591347155276550635")
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
 
 
@@ -135,6 +163,9 @@ class LidoContractsSetup:
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.LidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
+        self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
+        self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
         self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
 
     def create_voting(self, evm_script, description, tx_params=None):
@@ -172,6 +203,7 @@ class LidoContractsSetup:
         brownie.chain.sleep(self.aragon.voting.voteTime())
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
+
         voting.executeVote(voting_id, {"from": brownie.accounts[0], "priority_fee": "2 gwei"})
 
 
@@ -187,6 +219,9 @@ class LidoAddressesSetup:
         locator,
         mev_boost_list,
         validators_exit_bus_oracle,
+        dual_governance_admin_executor,
+        dual_governance,
+        emergency_protected_timelock
     ):
         self.aragon = aragon
         self.steth = steth
@@ -197,6 +232,9 @@ class LidoAddressesSetup:
         self.staking_router = staking_router
         self.locator = locator
         self.mev_boost_list = mev_boost_list
+        self.dual_governance_admin_executor = dual_governance_admin_executor
+        self.dual_governance = dual_governance
+        self.emergency_protected_timelock = emergency_protected_timelock
         self.validators_exit_bus_oracle = validators_exit_bus_oracle
 
 

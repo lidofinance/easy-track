@@ -60,7 +60,8 @@ To use the tools that this project provides, please pull the repository from Git
 ```bash
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
-yarn install
+nvm install
+npm ci
 
 poetry install
 poetry run brownie networks import network-config.yaml True
@@ -133,9 +134,9 @@ Script requires next ENV variables to be set:
 
 ## Tests
 
-Set infura project ID
+Set rpc url:
 ```bash
-export WEB3_INFURA_PROJECT_ID=<YOUR_PROJECT_ID>
+export MAINNET_RPC_URL=<YOUR_RPC_URL>
 ```
 
 The fastest way to run the tests is:
@@ -149,6 +150,8 @@ Run tests with coverage and gas profiling:
 ```bash
 brownie test --network mainnet-fork --coverage --gas
 ```
+
+> Note: Holesky support will be removed in upcoming upgrades.
 
 ### Coverage notes
 

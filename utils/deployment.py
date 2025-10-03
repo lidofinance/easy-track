@@ -10,13 +10,13 @@ from brownie import (
     IncreaseNodeOperatorStakingLimit,
     AddAllowedRecipient,
     RemoveAllowedRecipient,
-    TopUpAllowedRecipients,
+    TopUpAllowedRecipientsSingleToken,
     AllowedRecipientsRegistry,
 )
 
 
 @dataclass
-class AllowedRecipientsDeployConfig:
+class AllowedRecipientsSingleTokenDeployConfig:
     token: str
     limit: int
     period: int
@@ -25,14 +25,34 @@ class AllowedRecipientsDeployConfig:
 
 
 @dataclass
-class AllowedRecipientsSingleRecipientSetupDeployConfig(AllowedRecipientsDeployConfig):
+class AllowedRecipientsSingleTokenSingleRecipientSetupDeployConfig(AllowedRecipientsSingleTokenDeployConfig):
     title: str
 
 
 @dataclass
-class AllowedRecipientsFullSetupDeployConfig(AllowedRecipientsDeployConfig):
+class AllowedRecipientsSingleTokenFullSetupDeployConfig(AllowedRecipientsSingleTokenDeployConfig):
     titles: list[str]
     recipients: list[str]
+
+
+@dataclass
+class AllowedRecipientsMultiTokenDeployConfig:
+    tokens: [str]
+    tokens_registry: str
+    limit: int
+    period: int
+    spent_amount: int
+    trusted_caller: str
+
+@dataclass
+class AllowedRecipientsMultiTokenSingleRecipientSetupDeployConfig(AllowedRecipientsMultiTokenDeployConfig):
+    title: str
+
+@dataclass
+class AllowedRecipientsMultiTokenFullSetupDeployConfig(AllowedRecipientsMultiTokenDeployConfig):
+    titles: [str]
+    recipients: [str]
+    grant_rights: bool
 
 
 def deploy_easy_track(
@@ -126,7 +146,7 @@ def deploy_top_up_allowed_recipients(
     easy_track,
     tx_params,
 ):
-    return TopUpAllowedRecipients.deploy(
+    return TopUpAllowedRecipientsSingleToken.deploy(
         committee_multisig,
         allowed_recipients_registry,
         finance,

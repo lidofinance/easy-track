@@ -18,7 +18,7 @@ def get_network_name() -> Optional[str]:
 
 
 def get_is_live():
-    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "goerli-fork", "holesky-fork", "hoodi-fork"]
+    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "holesky-fork", "hoodi-fork"]
     return network.show_active() not in dev_networks
 
 

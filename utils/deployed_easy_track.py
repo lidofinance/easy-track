@@ -51,25 +51,26 @@ def addresses(network="mainnet"):
                 reward_programs_registry=None,
             ),
         )
-    if network == "goerli" or network == "goerli-fork":
+    if network == "hoodi" or network == "hoodi-fork":
         return EasyTrackSetup(
-            easy_track="0xAf072C8D368E4DD4A9d4fF6A76693887d6ae92Af",
-            evm_script_executor="0x3c9aca237b838c59612d79198685e7f20c7fe783",
-            increase_node_operator_staking_limit="0xE033673D83a8a60500BcE02aBd9007ffAB587714",
+            easy_track="0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a",
+            evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
+            increase_node_operator_staking_limit=None,
+            top_up_lego_program=None,
             reward_programs=RewardPrograms(
-                add_reward_program="0x5560d40b00EA3a64E9431f97B3c79b04e0cdF6F2",
-                remove_reward_program="0x31B68d81125E52fE1aDfe4076F8945D1014753b5",
-                top_up_reward_programs="0x8180949ac41EF18e844ff8dafE604a195d86Aea9",
-                reward_programs_registry="0x28a08f61AE129d0d8BD4380Ae5647e7Add0527ca",
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
             ),
             referral_partners=RewardPrograms(
-                add_reward_program="0xe54ca3e867C52a34d262E94606C7A9371AB820c9",
-                remove_reward_program="0x2A0c343087c6cFB721fFa20608A6eD0473C71275",
-                top_up_reward_programs="0xB1E898faC74c377bEF16712Ba1CD4738606c19Ee",
-                reward_programs_registry="0x4CB0c9987fd670069e4b24c653981E86b261A2ca",
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
             ),
         )
-    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, goerli, holesky.""")
+    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, hoodi, holesky.""")
 
 
 def contract_or_none(contract: Contract, addr: Optional[str]) -> Optional[Contract]:
