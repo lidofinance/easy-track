@@ -1,21 +1,20 @@
 import pytest
-from brownie import reverts, UpdateGroupsShareLimitInOperatorGrid, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, UpdateGroupsShareLimitInOperatorGrid, ZERO_ADDRESS # type: ignore
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operators, share_limits):
     return encode_calldata(["address[]", "uint256[]"], [operators, share_limits])
 
 @pytest.fixture(scope="module")
-def update_groups_share_limit_in_operator_grid_factory(owner, operator_grid_stub):
-    factory = UpdateGroupsShareLimitInOperatorGrid.deploy(owner, operator_grid_stub, 10000, {"from": owner})
-    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
+def update_groups_share_limit_in_operator_grid_factory(owner, lido_locator_stub):
+    factory = UpdateGroupsShareLimitInOperatorGrid.deploy(owner, lido_locator_stub, 10000, {"from": owner})
     return factory
 
 
-def test_deploy(owner, operator_grid_stub, update_groups_share_limit_in_operator_grid_factory):
+def test_deploy(owner, lido_locator_stub, update_groups_share_limit_in_operator_grid_factory):
     "Must deploy contract with correct data"
     assert update_groups_share_limit_in_operator_grid_factory.trustedCaller() == owner
-    assert update_groups_share_limit_in_operator_grid_factory.operatorGrid() == operator_grid_stub
+    assert update_groups_share_limit_in_operator_grid_factory.lidoLocator() == lido_locator_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, update_groups_share_limit_in_operator_grid_factory):
@@ -53,8 +52,9 @@ def test_group_not_exists(owner, stranger, accounts, update_groups_share_limit_i
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_share_limit_too_high(owner, accounts, update_groups_share_limit_in_operator_grid_factory, operator_grid_stub):
+def test_share_limit_too_high(owner, accounts, update_groups_share_limit_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'SHARE_LIMIT_TOO_HIGH' if any share limit exceeds maxShareLimit"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator = accounts[5]
 
     # Register operator first
@@ -69,8 +69,9 @@ def test_share_limit_too_high(owner, accounts, update_groups_share_limit_in_oper
         update_groups_share_limit_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(owner, accounts, update_groups_share_limit_in_operator_grid_factory, operator_grid_stub):
+def test_create_evm_script(owner, accounts, update_groups_share_limit_in_operator_grid_factory, lido_locator_stub):
     "Must create correct EVMScript if all requirements are met"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator1 = accounts[5]
     operator2 = accounts[6]
 

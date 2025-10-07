@@ -7,6 +7,7 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IOperatorGrid.sol";
+import "../../interfaces/ILidoLocator.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to register a group and its tiers in OperatorGrid
@@ -16,7 +17,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_ZERO_LIDO_LOCATOR = "ZERO_LIDO_LOCATOR";
     string private constant ERROR_EMPTY_NODE_OPERATORS = "EMPTY_NODE_OPERATORS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_NODE_OPERATOR = "ZERO_NODE_OPERATOR";
@@ -38,8 +39,8 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of OperatorGrid
-    IOperatorGrid public immutable operatorGrid;
+    /// @notice Address of Lido Locator
+    ILidoLocator public immutable lidoLocator;
 
     /// @notice Maximum sane share limit (percent from Lido total shares)
     uint256 public immutable maxShareLimit;
@@ -57,12 +58,12 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid, uint256 _maxShareLimit)
+    constructor(address _trustedCaller, address _lidoLocator, uint256 _maxShareLimit)
         TrustedCaller(_trustedCaller)
     {
-        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        require(_lidoLocator != address(0), ERROR_ZERO_LIDO_LOCATOR);
 
-        operatorGrid = IOperatorGrid(_operatorGrid);
+        lidoLocator = ILidoLocator(_lidoLocator);
         maxShareLimit = _maxShareLimit;
     }
 
@@ -91,7 +92,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         // Each group requires 2 calls (registerGroup and registerTiers)
         uint256 totalCalls = _nodeOperators.length * 2;
-        address toAddress = address(operatorGrid);
+        address toAddress = lidoLocator.operatorGrid();
         bytes4[] memory methodIds = new bytes4[](totalCalls);
         bytes[] memory calldataArray = new bytes[](totalCalls);
 
@@ -147,6 +148,8 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < _nodeOperators.length - 1; i++) {
             require(_nodeOperators[i] < _nodeOperators[i+1], ERROR_ASCENDING_ORDER_IN_OPERATORS_ARRAY);
         }
+
+        IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);

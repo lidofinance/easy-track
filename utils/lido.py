@@ -26,11 +26,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
             dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
             emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316",
-            operator_grid="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
-            vault_hub="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
-            lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A", # fake address
             evm_script_executor="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
-            vault_factory="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -53,11 +49,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x8BD0a916faDa88Ba3accb595a3Acd28F467130e8",
             dual_governance="0x490bf377734CA134A8E207525E8576745652212e",
             emergency_protected_timelock="0xe9c5FfEAd0668AFdBB9aac16163840d649DB76DD",
-            operator_grid="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
-            vault_hub="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
-            lazy_oracle="0xdF66Fb038CbB7587cC52A397CA88143657f3Ae4A", # fake address
             evm_script_executor="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
-            vault_factory="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
         )
     if network == "hoodi" or network == "hoodi-fork":
         return LidoAddressesSetup(
@@ -80,11 +72,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
             dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
-            operator_grid="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",  # fake address
-            vault_hub="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",  # fake address
-            lazy_oracle="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
             evm_script_executor="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
-            vault_factory="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
         )
     if network == "hoodi-v3" or network == "hoodi-v3-fork":
         return LidoAddressesSetup(
@@ -107,11 +95,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
             dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
-            operator_grid="0x8e864bb116452ea9869652e74C6657Ce92587043",
-            vault_hub="0x2c523D6FC4749432C5501734146458Bbd8f64E8C",
-            lazy_oracle="0x0c031620Cc5344eDC7C95a7083459a8C9DecAF24",
             evm_script_executor="0xc2764655e3fe0bd2D3C710D74Fa5a89162099FD8",
-            vault_factory="0x0b58379EC721162d4F5f218220a6f299B4EcC8E9",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork, hoodi-v3, hoodi-v3-fork"""
@@ -197,9 +181,6 @@ class LidoContractsSetup:
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
         self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
         self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
-        self.operator_grid = interface.IOperatorGrid(lido_addresses.operator_grid)
-        self.vault_hub = interface.IVaultHub(lido_addresses.vault_hub)
-        self.vault_factory = interface.IVaultFactory(lido_addresses.vault_factory)
 
 
     def create_voting(self, evm_script, description, tx_params=None):
@@ -254,11 +235,7 @@ class LidoAddressesSetup:
         dual_governance_admin_executor,
         dual_governance,
         emergency_protected_timelock,
-        operator_grid,
-        vault_hub,
-        evm_script_executor,
-        lazy_oracle,
-        vault_factory
+        evm_script_executor
     ):
         self.aragon = aragon
         self.steth = steth
@@ -271,11 +248,7 @@ class LidoAddressesSetup:
         self.dual_governance_admin_executor = dual_governance_admin_executor
         self.dual_governance = dual_governance
         self.emergency_protected_timelock = emergency_protected_timelock
-        self.operator_grid = operator_grid
-        self.vault_hub = vault_hub
         self.evm_script_executor = evm_script_executor
-        self.lazy_oracle = lazy_oracle
-        self.vault_factory = vault_factory
 
 
 class AragonSetup:

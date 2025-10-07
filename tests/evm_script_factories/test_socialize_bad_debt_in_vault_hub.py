@@ -10,8 +10,8 @@ def create_calldata(bad_debt_vaults, vault_acceptors, max_shares_to_socialize):
     )
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub, operator_grid_stub):
-    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, lido_locator_stub):
+    adapter = VaultsAdapter.deploy(owner, lido_locator_stub, owner, 1000000000000000000, {"from": owner})
     return adapter
 
 @pytest.fixture(scope="module")
@@ -19,13 +19,14 @@ def socialize_bad_debt_factory(owner, adapter):
     factory = SocializeBadDebtInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, socialize_bad_debt_factory, adapter, vault_hub_stub):
+def test_deploy(owner, socialize_bad_debt_factory, adapter, lido_locator_stub):
     "Must deploy contract with correct data"
     assert socialize_bad_debt_factory.trustedCaller() == owner
     assert socialize_bad_debt_factory.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
+    assert adapter.lidoLocator() == lido_locator_stub
 
 def test_create_evm_script_called_by_stranger(stranger, socialize_bad_debt_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"

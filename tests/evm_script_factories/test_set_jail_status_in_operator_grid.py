@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SetJailStatusInOperatorGrid, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, SetJailStatusInOperatorGrid, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,8 +7,8 @@ def create_calldata(vaults, jail_statuses):
     return encode_calldata(["address[]", "bool[]"], [vaults, jail_statuses])
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub, operator_grid_stub):
-    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, lido_locator_stub):
+    adapter = VaultsAdapter.deploy(owner, lido_locator_stub, owner, 1000000000000000000, {"from": owner})
     return adapter
 
 @pytest.fixture(scope="module")
@@ -16,13 +16,14 @@ def set_jail_status_factory(owner, adapter):
     factory = SetJailStatusInOperatorGrid.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, set_jail_status_factory, adapter, vault_hub_stub):
+def test_deploy(owner, set_jail_status_factory, adapter, lido_locator_stub):
     "Must deploy contract with correct data"
     assert set_jail_status_factory.trustedCaller() == owner
     assert set_jail_status_factory.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
+    assert adapter.lidoLocator() == lido_locator_stub
 
 def test_create_evm_script_called_by_stranger(stranger, set_jail_status_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -83,12 +84,14 @@ def test_create_evm_script(owner, accounts, set_jail_status_factory, adapter):
 
     assert evm_script == expected_evm_script
 
-def test_same_jail_status_fails(owner, accounts, adapter, operator_grid_stub, vault_hub_stub):
+def test_same_jail_status_fails(owner, accounts, adapter, lido_locator_stub):
     "Must emit VaultJailStatusUpdateFailed if current status equals new status"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
     vault = accounts[5]
 
     # Connect vault first
-    vault_hub_stub.connectVault(vault)
+    vault_hub_stub.connectVault(vault, {"from": owner})
 
     # Set initial jail status to True
     operator_grid_stub.setVaultJailStatus(vault, True, {"from": owner})

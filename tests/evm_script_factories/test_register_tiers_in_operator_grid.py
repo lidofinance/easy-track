@@ -1,21 +1,20 @@
 import pytest
-from brownie import reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, RegisterTiersInOperatorGrid, ZERO_ADDRESS # type: ignore
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operators, tiers):
     return encode_calldata(["address[]", "(uint256,uint256,uint256,uint256,uint256,uint256)[][]"], [operators, tiers])
 
 @pytest.fixture(scope="module")
-def register_tiers_in_operator_grid_factory(owner, operator_grid_stub):
-    factory = RegisterTiersInOperatorGrid.deploy(owner, operator_grid_stub, {"from": owner})
-    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
+def register_tiers_in_operator_grid_factory(owner, lido_locator_stub):
+    factory = RegisterTiersInOperatorGrid.deploy(owner, lido_locator_stub, {"from": owner})
     return factory
 
 
-def test_deploy(owner, operator_grid_stub, register_tiers_in_operator_grid_factory):
+def test_deploy(owner, lido_locator_stub, register_tiers_in_operator_grid_factory):
     "Must deploy contract with correct data"
     assert register_tiers_in_operator_grid_factory.trustedCaller() == owner
-    assert register_tiers_in_operator_grid_factory.operatorGrid() == operator_grid_stub
+    assert register_tiers_in_operator_grid_factory.lidoLocator() == lido_locator_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, register_tiers_in_operator_grid_factory):
@@ -46,8 +45,9 @@ def test_zero_node_operator(owner, stranger, register_tiers_in_operator_grid_fac
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_empty_tiers_array(owner, stranger, register_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'EMPTY_TIERS' if any tiers array is empty"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
     CALLDATA = create_calldata([stranger.address], [[]])
     with reverts('EMPTY_TIERS'):
@@ -71,15 +71,16 @@ def test_default_tier_operator(owner, register_tiers_in_operator_grid_factory):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(owner, accounts, register_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_create_evm_script(owner, accounts, register_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must create correct EVMScript if all requirements are met"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator1 = accounts[5]
     operator2 = accounts[6]
-    
+
     # Register operators
     operator_grid_stub.registerGroup(operator1, 1000, {"from": owner})
     operator_grid_stub.registerGroup(operator2, 1500, {"from": owner})
-    
+
     operators = [operator1.address, operator2.address]
     tiers = [
         [(1000, 200, 100, 50, 40, 10)],  # Tiers for operator1
@@ -111,10 +112,10 @@ def test_decode_evm_script_call_data(accounts, register_tiers_in_operator_grid_f
 
     EVM_SCRIPT_CALLDATA = create_calldata(operators, tiers)
     decoded_operators, decoded_tiers = register_tiers_in_operator_grid_factory.decodeEVMScriptCallData(EVM_SCRIPT_CALLDATA)
-    
+
     assert len(decoded_operators) == len(operators)
     assert len(decoded_tiers) == len(tiers)
-    
+
     for i in range(len(operators)):
         assert decoded_operators[i] == operators[i]
         assert len(decoded_tiers[i]) == len(tiers[i])
@@ -127,8 +128,9 @@ def test_decode_evm_script_call_data(accounts, register_tiers_in_operator_grid_f
             assert decoded_tiers[i][j][5] == tiers[i][j][5]  # reservationFeeBP
 
 
-def test_tier_share_limit_too_high(owner, register_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_tier_share_limit_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if any tier's share limit exceeds the group's share limit"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
     tiers = [[(1500, 200, 100, 50, 40, 10)]]  # Tier share limit exceeds group share limit

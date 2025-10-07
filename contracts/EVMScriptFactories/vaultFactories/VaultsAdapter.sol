@@ -6,6 +6,7 @@ pragma solidity 0.8.6;
 import "../../TrustedCaller.sol";
 import "../../interfaces/IVaultHub.sol";
 import "../../interfaces/IOperatorGrid.sol";
+import "../../interfaces/ILidoLocator.sol";
 
 /// @author dry914
 /// @notice Adapter for VaultHub and OperatorGrid to be used in EVMScriptFactories
@@ -19,8 +20,7 @@ contract VaultsAdapter is TrustedCaller {
     string private constant ERROR_NOT_ENOUGH_ETH = "NOT_ENOUGH_ETH";
     string private constant ERROR_NO_ETH_TO_WITHDRAW = "NO_ETH_TO_WITHDRAW";
     string private constant ERROR_ETH_TRANSFER_FAILED = "ETH_TRANSFER_FAILED";
-    string private constant ERROR_ZERO_VAULT_HUB = "ZERO_VAULT_HUB";
-    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_ZERO_LIDO_LOCATOR = "ZERO_LIDO_LOCATOR";
     string private constant ERROR_ZERO_EVM_SCRIPT_EXECUTOR = "ZERO_EVM_SCRIPT_EXECUTOR";
     string private constant ERROR_ZERO_VALIDATOR_EXIT_FEE_LIMIT = "ZERO_VALIDATOR_EXIT_FEE_LIMIT";
     string private constant ERROR_VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED = "VALIDATOR_EXIT_FEE_LIMIT_EXCEEDED";
@@ -38,11 +38,8 @@ contract VaultsAdapter is TrustedCaller {
     // VARIABLES
     // -------------
 
-    /// @notice Address of VaultHub
-    IVaultHub public immutable vaultHub;
-
-    /// @notice Address of OperatorGrid
-    IOperatorGrid public immutable operatorGrid;
+    /// @notice Address of Lido Locator
+    ILidoLocator public immutable lidoLocator;
 
     /// @notice Address of the EVMScriptExecutor
     address public immutable evmScriptExecutor;
@@ -65,16 +62,14 @@ contract VaultsAdapter is TrustedCaller {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _vaultHub, address _operatorGrid, address _evmScriptExecutor, uint256 _validatorExitFeeLimit)
+    constructor(address _trustedCaller, address _lidoLocator, address _evmScriptExecutor, uint256 _validatorExitFeeLimit)
         TrustedCaller(_trustedCaller)
     {
-        require(_vaultHub != address(0), ERROR_ZERO_VAULT_HUB);
-        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        require(_lidoLocator != address(0), ERROR_ZERO_LIDO_LOCATOR);
         require(_evmScriptExecutor != address(0), ERROR_ZERO_EVM_SCRIPT_EXECUTOR);
         require(_validatorExitFeeLimit > 0, ERROR_ZERO_VALIDATOR_EXIT_FEE_LIMIT);
 
-        vaultHub = IVaultHub(_vaultHub);
-        operatorGrid = IOperatorGrid(_operatorGrid);
+        lidoLocator = ILidoLocator(_lidoLocator);
         evmScriptExecutor = _evmScriptExecutor;
         validatorExitFeeLimit = _validatorExitFeeLimit;
     }
@@ -96,12 +91,14 @@ contract VaultsAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
+        IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
         if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
             vaultHub.isPendingDisconnect(_vault)) { // vault is disconnecting
             emit VaultFeesUpdateFailed(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
             return;
         }
 
+        IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
         operatorGrid.updateVaultFees(_vault, _infraFeeBP, _liquidityFeeBP, _reservationFeeBP);
     }
 
@@ -111,6 +108,8 @@ contract VaultsAdapter is TrustedCaller {
     function setVaultJailStatus(address _vault, bool _isInJail) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
+        IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
+        IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
         if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
             vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
             operatorGrid.isVaultInJail(_vault) == _isInJail) { // status is already the same
@@ -127,6 +126,7 @@ contract VaultsAdapter is TrustedCaller {
     function setLiabilitySharesTarget(address _vault, uint256 _liabilitySharesTarget) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
+        IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
         if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
             vaultHub.isPendingDisconnect(_vault)) { // vault is disconnecting
             emit LiabilitySharesTargetUpdateFailed(_vault, _liabilitySharesTarget);
@@ -147,6 +147,7 @@ contract VaultsAdapter is TrustedCaller {
     ) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
+        IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
         if (!vaultHub.isVaultConnected(_badDebtVault) || // vault is not connected to hub
             !vaultHub.isVaultConnected(_vaultAcceptor) || // vault is not connected to hub
             vaultHub.isPendingDisconnect(_badDebtVault) || // vault is disconnecting
@@ -174,6 +175,7 @@ contract VaultsAdapter is TrustedCaller {
         uint256 value = fee * numKeys;
         require(value <= address(this).balance, ERROR_NOT_ENOUGH_ETH);
 
+        IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
         if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
             vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
             vaultHub.obligationsShortfallValue(_vault) == 0) { // vault has no obligations shortfall

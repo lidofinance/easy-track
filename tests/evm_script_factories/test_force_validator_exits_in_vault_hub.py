@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, ForceValidatorExitsInVaultHub, VaultsAdapter, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, ForceValidatorExitsInVaultHub, VaultsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -7,8 +7,8 @@ def create_calldata(vaults, pubkeys):
     return encode_calldata(["address[]", "bytes[]"], [vaults, pubkeys])
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub, operator_grid_stub):
-    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, lido_locator_stub):
+    adapter = VaultsAdapter.deploy(owner, lido_locator_stub, owner, 1000000000000000000, {"from": owner})
     # send 10 ETH to adapter
     owner.transfer(adapter, 10 * 10 ** 18)
     return adapter
@@ -18,13 +18,14 @@ def force_validator_exits_factory(owner, adapter):
     factory = ForceValidatorExitsInVaultHub.deploy(owner, adapter, {"from": owner})
     return factory
 
-def test_deploy(owner, force_validator_exits_factory, adapter, vault_hub_stub):
+def test_deploy(owner, force_validator_exits_factory, adapter, lido_locator_stub):
     "Must deploy contract with correct data"
     assert force_validator_exits_factory.trustedCaller() == owner
     assert force_validator_exits_factory.vaultsAdapter() == adapter
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
+    assert adapter.lidoLocator() == lido_locator_stub
 
 def test_create_evm_script_called_by_stranger(stranger, force_validator_exits_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -129,15 +130,17 @@ def test_withdraw_eth_success(owner, adapter):
     # Check event
     assert len(tx.events) == 0, "No events should be emitted"
 
-def test_force_validator_exit_fails_when_no_obligations_shortfall(owner, stranger, adapter, vault_hub_stub):
+def test_force_validator_exit_fails_when_no_obligations_shortfall(owner, stranger, adapter, lido_locator_stub):
     "Must emit ForceValidatorExitFailed when obligationsShortfallValue == 0"
+    vault_hub = interface.IVaultHub(lido_locator_stub.vaultHub())
     vault = stranger.address
     pubkeys = b"01" * 48  # 48 bytes pubkey
 
     # Register vault first
-    vault_hub_stub.connectVault(vault, {"from": owner})
+    vault_hub.connectVault(vault, {"from": owner})
 
     # Set obligations shortfall to 0 (no shortfall)
+    vault_hub_stub = interface.IVaultHubStub(lido_locator_stub.vaultHub())
     vault_hub_stub.setObligationsShortfallValue(vault, 0, {"from": owner})
 
     # Try to force validator exit - should fail

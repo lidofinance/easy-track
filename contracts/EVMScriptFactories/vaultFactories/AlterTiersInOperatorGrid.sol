@@ -7,6 +7,7 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IOperatorGrid.sol";
+import "../../interfaces/ILidoLocator.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to alter tiers in OperatorGrid
@@ -16,7 +17,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_ZERO_LIDO_LOCATOR = "ZERO_LIDO_LOCATOR";
     string private constant ERROR_EMPTY_TIER_IDS = "EMPTY_TIER_IDS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
@@ -41,8 +42,8 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of OperatorGrid
-    IOperatorGrid public immutable operatorGrid;
+    /// @notice Address of Lido Locator
+    ILidoLocator public immutable lidoLocator;
 
     /// @notice Maximum share limit
     uint256 public immutable defaultTierMaxShareLimit;
@@ -51,12 +52,12 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid, uint256 _defaultTierMaxShareLimit)
+    constructor(address _trustedCaller, address _lidoLocator, uint256 _defaultTierMaxShareLimit)
         TrustedCaller(_trustedCaller)
     {
-        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        require(_lidoLocator != address(0), ERROR_ZERO_LIDO_LOCATOR);
 
-        operatorGrid = IOperatorGrid(_operatorGrid);
+        lidoLocator = ILidoLocator(_lidoLocator);
         defaultTierMaxShareLimit = _defaultTierMaxShareLimit;
     }
 
@@ -80,7 +81,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                address(operatorGrid),
+                lidoLocator.operatorGrid(),
                 IOperatorGrid.alterTiers.selector,
                 _evmScriptCallData
             );
@@ -112,6 +113,8 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     function _validateInputData(uint256[] memory _tierIds, TierParams[] memory _tierParams) private view {
         require(_tierIds.length > 0, ERROR_EMPTY_TIER_IDS);
         require(_tierIds.length == _tierParams.length, ERROR_ARRAY_LENGTH_MISMATCH);
+
+        IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
 
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {

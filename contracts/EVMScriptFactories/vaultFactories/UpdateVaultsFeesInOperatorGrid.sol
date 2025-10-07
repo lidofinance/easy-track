@@ -8,6 +8,7 @@ import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IVaultsAdapter.sol";
 import "../../interfaces/IOperatorGrid.sol";
+import "../../interfaces/ILidoLocator.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to update fees for multiple vaults in OperatorGrid
@@ -19,7 +20,7 @@ contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_ZERO_ADAPTER = "ZERO_ADAPTER";
-    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_ZERO_LIDO_LOCATOR = "ZERO_LIDO_LOCATOR";
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
@@ -34,20 +35,20 @@ contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Address of Vaults adapter
     IVaultsAdapter public immutable vaultsAdapter;
 
-    /// @notice Address of OperatorGrid
-    IOperatorGrid public immutable operatorGrid;
+    /// @notice Address of Lido Locator
+    ILidoLocator public immutable lidoLocator;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _adapter, address _operatorGrid)
+    constructor(address _trustedCaller, address _adapter, address _lidoLocator)
         TrustedCaller(_trustedCaller)
     {
         require(_adapter != address(0), ERROR_ZERO_ADAPTER);
-        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        require(_lidoLocator != address(0), ERROR_ZERO_LIDO_LOCATOR);
         vaultsAdapter = IVaultsAdapter(_adapter);
-        operatorGrid = IOperatorGrid(_operatorGrid);
+        lidoLocator = ILidoLocator(_lidoLocator);
     }
 
     // -------------
@@ -125,6 +126,8 @@ contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             _vaults.length == _reservationFeesBP.length,
             ERROR_ARRAY_LENGTH_MISMATCH
         );
+
+        IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
 
         for (uint256 i = 0; i < _vaults.length; i++) {
             require(_vaults[i] != address(0), ERROR_ZERO_VAULT);

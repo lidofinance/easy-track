@@ -1,21 +1,20 @@
 import pytest
-from brownie import reverts, RegisterGroupsInOperatorGrid, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, RegisterGroupsInOperatorGrid, ZERO_ADDRESS, OperatorGridStub, VaultHubStub # type: ignore
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(operators, share_limits, tiers):
     return encode_calldata(["address[]", "uint256[]", "(uint256,uint256,uint256,uint256,uint256,uint256)[][]"], [operators, share_limits, tiers])
 
 @pytest.fixture(scope="module")
-def register_groups_in_operator_grid_factory(owner, operator_grid_stub):
-    factory = RegisterGroupsInOperatorGrid.deploy(owner, operator_grid_stub, 10000, {"from": owner})
-    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
+def register_groups_in_operator_grid_factory(owner, lido_locator_stub):
+    factory = RegisterGroupsInOperatorGrid.deploy(owner, lido_locator_stub, 10000, {"from": owner})
     return factory
 
 
-def test_deploy(owner, operator_grid_stub, register_groups_in_operator_grid_factory):
+def test_deploy(owner, lido_locator_stub, register_groups_in_operator_grid_factory):
     "Must deploy contract with correct data"
     assert register_groups_in_operator_grid_factory.trustedCaller() == owner
-    assert register_groups_in_operator_grid_factory.operatorGrid() == operator_grid_stub
+    assert register_groups_in_operator_grid_factory.lidoLocator() == lido_locator_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, register_groups_in_operator_grid_factory):
@@ -61,18 +60,20 @@ def test_empty_tiers_array(owner, register_groups_in_operator_grid_factory):
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_group_exists(owner, stranger, register_groups_in_operator_grid_factory, operator_grid_stub):
+def test_group_exists(owner, stranger, register_groups_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'GROUP_EXISTS' if any group already exists"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator_grid_stub.registerGroup(stranger, 1000, {"from": owner})
     CALLDATA = create_calldata([stranger.address], [1000], [[(1000, 200, 100, 50, 40, 10)]])
     with reverts('GROUP_EXISTS'):
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_create_evm_script(owner, accounts, register_groups_in_operator_grid_factory, operator_grid_stub):
+def test_create_evm_script(owner, accounts, register_groups_in_operator_grid_factory, lido_locator_stub):
     "Must create correct EVMScript if all requirements are met"
     operator1 = "0x0000000000000000000000000000000000000001"
     operator2 = "0x0000000000000000000000000000000000000002"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
 
     operators = [operator1, operator2]
     share_limits = [1000, 3000]

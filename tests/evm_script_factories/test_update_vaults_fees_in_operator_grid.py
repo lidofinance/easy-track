@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, UpdateVaultsFeesInOperatorGrid, VaultsAdapter, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, UpdateVaultsFeesInOperatorGrid, VaultsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -10,23 +10,24 @@ def create_calldata(vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_b
     )
 
 @pytest.fixture(scope="module")
-def adapter(owner, vault_hub_stub, operator_grid_stub):
-    adapter = VaultsAdapter.deploy(owner, vault_hub_stub, operator_grid_stub, owner, 1000000000000000000, {"from": owner})
+def adapter(owner, lido_locator_stub):
+    adapter = VaultsAdapter.deploy(owner, lido_locator_stub, owner, 1000000000000000000, {"from": owner})
     return adapter
 
 @pytest.fixture(scope="module")
-def update_vaults_fees_factory(owner, adapter, operator_grid_stub):
-    factory = UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, operator_grid_stub, {"from": owner})
+def update_vaults_fees_factory(owner, adapter, lido_locator_stub):
+    factory = UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, lido_locator_stub, {"from": owner})
     return factory
 
-def test_deploy(owner, update_vaults_fees_factory, adapter, vault_hub_stub, operator_grid_stub):
+def test_deploy(owner, update_vaults_fees_factory, adapter, lido_locator_stub):
     "Must deploy contract with correct data"
     assert update_vaults_fees_factory.trustedCaller() == owner
     assert update_vaults_fees_factory.vaultsAdapter() == adapter
-    assert update_vaults_fees_factory.operatorGrid() == operator_grid_stub
+    assert update_vaults_fees_factory.lidoLocator() == lido_locator_stub
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
+    assert adapter.lidoLocator() == lido_locator_stub
 
 def test_create_evm_script_called_by_stranger(stranger, update_vaults_fees_factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
@@ -63,10 +64,11 @@ def test_zero_vault_address(owner, stranger, update_vaults_fees_factory):
     with reverts('ZERO_VAULT'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA)
 
-def test_fees_exceed_tier_limits(owner, stranger, update_vaults_fees_factory, vault_hub_stub, operator_grid_stub):
+def test_fees_exceed_tier_limits(owner, stranger, update_vaults_fees_factory, lido_locator_stub):
     "Must revert if any fee exceeds tier limits"
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
     # Register vault first
-    vault_hub_stub.connectVault(stranger)
+    vault_hub_stub.connectVault(stranger, {"from": owner})
 
     # Default tier has limits: infra=50, liquidity=40, reservation=10 (from stub)
     # Test infra fee exceeds tier limit
@@ -84,10 +86,11 @@ def test_fees_exceed_tier_limits(owner, stranger, update_vaults_fees_factory, va
     with reverts('RESERVATION_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA3)
 
-def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_factory, vault_hub_stub, adapter):
+def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_factory, lido_locator_stub, adapter):
     "Must create correct EVMScript for a single vault if all requirements are met"
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
     # Register vault first
-    vault_hub_stub.connectVault(stranger)
+    vault_hub_stub.connectVault(stranger, {"from": owner})
 
     vaults = [stranger.address]
     infra_fees = [20]  # within tier limit of 50
@@ -113,13 +116,14 @@ def test_create_evm_script_single_vault(owner, stranger, update_vaults_fees_fact
 
     assert evm_script == expected_evm_script
 
-def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_factory, vault_hub_stub, adapter):
+def test_create_evm_script_multiple_vaults(owner, accounts, update_vaults_fees_factory, lido_locator_stub, adapter):
     "Must create correct EVMScript for multiple vaults if all requirements are met"
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
     # Register multiple vaults first
     vault1 = accounts[1]
     vault2 = accounts[2]
-    vault_hub_stub.connectVault(vault1)
-    vault_hub_stub.connectVault(vault2)
+    vault_hub_stub.connectVault(vault1, {"from": owner})
+    vault_hub_stub.connectVault(vault2, {"from": owner})
 
     vaults = [vault1.address, vault2.address]
     infra_fees = [20, 15]  # within tier limit of 50
@@ -166,22 +170,25 @@ def test_decode_evm_script_call_data(accounts, update_vaults_fees_factory):
         assert decoded_liquidity_fees[i] == liquidity_fees[i]
         assert decoded_reservation_fees[i] == reservation_fees[i]
 
-def test_can_create_evm_script_with_fees_up_to_tier_limits(owner, stranger, update_vaults_fees_factory, vault_hub_stub, operator_grid_stub, adapter):
+def test_can_create_evm_script_with_fees_up_to_tier_limits(owner, stranger, update_vaults_fees_factory, lido_locator_stub, adapter):
     "Must allow creating EVMScript with fees up to tier limits"
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
+    operator_grid = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     vault = stranger.address
 
     # Register vault first
-    vault_hub_stub.connectVault(vault)
+    vault_hub_stub.connectVault(vault, {"from": owner})
 
     # Create a custom tier with higher fee limits
     node_operator = "0x0000000000000000000000000000000000000001"
-    operator_grid_stub.registerGroup(node_operator, 10000, {"from": owner})
+    operator_grid.registerGroup(node_operator, 10000, {"from": owner})
 
     # Tier with fees: infra=5000, liquidity=4000, reservation=3000 (in basis points)
     tier_params = (10000, 200, 100, 5000, 4000, 3000)
-    operator_grid_stub.registerTiers(node_operator, [tier_params], {"from": owner})
+    operator_grid.registerTiers(node_operator, [tier_params], {"from": owner})
 
     # Set vault to use tier 1 (the newly created tier)
+    operator_grid_stub = interface.IOperatorGridStub(lido_locator_stub.operatorGrid())
     operator_grid_stub.setVaultTier(vault, 1, {"from": owner})
 
     # Step 1: Create EVMScript with fees at tier limits - should succeed

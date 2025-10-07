@@ -1,22 +1,21 @@
 import pytest
-from brownie import reverts, AlterTiersInOperatorGrid # type: ignore
+from brownie import interface, reverts, AlterTiersInOperatorGrid # type: ignore
 from utils.evm_script import encode_call_script, encode_calldata
 
 def create_calldata(tier_ids, tier_params):
     return encode_calldata(["uint256[]", "(uint256,uint256,uint256,uint256,uint256,uint256)[]"], [tier_ids, tier_params])
 
 @pytest.fixture(scope="module")
-def alter_tiers_in_operator_grid_factory(owner, operator_grid_stub):
+def alter_tiers_in_operator_grid_factory(owner, lido_locator_stub):
     max_share_limit = 1000 * 10**18  # 1000 ETH for testing
-    factory = AlterTiersInOperatorGrid.deploy(owner, operator_grid_stub, max_share_limit, {"from": owner})
-    operator_grid_stub.grantRole(operator_grid_stub.REGISTRY_ROLE(), factory, {"from": owner})
+    factory = AlterTiersInOperatorGrid.deploy(owner, lido_locator_stub, max_share_limit, {"from": owner})
     return factory
 
 
-def test_deploy(owner, operator_grid_stub, alter_tiers_in_operator_grid_factory):
+def test_deploy(owner, lido_locator_stub, alter_tiers_in_operator_grid_factory):
     "Must deploy contract with correct data"
     assert alter_tiers_in_operator_grid_factory.trustedCaller() == owner
-    assert alter_tiers_in_operator_grid_factory.operatorGrid() == operator_grid_stub
+    assert alter_tiers_in_operator_grid_factory.lidoLocator() == lido_locator_stub
     assert alter_tiers_in_operator_grid_factory.defaultTierMaxShareLimit() == 1000 * 10**18
 
 
@@ -56,8 +55,9 @@ def test_wrong_calldata_length(owner, alter_tiers_in_operator_grid_factory):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, "0x00")
 
 
-def test_create_evm_script(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_create_evm_script(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must create correct EVMScript if all requirements are met"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
 
     # First register a group and tiers to alter
     operator_address = "0x0000000000000000000000000000000000000001"
@@ -104,8 +104,9 @@ def test_decode_evm_script_call_data(alter_tiers_in_operator_grid_factory):
         assert decoded_tier_params[i][5] == tier_params[i][5]  # reservationFeeBP
 
 
-def test_zero_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_zero_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'ZERO_RESERVE_RATIO' if reserve ratio is zero"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -119,8 +120,9 @@ def test_zero_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, operato
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'RESERVE_RATIO_TOO_HIGH' if reserve ratio exceeds 100%"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -134,8 +136,9 @@ def test_reserve_ratio_too_high(owner, alter_tiers_in_operator_grid_factory, ope
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_zero_forced_rebalance_threshold(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_zero_forced_rebalance_threshold(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'ZERO_FORCED_REBALANCE_THRESHOLD' if forced rebalance threshold is zero"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -149,8 +152,9 @@ def test_zero_forced_rebalance_threshold(owner, alter_tiers_in_operator_grid_fac
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold exceeds reserve ratio"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -164,8 +168,9 @@ def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'INFRA_FEE_TOO_HIGH' if infra fee exceeds max fee"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -179,8 +184,9 @@ def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operato
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'LIQUIDITY_FEE_TOO_HIGH' if liquidity fee exceeds max fee"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -194,8 +200,9 @@ def test_liquidity_fee_too_high(owner, alter_tiers_in_operator_grid_factory, ope
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'RESERVATION_FEE_TOO_HIGH' if reservation fee exceeds max fee"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -209,8 +216,9 @@ def test_reservation_fee_too_high(owner, alter_tiers_in_operator_grid_factory, o
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_fees_less_than_uint16_max(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_fees_less_than_uint16_max(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must not revert if fees are less than uint16.max"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -236,8 +244,9 @@ def test_fees_less_than_uint16_max(owner, alter_tiers_in_operator_grid_factory, 
 
 
 
-def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if tier share limit exceeds group share limit"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
@@ -251,7 +260,7 @@ def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_gr
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_default_tier_share_limit_exceeds_max_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_default_tier_share_limit_exceeds_max_limit(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if default tier share limit exceeds max share limit"
     # Default tier (tier ID 0) is already created in OperatorGridStub constructor
     # We can directly test altering it
@@ -264,7 +273,7 @@ def test_default_tier_share_limit_exceeds_max_limit(owner, alter_tiers_in_operat
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
-def test_default_tier_share_limit_at_max_limit(owner, alter_tiers_in_operator_grid_factory, operator_grid_stub):
+def test_default_tier_share_limit_at_max_limit(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must not revert if default tier share limit equals max share limit"
     # Default tier (tier ID 0) is already created in OperatorGridStub constructor
     # We can directly test altering it

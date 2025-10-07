@@ -40,7 +40,7 @@ def main():
     deployer = get_deployer_account(get_is_live(), network=network_name)
     trusted_caller = get_trusted_caller()
 
-    operator_grid = addresses.operator_grid
+    lido_locator = addresses.locator
 
     log.br()
 
@@ -52,7 +52,7 @@ def main():
     log.br()
 
     log.nb("Trusted caller", trusted_caller)
-    log.nb("Deployed Operator Grid", operator_grid)
+    log.nb("Deployed Lido Locator", lido_locator)
 
     log.br()
 
@@ -70,7 +70,7 @@ def main():
     deploy_operator_grid_factories(
         network_name,
         trusted_caller,
-        operator_grid,
+        lido_locator,
         tx_params,
     )
 
@@ -78,7 +78,7 @@ def main():
 def deploy_operator_grid_factories(
     network_name,
     trusted_caller,
-    operator_grid,
+    lido_locator,
     tx_params,
 ):
     deployment_artifacts = {}
@@ -86,14 +86,14 @@ def deploy_operator_grid_factories(
     # RegisterGroupsInOperatorGrid
     register_groups_in_operator_grid = RegisterGroupsInOperatorGrid.deploy(
         trusted_caller,
-        operator_grid,
+        lido_locator,
         MAX_GROUP_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["RegisterGroupsInOperatorGrid"] = {
         "contract": "RegisterGroupsInOperatorGrid",
         "address": register_groups_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid, MAX_GROUP_SHARE_LIMIT],
+        "constructorArgs": [trusted_caller, lido_locator, MAX_GROUP_SHARE_LIMIT],
     }
 
     log.ok("Deployed RegisterGroupsInOperatorGrid", register_groups_in_operator_grid.address)
@@ -101,14 +101,14 @@ def deploy_operator_grid_factories(
     # UpdateGroupsShareLimitInOperatorGrid
     update_groups_share_limit_in_operator_grid = UpdateGroupsShareLimitInOperatorGrid.deploy(
         trusted_caller,
-        operator_grid,
+        lido_locator,
         MAX_GROUP_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["UpdateGroupsShareLimitInOperatorGrid"] = {
         "contract": "UpdateGroupsShareLimitInOperatorGrid",
         "address": update_groups_share_limit_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid, MAX_GROUP_SHARE_LIMIT],
+        "constructorArgs": [trusted_caller, lido_locator, MAX_GROUP_SHARE_LIMIT],
     }
 
     log.ok("Deployed UpdateGroupsShareLimitInOperatorGrid", update_groups_share_limit_in_operator_grid.address)
@@ -116,13 +116,13 @@ def deploy_operator_grid_factories(
     # RegisterTiersInOperatorGrid
     register_tiers_in_operator_grid = RegisterTiersInOperatorGrid.deploy(
         trusted_caller,
-        operator_grid,
+        lido_locator,
         tx_params,
     )
     deployment_artifacts["RegisterTiersInOperatorGrid"] = {
         "contract": "RegisterTiersInOperatorGrid",
         "address": register_tiers_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid],
+        "constructorArgs": [trusted_caller, lido_locator],
     }
 
     log.ok("Deployed RegisterTiersInOperatorGrid", register_tiers_in_operator_grid.address)
@@ -130,14 +130,14 @@ def deploy_operator_grid_factories(
     # AlterTiersInOperatorGrid
     alter_tiers_in_operator_grid = AlterTiersInOperatorGrid.deploy(
         trusted_caller,
-        operator_grid,
+        lido_locator,
         MAX_DEFAULT_TIER_SHARE_LIMIT,
         tx_params,
     )
     deployment_artifacts["AlterTiersInOperatorGrid"] = {
         "contract": "AlterTiersInOperatorGrid",
         "address": alter_tiers_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, operator_grid, MAX_DEFAULT_TIER_SHARE_LIMIT],
+        "constructorArgs": [trusted_caller, lido_locator, MAX_DEFAULT_TIER_SHARE_LIMIT],
     }
 
     log.ok("Deployed AlterTiersInOperatorGrid", alter_tiers_in_operator_grid.address)

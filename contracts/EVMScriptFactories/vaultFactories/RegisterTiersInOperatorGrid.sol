@@ -7,6 +7,7 @@ import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/IOperatorGrid.sol";
+import "../../interfaces/ILidoLocator.sol";
 
 /// @author dry914
 /// @notice Creates EVMScript to register multiple tiers in OperatorGrid
@@ -16,7 +17,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // ERROR MESSAGES
     // -------------
 
-    string private constant ERROR_ZERO_OPERATOR_GRID = "ZERO_OPERATOR_GRID";
+    string private constant ERROR_ZERO_LIDO_LOCATOR = "ZERO_LIDO_LOCATOR";
     string private constant ERROR_EMPTY_NODE_OPERATORS = "EMPTY_NODE_OPERATORS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_ZERO_NODE_OPERATOR = "ZERO_NODE_OPERATOR";
@@ -36,8 +37,8 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of OperatorGrid
-    IOperatorGrid public immutable operatorGrid;
+    /// @notice Address of Lido Locator
+    ILidoLocator public immutable lidoLocator;
 
     // -------------
     // CONSTANTS
@@ -52,12 +53,12 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _operatorGrid)
+    constructor(address _trustedCaller, address _lidoLocator)
         TrustedCaller(_trustedCaller)
     {
-        require(_operatorGrid != address(0), ERROR_ZERO_OPERATOR_GRID);
+        require(_lidoLocator != address(0), ERROR_ZERO_LIDO_LOCATOR);
 
-        operatorGrid = IOperatorGrid(_operatorGrid);
+        lidoLocator = ILidoLocator(_lidoLocator);
     }
 
     // -------------
@@ -78,7 +79,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         _validateInputData(_nodeOperators, _tiers);
 
-        address toAddress = address(operatorGrid);
+        address toAddress = lidoLocator.operatorGrid();
         bytes4 methodId = IOperatorGrid.registerTiers.selector;
         bytes[] memory calldataArray = new bytes[](_nodeOperators.length);
 
@@ -118,6 +119,8 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     ) private view {
         require(_nodeOperators.length > 0, ERROR_EMPTY_NODE_OPERATORS);
         require(_nodeOperators.length == _tiers.length, ERROR_ARRAY_LENGTH_MISMATCH);
+
+        IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
 
         for (uint256 i = 0; i < _nodeOperators.length; i++) {
             require(_nodeOperators[i] != address(0), ERROR_ZERO_NODE_OPERATOR);

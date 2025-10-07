@@ -42,8 +42,7 @@ def main():
     deployer = get_deployer_account(get_is_live(), network=network_name)
     trusted_caller = get_trusted_caller()
 
-    vault_hub = addresses.vault_hub
-    operator_grid = addresses.operator_grid
+    lido_locator = addresses.locator
     evmScriptExecutor = addresses.evm_script_executor
 
     log.br()
@@ -57,8 +56,7 @@ def main():
 
     log.nb("Trusted caller", trusted_caller)
     log.nb("EVMScriptExecutor", evmScriptExecutor)
-    log.nb("Deployed Vault Hub", vault_hub)
-    log.nb("Deployed Operator Grid", operator_grid)
+    log.nb("Deployed Lido Locator", lido_locator)
 
     log.br()
 
@@ -76,8 +74,7 @@ def main():
     deploy_vault_hub_factories(
         network_name,
         trusted_caller,
-        vault_hub,
-        operator_grid,
+        lido_locator,
         evmScriptExecutor,
         tx_params,
     )
@@ -86,19 +83,18 @@ def main():
 def deploy_vault_hub_factories(
     network_name,
     trusted_caller,
-    vault_hub,
-    operator_grid,
+    lido_locator,
     evmScriptExecutor,
     tx_params,
 ):
     deployment_artifacts = {}
 
     # VaultsAdapter
-    adapter = VaultsAdapter.deploy(trusted_caller, vault_hub, operator_grid, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT, tx_params)
+    adapter = VaultsAdapter.deploy(trusted_caller, lido_locator, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT, tx_params)
     deployment_artifacts["VaultsAdapter"] = {
         "contract": "VaultsAdapter",
         "address": adapter.address,
-        "constructorArgs": [trusted_caller, vault_hub, operator_grid, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT],
+        "constructorArgs": [trusted_caller, lido_locator, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT],
     }
     log.ok("Deployed VaultsAdapter", adapter.address)
 
@@ -120,13 +116,13 @@ def deploy_vault_hub_factories(
     update_vaults_fees_in_operator_grid = UpdateVaultsFeesInOperatorGrid.deploy(
         trusted_caller,
         adapter.address,
-        operator_grid,
+        lido_locator,
         tx_params,
     )
     deployment_artifacts["UpdateVaultsFeesInOperatorGrid"] = {
         "contract": "UpdateVaultsFeesInOperatorGrid",
         "address": update_vaults_fees_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, adapter.address, operator_grid],
+        "constructorArgs": [trusted_caller, adapter.address, lido_locator],
     }
 
     log.ok("Deployed UpdateVaultsFeesInOperatorGrid", update_vaults_fees_in_operator_grid.address)

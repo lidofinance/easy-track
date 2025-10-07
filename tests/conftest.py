@@ -244,15 +244,12 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 
 @pytest.fixture(scope="module")
-def operator_grid_stub(owner, OperatorGridStub):
-    # set owner as the owner of the grid for the ease of testing purposes
+def lido_locator_stub(owner, LidoLocatorStub, VaultHubStub, OperatorGridStub):
+    vault_hub = owner.deploy(VaultHubStub, owner)
+     # set owner as the owner of the grid for the ease of testing purposes
     default_tier_params = (1000, 200, 100, 50, 40, 10) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
-    return owner.deploy(OperatorGridStub, owner, default_tier_params)
-
-
-@pytest.fixture(scope="module")
-def vault_hub_stub(owner, VaultHubStub):
-    return owner.deploy(VaultHubStub, owner)
+    operator_grid = owner.deploy(OperatorGridStub, owner, default_tier_params)
+    return owner.deploy(LidoLocatorStub, operator_grid, vault_hub, owner, owner, owner)
 
 
 @pytest.fixture(scope="module")
@@ -444,26 +441,6 @@ def mev_boost_relay_allowed_list(lido_contracts, owner):
         list_owner = lido_contracts.mev_boost_list.get_owner()
         lido_contracts.mev_boost_list.set_manager(owner, {"from": list_owner})
     return lido_contracts.mev_boost_list
-
-
-@pytest.fixture(scope="module")
-def operator_grid(lido_contracts):
-    return lido_contracts.operator_grid
-
-
-@pytest.fixture(scope="module")
-def vault_hub(lido_contracts):
-    return lido_contracts.vault_hub
-
-
-@pytest.fixture(scope="module")
-def lazy_oracle(lido_contracts):
-    return lido_contracts.lido_addresses.lazy_oracle
-
-
-@pytest.fixture(scope="module")
-def vault_factory(lido_contracts):
-    return lido_contracts.vault_factory
 
 
 #########################
