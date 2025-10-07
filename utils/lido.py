@@ -72,7 +72,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
             dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
-            evm_script_executor="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8", # fake address
+            evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
         )
     if network == "hoodi-v3" or network == "hoodi-v3-fork":
         return LidoAddressesSetup(
