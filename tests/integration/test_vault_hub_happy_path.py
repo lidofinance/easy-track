@@ -177,11 +177,11 @@ def create_enact_and_check_socialize_bad_debt_motion(
     assert len(motions) == 1
 
     vault_hub = interface.IVaultHub(locator.vaultHub())
-    # vaultConnection = vault_hub.vaultConnection(bad_debt_vaults[0])
-    # dashboard = vaultConnection[0]
-    # forceTransfer0 = ForceTransfer.deploy({"from": owner})
-    # forceTransfer0.transfer(dashboard, {"from": owner, "value": 10 * 10**18})
-    # vault_hub.mintShares(bad_debt_vaults[0], owner, 1 * 10**18, {"from": dashboard})
+    vaultConnection = vault_hub.vaultConnection(bad_debt_vaults[0])
+    dashboard = vaultConnection[0]
+    forceTransfer0 = ForceTransfer.deploy({"from": owner})
+    forceTransfer0.transfer(dashboard, {"from": owner, "value": 10 * 10**18})
+    # vault_hub.mintShares(bad_debt_vaults[0], owner, 1 * 10**17, {"from": dashboard}) TODO fix after Hoodi upgrade
 
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
 
