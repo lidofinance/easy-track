@@ -176,7 +176,7 @@ class LidoContractsSetup:
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
-        self.locator = interface.LidoLocator(lido_addresses.locator)
+        self.locator = interface.ILidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
         self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)

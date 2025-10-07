@@ -101,6 +101,13 @@ interface IVaultHub {
         uint256 _reportSlashingReserve
     ) external;
 
+    /// @notice mint StETH shares backed by vault external balance to the receiver address
+    /// @param _vault vault address
+    /// @param _recipient address of the receiver
+    /// @param _amountOfShares amount of stETH shares to mint
+    /// @dev requires the fresh report
+    function mintShares(address _vault, address _recipient, uint256 _amountOfShares) external;
+
     /// @notice Grants a role to an account
     /// @param role the role to grant
     /// @param account the account to grant the role to
@@ -175,6 +182,10 @@ interface IVaultHub {
 
     /// @return true if the vault is connected to the hub or pending to be disconnected
     function isVaultConnected(address _vault) external view returns (bool);
+
+    /// @return true if the report for the vault is fresh, false otherwise
+    /// @dev returns false if the vault is not connected
+    function isReportFresh(address _vault) external view returns (bool);
 
     /// @notice Returns the bad debt master role
     /// @return bytes32 the bad debt master role

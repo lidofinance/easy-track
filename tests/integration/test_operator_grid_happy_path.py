@@ -1,7 +1,6 @@
 import pytest
 import brownie
-
-from brownie import VaultsAdapter # type: ignore
+from brownie import VaultsAdapter, ForceTransfer, interface # type: ignore
 from utils.evm_script import encode_calldata
 
 MOTION_BUFFER_TIME = 100
@@ -12,30 +11,34 @@ def trusted_address(accounts):
     return accounts[7]
 
 @pytest.fixture(scope="module", autouse=True)
-def adapter(owner, vault_hub, operator_grid, easy_track, trusted_address, agent):
-    adapter = VaultsAdapter.deploy(trusted_address, vault_hub, operator_grid, easy_track.evmScriptExecutor(), 1000000000000000000, {"from": owner})
+def adapter(owner, locator, easy_track, trusted_address, agent):
+    adapter = VaultsAdapter.deploy(trusted_address, locator, easy_track.evmScriptExecutor(), 1000000000000000000, {"from": owner})
     # send 10 ETH to adapter
     owner.transfer(adapter, 10 * 10 ** 18)
     # grant all needed roles to adapter
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), adapter, {"from": agent})
     return adapter
 
 @pytest.fixture(scope="module", autouse=True)
-def vaults(owner, accounts, vault_factory, vault_hub):
+def vaults(owner, accounts, locator):
+    vault_factory = interface.IVaultFactory(locator.vaultFactory())
+    vault_hub = interface.IVaultHub(locator.vaultHub())
     tx = vault_factory.createVaultWithDashboard(accounts[0], accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
     vault1 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
     return [vault1]
 
 
-def setup_operator_grid(owner, operator_grid, easy_track, agent):
+def setup_operator_grid(owner, locator, easy_track, agent):
     # transfer 10 ETH to agent
     owner.transfer(agent, 10 * 10**18)
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), easy_track.evmScriptExecutor(), {"from": agent})
     operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
 
 
 def setup_evm_script_factory(
-    factory_instance, permissions, easy_track, trusted_address, voting, deployer, operator_grid
+    factory_instance, permissions, easy_track, trusted_address, voting, deployer
 ):
     num_factories_before = len(easy_track.getEVMScriptFactories())
     print(f"factory_instance: {factory_instance}")
@@ -64,7 +67,7 @@ def execute_motion(easy_track, motion_transaction, stranger):
 
 def create_enact_and_check_register_group_motion(
     easy_track,
-    operator_grid,
+    locator,
     stranger,
     trusted_address,
     register_group_factory,
@@ -82,6 +85,8 @@ def create_enact_and_check_register_group_motion(
     )
     motions = easy_track.getMotions()
     assert len(motions) == 1
+
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
 
     # Check initial state
     for i, operator_address in enumerate(operator_addresses):
@@ -113,13 +118,15 @@ def create_enact_and_check_register_group_motion(
 def create_enact_and_check_update_share_limits_motion(
     owner,
     easy_track,
-    operator_grid,
+    locator,
     stranger,
     trusted_address,
     update_share_limits_factory,
     operator_addresses,
     new_share_limits,
 ):
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
+
     # First register the group to update
     for i, operator_address in enumerate(operator_addresses):
         operator_grid.registerGroup(operator_address, new_share_limits[i]*2, {"from": owner})
@@ -151,13 +158,15 @@ def create_enact_and_check_update_share_limits_motion(
 def create_enact_and_check_register_tiers_motion(
     owner,
     easy_track,
-    operator_grid,
+    locator,
     stranger,
     trusted_address,
     register_tiers_factory,
     operator_addresses,
     tiers_params_array,
 ):
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
+
     # First register the groups to add tiers to
     for operator_address in operator_addresses:
         operator_grid.registerGroup(operator_address, 1000, {"from": owner})
@@ -200,13 +209,15 @@ def create_enact_and_check_register_tiers_motion(
 def create_enact_and_check_alter_tiers_motion(
     owner,
     easy_track,
-    operator_grid,
+    locator,
     stranger,
     trusted_address,
     alter_tiers_factory,
     tier_ids,
     new_tier_params,
 ):
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
+
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
     operator_grid.registerGroup(operator_address, 10000, {"from": owner})
@@ -248,7 +259,7 @@ def create_enact_and_check_alter_tiers_motion(
 def create_enact_and_check_set_jail_status_motion(
     owner,
     easy_track,
-    operator_grid,
+    locator,
     stranger,
     trusted_address,
     set_jail_status_factory,
@@ -266,6 +277,8 @@ def create_enact_and_check_set_jail_status_motion(
 
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
+
     # Check final state
     for i, vault in enumerate(vaults):
         is_in_jail = operator_grid.isVaultInJail(vault)
@@ -281,7 +294,7 @@ def create_enact_and_check_set_jail_status_motion(
 def create_enact_and_check_update_vaults_fees_motion(
     owner,
     easy_track,
-    operator_grid,
+    locator,
     stranger,
     trusted_address,
     update_vaults_fees_factory,
@@ -302,7 +315,44 @@ def create_enact_and_check_update_vaults_fees_motion(
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    tx = execute_motion(easy_track, motion_transaction, stranger)
+    brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
+    motions = easy_track.getMotions()
+    assert len(motions) == 1
+
+    # bring fresh report for vault
+    current_time = brownie.chain.time()
+
+    lazy_oracle = locator.lazyOracle()
+    accountingOracle = locator.accountingOracle()
+    forceTransfer1 = ForceTransfer.deploy({"from": owner})
+    forceTransfer1.transfer(accountingOracle, {"from": owner, "value": 10 * 10**18})
+    interface.ILazyOracle(lazy_oracle).updateReportData(
+        current_time,
+        1000,
+        "0x00",
+        "0x00",
+        {"from": accountingOracle})
+
+    forceTransfer2 = ForceTransfer.deploy({"from": owner})
+    forceTransfer2.transfer(lazy_oracle, {"from": owner, "value": 10 * 10**18})
+    vault_hub = interface.IVaultHub(locator.vaultHub())
+    vault_hub.applyVaultReport(
+        vaults[0],
+        current_time,
+        2 * 10**18,
+        2 * 10**18,
+        0,
+        0,
+        0,
+        0,
+        {"from": lazy_oracle})
+
+    tx = easy_track.enactMotion(
+        motions[0][0],
+        motion_transaction.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
+    )
+    assert len(easy_track.getMotions()) == 0
 
     # Check that events were emitted
     assert len(tx.events["VaultFeesUpdated"]) == len(vaults)
@@ -322,16 +372,17 @@ def test_register_group_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid,
+    locator,
     agent,
 ):
-    setup_operator_grid(owner, operator_grid, easy_track, agent)
+    setup_operator_grid(owner, locator, easy_track, agent)
 
-    factory_instance = deployer.deploy(RegisterGroupsInOperatorGrid, trusted_address, operator_grid, 10000)
+    factory_instance = deployer.deploy(RegisterGroupsInOperatorGrid, trusted_address, locator, 10000)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.lidoLocator() == locator
     assert factory_instance.maxShareLimit() == 10000
 
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     permission = operator_grid.address + operator_grid.registerGroup.signature[2:] + operator_grid.address[2:] + operator_grid.registerTiers.signature[2:]
     print("register_group_happy_path")
     register_group_factory = setup_evm_script_factory(
@@ -341,7 +392,6 @@ def test_register_group_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid,
     )
 
     # Define operator addresses and share limits
@@ -365,7 +415,7 @@ def test_register_group_happy_path(
 
     create_enact_and_check_register_group_motion(
         easy_track,
-        operator_grid,
+        locator,
         stranger,
         trusted_address,
         register_group_factory,
@@ -384,16 +434,17 @@ def test_update_groups_share_limit_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid,
+    locator,
     agent,
 ):
-    setup_operator_grid(owner, operator_grid, easy_track, agent)
+    setup_operator_grid(owner, locator, easy_track, agent)
 
-    factory_instance = deployer.deploy(UpdateGroupsShareLimitInOperatorGrid, trusted_address, operator_grid, 10000)
+    factory_instance = deployer.deploy(UpdateGroupsShareLimitInOperatorGrid, trusted_address, locator, 10000)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.lidoLocator() == locator
     assert factory_instance.maxShareLimit() == 10000
 
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     permission = operator_grid.address + operator_grid.updateGroupShareLimit.signature[2:]
     print("update_groups_share_limit_happy_path")
     update_share_limits_factory = setup_evm_script_factory(
@@ -403,13 +454,12 @@ def test_update_groups_share_limit_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid,
     )
 
     create_enact_and_check_update_share_limits_motion(
         owner,
         easy_track,
-        operator_grid,
+        locator,
         stranger,
         trusted_address,
         update_share_limits_factory,
@@ -427,15 +477,16 @@ def test_register_tiers_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid,
+    locator,
     agent,
 ):
-    setup_operator_grid(owner, operator_grid, easy_track, agent)
+    setup_operator_grid(owner, locator, easy_track, agent)
 
-    factory_instance = deployer.deploy(RegisterTiersInOperatorGrid, trusted_address, operator_grid)
+    factory_instance = deployer.deploy(RegisterTiersInOperatorGrid, trusted_address, locator)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.lidoLocator() == locator
 
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     permission = operator_grid.address + operator_grid.registerTiers.signature[2:]
     print("register_tiers_happy_path")
     register_tiers_factory = setup_evm_script_factory(
@@ -445,7 +496,6 @@ def test_register_tiers_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid,
     )
 
     # Define operator addresses
@@ -469,7 +519,7 @@ def test_register_tiers_happy_path(
     create_enact_and_check_register_tiers_motion(
         owner,
         easy_track,
-        operator_grid,
+        locator,
         stranger,
         trusted_address,
         register_tiers_factory,
@@ -487,17 +537,18 @@ def test_alter_tiers_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid,
+    locator,
     agent,
 ):
-    setup_operator_grid(owner, operator_grid, easy_track, agent)
+    setup_operator_grid(owner, locator, easy_track, agent)
 
     max_share_limit = 1000 * 10**18  # 1000 ETH for testing
-    factory_instance = deployer.deploy(AlterTiersInOperatorGrid, trusted_address, operator_grid, max_share_limit)
+    factory_instance = deployer.deploy(AlterTiersInOperatorGrid, trusted_address, locator, max_share_limit)
     assert factory_instance.trustedCaller() == trusted_address
-    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.lidoLocator() == locator
     assert factory_instance.defaultTierMaxShareLimit() == max_share_limit
 
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     permission = operator_grid.address + operator_grid.alterTiers.signature[2:]
     print("alter_tiers_happy_path")
     alter_tiers_factory = setup_evm_script_factory(
@@ -507,7 +558,6 @@ def test_alter_tiers_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid,
     )
 
     # Define new tier parameters
@@ -516,7 +566,7 @@ def test_alter_tiers_happy_path(
     create_enact_and_check_alter_tiers_motion(
         owner,
         easy_track,
-        operator_grid,
+        locator,
         stranger,
         trusted_address,
         alter_tiers_factory,
@@ -534,7 +584,7 @@ def test_set_jail_status_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid,
+    locator,
     adapter,
     vaults,
 ):
@@ -555,13 +605,12 @@ def test_set_jail_status_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid,
     )
 
     create_enact_and_check_set_jail_status_motion(
         owner,
         easy_track,
-        operator_grid,
+        locator,
         stranger,
         trusted_address,
         factory_instance,
@@ -579,14 +628,14 @@ def test_update_vaults_fees_happy_path(
     voting,
     deployer,
     stranger,
-    operator_grid,
+    locator,
     vaults,
     adapter,
 ):
-    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter, operator_grid)
+    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter, locator)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.vaultsAdapter() == adapter
-    assert factory_instance.operatorGrid() == operator_grid
+    assert factory_instance.lidoLocator() == locator
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
@@ -601,13 +650,12 @@ def test_update_vaults_fees_happy_path(
         trusted_address,
         voting,
         deployer,
-        operator_grid,
     )
 
     create_enact_and_check_update_vaults_fees_motion(
         owner,
         easy_track,
-        operator_grid,
+        locator,
         stranger,
         trusted_address,
         factory_instance,
