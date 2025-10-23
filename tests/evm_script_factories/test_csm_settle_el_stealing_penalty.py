@@ -19,9 +19,6 @@ def fill_cs_module(cs_module, owner):
     if cs_module.isPaused():
         cs_module.grantRole(cs_module.RESUME_ROLE(), owner, {"from": admin})
         cs_module.resume({"from": owner})
-    if not cs_module.publicRelease():
-        cs_module.grantRole(cs_module.MODULE_MANAGER_ROLE(), owner, {"from": admin})
-        cs_module.activatePublicRelease({"from": owner})
     if cs_module.getNodeOperatorsCount() == 0:
         cs_module.addNodeOperatorETH(
             1,
