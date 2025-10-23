@@ -50,7 +50,7 @@ def simple_dvt(
         simple_DVT_tx.new_contracts[0]
     )
 
-    simple_dvt_contract.initialize(locator, "0x01", 0, {"from": agent})
+    simple_dvt_contract.initialize(locator, "0x01", 86400, {"from": agent})
 
     staking_router.grantRole(
         web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent}

@@ -3,6 +3,7 @@ import brownie
 from brownie import chain, web3, accounts
 from eth_abi import encode
 from utils.evm_script import encode_calldata
+from utils.test_helpers import set_account_balance
 
 # Key and signature lengths for exit-request keys
 PUBKEY_SIZE = 48
@@ -105,6 +106,7 @@ def ensure_single_operator_with_keys(registry, min_keys):
             hex_keys = "0x" + buf_keys.hex()
             hex_sigs = "0x" + buf_sigs.hex()
 
+            set_account_balance(op_addr)
             registry.addSigningKeys(op_id, count, hex_keys, hex_sigs, {"from": op_addr})
 
     return op_id, op_addr
