@@ -99,5 +99,24 @@
         "0x98be4a407Bff0c125e25fBE9Eb1165504349c37d",
         "0xF95f069F9AD107938F6ba802a3da87892298610E"
         ]
+    },
+    "CuratedSubmitExitRequestHashes":{
+      "contract": "CuratedSubmitExitRequestHashes",
+      "address": "0x8aa34dAaF0fC263203A15Bcfa0Ed926D466e59F3",
+      "constructorArgs": [
+        "0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5",
+        "0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
+        "0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e"
+      ]
+    },
+    "SDVTSubmitExitRequestHashes":{
+      "contract": "SDVTSubmitExitRequestHashes",
+      "address": "0xB7668B5485d0f826B86a75b0115e088bB9ee03eE",
+      "constructorArgs": [
+        "0x08637515E85A4633E23dfc7861e2A9f53af640f7",
+        "0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
+        "0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
+        "0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e"
+      ]
     }
 }
