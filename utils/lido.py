@@ -74,31 +74,8 @@ def addresses(network=DEFAULT_NETWORK):
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
             evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
         )
-    if network == "hoodi-v3" or network == "hoodi-v3-fork":
-        return LidoAddressesSetup(
-            aragon=AragonSetup(
-                acl="0x626aD4EafdcaC3aCe157fC6ce920f00174e7D6A5",
-                agent="0xc87a9BaBE28c44bc3C13B126D4a122Cd43A0bbd2",
-                voting="0x8E06aB2F53F77E66bd61DedAe01c04c331b8Fd7A",
-                finance="0x508DCC9CA7779C6Aaa0E71c0FaD3c2ADc840B01F",
-                gov_token="0x83375563a486B62Ad8eAbCf1d3B4901f3Dfc0466",
-                calls_script="0x77c69687f2190c0C76bE55798f8ebA89434FE446",
-                token_manager="0xB7c9b7E1E60d6778adDe02502A5a52F4Ff0F541F",
-                kernel="0x5D6146FA4289611289F76b3D0525dC011fbDAE15",
-            ),
-            steth="0x46e0C0Cb0fcBd910D3d53a6b70E1c47F6B2E2996",
-            node_operators_registry="0xC95517df64804c9f6E51465ED77B22a951bbe18e",
-            simple_dvt="0xd6150f8885aaCDA62CC10f18077876868Dd091f6",
-            staking_router="0x2fe4E1BD4a936d984f74967cCdFDb6D40BdB5790",
-            locator="0x1C17D285Fa99Ae0b73ea3D0688b7190A1e02AA51",
-            mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
-            dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
-            dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
-            emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
-            evm_script_executor="0xc2764655e3fe0bd2D3C710D74Fa5a89162099FD8",
-        )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork, hoodi-v3, hoodi-v3-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
 
 
