@@ -181,7 +181,7 @@ def create_enact_and_check_socialize_bad_debt_motion(
     dashboard = vaultConnection[0]
     forceTransfer0 = ForceTransfer.deploy({"from": owner})
     forceTransfer0.transfer(dashboard, {"from": owner, "value": 10 * 10**18})
-    # vault_hub.mintShares(bad_debt_vaults[0], owner, 1 * 10**17, {"from": dashboard}) TODO fix after Hoodi upgrade
+    vault_hub.mintShares(bad_debt_vaults[0], owner, 5 * 10**17, {"from": dashboard})
 
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
 
@@ -212,11 +212,11 @@ def create_enact_and_check_socialize_bad_debt_motion(
         0,
         {"from": lazy_oracle})
 
-    # make second vault unhealthy
+    # make bad debt on second vault
     vault_hub.applyVaultReport(
         bad_debt_vaults[0],
         current_time,
-        1 * 10**18,
+        1 * 10**17,
         2 * 10**18,
         0,
         2 * 10**18,
@@ -232,11 +232,11 @@ def create_enact_and_check_socialize_bad_debt_motion(
     assert len(easy_track.getMotions()) == 0
 
     # Check that events were emitted for failed socializations
-    # assert len(tx.events["BadDebtSocialized"]) == len(bad_debt_vaults)
-    # for i, event in enumerate(tx.events["BadDebtSocialized"]):
-    #     assert event["vaultDonor"] == bad_debt_vaults[i]
-    #     assert event["vaultAcceptor"] == vault_acceptors[i]
-    #     assert event["badDebtShares"] == max_shares_to_socialize[i]
+    assert len(tx.events["BadDebtSocialized"]) == len(bad_debt_vaults)
+    for i, event in enumerate(tx.events["BadDebtSocialized"]):
+        assert event["vaultDonor"] == bad_debt_vaults[i]
+        assert event["vaultAcceptor"] == vault_acceptors[i]
+        assert event["badDebtShares"] == max_shares_to_socialize[i]
 
 
 @pytest.mark.skip_coverage
@@ -368,5 +368,5 @@ def test_socialize_bad_debt_happy_path(
         factory_instance,
         [vaults[0]],  # bad debt vaults
         [vaults[1]],  # vault acceptors - both vaults have same operator
-        [10 * 10**18],  # max shares to socialize
+        [1 * 10**16],  # max shares to socialize
     )

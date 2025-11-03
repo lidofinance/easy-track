@@ -169,7 +169,7 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
                 require(_tiers[i][j].reserveRatioBP <= MAX_RESERVE_RATIO_BP, ERROR_RESERVE_RATIO_TOO_HIGH);
 
                 require(_tiers[i][j].forcedRebalanceThresholdBP != 0, ERROR_ZERO_FORCED_REBALANCE_THRESHOLD);
-                require(_tiers[i][j].forcedRebalanceThresholdBP <= _tiers[i][j].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);
+                require(_tiers[i][j].forcedRebalanceThresholdBP < _tiers[i][j].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);
 
                 require(_tiers[i][j].infraFeeBP <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
                 require(_tiers[i][j].liquidityFeeBP <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);

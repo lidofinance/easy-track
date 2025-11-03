@@ -137,3 +137,91 @@ def test_tier_share_limit_too_high(owner, register_tiers_in_operator_grid_factor
     CALLDATA = create_calldata([operator], tiers)
     with reverts('TIER_SHARE_LIMIT_TOO_HIGH'):
         register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_zero_reserve_ratio(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'ZERO_RESERVE_RATIO' if reserve ratio is zero"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 0, 100, 50, 40, 10)]]  # reserveRatioBP = 0
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('ZERO_RESERVE_RATIO'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_reserve_ratio_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'RESERVE_RATIO_TOO_HIGH' if reserve ratio exceeds max"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 10000, 100, 50, 40, 10)]]  # reserveRatioBP > 9999
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('RESERVE_RATIO_TOO_HIGH'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_zero_forced_rebalance_threshold(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'ZERO_FORCED_REBALANCE_THRESHOLD' if forced rebalance threshold is zero"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 200, 0, 50, 40, 10)]]  # forcedRebalanceThresholdBP = 0
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('ZERO_FORCED_REBALANCE_THRESHOLD'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold exceeds reserve ratio"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 200, 300, 50, 40, 10)]]  # forcedRebalanceThresholdBP (300) > reserveRatioBP (200)
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('FORCED_REBALANCE_THRESHOLD_TOO_HIGH'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_equals_reserve_ratio(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold equals reserve ratio"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 200, 200, 50, 40, 10)]]  # forcedRebalanceThresholdBP (200) == reserveRatioBP (200)
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('FORCED_REBALANCE_THRESHOLD_TOO_HIGH'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_infra_fee_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'INFRA_FEE_TOO_HIGH' if infra fee exceeds max fee"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 200, 100, 70001, 40, 10)]]  # infraFeeBP > uint16.max
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('INFRA_FEE_TOO_HIGH'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_liquidity_fee_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'LIQUIDITY_FEE_TOO_HIGH' if liquidity fee exceeds max fee"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 200, 100, 50, 70001, 10)]]  # liquidityFeeBP > uint16.max
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('LIQUIDITY_FEE_TOO_HIGH'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_reservation_fee_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'RESERVATION_FEE_TOO_HIGH' if reservation fee exceeds max fee"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
+    tiers = [[(1000, 200, 100, 50, 40, 70001)]]  # reservationFeeBP > uint16.max
+    CALLDATA = create_calldata([operator], tiers)
+    with reverts('RESERVATION_FEE_TOO_HIGH'):
+        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)

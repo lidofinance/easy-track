@@ -132,7 +132,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             require(_tierParams[i].reserveRatioBP <= MAX_RESERVE_RATIO_BP, ERROR_RESERVE_RATIO_TOO_HIGH);
 
             require(_tierParams[i].forcedRebalanceThresholdBP != 0, ERROR_ZERO_FORCED_REBALANCE_THRESHOLD);
-            require(_tierParams[i].forcedRebalanceThresholdBP <= _tierParams[i].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);
+            require(_tierParams[i].forcedRebalanceThresholdBP < _tierParams[i].reserveRatioBP, ERROR_FORCED_REBALANCE_THRESHOLD_TOO_HIGH);
 
             require(_tierParams[i].infraFeeBP <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
             require(_tierParams[i].liquidityFeeBP <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);

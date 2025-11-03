@@ -213,7 +213,6 @@ def create_enact_and_check_alter_tiers_motion(
     stranger,
     trusted_address,
     alter_tiers_factory,
-    tier_ids,
     new_tier_params,
 ):
     operator_grid = interface.IOperatorGrid(locator.operatorGrid())
@@ -223,6 +222,9 @@ def create_enact_and_check_alter_tiers_motion(
     operator_grid.registerGroup(operator_address, 10000, {"from": owner})
     initial_tier_params = [(1000, 200, 100, 50, 40, 10), (1000, 200, 100, 50, 40, 10)]
     operator_grid.registerTiers(operator_address, initial_tier_params, {"from": owner})
+
+    tiers_count = operator_grid.tiersCount()
+    tier_ids = [tiers_count - 2, tiers_count - 1]
 
     # Check initial state
     for i, tier_id in enumerate(tier_ids):
@@ -394,23 +396,17 @@ def test_register_group_happy_path(
         deployer,
     )
 
-    # Define operator addresses and share limits
+    # Define operator addresses
     operator_addresses = [
         "0x0000000000000000000000000000000000000001",
-        "0x0000000000000000000000000000000000000002"
+        "0x0000000000000000000000000000000000000002",
     ]
-    share_limits = [1000, 1500]
 
-    # Define tier parameters for each operator
+    share_limits = [1000, 5000]
+
     tiers_params_array = [
-        [  # Tiers for operator 1
-            (500, 200, 100, 50, 40, 10),
-            (300, 150, 75, 25, 20, 5),
-        ],
-        [  # Tiers for operator 2
-            (800, 250, 125, 60, 50, 15),
-            (400, 180, 90, 30, 25, 8),
-        ]
+        [(500, 200, 100, 50, 40, 10), (800, 200, 100, 50, 40, 10)],
+        [(800, 200, 100, 50, 40, 10), (800, 200, 100, 50, 40, 10)],
     ]
 
     create_enact_and_check_register_group_motion(
@@ -570,7 +566,6 @@ def test_alter_tiers_happy_path(
         stranger,
         trusted_address,
         alter_tiers_factory,
-        [1, 2],  # tier IDs to alter
         new_tier_params,
     )
 

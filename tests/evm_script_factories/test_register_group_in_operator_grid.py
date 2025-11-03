@@ -188,3 +188,83 @@ def test_correct_ascending_order_in_operators_array(owner, register_groups_in_op
     # Should not revert - just create the script successfully
     evm_script = register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
     assert len(evm_script) > 0
+
+
+def test_zero_reserve_ratio(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'ZERO_RESERVE_RATIO' if reserve ratio is zero"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 0, 100, 50, 40, 10)]]  # reserveRatioBP = 0
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('ZERO_RESERVE_RATIO'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_reserve_ratio_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'RESERVE_RATIO_TOO_HIGH' if reserve ratio exceeds max"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 10000, 100, 50, 40, 10)]]  # reserveRatioBP > 9999
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('RESERVE_RATIO_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_zero_forced_rebalance_threshold(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'ZERO_FORCED_REBALANCE_THRESHOLD' if forced rebalance threshold is zero"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 0, 50, 40, 10)]]  # forcedRebalanceThresholdBP = 0
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('ZERO_FORCED_REBALANCE_THRESHOLD'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold exceeds reserve ratio"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 300, 50, 40, 10)]]  # forcedRebalanceThresholdBP (300) > reserveRatioBP (200)
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('FORCED_REBALANCE_THRESHOLD_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_equals_reserve_ratio(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold equals reserve ratio"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 200, 50, 40, 10)]]  # forcedRebalanceThresholdBP (200) == reserveRatioBP (200)
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('FORCED_REBALANCE_THRESHOLD_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_infra_fee_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'INFRA_FEE_TOO_HIGH' if infra fee exceeds max fee"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 100, 70001, 40, 10)]]  # infraFeeBP > uint16.max
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('INFRA_FEE_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_liquidity_fee_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'LIQUIDITY_FEE_TOO_HIGH' if liquidity fee exceeds max fee"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 100, 50, 70001, 10)]]  # liquidityFeeBP > uint16.max
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('LIQUIDITY_FEE_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_reservation_fee_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'RESERVATION_FEE_TOO_HIGH' if reservation fee exceeds max fee"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 100, 50, 40, 70001)]]  # reservationFeeBP > uint16.max
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('RESERVATION_FEE_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
