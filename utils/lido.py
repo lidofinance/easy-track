@@ -26,7 +26,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
             dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
             emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316",
-            evm_script_executor="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb", # fake address
+            evm_script_executor="0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977",
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(

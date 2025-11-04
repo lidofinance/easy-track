@@ -14,7 +14,7 @@ def get_network_name() -> Optional[str]:
         if net_ind != len(cli_args):
             full_network_name = cli_args[net_ind + 1]
 
-    return full_network_name.split("-fork")[0]
+    return full_network_name.split("-")[0]
 
 
 def get_is_live():
