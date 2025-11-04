@@ -55,4 +55,9 @@ interface INodeOperatorsRegistry {
         uint256 _targetLimitMode,
         uint256 _targetLimit
     ) external;
+
+    function getSigningKey(
+        uint256 _nodeOperatorId,
+        uint256 _index
+    ) external view returns (bytes memory key, bytes memory depositSignature, bool used);
 }

@@ -20,11 +20,13 @@ def addresses(network=DEFAULT_NETWORK):
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
             simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
+            curated_module="0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
+            validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
             dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
-            dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
+            dual_governance="0xC1db28B3301331277e307FDCfF8DE28242A4486E",
             emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316",
             evm_script_executor="0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977",
         )
@@ -46,6 +48,8 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
+            curated_module="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+            validators_exit_bus_oracle="0xffDDF7025410412deaa05E3E1cE68FE53208afcb",
             dual_governance_admin_executor="0x8BD0a916faDa88Ba3accb595a3Acd28F467130e8",
             dual_governance="0x490bf377734CA134A8E207525E8576745652212e",
             emergency_protected_timelock="0xe9c5FfEAd0668AFdBB9aac16163840d649DB76DD",
@@ -68,7 +72,9 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
             locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
+            curated_module="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
             mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
+            validators_exit_bus_oracle="0x8664d394C2B3278F26A1B44B967aEf99707eeAB2",
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
             dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
@@ -150,6 +156,11 @@ class LidoContractsSetup:
         self.simple_dvt = (
             None if not lido_addresses.simple_dvt else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
         )
+        self.curated_module = (
+            None
+            if not lido_addresses.curated_module
+            else interface.NodeOperatorsRegistry(lido_addresses.curated_module)
+        )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
@@ -158,6 +169,7 @@ class LidoContractsSetup:
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
         self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
         self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
+        self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
 
 
     def create_voting(self, evm_script, description, tx_params=None):
@@ -206,9 +218,11 @@ class LidoAddressesSetup:
         steth,
         node_operators_registry,
         simple_dvt,
+        curated_module,
         staking_router,
         locator,
         mev_boost_list,
+        validators_exit_bus_oracle,
         dual_governance_admin_executor,
         dual_governance,
         emergency_protected_timelock,
@@ -218,6 +232,7 @@ class LidoAddressesSetup:
         self.steth = steth
         self.node_operators_registry = node_operators_registry
         self.simple_dvt = simple_dvt
+        self.curated_module = curated_module
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
         self.locator = locator
@@ -225,6 +240,7 @@ class LidoAddressesSetup:
         self.dual_governance_admin_executor = dual_governance_admin_executor
         self.dual_governance = dual_governance
         self.emergency_protected_timelock = emergency_protected_timelock
+        self.validators_exit_bus_oracle = validators_exit_bus_oracle
         self.evm_script_executor = evm_script_executor
 
 
