@@ -20,11 +20,13 @@ def addresses(network=DEFAULT_NETWORK):
             steth="0xae7ab96520de3a18e5e111b5eaab095312d7fe84",
             node_operators_registry="0x55032650b14df07b85bf18a3a3ec8e0af2e028d5",
             simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
+            curated_module="0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
+            validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
             dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
-            dual_governance="0xcdF49b058D606AD34c5789FD8c3BF8B3E54bA2db",
+            dual_governance="0xC1db28B3301331277e307FDCfF8DE28242A4486E",
             emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316"
         )
     if network == "holesky" or network == "holesky-fork":
@@ -45,9 +47,11 @@ def addresses(network=DEFAULT_NETWORK):
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
+            curated_module="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
+            validators_exit_bus_oracle="0xffDDF7025410412deaa05E3E1cE68FE53208afcb",
             dual_governance_admin_executor="0x8BD0a916faDa88Ba3accb595a3Acd28F467130e8",
             dual_governance="0x490bf377734CA134A8E207525E8576745652212e",
-            emergency_protected_timelock="0xe9c5FfEAd0668AFdBB9aac16163840d649DB76DD"
+            emergency_protected_timelock="0xe9c5FfEAd0668AFdBB9aac16163840d649DB76DD",
         )
     if network == "hoodi" or network == "hoodi-fork":
         return LidoAddressesSetup(
@@ -66,9 +70,11 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
             locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
+            curated_module="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
             mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
+            validators_exit_bus_oracle="0x8664d394C2B3278F26A1B44B967aEf99707eeAB2",
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
-            dual_governance="0x4d12b9f6aCAB54FF6a3a776BA3b8724D9B77845F",
+            dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d"
         )
     raise NameError(
@@ -80,13 +86,50 @@ def contracts(network=DEFAULT_NETWORK):
     return LidoContractsSetup(brownie.interface, lido_addresses=addresses(network))
 
 
-def allowed_recipients_builder(network=DEFAULT_NETWORK):
+def external_contracts(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
-        return brownie.AllowedRecipientsBuilder.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
+        return {
+            "usdc": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+            "dai": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+            "usdt": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        }
     if network == "holesky" or network == "holesky-fork":
-        return brownie.AllowedRecipientsBuilder.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
+        return {
+            "usdc": "0x9715b2786f1053294fc8952df923b95cab9aac42",
+            "dai": "0x2eb8e9198e647f80ccf62a5e291bcd4a5a3ca68c",
+            "usdt": "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551",
+        }
     if network == "hoodi" or network == "hoodi-fork":
-        return brownie.AllowedRecipientsBuilder.at("0xC20129f1dd4DFeD023a6d6A8de9d54A7b61af5CC")
+        return {
+            "usdc": "0x97bb030B93faF4684eAC76bA0bf3be5ec7140F36",
+            "dai": "0x17fc691f6EF57D2CA719d30b8fe040123d4ee319",
+            "usdt": "0x64f1904d1b419c6889BDf3238e31A138E258eA68",
+        }
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"""
+    )
+
+
+def allowed_recipients_builder_single_token(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return brownie.AllowedRecipientsBuilderSingleToken.at("0x958e0D946D014F377421a53AB5f9180d4485e63B")
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilderSingleToken.at("0xeC3785b13b21c226D66B5bC2E82BB2f4226f715e")
+    if network == "hoodi" or network == "hoodi-fork":
+        return brownie.AllowedRecipientsBuilderSingleToken.at("0xC20129f1dd4DFeD023a6d6A8de9d54A7b61af5CC")
+    raise NameError(
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
+    )
+
+
+
+def allowed_recipients_builder_multi_token(network=DEFAULT_NETWORK):
+    if network == "mainnet" or network == "mainnet-fork":
+        return brownie.AllowedRecipientsBuilder.at("0x334D6eDc13F63728b39e6A6D04A7Bbd5D6A9B9FF")
+    if network == "holesky" or network == "holesky-fork":
+        return brownie.AllowedRecipientsBuilder.at("0x983dF2EA3A7Dce9D60bD06f5C5dCc44a138eBA89")
+    if network == "hoodi" or network == "hoodi-fork":
+        return brownie.AllowedRecipientsBuilder.at("0xf5436129Cf9d8fa2a1cb6e591347155276550635")
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
@@ -110,6 +153,11 @@ class LidoContractsSetup:
         self.simple_dvt = (
             None if not lido_addresses.simple_dvt else interface.NodeOperatorsRegistry(lido_addresses.simple_dvt)
         )
+        self.curated_module = (
+            None
+            if not lido_addresses.curated_module
+            else interface.NodeOperatorsRegistry(lido_addresses.curated_module)
+        )
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
@@ -118,6 +166,7 @@ class LidoContractsSetup:
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
         self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
         self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
+        self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -154,7 +203,7 @@ class LidoContractsSetup:
         brownie.chain.sleep(self.aragon.voting.voteTime())
         brownie.chain.mine()
         assert voting.canExecute(voting_id)
-               
+
         voting.executeVote(voting_id, {"from": brownie.accounts[0], "priority_fee": "2 gwei"})
 
 
@@ -165,9 +214,11 @@ class LidoAddressesSetup:
         steth,
         node_operators_registry,
         simple_dvt,
+        curated_module,
         staking_router,
         locator,
         mev_boost_list,
+        validators_exit_bus_oracle,
         dual_governance_admin_executor,
         dual_governance,
         emergency_protected_timelock
@@ -176,6 +227,7 @@ class LidoAddressesSetup:
         self.steth = steth
         self.node_operators_registry = node_operators_registry
         self.simple_dvt = simple_dvt
+        self.curated_module = curated_module
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
         self.locator = locator
@@ -183,6 +235,7 @@ class LidoAddressesSetup:
         self.dual_governance_admin_executor = dual_governance_admin_executor
         self.dual_governance = dual_governance
         self.emergency_protected_timelock = emergency_protected_timelock
+        self.validators_exit_bus_oracle = validators_exit_bus_oracle
 
 
 class AragonSetup:

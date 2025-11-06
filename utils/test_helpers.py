@@ -13,6 +13,12 @@ SET_PARAMETERS_ROLE = "0x260b83d52a26066d8e9db550fa70395df5f3f064b50ff9d8a94267d
 UPDATE_SPENT_AMOUNT_ROLE = "0xc5260260446719a726d11a6faece21d19daa48b4cbcca118345832d4cb71df99"
 ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE = "0xec20c52871c824e5437859e75ac830e83aaaaeb7b0ffd850de830ddd3e385276"
 REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE = "0x491d7752c25cfca0f73715cde1130022a9b815373f91a996bbb1ba8943efc99b"
+ADD_TOKEN_TO_ALLOWED_LIST_ROLE = (
+    "0xf171689cfd5919fb6ea45c7db72005f66d37a9d2ecad9a9102caf8177435cf54"
+)
+REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE = (
+    "0x9328ef869700347b81959a69acbca4adf93a9ee617e796e5692b2660ee007a81"
+)
 PERMISSION_ERROR_TEMPLATE = "AccessControl: account %s is missing role %s"
 
 
@@ -170,7 +176,7 @@ def advance_chain_time_to_n_seconds_before_current_period_end(period_duration: i
     ), f"cannot move chain time {seconds_before} seconds before current period \
          end, because there {seconds_till_period_end} seconds left till current period end"
 
-    chain.sleep(seconds_till_period_end - seconds_before)
+    chain.mine(1, chain_now + seconds_till_period_end)
     assert chain.time() + seconds_before + 1 >= first_second_of_next_period
 
 
@@ -183,7 +189,7 @@ def advance_chain_time_to_beginning_of_the_next_period(period_duration: int):
 
     chain_now = chain.time()
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
-    chain.sleep(first_second_of_next_period - chain_now)
+    chain.mine(1, first_second_of_next_period)
     assert chain.time() >= first_second_of_next_period
 
 
@@ -193,7 +199,7 @@ def advance_chain_time_to_middle_of_the_next_period(period_duration: int):
     chain_now = chain.time()
     _, first_second_of_next_period = calc_period_range(period_duration, chain_now)
     half_period_size_seconds_to_skip = int((first_second_of_next_period - chain_now) / 2)
-    chain.sleep(half_period_size_seconds_to_skip)
+    chain.mine(1, chain_now + half_period_size_seconds_to_skip)
     assert chain.time() >= chain_now + half_period_size_seconds_to_skip
 
 
@@ -201,5 +207,5 @@ def advance_chain_time_to_middle_of_the_next_period(period_duration: int):
 def get_timestamp_from_date(year, month, day, hour=0, min=0, sec=0):
     return datetime(year, month, day, hour, min, sec, tzinfo=timezone.utc).timestamp()
 
-def set_account_balance(address, amount=1 * 10 ** 18):
+def set_account_balance(address, amount=100 * 10 ** 18):
     set_balance_in_wei(address, amount)

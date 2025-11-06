@@ -5,6 +5,8 @@ from utils.hardhat_helpers import get_last_tx_revert_reason
 
 import constants
 
+NODE_OPERATOR_ID = 0
+
 
 def test_deploy(owner, easy_track, calls_script, EVMScriptExecutor):
     "Must deploy contract with correct data"
@@ -56,7 +58,7 @@ def test_execute_evm_script_revert_msg(
                         increase_node_operator_staking_limit.address,
                         increase_node_operator_staking_limit.createEVMScript.encode_input(
                             node_operator,
-                            "0x" + encode(["uint256", "uint256"], [1, 500]).hex(),
+                            "0x" + encode(["uint256", "uint256"], [NODE_OPERATOR_ID, 500]).hex(),
                         ),
                     )
                 ]
@@ -72,7 +74,7 @@ def test_execute_evm_script_output(easy_track, evm_script_executor, node_operato
         [
             (
                 node_operators_registry_stub.address,
-                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(1, 500),
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(NODE_OPERATOR_ID, 500),
             )
         ]
     )
@@ -97,7 +99,7 @@ def test_execute_evm_script_caller_validation(stranger, easy_track, evm_script_e
         [
             (
                 node_operators_registry_stub.address,
-                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(1, 500),
+                node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input(NODE_OPERATOR_ID, 500),
             )
         ]
     )
