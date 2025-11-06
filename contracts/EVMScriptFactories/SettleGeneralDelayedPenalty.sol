@@ -10,8 +10,8 @@ import "../interfaces/ICSModule.sol";
 import "../interfaces/ICSAccounting.sol";
 
 /// @author vgorkavenko
-/// @notice Creates EVMScript to settle EL stealing penalty for a specific node operators on CSM
-contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to settle general delayed penalty for a specific node operators
+contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERRORS
@@ -32,26 +32,26 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of CSModule
-    ICSModule public immutable csm;
+    /// @notice Address of Module Contract
+    ICSModule public immutable module;
     ICSAccounting public immutable accounting;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _csm)
+    constructor(address _trustedCaller, address _module)
         TrustedCaller(_trustedCaller)
     {
-        csm = ICSModule(_csm);
-        accounting = ICSAccounting(ICSModule(_csm).ACCOUNTING());
+        module = ICSModule(_module);
+        accounting = ICSAccounting(module.ACCOUNTING());
     }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to settle EL stealing penalty for the specific node operators on CSM
+    /// @notice Creates EVMScript to settle general delayed penalty for the specific node operators
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
@@ -67,15 +67,15 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                address(csm),
-                ICSModule.settleELRewardsStealingPenalty.selector,
+                address(module),
+                ICSModule.settleGeneralDelayedPenalty.selector,
                 _evmScriptCallData
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts
-    /// @return Node operator IDs and max amounts to settle EL stealing penalty
+    /// @return Node operator IDs and max amounts to settle general delayed penalty
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
@@ -105,7 +105,7 @@ contract CSMSettleElStealingPenalty is TrustedCaller, IEVMScriptFactory {
             nodeOperatorsIds.length == maxAmounts.length,
             ERROR_NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH
         );
-        uint256 nodeOperatorsCount = csm.getNodeOperatorsCount();
+        uint256 nodeOperatorsCount = module.getNodeOperatorsCount();
         for (uint256 i = 0; i < nodeOperatorsIds.length; ++i) {
             (uint256 nodeOperatorId, uint256 maxAmount) = (nodeOperatorsIds[i], maxAmounts[i]);
             require(nodeOperatorId < nodeOperatorsCount, ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID);

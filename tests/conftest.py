@@ -9,6 +9,7 @@ from brownie import web3
 import constants
 from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
+from utils.cm import contracts as cm_contracts_
 from utils import deployed_date_time
 from utils.test_helpers import set_account_balance
 
@@ -106,6 +107,11 @@ def lido_contracts():
 @pytest.fixture(scope="module")
 def csm_contracts():
     return csm_contracts_(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def cm_contracts():
+    return cm_contracts_(network=brownie.network.show_active())
 
 
 @pytest.fixture(scope="module")
@@ -348,6 +354,11 @@ def node_operators_registry(lido_contracts, agent):
 @pytest.fixture(scope="module")
 def cs_module(csm_contracts):
     return csm_contracts.module
+
+
+@pytest.fixture(scope="module")
+def curated_module(cm_contracts):
+    return cm_contracts.curated_module
 
 
 @pytest.fixture(scope="module")

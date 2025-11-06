@@ -12,7 +12,7 @@ interface ICSModule {
     /// @dev Should be called by the Easy Track
     /// @param nodeOperatorIds IDs of the Node Operators
     /// @param maxAmounts Maximum amounts to settle for each Node Operator
-    function settleELRewardsStealingPenalty(
+    function settleGeneralDelayedPenalty(
         uint256[] memory nodeOperatorIds,
         uint256[] memory maxAmounts
     ) external;
