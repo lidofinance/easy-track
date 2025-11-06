@@ -44,7 +44,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         TrustedCaller(_trustedCaller)
     {
         module = ICSModule(_module);
-        accounting = ICSAccounting(module.ACCOUNTING());
+        accounting = ICSAccounting(ICSModule(_module).ACCOUNTING());
     }
 
     // -------------
