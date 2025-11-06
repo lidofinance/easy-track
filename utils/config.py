@@ -22,7 +22,7 @@ def get_is_live():
     return network.show_active() not in dev_networks
 
 
-def get_deployer_account(is_live, network="mainnet"):
+def get_deployer_account(is_live, network="mainnet", dev_ldo_transfer=True):
     if not is_live:
         deployer = accounts[0]
         contracts = lido.contracts(network=network)
