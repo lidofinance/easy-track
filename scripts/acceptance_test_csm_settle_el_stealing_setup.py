@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from brownie import chain, CSMSettleElStealingPenalty
+from brownie import chain, SettleGeneralDelayedPenalty
 
 from utils import log
 
@@ -35,8 +35,8 @@ def main():
 
     log.br()
 
-    settle_el_stealing_factory = CSMSettleElStealingPenalty.at(tx.contract_address)
-    log.nb('CSMSettleElStealingPenalty address (from tx)', settle_el_stealing_factory)
+    settle_el_stealing_factory = SettleGeneralDelayedPenalty.at(tx.contract_address)
+    log.nb('SettleGeneralDelayedPenalty address (from tx)', settle_el_stealing_factory)
 
     log.br()
 

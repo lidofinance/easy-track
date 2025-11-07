@@ -3,7 +3,7 @@ import os
 
 from brownie import (
     chain,
-    CSMSettleElStealingPenalty,
+    SettleGeneralDelayedPenalty,
     web3,
 )
 
@@ -62,17 +62,17 @@ def main():
 
     deployment_artifacts = {}
 
-    # CSMSettleElStealingPenalty
-    csm_settle_el_stealing_penalty = CSMSettleElStealingPenalty.deploy(
+    # SettleGeneralDelayedPenalty
+    csm_settle_el_stealing_penalty = SettleGeneralDelayedPenalty.deploy(
         trusted_caller, cs_module.address, {"from": deployer}
     )
-    deployment_artifacts["CSMSettleElStealingPenalty"] = {
-        "contract": "CSMSettleElStealingPenalty",
+    deployment_artifacts["SettleGeneralDelayedPenalty"] = {
+        "contract": "SettleGeneralDelayedPenalty",
         "address": csm_settle_el_stealing_penalty.address,
         "constructorArgs": [trusted_caller, cs_module.address],
     }
 
-    log.ok("Deployed CSMSettleElStealingPenalty", csm_settle_el_stealing_penalty.address)
+    log.ok("Deployed SettleGeneralDelayedPenalty", csm_settle_el_stealing_penalty.address)
 
     log.br()
     log.nb("All factories have been deployed.")
@@ -84,6 +84,6 @@ def main():
     log.nb("Starting code verification.")
     log.br()
 
-    CSMSettleElStealingPenalty.publish_source(csm_settle_el_stealing_penalty)
+    SettleGeneralDelayedPenalty.publish_source(csm_settle_el_stealing_penalty)
 
     log.br()
