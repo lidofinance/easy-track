@@ -26,13 +26,28 @@ def get_trusted_caller():
     return trusted_caller
 
 
+def get_factory_name():
+    if "FACTORY_NAME" not in os.environ:
+        raise EnvironmentError("Please set FACTORY_NAME env variable")
+
+    factory_name = os.environ["FACTORY_NAME"]
+
+    if not factory_name:
+        raise ValueError("Factory name cannot be empty")
+    if not isinstance(factory_name, str):
+        raise TypeError("Factory name must be a string")
+
+    return factory_name
+
+
 def main():
     network_name = get_network_name()
     csm_contracts = csm.contracts(network=network_name)
 
     deployer = get_deployer_account(get_is_live(), network=network_name)
     trusted_caller = get_trusted_caller()
-    cs_module = csm_contracts.module
+    factory_name = get_factory_name()
+    module = csm_contracts.module
 
     log.br()
 
@@ -46,8 +61,9 @@ def main():
 
     log.br()
 
-    log.ok("CSModule module address", cs_module)
     log.ok("Trusted caller", trusted_caller)
+    log.ok("Factory name", factory_name)
+    log.ok("Module address", module)
 
     log.br()
 
@@ -63,20 +79,20 @@ def main():
     deployment_artifacts = {}
 
     # SettleGeneralDelayedPenalty
-    csm_settle_el_stealing_penalty = SettleGeneralDelayedPenalty.deploy(
-        trusted_caller, cs_module.address, {"from": deployer}
+    settle_general_delayed_penalty = SettleGeneralDelayedPenalty.deploy(
+        trusted_caller, module.address, {"from": deployer}
     )
     deployment_artifacts["SettleGeneralDelayedPenalty"] = {
         "contract": "SettleGeneralDelayedPenalty",
-        "address": csm_settle_el_stealing_penalty.address,
-        "constructorArgs": [trusted_caller, cs_module.address],
+        "address": settle_general_delayed_penalty.address,
+        "constructorArgs": [trusted_caller, module.address],
     }
 
-    log.ok("Deployed SettleGeneralDelayedPenalty", csm_settle_el_stealing_penalty.address)
+    log.ok("Deployed SettleGeneralDelayedPenalty", settle_general_delayed_penalty.address)
 
     log.br()
     log.nb("All factories have been deployed.")
-    log.nb("Saving atrifacts...")
+    log.nb("Saving artifacts...")
 
     with open(f"deployed-csm-{network_name}.json", "w") as outfile:
         json.dump(deployment_artifacts, outfile)
@@ -84,6 +100,6 @@ def main():
     log.nb("Starting code verification.")
     log.br()
 
-    SettleGeneralDelayedPenalty.publish_source(csm_settle_el_stealing_penalty)
+    SettleGeneralDelayedPenalty.publish_source(settle_general_delayed_penalty)
 
     log.br()
