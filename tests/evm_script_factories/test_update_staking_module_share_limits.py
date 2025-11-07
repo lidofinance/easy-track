@@ -65,7 +65,7 @@ def test_create_evm_script(owner, StakingRouterStub, UpdateStakingModuleShareLim
     assert evm_script == expected
 
 
-def test_reverts_if_current_values_changed(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
+def test_reverts_if_stake_share_limit_changed(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
     router = _deploy_router(owner, StakingRouterStub)
     factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
 
@@ -84,7 +84,25 @@ def test_reverts_if_current_values_changed(owner, StakingRouterStub, UpdateStaki
         factory.createEVMScript(owner, calldata)
 
 
-def test_reverts_when_stake_delta_exceeds_cap(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
+def test_reverts_if_priority_exit_threshold_changed(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
+    router = _deploy_router(owner, StakingRouterStub)
+    factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
+
+    calldata = _encode_module_payload(
+        CURRENT_STAKE_SHARE_LIMIT,
+        CURRENT_STAKE_SHARE_LIMIT,
+        CURRENT_PRIORITY_EXIT_SHARE,
+        CURRENT_PRIORITY_EXIT_SHARE + 100,
+    )
+
+    factory.createEVMScript(owner, calldata)
+    router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT, CURRENT_PRIORITY_EXIT_SHARE + 1)
+
+    with reverts("CURRENT_VALUES_MISMATCH"):
+        factory.createEVMScript(owner, calldata)
+
+
+def test_reverts_when_stake_share_limit_delta_exceeds_cap(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
     router = _deploy_router(owner, StakingRouterStub)
     factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
 
@@ -95,11 +113,11 @@ def test_reverts_when_stake_delta_exceeds_cap(owner, StakingRouterStub, UpdateSt
         CURRENT_PRIORITY_EXIT_SHARE,
     )
 
-    with reverts("SHARE_LIMITS"):
+    with reverts("STAKE_SHARE_LIMIT_DELTA_EXCEEDED"):
         factory.createEVMScript(owner, calldata)
 
 
-def test_reverts_when_priority_delta_exceeds_cap(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
+def test_reverts_when_priority_exit_threshold_delta_exceeds_cap(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
     router = _deploy_router(owner, StakingRouterStub)
     factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
 
@@ -110,7 +128,7 @@ def test_reverts_when_priority_delta_exceeds_cap(owner, StakingRouterStub, Updat
         CURRENT_PRIORITY_EXIT_SHARE - 201,
     )
 
-    with reverts("EXIT_THRESHOLD_LIMITS"):
+    with reverts("PRIORITY_EXIT_THRESHOLD_DELTA_EXCEEDED"):
         factory.createEVMScript(owner, calldata)
 
 
