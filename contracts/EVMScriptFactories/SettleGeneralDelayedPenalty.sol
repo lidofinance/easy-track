@@ -32,6 +32,9 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
+    /// @notice Alias for factory (e.g. "CSMv3")
+    string public name;
+
     /// @notice Address of Module Contract
     ICSModule public immutable module;
     ICSAccounting public immutable accounting;
@@ -40,9 +43,10 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _module)
+    constructor(address _trustedCaller, string memory _name, address _module)
         TrustedCaller(_trustedCaller)
     {
+        name = _name;
         module = ICSModule(_module);
         accounting = ICSAccounting(ICSModule(_module).ACCOUNTING());
     }

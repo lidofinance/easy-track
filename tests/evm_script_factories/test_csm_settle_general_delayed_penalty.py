@@ -5,13 +5,16 @@ from utils.evm_script import encode_call_script, encode_calldata
 from utils.test_helpers import set_account_balance
 
 
+TEST_FACTORY_NAME = "CSMv3"
+
+
 def create_calldata(ids, amounts):
     return encode_calldata(["uint256[]", "uint256[]"], [ids, amounts])
 
 
 @pytest.fixture(scope="module")
 def csm_settle_general_delayed_penalty_factory(owner, cs_module):
-    return SettleGeneralDelayedPenalty.deploy(owner, cs_module, {"from": owner})
+    return SettleGeneralDelayedPenalty.deploy(owner, TEST_FACTORY_NAME, cs_module, {"from": owner})
 
 
 @pytest.fixture()
@@ -45,6 +48,7 @@ def test_deploy(owner, cs_module, csm_settle_general_delayed_penalty_factory):
     "Must deploy contract with correct data"
     assert csm_settle_general_delayed_penalty_factory.trustedCaller() == owner
     assert csm_settle_general_delayed_penalty_factory.csm() == cs_module
+    assert csm_settle_general_delayed_penalty_factory.name() == TEST_FACTORY_NAME
 
 
 def test_create_evm_script_called_by_stranger(stranger, csm_settle_general_delayed_penalty_factory):
