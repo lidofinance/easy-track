@@ -5,7 +5,7 @@ from brownie import (
     chain,
     web3,
     accounts,
-    CSMSetVettedGateTree
+    SetMerkleGateTree
 )
 
 from utils import log
@@ -51,14 +51,14 @@ def get_factory_name():
     return factory_name
 
 
-def get_vetted_gate_address():
-    if "VETTED_GATE_ADDRESS" not in os.environ:
-        raise EnvironmentError("Please set VETTED_GATE_ADDRESS env variable")
-    vetted_gate_address = os.environ["VETTED_GATE_ADDRESS"]
+def get_merkle_gate_address():
+    if "MERKLE_GATE_ADDRESS" not in os.environ:
+        raise EnvironmentError("Please set MERKLE_GATE_ADDRESS env variable")
+    merkle_gate_address = os.environ["MERKLE_GATE_ADDRESS"]
 
-    assert web3.is_address(vetted_gate_address), "VettedGate address is not valid"
+    assert web3.is_address(merkle_gate_address), "MerkleGate address is not valid"
 
-    return vetted_gate_address
+    return merkle_gate_address
 
 
 def main():
@@ -70,7 +70,7 @@ def main():
     deployer = get_deployer_account(get_is_live(), network=network_name, dev_ldo_transfer=False)
     trusted_caller = get_trusted_caller()
     factory_name = get_factory_name()
-    vetted_gate_address = get_vetted_gate_address()
+    merkle_gate_address = get_merkle_gate_address()
 
     log.br()
 
@@ -83,7 +83,7 @@ def main():
 
     log.br()
 
-    log.ok("VettedGate address", vetted_gate_address)
+    log.ok("MerkleGate address", merkle_gate_address)
     log.ok("Trusted caller", trusted_caller)
     log.ok("Factory name", factory_name)
 
@@ -102,27 +102,27 @@ def main():
     # Gas parameters following project conventions
     tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
     
-    log.nb("Deploying CSMSetVettedGateTree...")
+    log.nb("Deploying SetMerkleGateTree...")
     
-    csm_set_vetted_gate_tree = CSMSetVettedGateTree.deploy(
+    set_merkle_gate_tree = SetMerkleGateTree.deploy(
         trusted_caller, 
         factory_name, 
-        vetted_gate_address, 
+        merkle_gate_address, 
         tx_params
     )
-    deployment_artifacts["CSMSetVettedGateTree"] = {
-        "contract": "CSMSetVettedGateTree",
-        "address": csm_set_vetted_gate_tree.address,
-        "constructorArgs": [trusted_caller, factory_name, vetted_gate_address],
+    deployment_artifacts["SetMerkleGateTree"] = {
+        "contract": "SetMerkleGateTree",
+        "address": set_merkle_gate_tree.address,
+        "constructorArgs": [trusted_caller, factory_name, merkle_gate_address],
     }
 
-    log.ok("Deployed CSMSetVettedGateTree", csm_set_vetted_gate_tree.address)
+    log.ok("Deployed SetMerkleGateTree", set_merkle_gate_tree.address)
 
     log.br()
     log.nb("All factories have been deployed.")
     log.nb("Saving artifacts...")
 
-    artifacts_path = f"deployed-csm-{network_name}.json"
+    artifacts_path = f"deployed-cm-{network_name}.json"
 
     if os.path.exists(artifacts_path):
         with open(artifacts_path, "r") as previous_artifacts:
@@ -136,6 +136,6 @@ def main():
         log.nb("Starting code verification.")
         log.br()
 
-        CSMSetVettedGateTree.publish_source(csm_set_vetted_gate_tree)
+        SetMerkleGateTree.publish_source(set_merkle_gate_tree)
 
     log.br()

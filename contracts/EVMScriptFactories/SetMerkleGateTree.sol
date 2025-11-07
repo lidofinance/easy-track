@@ -6,11 +6,11 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/IVettedGate.sol";
+import "../interfaces/IMerkleGate.sol";
 
 /// @author vgorkavenko
-/// @notice Creates EVMScript to set tree for CSM's VettedGate 
-contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to set tree for Module's Gate that implements IMerkleGate
+contract SetMerkleGateTree is TrustedCaller, IEVMScriptFactory {
 
     // -------------
     // ERRORS
@@ -32,25 +32,25 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     /// @notice Alias for factory (e.g. "IdentifiedCommunityStakerSetTreeParams")
     string public name;
 
-    /// @notice Address of VettedGate
-    IVettedGate public immutable vettedGate;
+    /// @notice Address of Module's Gate that implements IMerkleGate
+    IMerkleGate public immutable merkleGate;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, string memory _name, address _vettedGate)
+    constructor(address _trustedCaller, string memory _name, address _merkleGate)
         TrustedCaller(_trustedCaller)
     {
         name = _name;
-        vettedGate = IVettedGate(_vettedGate);
+        merkleGate = IMerkleGate(_merkleGate);
     }
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to set treeRoot and treeCid for CSM's VettedGate
+    /// @notice Creates EVMScript to set treeRoot and treeCid for Module's Gate
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded: bytes32 treeRoot and string treeCid
     function createEVMScript(address _creator, bytes calldata _evmScriptCallData)
@@ -66,8 +66,8 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                address(vettedGate),
-                IVettedGate.setTreeParams.selector,
+                address(merkleGate),
+                IMerkleGate.setTreeParams.selector,
                 _evmScriptCallData
             );
     }
@@ -102,7 +102,7 @@ contract CSMSetVettedGateTree is TrustedCaller, IEVMScriptFactory {
     ) private view {
         require(treeRoot != bytes32(0), ERROR_EMPTY_TREE_ROOT);
         require(bytes(treeCid).length > 0, ERROR_EMPTY_TREE_CID);
-        require(treeRoot != vettedGate.treeRoot(), ERROR_SAME_TREE_ROOT);
-        require(keccak256(bytes(treeCid)) != keccak256(bytes(vettedGate.treeCid())), ERROR_SAME_TREE_CID);
+        require(treeRoot != merkleGate.treeRoot(), ERROR_SAME_TREE_ROOT);
+        require(keccak256(bytes(treeCid)) != keccak256(bytes(merkleGate.treeCid())), ERROR_SAME_TREE_CID);
     }
 }
