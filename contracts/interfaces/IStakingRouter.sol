@@ -24,4 +24,10 @@ interface IStakingRouter {
     function getStakingModule(
         uint256 _stakingModuleId
     ) external view returns (StakingModule memory);
+
+    function updateModuleShares(
+        uint256 _stakingModuleId,
+        uint16 _newStakeShareLimit,
+        uint16 _newPriorityExitShareThreshold
+    ) external;
 }
