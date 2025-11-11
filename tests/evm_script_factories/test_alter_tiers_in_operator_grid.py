@@ -162,7 +162,7 @@ def test_forced_rebalance_threshold_too_high(owner, alter_tiers_in_operator_grid
     operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
 
     tier_ids = [1]
-    tier_params = [(1000, 200, 300, 50, 40, 10)]  # forcedRebalanceThresholdBP > reserveRatioBP
+    tier_params = [(1000, 200, 300, 50, 40, 10)]  # forcedRebalanceThresholdBP (300) > reserveRatioBP (200)
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("FORCED_REBALANCE_THRESHOLD_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
@@ -178,10 +178,44 @@ def test_forced_rebalance_threshold_equals_reserve_ratio(owner, alter_tiers_in_o
     operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
 
     tier_ids = [1]
-    tier_params = [(1000, 200, 200, 50, 40, 10)]  # forcedRebalanceThresholdBP == reserveRatioBP
+    tier_params = [(1000, 200, 200, 50, 40, 10)]  # forcedRebalanceThresholdBP == reserveRatioBP (200 + 10 = 210 > 200)
     CALLDATA = create_calldata(tier_ids, tier_params)
     with reverts("FORCED_REBALANCE_THRESHOLD_TOO_HIGH"):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_within_10bp_of_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold is within 10 BP of reserve ratio"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [1]
+    tier_params = [(1000, 200, 191, 50, 40, 10)]  # forcedRebalanceThresholdBP + 10 = 201 > reserveRatioBP (200)
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts("FORCED_REBALANCE_THRESHOLD_TOO_HIGH"):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_exactly_10bp_below_reserve_ratio(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must pass if forced rebalance threshold is exactly at the boundary (reserveRatioBP - 10)"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    # First register a group and tier to alter
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [1]
+    tier_params = [(1000, 200, 189, 50, 40, 10)]  # forcedRebalanceThresholdBP + 10 = 199 < reserveRatioBP (200)
+    CALLDATA = create_calldata(tier_ids, tier_params)
+
+    # Should not revert
+    evm_script = alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+    assert len(evm_script) > 0
 
 
 def test_infra_fee_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):

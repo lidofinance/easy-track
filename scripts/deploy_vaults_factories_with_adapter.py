@@ -57,6 +57,7 @@ def main():
     log.nb("Trusted caller", trusted_caller)
     log.nb("EVMScriptExecutor", evmScriptExecutor)
     log.nb("Deployed Lido Locator", lido_locator)
+    log.nb("Initial validator exit fee limit", INITIAL_VALIDATOR_EXIT_FEE_LIMIT)
 
     log.br()
 

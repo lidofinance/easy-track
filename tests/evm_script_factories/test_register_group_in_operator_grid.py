@@ -234,10 +234,32 @@ def test_forced_rebalance_threshold_equals_reserve_ratio(owner, register_groups_
     "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold equals reserve ratio"
     operator = "0x0000000000000000000000000000000000000001"
     share_limit = 1000
-    tiers = [[(1000, 200, 200, 50, 40, 10)]]  # forcedRebalanceThresholdBP (200) == reserveRatioBP (200)
+    tiers = [[(1000, 200, 200, 50, 40, 10)]]  # forcedRebalanceThresholdBP (200) == reserveRatioBP (200), 200 + 10 = 210 > 200
     CALLDATA = create_calldata([operator], [share_limit], tiers)
     with reverts('FORCED_REBALANCE_THRESHOLD_TOO_HIGH'):
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_within_10bp_of_reserve_ratio(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'FORCED_REBALANCE_THRESHOLD_TOO_HIGH' if forced rebalance threshold is within 10 BP of reserve ratio"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 191, 50, 40, 10)]]  # forcedRebalanceThresholdBP + 10 = 201 > reserveRatioBP (200)
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+    with reverts('FORCED_REBALANCE_THRESHOLD_TOO_HIGH'):
+        register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
+def test_forced_rebalance_threshold_exactly_10bp_below_reserve_ratio(owner, register_groups_in_operator_grid_factory):
+    "Must pass if forced rebalance threshold is exactly at the boundary (reserveRatioBP - 10)"
+    operator = "0x0000000000000000000000000000000000000001"
+    share_limit = 1000
+    tiers = [[(1000, 200, 189, 50, 40, 10)]]  # forcedRebalanceThresholdBP + 10 = 199 < reserveRatioBP (200)
+    CALLDATA = create_calldata([operator], [share_limit], tiers)
+
+    # Should not revert
+    evm_script = register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+    assert len(evm_script) > 0
 
 
 def test_infra_fee_too_high(owner, register_groups_in_operator_grid_factory):
