@@ -3,14 +3,17 @@ __pycache__
 .hypothesis/
 build/
 reports/
+typings/
 .DS_Store
 .env
 /venv
+.direnv
 .vscode
 .pytest_cache
 node_modules
 /contracts_flattened
 logs
 cache
+tags
 .idea/
 .yarn/
