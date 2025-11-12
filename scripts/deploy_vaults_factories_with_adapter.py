@@ -22,28 +22,20 @@ from utils.config import (
     get_network_name,
 )
 
-from utils.constants import INITIAL_VALIDATOR_EXIT_FEE_LIMIT
-
-
-def get_trusted_caller():
-    if "TRUSTED_CALLER" not in os.environ:
-        raise EnvironmentError("Please set TRUSTED_CALLER env variable")
-    trusted_caller = os.environ["TRUSTED_CALLER"]
-
-    assert web3.is_address(trusted_caller), "Trusted caller address is not valid"
-
-    return trusted_caller
+from utils.constants import get_network_config
 
 
 def main():
     network_name = get_network_name()
 
+    # Get Lido addresses
     addresses = lido.addresses(network=network_name)
-    deployer = get_deployer_account(get_is_live(), network=network_name)
-    trusted_caller = get_trusted_caller()
-
     lido_locator = addresses.locator
     evmScriptExecutor = addresses.evm_script_executor
+    # Get deployer account
+    deployer = get_deployer_account(get_is_live(), network=network_name)
+    # Get network config
+    config = get_network_config(network_name)
 
     log.br()
 
@@ -54,10 +46,10 @@ def main():
 
     log.br()
 
-    log.nb("Trusted caller", trusted_caller)
+    log.nb("stVaults Committee", config.st_vaults_committee)
     log.nb("EVMScriptExecutor", evmScriptExecutor)
     log.nb("Deployed Lido Locator", lido_locator)
-    log.nb("Initial validator exit fee limit", INITIAL_VALIDATOR_EXIT_FEE_LIMIT)
+    log.nb("Initial validator exit fee limit", config.validator_exit_fee_limit)
 
     log.br()
 
@@ -74,7 +66,7 @@ def main():
 
     deploy_vault_hub_factories(
         network_name,
-        trusted_caller,
+        config,
         lido_locator,
         evmScriptExecutor,
         tx_params,
@@ -83,7 +75,7 @@ def main():
 
 def deploy_vault_hub_factories(
     network_name,
-    trusted_caller,
+    config,
     lido_locator,
     evmScriptExecutor,
     tx_params,
@@ -91,31 +83,31 @@ def deploy_vault_hub_factories(
     deployment_artifacts = {}
 
     # VaultsAdapter
-    adapter = VaultsAdapter.deploy(trusted_caller, lido_locator, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT, tx_params)
+    adapter = VaultsAdapter.deploy(config.st_vaults_committee, lido_locator, evmScriptExecutor, config.validator_exit_fee_limit, tx_params)
     deployment_artifacts["VaultsAdapter"] = {
         "contract": "VaultsAdapter",
         "address": adapter.address,
-        "constructorArgs": [trusted_caller, lido_locator, evmScriptExecutor, INITIAL_VALIDATOR_EXIT_FEE_LIMIT],
+        "constructorArgs": [config.st_vaults_committee, lido_locator, evmScriptExecutor, config.validator_exit_fee_limit],
     }
     log.ok("Deployed VaultsAdapter", adapter.address)
 
     # SetJailStatusInOperatorGrid
     set_jail_status_in_operator_grid = SetJailStatusInOperatorGrid.deploy(
-        trusted_caller,
+        config.st_vaults_committee,
         adapter.address,
         tx_params,
     )
     deployment_artifacts["SetJailStatusInOperatorGrid"] = {
         "contract": "SetJailStatusInOperatorGrid",
         "address": set_jail_status_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, adapter.address],
+        "constructorArgs": [config.st_vaults_committee, adapter.address],
     }
 
     log.ok("Deployed SetJailStatusInOperatorGrid", set_jail_status_in_operator_grid.address)
 
     # UpdateVaultsFeesInOperatorGrid
     update_vaults_fees_in_operator_grid = UpdateVaultsFeesInOperatorGrid.deploy(
-        trusted_caller,
+        config.st_vaults_committee,
         adapter.address,
         lido_locator,
         tx_params,
@@ -123,57 +115,57 @@ def deploy_vault_hub_factories(
     deployment_artifacts["UpdateVaultsFeesInOperatorGrid"] = {
         "contract": "UpdateVaultsFeesInOperatorGrid",
         "address": update_vaults_fees_in_operator_grid.address,
-        "constructorArgs": [trusted_caller, adapter.address, lido_locator],
+        "constructorArgs": [config.st_vaults_committee, adapter.address, lido_locator],
     }
 
     log.ok("Deployed UpdateVaultsFeesInOperatorGrid", update_vaults_fees_in_operator_grid.address)
 
     # ForceValidatorExitsInVaultHub
     force_validator_exits_in_vault_hub = ForceValidatorExitsInVaultHub.deploy(
-        trusted_caller,
+        config.st_vaults_committee,
         adapter.address,
         tx_params,
     )
     deployment_artifacts["ForceValidatorExitsInVaultHub"] = {
         "contract": "ForceValidatorExitsInVaultHub",
         "address": force_validator_exits_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, adapter.address],
+        "constructorArgs": [config.st_vaults_committee, adapter.address],
     }
 
     log.ok("Deployed ForceValidatorExitsInVaultHub", force_validator_exits_in_vault_hub.address)
 
     # SocializeBadDebtInVaultHub
     socialize_bad_debt_in_vault_hub = SocializeBadDebtInVaultHub.deploy(
-        trusted_caller,
+        config.st_vaults_committee,
         adapter.address,
         tx_params,
     )
     deployment_artifacts["SocializeBadDebtInVaultHub"] = {
         "contract": "SocializeBadDebtInVaultHub",
         "address": socialize_bad_debt_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, adapter.address],
+        "constructorArgs": [config.st_vaults_committee, adapter.address],
     }
 
     log.ok("Deployed SocializeBadDebtInVaultHub", socialize_bad_debt_in_vault_hub.address)
 
     # SetLiabilitySharesTargetInVaultHub
     set_liability_shares_target_in_vault_hub = SetLiabilitySharesTargetInVaultHub.deploy(
-        trusted_caller,
+        config.st_vaults_committee,
         adapter.address,
         tx_params,
     )
     deployment_artifacts["SetLiabilitySharesTargetInVaultHub"] = {
         "contract": "SetLiabilitySharesTargetInVaultHub",
         "address": set_liability_shares_target_in_vault_hub.address,
-        "constructorArgs": [trusted_caller, adapter.address],
+        "constructorArgs": [config.st_vaults_committee, adapter.address],
     }
 
     log.ok("Deployed SetLiabilitySharesTargetInVaultHub", set_liability_shares_target_in_vault_hub.address)
 
     log.br()
-    log.ok(f"All Vault Hub factories have been deployed. Saving artifacts...")
+    log.ok(f"All vaults factories with adapter have been deployed. Saving artifacts...")
 
-    filename = f"et-vault-hub-deployed-{network_name}.json"
+    filename = f"et-vaults-factories-with-adapter-deployed-{network_name}.json"
 
     with open(filename, "w") as outfile:
         json.dump(deployment_artifacts, outfile)
@@ -194,4 +186,4 @@ def deploy_vault_hub_factories(
     SetLiabilitySharesTargetInVaultHub.publish_source(set_liability_shares_target_in_vault_hub)
 
     log.br()
-    log.ok("All Vault Hub factories have been verified and published.")
+    log.ok("All vaults factories with adapter have been verified and published.")
