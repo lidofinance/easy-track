@@ -20,6 +20,8 @@ ValidatorWithdrawalInfo = namedtuple(
     ],
 )
 
+FACTORY_NAME = "MY_LOVELY_FACTORY"
+
 
 def create_calldata(values: Iterable[ValidatorWithdrawalInfo]):
     return encode_calldata("(uint256,uint256,uint256,uint256)[]", [values])
@@ -36,6 +38,7 @@ def module(owner):
 def factory(owner, module):
     return SubmitWithdrawals.deploy(
         owner,
+        FACTORY_NAME,
         module,
         {"from": owner},
     )
@@ -43,6 +46,7 @@ def factory(owner, module):
 
 def test_deploy(owner, module, factory):
     assert factory.trustedCaller() == owner
+    assert factory.name() == FACTORY_NAME
     assert factory.module() == module
 
 

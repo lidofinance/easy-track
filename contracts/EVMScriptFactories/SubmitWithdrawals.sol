@@ -22,6 +22,9 @@ contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
+    // @notice Alias for the factory.
+    string public name;
+
     /// @notice Address of the module.
     ICSModule public immutable module;
 
@@ -29,7 +32,12 @@ contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _module) TrustedCaller(_trustedCaller) {
+    constructor(
+        address _trustedCaller,
+        string memory _name,
+        address _module
+    ) TrustedCaller(_trustedCaller) {
+        name = _name;
         module = ICSModule(_module);
     }
 
