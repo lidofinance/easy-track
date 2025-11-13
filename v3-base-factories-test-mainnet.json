@@ -1,0 +1,64 @@
+{
+    "RegisterGroupsInOperatorGrid (Phase 1)": {
+        "contract": "RegisterGroupsInOperatorGrid",
+        "address": "0x65a166Cf16cF19A446Bb3bD1B2Df5f1a7A282fF4",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            50000000000000000000000
+        ]
+    },
+    "RegisterGroupsInOperatorGrid (Phase 2)": {
+        "contract": "RegisterGroupsInOperatorGrid",
+        "address": "0x13cAa6C043201f00bC4d05CCEF58a6F5c007CFaA",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            1000000000000000000000000
+        ]
+    },
+    "UpdateGroupsShareLimitInOperatorGrid (Phase 1)": {
+        "contract": "UpdateGroupsShareLimitInOperatorGrid",
+        "address": "0x8aF6973c70c45506DA2e9D068720b12F3D2d4A98",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            50000000000000000000000
+        ]
+    },
+    "UpdateGroupsShareLimitInOperatorGrid (Phase 2)": {
+        "contract": "UpdateGroupsShareLimitInOperatorGrid",
+        "address": "0xC6fe347678c73bA05E967C5d429b0069C267A983",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            1000000000000000000000000
+        ]
+    },
+    "RegisterTiersInOperatorGrid": {
+        "contract": "RegisterTiersInOperatorGrid",
+        "address": "0xB54a475203c001E0DeB78A7b9e3C1DDD67B9fF29",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb"
+        ]
+    },
+    "AlterTiersInOperatorGrid (Phase 1)": {
+        "contract": "AlterTiersInOperatorGrid",
+        "address": "0xEdCc480e10E324c87bcEd02b976e505D6733a123",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            0
+        ]
+    },
+    "AlterTiersInOperatorGrid (Phase 2)": {
+        "contract": "AlterTiersInOperatorGrid",
+        "address": "0x291884F184027d195d62627862f75337986fE273",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            1000000000000000000000000
+        ]
+    }
+}

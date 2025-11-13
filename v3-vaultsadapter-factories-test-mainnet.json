@@ -1,0 +1,53 @@
+{
+    "VaultsAdapter": {
+        "contract": "VaultsAdapter",
+        "address": "0x4CC57Fcb95429CBdC596824a40A92D1245FDb92b",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            "0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977",
+            100000000000000000
+        ]
+    },
+    "SetJailStatusInOperatorGrid": {
+        "contract": "SetJailStatusInOperatorGrid",
+        "address": "0x44993ad6e49e20e32F98CE7047ef4334BaFCbAf6",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x4CC57Fcb95429CBdC596824a40A92D1245FDb92b"
+        ]
+    },
+    "UpdateVaultsFeesInOperatorGrid": {
+        "contract": "UpdateVaultsFeesInOperatorGrid",
+        "address": "0x31D377D79D2de4042ffb52114701Cdb3E58522c8",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x4CC57Fcb95429CBdC596824a40A92D1245FDb92b",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb"
+        ]
+    },
+    "ForceValidatorExitsInVaultHub": {
+        "contract": "ForceValidatorExitsInVaultHub",
+        "address": "0xE551A1F085D9f7f553e6099B6Ee3c694551b238A",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x4CC57Fcb95429CBdC596824a40A92D1245FDb92b"
+        ]
+    },
+    "SocializeBadDebtInVaultHub": {
+        "contract": "SocializeBadDebtInVaultHub",
+        "address": "0x55F0fDAEA0759ddde67aBcf7F07Dd27b8376993b",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x4CC57Fcb95429CBdC596824a40A92D1245FDb92b"
+        ]
+    },
+    "SetLiabilitySharesTargetInVaultHub": {
+        "contract": "SetLiabilitySharesTargetInVaultHub",
+        "address": "0xFF576a593d83370e8674984958de8bE65D59e193",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x4CC57Fcb95429CBdC596824a40A92D1245FDb92b"
+        ]
+    }
+}
