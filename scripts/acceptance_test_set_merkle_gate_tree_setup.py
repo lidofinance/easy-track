@@ -8,14 +8,12 @@ from utils import log
 @dataclass
 class DeployConfig:
     trusted_caller: str
-    factory_name: str
-    merkle_gate_address: str
+    allowed_merkle_gates_registry: str
 
 
 deploy_config = DeployConfig(
     trusted_caller="",
-    factory_name="",
-    merkle_gate_address=""
+    allowed_merkle_gates_registry="",
 )
 
 
@@ -23,18 +21,14 @@ deployment_tx_hash = ""
 
 
 def main():
-
     tx = chain.get_transaction(deployment_tx_hash)
 
     log.br()
-
     log.nb("tx of creation", deployment_tx_hash)
 
     log.br()
-
     log.nb("trusted_caller", deploy_config.trusted_caller)
-    log.nb("factory_name", deploy_config.factory_name)
-    log.nb("merkle_gate_address", deploy_config.merkle_gate_address)
+    log.nb("allowed_merkle_gates_registry", deploy_config.allowed_merkle_gates_registry)
 
     log.br()
 
@@ -43,13 +37,10 @@ def main():
 
     log.br()
 
-    assert set_merkle_gate_tree_factory.merkleGate() == deploy_config.merkle_gate_address
-    log.nb('MerkleGate address is correct')
-
     assert set_merkle_gate_tree_factory.trustedCaller() == deploy_config.trusted_caller
     log.nb('Trusted caller is correct')
 
-    assert set_merkle_gate_tree_factory.name() == deploy_config.factory_name
-    log.nb('Factory name is correct')
+    assert set_merkle_gate_tree_factory.allowedMerkleGatesRegistry() == deploy_config.allowed_merkle_gates_registry
+    log.nb('AllowedMerkleGatesRegistry is correct')
 
     log.br()

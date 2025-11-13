@@ -2,9 +2,9 @@ import pytest
 from utils.evm_script import encode_calldata
 
 
-def create_calldata(tree_root, tree_cid):
+def create_calldata(gate, tree_root, tree_cid):
     """Helper function to create encoded calldata for setTreeParams"""
-    return encode_calldata(["bytes32", "string"], [tree_root, tree_cid])
+    return encode_calldata(["address", "bytes32", "string"], [gate, tree_root, tree_cid])
 
 @pytest.fixture(scope="module")
 def merkle_gate_stub(owner, et_contracts):
@@ -34,14 +34,17 @@ def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts,
     """
     Deploy the SetMerkleGateTree factory with the MerkleGateStub
     """
-    from brownie import SetMerkleGateTree
+    from brownie import SetMerkleGateTree, AllowedMerkleGatesRegistry
 
     # Deploy SetMerkleGateTree factory
+    # Deploy registry and list the gate
+    registry = owner.deploy(AllowedMerkleGatesRegistry, owner)
+    registry.addGate(merkle_gate_stub, "Scenario Gate", {"from": owner})
+
     factory = owner.deploy(
         SetMerkleGateTree,
         commitee_multisig,  # Trusted caller. It should be CSM committee multisig
-        "IdentifiedCommunityStakerSetTreeParams",
-        merkle_gate_stub.address
+        registry.address,
     )
 
     # And add the factory to EasyTrack to activate it. It should be done on CSM v2 voting
@@ -78,7 +81,7 @@ def test_csm_merkle_gate_scenario(
 
     for update in tree_updates:
         # Create EVM script for this update
-        evm_script_calldata = create_calldata(update["root"], update["cid"])
+        evm_script_calldata = create_calldata(merkle_gate_stub.address, update["root"], update["cid"])
         
         easytrack_executor(
             commitee_multisig, merkle_gate_set_tree_factory, evm_script_calldata
