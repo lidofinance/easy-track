@@ -5,7 +5,7 @@ pragma solidity 0.8.6;
 
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
-/// @title Registry of allowed merkle gates addresses of different Staking Modules
+/// @title Registry of allowed merkle gates addresses of Staking Module
 /// @notice Stores list of allowed addresses
 contract AllowedMerkleGatesRegistry is AccessControl {
     // -------------

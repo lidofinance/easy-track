@@ -31,6 +31,9 @@ contract SetMerkleGateTree is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
+    /// @notice Alias for factory (e.g. "CSMv3")
+    string public name;
+
     /// @notice Address of AllowedMerkleGatesRegistry contract
     IAllowedMerkleGatesRegistry public immutable allowedMerkleGatesRegistry;
 
@@ -38,9 +41,10 @@ contract SetMerkleGateTree is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _allowedMerkleGatesRegistry)
+    constructor(address _trustedCaller, string memory _name, address _allowedMerkleGatesRegistry)
         TrustedCaller(_trustedCaller)
     {
+        name = _name;
         allowedMerkleGatesRegistry = IAllowedMerkleGatesRegistry(_allowedMerkleGatesRegistry);
     }
 

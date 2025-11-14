@@ -44,6 +44,7 @@ def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts,
     factory = owner.deploy(
         SetMerkleGateTree,
         commitee_multisig,  # Trusted caller. It should be CSM committee multisig
+        "CSMv3",
         registry.address,
     )
 
@@ -58,7 +59,7 @@ def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts,
     return factory
 
 
-def test_csm_merkle_gate_scenario(
+def test_merkle_gate_scenario(
     commitee_multisig,
     merkle_gate_stub,
     merkle_gate_set_tree_factory,

@@ -1,8 +1,10 @@
 import pytest
-from brownie import reverts, SetMerkleGateTree, MerkleGateStub, AllowedMerkleGatesRegistry, ZERO_ADDRESS # type: ignore
+from brownie import reverts, SetMerkleGateTree, MerkleGateStub, AllowedMerkleGatesRegistry
 
 from utils.evm_script import encode_call_script, encode_calldata
-from utils.test_helpers import set_account_balance
+
+
+TEST_FACTORY_NAME = "CSMv3"
 
 def create_calldata(gate, tree_root, tree_cid):
     return encode_calldata(["address", "bytes32", "string"], [gate, tree_root, tree_cid])
@@ -27,13 +29,14 @@ def allowed_gates_registry(owner, merkle_gate_stub):
 
 @pytest.fixture(scope="module") 
 def set_merkle_gate_tree_factory(owner, allowed_gates_registry):
-    return SetMerkleGateTree.deploy(owner, allowed_gates_registry, {"from": owner})
+    return SetMerkleGateTree.deploy(owner, TEST_FACTORY_NAME, allowed_gates_registry, {"from": owner})
 
 
 def test_deploy(owner, allowed_gates_registry, set_merkle_gate_tree_factory):
     """Must deploy contract with correct data"""
     assert set_merkle_gate_tree_factory.trustedCaller() == owner
     assert set_merkle_gate_tree_factory.allowedMerkleGatesRegistry() == allowed_gates_registry
+    assert set_merkle_gate_tree_factory.name() == TEST_FACTORY_NAME
 
 
 def test_create_evm_script_called_by_stranger(stranger, set_merkle_gate_tree_factory):
