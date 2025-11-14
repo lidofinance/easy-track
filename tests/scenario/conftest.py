@@ -59,6 +59,8 @@ def easytrack_executor(et_contracts, stranger):
         )
         print("enactment costs: ", etx.gas_used)
 
+        return etx
+
     return helper
 
 

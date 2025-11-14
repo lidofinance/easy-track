@@ -8,7 +8,13 @@ import {ValidatorWithdrawalInfo} from "../interfaces/ICSModule.sol";
 contract CSLikeModuleStub {
     uint256 internal _nodeOperatorsCount;
 
-    function submitWithdrawals(ValidatorWithdrawalInfo[] calldata withdrawalsInfo) external {}
+    event GotWithdrawalInfo(ValidatorWithdrawalInfo info);
+
+    function submitWithdrawals(ValidatorWithdrawalInfo[] calldata withdrawalsInfo) external {
+        for (uint256 i; i < withdrawalsInfo.length; ++i) {
+            emit GotWithdrawalInfo(withdrawalsInfo[i]);
+        }
+    }
 
     function getNodeOperatorsCount() external view returns (uint256) {
         return _nodeOperatorsCount;
