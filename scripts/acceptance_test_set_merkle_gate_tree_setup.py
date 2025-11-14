@@ -9,11 +9,13 @@ from utils import log
 class DeployConfig:
     trusted_caller: str
     allowed_merkle_gates_registry: str
+    factory_name: str
 
 
 deploy_config = DeployConfig(
     trusted_caller="",
     allowed_merkle_gates_registry="",
+    factory_name="",
 )
 
 
@@ -29,6 +31,7 @@ def main():
     log.br()
     log.nb("trusted_caller", deploy_config.trusted_caller)
     log.nb("allowed_merkle_gates_registry", deploy_config.allowed_merkle_gates_registry)
+    log.nb("factory_name", deploy_config.factory_name)
 
     log.br()
 
@@ -42,5 +45,8 @@ def main():
 
     assert set_merkle_gate_tree_factory.allowedMerkleGatesRegistry() == deploy_config.allowed_merkle_gates_registry
     log.nb('AllowedMerkleGatesRegistry is correct')
+
+    assert set_merkle_gate_tree_factory.name() == deploy_config.factory_name
+    log.nb('Factory name is correct')
 
     log.br()
