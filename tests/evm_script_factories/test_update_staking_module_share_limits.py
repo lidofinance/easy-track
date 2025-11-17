@@ -6,7 +6,7 @@ from utils.evm_script import encode_call_script
 MODULE_ID = 3
 FACTORY_NAME = "Update module shares factory"
 CURRENT_STAKE_SHARE_LIMIT = 9_000
-CURRENT_PRIORITY_EXIT_SHARE = 500
+CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 500
 
 
 def _encode_module_payload(current_stake, new_stake, current_priority, new_priority):
@@ -29,7 +29,7 @@ def _deploy_factory(owner, staking_router, UpdateStakingModuleShareLimits):
 
 def _deploy_router(owner, StakingRouterStub):
     router = owner.deploy(StakingRouterStub)
-    router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT, CURRENT_PRIORITY_EXIT_SHARE)
+    router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT, CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD)
     return router
 
 
@@ -39,11 +39,11 @@ def test_create_evm_script(owner, StakingRouterStub, UpdateStakingModuleShareLim
     assert factory.trustedCaller() == owner
     assert factory.name() == FACTORY_NAME
     new_stake = CURRENT_STAKE_SHARE_LIMIT + 200
-    new_priority = CURRENT_PRIORITY_EXIT_SHARE - 150
+    new_priority = CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD - 150
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         new_stake,
-        CURRENT_PRIORITY_EXIT_SHARE,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
         new_priority,
     )
 
@@ -72,13 +72,13 @@ def test_reverts_if_stake_share_limit_changed(owner, StakingRouterStub, UpdateSt
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_STAKE_SHARE_LIMIT + 100,
-        CURRENT_PRIORITY_EXIT_SHARE,
-        CURRENT_PRIORITY_EXIT_SHARE,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
     )
 
     factory.createEVMScript(owner, calldata)
 
-    router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT + 1, CURRENT_PRIORITY_EXIT_SHARE)
+    router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT + 1, CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD)
 
     with reverts("CURRENT_VALUES_MISMATCH"):
         factory.createEVMScript(owner, calldata)
@@ -91,12 +91,16 @@ def test_reverts_if_priority_exit_threshold_changed(owner, StakingRouterStub, Up
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_STAKE_SHARE_LIMIT,
-        CURRENT_PRIORITY_EXIT_SHARE,
-        CURRENT_PRIORITY_EXIT_SHARE + 100,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD + 100,
     )
 
     factory.createEVMScript(owner, calldata)
-    router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT, CURRENT_PRIORITY_EXIT_SHARE + 1)
+    router.setModuleShares(
+        MODULE_ID,
+        CURRENT_STAKE_SHARE_LIMIT,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD + 1,
+    )
 
     with reverts("CURRENT_VALUES_MISMATCH"):
         factory.createEVMScript(owner, calldata)
@@ -109,8 +113,8 @@ def test_reverts_when_stake_share_limit_delta_exceeds_cap(owner, StakingRouterSt
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_STAKE_SHARE_LIMIT + 501,
-        CURRENT_PRIORITY_EXIT_SHARE,
-        CURRENT_PRIORITY_EXIT_SHARE,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
     )
 
     with reverts("STAKE_SHARE_LIMIT_DELTA_EXCEEDED"):
@@ -124,11 +128,11 @@ def test_reverts_when_priority_exit_threshold_delta_exceeds_cap(owner, StakingRo
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_STAKE_SHARE_LIMIT,
-        CURRENT_PRIORITY_EXIT_SHARE,
-        CURRENT_PRIORITY_EXIT_SHARE - 201,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD - 201,
     )
 
-    with reverts("PRIORITY_EXIT_THRESHOLD_DELTA_EXCEEDED"):
+    with reverts("PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED"):
         factory.createEVMScript(owner, calldata)
 
 
@@ -139,8 +143,8 @@ def test_reverts_when_no_changes(owner, StakingRouterStub, UpdateStakingModuleSh
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_STAKE_SHARE_LIMIT,
-        CURRENT_PRIORITY_EXIT_SHARE,
-        CURRENT_PRIORITY_EXIT_SHARE,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
     )
 
     with reverts("NO_CHANGES"):
@@ -163,8 +167,8 @@ def test_only_trusted_caller(owner, stranger, StakingRouterStub, UpdateStakingMo
     calldata = _encode_module_payload(
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_STAKE_SHARE_LIMIT + 100,
-        CURRENT_PRIORITY_EXIT_SHARE,
-        CURRENT_PRIORITY_EXIT_SHARE + 100,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD + 100,
     )
 
     with reverts("CALLER_IS_FORBIDDEN"):
