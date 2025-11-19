@@ -39,6 +39,19 @@ def test_add_gate_success(allowed_merkle_gates_registry, merkle_gate_with_interf
     assert tx.events["GateAdded"]["_title"] == GATE_TITLE
 
 
+def test_add_gate_preserves_insertion_order(allowed_merkle_gates_registry, owner, MerkleGateStub):
+    registry, admin = allowed_merkle_gates_registry
+
+    gate_list = []
+    for _ in range(10):
+        gate_list.append(owner.deploy(MerkleGateStub))
+
+    for gate in gate_list:
+        registry.addGate(gate, GATE_TITLE, {"from": admin})
+
+    assert registry.getAllowedGates() == gate_list
+
+
 def test_add_gate_duplicate_reverts(allowed_merkle_gates_registry, merkle_gate_with_interface):
     registry, admin = allowed_merkle_gates_registry
 
@@ -61,18 +74,25 @@ def test_remove_gate_success(allowed_merkle_gates_registry, merkle_gate_with_int
     assert tx.events["GateRemoved"]["_gate"] == merkle_gate_with_interface
 
 
-def test_remove_not_last_gate_uses_swap_and_pop(allowed_merkle_gates_registry, merkle_gate_with_interface, owner, MerkleGateStub):
+def test_remove_not_last_gate_uses_swap_and_pop(allowed_merkle_gates_registry, owner, MerkleGateStub):
     registry, admin = allowed_merkle_gates_registry
 
-    # deploy second gate
-    second_gate = owner.deploy(MerkleGateStub)
+    gate_list = []
+    for _ in range(10):
+        gate_list.append(owner.deploy(MerkleGateStub))
 
-    registry.addGate(merkle_gate_with_interface, GATE_TITLE, {"from": admin})
-    registry.addGate(second_gate, GATE_TITLE, {"from": admin})
+    for gate in gate_list:
+        registry.addGate(gate, GATE_TITLE, {"from": admin})
 
-    # Remove the first one; second should be left at index 0
-    registry.removeGate(merkle_gate_with_interface, {"from": admin})
-    assert registry.getAllowedGates() == [second_gate]
+    def swap_and_pop(gate_list: list, idx):
+        gate_list[idx] = gate_list[-1]
+        gate_list.pop(-1)
+
+    for idx in (0, 1, 3, 4):
+        registry.removeGate(gate_list[idx], {"from": admin})
+        swap_and_pop(gate_list, idx)
+
+        assert registry.getAllowedGates() == gate_list
 
 
 def test_remove_missing_gate_reverts(allowed_merkle_gates_registry, merkle_gate_with_interface):
