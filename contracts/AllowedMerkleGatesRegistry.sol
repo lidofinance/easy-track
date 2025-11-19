@@ -27,7 +27,7 @@ contract AllowedMerkleGatesRegistry is AccessControl {
     // -------------
 
     /// @dev List of allowed gates
-    address[] public allowedGates;
+    address[] private allowedGates;
 
     // Position of the address in the `allowedGates` array,
     // plus 1 because index 0 means a value is not in the set.
