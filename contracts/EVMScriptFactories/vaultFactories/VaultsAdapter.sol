@@ -108,11 +108,8 @@ contract VaultsAdapter is TrustedCaller {
     function setVaultJailStatus(address _vault, bool _isInJail) external {
         require(msg.sender == evmScriptExecutor, ERROR_ONLY_EVM_SCRIPT_EXECUTOR);
 
-        IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
         IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
-        if (!vaultHub.isVaultConnected(_vault) || // vault is not connected to hub
-            vaultHub.isPendingDisconnect(_vault) || // vault is disconnecting
-            operatorGrid.isVaultInJail(_vault) == _isInJail) { // status is already the same
+        if (operatorGrid.isVaultInJail(_vault) == _isInJail) { // status is already the same
             emit VaultJailStatusUpdateFailed(_vault, _isInJail);
             return;
         }

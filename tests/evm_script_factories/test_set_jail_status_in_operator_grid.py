@@ -87,11 +87,7 @@ def test_create_evm_script(owner, accounts, set_jail_status_factory, adapter):
 def test_same_jail_status_fails(owner, accounts, adapter, lido_locator_stub):
     "Must emit VaultJailStatusUpdateFailed if current status equals new status"
     operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
-    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
     vault = accounts[5]
-
-    # Connect vault first
-    vault_hub_stub.connectVault(vault, {"from": owner})
 
     # Set initial jail status to True
     operator_grid_stub.setVaultJailStatus(vault, True, {"from": owner})
