@@ -112,3 +112,22 @@ def test_decode_evm_script_call_data(accounts, set_jail_status_factory):
     for i in range(len(vaults)):
         assert decoded_vaults[i] == vaults[i]
         assert decoded_jail_statuses[i] == jail_statuses[i]
+
+def test_can_set_jail_status_on_disconnected_vault(owner, accounts, adapter, lido_locator_stub):
+    "Must allow setting jail status on disconnected vault (vault not connected to VaultHub)"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
+    vault = accounts[7]
+
+    # Verify vault is NOT connected (never connected)
+    assert vault_hub_stub.isVaultConnected(vault) == False
+
+    # Set jail status on disconnected vault - should succeed
+    # This works because setVaultJailStatus doesn't check vault connection status
+    tx = adapter.setVaultJailStatus(vault, True, {"from": owner})
+
+    # Verify jail status was set
+    assert operator_grid_stub.isVaultInJail(vault) == True
+
+    # Check that VaultJailStatusUpdated event was emitted
+    assert "VaultJailStatusUpdated" in tx.events

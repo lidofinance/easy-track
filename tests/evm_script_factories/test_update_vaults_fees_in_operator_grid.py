@@ -2,6 +2,7 @@ import pytest
 from brownie import interface, reverts, UpdateVaultsFeesInOperatorGrid, VaultsAdapter, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 def create_calldata(vaults, infra_fees_bp, liquidity_fees_bp, reservation_fees_bp):
     return encode_calldata(
@@ -16,7 +17,8 @@ def adapter(owner, lido_locator_stub):
 
 @pytest.fixture(scope="module")
 def update_vaults_fees_factory(owner, adapter, lido_locator_stub):
-    factory = UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, lido_locator_stub, {"from": owner})
+    # Deploy with max fee limits: maxLiquidityFeeBP=10000, maxReservationFeeBP=10000, maxInfraFeeBP=10000 (100%)
+    factory = UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, lido_locator_stub, 10000, 10000, 10000, {"from": owner})
     return factory
 
 def test_deploy(owner, update_vaults_fees_factory, adapter, lido_locator_stub):
@@ -24,6 +26,9 @@ def test_deploy(owner, update_vaults_fees_factory, adapter, lido_locator_stub):
     assert update_vaults_fees_factory.trustedCaller() == owner
     assert update_vaults_fees_factory.vaultsAdapter() == adapter
     assert update_vaults_fees_factory.lidoLocator() == lido_locator_stub
+    assert update_vaults_fees_factory.maxLiquidityFeeBP() == 10000
+    assert update_vaults_fees_factory.maxReservationFeeBP() == 10000
+    assert update_vaults_fees_factory.maxInfraFeeBP() == 10000
     assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == owner
     assert adapter.evmScriptExecutor() == owner
@@ -217,3 +222,106 @@ def test_can_create_evm_script_with_fees_up_to_tier_limits(owner, stranger, upda
     CALLDATA_EXCEED = create_calldata([vault], [over_tier_infra_fee], [tier_liquidity_fee], [tier_reservation_fee])
     with reverts('INFRA_FEE_TOO_HIGH'):
         update_vaults_fees_factory.createEVMScript(owner, CALLDATA_EXCEED)
+
+def test_deploy_with_zero_adapter(owner, lido_locator_stub):
+    "Must revert with message 'ZERO_ADAPTER' if adapter is zero address"
+    revert_reason = 'ZERO_ADAPTER'
+    try:
+        with reverts(revert_reason):
+            owner.deploy(UpdateVaultsFeesInOperatorGrid, owner, ZERO_ADDRESS, lido_locator_stub, 10000, 10000, 10000)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
+
+def test_deploy_with_zero_lido_locator(owner, adapter):
+    "Must revert with message 'ZERO_LIDO_LOCATOR' if lido locator is zero address"
+    revert_reason = 'ZERO_LIDO_LOCATOR'
+    try:
+        with reverts(revert_reason):
+            owner.deploy(UpdateVaultsFeesInOperatorGrid, owner, adapter, ZERO_ADDRESS, 10000, 10000, 10000)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
+
+def test_deploy_with_max_liquidity_fee_too_high(owner, adapter, lido_locator_stub):
+    "Must revert with message 'LIQUIDITY_FEE_TOO_HIGH' if maxLiquidityFeeBP exceeds MAX_FEE_BP (type(uint16).max = 65535)"
+    MAX_FEE_BP = 65535
+    revert_reason = 'LIQUIDITY_FEE_TOO_HIGH'
+    try:
+        with reverts(revert_reason):
+            owner.deploy(UpdateVaultsFeesInOperatorGrid, owner, adapter, lido_locator_stub, MAX_FEE_BP + 1, 10000, 10000)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
+
+def test_deploy_with_max_reservation_fee_too_high(owner, adapter, lido_locator_stub):
+    "Must revert with message 'RESERVATION_FEE_TOO_HIGH' if maxReservationFeeBP exceeds MAX_FEE_BP (type(uint16).max = 65535)"
+    MAX_FEE_BP = 65535
+    revert_reason = 'RESERVATION_FEE_TOO_HIGH'
+    try:
+        with reverts(revert_reason):
+            owner.deploy(UpdateVaultsFeesInOperatorGrid, owner, adapter, lido_locator_stub, 10000, MAX_FEE_BP + 1, 10000)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
+
+def test_deploy_with_max_infra_fee_too_high(owner, adapter, lido_locator_stub):
+    "Must revert with message 'INFRA_FEE_TOO_HIGH' if maxInfraFeeBP exceeds MAX_FEE_BP (type(uint16).max = 65535)"
+    MAX_FEE_BP = 65535
+    revert_reason = 'INFRA_FEE_TOO_HIGH'
+    try:
+        with reverts(revert_reason):
+            owner.deploy(UpdateVaultsFeesInOperatorGrid, owner, adapter, lido_locator_stub, 10000, 10000, MAX_FEE_BP + 1)
+    except Exception as e:
+        if revert_reason != get_last_tx_revert_reason():
+            raise e
+
+def test_fees_exceed_max_limits(owner, stranger, adapter, lido_locator_stub):
+    "Must revert if any fee exceeds factory max limits even if within tier limits"
+    # Deploy factory with lower max limits: maxLiquidityFeeBP=3000, maxReservationFeeBP=2000, maxInfraFeeBP=4000
+    factory = UpdateVaultsFeesInOperatorGrid.deploy(owner, adapter, lido_locator_stub, 3000, 2000, 4000, {"from": owner})
+
+    vault_hub_stub = interface.IVaultHub(lido_locator_stub.vaultHub())
+    operator_grid = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    vault = stranger.address
+
+    # Register vault first
+    vault_hub_stub.connectVault(vault, {"from": owner})
+
+    # Create a custom tier with higher fee limits than factory max
+    node_operator = "0x0000000000000000000000000000000000000001"
+    operator_grid.registerGroup(node_operator, 10000, {"from": owner})
+
+    # Tier with fees: infra=5000, liquidity=4000, reservation=3000 (all higher than factory max)
+    tier_params = (10000, 200, 100, 5000, 4000, 3000)
+    operator_grid.registerTiers(node_operator, [tier_params], {"from": owner})
+
+    # Set vault to use tier 1 (the newly created tier)
+    operator_grid_stub = interface.IOperatorGridStub(lido_locator_stub.operatorGrid())
+    operator_grid_stub.setVaultTier(vault, 1, {"from": owner})
+
+    # Test infra fee exceeds factory max limit (4000) but within tier limit (5000)
+    CALLDATA1 = create_calldata([vault], [4001], [2000], [1000])
+    with reverts('INFRA_FEE_TOO_HIGH'):
+        factory.createEVMScript(owner, CALLDATA1)
+
+    # Test liquidity fee exceeds factory max limit (3000) but within tier limit (4000)
+    CALLDATA2 = create_calldata([vault], [3000], [3001], [1000])
+    with reverts('LIQUIDITY_FEE_TOO_HIGH'):
+        factory.createEVMScript(owner, CALLDATA2)
+
+    # Test reservation fee exceeds factory max limit (2000) but within tier limit (3000)
+    CALLDATA3 = create_calldata([vault], [3000], [2000], [2001])
+    with reverts('RESERVATION_FEE_TOO_HIGH'):
+        factory.createEVMScript(owner, CALLDATA3)
+
+    # Test fees at factory max limits - should succeed
+    CALLDATA4 = create_calldata([vault], [4000], [3000], [2000])
+    evm_script = factory.createEVMScript(owner, CALLDATA4)
+
+    expected_calls = [(
+        adapter.address,
+        adapter.updateVaultFees.encode_input(vault, 4000, 3000, 2000)
+    )]
+    expected_evm_script = encode_call_script(expected_calls)
+    assert evm_script == expected_evm_script

@@ -29,6 +29,13 @@ contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_RESERVATION_FEE_TOO_HIGH = "RESERVATION_FEE_TOO_HIGH";
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    /// @dev max value for fees in basis points - it's about 650%
+    uint256 internal constant MAX_FEE_BP = type(uint16).max;
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -38,17 +45,29 @@ contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     /// @notice Address of Lido Locator
     ILidoLocator public immutable lidoLocator;
 
+    /// @notice Maximum fee basis points
+    uint256 public immutable maxLiquidityFeeBP;
+    uint256 public immutable maxReservationFeeBP;
+    uint256 public immutable maxInfraFeeBP;
+
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _adapter, address _lidoLocator)
+    constructor(address _trustedCaller, address _adapter, address _lidoLocator, uint256 _maxLiquidityFeeBP, uint256 _maxReservationFeeBP, uint256 _maxInfraFeeBP)
         TrustedCaller(_trustedCaller)
     {
         require(_adapter != address(0), ERROR_ZERO_ADAPTER);
         require(_lidoLocator != address(0), ERROR_ZERO_LIDO_LOCATOR);
         vaultsAdapter = IVaultsAdapter(_adapter);
         lidoLocator = ILidoLocator(_lidoLocator);
+
+        require(_maxLiquidityFeeBP <= MAX_FEE_BP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
+        require(_maxReservationFeeBP <= MAX_FEE_BP, ERROR_RESERVATION_FEE_TOO_HIGH);
+        require(_maxInfraFeeBP <= MAX_FEE_BP, ERROR_INFRA_FEE_TOO_HIGH);
+        maxLiquidityFeeBP = _maxLiquidityFeeBP;
+        maxReservationFeeBP = _maxReservationFeeBP;
+        maxInfraFeeBP = _maxInfraFeeBP;
     }
 
     // -------------
@@ -135,8 +154,11 @@ contract UpdateVaultsFeesInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             (,,,,,uint256 tierInfraFeeBP,uint256 tierLiquidityFeeBP,uint256 tierReservationFeeBP
                 ) = operatorGrid.vaultTierInfo(_vaults[i]);
             require(_infraFeesBP[i] <= tierInfraFeeBP, ERROR_INFRA_FEE_TOO_HIGH);
+            require(_infraFeesBP[i] <= maxInfraFeeBP, ERROR_INFRA_FEE_TOO_HIGH);
             require(_liquidityFeesBP[i] <= tierLiquidityFeeBP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
+            require(_liquidityFeesBP[i] <= maxLiquidityFeeBP, ERROR_LIQUIDITY_FEE_TOO_HIGH);
             require(_reservationFeesBP[i] <= tierReservationFeeBP, ERROR_RESERVATION_FEE_TOO_HIGH);
+            require(_reservationFeesBP[i] <= maxReservationFeeBP, ERROR_RESERVATION_FEE_TOO_HIGH);
             // more checks in adapter function to prevent motion failure in case vault disconnected while motion is in progress
         }
     }

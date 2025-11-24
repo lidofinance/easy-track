@@ -627,7 +627,10 @@ def test_update_vaults_fees_happy_path(
     vaults,
     adapter,
 ):
-    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter, locator)
+    max_liquidity_fee_bp = 1000
+    max_reservation_fee_bp = 0
+    max_infra_fee_bp = 100
+    factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter, locator, max_liquidity_fee_bp, max_reservation_fee_bp, max_infra_fee_bp)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.vaultsAdapter() == adapter
     assert factory_instance.lidoLocator() == locator

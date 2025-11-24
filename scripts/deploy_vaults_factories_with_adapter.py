@@ -110,12 +110,15 @@ def deploy_vault_hub_factories(
         config.st_vaults_committee,
         adapter.address,
         lido_locator,
+        config.max_liquidity_fee_bp,
+        config.max_reservation_fee_bp,
+        config.max_infra_fee_bp,
         tx_params,
     )
     deployment_artifacts["UpdateVaultsFeesInOperatorGrid"] = {
         "contract": "UpdateVaultsFeesInOperatorGrid",
         "address": update_vaults_fees_in_operator_grid.address,
-        "constructorArgs": [config.st_vaults_committee, adapter.address, lido_locator],
+        "constructorArgs": [config.st_vaults_committee, adapter.address, lido_locator, config.max_liquidity_fee_bp, config.max_reservation_fee_bp, config.max_infra_fee_bp],
     }
 
     log.ok("Deployed UpdateVaultsFeesInOperatorGrid", update_vaults_fees_in_operator_grid.address)

@@ -14,6 +14,9 @@ class NetworkConfig:
         max_group_share_limit_phase_2_and_3: int,
         max_default_tier_share_limit_phase_2_and_3: int,
         st_vaults_committee: str,
+        max_liquidity_fee_bp: int,
+        max_reservation_fee_bp: int,
+        max_infra_fee_bp: int,
     ):
         # General Easy Track settings
         self.motion_duration = motion_duration
@@ -28,6 +31,9 @@ class NetworkConfig:
         self.max_group_share_limit_phase_2_and_3 = max_group_share_limit_phase_2_and_3 # max group share limit which can be set by easy track for phase 2 and 3
         self.max_default_tier_share_limit_phase_2_and_3 = max_default_tier_share_limit_phase_2_and_3 # max default tier share limit which can be set by easy track for phase 2 and 3
         self.st_vaults_committee = st_vaults_committee # address of the stVaults committee
+        self.max_liquidity_fee_bp = max_liquidity_fee_bp # max liquidity fee basis points which can be set by easy track
+        self.max_reservation_fee_bp = max_reservation_fee_bp # max reservation fee basis points which can be set by easy track
+        self.max_infra_fee_bp = max_infra_fee_bp # max infra fee basis points which can be set by easy track
 
 
 def get_network_config(network=DEFAULT_NETWORK):
@@ -43,6 +49,9 @@ def get_network_config(network=DEFAULT_NETWORK):
             max_group_share_limit_phase_2_and_3 = 1_000_000 * 10 ** 18,
             max_default_tier_share_limit_phase_2_and_3 = 1_000_000 * 10 ** 18,
             st_vaults_committee = "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            max_liquidity_fee_bp = 1000,
+            max_reservation_fee_bp = 0,
+            max_infra_fee_bp = 100,
         )
 
     if network == "hoodi" or network == "hoodi-fork":
@@ -56,6 +65,9 @@ def get_network_config(network=DEFAULT_NETWORK):
             max_group_share_limit_phase_2_and_3 = 500_000 * 10 ** 18,
             max_default_tier_share_limit_phase_2_and_3 = 500_000 * 10 ** 18,
             st_vaults_committee = "0xeBe5948787Bb3a565F67ccD93cb85A91960c472a",
+            max_liquidity_fee_bp = 1000,
+            max_reservation_fee_bp = 0,
+            max_infra_fee_bp = 100,
         )
 
     raise NameError(
