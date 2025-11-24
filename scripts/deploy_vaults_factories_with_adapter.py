@@ -50,6 +50,9 @@ def main():
     log.nb("EVMScriptExecutor", evmScriptExecutor)
     log.nb("Deployed Lido Locator", lido_locator)
     log.nb("Initial validator exit fee limit", config.validator_exit_fee_limit)
+    log.nb("Max liquidity fee BP", config.max_liquidity_fee_bp)
+    log.nb("Max reservation fee BP", config.max_reservation_fee_bp)
+    log.nb("Max infra fee BP", config.max_infra_fee_bp)
 
     log.br()
 

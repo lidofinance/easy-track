@@ -111,7 +111,6 @@ Script deploys factories for:
 Script requires next ENV variables to be set:
 
 - `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
-- `TRUSTED_CALLER` - address of the trusted caller (usually EasyTrack contract)
 
 ### `deploy_vaults_factories_with_adapter.py`
 
@@ -127,7 +126,6 @@ Script deploys VaultsAdapter and factories for:
 Script requires next ENV variables to be set:
 
 - `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
-- `TRUSTED_CALLER` - address of the trusted caller (usually EasyTrack contract)
 
 ### `final_check.py`
 
