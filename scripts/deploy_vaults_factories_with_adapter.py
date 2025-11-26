@@ -43,6 +43,7 @@ def main():
     log.nb("Using deployed addresses for", network_name, color_hl=log.color_yellow)
     log.ok("chain id", chain.id)
     log.ok("Deployer", deployer)
+    log.ok("Etherscan API Key", os.getenv("ETHERSCAN_TOKEN"))
 
     log.br()
 
@@ -65,7 +66,7 @@ def main():
     tx_params = {"from": deployer}
     if get_is_live():
         tx_params["priority_fee"] = "2 gwei"
-        tx_params["max_fee"] = "300 gwei"
+        tx_params["max_fee"] = "10 gwei"
 
     deploy_vault_hub_factories(
         network_name,
