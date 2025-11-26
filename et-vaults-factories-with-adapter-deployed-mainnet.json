@@ -1,0 +1,56 @@
+{
+    "VaultsAdapter": {
+        "contract": "VaultsAdapter",
+        "address": "0x8cDA09f41970A8f4416b6bA4696a2f09a6080c76",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            "0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977",
+            100000000000000000
+        ]
+    },
+    "SetJailStatusInOperatorGrid": {
+        "contract": "SetJailStatusInOperatorGrid",
+        "address": "0x88D32aABa5B6A972D82E55D26B212eBeca07C983",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x8cDA09f41970A8f4416b6bA4696a2f09a6080c76"
+        ]
+    },
+    "UpdateVaultsFeesInOperatorGrid": {
+        "contract": "UpdateVaultsFeesInOperatorGrid",
+        "address": "0x7DCf0746ff2F77A36ceC8E318b59dc8a8A5c066e",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x8cDA09f41970A8f4416b6bA4696a2f09a6080c76",
+            "0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
+            1000,
+            0,
+            100
+        ]
+    },
+    "ForceValidatorExitsInVaultHub": {
+        "contract": "ForceValidatorExitsInVaultHub",
+        "address": "0x6D0F542591eF4f8ebA8c77a11dc3676D9E9F7e66",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x8cDA09f41970A8f4416b6bA4696a2f09a6080c76"
+        ]
+    },
+    "SocializeBadDebtInVaultHub": {
+        "contract": "SocializeBadDebtInVaultHub",
+        "address": "0xD60671a489948641954736A0e7272137b3A335CE",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x8cDA09f41970A8f4416b6bA4696a2f09a6080c76"
+        ]
+    },
+    "SetLiabilitySharesTargetInVaultHub": {
+        "contract": "SetLiabilitySharesTargetInVaultHub",
+        "address": "0xf61601787E84d89c30911e5A48d9CA630eC47044",
+        "constructorArgs": [
+            "0x18A1065c81b0Cc356F1b1C843ddd5E14e4AefffF",
+            "0x8cDA09f41970A8f4416b6bA4696a2f09a6080c76"
+        ]
+    }
+}
