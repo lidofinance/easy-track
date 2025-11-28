@@ -3,20 +3,21 @@
 
 pragma solidity 0.8.6;
 
-import "../TrustedCaller.sol";
-import "../libraries/EVMScriptCreator.sol";
-import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/ICSModule.sol";
+import {TrustedCaller} from "../TrustedCaller.sol";
+import {EVMScriptCreator} from "../libraries/EVMScriptCreator.sol";
+import {IEVMScriptFactory} from "../interfaces/IEVMScriptFactory.sol";
+import {ICSModule, WithdrawnValidatorInfo} from "../interfaces/ICSModule.sol";
 
-/// @notice Creates an EVMScript to report withdrawals to a CSM-like module.
-contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates an EVMScript to report slashed validators as withdrawn to a CSM-like module.
+contract ReportSlashedValidatorsAsWithdrawn is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
-    string private constant ERROR_EMPTY_WITHDRAWAL_LIST = "EMPTY_WITHDRAWAL_LIST";
-    string private constant ERROR_ZERO_EXIT_BALANCE = "ZERO_EXIT_BALANCE";
+    string private constant ERROR_EMPTY_VALIDATOR_INFO_LIST = "EMPTY_VALIDATOR_INFO_LIST";
     string private constant ERROR_OPERATOR_DOES_NOT_EXIST = "OPERATOR_DOES_NOT_EXIST";
+    string private constant ERROR_VALIDATOR_NOT_SLASHED = "VALIDATOR_NOT_SLASHED";
+    string private constant ERROR_ZERO_EXIT_BALANCE = "ZERO_EXIT_BALANCE";
 
     // -------------
     // VARIABLES
@@ -45,9 +46,9 @@ contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates an EVMScript to report withdrawals to a CSM-like module.
+    /// @notice Creates an EVMScript to report slashed validators as withdrawn to a CSM-like module.
     /// @param _creator Address who creates EVMScript.
-    /// @param _evmScriptCallData Encoded (ValidatorWithdrawalInfo[]).
+    /// @param _evmScriptCallData Encoded (WithdrawnValidatorInfo[]).
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -55,7 +56,7 @@ contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        ValidatorWithdrawalInfo[] memory decodedCallData = _decodeEVMScriptCallData(
+        WithdrawnValidatorInfo[] memory decodedCallData = _decodeEVMScriptCallData(
             _evmScriptCallData
         );
         _validateInputData(decodedCallData);
@@ -63,18 +64,18 @@ contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(module),
-                module.submitWithdrawals.selector,
+                module.reportWithdrawnValidators.selector,
                 _evmScriptCallData
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded (ValidatorWithdrawalInfo[])
-    /// @return ValidatorWithdrawalInfo[]
+    /// @param _evmScriptCallData Encoded (WithdrawnValidatorInfo[])
+    /// @return WithdrawnValidatorInfo[]
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (ValidatorWithdrawalInfo[] memory)
+        returns (WithdrawnValidatorInfo[] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -86,18 +87,21 @@ contract SubmitWithdrawals is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (ValidatorWithdrawalInfo[] memory)
+        returns (WithdrawnValidatorInfo[] memory)
     {
-        return abi.decode(_evmScriptCallData, (ValidatorWithdrawalInfo[]));
+        return abi.decode(_evmScriptCallData, (WithdrawnValidatorInfo[]));
     }
 
-    function _validateInputData(ValidatorWithdrawalInfo[] memory _decodedCallData) private view {
-        require(_decodedCallData.length > 0, ERROR_EMPTY_WITHDRAWAL_LIST);
+    // NOTE: The method doesn't validate the `slashingPenalty` field. It can be arbitrarily large (if the committee
+    // decides so), and it can be zero in case of some kind of off-chain agreement.
+    function _validateInputData(WithdrawnValidatorInfo[] memory _decodedCallData) private view {
+        require(_decodedCallData.length > 0, ERROR_EMPTY_VALIDATOR_INFO_LIST);
 
         uint256 nosCount = module.getNodeOperatorsCount();
         for (uint256 i; i < _decodedCallData.length; ++i) {
             require(_decodedCallData[i].nodeOperatorId < nosCount, ERROR_OPERATOR_DOES_NOT_EXIST);
             require(_decodedCallData[i].exitBalance > 0, ERROR_ZERO_EXIT_BALANCE);
+            require(_decodedCallData[i].isSlashed, ERROR_VALIDATOR_NOT_SLASHED);
         }
     }
 }

@@ -4,27 +4,28 @@ from typing import Iterable
 import pytest
 from brownie import (
     CSLikeModuleStub,
-    SubmitWithdrawals,
+    ReportSlashedValidatorsAsWithdrawn,
     reverts,
 )
 
 from utils.evm_script import encode_call_script, encode_calldata
 
-ValidatorWithdrawalInfo = namedtuple(
-    "ValidatorWithdrawalInfo",
+WithdrawnValidatorInfo = namedtuple(
+    "WithdrawnValidatorInfo",
     [
         "no_id",
         "key_index",
         "exit_balance",
         "slashing_penalty",
+        "is_slashed",
     ],
 )
 
 FACTORY_NAME = "MY_LOVELY_FACTORY"
 
 
-def create_calldata(values: Iterable[ValidatorWithdrawalInfo]):
-    return encode_calldata("(uint256,uint256,uint256,uint256)[]", [values])
+def create_calldata(values: Iterable[WithdrawnValidatorInfo]):
+    return encode_calldata("(uint256,uint256,uint256,uint256,bool)[]", [values])
 
 
 @pytest.fixture(scope="module")
@@ -36,7 +37,7 @@ def module(owner):
 
 @pytest.fixture(scope="module")
 def factory(owner, module):
-    return SubmitWithdrawals.deploy(
+    return ReportSlashedValidatorsAsWithdrawn.deploy(
         owner,
         FACTORY_NAME,
         module,
@@ -58,7 +59,7 @@ def test_create_evm_script_reverts_if_called_by_stranger(stranger, factory):
 
 def test_create_evm_script_reverts_if_empty_withdrawal_list(owner, factory):
     EVM_SCRIPT_CALLDATA = create_calldata([])
-    with reverts("EMPTY_WITHDRAWAL_LIST"):
+    with reverts("EMPTY_VALIDATOR_INFO_LIST"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
 
@@ -67,27 +68,30 @@ def test_create_evm_script_reverts_if_empty_withdrawal_list(owner, factory):
     [
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1,
                     key_index=1,
                     exit_balance=0,
                     slashing_penalty=1,
+                    is_slashed=True,
                 ),
             ]
         ),
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=0,
                     key_index=0,
                     exit_balance=100500,
                     slashing_penalty=16,
+                    is_slashed=True,
                 ),
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1,
                     key_index=1,
                     exit_balance=0,
                     slashing_penalty=1,
+                    is_slashed=True,
                 ),
             ]
         ),
@@ -104,27 +108,30 @@ def test_create_evm_script_reverts_if_zero_exit_balance(owner, factory, values):
     [
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1001,
                     key_index=1,
                     exit_balance=1,
                     slashing_penalty=1,
+                    is_slashed=True,
                 ),
             ]
         ),
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=0,
                     key_index=0,
                     exit_balance=100500,
                     slashing_penalty=16,
+                    is_slashed=True,
                 ),
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1001,
                     key_index=3,
                     exit_balance=30000,
                     slashing_penalty=0,
+                    is_slashed=True,
                 ),
             ]
         ),
@@ -141,27 +148,70 @@ def test_create_evm_script_reverts_if_non_existing_operator(owner, factory, valu
     [
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=1,
+                    exit_balance=1,
+                    slashing_penalty=1,
+                    is_slashed=False,
+                ),
+            ]
+        ),
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
                     no_id=0,
                     key_index=0,
                     exit_balance=100500,
                     slashing_penalty=16,
+                    is_slashed=False,
+                ),
+                WithdrawnValidatorInfo(
+                    no_id=1,
+                    key_index=3,
+                    exit_balance=30000,
+                    slashing_penalty=0,
+                    is_slashed=False,
+                ),
+            ]
+        ),
+    ],
+)
+def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
+    EVM_SCRIPT_CALLDATA = create_calldata(values)
+    with reverts("VALIDATOR_NOT_SLASHED"):
+        factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=0,
+                    exit_balance=100500,
+                    slashing_penalty=16,
+                    is_slashed=True,
                 ),
             ],
         ),
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=0,
                     key_index=0,
                     exit_balance=100500,
                     slashing_penalty=16,
+                    is_slashed=True,
                 ),
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1,
                     key_index=3,
                     exit_balance=30000,
                     slashing_penalty=0,
+                    is_slashed=True,
                 ),
             ]
         ),
@@ -176,7 +226,7 @@ def test_create_evm_script(owner, factory, module, values):
         [
             (
                 module.address,
-                module.submitWithdrawals.encode_input(values),
+                module.reportWithdrawnValidators.encode_input(values),
             )
         ]
     )
@@ -190,37 +240,41 @@ def test_create_evm_script(owner, factory, module, values):
         pytest.param([]),
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=0,
                     key_index=0,
                     exit_balance=0,
                     slashing_penalty=0,
+                    is_slashed=True,
                 ),
             ]
         ),
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1,
                     key_index=2,
                     exit_balance=100500,
                     slashing_penalty=16,
+                    is_slashed=True,
                 ),
             ]
         ),
         pytest.param(
             [
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=0,
                     key_index=0,
                     exit_balance=100500,
                     slashing_penalty=16,
+                    is_slashed=True,
                 ),
-                ValidatorWithdrawalInfo(
+                WithdrawnValidatorInfo(
                     no_id=1,
                     key_index=3,
                     exit_balance=30000,
                     slashing_penalty=0,
+                    is_slashed=True,
                 ),
             ]
         ),

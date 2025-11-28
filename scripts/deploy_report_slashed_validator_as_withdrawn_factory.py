@@ -2,7 +2,7 @@ import json
 import os
 
 from brownie import (
-    SubmitWithdrawals,  # type: ignore
+    ReportSlashedValidatorsAsWithdrawn,  # type: ignore
     chain,
     web3,
 )
@@ -53,16 +53,18 @@ def main():
         factory_name,
         module_address,
     )
-    factory = SubmitWithdrawals.deploy(*constructor_args, {"from": deployer})
+    factory = ReportSlashedValidatorsAsWithdrawn.deploy(
+        *constructor_args, {"from": deployer}
+    )
 
     log.br()
-    log.ok("Deployed SubmitWithdrawals", factory.address)
+    log.ok("Deployed ReportSlashedValidatorsAsWithdrawn", factory.address)
 
     if get_is_live():
         # Save artifacts into deployed-sm-<network>.json
         new_entry = {
-            "SubmitWithdrawals": {
-                "contract": "SubmitWithdrawals",
+            "ReportSlashedValidatorsAsWithdrawn": {
+                "contract": "ReportSlashedValidatorsAsWithdrawn",
                 "address": factory.address,
                 "constructorArgs": constructor_args,
             }
@@ -82,8 +84,8 @@ def main():
             json.dump(artifacts, out, indent=4)
 
         if get_env("FORCE_VERIFY", False):
-            log.ok("Verifying SubmitWithdrawals...")
-            SubmitWithdrawals.publish_source(factory)
+            log.ok("Verifying ReportSlashedValidatorsAsWithdrawn...")
+            ReportSlashedValidatorsAsWithdrawn.publish_source(factory)
 
     log.br()
     print("Hit <Enter> to quit script")
@@ -100,18 +102,16 @@ def _get_trusted_caller():
 
 
 def _get_module_address():
-    addr = os.environ.get("SUBMIT_WITHDRAWALS_MODULE_ADDRESS")
+    addr = os.environ.get("MODULE_ADDRESS")
     if not web3.is_address(addr):
         raise ValueError(
-            f"{addr} is not a valid address, check the SUBMIT_WITHDRAWALS_MODULE_ADDRESS env variable"
+            f"{addr} is not a valid address, check the MODULE_ADDRESS env variable"
         )
     return addr
 
 
 def _get_factory_name():
-    name = os.environ.get("SUBMIT_WITHDRAWALS_FACTORY_NAME")
+    name = os.environ.get("FACTORY_NAME")
     if not name:
-        raise ValueError(
-            "Please provide non-empty name via SUBMIT_WITHDRAWALS_FACTORY_NAME env variable"
-        )
+        raise ValueError("Please provide non-empty name via FACTORY_NAME env variable")
     return name

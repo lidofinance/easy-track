@@ -3,16 +3,16 @@
 
 pragma solidity ^0.8.4;
 
-import {ValidatorWithdrawalInfo} from "../interfaces/ICSModule.sol";
+import {WithdrawnValidatorInfo} from "../interfaces/ICSModule.sol";
 
 contract CSLikeModuleStub {
     uint256 internal _nodeOperatorsCount;
 
-    event GotWithdrawalInfo(ValidatorWithdrawalInfo info);
+    event GotValidatorInfo(WithdrawnValidatorInfo info);
 
-    function submitWithdrawals(ValidatorWithdrawalInfo[] calldata withdrawalsInfo) external {
-        for (uint256 i; i < withdrawalsInfo.length; ++i) {
-            emit GotWithdrawalInfo(withdrawalsInfo[i]);
+    function reportWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external {
+        for (uint256 i; i < validatorInfos.length; ++i) {
+            emit GotValidatorInfo(validatorInfos[i]);
         }
     }
 
