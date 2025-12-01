@@ -4,7 +4,7 @@ from typing import Iterable
 import pytest
 from brownie import (
     CSLikeModuleStub,
-    ReportSlashedValidatorsAsWithdrawn,
+    ReportWithdrawalsForSlashedValidators,
 )
 
 from utils.evm_script import encode_calldata
@@ -34,7 +34,7 @@ def module(owner):
 
 @pytest.fixture(scope="module")
 def factory(owner, et_contracts, voting, module):
-    factory = ReportSlashedValidatorsAsWithdrawn.deploy(
+    factory = ReportWithdrawalsForSlashedValidators.deploy(
         owner,
         "MY_LOVELY_FACTORY",
         module,

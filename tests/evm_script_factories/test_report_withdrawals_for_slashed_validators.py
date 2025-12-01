@@ -4,7 +4,7 @@ from typing import Iterable
 import pytest
 from brownie import (
     CSLikeModuleStub,
-    ReportSlashedValidatorsAsWithdrawn,
+    ReportWithdrawalsForSlashedValidators,
     reverts,
 )
 
@@ -37,7 +37,7 @@ def module(owner):
 
 @pytest.fixture(scope="module")
 def factory(owner, module):
-    return ReportSlashedValidatorsAsWithdrawn.deploy(
+    return ReportWithdrawalsForSlashedValidators.deploy(
         owner,
         FACTORY_NAME,
         module,

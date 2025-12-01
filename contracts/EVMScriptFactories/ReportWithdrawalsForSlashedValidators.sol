@@ -9,7 +9,7 @@ import {IEVMScriptFactory} from "../interfaces/IEVMScriptFactory.sol";
 import {ICSModule, WithdrawnValidatorInfo} from "../interfaces/ICSModule.sol";
 
 /// @notice Creates an EVMScript to report slashed validators as withdrawn to a CSM-like module.
-contract ReportSlashedValidatorsAsWithdrawn is TrustedCaller, IEVMScriptFactory {
+contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------

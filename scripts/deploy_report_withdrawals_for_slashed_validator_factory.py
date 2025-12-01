@@ -2,7 +2,7 @@ import json
 import os
 
 from brownie import (
-    ReportSlashedValidatorsAsWithdrawn,  # type: ignore
+    ReportWithdrawalsForSlashedValidators,  # type: ignore
     chain,
     web3,
 )
@@ -53,18 +53,18 @@ def main():
         factory_name,
         module_address,
     )
-    factory = ReportSlashedValidatorsAsWithdrawn.deploy(
+    factory = ReportWithdrawalsForSlashedValidators.deploy(
         *constructor_args, {"from": deployer}
     )
 
     log.br()
-    log.ok("Deployed ReportSlashedValidatorsAsWithdrawn", factory.address)
+    log.ok("Deployed ReportWithdrawalsForSlashedValidators", factory.address)
 
     if get_is_live():
         # Save artifacts into deployed-sm-<network>.json
         new_entry = {
-            "ReportSlashedValidatorsAsWithdrawn": {
-                "contract": "ReportSlashedValidatorsAsWithdrawn",
+            "ReportWithdrawalsForSlashedValidators": {
+                "contract": "ReportWithdrawalsForSlashedValidators",
                 "address": factory.address,
                 "constructorArgs": constructor_args,
             }
@@ -84,8 +84,8 @@ def main():
             json.dump(artifacts, out, indent=4)
 
         if get_env("FORCE_VERIFY", False):
-            log.ok("Verifying ReportSlashedValidatorsAsWithdrawn...")
-            ReportSlashedValidatorsAsWithdrawn.publish_source(factory)
+            log.ok("Verifying ReportWithdrawalsForSlashedValidators...")
+            ReportWithdrawalsForSlashedValidators.publish_source(factory)
 
     log.br()
     print("Hit <Enter> to quit script")
