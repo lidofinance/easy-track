@@ -424,6 +424,10 @@ def test_spendable_balance_is_renewed_in_next_period(
 ):
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
+    print(allowed_recipients_registry)
+    print("allowed_recipients_registry address", allowed_recipients_registry.address)
+    print(allowed_recipients_limit_params)
+    print("allowed_recipients_limit_params limit", allowed_recipients_limit_params.limit)
     assert allowed_recipients_registry.spendableBalance() == allowed_recipients_limit_params.limit
 
     allowed_recipients = recipients[:2]

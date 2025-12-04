@@ -25,32 +25,35 @@ GRANT_ROLE_EVENT = "0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733
 REVOKE_ROLE_EVENT = "0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
 
 deploy_config = deployment.AllowedRecipientsMultiTokenFullSetupDeployConfig(
-    tokens=["", ""],  # the list of tokens in which transfers can be made,  ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
-    tokens_registry="",  # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
-    limit=0,  # budget amount, ex. 1_000_000 * 10 ** 18,
-    period=1,  # budget period duration in month, ex. 3
-    spent_amount=0, # budget already spent, ex. 0
+    tokens=["0x6B175474E89094C44Da98b954EedeAC495271d0F", "0xdAC17F958D2ee523a2206206994597C13D831ec7", "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48"],  # the list of tokens in which transfers can be made,  ex. ["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
+    tokens_registry="0x4AC40c34f8992bb1e5E856A448792158022551ca",  # a token registry that includes a list of tokens in which transfers can be made, ex. "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666"
+    limit=10000000000000000000000000,  # budget amount, ex. 1_000_000 * 10 ** 18,
+    period=3,  # budget period duration in month, ex. 3
+    spent_amount=2000000000000000000000000, # budget already spent, ex. 0
     titles=["", ""], # allowed recipients titles, ex. ["LEGO LDO funder", "LEGO Stables funder"]
-    recipients=["", ""], # allowed recipients addresses, ex. ["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"]
-    trusted_caller="", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
+    recipients=["0x79f5E20996abE9f6a48AF6f9b13f1E55AED6f06D", "0x8Ba6D367D15Ebc52f3eBBdb4a8710948C0918d42", "0x2B5a3944A654439379B206DE999639508bA2e850", "0x278f7B6CBB3Cc37374e6a40bDFEBfff08f65A5C7",
+"0x64B6aF9A108dCdF470E48e4c0147127F26221A7C", "0x281e6BB6F26A94250aCEb24396a8E4190726C97e"], # allowed recipients addresses, ex. ["0x96d2Ff1C4D30f592B91fd731E218247689a76915", "0x1580881349e214Bab9f1E533bF97351271DB95a9"]
+    trusted_caller="0xa02FC823cCE0D016bD7e17ac684c9abAb2d6D647", # multisig / trusted caller's address, ex. "0x12a43b049A7D330cB8aEAB5113032D18AE9a9030"
     grant_rights = False, # permissions to execute AddAllowedRecipient / RemoveAllowedRecipient methods on behalf of trusted_caller
 )
 
-recipients_registry_deploy_tx_hash = ""
-tokens_registry_deploy_tx_hash = ""
-top_up_allowed_recipients_deploy_tx_hash = ""
-add_allowed_recipient_deploy_tx_hash = ""
-remove_allowed_recipient_deploy_tx_hash = ""
+
+recipients_registry_deploy_tx_hash = "0x6916415602768eb306fd3b602b820afddfac91b812d43bd6f875672fb32b719d"
+tokens_registry_deploy_tx_hash = "0xb29ee752d1b66a293be52a96b78e01408e1ad84f0d047128b953ba55887640be"
+top_up_allowed_recipients_deploy_tx_hash = "0xfe0b00b68789c6ae28a5cbda27010408a8ebce4b141ce397a31582520244d514"
+add_allowed_recipient_deploy_tx_hash = "0xdebefdb5fee7b3637c07251304723f54a8c866255f0e7b87cc3b66583f9cca63"
+remove_allowed_recipient_deploy_tx_hash = "0x93d983d8cd931309036e11be29a2817a817e8fabfbaf3363162b2ffeb7bd85cf"
 
 
 def main(
-    deploy_config: deployment.AllowedRecipientsMultiTokenFullSetupDeployConfig,
-    recipients_registry_deploy_tx_hash: str,
-    tokens_registry_deploy_tx_hash: str,
-    top_up_allowed_recipients_deploy_tx_hash: str,
-    add_allowed_recipient_deploy_tx_hash: str,
-    remove_allowed_recipient_deploy_tx_hash: str,
+    deploy_config = deploy_config,
+    recipients_registry_deploy_tx_hash = recipients_registry_deploy_tx_hash,
+    tokens_registry_deploy_tx_hash = tokens_registry_deploy_tx_hash,
+    top_up_allowed_recipients_deploy_tx_hash = top_up_allowed_recipients_deploy_tx_hash,
+    add_allowed_recipient_deploy_tx_hash = add_allowed_recipient_deploy_tx_hash,
+    remove_allowed_recipient_deploy_tx_hash = remove_allowed_recipient_deploy_tx_hash,
 ):
+
     network_name = network.show_active()
 
     recipients_registry_deploy_tx = chain.get_transaction(

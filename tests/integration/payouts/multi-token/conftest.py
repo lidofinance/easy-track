@@ -3,6 +3,8 @@ import brownie
 
 import constants
 import math
+
+from tests.conftest import add_allowed_recipients
 from utils import lido, deployment, deployed_date_time, evm_script, log
 from dataclasses import dataclass
 
@@ -85,14 +87,14 @@ def deployed_contracts():
     To run tests on deployed contracts, set their address below
     """
     return {
-        "EasyTrack": "",
+        "EasyTrack": "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea",
         "AllowedRecipientsFactory": "",
         "AllowedRecipientsBuilder": "",
-        "AllowedRecipientsRegistry": "",
-        "AllowedTokensRegistry": "",
-        "AddAllowedRecipient": "",
-        "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipients": "",
+        "AllowedRecipientsRegistry": "0x3f0534CCcFb952470775C516DC2eff8396B8A368",
+        "AllowedTokensRegistry": "0x4AC40c34f8992bb1e5E856A448792158022551ca",
+        "AddAllowedRecipient": "0x56bcff69e1d06e18C46B65C00D41B4ae82890184",
+        "RemoveAllowedRecipient": "0x4C75070Aa6e7f89fd5Cb6Ce77544e9cB2AC585DD",
+        "TopUpAllowedRecipients": "0x0d2aefA542aFa8d9D1Ec35376068B88042FEF5f6",
     }
 
 
@@ -267,7 +269,7 @@ def add_allowed_recipient_by_motion(AllowedRecipientsRegistry, easy_track, stran
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             add_allowed_recipient_evm_script_factory.allowedRecipientsRegistry()
         )
-
+        
         tx = easy_track.createMotion(
             add_allowed_recipient_evm_script_factory,
             evm_script.encode_calldata(

@@ -74,13 +74,13 @@ def deployed_contracts():
     To run tests on deployed contracts, set their address below
     """
     return {
-        "EasyTrack": "",
+        "EasyTrack": "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea",
         "AllowedRecipientsFactorySingleToken": "",
         "AllowedRecipientsBuilderSingleToken": "",
-        "AllowedRecipientsRegistry": "",
-        "AddAllowedRecipient": "",
-        "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipientsSingleToken": "",
+        "AllowedRecipientsRegistry": "0x1a7cFA9EFB4D5BfFDE87B0FaEb1fC65d653868C0",
+        "AddAllowedRecipient": "0x8b18e9b7c17c20Ae2f4F825429e9b5e788194E22",
+        "RemoveAllowedRecipient": "0x5F6Db5A060Ac5145Af3C5590a4E1eaB080A8143A",
+        "TopUpAllowedRecipientsSingleToken": "0x6e04aED774B7c89BB43721AcDD7D03C872a51B69",
     }
 
 
@@ -237,13 +237,24 @@ def remove_allowed_recipient_evm_script_factory(
     return evm_script_factory
 
 
+def prepare_recipient_for_transaction(amount: int, recipient: str):
+    eth_whale = brownie.accounts.at("0x00000000219ab540356cBB839Cbe05303d7705Fa", force=True)
+    addr = brownie.accounts.at(recipient, force=True)
+    if addr.balance() < amount:
+        # transfer eth from whale to recipient
+        eth_whale.transfer(addr, amount)
+        assert addr.balance() >= amount, "Insufficient ETH balance"
+    
+    
 @pytest.fixture(scope="module")
 def add_allowed_recipient_by_motion(AllowedRecipientsRegistry, easy_track, stranger):
     def _add_allowed_recipient_via_motion(add_allowed_recipient_evm_script_factory, recipient_address, recipient_title):
         allowed_recipients_registry = AllowedRecipientsRegistry.at(
             add_allowed_recipient_evm_script_factory.allowedRecipientsRegistry()
         )
-
+                
+        prepare_recipient_for_transaction(10*10**18, add_allowed_recipient_evm_script_factory.trustedCaller())
+        
         tx = easy_track.createMotion(
             add_allowed_recipient_evm_script_factory,
             evm_script.encode_calldata(["address", "string"], [recipient_address, recipient_title]),
@@ -273,6 +284,8 @@ def remove_allowed_recipient_by_motion(AllowedRecipientsRegistry, easy_track, st
         )
         call_data = evm_script.encode_calldata(["address"], [recipient_address])
 
+        prepare_recipient_for_transaction(10 * 10 ** 18, remove_allowed_recipient_evm_script_factory.trustedCaller())
+        
         tx = easy_track.createMotion(
             remove_allowed_recipient_evm_script_factory,
             call_data,
@@ -340,6 +353,7 @@ def create_add_allowed_recipient_motion(easy_track):
     def _create_add_allowed_recipient_motion(
         add_allowed_recipient_evm_script_factory, recipient_address, recipient_title
     ):
+        prepare_recipient_for_transaction(10 * 10 ** 18, add_allowed_recipient_evm_script_factory.trustedCaller())
         return easy_track.createMotion(
             add_allowed_recipient_evm_script_factory,
             evm_script.encode_calldata(["address", "string"], [recipient_address, recipient_title]),
