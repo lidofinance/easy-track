@@ -21,8 +21,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_SOURCE_OPERATOR_ID_OUT_OF_RANGE = "SOURCE_OPERATOR_ID_OUT_OF_RANGE";
-    string private constant ERROR_TARGET_OPERATOR_ID_OUT_OF_RANGE = "TARGET_OPERATOR_ID_OUT_OF_RANGE";
+    string private constant ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST = "SOURCE_OPERATOR_ID_DOES_NOT_EXIST";
+    string private constant ERROR_TARGET_OPERATOR_ID_DOES_NOT_EXIST = "TARGET_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_PAIR_ALREADY_ALLOWED = "PAIR_ALREADY_ALLOWED";
     string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER =
         "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER";
@@ -105,7 +105,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         AllowConsolidationPairInput memory input
     ) private view {
         uint256 sourceCount = sourceModule.getNodeOperatorsCount();
-        require(input.sourceOperatorId < sourceCount, ERROR_SOURCE_OPERATOR_ID_OUT_OF_RANGE);
+        require(input.sourceOperatorId < sourceCount, ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST);
 
         (, , address rewardAddress, , , , ) = sourceModule.getNodeOperator(
             input.sourceOperatorId,
@@ -115,7 +115,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         // TODO: should we allow MANAGE_SIGNING_KEYS_ROLE holders to enact the script?
 
         uint256 targetCount = targetModule.getNodeOperatorsCount();
-        require(input.targetOperatorId < targetCount, ERROR_TARGET_OPERATOR_ID_OUT_OF_RANGE);
+        require(input.targetOperatorId < targetCount, ERROR_TARGET_OPERATOR_ID_DOES_NOT_EXIST);
 
         require(
             consolidationMigrator.isPairAllowed(input.sourceOperatorId, input.targetOperatorId) == false,

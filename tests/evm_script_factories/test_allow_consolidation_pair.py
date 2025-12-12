@@ -80,14 +80,14 @@ def test_create_evm_script_called_by_stranger(stranger, allow_consolidation_pair
 
 def test_source_operator_must_exist(owner, allow_consolidation_pair_factory):
     calldata = _encode_input(source_operator_id=SOURCE_OPERATOR_ID + 1)
-    with reverts("SOURCE_OPERATOR_ID_OUT_OF_RANGE"):
+    with reverts("SOURCE_OPERATOR_ID_DOES_NOT_EXIST"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
 
 
 def test_source_operator_out_of_range(owner, source_module_stub, allow_consolidation_pair_factory):
     source_module_stub.setDesiredNodeOperatorCount(SOURCE_OPERATOR_ID, {"from": owner})
     calldata = _encode_input()
-    with reverts("SOURCE_OPERATOR_ID_OUT_OF_RANGE"):
+    with reverts("SOURCE_OPERATOR_ID_DOES_NOT_EXIST"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
     source_module_stub.setDesiredNodeOperatorCount(SOURCE_OPERATOR_ID + 1, {"from": owner})
 
@@ -103,7 +103,7 @@ def test_caller_must_match_owner(owner, stranger, source_module_stub, allow_cons
 def test_target_operator_out_of_range(owner, target_module_stub, allow_consolidation_pair_factory):
     target_module_stub.setNodeOperatorsCount(TARGET_OPERATOR_ID, {"from": owner})
     calldata = _encode_input()
-    with reverts("TARGET_OPERATOR_ID_OUT_OF_RANGE"):
+    with reverts("TARGET_OPERATOR_ID_DOES_NOT_EXIST"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
     target_module_stub.setNodeOperatorsCount(TARGET_OPERATOR_ID + 2, {"from": owner})
 
