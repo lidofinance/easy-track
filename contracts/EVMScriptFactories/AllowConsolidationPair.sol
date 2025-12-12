@@ -112,6 +112,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             false
         );
         require(msg.sender == rewardAddress, ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER);
+        // TODO: should we allow MANAGE_SIGNING_KEYS_ROLE holders to enact the script?
 
         uint256 targetCount = targetModule.getNodeOperatorsCount();
         require(input.targetOperatorId < targetCount, ERROR_TARGET_OPERATOR_ID_OUT_OF_RANGE);
