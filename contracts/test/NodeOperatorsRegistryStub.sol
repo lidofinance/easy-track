@@ -107,6 +107,10 @@ contract NodeOperatorsRegistryStub {
         rewardAddress = _rewardAddress;
     }
 
+    function setNodeOperatorRewardAddress(uint256 _id, address _rewardAddress) external {
+        _nodeOperators[_id].rewardAddress = _rewardAddress;
+    }
+
     function setStakingLimit(uint256 _id, uint64 _stakingLimit) public {
         stakingLimit = _stakingLimit;
         _nodeOperators[_id].stakingLimit = _stakingLimit;
