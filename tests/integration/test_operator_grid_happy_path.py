@@ -1,10 +1,11 @@
 import pytest
 import brownie
-from brownie import VaultsAdapter, ForceTransfer, interface # type: ignore
+from brownie import VaultsAdapter, interface # type: ignore
 from utils.evm_script import encode_calldata
+from utils.test_helpers import set_account_balance
 
 MOTION_BUFFER_TIME = 100
-
+INITIAL_VAULT_BALANCE = 2 * 10 ** 18
 
 @pytest.fixture(scope="module")
 def trusted_address(accounts):
@@ -24,14 +25,13 @@ def adapter(owner, locator, easy_track, trusted_address, agent):
 def vaults(owner, accounts, locator):
     vault_factory = interface.IVaultFactory(locator.vaultFactory())
     vault_hub = interface.IVaultHub(locator.vaultHub())
-    tx = vault_factory.createVaultWithDashboard(accounts[0], accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
+    tx = vault_factory.createVaultWithDashboard(accounts[0], accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": INITIAL_VAULT_BALANCE})
     vault1 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
     return [vault1]
 
 
 def setup_operator_grid(owner, locator, easy_track, agent):
-    # transfer 10 ETH to agent
-    owner.transfer(agent, 10 * 10**18)
+    set_account_balance(agent.address)
     operator_grid = interface.IOperatorGrid(locator.operatorGrid())
     operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), easy_track.evmScriptExecutor(), {"from": agent})
     operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), owner, {"from": agent})
@@ -305,6 +305,13 @@ def create_enact_and_check_update_vaults_fees_motion(
     liquidity_fees_bp,
     reservation_fees_bp,
 ):
+    # Prepare all contracts
+    lazy_oracle = interface.ILazyOracle(locator.lazyOracle())
+    vault_hub = interface.IVaultHub(locator.vaultHub())
+    accounting_oracle = locator.accountingOracle()
+    set_account_balance(accounting_oracle)
+    set_account_balance(lazy_oracle.address)
+
     # Create and execute motion to update fees
     motion_transaction = easy_track.createMotion(
         update_vaults_fees_factory.address,
@@ -323,31 +330,23 @@ def create_enact_and_check_update_vaults_fees_motion(
 
     # bring fresh report for vault
     current_time = brownie.chain.time()
-
-    lazy_oracle = locator.lazyOracle()
-    accountingOracle = locator.accountingOracle()
-    forceTransfer1 = ForceTransfer.deploy({"from": owner})
-    forceTransfer1.transfer(accountingOracle, {"from": owner, "value": 10 * 10**18})
-    interface.ILazyOracle(lazy_oracle).updateReportData(
-        current_time,
-        1000,
-        "0x00",
-        "0x00",
-        {"from": accountingOracle})
-
-    forceTransfer2 = ForceTransfer.deploy({"from": owner})
-    forceTransfer2.transfer(lazy_oracle, {"from": owner, "value": 10 * 10**18})
-    vault_hub = interface.IVaultHub(locator.vaultHub())
+    lazy_oracle.updateReportData(current_time, 1000, "0x00", "0x00", {"from": accounting_oracle})
     vault_hub.applyVaultReport(
         vaults[0],
         current_time,
-        2 * 10**18,
-        2 * 10**18,
+        INITIAL_VAULT_BALANCE,
+        INITIAL_VAULT_BALANCE,
         0,
         0,
         0,
         0,
         {"from": lazy_oracle})
+
+    # Check initial state
+    connection = vault_hub.vaultConnection(vaults[0])
+    assert connection[6] != infra_fees_bp[0] # infraFeeBP
+    assert connection[7] != liquidity_fees_bp[0] # liquidityFeeBP
+    assert (connection[8] != reservation_fees_bp[0] or connection[8] == 0) # reservationFeeBP
 
     tx = easy_track.enactMotion(
         motions[0][0],
@@ -355,6 +354,12 @@ def create_enact_and_check_update_vaults_fees_motion(
         {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
+
+    # Check final state
+    connection = vault_hub.vaultConnection(vaults[0])
+    assert connection[6] == infra_fees_bp[0] # infraFeeBP
+    assert connection[7] == liquidity_fees_bp[0] # liquidityFeeBP
+    assert connection[8] == reservation_fees_bp[0] # reservationFeeBP
 
     # Check that events were emitted
     assert len(tx.events["VaultFeesUpdated"]) == len(vaults)
@@ -628,7 +633,7 @@ def test_update_vaults_fees_happy_path(
     adapter,
 ):
     max_liquidity_fee_bp = 1000
-    max_reservation_fee_bp = 0
+    max_reservation_fee_bp = 100
     max_infra_fee_bp = 100
     factory_instance = deployer.deploy(UpdateVaultsFeesInOperatorGrid, trusted_address, adapter, locator, max_liquidity_fee_bp, max_reservation_fee_bp, max_infra_fee_bp)
     assert factory_instance.trustedCaller() == trusted_address
@@ -658,7 +663,7 @@ def test_update_vaults_fees_happy_path(
         trusted_address,
         factory_instance,
         vaults,
-        [0],  # infra fees BP
-        [0],  # liquidity fees BP
+        [1],  # infra fees BP
+        [1],  # liquidity fees BP
         [0],  # reservation fees BP
     )

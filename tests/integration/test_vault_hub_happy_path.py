@@ -1,10 +1,12 @@
 import pytest
 import brownie
-from brownie import VaultsAdapter, ForceTransfer, interface # type: ignore
+from brownie import VaultsAdapter, interface, accounts # type: ignore
 from utils.evm_script import encode_calldata
-from utils.test_helpers import assert_event_exists
+from utils.test_helpers import assert_event_exists, set_account_balance
 
 MOTION_BUFFER_TIME = 100
+
+INITIAL_VAULT_BALANCE = 2 * 10**18
 
 
 @pytest.fixture(scope="module")
@@ -22,16 +24,23 @@ def adapter(owner, locator, easy_track, trusted_address, agent):
     vault_hub.grantRole(vault_hub.BAD_DEBT_MASTER_ROLE(), adapter, {"from": agent})
     vault_hub.grantRole(vault_hub.VALIDATOR_EXIT_ROLE(), adapter, {"from": agent})
     vault_hub.grantRole(vault_hub.REDEMPTION_MASTER_ROLE(), adapter, {"from": agent})
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
+    operator_grid.grantRole(operator_grid.REGISTRY_ROLE(), adapter, {"from": agent})
     return adapter
 
 
 @pytest.fixture(scope="module", autouse=True)
-def vaults(owner, accounts, locator):
+def vaults(owner, accounts, locator, adapter):
+    # Enable minting in default group
+    operator_grid = interface.IOperatorGrid(locator.operatorGrid())
+    operator_grid.alterTiers([0], [(100_000 * 10**18, 300, 250, 50, 40, 10)], {"from": accounts.at(adapter.address, force=True)})
+
+    # create vaults
     vault_factory = interface.IVaultFactory(locator.vaultFactory())
     vault_hub = interface.IVaultHub(locator.vaultHub())
-    tx = vault_factory.createVaultWithDashboard(owner, accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
+    vault_factory.createVaultWithDashboard(owner, accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": INITIAL_VAULT_BALANCE})
     vault1 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
-    tx = vault_factory.createVaultWithDashboard(owner, accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": 2 * 10 ** 18})
+    vault_factory.createVaultWithDashboard(owner, accounts[1], accounts[2], 10000, 10000, [], {"from": owner, "value": INITIAL_VAULT_BALANCE})
     vault2 = vault_hub.vaultByIndex(vault_hub.vaultsCount())
     return [vault1, vault2]
 
@@ -73,6 +82,13 @@ def create_enact_and_check_force_validator_exits_motion(
     pubkeys,
     adapter,
 ):
+    # Prepare all contracts
+    lazy_oracle = interface.ILazyOracle(locator.lazyOracle())
+    vault_hub = interface.IVaultHub(locator.vaultHub())
+    accounting_oracle = locator.accountingOracle()
+    set_account_balance(accounting_oracle)
+    set_account_balance(lazy_oracle.address)
+
     # Create and execute motion to force validator exits
     motion_transaction = easy_track.createMotion(
         force_validator_exits_factory.address,
@@ -86,27 +102,15 @@ def create_enact_and_check_force_validator_exits_motion(
 
     # bring fresh report for vault
     current_time = brownie.chain.time()
-    lazy_oracle = locator.lazyOracle()
-    accountingOracle = locator.accountingOracle()
-    forceTransfer1 = ForceTransfer.deploy({"from": owner})
-    forceTransfer1.transfer(accountingOracle, {"from": owner, "value": 10 * 10**18})
-    interface.ILazyOracle(lazy_oracle).updateReportData(
-        current_time,
-        1000,
-        "0x00",
-        "0x00",
-        {"from": accountingOracle})
+    lazy_oracle.updateReportData(current_time, 1000, "0x00", "0x00", {"from": accounting_oracle})
 
     # make vault unhealthy
-    forceTransfer2 = ForceTransfer.deploy({"from": owner})
-    forceTransfer2.transfer(lazy_oracle, {"from": owner, "value": 10 * 10**18})
-    vault_hub = interface.IVaultHub(locator.vaultHub())
     vault_hub.applyVaultReport(
         vault_addresses[0],
         current_time,
-        2 * 10**18,
-        2 * 10**18,
-        7 * 10**18,
+        INITIAL_VAULT_BALANCE,
+        INITIAL_VAULT_BALANCE,
+        4 * INITIAL_VAULT_BALANCE,
         0,
         0,
         0,
@@ -136,6 +140,13 @@ def create_enact_and_check_set_liability_shares_target_motion(
     vaults,
     liability_shares_targets,
 ):
+    # Prepare all contracts
+    vault_hub = interface.IVaultHub(locator.vaultHub())
+    lazy_oracle = interface.ILazyOracle(locator.lazyOracle())
+    accounting_oracle = locator.accountingOracle()
+    set_account_balance(accounting_oracle)
+    set_account_balance(lazy_oracle.address)
+
     # Create and execute motion to set liability shares target
     motion_transaction = easy_track.createMotion(
         set_liability_shares_target_factory.address,
@@ -145,12 +156,35 @@ def create_enact_and_check_set_liability_shares_target_motion(
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
+    # bring fresh report for vaults
+    current_time = brownie.chain.time()
+    lazy_oracle.updateReportData(current_time, 1000, "0x00", "0x00", {"from": accounting_oracle})
+    minted_shares = []
+    for i, vault in enumerate(vaults):
+        minted_shares.append(liability_shares_targets[i] * (i + 1))
+        vault_hub.applyVaultReport(
+            vault,
+            current_time,
+            INITIAL_VAULT_BALANCE,
+            INITIAL_VAULT_BALANCE,
+            0,
+            0,
+            0,
+            0,
+            {"from": lazy_oracle})
+
+        vaultConnection = vault_hub.vaultConnection(vault)
+        dashboard = vaultConnection[0]
+        set_account_balance(dashboard)
+        vault_hub.mintShares(vault, owner, minted_shares[i], {"from": dashboard})
+
     tx = execute_motion(easy_track, motion_transaction, stranger)
 
     # Check that events were emitted from VaultHub via adapter
     assert len(tx.events["VaultRedemptionSharesUpdated"]) == len(vaults)
     for i, event in enumerate(tx.events["VaultRedemptionSharesUpdated"]):
         assert event["vault"] == vaults[i]
+        assert event["redemptionShares"] == minted_shares[i] - liability_shares_targets[i]
 
 
 def create_enact_and_check_socialize_bad_debt_motion(
@@ -164,6 +198,13 @@ def create_enact_and_check_socialize_bad_debt_motion(
     vault_acceptors,
     max_shares_to_socialize,
 ):
+    # Prepare all contracts
+    vault_hub = interface.IVaultHub(locator.vaultHub())
+    lazy_oracle = interface.ILazyOracle(locator.lazyOracle())
+    accounting_oracle = locator.accountingOracle()
+    set_account_balance(accounting_oracle)
+    set_account_balance(lazy_oracle.address)
+
     # Create and execute motion to socialize bad debt
     motion_transaction = easy_track.createMotion(
         socialize_bad_debt_factory.address,
@@ -176,36 +217,37 @@ def create_enact_and_check_socialize_bad_debt_motion(
     motions = easy_track.getMotions()
     assert len(motions) == 1
 
-    vault_hub = interface.IVaultHub(locator.vaultHub())
+    # bring fresh report bad debt vault
+    current_time = brownie.chain.time()
+    lazy_oracle.updateReportData(current_time, 1000, "0x00", "0x00", {"from": accounting_oracle})
+    vault_hub.applyVaultReport(
+        bad_debt_vaults[0],
+        current_time,
+        INITIAL_VAULT_BALANCE,
+        INITIAL_VAULT_BALANCE,
+        0,
+        0,
+        0,
+        0,
+        {"from": lazy_oracle})
+
     vaultConnection = vault_hub.vaultConnection(bad_debt_vaults[0])
     dashboard = vaultConnection[0]
-    forceTransfer0 = ForceTransfer.deploy({"from": owner})
-    forceTransfer0.transfer(dashboard, {"from": owner, "value": 10 * 10**18})
-    vault_hub.mintShares(bad_debt_vaults[0], owner, 5 * 10**17, {"from": dashboard})
+    set_account_balance(dashboard)
+    vault_hub.mintShares(bad_debt_vaults[0], owner, 10 * max_shares_to_socialize[0], {"from": dashboard})
 
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
 
     # bring fresh report for vaults
     current_time = brownie.chain.time()
-    lazy_oracle = locator.lazyOracle()
-    accountingOracle = locator.accountingOracle()
-    forceTransfer1 = ForceTransfer.deploy({"from": owner})
-    forceTransfer1.transfer(accountingOracle, {"from": owner, "value": 10 * 10**18})
-    interface.ILazyOracle(lazy_oracle).updateReportData(
-        current_time,
-        1000,
-        "0x00",
-        "0x00",
-        {"from": accountingOracle})
+    lazy_oracle.updateReportData(current_time, 1000, "0x00", "0x00", {"from": accounting_oracle})
 
     # fresh report for first vault
-    forceTransfer2 = ForceTransfer.deploy({"from": owner})
-    forceTransfer2.transfer(lazy_oracle, {"from": owner, "value": 10 * 10**18})
     vault_hub.applyVaultReport(
         vault_acceptors[0],
         current_time,
-        2 * 10**18,
-        2 * 10**18,
+        INITIAL_VAULT_BALANCE,
+        INITIAL_VAULT_BALANCE,
         0,
         0,
         0,
@@ -216,13 +258,18 @@ def create_enact_and_check_socialize_bad_debt_motion(
     vault_hub.applyVaultReport(
         bad_debt_vaults[0],
         current_time,
-        1 * 10**17,
-        2 * 10**18,
+        10 * max_shares_to_socialize[0],
+        INITIAL_VAULT_BALANCE,
         0,
-        2 * 10**18,
+        INITIAL_VAULT_BALANCE,
         0,
         0,
         {"from": lazy_oracle})
+
+    bad_debt_record_before = vault_hub.vaultRecord(bad_debt_vaults[0])
+    bad_liability_before = bad_debt_record_before[2]
+    acceptor_record_before = vault_hub.vaultRecord(vault_acceptors[0])
+    acceptor_liability_before = acceptor_record_before[2]
 
     tx = easy_track.enactMotion(
         motions[0][0],
@@ -230,6 +277,14 @@ def create_enact_and_check_socialize_bad_debt_motion(
         {"from": stranger},
     )
     assert len(easy_track.getMotions()) == 0
+
+    bad_debt_record_after = vault_hub.vaultRecord(bad_debt_vaults[0])
+    bad_liability_after = bad_debt_record_after[2]
+    acceptor_record_after = vault_hub.vaultRecord(vault_acceptors[0])
+    acceptor_liability_after = acceptor_record_after[2]
+
+    assert bad_liability_after == bad_liability_before - max_shares_to_socialize[0]
+    assert acceptor_liability_after == acceptor_liability_before + max_shares_to_socialize[0]
 
     # Check that events were emitted for failed socializations
     assert len(tx.events["BadDebtSocialized"]) == len(bad_debt_vaults)
@@ -257,7 +312,7 @@ def test_force_validator_exits_happy_path(
     factory_instance = deployer.deploy(ForceValidatorExitsInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.vaultsAdapter() == adapter
-    assert adapter.validatorExitFeeLimit() == 1000000000000000000
+    assert adapter.validatorExitFeeLimit() == 10**18 # 1 ETH
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
 
@@ -344,7 +399,6 @@ def test_socialize_bad_debt_happy_path(
     factory_instance = deployer.deploy(SocializeBadDebtInVaultHub, trusted_address, adapter)
     assert factory_instance.trustedCaller() == trusted_address
     assert factory_instance.vaultsAdapter() == adapter
-    assert adapter.validatorExitFeeLimit() == 1000000000000000000
     assert adapter.trustedCaller() == trusted_address
     assert adapter.evmScriptExecutor() == easy_track.evmScriptExecutor()
 
@@ -368,5 +422,5 @@ def test_socialize_bad_debt_happy_path(
         factory_instance,
         [vaults[0]],  # bad debt vaults
         [vaults[1]],  # vault acceptors - both vaults have same operator
-        [1 * 10**16],  # max shares to socialize
+        [INITIAL_VAULT_BALANCE // 100],  # max shares to socialize
     )
