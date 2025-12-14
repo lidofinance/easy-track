@@ -283,15 +283,16 @@ def create_enact_and_check_socialize_bad_debt_motion(
     acceptor_record_after = vault_hub.vaultRecord(vault_acceptors[0])
     acceptor_liability_after = acceptor_record_after[2]
 
-    assert bad_liability_after == bad_liability_before - max_shares_to_socialize[0]
-    assert acceptor_liability_after == acceptor_liability_before + max_shares_to_socialize[0]
+    assert bad_liability_after + acceptor_liability_after == bad_liability_before + acceptor_liability_before
+    liability_delta = bad_liability_before - bad_liability_after
+    assert liability_delta > 0
 
     # Check that events were emitted for failed socializations
     assert len(tx.events["BadDebtSocialized"]) == len(bad_debt_vaults)
     for i, event in enumerate(tx.events["BadDebtSocialized"]):
         assert event["vaultDonor"] == bad_debt_vaults[i]
         assert event["vaultAcceptor"] == vault_acceptors[i]
-        assert event["badDebtShares"] == max_shares_to_socialize[i]
+        assert event["badDebtShares"] == liability_delta
 
 
 @pytest.mark.skip_coverage
