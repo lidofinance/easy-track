@@ -98,6 +98,35 @@ Next optional variables can be set:
 - `UNPAUSE_ADDRESS` - address to grant UNPAUSE_ROLE
 - `CANCEL_ADDRESS` - address to grant CANCEL_ROLE
 
+### `deploy_vaults_factories_base.py`
+
+Contains script to deploy base OperatorGrid EVM Script factories for vault management.
+Script deploys factories for:
+
+- RegisterGroupsInOperatorGrid - for registering new operator groups
+- UpdateGroupsShareLimitInOperatorGrid - for updating group share limits
+- RegisterTiersInOperatorGrid - for registering new tiers
+- AlterTiersInOperatorGrid - for altering existing tier parameters
+
+Script requires next ENV variables to be set:
+
+- `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
+
+### `deploy_vaults_factories_with_adapter.py`
+
+Contains script to deploy vault-specific EVM Script factories that work through VaultsAdapter.
+Script deploys VaultsAdapter and factories for:
+
+- SetJailStatusInOperatorGrid - for setting jail status of vaults
+- UpdateVaultsFeesInOperatorGrid - for updating vault fees
+- ForceValidatorExitsInVaultHub - for forcing validator exits
+- SocializeBadDebtInVaultHub - for socializing bad debt
+- SetLiabilitySharesTargetInVaultHub - for setting liability shares target
+
+Script requires next ENV variables to be set:
+
+- `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
+
 ### `final_check.py`
 
 Contains script to validate deployed setup of EasyTrack in mainnet network.
@@ -149,6 +178,12 @@ Run tests with coverage and gas profiling:
 
 ```bash
 brownie test --network mainnet-fork --coverage --gas
+```
+
+Run tests only for stVaults factories on Hoodi fork:
+```bash
+export HOODI_RPC_URL=<YOUR_HOODI_RPC_URL>
+./scripts/run_vaults_tests.sh
 ```
 
 > Note: Holesky support will be removed in upcoming upgrades.

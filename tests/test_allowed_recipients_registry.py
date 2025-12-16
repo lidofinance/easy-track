@@ -528,8 +528,7 @@ def test_set_limit_parameters_happy_path(limits_checker):
         _,
     ) = limits_checker
     period_limit, period_duration = 3 * 10**18, 1
-    now = datetime.now()
-    period_start = get_month_start_timestamp(now)
+    period_start, _ = calc_period_range(period_duration, chain.time())
 
     tx = limits_checker.setLimitParameters(period_limit, period_duration, {"from": set_parameters_role_holder})
     assert_event_exists(tx, "CurrentPeriodAdvanced", {"_periodStartTimestamp": period_start})

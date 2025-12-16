@@ -252,6 +252,15 @@ def evm_script_executor_stub(owner, EVMScriptExecutorStub):
 
 
 @pytest.fixture(scope="module")
+def lido_locator_stub(owner, LidoLocatorStub, VaultHubStub, OperatorGridStub):
+    vault_hub = owner.deploy(VaultHubStub, owner)
+     # set owner as the owner of the grid for the ease of testing purposes
+    default_tier_params = (1000, 200, 100, 50, 40, 10) # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
+    operator_grid = owner.deploy(OperatorGridStub, owner, default_tier_params)
+    return owner.deploy(LidoLocatorStub, operator_grid, vault_hub, owner, owner, owner)
+
+
+@pytest.fixture(scope="module")
 def mev_boost_relay_allowed_list_stub(owner, agent, MEVBoostRelayAllowedListStub):
     # set agent as the owner of the list and owner as the manager for the ease of testing purposes
     # in actual deployment, the owner should be the EVM script executor

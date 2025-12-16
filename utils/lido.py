@@ -27,7 +27,8 @@ def addresses(network=DEFAULT_NETWORK):
             validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
             dual_governance_admin_executor="0x23E0B465633FF5178808F4A75186E2F2F9537021",
             dual_governance="0xC1db28B3301331277e307FDCfF8DE28242A4486E",
-            emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316"
+            emergency_protected_timelock="0xCE0425301C85c5Ea2A0873A2dEe44d78E02D2316",
+            evm_script_executor="0xFE5986E06210aC1eCC1aDCafc0cc7f8D63B3F977",
         )
     if network == "holesky" or network == "holesky-fork":
         return LidoAddressesSetup(
@@ -52,6 +53,7 @@ def addresses(network=DEFAULT_NETWORK):
             dual_governance_admin_executor="0x8BD0a916faDa88Ba3accb595a3Acd28F467130e8",
             dual_governance="0x490bf377734CA134A8E207525E8576745652212e",
             emergency_protected_timelock="0xe9c5FfEAd0668AFdBB9aac16163840d649DB76DD",
+            evm_script_executor="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8", # fake address
         )
     if network == "hoodi" or network == "hoodi-fork":
         return LidoAddressesSetup(
@@ -75,7 +77,8 @@ def addresses(network=DEFAULT_NETWORK):
             validators_exit_bus_oracle="0x8664d394C2B3278F26A1B44B967aEf99707eeAB2",
             dual_governance_admin_executor="0x0eCc17597D292271836691358B22340b78F3035B",
             dual_governance="0x9CAaCCc62c66d817CC59c44780D1b722359795bF",
-            emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d"
+            emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
+            evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
         )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
@@ -161,12 +164,13 @@ class LidoContractsSetup:
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
-        self.locator = interface.LidoLocator(lido_addresses.locator)
+        self.locator = interface.ILidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
         self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
         self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
         self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
+
 
     def create_voting(self, evm_script, description, tx_params=None):
         voting = self.aragon.voting
@@ -221,7 +225,8 @@ class LidoAddressesSetup:
         validators_exit_bus_oracle,
         dual_governance_admin_executor,
         dual_governance,
-        emergency_protected_timelock
+        emergency_protected_timelock,
+        evm_script_executor
     ):
         self.aragon = aragon
         self.steth = steth
@@ -236,6 +241,7 @@ class LidoAddressesSetup:
         self.dual_governance = dual_governance
         self.emergency_protected_timelock = emergency_protected_timelock
         self.validators_exit_bus_oracle = validators_exit_bus_oracle
+        self.evm_script_executor = evm_script_executor
 
 
 class AragonSetup:
