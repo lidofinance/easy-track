@@ -1,0 +1,557 @@
+[
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vaultDonor",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vaultAcceptor",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "badDebtShares",
+        "type": "uint256"
+      }
+    ],
+    "name": "BadDebtSocialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes",
+        "name": "pubkeys",
+        "type": "bytes"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "refundRecipient",
+        "type": "address"
+      }
+    ],
+    "name": "ForcedValidatorExitTriggered",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "unsettledRedemptions",
+        "type": "uint256"
+      }
+    ],
+    "name": "RedemptionsUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "preInfraFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "preLiquidityFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "preReservationFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "infraFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "liquidityFeeBP",
+        "type": "uint256"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "reservationFeeBP",
+        "type": "uint256"
+      }
+    ],
+    "name": "VaultFeesUpdated",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "vault",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "uint256",
+        "name": "newShareLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "VaultShareLimitUpdated",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "BAD_DEBT_MASTER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "REDEMPTION_MASTER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "VALIDATOR_EXIT_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "VAULT_MASTER_ROLE",
+    "outputs": [
+      {
+        "internalType": "bytes32",
+        "name": "",
+        "type": "bytes32"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportTimestamp",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportTotalValue",
+        "type": "uint256"
+      },
+      {
+        "internalType": "int256",
+        "name": "_reportInOutDelta",
+        "type": "int256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportCumulativeLidoFees",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportLiabilityShares",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reportSlashingReserve",
+        "type": "uint256"
+      }
+    ],
+    "name": "applyVaultReport",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      }
+    ],
+    "name": "connectVault",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "bytes",
+        "name": "_pubkeys",
+        "type": "bytes"
+      },
+      {
+        "internalType": "address",
+        "name": "_refundRecipient",
+        "type": "address"
+      }
+    ],
+    "name": "forceValidatorExit",
+    "outputs": [],
+    "stateMutability": "payable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_redemptionsValue",
+        "type": "uint256"
+      }
+    ],
+    "name": "setVaultRedemptions",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_badDebtVault",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "_vaultAcceptor",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_maxSharesToSocialize",
+        "type": "uint256"
+      }
+    ],
+    "name": "socializeBadDebt",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_shareLimit",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateShareLimit",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_infraFeeBP",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_liquidityFeeBP",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
+        "name": "_reservationFeeBP",
+        "type": "uint256"
+      }
+    ],
+    "name": "updateVaultFees",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      }
+    ],
+    "name": "vaultConnection",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "address",
+            "name": "owner",
+            "type": "address"
+          },
+          {
+            "internalType": "uint96",
+            "name": "shareLimit",
+            "type": "uint96"
+          },
+          {
+            "internalType": "uint96",
+            "name": "vaultIndex",
+            "type": "uint96"
+          },
+          {
+            "internalType": "bool",
+            "name": "pendingDisconnect",
+            "type": "bool"
+          },
+          {
+            "internalType": "uint16",
+            "name": "reserveRatioBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "forcedRebalanceThresholdBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "infraFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "liquidityFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "uint16",
+            "name": "reservationFeeBP",
+            "type": "uint16"
+          },
+          {
+            "internalType": "bool",
+            "name": "isBeaconDepositsManuallyPaused",
+            "type": "bool"
+          }
+        ],
+        "internalType": "struct IVaultHub.VaultConnection",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      }
+    ],
+    "name": "vaultObligations",
+    "outputs": [
+      {
+        "components": [
+          {
+            "internalType": "uint128",
+            "name": "settledLidoFees",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "unsettledLidoFees",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint128",
+            "name": "redemptions",
+            "type": "uint128"
+          }
+        ],
+        "internalType": "struct IVaultHub.VaultObligations",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "address",
+        "name": "_vault",
+        "type": "address"
+      }
+    ],
+    "name": "vaultRecord",
+    "outputs": [
+      {
+        "components": [
+          {
+            "components": [
+              {
+                "internalType": "uint128",
+                "name": "totalValue",
+                "type": "uint128"
+              },
+              {
+                "internalType": "int112",
+                "name": "inOutDelta",
+                "type": "int112"
+              }
+            ],
+            "internalType": "struct IVaultHub.Report",
+            "name": "report",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint128",
+            "name": "locked",
+            "type": "uint128"
+          },
+          {
+            "internalType": "uint96",
+            "name": "liabilityShares",
+            "type": "uint96"
+          },
+          {
+            "components": [
+              {
+                "internalType": "int112",
+                "name": "value",
+                "type": "int112"
+              },
+              {
+                "internalType": "int112",
+                "name": "valueOnRefSlot",
+                "type": "int112"
+              },
+              {
+                "internalType": "uint32",
+                "name": "refSlot",
+                "type": "uint32"
+              }
+            ],
+            "internalType": "struct IVaultHub.Int112WithRefSlotCache",
+            "name": "inOutDelta",
+            "type": "tuple"
+          },
+          {
+            "internalType": "uint64",
+            "name": "reportTimestamp",
+            "type": "uint64"
+          }
+        ],
+        "internalType": "struct IVaultHub.VaultRecord",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
