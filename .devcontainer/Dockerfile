@@ -30,7 +30,7 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt-get update \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/* \
-    && corepack enable
+    && corepack enable npm
 
 # Install Poetry from PyPI at the pinned version
 RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
@@ -42,10 +42,7 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
 COPY package.json package-lock.json* ./
-RUN NPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]") \
-    && echo "Extracted npm version: ${NPM_VERSION}" \
-    && corepack prepare npm@${NPM_VERSION} --activate \
-    && if [ -f package-lock.json ]; then \
+RUN if [ -f package-lock.json ]; then \
       npm ci --ignore-scripts; \
     else \
       npm install --ignore-scripts; \
