@@ -43,6 +43,7 @@ RUN poetry install --no-root
 
 COPY package.json package-lock.json* ./
 RUN NPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]") \
+    && echo "Extracted npm version: ${NPM_VERSION}" \
     && corepack prepare npm@${NPM_VERSION} --activate \
     && if [ -f package-lock.json ]; then \
       npm ci --ignore-scripts; \
