@@ -1,26 +1,26 @@
 {
-	"name": "Easy Track Brownie Development",
-	"build": {
-		"dockerfile": "Dockerfile",
-		"context": ".."
-	},
-	"runArgs": [
-		"--add-host=host.docker.internal:host-gateway"
-	],
-	"containerEnv": {
-		"MAINNET_RPC_URL": "http://host.docker.internal:8545"
-	},
-	"forwardPorts": [],
-	"portsAttributes": {
-		"8545": {
-			"onAutoForward": "ignore"
-		}
-	},
-	"remoteUser": "root",
-	"mounts": [
-		"source=${localEnv:HOME}/.brownie,target=/root/.brownie,type=bind,consistency=cached"
-	],
-	"features": {
-		"ghcr.io/devcontainers/features/git:1": {}
-	}
+  "name": "Easy Track Brownie Development",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "runArgs": [
+    "--add-host=host.docker.internal:host-gateway"
+  ],
+  "containerEnv": {
+    "MAINNET_RPC_URL": "http://host.docker.internal:8545"
+  },
+  "forwardPorts": [],
+  "portsAttributes": {
+    "8545": {
+      "onAutoForward": "ignore"
+    }
+  },
+  "remoteUser": "root",
+  "mounts": [
+    "source=${localEnv:HOME}/.brownie,target=/root/.brownie,type=bind,consistency=cached"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/git:1": {}
+  }
 }
