@@ -5,7 +5,6 @@ FROM --platform=linux/amd64 python:3.10-slim-bookworm
 
 ARG POETRY_VERSION=1.8.2
 ARG NODE_MAJOR=18
-ARG NPM_VERSION=10.5.0
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -43,7 +42,8 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
 COPY package.json package-lock.json* ./
-RUN corepack prepare npm@${NPM_VERSION} --activate \
+RUN NPM_VERSION=$(node -p "require('./package.json').packageManager.split('@')[1]") \
+    && corepack prepare npm@${NPM_VERSION} --activate \
     && if [ -f package-lock.json ]; then \
       npm ci --ignore-scripts; \
     else \
