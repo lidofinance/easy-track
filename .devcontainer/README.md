@@ -27,11 +27,13 @@ The container has `MAINNET_RPC_URL=http://host.docker.internal:8545` by default.
 **Option A: Local RPC**
 
 Start an RPC on your host machine:
+
 ```bash
 anvil --host 0.0.0.0 --port 8545 --fork-url https://eth.drpc.org
 ```
 
 Then in the container:
+
 ```bash
 brownie test --network mainnet-fork
 ```
