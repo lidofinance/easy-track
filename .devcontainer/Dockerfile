@@ -34,8 +34,8 @@ RUN curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key \
     && apt-get install -y --no-install-recommends nodejs \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN curl -sSL https://install.python-poetry.org | python3 - --version ${POETRY_VERSION}
+# Install Poetry from PyPI at the pinned version
+RUN pip install --no-cache-dir "poetry==${POETRY_VERSION}"
 
 WORKDIR /workspace
 
@@ -44,6 +44,10 @@ COPY pyproject.toml poetry.lock* ./
 RUN poetry install --no-root
 
 COPY package.json package-lock.json* ./
-RUN npm ci --ignore-scripts 2>/dev/null || npm install --ignore-scripts
+RUN if [ -f package-lock.json ]; then \
+      npm ci --ignore-scripts; \
+    else \
+      npm install --ignore-scripts; \
+    fi
 
 CMD ["/bin/bash"]
