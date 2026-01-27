@@ -10,7 +10,7 @@ contract CSLikeModuleStub {
 
     event GotValidatorInfo(WithdrawnValidatorInfo info);
 
-    function reportWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external {
+    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external {
         for (uint256 i; i < validatorInfos.length; ++i) {
             emit GotValidatorInfo(validatorInfos[i]);
         }

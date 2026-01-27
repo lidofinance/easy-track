@@ -64,7 +64,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
         return
             EVMScriptCreator.createEVMScript(
                 address(module),
-                module.reportWithdrawnValidators.selector,
+                module.reportSlashedWithdrawnValidators.selector,
                 _evmScriptCallData
             );
     }

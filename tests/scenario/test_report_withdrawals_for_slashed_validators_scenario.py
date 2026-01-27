@@ -41,7 +41,7 @@ def factory(owner, et_contracts, voting, module):
         {"from": owner},
     )
 
-    permissions = module.address + module.reportWithdrawnValidators.signature[2:]
+    permissions = module.address + module.reportSlashedWithdrawnValidators.signature[2:]
     et_contracts.easy_track.addEVMScriptFactory(
         factory.address,
         permissions,

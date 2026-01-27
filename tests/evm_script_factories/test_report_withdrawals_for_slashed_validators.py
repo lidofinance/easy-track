@@ -226,7 +226,7 @@ def test_create_evm_script(owner, factory, module, values):
         [
             (
                 module.address,
-                module.reportWithdrawnValidators.encode_input(values),
+                module.reportSlashedWithdrawnValidators.encode_input(values),
             )
         ]
     )
