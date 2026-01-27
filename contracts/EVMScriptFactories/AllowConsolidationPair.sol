@@ -13,6 +13,7 @@ import "../interfaces/IConsolidationMigrator.sol";
 /// @notice Creates EVMScript to allow consolidation between a curated node operator and a target module operator
 contract AllowConsolidationPair is IEVMScriptFactory {
     struct AllowConsolidationPairInput {
+        address consolidationManager;
         uint256 sourceOperatorId;
         uint256 targetOperatorId;
     }
@@ -51,12 +52,12 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     constructor(address _consolidationMigrator) {
         require(_consolidationMigrator != address(0), ERROR_ZERO_MIGRATOR);
 
-        consolidationMigrator = IConsolidationMigrator(_consolidationMigrator);
+        sourceModule = INodeOperatorsRegistry(IConsolidationMigrator(_consolidationMigrator).sourceModule());
+        targetModule = ICSModule(IConsolidationMigrator(_consolidationMigrator).targetModule());
+        sourceModuleId = IConsolidationMigrator(_consolidationMigrator).sourceModuleId();
+        targetModuleId = IConsolidationMigrator(_consolidationMigrator).targetModuleId();
 
-        sourceModule = INodeOperatorsRegistry(consolidationMigrator.sourceModule());
-        targetModule = ICSModule(consolidationMigrator.targetModule());
-        sourceModuleId = consolidationMigrator.sourceModuleId();
-        targetModuleId = consolidationMigrator.targetModuleId();
+        consolidationMigrator = IConsolidationMigrator(_consolidationMigrator);
     }
 
     // -------------
@@ -64,7 +65,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     // -------------
 
     /// @notice Creates EVMScript that allows consolidation between the curated and the target operators.
-    /// @param _creator Address who creates EVMScript
+    /// @param /* _creator */ address who creates EVMScript
     /// @param _evmScriptCallData Encoded AllowConsolidationPairInput
     function createEVMScript(
         address /* _creator */,
@@ -78,7 +79,11 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             EVMScriptCreator.createEVMScript(
                 address(consolidationMigrator),
                 IConsolidationMigrator.allowPair.selector,
-                abi.encode(input.sourceOperatorId, input.targetOperatorId)
+                abi.encode(
+                    input.consolidationManager,
+                    input.sourceOperatorId,
+                    input.targetOperatorId
+                )
             );
     }
 
