@@ -43,7 +43,7 @@ def main():
 
     log.br()
 
-    assert settle_general_delayed_penalty_factory.csm() == deploy_config.module_address
+    assert settle_general_delayed_penalty_factory.module() == deploy_config.module_address
     log.nb('Module address is correct')
 
     assert settle_general_delayed_penalty_factory.trustedCaller() == deploy_config.trusted_caller

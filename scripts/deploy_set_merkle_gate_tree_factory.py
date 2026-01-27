@@ -74,8 +74,9 @@ def main():
 
     if get_is_live():
         # Save artifacts into deployed-sm-<network>.json
+        entry_key = f"SetMerkleGateTree:{factory_name}"
         deployment_artifacts = {
-            "SetMerkleGateTree": {
+            entry_key: {
                 "contract": "SetMerkleGateTree",
                 "address": factory.address,
             "constructorArgs": [trusted_caller, factory_name, allowed_registry],

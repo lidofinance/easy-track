@@ -1,11 +1,7 @@
 import json
 import os
 
-from brownie import (
-    ReportWithdrawalsForSlashedValidators,  # type: ignore
-    chain,
-    web3,
-)
+from brownie import SettleGeneralDelayedPenalty, chain, web3
 
 from utils import log
 from utils.config import (
@@ -19,7 +15,7 @@ from utils.config import (
 
 def main():
     network_name = get_network_name()
-    assert type(network_name) is str
+    assert isinstance(network_name, str)
 
     deployer = get_deployer_account(
         get_is_live(), network=network_name, dev_ldo_transfer=False
@@ -53,26 +49,22 @@ def main():
         factory_name,
         module_address,
     )
-    factory = ReportWithdrawalsForSlashedValidators.deploy(
-        *constructor_args, {"from": deployer}
-    )
+    factory = SettleGeneralDelayedPenalty.deploy(*constructor_args, tx_params)
 
     log.br()
-    log.ok("Deployed ReportWithdrawalsForSlashedValidators", factory.address)
+    log.ok("Deployed SettleGeneralDelayedPenalty", factory.address)
 
     if get_is_live():
-        # Save artifacts into deployed-sm-<network>.json
-        entry_key = f"ReportWithdrawalsForSlashedValidators:{factory_name}"
+        entry_key = f"SettleGeneralDelayedPenalty:{factory_name}"
         new_entry = {
             entry_key: {
-                "contract": "ReportWithdrawalsForSlashedValidators",
+                "contract": "SettleGeneralDelayedPenalty",
                 "address": factory.address,
                 "constructorArgs": constructor_args,
             }
         }
 
         artifacts_path = f"deployed-sm-{network_name}.json"
-
         try:
             with open(artifacts_path, "r") as prev:
                 artifacts = json.load(prev)
@@ -85,8 +77,8 @@ def main():
             json.dump(artifacts, out, indent=4)
 
         if get_env("FORCE_VERIFY", False):
-            log.ok("Verifying ReportWithdrawalsForSlashedValidators...")
-            ReportWithdrawalsForSlashedValidators.publish_source(factory)
+            log.ok("Verifying SettleGeneralDelayedPenalty...")
+            SettleGeneralDelayedPenalty.publish_source(factory)
 
     log.br()
     print("Hit <Enter> to quit script")
