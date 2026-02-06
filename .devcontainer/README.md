@@ -5,10 +5,11 @@ Devcontainer for running Brownie tests on the Easy Track project.
 ## Architecture
 
 - **Platform**: `linux/amd64` (even on ARM64 hosts)
+
   - Required for prebuilt `solc 0.8.6` binary
   - Avoids slow source compilation on ARM64
 
-- **Tools**: Python 3.10, Poetry 1.8.2, Node.js 18, Hardhat
+- **Tools**: Python 3.10, Poetry 1.8.2, Node.js 20, Hardhat
 
 - **Dependencies**: Installed during image build (cached until lock files change)
 
