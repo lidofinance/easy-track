@@ -17,8 +17,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_META_REGISTRY_IS_ZERO_ADDRESS =
         "META_REGISTRY_IS_ZERO_ADDRESS";
     string private constant ERROR_INVALID_GROUP_ID = "INVALID_GROUP_ID";
-    string private constant ERROR_EMPTY_SUB_NODE_OPERATORS =
-        "EMPTY_SUB_NODE_OPERATORS";
+    string private constant ERROR_EMPTY_GROUP = "EMPTY_GROUP";
     string private constant ERROR_INVALID_EMPTY_GROUP_UPDATE =
         "INVALID_EMPTY_GROUP_UPDATE";
     string private constant ERROR_SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH =
@@ -144,16 +143,15 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         uint256 externalOperatorsCount = groupInfo.externalOperators.length;
         bool hasSubNodeOperators = subNodeOperatorsCount > 0;
         bool hasExternalOperators = externalOperatorsCount > 0;
-        bool isClearUpdate = !hasSubNodeOperators && !hasExternalOperators;
+        bool isEmptyGroup = !hasSubNodeOperators && !hasExternalOperators;
 
         if (isCreate) {
-            require(!isClearUpdate, ERROR_EMPTY_SUB_NODE_OPERATORS);
+            require(!isEmptyGroup, ERROR_EMPTY_GROUP);
         } else {
             require(groupId < groupsCount, ERROR_INVALID_GROUP_ID);
-        }
-
-        if (!isCreate && isClearUpdate) {
-            return;
+            if (isEmptyGroup) {
+                return;
+            }
         }
 
         require(hasSubNodeOperators, ERROR_INVALID_EMPTY_GROUP_UPDATE);

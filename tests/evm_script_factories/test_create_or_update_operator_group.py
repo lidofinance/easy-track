@@ -203,7 +203,7 @@ def test_create_group_reverts_with_empty_sub_node_operators(owner, factory):
         group_id=0,
         sub_node_operators=[],
         external_operators=[],
-        revert_reason="EMPTY_SUB_NODE_OPERATORS",
+        revert_reason="EMPTY_GROUP",
     )
 
 
