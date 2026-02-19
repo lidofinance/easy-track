@@ -21,6 +21,8 @@ contract AllowedMerkleGatesRegistry is AccessControl {
         "GATE_ALREADY_ADDED_TO_ALLOWED_LIST";
     string private constant ERROR_GATE_NOT_FOUND_IN_ALLOWED_LIST =
         "GATE_NOT_FOUND_IN_ALLOWED_LIST";
+    string private constant ERROR_INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH =
+        "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH";
 
     // -------------
     // VARIABLES
@@ -38,8 +40,19 @@ contract AllowedMerkleGatesRegistry is AccessControl {
     // -------------
 
     /// @param _admin Address which will be granted with role DEFAULT_ADMIN_ROLE
-    constructor(address _admin) {
+    /// @param _gates Initial list of allowed gates
+    /// @param _titles Titles for initial gates
+    constructor(address _admin, address[] memory _gates, string[] memory _titles) {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+
+        require(
+            _gates.length == _titles.length,
+            ERROR_INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH
+        );
+
+        for (uint256 i = 0; i < _gates.length; ++i) {
+            _addGate(_gates[i], _titles[i]);
+        }
     }
 
     // -------------
@@ -51,14 +64,7 @@ contract AllowedMerkleGatesRegistry is AccessControl {
         external
         onlyRole(DEFAULT_ADMIN_ROLE)
     {
-        require(
-            allowedGateIndices[_gate] == 0,
-            ERROR_GATE_ALREADY_ADDED_TO_ALLOWED_LIST
-        );
-
-        allowedGates.push(_gate);
-        allowedGateIndices[_gate] = allowedGates.length;
-        emit GateAdded(_gate, _title);
+        _addGate(_gate, _title);
     }
 
     /// @notice Removes address from list of allowed addresses 
@@ -101,5 +107,16 @@ contract AllowedMerkleGatesRegistry is AccessControl {
         _index = allowedGateIndices[_gate];
         require(_index > 0, ERROR_GATE_NOT_FOUND_IN_ALLOWED_LIST);
         _index -= 1;
+    }
+
+    function _addGate(address _gate, string memory _title) private {
+        require(
+            allowedGateIndices[_gate] == 0,
+            ERROR_GATE_ALREADY_ADDED_TO_ALLOWED_LIST
+        );
+
+        allowedGates.push(_gate);
+        allowedGateIndices[_gate] = allowedGates.length;
+        emit GateAdded(_gate, _title);
     }
 }

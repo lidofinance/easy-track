@@ -38,8 +38,12 @@ def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts,
 
     # Deploy SetMerkleGateTree factory
     # Deploy registry and list the gate
-    registry = owner.deploy(AllowedMerkleGatesRegistry, owner)
-    registry.addGate(merkle_gate_stub, "Scenario Gate", {"from": owner})
+    registry = owner.deploy(
+        AllowedMerkleGatesRegistry,
+        owner,
+        [merkle_gate_stub],
+        ["Scenario Gate"],
+    )
 
     factory = owner.deploy(
         SetMerkleGateTree,

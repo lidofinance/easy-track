@@ -22,8 +22,12 @@ def merkle_gate_stub(owner):
 
 @pytest.fixture(scope="module")
 def allowed_gates_registry(owner, merkle_gate_stub):
-    registry = owner.deploy(AllowedMerkleGatesRegistry, owner)
-    registry.addGate(merkle_gate_stub, "Test Gate", {"from": owner})
+    registry = owner.deploy(
+        AllowedMerkleGatesRegistry,
+        owner,
+        [merkle_gate_stub],
+        ["Test Gate"],
+    )
     return registry
 
 
