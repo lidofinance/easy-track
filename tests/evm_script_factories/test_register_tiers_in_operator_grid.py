@@ -128,15 +128,17 @@ def test_decode_evm_script_call_data(accounts, register_tiers_in_operator_grid_f
             assert decoded_tiers[i][j][5] == tiers[i][j][5]  # reservationFeeBP
 
 
-def test_tier_share_limit_too_high(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
-    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if any tier's share limit exceeds the group's share limit"
+def test_tier_share_limit_exceeds_group_share_limit(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must allow tier share limit to exceed group share limit (enforced at minting time by OperatorGrid)"
     operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     operator = "0x0000000000000000000000000000000000000001"
     operator_grid_stub.registerGroup(operator, 1000, {"from": owner})
     tiers = [[(1500, 200, 100, 50, 40, 10)]]  # Tier share limit exceeds group share limit
     CALLDATA = create_calldata([operator], tiers)
-    with reverts('TIER_SHARE_LIMIT_TOO_HIGH'):
-        register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+    # Should not revert - share limit enforcement is done by OperatorGrid at minting time
+    evm_script = register_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+    assert len(evm_script) > 0
 
 
 def test_zero_reserve_ratio(owner, register_tiers_in_operator_grid_factory, lido_locator_stub):
