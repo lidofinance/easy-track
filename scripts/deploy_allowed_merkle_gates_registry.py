@@ -89,6 +89,7 @@ def main():
 
     registry = AllowedMerkleGatesRegistry.deploy(
         admin,
+        registry_name,
         initial_gates,
         initial_titles,
         tx_params,
@@ -104,7 +105,7 @@ def main():
             entry_key: {
                 "contract": "AllowedMerkleGatesRegistry",
                 "address": registry.address,
-                "constructorArgs": [admin, initial_gates, initial_titles],
+                "constructorArgs": [admin, registry_name, initial_gates, initial_titles],
                 "name": registry_name,
             }
         }

@@ -31,6 +31,9 @@ contract AllowedMerkleGatesRegistry is AccessControl {
     /// @dev List of allowed gates
     address[] private allowedGates;
 
+    /// @notice Alias for the registry.
+    string public name;
+
     // Position of the address in the `allowedGates` array,
     // plus 1 because index 0 means a value is not in the set.
     mapping(address => uint256) private allowedGateIndices;
@@ -40,10 +43,17 @@ contract AllowedMerkleGatesRegistry is AccessControl {
     // -------------
 
     /// @param _admin Address which will be granted with role DEFAULT_ADMIN_ROLE
+    /// @param _name Alias for the registry
     /// @param _gates Initial list of allowed gates
     /// @param _titles Titles for initial gates
-    constructor(address _admin, address[] memory _gates, string[] memory _titles) {
+    constructor(
+        address _admin,
+        string memory _name,
+        address[] memory _gates,
+        string[] memory _titles
+    ) {
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
+        name = _name;
 
         require(
             _gates.length == _titles.length,

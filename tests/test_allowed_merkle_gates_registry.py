@@ -5,6 +5,7 @@ from utils.test_helpers import access_revert_message
 
 
 GATE_TITLE = "New Allowed Merkle Gate"
+REGISTRY_NAME = "CSM"
 
 
 @pytest.fixture(scope="module")
@@ -14,15 +15,16 @@ def merkle_gate_with_interface(owner, MerkleGateStub):
 
 @pytest.fixture(scope="module")
 def allowed_merkle_gates_registry(owner, AllowedMerkleGatesRegistry):
-    registry = owner.deploy(AllowedMerkleGatesRegistry, owner, [], [])
+    registry = owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [], [])
     return (registry, owner)
 
 
 def test_registry_initial_state(owner, AllowedMerkleGatesRegistry):
-    registry = owner.deploy(AllowedMerkleGatesRegistry, owner, [], [])
+    registry = owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [], [])
 
     # Only admin role is set
     assert registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), owner)
+    assert registry.name() == REGISTRY_NAME
 
     # Empty list by default
     assert len(registry.getAllowedGates()) == 0
@@ -36,10 +38,12 @@ def test_registry_constructor_seeds_initial_gates(owner, AllowedMerkleGatesRegis
     registry = owner.deploy(
         AllowedMerkleGatesRegistry,
         owner,
+        REGISTRY_NAME,
         [first_gate, second_gate],
         titles,
     )
 
+    assert registry.name() == REGISTRY_NAME
     assert registry.getAllowedGates() == [first_gate, second_gate]
     assert registry.isGateAllowed(first_gate)
     assert registry.isGateAllowed(second_gate)
@@ -48,7 +52,7 @@ def test_registry_constructor_seeds_initial_gates(owner, AllowedMerkleGatesRegis
 def test_registry_constructor_reverts_on_initial_length_mismatch(owner, AllowedMerkleGatesRegistry, MerkleGateStub):
     gate = owner.deploy(MerkleGateStub)
     with reverts("INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"):
-        owner.deploy(AllowedMerkleGatesRegistry, owner, [gate], [])
+        owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [gate], [])
 
 
 def test_add_gate_success(allowed_merkle_gates_registry, merkle_gate_with_interface):
@@ -126,7 +130,7 @@ def test_remove_missing_gate_reverts(allowed_merkle_gates_registry, merkle_gate_
 
 
 def test_access_control_enforced(owner, stranger, AllowedMerkleGatesRegistry, merkle_gate_with_interface):
-    registry = owner.deploy(AllowedMerkleGatesRegistry, owner, [], [])
+    registry = owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [], [])
 
     # Only DEFAULT_ADMIN_ROLE can add/remove
     for caller in [stranger]:

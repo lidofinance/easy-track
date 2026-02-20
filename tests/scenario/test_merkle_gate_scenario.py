@@ -41,6 +41,7 @@ def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts,
     registry = owner.deploy(
         AllowedMerkleGatesRegistry,
         owner,
+        "CSM",
         [merkle_gate_stub],
         ["Scenario Gate"],
     )

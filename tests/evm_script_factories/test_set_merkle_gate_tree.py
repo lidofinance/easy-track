@@ -5,6 +5,7 @@ from utils.evm_script import encode_call_script, encode_calldata
 
 
 TEST_FACTORY_NAME = "CSMv3"
+TEST_REGISTRY_NAME = "CSM"
 
 def create_calldata(gate, tree_root, tree_cid):
     return encode_calldata(["address", "bytes32", "string"], [gate, tree_root, tree_cid])
@@ -25,6 +26,7 @@ def allowed_gates_registry(owner, merkle_gate_stub):
     registry = owner.deploy(
         AllowedMerkleGatesRegistry,
         owner,
+        TEST_REGISTRY_NAME,
         [merkle_gate_stub],
         ["Test Gate"],
     )
