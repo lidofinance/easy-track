@@ -79,7 +79,8 @@ def main():
             entry_key: {
                 "contract": "SetMerkleGateTree",
                 "address": factory.address,
-            "constructorArgs": [trusted_caller, factory_name, allowed_registry],
+                "constructorArgs": [trusted_caller, factory_name, allowed_registry],
+                "txHash": factory.tx.txid,
             }
         }
 

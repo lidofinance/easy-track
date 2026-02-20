@@ -106,6 +106,7 @@ def main():
                 "contract": "AllowedMerkleGatesRegistry",
                 "address": registry.address,
                 "constructorArgs": [admin, registry_name, initial_gates, initial_titles],
+                "txHash": registry.tx.txid,
                 "name": registry_name,
             }
         }

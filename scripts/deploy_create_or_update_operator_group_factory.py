@@ -61,6 +61,7 @@ def main():
                 "contract": "CreateOrUpdateOperatorGroup",
                 "address": factory.address,
                 "constructorArgs": constructor_args,
+                "txHash": factory.tx.txid,
             }
         }
 

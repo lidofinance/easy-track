@@ -54,7 +54,7 @@ def main():
         module_address,
     )
     factory = ReportWithdrawalsForSlashedValidators.deploy(
-        *constructor_args, {"from": deployer}
+        *constructor_args, tx_params
     )
 
     log.br()
@@ -68,6 +68,7 @@ def main():
                 "contract": "ReportWithdrawalsForSlashedValidators",
                 "address": factory.address,
                 "constructorArgs": constructor_args,
+                "txHash": factory.tx.txid,
             }
         }
 
