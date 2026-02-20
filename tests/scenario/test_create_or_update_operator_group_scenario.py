@@ -1,7 +1,9 @@
 import pytest
 from brownie import (
     CreateOrUpdateOperatorGroup,
+    CSLikeModuleStub,
     MetaRegistryStub,
+    StakingRouterStub,
 )
 
 from utils.evm_script import encode_calldata
@@ -24,7 +26,20 @@ def make_nor_external_operator(module_id, node_operator_id):
 
 @pytest.fixture(scope="module")
 def meta_registry_stub(owner):
-    return owner.deploy(MetaRegistryStub)
+    registry = owner.deploy(MetaRegistryStub)
+
+    module = owner.deploy(CSLikeModuleStub)
+    module.mock_setNodeOperatorsCount(100, {"from": owner})
+
+    external_module = owner.deploy(CSLikeModuleStub)
+    external_module.mock_setNodeOperatorsCount(100, {"from": owner})
+
+    staking_router = owner.deploy(StakingRouterStub)
+    staking_router.setStakingModule(1, external_module.address, {"from": owner})
+
+    registry.setModule(module.address, {"from": owner})
+    registry.setStakingRouter(staking_router.address, {"from": owner})
+    return registry
 
 
 @pytest.fixture(scope="module")

@@ -7,6 +7,8 @@ import "../interfaces/IMetaRegistry.sol";
 
 contract MetaRegistryStub is IMetaRegistry {
     uint256 public override NO_GROUP_ID;
+    address public override MODULE;
+    address public override STAKING_ROUTER;
     OperatorGroup[] internal groups;
 
     error InvalidOperatorGroup();
@@ -35,6 +37,14 @@ contract MetaRegistryStub is IMetaRegistry {
         while (groups.length > _groupsCount) {
             groups.pop();
         }
+    }
+
+    function setModule(address _module) external {
+        MODULE = _module;
+    }
+
+    function setStakingRouter(address _stakingRouter) external {
+        STAKING_ROUTER = _stakingRouter;
     }
 
     function getOperatorGroupsCount() external view override returns (uint256) {

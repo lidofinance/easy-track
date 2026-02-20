@@ -22,6 +22,10 @@ interface IMetaRegistry {
 
     function getOperatorGroupsCount() external view returns (uint256);
 
+    function MODULE() external view returns (address);
+
+    function STAKING_ROUTER() external view returns (address);
+
     function createOrUpdateOperatorGroup(
         uint256 groupId,
         OperatorGroup calldata groupInfo

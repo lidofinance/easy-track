@@ -6,7 +6,9 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
+import "../interfaces/ICSModule.sol";
 import "../interfaces/IMetaRegistry.sol";
+import "../interfaces/IStakingRouter.sol";
 
 /// @notice Creates EVMScript to create or update a MetaRegistry operator group.
 contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
@@ -26,6 +28,16 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         "DUPLICATE_SUB_NODE_OPERATOR";
     string private constant ERROR_DUPLICATE_EXTERNAL_OPERATOR =
         "DUPLICATE_EXTERNAL_OPERATOR";
+    string private constant ERROR_SUB_NODE_OPERATOR_DOES_NOT_EXIST =
+        "SUB_NODE_OPERATOR_DOES_NOT_EXIST";
+    string private constant ERROR_INVALID_EXTERNAL_OPERATOR_DATA_LENGTH =
+        "INVALID_EXTERNAL_OPERATOR_DATA_LENGTH";
+    string private constant ERROR_UNSUPPORTED_EXTERNAL_OPERATOR_TYPE =
+        "UNSUPPORTED_EXTERNAL_OPERATOR_TYPE";
+    string private constant ERROR_EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST =
+        "EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST";
+    string private constant ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST =
+        "EXTERNAL_OPERATOR_DOES_NOT_EXIST";
 
     // -------------
     // CONSTANTS
@@ -34,6 +46,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     uint256 private constant MAX_BP = 10000;
     // ExternalOperatorLib.OperatorType.NOR
     uint8 private constant EXT_OPERATOR_TYPE_NOR = 0;
+    uint256 private constant EXT_OPERATOR_DATA_LENGTH = 10;
 
     // -------------
     // VARIABLES
@@ -44,6 +57,10 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of MetaRegistry contract
     IMetaRegistry public immutable metaRegistry;
+    /// @notice CS-like module taken from MetaRegistry at deployment time
+    ICSModule public immutable module;
+    /// @notice Staking router taken from MetaRegistry at deployment time
+    IStakingRouter public immutable stakingRouter;
 
     // -------------
     // CONSTRUCTOR
@@ -59,8 +76,14 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
             ERROR_META_REGISTRY_IS_ZERO_ADDRESS
         );
 
+        IMetaRegistry registry = IMetaRegistry(_metaRegistry);
+        metaRegistry = registry;
+        // Snapshot dependencies at deploy time.
+        // If MetaRegistry changes MODULE/STAKING_ROUTER, this factory must be redeployed.
+        module = ICSModule(registry.MODULE());
+        stakingRouter = IStakingRouter(registry.STAKING_ROUTER());
+
         name = _name;
-        metaRegistry = IMetaRegistry(_metaRegistry);
     }
 
     // -------------
@@ -120,6 +143,17 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         );
     }
 
+    /// @notice Decodes `ExternalOperator.data` for a NOR external operator.
+    /// @dev Expected format:
+    /// `[operatorType:1 byte][moduleId:1 byte][nodeOperatorId:8 bytes]`.
+    function decodeNORExtOperatorData(bytes memory _externalOperatorData)
+        external
+        pure
+        returns (uint8 moduleId, uint64 nodeOperatorId)
+    {
+        return _decodeNORExtOperatorData(_externalOperatorData);
+    }
+
     // ------------------
     // PRIVATE METHODS
     // ------------------
@@ -136,35 +170,46 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         uint256 groupId,
         IMetaRegistry.OperatorGroup memory groupInfo
     ) private view {
-        uint256 noGroupId = metaRegistry.NO_GROUP_ID();
-        uint256 groupsCount = metaRegistry.getOperatorGroupsCount();
-        bool isCreate = groupId == noGroupId;
         uint256 subNodeOperatorsCount = groupInfo.subNodeOperators.length;
         uint256 externalOperatorsCount = groupInfo.externalOperators.length;
-        bool hasSubNodeOperators = subNodeOperatorsCount > 0;
-        bool hasExternalOperators = externalOperatorsCount > 0;
-        bool isEmptyGroup = !hasSubNodeOperators && !hasExternalOperators;
 
-        if (isCreate) {
-            require(!isEmptyGroup, ERROR_EMPTY_GROUP);
-        } else {
-            require(groupId < groupsCount, ERROR_INVALID_GROUP_ID);
-            if (isEmptyGroup) {
-                return;
-            }
+        require(
+            groupId < metaRegistry.getOperatorGroupsCount(),
+            ERROR_INVALID_GROUP_ID
+        );
+
+        if (groupId == metaRegistry.NO_GROUP_ID()) {
+            require(subNodeOperatorsCount > 0, ERROR_EMPTY_GROUP);
+        } else if (subNodeOperatorsCount == 0) {
+            require(
+                externalOperatorsCount == 0,
+                ERROR_INVALID_EMPTY_GROUP_UPDATE
+            );
+            return;
         }
 
-        require(hasSubNodeOperators, ERROR_INVALID_EMPTY_GROUP_UPDATE);
+        _validateSubNodeOperators(groupInfo.subNodeOperators);
+        _validateExternalOperators(groupInfo.externalOperators);
+    }
+
+    function _validateSubNodeOperators(
+        IMetaRegistry.SubNodeOperator[] memory _subNodeOperators
+    ) private view {
+        uint256 moduleNodeOperatorsCount = module.getNodeOperatorsCount();
+        uint256 subNodeOperatorsCount = _subNodeOperators.length;
 
         uint256 sharesSum;
-
         for (uint256 i = 0; i < subNodeOperatorsCount; ++i) {
-            uint64 nodeOperatorId = groupInfo.subNodeOperators[i].nodeOperatorId;
-            sharesSum += groupInfo.subNodeOperators[i].share;
+            uint64 nodeOperatorId = _subNodeOperators[i].nodeOperatorId;
+            require(
+                nodeOperatorId < moduleNodeOperatorsCount,
+                ERROR_SUB_NODE_OPERATOR_DOES_NOT_EXIST
+            );
+            sharesSum += _subNodeOperators[i].share;
 
             for (uint256 j = i + 1; j < subNodeOperatorsCount; ++j) {
                 require(
-                    nodeOperatorId != groupInfo.subNodeOperators[j].nodeOperatorId,
+                    nodeOperatorId != _subNodeOperators[j].nodeOperatorId,
                     ERROR_DUPLICATE_SUB_NODE_OPERATOR
                 );
             }
@@ -174,18 +219,81 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
             sharesSum == MAX_BP,
             ERROR_SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH
         );
+    }
 
+    function _validateExternalOperators(
+        IMetaRegistry.ExternalOperator[] memory _externalOperators
+    ) private view {
+        uint256 externalOperatorsCount = _externalOperators.length;
         for (uint256 i = 0; i < externalOperatorsCount; ++i) {
+            (
+                uint8 externalModuleId,
+                uint64 externalNodeOperatorId
+            ) = _decodeNORExtOperatorData(_externalOperators[i].data);
+
+            IStakingRouter.StakingModule memory stakingModule = stakingRouter
+                .getStakingModule(externalModuleId);
+            address externalModuleAddress = stakingModule.stakingModuleAddress;
+            require(
+                externalModuleAddress != address(0),
+                ERROR_EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST
+            );
+            uint256 externalModuleNodeOperatorsCount = ICSModule(externalModuleAddress)
+                .getNodeOperatorsCount();
+            require(
+                externalNodeOperatorId < externalModuleNodeOperatorsCount,
+                ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST
+            );
+
             bytes32 externalOperatorHash = keccak256(
-                groupInfo.externalOperators[i].data
+                _externalOperators[i].data
             );
             for (uint256 j = i + 1; j < externalOperatorsCount; ++j) {
                 require(
                     externalOperatorHash !=
-                        keccak256(groupInfo.externalOperators[j].data),
+                        keccak256(_externalOperators[j].data),
                     ERROR_DUPLICATE_EXTERNAL_OPERATOR
                 );
             }
+        }
+    }
+
+    function _decodeNORExtOperatorData(bytes memory _externalOperatorData)
+        private
+        pure
+        returns (uint8 moduleId, uint64 nodeOperatorId)
+    {
+        require(
+            _externalOperatorData.length == EXT_OPERATOR_DATA_LENGTH,
+            ERROR_INVALID_EXTERNAL_OPERATOR_DATA_LENGTH
+        );
+        require(
+            uint8(_externalOperatorData[0]) == EXT_OPERATOR_TYPE_NOR,
+            ERROR_UNSUPPORTED_EXTERNAL_OPERATOR_TYPE
+        );
+
+        moduleId = _moduleIdNOR(_externalOperatorData);
+        nodeOperatorId = _nodeOperatorIdNOR(_externalOperatorData);
+    }
+
+    function _moduleIdNOR(bytes memory _externalOperatorData)
+        private
+        pure
+        returns (uint8)
+    {
+        return uint8(_externalOperatorData[1]);
+    }
+
+    function _nodeOperatorIdNOR(bytes memory _externalOperatorData)
+        private
+        pure
+        returns (uint64 ret)
+    {
+        assembly {
+            // bytes layout in memory: [length (32 bytes)][data...]
+            // data[2..9] starts at (_externalOperatorData + 34).
+            // Keep the top 8 bytes as uint64.
+            ret := shr(192, mload(add(_externalOperatorData, 34)))
         }
     }
 }

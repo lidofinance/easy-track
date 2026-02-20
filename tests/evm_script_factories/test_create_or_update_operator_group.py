@@ -86,8 +86,24 @@ def assert_create_evm_script_reverts(
 
 
 @pytest.fixture(scope="module")
-def meta_registry_stub(owner):
-    return owner.deploy(MetaRegistryStub)
+def meta_registry_stub(owner, CSLikeModuleStub, StakingRouterStub):
+    registry = owner.deploy(MetaRegistryStub)
+
+    module = owner.deploy(CSLikeModuleStub)
+    module.mock_setNodeOperatorsCount(100, {"from": owner})
+
+    external_module_1 = owner.deploy(CSLikeModuleStub)
+    external_module_1.mock_setNodeOperatorsCount(10_000, {"from": owner})
+    external_module_2 = owner.deploy(CSLikeModuleStub)
+    external_module_2.mock_setNodeOperatorsCount(10_000, {"from": owner})
+
+    staking_router = owner.deploy(StakingRouterStub)
+    staking_router.setStakingModule(1, external_module_1.address, {"from": owner})
+    staking_router.setStakingModule(2, external_module_2.address, {"from": owner})
+
+    registry.setModule(module.address, {"from": owner})
+    registry.setStakingRouter(staking_router.address, {"from": owner})
+    return registry
 
 
 @pytest.fixture(scope="module")
@@ -109,6 +125,8 @@ def test_deploy(owner, meta_registry_stub, factory):
     assert factory.trustedCaller() == owner
     assert factory.name() == FACTORY_NAME
     assert factory.metaRegistry() == meta_registry_stub
+    assert factory.module() == meta_registry_stub.MODULE()
+    assert factory.stakingRouter() == meta_registry_stub.STAKING_ROUTER()
 
 
 def test_deploy_reverts_with_zero_meta_registry(owner):
@@ -146,6 +164,19 @@ def test_encode_nor_external_operator_data(factory):
     expected = "0x" + make_nor_external_operator_data(module_id, node_operator_id).hex()
 
     assert factory.encodeNORExtOperatorData(module_id, node_operator_id) == expected
+
+
+def test_decode_nor_external_operator_data(factory):
+    module_id = 7
+    node_operator_id = 255
+    encoded = "0x" + make_nor_external_operator_data(module_id, node_operator_id).hex()
+
+    decoded_module_id, decoded_node_operator_id = factory.decodeNORExtOperatorData(
+        encoded
+    )
+
+    assert decoded_module_id == module_id
+    assert decoded_node_operator_id == node_operator_id
 
 
 def test_decode_evm_script_call_data(factory):
@@ -214,7 +245,7 @@ def test_create_group_reverts_with_empty_sub_node_operators_and_non_empty_extern
         group_id=0,
         sub_node_operators=[],
         external_operators=[make_nor_external_operator(1, 1)],
-        revert_reason="INVALID_EMPTY_GROUP_UPDATE",
+        revert_reason="EMPTY_GROUP",
     )
 
 
@@ -252,6 +283,62 @@ def test_create_group_reverts_with_duplicate_external_operators(owner, factory):
             duplicate_external_operator,
         ],
         revert_reason="DUPLICATE_EXTERNAL_OPERATOR",
+    )
+
+
+def test_create_group_reverts_with_missing_sub_node_operator(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(100, 10000)],
+        external_operators=[],
+        revert_reason="SUB_NODE_OPERATOR_DOES_NOT_EXIST",
+    )
+
+
+def test_create_group_reverts_with_invalid_external_operator_data_length(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[(bytes([0, 1]),)],
+        revert_reason="INVALID_EXTERNAL_OPERATOR_DATA_LENGTH",
+    )
+
+
+def test_create_group_reverts_with_unsupported_external_operator_type(owner, factory):
+    invalid_external_operator_data = bytes([1, 1]) + int(1).to_bytes(8, "big")
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[(invalid_external_operator_data,)],
+        revert_reason="UNSUPPORTED_EXTERNAL_OPERATOR_TYPE",
+    )
+
+
+def test_create_group_reverts_with_missing_external_module(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[make_nor_external_operator(99, 1)],
+        revert_reason="EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST",
+    )
+
+
+def test_create_group_reverts_with_missing_external_operator(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[make_nor_external_operator(1, 10_000)],
+        revert_reason="EXTERNAL_OPERATOR_DOES_NOT_EXIST",
     )
 
 
@@ -364,4 +451,22 @@ def test_create_and_update_with_non_zero_no_group_id(owner, meta_registry_stub, 
         group_id=1,
         sub_node_operators=[(3, 10000)],
         external_operators=[],
+    )
+
+
+def test_create_reverts_with_invalid_group_id_when_no_group_id_is_out_of_range(
+    owner,
+    meta_registry_stub,
+    factory,
+):
+    meta_registry_stub.setNoGroupId(10, {"from": owner})
+    meta_registry_stub.setGroupsCount(2, {"from": owner})
+
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=10,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[],
+        revert_reason="INVALID_GROUP_ID",
     )
