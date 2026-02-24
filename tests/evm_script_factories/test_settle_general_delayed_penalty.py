@@ -1,26 +1,22 @@
 import pytest
-from brownie import reverts, SettleGeneralDelayedPenalty, ZERO_ADDRESS  # type: ignore
+from brownie import CSLikeModuleStub, reverts, SettleGeneralDelayedPenalty
 
 from utils.evm_script import encode_call_script, encode_calldata
-from utils.test_helpers import set_account_balance
 
 
 FACTORY_NAME = "MODULE"
-PENALTY_TYPE = "0x" + "11" * 32
+LOCKED_BOND_AMOUNT = 1000
 
 
 def create_calldata(ids, amounts):
     return encode_calldata(["uint256[]", "uint256[]"], [ids, amounts])
 
 
-@pytest.fixture(scope="module", params=["cs_module", "curated_module"])
-def module_case(request):
-    return request.param
-
-
 @pytest.fixture(scope="module")
-def module(request, module_case):
-    return request.getfixturevalue(module_case)
+def module(owner):
+    module = owner.deploy(CSLikeModuleStub)
+    module.mock_setNodeOperatorsCount(1000, {"from": owner})
+    return module
 
 
 @pytest.fixture(scope="module")
@@ -30,30 +26,7 @@ def factory(owner, module):
 
 @pytest.fixture()
 def fill_module(module, owner):
-    admin = module.getRoleMember(module.DEFAULT_ADMIN_ROLE(), 0)
-    set_account_balance(admin)
-    if module.isPaused():
-        module.grantRole(module.RESUME_ROLE(), owner, {"from": admin})
-        module.resume({"from": owner})
-    if module.getNodeOperatorsCount() == 0:
-        module.addNodeOperatorETH(
-            1,
-            # some random pubkey and signature
-            "0x8bb1db218877a42047b953bdc32573445a78d93383ef5fd08f79c066d4781961db4f5ab5a7cc0cf1e4cbcc23fd17f9d7",
-            "0xad17ef7cdf0c4917aaebc067a785b049d417dda5d4dd66395b21bbd50781d51e28ee750183eca3d32e1f57b324049a06135ad07d1aa243368bca9974e25233f050e0d6454894739f87faace698b90ea65ee4baba2758772e09fec4f1d8d35660",
-            [ZERO_ADDRESS, ZERO_ADDRESS, False],
-            [],
-            ZERO_ADDRESS,
-            {"from": owner, "value": 32 * 10**18}
-        )
-    reporter = module.getRoleMember(module.REPORT_GENERAL_DELAYED_PENALTY_ROLE(), 0)
-    module.reportGeneralDelayedPenalty(
-        0,
-        PENALTY_TYPE,
-        32 * 10**18,
-        "test",
-        {"from": reporter}
-    )
+    module.mock_setActualLockedBond(0, LOCKED_BOND_AMOUNT, {"from": owner})
 
 
 def test_deploy(owner, module, factory):
@@ -87,7 +60,7 @@ def test_operator_id_out_of_range(owner, factory, module):
 def test_create_evm_script(owner, factory, module, fill_module):
     "Must create correct EVMScript if all requirements are met"
     node_operator_ids = [0]
-    max_amounts = [1000 * 10 ** 18]
+    max_amounts = [LOCKED_BOND_AMOUNT]
 
     EVM_SCRIPT_CALLDATA = create_calldata(node_operator_ids, max_amounts)
     evm_script = factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)

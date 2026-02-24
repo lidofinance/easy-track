@@ -1,5 +1,5 @@
 import pytest
-from brownie import accounts, reverts, ZERO_ADDRESS
+from brownie import accounts, history, reverts, ZERO_ADDRESS
 
 from utils.test_helpers import access_revert_message
 
@@ -51,8 +51,11 @@ def test_registry_constructor_seeds_initial_gates(owner, AllowedMerkleGatesRegis
 
 def test_registry_constructor_reverts_on_initial_length_mismatch(owner, AllowedMerkleGatesRegistry, MerkleGateStub):
     gate = owner.deploy(MerkleGateStub)
-    with reverts("INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"):
+    prev_history_len = len(history)
+    with pytest.raises(ValueError, match="not a valid ETH address"):
         owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [gate], [])
+    assert len(history) == prev_history_len + 1
+    assert history[-1].revert_msg == "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"
 
 
 def test_add_gate_success(allowed_merkle_gates_registry, merkle_gate_with_interface):

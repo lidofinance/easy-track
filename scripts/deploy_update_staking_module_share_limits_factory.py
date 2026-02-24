@@ -87,7 +87,10 @@ def main():
         log.nb("Aborting")
         return
 
-    tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
+    tx_params = {"from": deployer}
+    if is_live:
+        tx_params["priority_fee"] = "2 gwei"
+        tx_params["max_fee"] = "50 gwei"
 
     log.br()
     log.nb("Deploying UpdateStakingModuleShareLimits...")
@@ -106,8 +109,9 @@ def main():
 
     log.ok("Deployed UpdateStakingModuleShareLimits", factory.address)
 
+    entry_key = f"UpdateStakingModuleShareLimits:{factory_name}"
     deployment_artifacts = {
-        "UpdateStakingModuleShareLimits": {
+        entry_key: {
             "contract": "UpdateStakingModuleShareLimits",
             "address": factory.address,
             "constructorArgs": [
@@ -120,14 +124,16 @@ def main():
                 max_priority_threshold_increase,
                 max_priority_threshold_decrease,
             ],
+            "txHash": factory.tx.txid,
         }
     }
 
-    artifacts_path = f"deployed-{network_name}.json"
+    artifacts_path = f"deployed-sr-{network_name}.json"
     if os.path.exists(artifacts_path):
         with open(artifacts_path, "r") as previous_artifacts:
             existing_artifacts = json.load(previous_artifacts)
-        deployment_artifacts.update(existing_artifacts)
+        existing_artifacts.update(deployment_artifacts)
+        deployment_artifacts = existing_artifacts
 
     with open(artifacts_path, "w") as outfile:
         json.dump(deployment_artifacts, outfile, indent=4)

@@ -448,7 +448,7 @@ def cs_module(csm_contracts):
 
 @pytest.fixture(scope="module")
 def curated_module(cm_contracts):
-    return cm_contracts.curated_module
+    return cm_contracts.module
 
 
 @pytest.fixture(scope="module")
