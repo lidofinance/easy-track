@@ -478,6 +478,8 @@ def cm_allowed_merkle_gates_registry(cm_contracts):
 
 
 def _first_allowed_gate(allowed_registry):
+    if allowed_registry is None:
+        return None
     allowed_gates = allowed_registry.getAllowedGates()
     return brownie.interface.IMerkleGate(allowed_gates[0])
 

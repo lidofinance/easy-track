@@ -7,7 +7,17 @@ def create_calldata(gate, tree_root, tree_cid):
     return encode_calldata(["address", "bytes32", "string"], [gate, tree_root, tree_cid])
 
 @pytest.fixture(scope="module")
-def merkle_gate_stub(owner, et_contracts):
+def merkle_gate(
+    owner,
+    et_contracts,
+    use_deployed_contracts_from_env,
+    active_csm_merkle_gate,
+    ensure_gate_unpaused,
+):
+    if use_deployed_contracts_from_env:
+        ensure_gate_unpaused(active_csm_merkle_gate)
+        return active_csm_merkle_gate
+
     """
     Create a mock MerkleGate contract with setTreeParams method
     and grant SET_TREE_ROLE to the owner for testing.
@@ -30,31 +40,49 @@ def merkle_gate_stub(owner, et_contracts):
     return stub
 
 @pytest.fixture(scope="module")
-def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts, merkle_gate_stub):
-    """
-    Deploy the SetMerkleGateTree factory with the MerkleGateStub
-    """
-    from brownie import SetMerkleGateTree, AllowedMerkleGatesRegistry
+def allowed_gates_registry(
+    owner,
+    use_deployed_contracts_from_env,
+    active_csm_allowed_merkle_gates_registry,
+    merkle_gate,
+):
+    if use_deployed_contracts_from_env:
+        return active_csm_allowed_merkle_gates_registry
 
-    # Deploy SetMerkleGateTree factory
-    # Deploy registry and list the gate
-    registry = owner.deploy(
+    from brownie import AllowedMerkleGatesRegistry
+
+    return owner.deploy(
         AllowedMerkleGatesRegistry,
         owner,
         "CSM",
-        [merkle_gate_stub],
+        [merkle_gate],
         ["Scenario Gate"],
     )
+
+
+@pytest.fixture(scope="module")
+def merkle_gate_set_tree_factory(
+    owner,
+    commitee_multisig,
+    voting,
+    et_contracts,
+    allowed_gates_registry,
+    merkle_gate,
+):
+    """
+    Deploy the SetMerkleGateTree factory with the MerkleGateStub
+    """
+    from brownie import SetMerkleGateTree
 
     factory = owner.deploy(
         SetMerkleGateTree,
         commitee_multisig,  # Trusted caller. It should be CSM committee multisig
         "CSMv3",
-        registry.address,
+        allowed_gates_registry.address,
     )
 
     # And add the factory to EasyTrack to activate it. It should be done on CSM v2 voting
-    permissions = merkle_gate_stub.address + merkle_gate_stub.setTreeParams.signature[2:]
+    permissions = merkle_gate.address + merkle_gate.setTreeParams.signature[2:]
     et_contracts.easy_track.addEVMScriptFactory(
         factory.address,
         permissions,
@@ -66,33 +94,29 @@ def merkle_gate_set_tree_factory(owner, commitee_multisig, voting, et_contracts,
 
 def test_merkle_gate_scenario(
     commitee_multisig,
-    merkle_gate_stub,
+    merkle_gate,
     merkle_gate_set_tree_factory,
     easytrack_executor,
 ):
+    current_root = merkle_gate.treeRoot()
+    current_cid = merkle_gate.treeCid()
     tree_updates = [
         {
-            "root": bytes.fromhex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"),
-            "cid": "QmFirstUpdate123"
+            "root": bytes.fromhex("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+            if current_root != "0x" + "aa" * 32
+            else bytes.fromhex("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
+            "cid": "QmFirstUpdate123" if current_cid != "QmFirstUpdate123" else "QmFirstUpdate456",
         },
-        {
-            "root": bytes.fromhex("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
-            "cid": "QmSecondUpdate456"
-        },
-        {
-            "root": bytes.fromhex("cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"),
-            "cid": "QmThirdUpdate789"
-        }
     ]
 
     for update in tree_updates:
         # Create EVM script for this update
-        evm_script_calldata = create_calldata(merkle_gate_stub.address, update["root"], update["cid"])
+        evm_script_calldata = create_calldata(merkle_gate.address, update["root"], update["cid"])
         
         easytrack_executor(
             commitee_multisig, merkle_gate_set_tree_factory, evm_script_calldata
         )
         
         # Verify the update was applied
-        assert merkle_gate_stub.treeRoot() == "0x" + update["root"].hex()
-        assert merkle_gate_stub.treeCid() == update["cid"]
+        assert merkle_gate.treeRoot() == "0x" + update["root"].hex()
+        assert merkle_gate.treeCid() == update["cid"]

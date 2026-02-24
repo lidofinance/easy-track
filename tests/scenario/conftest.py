@@ -1,6 +1,7 @@
 import pytest
 import os
 import json
+import brownie
 
 from brownie import (
     chain,
@@ -16,6 +17,7 @@ from brownie import (
 )
 from utils import deployed_easy_track
 from utils.config import get_network_name
+from utils.test_helpers import set_account_balance
 
 ENV_VOTE_ID = "VOTE_ID"
 ENV_USE_DEPLOYED_CONTRACTS = "USE_DEPLOYED_CONTRACTS"
@@ -119,6 +121,66 @@ def use_deployed_contracts_from_env():
     return True if os.getenv(ENV_USE_DEPLOYED_CONTRACTS) else False
 
 
+@pytest.fixture(scope="module")
+def active_cs_module(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("cs_module")
+
+
+@pytest.fixture(scope="module")
+def active_curated_module(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("curated_module")
+
+
+@pytest.fixture(scope="module")
+def active_nor_module(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("node_operators_registry")
+
+
+@pytest.fixture(scope="module")
+def active_cm_meta_registry(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("cm_meta_registry")
+
+
+@pytest.fixture(scope="module")
+def active_csm_allowed_merkle_gates_registry(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("csm_allowed_merkle_gates_registry")
+
+
+@pytest.fixture(scope="module")
+def active_csm_merkle_gate(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("csm_merkle_gate")
+
+
+@pytest.fixture(scope="module")
+def active_staking_router(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    return request.getfixturevalue("staking_router")
+
+
+@pytest.fixture(scope="module")
+def active_sr_consolidation_migrator(request, use_deployed_contracts_from_env):
+    if not use_deployed_contracts_from_env:
+        return None
+    sr_consolidation_migrator = request.getfixturevalue("sr_consolidation_migrator")
+    assert (
+        sr_consolidation_migrator is not None
+    ), "sr_consolidation_migrator is None; fill consolidation_migrator address for selected network"
+    return sr_consolidation_migrator
+
+
 @pytest.fixture(scope="session")
 def deployed_artifact():
     network_name = get_network_name()
@@ -136,6 +198,141 @@ def execute_vote_from_env(vote_id_from_env, lido_contracts):
     if vote_id_from_env:
         print(f"VOTE_ID env var is set, executing voting {vote_id_from_env}")
         lido_contracts.execute_voting(vote_id_from_env)
+
+
+@pytest.fixture(scope="module")
+def impersonate_account(accounts):
+    def _impersonate(address):
+        set_account_balance(address)
+        return accounts.at(address, force=True)
+
+    return _impersonate
+
+
+@pytest.fixture(scope="module")
+def first_role_holder():
+    def _first_role_holder(contract, role):
+        count = contract.getRoleMemberCount(role)
+        assert count > 0, f"No holders for role {role}"
+        return contract.getRoleMember(role, 0)
+
+    return _first_role_holder
+
+
+@pytest.fixture(scope="module")
+def ensure_module_in_staking_router(staking_router, impersonate_account, first_role_holder):
+    def _ensure(module, module_name):
+        module_address = module.address.lower()
+        for module_id in staking_router.getStakingModuleIds():
+            module_info = staking_router.getStakingModule(module_id)
+            if module_info[1].lower() == module_address:
+                return module_id
+
+        manager = first_role_holder(staking_router, staking_router.STAKING_MODULE_MANAGE_ROLE())
+        manager_sender = impersonate_account(manager)
+        staking_router.addStakingModule(
+            module_name,
+            module.address,
+            10_000,
+            10_000,
+            500,
+            500,
+            150,
+            25,
+            {"from": manager_sender},
+        )
+        for module_id in staking_router.getStakingModuleIds():
+            module_info = staking_router.getStakingModule(module_id)
+            if module_info[1].lower() == module_address:
+                return module_id
+        raise RuntimeError("Failed to add module to staking router")
+
+    return _ensure
+
+
+@pytest.fixture(scope="module")
+def ensure_module_unpaused(impersonate_account, first_role_holder):
+    def _ensure(module):
+        if not module.isPaused():
+            return
+
+        resume_sender = impersonate_account(first_role_holder(module, module.RESUME_ROLE()))
+        module.resume({"from": resume_sender})
+
+    return _ensure
+
+
+@pytest.fixture(scope="module")
+def ensure_module_operator(accounts, ensure_module_unpaused, impersonate_account, first_role_holder):
+    def _ensure(module):
+        count = module.getNodeOperatorsCount()
+        if count > 0:
+            return 0
+
+        ensure_module_unpaused(module)
+        creator = first_role_holder(module, module.CREATE_NODE_OPERATOR_ROLE())
+        creator_sender = impersonate_account(creator)
+        operator = accounts[0].address
+        module.createNodeOperator(
+            operator,
+            (operator, operator, False),
+            operator,
+            {"from": creator_sender},
+        )
+        return module.getNodeOperatorsCount() - 1
+
+    return _ensure
+
+
+@pytest.fixture(scope="module")
+def ensure_legacy_module_operator(accounts, agent, impersonate_account):
+    def _ensure(module):
+        count = module.getNodeOperatorsCount()
+        if count > 0:
+            return 0
+
+        module.addNodeOperator(
+            "Scenario Operator",
+            accounts[0].address,
+            {"from": impersonate_account(agent.address)},
+        )
+        return module.getNodeOperatorsCount() - 1
+
+    return _ensure
+
+
+@pytest.fixture(scope="module")
+def ensure_gate_unpaused(impersonate_account, first_role_holder):
+    def _ensure(gate):
+        if not gate.isPaused():
+            return
+
+        sender = first_role_holder(gate, gate.RESUME_ROLE())
+        gate.resume({"from": impersonate_account(sender)})
+
+    return _ensure
+
+
+@pytest.fixture(scope="module")
+def ensure_module_locked_bond(impersonate_account, first_role_holder):
+    def _ensure(module, node_operator_id, amount):
+        accounting = brownie.interface.ICSAccounting(module.ACCOUNTING())
+        current_locked = accounting.getActualLockedBond(node_operator_id)
+        if current_locked > 0:
+            return current_locked
+
+        reporter = first_role_holder(module, module.REPORT_GENERAL_DELAYED_PENALTY_ROLE())
+        reporter_sender = impersonate_account(reporter)
+        module.reportGeneralDelayedPenalty(
+            node_operator_id,
+            brownie.web3.keccak(text="SCENARIO_PREP"),
+            amount,
+            "scenario prep",
+            {"from": reporter_sender},
+        )
+        return accounting.getActualLockedBond(node_operator_id)
+
+    return _ensure
 
 
 @pytest.fixture(scope="module")
@@ -183,7 +380,6 @@ def activate_node_operators_factory(
     vote_id_from_env,
     use_deployed_contracts_from_env,
 ):
-    print(vote_id_from_env)
     if vote_id_from_env or use_deployed_contracts_from_env:
         return ActivateNodeOperators.at(deployed_artifact["ActivateNodeOperators"]["address"])
 

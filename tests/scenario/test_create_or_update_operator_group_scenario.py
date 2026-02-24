@@ -25,7 +25,10 @@ def make_nor_external_operator(module_id, node_operator_id):
 
 
 @pytest.fixture(scope="module")
-def meta_registry_stub(owner):
+def meta_registry_contract(owner, use_deployed_contracts_from_env, active_cm_meta_registry):
+    if use_deployed_contracts_from_env:
+        return active_cm_meta_registry
+
     registry = owner.deploy(MetaRegistryStub)
 
     module = owner.deploy(CSLikeModuleStub)
@@ -48,18 +51,32 @@ def create_or_update_operator_group_factory(
     commitee_multisig,
     voting,
     et_contracts,
-    meta_registry_stub,
+    meta_registry_contract,
+    use_deployed_contracts_from_env,
+    active_curated_module,
+    active_cs_module,
+    ensure_module_in_staking_router,
+    ensure_module_unpaused,
+    ensure_legacy_module_operator,
+    ensure_module_operator,
 ):
+    if use_deployed_contracts_from_env:
+        ensure_module_in_staking_router(active_curated_module, "CM")
+        ensure_module_in_staking_router(active_cs_module, "CSM")
+        ensure_module_unpaused(active_cs_module)
+        ensure_legacy_module_operator(active_curated_module)
+        ensure_module_operator(active_cs_module)
+
     factory = owner.deploy(
         CreateOrUpdateOperatorGroup,
         commitee_multisig,
         FACTORY_NAME,
-        meta_registry_stub.address,
+        meta_registry_contract.address,
     )
 
     permissions = (
-        meta_registry_stub.address
-        + meta_registry_stub.createOrUpdateOperatorGroup.signature[2:]
+        meta_registry_contract.address
+        + meta_registry_contract.createOrUpdateOperatorGroup.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory.address,
@@ -71,18 +88,46 @@ def create_or_update_operator_group_factory(
     return factory
 
 
+@pytest.fixture(scope="module")
+def scenario_group_input(
+    use_deployed_contracts_from_env,
+    meta_registry_contract,
+    active_curated_module,
+    active_cs_module,
+    ensure_module_in_staking_router,
+    ensure_legacy_module_operator,
+    ensure_module_operator,
+):
+    if not use_deployed_contracts_from_env:
+        return {
+            "group_id": meta_registry_contract.NO_GROUP_ID(),
+            "sub_node_operators": [(1, 6000), (2, 4000)],
+            "external_operators": [make_nor_external_operator(1, 11)],
+        }
+
+    csm_module_id = ensure_module_in_staking_router(active_cs_module, "CSM")
+    curated_operator_id = ensure_legacy_module_operator(active_curated_module)
+    csm_operator_id = ensure_module_operator(active_cs_module)
+    return {
+        "group_id": meta_registry_contract.NO_GROUP_ID(),
+        "sub_node_operators": [(curated_operator_id, 10_000)],
+        "external_operators": [make_nor_external_operator(csm_module_id, csm_operator_id)],
+    }
+
+
 def test_create_operator_group_via_motion_scenario(
     commitee_multisig,
     easytrack_executor,
-    meta_registry_stub,
+    meta_registry_contract,
     create_or_update_operator_group_factory,
+    scenario_group_input,
 ):
-    groups_count_before = meta_registry_stub.getOperatorGroupsCount()
+    groups_count_before = meta_registry_contract.getOperatorGroupsCount()
 
     evm_script_calldata = create_calldata(
-        group_id=meta_registry_stub.NO_GROUP_ID(),
-        sub_node_operators=[(1, 6000), (2, 4000)],
-        external_operators=[make_nor_external_operator(1, 11)],
+        group_id=scenario_group_input["group_id"],
+        sub_node_operators=scenario_group_input["sub_node_operators"],
+        external_operators=scenario_group_input["external_operators"],
     )
 
     tx = easytrack_executor(
@@ -91,7 +136,7 @@ def test_create_operator_group_via_motion_scenario(
         evm_script_calldata,
     )
 
-    assert meta_registry_stub.getOperatorGroupsCount() == groups_count_before + 1
+    assert meta_registry_contract.getOperatorGroupsCount() == groups_count_before + 1
 
     created_event = tx.events["OperatorGroupCreated"]
     if isinstance(created_event, list):

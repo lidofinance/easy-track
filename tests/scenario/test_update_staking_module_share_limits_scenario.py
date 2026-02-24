@@ -5,7 +5,6 @@ from utils.evm_script import encode_calldata
 
 
 FACTORY_NAME = "SR"
-MODULE_ID = 3
 CURRENT_STAKE_SHARE_LIMIT = 9000
 CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 500
 
@@ -18,10 +17,13 @@ def create_calldata(current_stake, new_stake, current_priority, new_priority):
 
 
 @pytest.fixture(scope="module")
-def staking_router_stub(owner):
+def staking_router_contract(owner, use_deployed_contracts_from_env, active_staking_router):
+    if use_deployed_contracts_from_env:
+        return active_staking_router
+
     router = owner.deploy(StakingRouterStub)
     router.setModuleShares(
-        MODULE_ID,
+        3,
         CURRENT_STAKE_SHARE_LIMIT,
         CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
         {"from": owner},
@@ -30,19 +32,38 @@ def staking_router_stub(owner):
 
 
 @pytest.fixture(scope="module")
+def module_id(
+    staking_router_contract,
+    use_deployed_contracts_from_env,
+    active_cs_module,
+    ensure_module_in_staking_router,
+    ensure_module_unpaused,
+    ensure_module_operator,
+):
+    if use_deployed_contracts_from_env:
+        module_id = ensure_module_in_staking_router(active_cs_module, "CSM")
+        ensure_module_unpaused(active_cs_module)
+        ensure_module_operator(active_cs_module)
+        return module_id
+
+    return 3
+
+
+@pytest.fixture(scope="module")
 def update_staking_module_share_limits_factory(
     owner,
     commitee_multisig,
     voting,
     et_contracts,
-    staking_router_stub,
+    staking_router_contract,
+    module_id,
 ):
     factory = owner.deploy(
         UpdateStakingModuleShareLimits,
         commitee_multisig,
         FACTORY_NAME,
-        staking_router_stub.address,
-        MODULE_ID,
+        staking_router_contract.address,
+        module_id,
         500,  # max stake share increase
         400,  # max stake share decrease
         300,  # max priority exit threshold increase
@@ -50,8 +71,8 @@ def update_staking_module_share_limits_factory(
     )
 
     permissions = (
-        staking_router_stub.address
-        + staking_router_stub.updateModuleShares.signature[2:]
+        staking_router_contract.address
+        + staking_router_contract.updateModuleShares.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
         factory.address,
@@ -66,20 +87,27 @@ def update_staking_module_share_limits_factory(
 def test_update_staking_module_share_limits_via_motion_scenario(
     commitee_multisig,
     easytrack_executor,
-    staking_router_stub,
+    staking_router_contract,
     update_staking_module_share_limits_factory,
+    module_id,
 ):
-    new_stake_share_limit = CURRENT_STAKE_SHARE_LIMIT + 200
-    new_priority_exit_threshold = CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD - 150
+    module_before = staking_router_contract.getStakingModule(module_id)
+    current_stake_share_limit = module_before[4]
+    current_priority_exit_threshold = module_before[10]
+    if current_stake_share_limit <= 9_800:
+        new_stake_share_limit = current_stake_share_limit + 200
+    else:
+        new_stake_share_limit = current_stake_share_limit - 200
 
-    module_before = staking_router_stub.getStakingModule(MODULE_ID)
-    assert module_before[4] == CURRENT_STAKE_SHARE_LIMIT
-    assert module_before[10] == CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD
+    if current_priority_exit_threshold >= 150:
+        new_priority_exit_threshold = current_priority_exit_threshold - 150
+    else:
+        new_priority_exit_threshold = current_priority_exit_threshold + 150
 
     evm_script_calldata = create_calldata(
-        CURRENT_STAKE_SHARE_LIMIT,
+        current_stake_share_limit,
         new_stake_share_limit,
-        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        current_priority_exit_threshold,
         new_priority_exit_threshold,
     )
 
@@ -89,7 +117,7 @@ def test_update_staking_module_share_limits_via_motion_scenario(
         evm_script_calldata,
     )
 
-    module_after = staking_router_stub.getStakingModule(MODULE_ID)
+    module_after = staking_router_contract.getStakingModule(module_id)
     assert module_after[4] == new_stake_share_limit
     assert module_after[10] == new_priority_exit_threshold
 

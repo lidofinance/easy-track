@@ -26,7 +26,20 @@ def create_calldata(values: Iterable[WithdrawnValidatorInfo]):
 
 
 @pytest.fixture(scope="module")
-def module(owner):
+def module(
+    owner,
+    use_deployed_contracts_from_env,
+    active_cs_module,
+    ensure_module_in_staking_router,
+    ensure_module_unpaused,
+    ensure_module_operator,
+):
+    if use_deployed_contracts_from_env:
+        ensure_module_in_staking_router(active_cs_module, "CSM")
+        ensure_module_unpaused(active_cs_module)
+        ensure_module_operator(active_cs_module)
+        return active_cs_module
+
     module = owner.deploy(CSLikeModuleStub)
     module.mock_setNodeOperatorsCount(1000)
     return module
@@ -89,11 +102,30 @@ def test_submit_withdrawals_scenario(
     easytrack_executor,
     owner,
     factory,
+    use_deployed_contracts_from_env,
+    module,
+    ensure_module_operator,
     values: list[WithdrawnValidatorInfo],
 ):
     """Must create correct EVMScript if all requirements are met"""
+    if use_deployed_contracts_from_env:
+        no_id = ensure_module_operator(module)
+        values = [
+            WithdrawnValidatorInfo(
+                no_id=no_id,
+                key_index=0,
+                exit_balance=1,
+                slashing_penalty=0,
+                is_slashed=True,
+            ),
+        ]
 
     EVM_SCRIPT_CALLDATA = create_calldata(values)
+    if use_deployed_contracts_from_env:
+        evm_script = factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA, {"from": owner})
+        assert evm_script != b""
+        return
+
     tx = easytrack_executor(owner, factory, EVM_SCRIPT_CALLDATA)
     withdrawal_evts: list[dict] = tx.events["GotValidatorInfo"]
     assert len(withdrawal_evts) == len(values)
