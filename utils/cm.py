@@ -8,17 +8,17 @@ def addresses(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return CMAddressesSetup(
             module="",
-        )
-    if network == "holesky" or network == "holesky-fork":
-        return CMAddressesSetup(
-            module="",
+            meta_registry="",
+            allowed_merkle_gates_registry="",
         )
     if network == "hoodi" or network == "hoodi-fork":
         return CMAddressesSetup(
-            module=""
+            module="",
+            meta_registry="",
+            allowed_merkle_gates_registry="",
         )
     raise NameError(
-        f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"
+        f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork"
     )
 
 
@@ -29,8 +29,14 @@ def contracts(network=DEFAULT_NETWORK):
 class CMContractsSetup:
     def __init__(self, interface, cm_addresses):
         self.module = interface.CSModule(cm_addresses.module)
+        self.meta_registry = interface.IMetaRegistry(cm_addresses.meta_registry)
+        self.allowed_merkle_gates_registry = interface.IAllowedMerkleGatesRegistry(
+            cm_addresses.allowed_merkle_gates_registry
+        )
 
 
 @dataclass
 class CMAddressesSetup:
     module: str
+    meta_registry: str
+    allowed_merkle_gates_registry: str

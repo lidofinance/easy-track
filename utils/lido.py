@@ -22,6 +22,7 @@ def addresses(network=DEFAULT_NETWORK):
             simple_dvt="0xaE7B191A31f627b4eB1d4DaC64eaB9976995b433",
             curated_module="0x55032650b14df07b85bF18A3a3eC8E0Af2e028d5",
             staking_router="0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
+            consolidation_migrator="",
             locator="0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb",
             mev_boost_list="0xF95f069F9AD107938F6ba802a3da87892298610E",
             validators_exit_bus_oracle="0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e",
@@ -46,6 +47,7 @@ def addresses(network=DEFAULT_NETWORK):
             node_operators_registry="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
             simple_dvt="0x11a93807078f8BB880c1BD0ee4C387537de4b4b6",
             staking_router="0xd6EbF043D30A7fe46D1Db32BA90a0A51207FE229",
+            consolidation_migrator="",
             locator="0x28FAB2059C713A7F9D8c86Db49f9bb0e96Af1ef8",
             mev_boost_list="0x2d86C5855581194a386941806E38cA119E50aEA3",
             curated_module="0x595F64Ddc3856a3b5Ff4f4CC1d1fb4B46cFd2bAC",
@@ -71,6 +73,7 @@ def addresses(network=DEFAULT_NETWORK):
             node_operators_registry="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
             simple_dvt="0x0B5236BECA68004DB89434462DfC3BB074d2c830",
             staking_router="0xCc820558B39ee15C7C45B59390B503b83fb499A8",
+            consolidation_migrator="",
             locator="0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8",
             curated_module="0x5cDbE1590c083b5A2A64427fAA63A7cfDB91FbB5",
             mev_boost_list="0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf",
@@ -164,6 +167,7 @@ class LidoContractsSetup:
         self.ldo = self.aragon.gov_token
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
+        self.consolidation_migrator = interface.IConsolidationMigrator(lido_addresses.consolidation_migrator)
         self.locator = interface.ILidoLocator(lido_addresses.locator)
         self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
@@ -220,6 +224,7 @@ class LidoAddressesSetup:
         simple_dvt,
         curated_module,
         staking_router,
+        consolidation_migrator,
         locator,
         mev_boost_list,
         validators_exit_bus_oracle,
@@ -235,6 +240,7 @@ class LidoAddressesSetup:
         self.curated_module = curated_module
         self.ldo = self.aragon.gov_token
         self.staking_router = staking_router
+        self.consolidation_migrator = consolidation_migrator
         self.locator = locator
         self.mev_boost_list = mev_boost_list
         self.dual_governance_admin_executor = dual_governance_admin_executor

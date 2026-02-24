@@ -10,6 +10,7 @@ import constants
 from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
 from utils.cm import contracts as cm_contracts_
+from utils.csm0x02 import contracts as csm0x02_contracts_
 from utils import deployed_date_time
 from utils.test_helpers import set_account_balance
 from utils.submit_exit_requests_test_helpers import MAX_REQUESTS
@@ -115,6 +116,11 @@ def csm_contracts():
 @pytest.fixture(scope="module")
 def cm_contracts():
     return cm_contracts_(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def csm0x02_contracts():
+    return csm0x02_contracts_(network=brownie.network.show_active())
 
 
 @pytest.fixture(scope="module")
@@ -452,6 +458,41 @@ def curated_module(cm_contracts):
 
 
 @pytest.fixture(scope="module")
+def csm0x02_module(csm0x02_contracts):
+    return csm0x02_contracts.module
+
+
+@pytest.fixture(scope="module")
+def cm_meta_registry(cm_contracts):
+    return cm_contracts.meta_registry
+
+
+@pytest.fixture(scope="module")
+def csm_allowed_merkle_gates_registry(csm_contracts):
+    return csm_contracts.allowed_merkle_gates_registry
+
+
+@pytest.fixture(scope="module")
+def cm_allowed_merkle_gates_registry(cm_contracts):
+    return cm_contracts.allowed_merkle_gates_registry
+
+
+def _first_allowed_gate(allowed_registry):
+    allowed_gates = allowed_registry.getAllowedGates()
+    return brownie.interface.IMerkleGate(allowed_gates[0])
+
+
+@pytest.fixture(scope="module")
+def csm_merkle_gate(csm_allowed_merkle_gates_registry):
+    return _first_allowed_gate(csm_allowed_merkle_gates_registry)
+
+
+@pytest.fixture(scope="module")
+def cm_merkle_gate(cm_allowed_merkle_gates_registry):
+    return _first_allowed_gate(cm_allowed_merkle_gates_registry)
+
+
+@pytest.fixture(scope="module")
 def voting(lido_contracts):
     return lido_contracts.aragon.voting
 
@@ -494,6 +535,11 @@ def kernel(lido_contracts):
 @pytest.fixture(scope="module")
 def staking_router(lido_contracts):
     return lido_contracts.staking_router
+
+
+@pytest.fixture(scope="module")
+def sr_consolidation_migrator(lido_contracts):
+    return lido_contracts.consolidation_migrator
 
 
 @pytest.fixture(scope="module")
