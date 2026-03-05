@@ -25,7 +25,6 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_TIERS = "EMPTY_TIERS";
     string private constant ERROR_GROUP_EXISTS = "GROUP_EXISTS";
     string private constant ERROR_GROUP_SHARE_LIMIT_TOO_HIGH = "GROUP_SHARE_LIMIT_TOO_HIGH";
-    string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
     string private constant ERROR_ZERO_RESERVE_RATIO = "ZERO_RESERVE_RATIO";
     string private constant ERROR_RESERVE_RATIO_TOO_HIGH = "RESERVE_RATIO_TOO_HIGH";
     string private constant ERROR_ZERO_FORCED_REBALANCE_THRESHOLD = "ZERO_FORCED_REBALANCE_THRESHOLD";
@@ -163,8 +162,6 @@ contract RegisterGroupsInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
             // Validate tier parameters
             for (uint256 j = 0; j < _tiers[i].length; j++) {
-                require(_tiers[i][j].shareLimit <= _shareLimits[i], ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
-
                 require(_tiers[i][j].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
                 require(_tiers[i][j].reserveRatioBP <= MAX_RESERVE_RATIO_BP, ERROR_RESERVE_RATIO_TOO_HIGH);
 
