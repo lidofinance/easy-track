@@ -312,6 +312,22 @@ def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_gr
     assert len(evm_script) > 0
 
 
+def test_tier_share_limit_overflow(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'TIER_SHARE_LIMIT_OVERFLOW' if tier share limit exceeds uint96 max"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [1]
+    uint96_max = 2**96 - 1
+    tier_params = [(uint96_max + 1, 200, 100, 50, 40, 10)]  # shareLimit > type(uint96).max
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts('TIER_SHARE_LIMIT_OVERFLOW'):
+        alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+
+
 def test_default_tier_share_limit_exceeds_max_limit(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
     "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if default tier share limit exceeds max share limit"
     # Default tier (tier ID 0) is already created in OperatorGridStub constructor

@@ -24,6 +24,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_DEFAULT_TIER_OPERATOR = "DEFAULT_TIER_OPERATOR";
     string private constant ERROR_EMPTY_TIERS = "EMPTY_TIERS";
     string private constant ERROR_GROUP_NOT_EXISTS = "GROUP_NOT_EXISTS";
+    string private constant ERROR_TIER_SHARE_LIMIT_OVERFLOW = "TIER_SHARE_LIMIT_OVERFLOW";
     string private constant ERROR_ZERO_RESERVE_RATIO = "ZERO_RESERVE_RATIO";
     string private constant ERROR_RESERVE_RATIO_TOO_HIGH = "RESERVE_RATIO_TOO_HIGH";
     string private constant ERROR_ZERO_FORCED_REBALANCE_THRESHOLD = "ZERO_FORCED_REBALANCE_THRESHOLD";
@@ -43,6 +44,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
+    uint256 internal constant MAX_SHARE_LIMIT = type(uint96).max;
     uint256 internal constant MAX_RESERVE_RATIO_BP = 9999;
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
     /// @notice Special address to denote that default tier is not linked to any real operator
@@ -131,6 +133,8 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
             // Validate tier parameters
             for (uint256 j = 0; j < _tiers[i].length; j++) {
+                require(_tiers[i][j].shareLimit <= MAX_SHARE_LIMIT, ERROR_TIER_SHARE_LIMIT_OVERFLOW);
+
                 require(_tiers[i][j].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
                 require(_tiers[i][j].reserveRatioBP <= MAX_RESERVE_RATIO_BP, ERROR_RESERVE_RATIO_TOO_HIGH);
 
