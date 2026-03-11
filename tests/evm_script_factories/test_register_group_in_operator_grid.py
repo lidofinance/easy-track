@@ -144,14 +144,14 @@ def test_tier_share_limit_exceeds_group_share_limit(owner, register_groups_in_op
     assert len(evm_script) > 0
 
 
-def test_tier_share_limit_overflow(owner, register_groups_in_operator_grid_factory):
-    "Must revert with message 'TIER_SHARE_LIMIT_OVERFLOW' if tier share limit exceeds uint96 max"
+def test_tier_share_limit_too_high(owner, register_groups_in_operator_grid_factory):
+    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if tier share limit exceeds max share limit"
     operator = "0x0000000000000000000000000000000000000001"
     share_limit = 1000
-    uint96_max = 2**96 - 1
-    tiers = [[(uint96_max + 1, 200, 100, 50, 40, 10)]]  # shareLimit > type(uint96).max
+    max_share_limit = 10_000_000 * 10**18
+    tiers = [[(max_share_limit + 1, 200, 100, 50, 40, 10)]]  # shareLimit > MAX_SHARE_LIMIT
     CALLDATA = create_calldata([operator], [share_limit], tiers)
-    with reverts('TIER_SHARE_LIMIT_OVERFLOW'):
+    with reverts('TIER_SHARE_LIMIT_TOO_HIGH'):
         register_groups_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 

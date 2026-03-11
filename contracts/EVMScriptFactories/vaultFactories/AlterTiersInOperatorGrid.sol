@@ -22,7 +22,6 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
     string private constant ERROR_TIER_NOT_EXISTS = "TIER_NOT_EXISTS";
     string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
-    string private constant ERROR_TIER_SHARE_LIMIT_OVERFLOW = "TIER_SHARE_LIMIT_OVERFLOW";
     string private constant ERROR_ZERO_RESERVE_RATIO = "ZERO_RESERVE_RATIO";
     string private constant ERROR_RESERVE_RATIO_TOO_HIGH = "RESERVE_RATIO_TOO_HIGH";
     string private constant ERROR_ZERO_FORCED_REBALANCE_THRESHOLD = "ZERO_FORCED_REBALANCE_THRESHOLD";
@@ -35,7 +34,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
-    uint256 internal constant MAX_SHARE_LIMIT = type(uint96).max;
+    uint256 internal constant MAX_SHARE_LIMIT = 10_000_000 * 1e18;
     /// @dev max value for fees in basis points - it's about 650%
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
     uint256 internal constant MAX_RESERVE_RATIO_BP = 9999;
@@ -128,7 +127,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
             if (_tierIds[i] == DEFAULT_TIER_ID) {
                 require(_tierParams[i].shareLimit <= defaultTierMaxShareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
             } else {
-                require(_tierParams[i].shareLimit <= MAX_SHARE_LIMIT, ERROR_TIER_SHARE_LIMIT_OVERFLOW);
+                require(_tierParams[i].shareLimit <= MAX_SHARE_LIMIT, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
             }
 
             require(_tierParams[i].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
