@@ -45,7 +45,7 @@ library SubmitExitRequestHashesUtils {
         "MAX_REQUESTS_PER_MOTION_EXCEEDED";
     // Error messages for validator public key validation
     string private constant ERROR_INVALID_PUBKEY = "INVALID_PUBKEY";
-    string private constant ERROR_INVALID_PUBKEY_USED = "INVALID_PUBKEY_USED";
+    string private constant ERROR_UNUSED_PUBKEY = "UNUSED_PUBKEY";
     string private constant ERROR_INVALID_PUBKEY_LENGTH = "INVALID_PUBKEY_LENGTH";
     string private constant ERROR_INVALID_EXIT_REQUESTS_SORT_ORDER =
         "INVALID_EXIT_REQUESTS_SORT_ORDER";
@@ -167,7 +167,7 @@ library SubmitExitRequestHashesUtils {
                 _input.nodeOpId,
                 _input.valPubKeyIndex
             );
-            require(used, ERROR_INVALID_PUBKEY_USED);
+            require(used, ERROR_UNUSED_PUBKEY);
 
             // Duplicate check: linear scan over hashes so far
             bytes32 providedPubkeyHash = keccak256(_input.valPubkey);

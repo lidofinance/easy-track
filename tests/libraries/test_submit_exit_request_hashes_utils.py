@@ -354,7 +354,7 @@ def test_validation_reverts_on_unused_pubkey(
         {"from": accounts[0]},
     )
 
-    with reverts("INVALID_PUBKEY_USED"):
+    with reverts("UNUSED_PUBKEY"):
         submit_exit_request_hashes_utils_wrapper.validateExitRequests(
             [request.to_tuple()], sdvt_registry_stub, staking_router_stub, ZERO_ADDRESS
         )
