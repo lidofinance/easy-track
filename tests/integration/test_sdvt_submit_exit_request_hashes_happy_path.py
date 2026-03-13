@@ -94,7 +94,6 @@ def test_sdvt_reverts_on_unused_key(
     easy_track,
     validators_exit_bus_oracle,
     exit_request_input_factory,
-    stranger,
     agent,
 ):
     grant_submit_report_hash_role(agent, validators_exit_bus_oracle, easy_track)
@@ -114,8 +113,7 @@ def test_sdvt_reverts_on_unused_key(
     )
 
     _, _, bool_used = sdvt_registry.getSigningKey(node_operator_id, total_signing_keys)
-    if bool_used:
-        pytest.skip("Newly added key is already marked used on this fork snapshot")
+    assert not bool_used, "Test setup failure: expected the new key to be unused"
 
     request_unused = exit_request_input_factory(
         MODULE_ID,

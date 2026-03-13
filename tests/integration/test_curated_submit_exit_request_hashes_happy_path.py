@@ -91,7 +91,6 @@ def test_curated_reverts_on_unused_key(
     easy_track,
     validators_exit_bus_oracle,
     exit_request_input_factory,
-    stranger,
     agent,
 ):
     grant_submit_report_hash_role(agent, validators_exit_bus_oracle, easy_track)
@@ -113,7 +112,7 @@ def test_curated_reverts_on_unused_key(
     # Build request pointing to the newly added (unused) key
     # Confirm the key is reported unused; if not (unlikely), skip to avoid false positives on forks
     _, _, bool_used = curated_registry.getSigningKey(node_operator_id, total_signing_keys)
-    # assert not bool_used, "Test setup failure: expected the new key to be unused"
+    assert not bool_used, "Test setup failure: expected the new key to be unused"
 
     request_unused = exit_request_input_factory(
         MODULE_ID,
