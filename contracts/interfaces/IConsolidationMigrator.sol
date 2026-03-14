@@ -69,9 +69,9 @@ interface IConsolidationMigrator {
     /// @notice Allows consolidations from `sourceOperatorId` to `targetOperatorId`.
     /// @dev Access-controlled in the implementation (role-based).
     function allowPair(
-        address consolidationManager,
         uint256 sourceOperatorId,
-        uint256 targetOperatorId
+        uint256 targetOperatorId,
+        address consolidationManager
     ) external;
 
     /// @notice Disallows consolidations from `sourceOperatorId` to `targetOperatorId`.

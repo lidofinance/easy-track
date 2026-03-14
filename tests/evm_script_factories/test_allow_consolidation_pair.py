@@ -141,9 +141,9 @@ def test_create_evm_script(
             (
                 consolidation_migrator_stub.address,
                 consolidation_migrator_stub.allowPair.encode_input(
-                    owner.address,
                     SOURCE_OPERATOR_ID,
                     TARGET_OPERATOR_ID,
+                    owner.address,
                 ),
             )
         ]

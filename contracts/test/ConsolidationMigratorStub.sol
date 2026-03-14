@@ -89,9 +89,9 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
     ) external override {}
 
     function allowPair(
-        address /* consolidationManager */,
         uint256 sourceOperatorId,
-        uint256 targetOperatorId
+        uint256 targetOperatorId,
+        address /* consolidationManager */
     ) external override {
         if (!_allowedPairs[sourceOperatorId][targetOperatorId]) {
             _allowedPairs[sourceOperatorId][targetOperatorId] = true;

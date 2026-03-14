@@ -80,9 +80,9 @@ contract AllowConsolidationPair is IEVMScriptFactory {
                 address(consolidationMigrator),
                 IConsolidationMigrator.allowPair.selector,
                 abi.encode(
-                    input.consolidationManager,
                     input.sourceOperatorId,
-                    input.targetOperatorId
+                    input.targetOperatorId,
+                    input.consolidationManager
                 )
             );
     }
