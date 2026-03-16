@@ -126,7 +126,7 @@ def test_sdvt_reverts_on_unused_key(
 
     calldata = create_exit_request_hash_calldata([r.to_tuple() for r in requests])
 
-    with reverts():
+    with reverts("UNUSED_PUBKEY"):
         create_motion_sdvt(
             sdvt_submit_exit_hashes_evm_script_factory,
             calldata,
