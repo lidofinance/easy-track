@@ -26,7 +26,6 @@ contract NodeOperatorsRegistryStub {
 
     mapping(uint256 => NodeOperator) internal _nodeOperators;
     mapping(uint256 => bytes) internal _signingKeys;
-    mapping(uint256 => mapping(uint256 => bool)) internal _signingKeyUsed;
 
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
@@ -143,7 +142,7 @@ contract NodeOperatorsRegistryStub {
             mstore(add(dest, 32), mload(add(src, 32)))
         }
         depositSignature = "";
-        used = _signingKeyUsed[_nodeOperatorId][_index];
+        used = false;
     }
 
     /// @notice Sets the signing keys for a given node operator.
@@ -152,16 +151,5 @@ contract NodeOperatorsRegistryStub {
     function setSigningKeys(uint256 _nodeOperatorId, bytes memory keysConcat) external {
         // Overwrite all keys for this node operator
         _signingKeys[_nodeOperatorId] = keysConcat;
-
-        // Mark all provided keys as used by default to mirror deposited keys in positive-path tests
-        uint256 keyCount = keysConcat.length / 48;
-        for (uint256 i; i < keyCount; ++i) {
-            _signingKeyUsed[_nodeOperatorId][i] = true;
-        }
-    }
-
-    /// @notice Sets the used flag for a specific signing key, to simulate unused keys in tests.
-    function setSigningKeyUsed(uint256 _nodeOperatorId, uint256 _index, bool _used) external {
-        _signingKeyUsed[_nodeOperatorId][_index] = _used;
     }
 }
