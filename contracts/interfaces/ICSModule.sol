@@ -27,6 +27,8 @@ interface ICSModule {
 
     function getNodeOperatorsCount() external view returns (uint256);
 
+    function getNodeOperatorIsActive(uint256 _nodeOperatorId) external view returns (bool);
+
     /// @notice Report withdrawn validators that have been slashed.
     /// @notice Called by the Easy Track EVM script executor via a motion started by the dedicated committee.
     /// @param validatorInfos An array WithdrawnValidatorInfo structs

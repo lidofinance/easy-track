@@ -103,6 +103,10 @@ contract NodeOperatorsRegistryStub {
         _nodeOperators[_id].active = _active;
     }
 
+    function getNodeOperatorIsActive(uint256 _id) external view returns (bool) {
+        return _nodeOperators[_id].active;
+    }
+
     function setRewardAddress(address _rewardAddress) public {
         rewardAddress = _rewardAddress;
     }

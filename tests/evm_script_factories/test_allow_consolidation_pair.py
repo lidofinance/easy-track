@@ -30,6 +30,7 @@ def _encode_input_with_manager(
 def target_module_stub(owner):
     module = owner.deploy(CSModuleNodeOperatorsStub)
     module.setNodeOperatorsCount(TARGET_OPERATOR_ID + 2, {"from": owner})
+    module.setNodeOperatorActive(TARGET_OPERATOR_ID, True, {"from": owner})
     return module
 
 
@@ -107,6 +108,22 @@ def test_caller_must_match_owner(owner, stranger, source_module_stub, allow_cons
     with reverts("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
     source_module_stub.setNodeOperatorRewardAddress(SOURCE_OPERATOR_ID, owner, {"from": owner})
+
+
+def test_source_operator_must_be_active(owner, source_module_stub, allow_consolidation_pair_factory):
+    source_module_stub.setActive(SOURCE_OPERATOR_ID, False, {"from": owner})
+    calldata = _encode_input_with_manager(owner.address)
+    with reverts("SOURCE_OPERATOR_IS_NOT_ACTIVE"):
+        allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
+    source_module_stub.setActive(SOURCE_OPERATOR_ID, True, {"from": owner})
+
+
+def test_target_operator_must_be_active(owner, target_module_stub, allow_consolidation_pair_factory):
+    target_module_stub.setNodeOperatorActive(TARGET_OPERATOR_ID, False, {"from": owner})
+    calldata = _encode_input_with_manager(owner.address)
+    with reverts("TARGET_OPERATOR_IS_NOT_ACTIVE"):
+        allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
+    target_module_stub.setNodeOperatorActive(TARGET_OPERATOR_ID, True, {"from": owner})
 
 
 def test_target_operator_out_of_range(owner, target_module_stub, allow_consolidation_pair_factory):

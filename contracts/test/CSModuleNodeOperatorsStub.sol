@@ -9,9 +9,18 @@ import "../interfaces/ICSModule.sol";
 contract CSModuleNodeOperatorsStub is ICSModule {
     uint256 private _nodeOperatorsCount;
     address private _accounting;
+    mapping(uint256 => bool) private _activeOperators;
 
     function setNodeOperatorsCount(uint256 newCount) external {
         _nodeOperatorsCount = newCount;
+    }
+
+    function setNodeOperatorActive(uint256 _nodeOperatorId, bool _active) external {
+        _activeOperators[_nodeOperatorId] = _active;
+    }
+
+    function getNodeOperatorIsActive(uint256 _nodeOperatorId) external view override returns (bool) {
+        return _activeOperators[_nodeOperatorId];
     }
 
     function setAccounting(address accounting_) external {

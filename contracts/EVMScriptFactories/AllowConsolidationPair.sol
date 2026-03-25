@@ -27,6 +27,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     string private constant ERROR_PAIR_ALREADY_ALLOWED = "PAIR_ALREADY_ALLOWED";
     string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER =
         "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER";
+    string private constant ERROR_SOURCE_OPERATOR_IS_NOT_ACTIVE = "SOURCE_OPERATOR_IS_NOT_ACTIVE";
+    string private constant ERROR_TARGET_OPERATOR_IS_NOT_ACTIVE = "TARGET_OPERATOR_IS_NOT_ACTIVE";
     string private constant ERROR_ZERO_MIGRATOR = "ZERO_MIGRATOR";
 
     // -------------
@@ -116,6 +118,10 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             input.sourceOperatorId,
             false
         );
+
+        require(sourceModule.getNodeOperatorIsActive(input.sourceOperatorId), ERROR_SOURCE_OPERATOR_IS_NOT_ACTIVE);
+        require(targetModule.getNodeOperatorIsActive(input.targetOperatorId), ERROR_TARGET_OPERATOR_IS_NOT_ACTIVE);
+        
         require(msg.sender == rewardAddress, ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER);
         // TODO: should we allow MANAGE_SIGNING_KEYS_ROLE holders to enact the script?
 
