@@ -23,8 +23,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST = "SOURCE_OPERATOR_ID_DOES_NOT_EXIST";
-    string private constant ERROR_TARGET_OPERATOR_ID_DOES_NOT_EXIST = "TARGET_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_PAIR_ALREADY_ALLOWED = "PAIR_ALREADY_ALLOWED";
+    string private constant ERROR_NODE_OPERATOR_IS_NOT_ACTIVE = "NODE_OPERATOR_IS_NOT_ACTIVE";
     string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER =
         "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER";
     string private constant ERROR_ZERO_MIGRATOR = "ZERO_MIGRATOR";
@@ -117,20 +117,22 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         uint256 sourceCount = sourceModule.getNodeOperatorsCount();
         require(input.sourceOperatorId < sourceCount, ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST);
 
-        (, , address rewardAddress, , , , ) = sourceModule.getNodeOperator(
+        (bool active, , address rewardAddress, , , , ) = sourceModule.getNodeOperator(
             input.sourceOperatorId,
             false
         );
+        require(active, ERROR_NODE_OPERATOR_IS_NOT_ACTIVE);
+
         uint256[] memory roleParams = new uint256[](1);
         roleParams[0] = input.sourceOperatorId;
+
         require(
             creator == rewardAddress ||
                 sourceModule.canPerform(creator, MANAGE_SIGNING_KEYS_ROLE, roleParams),
             ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER
         );
 
-        uint256 targetCount = targetModule.getNodeOperatorsCount();
-        require(input.targetOperatorId < targetCount, ERROR_TARGET_OPERATOR_ID_DOES_NOT_EXIST);
+        require(targetModule.getNodeOperatorIsActive(input.targetOperatorId), ERROR_NODE_OPERATOR_IS_NOT_ACTIVE);
 
         require(
             consolidationMigrator.isPairAllowed(input.sourceOperatorId, input.targetOperatorId) == false,
