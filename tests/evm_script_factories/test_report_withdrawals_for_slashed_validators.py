@@ -109,6 +109,46 @@ def test_create_evm_script_reverts_if_zero_exit_balance(owner, factory, values):
         pytest.param(
             [
                 WithdrawnValidatorInfo(
+                    no_id=1,
+                    key_index=1,
+                    exit_balance=1,
+                    slashing_penalty=0,
+                    is_slashed=True,
+                ),
+            ]
+        ),
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=0,
+                    exit_balance=100500,
+                    slashing_penalty=16,
+                    is_slashed=True,
+                ),
+                WithdrawnValidatorInfo(
+                    no_id=1,
+                    key_index=1,
+                    exit_balance=1,
+                    slashing_penalty=0,
+                    is_slashed=True,
+                ),
+            ]
+        ),
+    ],
+)
+def test_create_evm_script_reverts_if_zero_slashing_penalty(owner, factory, values):
+    EVM_SCRIPT_CALLDATA = create_calldata(values)
+    with reverts("INVALID_SLASHING_PENALTY"):
+        factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
                     no_id=1001,
                     key_index=1,
                     exit_balance=1,
@@ -210,7 +250,7 @@ def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
                     no_id=1,
                     key_index=3,
                     exit_balance=30000,
-                    slashing_penalty=0,
+                    slashing_penalty=1,
                     is_slashed=True,
                 ),
             ]

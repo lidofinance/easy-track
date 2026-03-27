@@ -18,6 +18,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
     string private constant ERROR_OPERATOR_DOES_NOT_EXIST = "OPERATOR_DOES_NOT_EXIST";
     string private constant ERROR_VALIDATOR_NOT_SLASHED = "VALIDATOR_NOT_SLASHED";
     string private constant ERROR_ZERO_EXIT_BALANCE = "ZERO_EXIT_BALANCE";
+    string private constant ERROR_INVALID_SLASHING_PENALTY = "INVALID_SLASHING_PENALTY";
 
     // -------------
     // VARIABLES
@@ -92,8 +93,6 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
         return abi.decode(_evmScriptCallData, (WithdrawnValidatorInfo[]));
     }
 
-    // NOTE: The method doesn't validate the `slashingPenalty` field. It can be arbitrarily large (if the committee
-    // decides so), and it can be zero in case of some kind of off-chain agreement.
     function _validateInputData(WithdrawnValidatorInfo[] memory _decodedCallData) private view {
         require(_decodedCallData.length > 0, ERROR_EMPTY_VALIDATOR_INFO_LIST);
 
@@ -102,6 +101,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
             require(_decodedCallData[i].nodeOperatorId < nosCount, ERROR_OPERATOR_DOES_NOT_EXIST);
             require(_decodedCallData[i].exitBalance > 0, ERROR_ZERO_EXIT_BALANCE);
             require(_decodedCallData[i].isSlashed, ERROR_VALIDATOR_NOT_SLASHED);
+            require(_decodedCallData[i].slashingPenalty > 0, ERROR_INVALID_SLASHING_PENALTY);
         }
     }
 }
