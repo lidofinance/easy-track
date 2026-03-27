@@ -25,9 +25,13 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     string private constant ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST = "SOURCE_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_TARGET_OPERATOR_ID_DOES_NOT_EXIST = "TARGET_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_PAIR_ALREADY_ALLOWED = "PAIR_ALREADY_ALLOWED";
-    string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER =
-        "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER";
+    string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER =
+        "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER";
     string private constant ERROR_ZERO_MIGRATOR = "ZERO_MIGRATOR";
+
+    /// @notice keccak256("MANAGE_SIGNING_KEYS")
+    bytes32 private constant MANAGE_SIGNING_KEYS_ROLE =
+        0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
 
     // -------------
     // VARIABLES
@@ -65,15 +69,15 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     // -------------
 
     /// @notice Creates EVMScript that allows consolidation between the curated and the target operators.
-    /// @param /* _creator */ address who creates EVMScript
+    /// @param _creator address who creates EVMScript
     /// @param _evmScriptCallData Encoded AllowConsolidationPairInput
     function createEVMScript(
-        address /* _creator */,
+        address _creator,
         bytes memory _evmScriptCallData
     ) external view override returns (bytes memory) {
         AllowConsolidationPairInput memory input = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(input);
+        _validateInputData(_creator, input);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -107,6 +111,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     }
 
     function _validateInputData(
+        address creator,
         AllowConsolidationPairInput memory input
     ) private view {
         uint256 sourceCount = sourceModule.getNodeOperatorsCount();
@@ -116,8 +121,13 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             input.sourceOperatorId,
             false
         );
-        require(msg.sender == rewardAddress, ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER);
-        // TODO: should we allow MANAGE_SIGNING_KEYS_ROLE holders to enact the script?
+        uint256[] memory roleParams = new uint256[](1);
+        roleParams[0] = input.sourceOperatorId;
+        require(
+            creator == rewardAddress ||
+                sourceModule.canPerform(creator, MANAGE_SIGNING_KEYS_ROLE, roleParams),
+            ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER
+        );
 
         uint256 targetCount = targetModule.getNodeOperatorsCount();
         require(input.targetOperatorId < targetCount, ERROR_TARGET_OPERATOR_ID_DOES_NOT_EXIST);

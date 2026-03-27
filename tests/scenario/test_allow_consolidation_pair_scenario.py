@@ -62,35 +62,15 @@ def consolidation_migrator(
 @pytest.fixture(scope="module")
 def allow_consolidation_pair_factory(
     owner,
-    commitee_multisig,
     voting,
     et_contracts,
-    source_module,
     target_module,
     consolidation_migrator,
     use_deployed_contracts_from_env,
     ensure_module_in_staking_router,
-    ensure_legacy_module_operator,
-    impersonate_account,
 ):
     if use_deployed_contracts_from_env:
         ensure_module_in_staking_router(target_module, "CM")
-
-    source_operator_id = 0 if use_deployed_contracts_from_env else ensure_legacy_module_operator(source_module)
-    target_operator_id = ensure_legacy_module_operator(target_module)
-
-    # AllowConsolidationPair currently validates `msg.sender` as source operator owner.
-    # In EasyTrack flow msg.sender is EasyTrack contract itself.
-    reward_address = source_module.getNodeOperator(source_operator_id, False)[2]
-    reward_sender = owner
-    if use_deployed_contracts_from_env:
-        reward_sender = impersonate_account(reward_address)
-
-    source_module.setNodeOperatorRewardAddress(
-        source_operator_id,
-        et_contracts.easy_track.address,
-        {"from": reward_sender},
-    )
 
     factory = owner.deploy(AllowConsolidationPair, consolidation_migrator.address)
 
@@ -120,8 +100,22 @@ def target_operator_id(target_module, ensure_legacy_module_operator):
     return ensure_legacy_module_operator(target_module)
 
 
+@pytest.fixture(scope="module")
+def source_operator_creator(
+    owner,
+    source_module,
+    source_operator_id,
+    use_deployed_contracts_from_env,
+    impersonate_account,
+):
+    reward_address = source_module.getNodeOperator(source_operator_id, False)[2]
+    if use_deployed_contracts_from_env:
+        return impersonate_account(reward_address)
+    return owner
+
+
 def test_allow_consolidation_pair_via_motion_scenario(
-    commitee_multisig,
+    source_operator_creator,
     easytrack_executor,
     consolidation_migrator,
     allow_consolidation_pair_factory,
@@ -134,13 +128,13 @@ def test_allow_consolidation_pair_via_motion_scenario(
     )
 
     evm_script_calldata = create_calldata(
-        commitee_multisig.address,
+        source_operator_creator.address,
         source_operator_id,
         target_operator_id,
     )
 
     tx = easytrack_executor(
-        commitee_multisig,
+        source_operator_creator,
         allow_consolidation_pair_factory,
         evm_script_calldata,
     )

@@ -13,6 +13,9 @@ SOURCE_MODULE_ID = 1
 TARGET_MODULE_ID = 2
 SOURCE_OPERATOR_ID = 0
 TARGET_OPERATOR_ID = 3
+MANAGE_SIGNING_KEYS_ROLE = (
+    "0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee"
+)
 
 
 def _encode_input_with_manager(
@@ -80,7 +83,7 @@ def test_deploy(
 
 def test_create_evm_script_called_by_stranger(stranger, allow_consolidation_pair_factory):
     calldata = _encode_input_with_manager(stranger.address)
-    with reverts("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER"):
+    with reverts("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER"):
         allow_consolidation_pair_factory.createEVMScript(stranger, calldata, {"from": stranger})
 
 
@@ -104,9 +107,76 @@ def test_source_operator_out_of_range(owner, source_module_stub, allow_consolida
 def test_caller_must_match_owner(owner, stranger, source_module_stub, allow_consolidation_pair_factory):
     source_module_stub.setNodeOperatorRewardAddress(SOURCE_OPERATOR_ID, stranger, {"from": owner})
     calldata = _encode_input_with_manager(owner.address)
-    with reverts("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER"):
+    with reverts("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
     source_module_stub.setNodeOperatorRewardAddress(SOURCE_OPERATOR_ID, owner, {"from": owner})
+
+
+def test_caller_with_manage_signing_keys_role_can_create_script(
+    owner,
+    stranger,
+    source_module_stub,
+    allow_consolidation_pair_factory,
+    consolidation_migrator_stub,
+):
+    source_module_stub.setCanPerform(
+        stranger,
+        MANAGE_SIGNING_KEYS_ROLE,
+        SOURCE_OPERATOR_ID,
+        True,
+        {"from": owner},
+    )
+
+    calldata = _encode_input_with_manager(owner.address)
+    evm_script = allow_consolidation_pair_factory.createEVMScript(
+        stranger,
+        calldata,
+        {"from": owner},
+    )
+
+    expected_evm_script = encode_call_script(
+        [
+            (
+                consolidation_migrator_stub.address,
+                consolidation_migrator_stub.allowPair.encode_input(
+                    owner.address,
+                    SOURCE_OPERATOR_ID,
+                    TARGET_OPERATOR_ID,
+                ),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
+
+
+def test_validation_uses_creator_not_tx_sender(
+    owner,
+    stranger,
+    allow_consolidation_pair_factory,
+    consolidation_migrator_stub,
+):
+    calldata = _encode_input_with_manager(owner.address)
+    evm_script = allow_consolidation_pair_factory.createEVMScript(
+        owner,
+        calldata,
+        {"from": stranger},
+    )
+
+    expected_evm_script = encode_call_script(
+        [
+            (
+                consolidation_migrator_stub.address,
+                consolidation_migrator_stub.allowPair.encode_input(
+                    owner.address,
+                    SOURCE_OPERATOR_ID,
+                    TARGET_OPERATOR_ID,
+                ),
+            )
+        ]
+    )
+
+    assert evm_script == expected_evm_script
 
 
 def test_target_operator_out_of_range(owner, target_module_stub, allow_consolidation_pair_factory):

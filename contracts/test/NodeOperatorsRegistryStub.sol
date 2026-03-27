@@ -26,6 +26,7 @@ contract NodeOperatorsRegistryStub {
 
     mapping(uint256 => NodeOperator) internal _nodeOperators;
     mapping(uint256 => bytes) internal _signingKeys;
+    mapping(address => mapping(bytes32 => mapping(uint256 => bool))) internal _canPerform;
 
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
@@ -128,6 +129,26 @@ contract NodeOperatorsRegistryStub {
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
         _nodeOperatorsCount = uint40(_desiredCount);
+    }
+
+    function setCanPerform(
+        address _sender,
+        bytes32 _role,
+        uint256 _operatorId,
+        bool _allowed
+    ) external {
+        _canPerform[_sender][_role][_operatorId] = _allowed;
+    }
+
+    function canPerform(
+        address _sender,
+        bytes32 _role,
+        uint256[] memory _params
+    ) external view returns (bool) {
+        if (_params.length == 0) {
+            return _canPerform[_sender][_role][0];
+        }
+        return _canPerform[_sender][_role][_params[0]];
     }
 
     /// @notice Returns the signing key for a given node operator and index.
