@@ -23,6 +23,8 @@ contract AllowedMerkleGatesRegistry is AccessControl {
         "GATE_NOT_FOUND_IN_ALLOWED_LIST";
     string private constant ERROR_INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH =
         "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH";
+    string private constant ERROR_ZERO_ADMIN_ADDRESS = "ZERO_ADMIN_ADDRESS";
+    string private constant ERROR_ZERO_GATE_ADDRESS = "ZERO_GATE_ADDRESS";
 
     // -------------
     // VARIABLES
@@ -52,6 +54,7 @@ contract AllowedMerkleGatesRegistry is AccessControl {
         address[] memory _gates,
         string[] memory _titles
     ) {
+        require(_admin != address(0), ERROR_ZERO_ADMIN_ADDRESS);
         _setupRole(DEFAULT_ADMIN_ROLE, _admin);
         name = _name;
 
@@ -120,6 +123,7 @@ contract AllowedMerkleGatesRegistry is AccessControl {
     }
 
     function _addGate(address _gate, string memory _title) private {
+        require(_gate != address(0), ERROR_ZERO_GATE_ADDRESS);
         require(
             allowedGateIndices[_gate] == 0,
             ERROR_GATE_ALREADY_ADDED_TO_ALLOWED_LIST

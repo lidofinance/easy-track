@@ -58,6 +58,16 @@ def test_registry_constructor_reverts_on_initial_length_mismatch(owner, AllowedM
     assert history[-1].revert_msg == "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"
 
 
+def test_registry_constructor_reverts_on_zero_admin(owner, AllowedMerkleGatesRegistry):
+    with reverts("ZERO_ADMIN_ADDRESS"):
+        owner.deploy(AllowedMerkleGatesRegistry, ZERO_ADDRESS, REGISTRY_NAME, [], [])
+
+
+def test_registry_constructor_reverts_on_zero_gate_address(owner, AllowedMerkleGatesRegistry):
+    with reverts("ZERO_GATE_ADDRESS"):
+        owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [ZERO_ADDRESS], ["Zero Gate"])
+
+
 def test_add_gate_success(allowed_merkle_gates_registry, merkle_gate_with_interface):
     registry, admin = allowed_merkle_gates_registry
 
@@ -90,6 +100,13 @@ def test_add_gate_duplicate_reverts(allowed_merkle_gates_registry, merkle_gate_w
 
     with reverts("GATE_ALREADY_ADDED_TO_ALLOWED_LIST"):
         registry.addGate(merkle_gate_with_interface, GATE_TITLE, {"from": admin})
+
+
+def test_add_gate_reverts_on_zero_address(allowed_merkle_gates_registry):
+    registry, admin = allowed_merkle_gates_registry
+
+    with reverts("ZERO_GATE_ADDRESS"):
+        registry.addGate(ZERO_ADDRESS, GATE_TITLE, {"from": admin})
 
 
 def test_remove_gate_success(allowed_merkle_gates_registry, merkle_gate_with_interface):
