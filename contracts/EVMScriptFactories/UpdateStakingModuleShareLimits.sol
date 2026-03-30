@@ -19,6 +19,7 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
     }
 
     string private constant ERROR_CURRENT_VALUES_MISMATCH = "CURRENT_VALUES_MISMATCH";
+    string private constant ERROR_STAKING_MODULE_DOES_NOT_EXIST = "STAKING_MODULE_DOES_NOT_EXIST";
     string private constant ERROR_SHARE_LIMITS = "STAKE_SHARE_LIMIT_DELTA_EXCEEDED";
     string private constant ERROR_EXIT_THRESHOLD_LIMITS = "PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED";
     string private constant ERROR_NO_CHANGES = "NO_CHANGES";
@@ -72,6 +73,10 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         ModuleShareParams memory params = _decodeCallData(_evmScriptCallData);
         IStakingRouter.StakingModule memory module =
             stakingRouter.getStakingModule(stakingModuleId);
+        require(
+            module.stakingModuleAddress != address(0),
+            ERROR_STAKING_MODULE_DOES_NOT_EXIST
+        );
 
         require(
             module.stakeShareLimit == params.currentStakeShareLimit &&

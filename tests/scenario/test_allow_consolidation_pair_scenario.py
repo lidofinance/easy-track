@@ -2,6 +2,7 @@ import pytest
 from brownie import (
     AllowConsolidationPair,
     ConsolidationMigratorStub,
+    CSModuleNodeOperatorsStub,
     NodeOperatorsRegistryStub,
 )
 
@@ -34,9 +35,10 @@ def target_module(owner, use_deployed_contracts_from_env, active_curated_module)
     if use_deployed_contracts_from_env:
         return active_curated_module
 
-    registry = owner.deploy(NodeOperatorsRegistryStub, owner)
-    registry.setDesiredNodeOperatorCount(1, {"from": owner})
-    return registry
+    module = owner.deploy(CSModuleNodeOperatorsStub)
+    module.setNodeOperatorsCount(1, {"from": owner})
+    module.setNodeOperatorIsActive(0, True, {"from": owner})
+    return module
 
 
 @pytest.fixture(scope="module")
@@ -96,8 +98,10 @@ def source_operator_id(source_module, use_deployed_contracts_from_env, ensure_le
 
 
 @pytest.fixture(scope="module")
-def target_operator_id(target_module, ensure_legacy_module_operator):
-    return ensure_legacy_module_operator(target_module)
+def target_operator_id(use_deployed_contracts_from_env, target_module, ensure_module_operator):
+    if use_deployed_contracts_from_env:
+        return ensure_module_operator(target_module)
+    return 0
 
 
 @pytest.fixture(scope="module")

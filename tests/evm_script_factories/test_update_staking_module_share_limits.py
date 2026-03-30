@@ -14,12 +14,16 @@ def _encode_module_payload(current_stake, new_stake, current_priority, new_prior
 
 
 def _deploy_factory(owner, staking_router, UpdateStakingModuleShareLimits):
+    return _deploy_factory_for_module_id(owner, staking_router, UpdateStakingModuleShareLimits, MODULE_ID)
+
+
+def _deploy_factory_for_module_id(owner, staking_router, UpdateStakingModuleShareLimits, module_id):
     return owner.deploy(
         UpdateStakingModuleShareLimits,
         owner,
         FACTORY_NAME,
         staking_router,
-        MODULE_ID,
+        module_id,
         500,  # +5%
         400,  # -4%
         300,
@@ -29,6 +33,7 @@ def _deploy_factory(owner, staking_router, UpdateStakingModuleShareLimits):
 
 def _deploy_router(owner, StakingRouterStub):
     router = owner.deploy(StakingRouterStub)
+    router.setStakingModule(MODULE_ID, owner.address)
     router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT, CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD)
     return router
 
@@ -148,6 +153,15 @@ def test_reverts_when_no_changes(owner, StakingRouterStub, UpdateStakingModuleSh
     )
 
     with reverts("NO_CHANGES"):
+        factory.createEVMScript(owner, calldata)
+
+
+def test_reverts_if_staking_module_does_not_exist(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
+    router = owner.deploy(StakingRouterStub)
+    factory = _deploy_factory_for_module_id(owner, router, UpdateStakingModuleShareLimits, MODULE_ID + 1)
+    calldata = _encode_module_payload(0, 100, 0, 100)
+
+    with reverts("STAKING_MODULE_DOES_NOT_EXIST"):
         factory.createEVMScript(owner, calldata)
 
 

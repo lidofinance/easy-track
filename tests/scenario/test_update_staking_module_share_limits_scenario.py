@@ -22,6 +22,7 @@ def staking_router_contract(owner, use_deployed_contracts_from_env, active_staki
         return active_staking_router
 
     router = owner.deploy(StakingRouterStub)
+    router.setStakingModule(3, owner.address, {"from": owner})
     router.setModuleShares(
         3,
         CURRENT_STAKE_SHARE_LIMIT,

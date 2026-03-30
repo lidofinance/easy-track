@@ -91,7 +91,7 @@ def factory(owner, et_contracts, voting, module):
                     no_id=1,
                     key_index=3,
                     exit_balance=30000,
-                    slashing_penalty=0,
+                    slashing_penalty=1,
                     is_slashed=True,
                 ),
             ]
@@ -115,7 +115,7 @@ def test_submit_withdrawals_scenario(
                 no_id=no_id,
                 key_index=0,
                 exit_balance=1,
-                slashing_penalty=0,
+                slashing_penalty=1,
                 is_slashed=True,
             ),
         ]

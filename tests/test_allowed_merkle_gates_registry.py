@@ -1,6 +1,7 @@
 import pytest
-from brownie import accounts, history, reverts, ZERO_ADDRESS
+from brownie import accounts, reverts, ZERO_ADDRESS
 
+from utils.hardhat_helpers import get_last_tx_revert_reason
 from utils.test_helpers import access_revert_message
 
 
@@ -51,11 +52,13 @@ def test_registry_constructor_seeds_initial_gates(owner, AllowedMerkleGatesRegis
 
 def test_registry_constructor_reverts_on_initial_length_mismatch(owner, AllowedMerkleGatesRegistry, MerkleGateStub):
     gate = owner.deploy(MerkleGateStub)
-    prev_history_len = len(history)
-    with pytest.raises(ValueError, match="not a valid ETH address"):
-        owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [gate], [])
-    assert len(history) == prev_history_len + 1
-    assert history[-1].revert_msg == "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"
+    revert_reason = "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"
+    try:
+        with reverts(revert_reason):
+            owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [gate], [])
+    except ValueError:
+        if revert_reason != get_last_tx_revert_reason():
+            raise
 
 
 def test_registry_constructor_reverts_on_zero_admin(owner, AllowedMerkleGatesRegistry):

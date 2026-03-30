@@ -148,9 +148,9 @@ def test_caller_with_manage_signing_keys_role_can_create_script(
             (
                 consolidation_migrator_stub.address,
                 consolidation_migrator_stub.allowPair.encode_input(
-                    owner.address,
                     SOURCE_OPERATOR_ID,
                     TARGET_OPERATOR_ID,
+                    owner.address,
                 ),
             )
         ]
@@ -177,9 +177,9 @@ def test_validation_uses_creator_not_tx_sender(
             (
                 consolidation_migrator_stub.address,
                 consolidation_migrator_stub.allowPair.encode_input(
-                    owner.address,
                     SOURCE_OPERATOR_ID,
                     TARGET_OPERATOR_ID,
+                    owner.address,
                 ),
             )
         ]
