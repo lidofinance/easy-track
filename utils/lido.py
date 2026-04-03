@@ -80,6 +80,31 @@ def addresses(network=DEFAULT_NETWORK):
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
             evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
         )
+    if network == "local-devnet" or network == "local-devnet-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl=config.get_env("DEVNET_ACL", ""),
+                agent=config.get_env("DEVNET_AGENT", ""),
+                voting=config.get_env("DEVNET_VOTING", ""),
+                finance=config.get_env("DEVNET_FINANCE", ""),
+                gov_token=config.get_env("DEVNET_GOV_TOKEN", ""),
+                calls_script=config.get_env("DEVNET_CALLS_SCRIPT", ""),
+                token_manager=config.get_env("DEVNET_TOKEN_MANAGER", ""),
+                kernel=config.get_env("DEVNET_KERNEL", ""),
+            ),
+            steth=config.get_env("DEVNET_STETH", ""),
+            node_operators_registry=config.get_env("DEVNET_NOR", ""),
+            simple_dvt=config.get_env("DEVNET_SDVT", ""),
+            curated_module=config.get_env("DEVNET_NOR", ""),
+            staking_router=config.get_env("DEVNET_STAKING_ROUTER", ""),
+            locator=config.get_env("DEVNET_LOCATOR", ""),
+            mev_boost_list="0x0000000000000000000000000000000000000000",
+            validators_exit_bus_oracle=config.get_env("DEVNET_VEBO", ""),
+            dual_governance_admin_executor=config.get_env("DEVNET_AGENT", ""),
+            dual_governance="0x0000000000000000000000000000000000000000",
+            emergency_protected_timelock="0x0000000000000000000000000000000000000000",
+            evm_script_executor=config.get_env("DEVNET_AGENT", ""),
+        )
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
     )
@@ -107,6 +132,12 @@ def external_contracts(network=DEFAULT_NETWORK):
             "usdc": "0x97bb030B93faF4684eAC76bA0bf3be5ec7140F36",
             "dai": "0x17fc691f6EF57D2CA719d30b8fe040123d4ee319",
             "usdt": "0x64f1904d1b419c6889BDf3238e31A138E258eA68",
+        }
+    if network == "local-devnet" or network == "local-devnet-fork":
+        return {
+            "usdc": "0x0000000000000000000000000000000000000000",
+            "dai": "0x0000000000000000000000000000000000000000",
+            "usdt": "0x0000000000000000000000000000000000000000",
         }
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, holesky, holesky-fork"""
@@ -165,10 +196,19 @@ class LidoContractsSetup:
         self.permissions = Permissions(contracts=self)
         self.staking_router = interface.StakingRouter(lido_addresses.staking_router)
         self.locator = interface.ILidoLocator(lido_addresses.locator)
-        self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        if lido_addresses.mev_boost_list != "0x0000000000000000000000000000000000000000":
+            self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        else:
+            self.mev_boost_list = None
         self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
-        self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
-        self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
+        if lido_addresses.dual_governance != "0x0000000000000000000000000000000000000000":
+            self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
+        else:
+            self.dual_governance = None
+        if lido_addresses.emergency_protected_timelock != "0x0000000000000000000000000000000000000000":
+            self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
+        else:
+            self.emergency_protected_timelock = None
         self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
 
 

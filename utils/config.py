@@ -18,11 +18,13 @@ def get_network_name() -> Optional[str]:
 
 
 def get_is_live():
-    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "holesky-fork", "hoodi-fork"]
+    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "holesky-fork", "hoodi-fork", "local-devnet"]
     return network.show_active() not in dev_networks
 
 
 def get_deployer_account(is_live, network="mainnet", dev_ldo_transfer=True):
+    if "DEPLOYER_PRIVATE_KEY" in os.environ:
+        return accounts.add(os.environ["DEPLOYER_PRIVATE_KEY"])
     if not is_live:
         deployer = accounts[0]
         contracts = lido.contracts(network=network)
@@ -36,6 +38,8 @@ def get_deployer_account(is_live, network="mainnet", dev_ldo_transfer=True):
 
 
 def prompt_bool():
+    if os.environ.get("DEVNET_AUTO_CONFIRM"):
+        return True
     choice = input().lower()
     if choice in {"yes", "y"}:
         return True

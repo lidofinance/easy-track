@@ -26,6 +26,12 @@ live:
     name: Hoodi
     provider: custom
 
+  - chainid: 32382
+    host: $DEVNET_RPC_URL
+    id: local-devnet
+    name: Lido Local DevNet
+    provider: custom
+
 development:
   - cmd: "npx hardhat node"
     cmd_settings:
@@ -51,3 +57,10 @@ development:
     id: hoodi-fork
     name: hoodi-fork
     timeout: 360
+  - cmd: npx hardhat node
+    cmd_settings:
+      fork: $DEVNET_RPC_URL
+      port: 8545
+    host: http://127.0.0.1
+    id: local-devnet-fork
+    name: Lido Local DevNet Fork

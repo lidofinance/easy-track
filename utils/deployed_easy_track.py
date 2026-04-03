@@ -70,6 +70,15 @@ def addresses(network="mainnet"):
                 reward_programs_registry=None,
             ),
         )
+    if network == "local-devnet" or network == "local-devnet-fork":
+        return EasyTrackSetup(
+            easy_track=None,
+            evm_script_executor=None,
+            increase_node_operator_staking_limit=None,
+            top_up_lego_program=None,
+            reward_programs=None,
+            referral_partners=None,
+        )
     raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, hoodi, holesky.""")
 
 

@@ -33,7 +33,7 @@ contract MotionSettings is AccessControl {
     uint256 public constant MAX_OBJECTIONS_THRESHOLD = 500;
 
     /// @notice Lower bound for motionDuration variable
-    uint256 public constant MIN_MOTION_DURATION = 48 hours;
+    uint256 public constant MIN_MOTION_DURATION = 60;
 
     /// ------------------
     /// STORAGE VARIABLES

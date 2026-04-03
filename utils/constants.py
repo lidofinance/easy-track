@@ -1,3 +1,5 @@
+import os
+
 DEFAULT_NETWORK = "mainnet"
 
 
@@ -70,6 +72,22 @@ def get_network_config(network=DEFAULT_NETWORK):
             max_infra_fee_bp = 100,
         )
 
+    if network == "local-devnet" or network == "local-devnet-fork":
+        return NetworkConfig(
+            motion_duration=120,
+            motions_count_limit=24,
+            objections_threshold=500,
+            validator_exit_fee_limit=int(0.1e18),
+            max_group_share_limit_phase_1=int(50_000e18),
+            max_default_tier_share_limit_phase_1=0,
+            max_group_share_limit_phase_2_and_3=int(1_000_000e18),
+            max_default_tier_share_limit_phase_2_and_3=int(1_000_000e18),
+            st_vaults_committee=os.environ.get("DEVNET_DEPLOYER", "0x0000000000000000000000000000000000000000"),
+            max_liquidity_fee_bp=1000,
+            max_reservation_fee_bp=0,
+            max_infra_fee_bp=100,
+        )
+
     raise NameError(
         f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork"""
     )
@@ -77,6 +95,6 @@ def get_network_config(network=DEFAULT_NETWORK):
 
 # Backward compatibility - deprecated constants
 # Use get_network_config() instead
-INITIAL_MOTION_DURATION = 72 * 60 * 60  # 72 hours
+INITIAL_MOTION_DURATION = 120  # 2 minutes for devnet
 INITIAL_MOTIONS_COUNT_LIMIT = 12
 INITIAL_OBJECTIONS_THRESHOLD = 50  # 0.5 %
