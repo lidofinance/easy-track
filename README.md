@@ -180,9 +180,8 @@ Run tests with coverage and gas profiling:
 brownie test --network mainnet-fork --coverage --gas
 ```
 
-Run tests only for stVaults factories on Hoodi fork:
+Run tests only for stVaults factories on mainnet fork:
 ```bash
-export HOODI_RPC_URL=<YOUR_HOODI_RPC_URL>
 ./scripts/run_vaults_tests.sh
 ```
 
