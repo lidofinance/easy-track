@@ -1,5 +1,5 @@
 import pytest
-from brownie import StakingRouterStub, UpdateStakingModuleShareLimits
+from brownie import StakingRouterStub, UpdateStakingModuleShareLimits, reverts
 
 from utils.evm_script import encode_calldata
 
@@ -123,3 +123,47 @@ def test_update_staking_module_share_limits_via_motion_scenario(
     assert module_after[10] == new_priority_exit_threshold
 
     assert "ModuleSharesUpdated" in tx.events
+
+
+def test_update_staking_module_share_limits_reverts_for_missing_module(
+    owner,
+    commitee_multisig,
+    voting,
+    et_contracts,
+    staking_router_contract,
+    use_deployed_contracts_from_env,
+):
+    if use_deployed_contracts_from_env:
+        pytest.skip("local stub only")
+
+    missing_module_id = 999
+    factory = owner.deploy(
+        UpdateStakingModuleShareLimits,
+        commitee_multisig,
+        FACTORY_NAME + "-MISSING",
+        staking_router_contract.address,
+        missing_module_id,
+        500,
+        400,
+        300,
+        200,
+    )
+
+    permissions = (
+        staking_router_contract.address
+        + staking_router_contract.updateModuleShares.signature[2:]
+    )
+    et_contracts.easy_track.addEVMScriptFactory(
+        factory.address,
+        permissions,
+        {"from": voting},
+    )
+
+    evm_script_calldata = create_calldata(0, 100, 0, 100)
+
+    with reverts("STAKING_MODULE_DOES_NOT_EXIST"):
+        et_contracts.easy_track.createMotion(
+            factory.address,
+            evm_script_calldata,
+            {"from": commitee_multisig},
+        )

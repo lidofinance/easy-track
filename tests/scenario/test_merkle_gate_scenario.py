@@ -1,4 +1,5 @@
 import pytest
+from brownie import reverts
 from utils.evm_script import encode_calldata
 
 
@@ -120,3 +121,54 @@ def test_merkle_gate_scenario(
         # Verify the update was applied
         assert merkle_gate.treeRoot() == "0x" + update["root"].hex()
         assert merkle_gate.treeCid() == update["cid"]
+
+
+def test_merkle_gate_reverts_with_same_tree_root_on_motion_creation(
+    commitee_multisig,
+    et_contracts,
+    merkle_gate,
+    merkle_gate_set_tree_factory,
+):
+    current_root = merkle_gate.treeRoot()
+    new_cid = "QmScenarioNewCid123"
+    if merkle_gate.treeCid() == new_cid:
+        new_cid = "QmScenarioNewCid456"
+
+    evm_script_calldata = create_calldata(
+        merkle_gate.address,
+        bytes.fromhex(current_root[2:]),
+        new_cid,
+    )
+
+    with reverts("SAME_TREE_ROOT"):
+        et_contracts.easy_track.createMotion(
+            merkle_gate_set_tree_factory.address,
+            evm_script_calldata,
+            {"from": commitee_multisig},
+        )
+
+
+def test_merkle_gate_reverts_with_same_tree_cid_on_motion_creation(
+    commitee_multisig,
+    et_contracts,
+    merkle_gate,
+    merkle_gate_set_tree_factory,
+):
+    current_root = merkle_gate.treeRoot()
+    current_cid = merkle_gate.treeCid()
+    new_root = bytes.fromhex("cd" * 32)
+    if current_root == "0x" + new_root.hex():
+        new_root = bytes.fromhex("ef" * 32)
+
+    evm_script_calldata = create_calldata(
+        merkle_gate.address,
+        new_root,
+        current_cid,
+    )
+
+    with reverts("SAME_TREE_CID"):
+        et_contracts.easy_track.createMotion(
+            merkle_gate_set_tree_factory.address,
+            evm_script_calldata,
+            {"from": commitee_multisig},
+        )

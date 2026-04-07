@@ -82,6 +82,12 @@ def test_decode_evm_script_call_data(factory):
     assert decoded_amounts == max_amounts
 
 
+@pytest.mark.parametrize("invalid_calldata", ["0x", "0x01"], ids=["empty", "malformed"])
+def test_decode_evm_script_call_data_reverts_on_invalid_calldata(factory, invalid_calldata):
+    with reverts():
+        factory.decodeEVMScriptCallData(invalid_calldata)
+
+
 def test_node_operators_ids_and_max_amounts_length_mismatch(owner, factory):
     "Must revert with message 'NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH' when arrays have different lengths"
     node_operator_ids = [0, 1]

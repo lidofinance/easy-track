@@ -143,3 +143,91 @@ def test_create_operator_group_via_motion_scenario(
         created_event = created_event[-1]
 
     assert created_event["groupId"] == groups_count_before
+
+
+def test_update_operator_group_via_motion_scenario(
+    commitee_multisig,
+    easytrack_executor,
+    meta_registry_contract,
+    create_or_update_operator_group_factory,
+    scenario_group_input,
+    use_deployed_contracts_from_env,
+):
+    groups_count_before = meta_registry_contract.getOperatorGroupsCount()
+
+    create_tx = easytrack_executor(
+        commitee_multisig,
+        create_or_update_operator_group_factory,
+        create_calldata(
+            group_id=scenario_group_input["group_id"],
+            sub_node_operators=scenario_group_input["sub_node_operators"],
+            external_operators=scenario_group_input["external_operators"],
+        ),
+    )
+    group_id = groups_count_before
+
+    updated_sub_node_operators = list(scenario_group_input["sub_node_operators"])
+    if len(updated_sub_node_operators) == 1:
+        updated_sub_node_operators = [(updated_sub_node_operators[0][0], 10_000)]
+    else:
+        first_operator_id = updated_sub_node_operators[0][0]
+        last_operator_id = updated_sub_node_operators[-1][0]
+        updated_sub_node_operators = [(first_operator_id, 5_500), (last_operator_id, 4_500)]
+
+    update_tx = easytrack_executor(
+        commitee_multisig,
+        create_or_update_operator_group_factory,
+        create_calldata(
+            group_id=group_id,
+            sub_node_operators=updated_sub_node_operators,
+            external_operators=scenario_group_input["external_operators"],
+        ),
+    )
+
+    assert meta_registry_contract.getOperatorGroupsCount() == groups_count_before + 1
+
+    if not use_deployed_contracts_from_env:
+        updated_event = update_tx.events["OperatorGroupUpdated"]
+        if isinstance(updated_event, list):
+            updated_event = updated_event[-1]
+        assert updated_event["groupId"] == group_id
+
+
+def test_clear_operator_group_via_motion_scenario(
+    commitee_multisig,
+    easytrack_executor,
+    meta_registry_contract,
+    create_or_update_operator_group_factory,
+    scenario_group_input,
+    use_deployed_contracts_from_env,
+):
+    groups_count_before = meta_registry_contract.getOperatorGroupsCount()
+
+    easytrack_executor(
+        commitee_multisig,
+        create_or_update_operator_group_factory,
+        create_calldata(
+            group_id=scenario_group_input["group_id"],
+            sub_node_operators=scenario_group_input["sub_node_operators"],
+            external_operators=scenario_group_input["external_operators"],
+        ),
+    )
+    group_id = groups_count_before
+
+    clear_tx = easytrack_executor(
+        commitee_multisig,
+        create_or_update_operator_group_factory,
+        create_calldata(
+            group_id=group_id,
+            sub_node_operators=[],
+            external_operators=[],
+        ),
+    )
+
+    assert meta_registry_contract.getOperatorGroupsCount() == groups_count_before + 1
+
+    if not use_deployed_contracts_from_env:
+        cleared_event = clear_tx.events["OperatorGroupCleared"]
+        if isinstance(cleared_event, list):
+            cleared_event = cleared_event[-1]
+        assert cleared_event["groupId"] == group_id

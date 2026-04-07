@@ -329,3 +329,9 @@ def test_decode_evm_script_call_data(factory, values):
     assert len(decoded_list) == len(values), "Unexpected length of the decoded list"
     for actual, expected in zip(decoded_list, values):
         assert actual == expected
+
+
+@pytest.mark.parametrize("invalid_calldata", ["0x", "0x01"], ids=["empty", "malformed"])
+def test_decode_evm_script_call_data_reverts_on_invalid_calldata(factory, invalid_calldata):
+    with reverts():
+        factory.decodeEVMScriptCallData(invalid_calldata)
