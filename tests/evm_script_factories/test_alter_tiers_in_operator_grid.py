@@ -42,10 +42,10 @@ def test_array_length_mismatch(owner, alter_tiers_in_operator_grid_factory):
 
 
 def test_tier_not_exists(owner, alter_tiers_in_operator_grid_factory):
-    "Must revert with message 'Tier does not exist' if tier doesn't exist"
+    "Must revert with message 'TIER_NOT_EXISTS' if tier doesn't exist"
     tier_params = [(1000, 200, 100, 50, 40, 10)]  # (shareLimit, reserveRatioBP, forcedRebalanceThresholdBP, infraFeeBP, liquidityFeeBP, reservationFeeBP)
     CALLDATA = create_calldata([99], tier_params)  # Using tier ID 99 which doesn't exist
-    with reverts('Tier does not exist'):
+    with reverts('TIER_NOT_EXISTS'):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
@@ -295,7 +295,7 @@ def test_fees_less_than_uint16_max(owner, alter_tiers_in_operator_grid_factory, 
 
 
 def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
-    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if tier share limit exceeds group share limit"
+    "Must allow tier share limit to exceed group share limit (enforced at minting time by OperatorGrid)"
     operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
     # First register a group and tier to alter
     operator_address = "0x0000000000000000000000000000000000000001"
@@ -306,7 +306,25 @@ def test_share_limit_exceeds_group_share_limit(owner, alter_tiers_in_operator_gr
     tier_ids = [1]
     tier_params = [(2000, 200, 100, 50, 40, 10)]  # shareLimit > group share limit
     CALLDATA = create_calldata(tier_ids, tier_params)
-    with reverts("TIER_SHARE_LIMIT_TOO_HIGH"):
+
+    # Should not revert - share limit enforcement is done by OperatorGrid at minting time
+    evm_script = alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
+    assert len(evm_script) > 0
+
+
+def test_tier_share_limit_too_high(owner, alter_tiers_in_operator_grid_factory, lido_locator_stub):
+    "Must revert with message 'TIER_SHARE_LIMIT_TOO_HIGH' if tier share limit exceeds max share limit"
+    operator_grid_stub = interface.IOperatorGrid(lido_locator_stub.operatorGrid())
+    operator_address = "0x0000000000000000000000000000000000000001"
+    operator_grid_stub.registerGroup(operator_address, 1000, {"from": owner})
+    initial_tier_params = (1000, 200, 100, 50, 40, 10)
+    operator_grid_stub.registerTiers(operator_address, [initial_tier_params], {"from": owner})
+
+    tier_ids = [1]
+    max_share_limit = 10_000_000 * 10**18
+    tier_params = [(max_share_limit + 1, 200, 100, 50, 40, 10)]  # shareLimit > MAX_SHARE_LIMIT
+    CALLDATA = create_calldata(tier_ids, tier_params)
+    with reverts('TIER_SHARE_LIMIT_TOO_HIGH'):
         alter_tiers_in_operator_grid_factory.createEVMScript(owner, CALLDATA)
 
 
