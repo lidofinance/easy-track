@@ -229,7 +229,7 @@ def test_top_up_single_recipient_several_times_in_period(
     )
 
     top_up_recipient_addresses = [allowed_recipient.address]
-    top_up_amounts = [int(allowed_recipients_limit_params.limit / 2)]
+    top_up_amounts = [allowed_recipients_limit_params.limit // 2]
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 

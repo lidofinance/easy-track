@@ -6,6 +6,8 @@ import constants
 import math
 from utils import deployment, deployed_date_time, evm_script, log
 from utils.config import get_network_name, set_balance_in_wei
+from utils.deployed_addresses import get_single_token_config
+from utils.test_helpers import set_account_balance
 from dataclasses import dataclass
 
 #####
@@ -68,19 +70,28 @@ def deployed_artifact():
 #####
 
 
-@pytest.fixture(scope="module")
-def deployed_contracts():
+_single_token_config = get_single_token_config()
+
+
+@pytest.fixture(
+    scope="module",
+    params=_single_token_config["instances"],
+    ids=lambda x: x.get("name", "default"),
+)
+def deployed_contracts(request):
     """
-    To run tests on deployed contracts, set their address below
+    Parametrized over all single-token AllowedRecipients instances from integration-test-addresses.json.
+    Factory and builder are shared across all instances; add/remove are optional per instance.
     """
+    instance = request.param
     return {
-        "EasyTrack": "",
-        "AllowedRecipientsFactorySingleToken": "",
-        "AllowedRecipientsBuilderSingleToken": "",
-        "AllowedRecipientsRegistry": "",
-        "AddAllowedRecipient": "",
-        "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipientsSingleToken": "",
+        "EasyTrack": _single_token_config["easytrack"],
+        "AllowedRecipientsFactorySingleToken": _single_token_config["factory"],
+        "AllowedRecipientsBuilderSingleToken": _single_token_config["builder"],
+        "AllowedRecipientsRegistry": instance.get("registry", ""),
+        "AddAllowedRecipient": instance.get("add_allowed_recipient", ""),
+        "RemoveAllowedRecipient": instance.get("remove_allowed_recipient", ""),
+        "TopUpAllowedRecipientsSingleToken": instance.get("top_up_allowed_recipients", ""),
     }
 
 
@@ -201,6 +212,7 @@ def add_allowed_recipient_evm_script_factory(
         )
         log.ok(f"EVM Script Factory AddAllowedRecipient({evm_script_factory}) was added to EasyTrack")
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -234,6 +246,7 @@ def remove_allowed_recipient_evm_script_factory(
         )
         log.ok(f"EVM Script Factory RemoveAllowedRecipient({evm_script_factory}) was added to EasyTrack")
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -327,6 +340,7 @@ def top_up_allowed_recipients_evm_script_factory(
         )
         log.ok(f"EVM Script Factory TopUpAllowedRecipientsSingleToken({evm_script_factory}) was added to EasyTrack")
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -609,6 +623,9 @@ def allowed_recipients_registry(
             easy_track.evmScriptExecutor(),
             {"from": lido_contracts.aragon.agent},
         )
+
+    # Reset spending for deployed registries so tests start with a clean slate
+    allowed_recipients_registry.unsafeSetSpentAmount(0, {"from": lido_contracts.aragon.agent})
 
     return allowed_recipients_registry
 

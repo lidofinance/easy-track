@@ -6,6 +6,7 @@ import constants
 import math
 from utils import log
 from utils.config import get_network_name, set_balance_in_wei
+from utils.deployed_addresses import get_easytrack_address
 from utils.test_helpers import set_account_balance
 from dataclasses import dataclass
 
@@ -63,10 +64,10 @@ def deployed_artifact():
 @pytest.fixture(scope="module")
 def deployed_contracts():
     """
-    To run tests on deployed contracts, set their address below
+    Loads deployed contract addresses from integration-test-addresses.json.
     """
     return {
-        "EasyTrack": ""
+        "EasyTrack": get_easytrack_address(),
     }
 
 
