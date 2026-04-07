@@ -8,7 +8,7 @@ from utils.test_helpers import set_account_balance
 # Key and signature lengths for exit-request keys
 PUBKEY_SIZE = 48
 SIG_SIZE = 96
-MAX_REQUESTS = 200
+MAX_REQUESTS = 80
 DATA_FORMAT_LIST = 1
 
 
