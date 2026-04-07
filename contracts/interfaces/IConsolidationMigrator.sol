@@ -9,8 +9,16 @@ interface IConsolidationMigrator {
     // =========
     //  Events
     // =========
-    event ConsolidationPairAllowed(uint256 indexed sourceOperatorId, uint256 indexed targetOperatorId);
-    event ConsolidationPairDisallowed(uint256 indexed sourceOperatorId, uint256 indexed targetOperatorId);
+    event ConsolidationPairAllowed(
+        uint256 indexed sourceOperatorId,
+        uint256 indexed targetOperatorId,
+        address indexed submitter
+    );
+    event ConsolidationPairDisallowed(
+        uint256 indexed sourceOperatorId,
+        uint256 indexed targetOperatorId,
+        address indexed submitter
+    );
     event ConsolidationSubmitted(
         uint256 indexed sourceOperatorId,
         uint256 indexed targetOperatorId,
@@ -39,6 +47,9 @@ interface IConsolidationMigrator {
 
     /// @notice Returns the list of target operators allowed for a given `sourceOperatorId`.
     function getAllowedTargets(uint256 sourceOperatorId) external view returns (uint256[] memory targetOperatorIds);
+
+    /// @notice Returns the designated submitter for a given consolidation pair.
+    function getSubmitter(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (address);
 
     // =========================
     //  Validation & Submission
@@ -71,7 +82,7 @@ interface IConsolidationMigrator {
     function allowPair(
         uint256 sourceOperatorId,
         uint256 targetOperatorId,
-        address consolidationManager
+        address submitter
     ) external;
 
     /// @notice Disallows consolidations from `sourceOperatorId` to `targetOperatorId`.

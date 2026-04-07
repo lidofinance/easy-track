@@ -13,9 +13,9 @@ import "../interfaces/IConsolidationMigrator.sol";
 /// @notice Creates EVMScript to allow consolidation between a curated node operator and a target module operator
 contract AllowConsolidationPair is IEVMScriptFactory {
     struct AllowConsolidationPairInput {
-        address consolidationManager;
+        address submitter;
         uint256 sourceOperatorId;
-        uint256 targetOperatorId;
+        uint256[] targetOperatorIds;
     }
 
     // -------------
@@ -23,7 +23,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST = "SOURCE_OPERATOR_ID_DOES_NOT_EXIST";
-    string private constant ERROR_PAIR_ALREADY_ALLOWED = "PAIR_ALREADY_ALLOWED";
+    string private constant ERROR_EMPTY_TARGET_OPERATOR_IDS = "EMPTY_TARGET_OPERATOR_IDS";
+    string private constant ERROR_DUPLICATE_TARGET_OPERATOR_ID = "DUPLICATE_TARGET_OPERATOR_ID";
     string private constant ERROR_NODE_OPERATOR_IS_NOT_ACTIVE = "NODE_OPERATOR_IS_NOT_ACTIVE";
     string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER =
         "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER";
@@ -79,15 +80,21 @@ contract AllowConsolidationPair is IEVMScriptFactory {
 
         _validateInputData(_creator, input);
 
+        uint256 targetsCount = input.targetOperatorIds.length;
+        bytes[] memory encodedCalldata = new bytes[](targetsCount);
+        for (uint256 i; i < targetsCount; ++i) {
+            encodedCalldata[i] = abi.encode(
+                input.sourceOperatorId,
+                input.targetOperatorIds[i],
+                input.submitter
+            );
+        }
+
         return
             EVMScriptCreator.createEVMScript(
                 address(consolidationMigrator),
                 IConsolidationMigrator.allowPair.selector,
-                abi.encode(
-                    input.sourceOperatorId,
-                    input.targetOperatorId,
-                    input.consolidationManager
-                )
+                encodedCalldata
             );
     }
 
@@ -107,7 +114,17 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     function _decodeEVMScriptCallData(
         bytes memory _evmScriptCallData
     ) private pure returns (AllowConsolidationPairInput memory) {
-        return abi.decode(_evmScriptCallData, (AllowConsolidationPairInput));
+        (
+            address submitter,
+            uint256 sourceOperatorId,
+            uint256[] memory targetOperatorIds
+        ) = abi.decode(_evmScriptCallData, (address, uint256, uint256[]));
+
+        return AllowConsolidationPairInput({
+            submitter: submitter,
+            sourceOperatorId: sourceOperatorId,
+            targetOperatorIds: targetOperatorIds
+        });
     }
 
     function _validateInputData(
@@ -132,11 +149,30 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER
         );
 
-        require(targetModule.getNodeOperatorIsActive(input.targetOperatorId), ERROR_NODE_OPERATOR_IS_NOT_ACTIVE);
+        _validateTargetOperatorIds(input.sourceOperatorId, input.targetOperatorIds);
+    }
 
-        require(
-            consolidationMigrator.isPairAllowed(input.sourceOperatorId, input.targetOperatorId) == false,
-            ERROR_PAIR_ALREADY_ALLOWED
-        );
+    function _validateTargetOperatorIds(
+        uint256 sourceOperatorId,
+        uint256[] memory targetOperatorIds
+    ) private view {
+        uint256 targetsCount = targetOperatorIds.length;
+        require(targetsCount > 0, ERROR_EMPTY_TARGET_OPERATOR_IDS);
+
+        for (uint256 i; i < targetsCount; ++i) {
+            uint256 targetOperatorId = targetOperatorIds[i];
+
+            for (uint256 j = i + 1; j < targetsCount; ++j) {
+                require(
+                    targetOperatorId != targetOperatorIds[j],
+                    ERROR_DUPLICATE_TARGET_OPERATOR_ID
+                );
+            }
+
+            require(
+                targetModule.getNodeOperatorIsActive(targetOperatorId),
+                ERROR_NODE_OPERATOR_IS_NOT_ACTIVE
+            );
+        }
     }
 }
