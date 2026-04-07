@@ -4,7 +4,7 @@ import brownie
 import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
-from utils.deployed_addresses import get_multi_token_config
+from utils.deployed_addresses import get_multi_token_config, try_load_deployed_contract
 from dataclasses import dataclass
 
 from utils.test_helpers import set_account_balance
@@ -109,15 +109,7 @@ def deployed_contracts(request):
 @pytest.fixture(scope="module")
 def load_deployed_contract(deployed_contracts):
     def _load_deployed_contract(contract_name):
-        Contract = getattr(brownie, contract_name)
-
-        if Contract is None:
-            raise Exception(f"Contract '{contract_name}' not found")
-
-        if contract_name in deployed_contracts and deployed_contracts[contract_name] != "":
-            loaded_contract = Contract.at(deployed_contracts[contract_name])
-            log.ok(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
-            return loaded_contract
+        return try_load_deployed_contract(contract_name, deployed_contracts)
 
     return _load_deployed_contract
 

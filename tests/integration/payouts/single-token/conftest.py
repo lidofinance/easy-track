@@ -1,12 +1,9 @@
 import pytest
 import brownie
-import json
-
 import constants
 import math
 from utils import deployment, deployed_date_time, evm_script, log
-from utils.config import get_network_name, set_balance_in_wei
-from utils.deployed_addresses import get_single_token_config
+from utils.deployed_addresses import get_single_token_config, try_load_deployed_contract
 from utils.test_helpers import set_account_balance
 from dataclasses import dataclass
 
@@ -53,17 +50,6 @@ def recipients(accounts):
     ]
 
 
-@pytest.fixture(scope="session")
-def deployed_artifact():
-    network_name = get_network_name()
-    file_name = f"deployed-{network_name}.json"
-
-    try:
-        f = open(file_name)
-        return json.load(f)
-    except:
-        pass
-
 
 #####
 # CONTRACTS
@@ -98,15 +84,7 @@ def deployed_contracts(request):
 @pytest.fixture(scope="module")
 def load_deployed_contract(deployed_contracts):
     def _load_deployed_contract(contract_name):
-        Contract = getattr(brownie, contract_name)
-
-        if Contract is None:
-            raise Exception(f"Contract '{contract_name}' not found")
-
-        if contract_name in deployed_contracts and deployed_contracts[contract_name] != "":
-            loaded_contract = Contract.at(deployed_contracts[contract_name])
-            log.ok(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
-            return loaded_contract
+        return try_load_deployed_contract(contract_name, deployed_contracts)
 
     return _load_deployed_contract
 

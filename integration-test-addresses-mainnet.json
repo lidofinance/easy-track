@@ -1,6 +1,9 @@
 {
   "easytrack": "0xF0211b7660680B49De1A7E9f25C65660F0a13Fea",
 
+  "SDVTSubmitExitRequestHashes": "local",
+  "CuratedSubmitExitRequestHashes": "local",
+
   "single_token": {
     "factory": "0x83E976758B7AB1bb676A4fEA073Fa0E2A807642B",
     "builder": "0x958e0D946D014F377421a53AB5f9180d4485e63B",

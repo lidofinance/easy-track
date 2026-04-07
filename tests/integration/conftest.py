@@ -1,14 +1,10 @@
 import pytest
 import brownie
-import json
-
 import constants
-import math
 from utils import log
 from utils.config import get_network_name, set_balance_in_wei
-from utils.deployed_addresses import get_easytrack_address
+from utils.deployed_addresses import load_addresses, load_deployed_artifact, try_load_deployed_contract
 from utils.test_helpers import set_account_balance
-from dataclasses import dataclass
 
 
 #####
@@ -33,58 +29,42 @@ def stranger(accounts):
     return accounts[2]
 
 
-@pytest.fixture(scope="session")
-def deployed_artifact():
-    network_name = get_network_name()
-    file_name = f"deployed-{network_name}.json"
-
-    try:
-        f = open(file_name)
-        return json.load(f)
-    except:
-        pass
-
 #####
 # CONTRACTS
 #####
 
 
-@pytest.fixture(scope="session")
-def deployed_artifact():
-    network_name = get_network_name()
-    file_name = f"deployed-{network_name}.json"
-
-    try:
-        f = open(file_name)
-        return json.load(f)
-    except:
-        pass
-
 
 @pytest.fixture(scope="module")
 def deployed_contracts():
     """
-    Loads deployed contract addresses from integration-test-addresses.json.
+    Merges contract addresses from two sources:
+    - integration-test-addresses-{network}.json (structured payout data, easytrack)
+    - deployed-{network}.json (flat factory addresses, takes priority)
     """
-    return {
-        "EasyTrack": get_easytrack_address(),
+    data = load_addresses()
+    artifact = load_deployed_artifact()
+
+    contracts = {
+        "EasyTrack": data.get("easytrack", ""),
     }
+
+    # deployed-{network}.json has priority for flat factory addresses
+    contracts.update(artifact)
+
+    # "local" entries from integration JSON always win
+    for key, value in data.items():
+        if value == "local":
+            contracts[key] = "local"
+
+    return contracts
 
 
 @pytest.fixture(scope="module")
 def load_deployed_contract(request):
     deployed_contracts = request.getfixturevalue('deployed_contracts')
-
     def _load_deployed_contract(contract_name):
-        Contract = getattr(brownie, contract_name)
-
-        if Contract is None:
-            raise Exception(f"Contract '{contract_name}' not found")
-
-        if contract_name in deployed_contracts and deployed_contracts[contract_name] != "":
-            loaded_contract = Contract.at(deployed_contracts[contract_name])
-            log.ok(f"Loaded contract: {contract_name}('{loaded_contract.address}')")
-            return loaded_contract
+        return try_load_deployed_contract(contract_name, deployed_contracts)
 
     return _load_deployed_contract
 
@@ -197,17 +177,22 @@ def sdvt_submit_exit_hashes_evm_script_factory(
     validators_exit_bus_oracle,
     deployer,
     staking_router,
+    load_deployed_contract,
 ):
     """
-    Deploy and register the SDVTSubmitExitRequestHashes factory to EasyTrack, if not present.
+    Load deployed or deploy fresh SDVTSubmitExitRequestHashes factory.
     """
-    factory = deployer.deploy(
-        SDVTSubmitExitRequestHashes,
-        sdvt_trusted_caller,
-        sdvt_registry,
-        staking_router,
-        validators_exit_bus_oracle,
-    )
+    factory = load_deployed_contract("SDVTSubmitExitRequestHashes")
+
+    if factory is None:
+        factory = deployer.deploy(
+            SDVTSubmitExitRequestHashes,
+            sdvt_trusted_caller,
+            sdvt_registry,
+            staking_router,
+            validators_exit_bus_oracle,
+        )
+
     assert factory.trustedCaller() == sdvt_trusted_caller
     assert factory.nodeOperatorsRegistry() == sdvt_registry
 
@@ -222,6 +207,7 @@ def sdvt_submit_exit_hashes_evm_script_factory(
         )
         assert factory in easy_track.getEVMScriptFactories()
 
+    set_account_balance(factory.trustedCaller())
     return factory
 
 
@@ -234,16 +220,21 @@ def curated_submit_exit_hashes_evm_script_factory(
     validators_exit_bus_oracle,
     deployer,
     staking_router,
+    load_deployed_contract,
 ):
     """
-    Deploy and register the CuratedSubmitExitRequestHashes factory to EasyTrack, if not present.
+    Load deployed or deploy fresh CuratedSubmitExitRequestHashes factory.
     """
-    factory = deployer.deploy(
-        CuratedSubmitExitRequestHashes,
-        curated_registry,
-        staking_router,
-        validators_exit_bus_oracle,
-    )
+    factory = load_deployed_contract("CuratedSubmitExitRequestHashes")
+
+    if factory is None:
+        factory = deployer.deploy(
+            CuratedSubmitExitRequestHashes,
+            curated_registry,
+            staking_router,
+            validators_exit_bus_oracle,
+        )
+
     assert factory.nodeOperatorsRegistry() == curated_registry
 
     if not easy_track.isEVMScriptFactory(factory):
@@ -264,17 +255,13 @@ def curated_submit_exit_hashes_evm_script_factory(
 def add_mev_boost_relays_evm_script_factory(
     AddMEVBoostRelays,
     rmc_factories_multisig,
-    deployed_artifact,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
     deployer,
+    load_deployed_contract,
 ):
-    evm_script_factory = (
-        AddMEVBoostRelays.at(deployed_artifact["AddMEVBoostRelays"]["address"])
-        if "AddMEVBoostRelays" in deployed_artifact
-        else None
-    )
+    evm_script_factory = load_deployed_contract("AddMEVBoostRelays")
 
     if evm_script_factory is None:
         evm_script_factory = deployer.deploy(AddMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
@@ -293,12 +280,12 @@ def add_mev_boost_relays_evm_script_factory(
         )
         evm_script_factories = easy_track.getEVMScriptFactories()
 
-        # Check that the factory is added to the EasyTrack
         assert len(evm_script_factories) == num_factories_before + 1
         assert evm_script_factory in evm_script_factories
 
         log.ok(f"EVM Script Factory AddMEVBoostRelays({evm_script_factory}) was added to EasyTrack")
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -306,17 +293,13 @@ def add_mev_boost_relays_evm_script_factory(
 def remove_mev_boost_relays_evm_script_factory(
     RemoveMEVBoostRelays,
     rmc_factories_multisig,
-    deployed_artifact,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
     deployer,
+    load_deployed_contract,
 ):
-    evm_script_factory = (
-        RemoveMEVBoostRelays.at(deployed_artifact["RemoveMEVBoostRelays"]["address"])
-        if "RemoveMEVBoostRelays" in deployed_artifact
-        else None
-    )
+    evm_script_factory = load_deployed_contract("RemoveMEVBoostRelays")
 
     if evm_script_factory is None:
         evm_script_factory = deployer.deploy(RemoveMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
@@ -335,12 +318,12 @@ def remove_mev_boost_relays_evm_script_factory(
         )
         evm_script_factories = easy_track.getEVMScriptFactories()
 
-        # Check that the factory is added to the EasyTrack
         assert len(evm_script_factories) == num_factories_before + 1
         assert evm_script_factory in evm_script_factories
 
         log.ok(f"EVM Script Factory RemoveMEVBoostRelays({evm_script_factory}) was added to EasyTrack")
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -348,17 +331,13 @@ def remove_mev_boost_relays_evm_script_factory(
 def edit_mev_boost_relays_evm_script_factory(
     EditMEVBoostRelays,
     rmc_factories_multisig,
-    deployed_artifact,
     easy_track,
     lido_contracts,
     mev_boost_relay_allowed_list,
     deployer,
+    load_deployed_contract,
 ):
-    evm_script_factory = (
-        EditMEVBoostRelays.at(deployed_artifact["EditMEVBoostRelays"]["address"])
-        if "EditMEVBoostRelays" in deployed_artifact
-        else None
-    )
+    evm_script_factory = load_deployed_contract("EditMEVBoostRelays")
 
     if evm_script_factory is None:
         evm_script_factory = deployer.deploy(EditMEVBoostRelays, rmc_factories_multisig, mev_boost_relay_allowed_list)
@@ -387,4 +366,5 @@ def edit_mev_boost_relays_evm_script_factory(
 
         log.ok(f"EVM Script Factory EditMEVBoostRelays({evm_script_factory}) was added to EasyTrack")
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory

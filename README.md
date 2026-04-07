@@ -164,6 +164,7 @@ Script requires next ENV variables to be set:
 ## Tests
 
 Set rpc url:
+
 ```bash
 export MAINNET_RPC_URL=<YOUR_RPC_URL>
 ```
@@ -181,12 +182,31 @@ brownie test --network mainnet-fork --coverage --gas
 ```
 
 Run tests only for stVaults factories on Hoodi fork:
+
 ```bash
 export HOODI_RPC_URL=<YOUR_HOODI_RPC_URL>
 ./scripts/run_vaults_tests.sh
 ```
 
 > Note: Holesky support will be removed in upcoming upgrades.
+
+### Integration test addresses
+
+Integration tests that use the `load_deployed_contract` helper get their contract addresses from two sources, merged at runtime:
+
+1. **`deployed-{network}.json`** — flat factory addresses produced by deployment scripts (e.g. `AddMEVBoostRelays`, `SDVTSubmitExitRequestHashes`). **Takes priority** when both files contain the same contract, unless the integration JSON sets the contract to `"local"`.
+2. **`integration-test-addresses-{network}.json`** — structured data that doesn't fit the deployed artifact format: the EasyTrack address and payout suite configs (single-token / multi-token instances with per-instance registries and factories). One file per network, mirroring the `deployed-{network}.json` convention.
+
+This avoids address duplication: factory addresses live only in the deployed artifact, while payout instance data lives only in the integration JSON. A dev deploying a new factory only updates `deployed-{network}.json`; integration tests pick it up automatically.
+
+Each resolved address in **`integration-test-addresses-{network}.json`** can be:
+
+- **A real address** (e.g. `"0xF021..."`) — the test loads the deployed contract from the mainnet fork
+- **`"local"`** — the test deploys a fresh factory on the fork and connects it to the real EasyTrack
+
+**Payout tests (single-token / multi-token)** resolve addresses exclusively from `integration-test-addresses-{network}.json` — they do **not** merge in `deployed-{network}.json`. When deploying a new TopUp setup (factory, registry, add/remove instances), you must add its addresses to the relevant section in `integration-test-addresses-{network}.json`.
+
+Tests that don't use `load_deployed_contract` (e.g. unit tests, operator grid, vault hub) always deploy everything from scratch and are not affected by either file.
 
 ### Coverage notes
 
