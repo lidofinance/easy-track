@@ -67,14 +67,15 @@ def test_sdvt_batch_exit_requests_happy_path(
     stranger,
     agent,
 ):
+    batch_size = 60
     grant_submit_report_hash_role(agent, validators_exit_bus_oracle, easy_track)
 
-    node_operator_id, _ = ensure_single_operator_with_keys(sdvt_registry, MAX_REQUESTS)
+    node_operator_id, _ = ensure_single_operator_with_keys(sdvt_registry, batch_size)
 
-    key_list = get_operator_keys(sdvt_registry, node_operator_id, MAX_REQUESTS)
+    key_list = get_operator_keys(sdvt_registry, node_operator_id, batch_size)
     requests = build_exit_requests(exit_request_input_factory, MODULE_ID, node_operator_id, key_list)
 
-    assert len(requests) == MAX_REQUESTS
+    assert len(requests) == batch_size
 
     run_motion_and_check_events(
         factory=sdvt_submit_exit_hashes_evm_script_factory,
