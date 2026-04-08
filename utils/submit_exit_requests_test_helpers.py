@@ -78,7 +78,7 @@ def ensure_single_operator_with_keys(registry, min_keys):
     if count == 0:
         raise ValueError("No node operators found")
 
-    op_id = 24
+    op_id = 0
     _, _, op_addr, _, _, total_keys, _ = registry.getNodeOperator(op_id, False)
     while total_keys == 0:
         op_id += 1
