@@ -179,9 +179,7 @@ def sdvt_trusted_caller():
     """
     network_name = get_network_name()
     if network_name in ("mainnet", "mainnet-fork"):
-        address = "0x08637515E85A4633E23dfc7861e2A9f53af640f7"
-        set_account_balance(address)
-        return address
+        return "0x08637515E85A4633E23dfc7861e2A9f53af640f7"
     else:
         account = brownie.accounts.at("0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A", force=True)
         set_account_balance(account.address)
