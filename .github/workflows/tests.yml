@@ -11,8 +11,8 @@ env:
   POETRY_VERSION: "1.8.5"
 
 jobs:
-  unit-tests-evm-factories:
-    name: Unit Tests - EVM Script Factories
+  unit-tests-datetime:
+    name: Unit Tests - DateTime Library
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -49,63 +49,16 @@ jobs:
       - name: Import network config
         run: poetry run brownie networks import network-config.yaml True
 
-      - name: Run EVM script factories unit tests
+      - name: Run DateTime library unit tests
         run: >
           poetry run brownie test
-          tests/evm_script_factories/
-          -s --network mainnet-fork
-        env:
-          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-
-  unit-tests-registry:
-    name: Unit Tests - Registry & DateTime
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install poetry
-        run: pip install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          poetry install
-          npm ci
-
-      - name: Compile contracts
-        run: poetry run brownie compile
-
-      - name: Import network config
-        run: poetry run brownie networks import network-config.yaml True
-
-      - name: Run slow unit tests
-        run: >
-          poetry run brownie test
-          tests/test_allowed_recipients_registry.py
           tests/test_bokky_poo_bahs_date-time-library.py
           -s --network mainnet-fork
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
   unit-tests-core:
-    name: Unit Tests - Core & Libraries
+    name: Unit Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -142,20 +95,18 @@ jobs:
       - name: Import network config
         run: poetry run brownie networks import network-config.yaml True
 
-      - name: Run other unit tests
+      - name: Run unit tests
         run: >
           poetry run brownie test
           --ignore=tests/integration
           --ignore=tests/scenario
-          --ignore=tests/evm_script_factories
-          --ignore=tests/test_allowed_recipients_registry.py
           --ignore=tests/test_bokky_poo_bahs_date-time-library.py
           -s --network mainnet-fork
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
-  integration-tests:
-    name: Integration Tests
+  integration-and-scenario-tests:
+    name: Integration & Scenario Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -199,44 +150,6 @@ jobs:
           -s --network mainnet-fork
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-
-  scenario-tests:
-    name: Scenario Tests
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install poetry
-        run: pip install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          poetry install
-          npm ci
-
-      - name: Compile contracts
-        run: poetry run brownie compile
-
-      - name: Import network config
-        run: poetry run brownie networks import network-config.yaml True
 
       - name: Run scenario tests
         run: >
