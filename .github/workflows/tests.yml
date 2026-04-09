@@ -11,8 +11,8 @@ env:
   POETRY_VERSION: "1.8.5"
 
 jobs:
-  unit-tests:
-    name: Unit Tests
+  unit-tests-evm-factories:
+    name: Unit Tests - EVM Script Factories
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -49,18 +49,66 @@ jobs:
       - name: Import network config
         run: poetry run brownie networks import network-config.yaml True
 
-      - name: Run unit tests
+      - name: Run EVM script factories unit tests
+        run: >
+          poetry run brownie test
+          tests/evm_script_factories/
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+          ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
+
+  unit-tests-other:
+    name: Unit Tests - Other
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Install poetry
+        run: pip install poetry==${{ env.POETRY_VERSION }}
+
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: "poetry"
+
+      - name: Setup Node
+        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+        with:
+          node-version-file: ".nvmrc"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          npm ci
+
+      - name: Compile contracts
+        run: poetry run brownie compile
+
+      - name: Import network config
+        run: poetry run brownie networks import network-config.yaml True
+
+      - name: Run other unit tests
         run: >
           poetry run brownie test
           --ignore=tests/integration
           --ignore=tests/scenario
+          --ignore=tests/evm_script_factories
           -s --network mainnet-fork
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
           ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
 
-  integration-payouts:
-    name: Integration Tests - Payouts
+  integration-tests:
+    name: Integration Tests
     runs-on: ubuntu-latest
     timeout-minutes: 60
 
@@ -97,67 +145,10 @@ jobs:
       - name: Import network config
         run: poetry run brownie networks import network-config.yaml True
 
-      - name: Run single-token payout integration tests
-        run: >
-          poetry run brownie test
-          tests/integration/payouts/single-token/
-          -s --network mainnet-fork
-        env:
-          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-          ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
-
-      - name: Run multi-token payout integration tests
-        run: >
-          poetry run brownie test
-          tests/integration/payouts/multi-token/
-          -s --network mainnet-fork
-        env:
-          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
-          ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
-
-  integration-other:
-    name: Integration Tests - Other
-    runs-on: ubuntu-latest
-    timeout-minutes: 60
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install poetry
-        run: pip install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          poetry install
-          npm ci
-
-      - name: Compile contracts
-        run: poetry run brownie compile
-
-      - name: Import network config
-        run: poetry run brownie networks import network-config.yaml True
-
-      - name: Run other integration tests
+      - name: Run integration tests
         run: >
           poetry run brownie test
           tests/integration/
-          --ignore=tests/integration/payouts
           -s --network mainnet-fork
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
