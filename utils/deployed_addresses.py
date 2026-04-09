@@ -38,7 +38,7 @@ def load_deployed_artifact():
     try:
         with open(file_path) as f:
             data = json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except FileNotFoundError:
         return {}
 
     return {
