@@ -7,6 +7,12 @@ def create_calldata(gate, tree_root, tree_cid):
     """Helper function to create encoded calldata for setTreeParams"""
     return encode_calldata(["address", "bytes32", "string"], [gate, tree_root, tree_cid])
 
+
+def tree_root_hex(tree_root):
+    assert isinstance(tree_root, bytes)
+    return "0x" + tree_root.hex()
+
+
 @pytest.fixture(scope="module")
 def merkle_gate(
     owner,
@@ -31,7 +37,7 @@ def merkle_gate(
     initial_tree_root = bytes.fromhex("1111111111111111111111111111111111111111111111111111111111111111")
     initial_tree_cid = "QmInitialTree123456789abcdef"
     stub.setTreeParams(initial_tree_root, initial_tree_cid, {"from": owner})
-    assert stub.treeRoot() == "0x" + initial_tree_root.hex()
+    assert tree_root_hex(stub.treeRoot()) == "0x" + initial_tree_root.hex()
     assert stub.treeCid() == initial_tree_cid
 
     # Grant SET_TREE_ROLE to the et_contracts.evm_script_executor
@@ -99,7 +105,7 @@ def test_merkle_gate_scenario(
     merkle_gate_set_tree_factory,
     easytrack_executor,
 ):
-    current_root = merkle_gate.treeRoot()
+    current_root = tree_root_hex(merkle_gate.treeRoot())
     current_cid = merkle_gate.treeCid()
     tree_updates = [
         {
@@ -119,7 +125,7 @@ def test_merkle_gate_scenario(
         )
         
         # Verify the update was applied
-        assert merkle_gate.treeRoot() == "0x" + update["root"].hex()
+        assert tree_root_hex(merkle_gate.treeRoot()) == "0x" + update["root"].hex()
         assert merkle_gate.treeCid() == update["cid"]
 
 
@@ -136,7 +142,7 @@ def test_merkle_gate_reverts_with_same_tree_root_on_motion_creation(
 
     evm_script_calldata = create_calldata(
         merkle_gate.address,
-        bytes.fromhex(current_root[2:]),
+        current_root,
         new_cid,
     )
 
@@ -154,7 +160,7 @@ def test_merkle_gate_reverts_with_same_tree_cid_on_motion_creation(
     merkle_gate,
     merkle_gate_set_tree_factory,
 ):
-    current_root = merkle_gate.treeRoot()
+    current_root = tree_root_hex(merkle_gate.treeRoot())
     current_cid = merkle_gate.treeCid()
     new_root = bytes.fromhex("cd" * 32)
     if current_root == "0x" + new_root.hex():

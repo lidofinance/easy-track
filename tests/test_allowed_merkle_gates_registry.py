@@ -9,6 +9,15 @@ GATE_TITLE = "New Allowed Merkle Gate"
 REGISTRY_NAME = "CSM"
 
 
+def _assert_constructor_reverts(revert_reason, deploy):
+    try:
+        with reverts(revert_reason):
+            deploy()
+    except ValueError:
+        if revert_reason != get_last_tx_revert_reason():
+            raise
+
+
 @pytest.fixture(scope="module")
 def merkle_gate_with_interface(owner, MerkleGateStub):
     return owner.deploy(MerkleGateStub)
@@ -53,22 +62,26 @@ def test_registry_constructor_seeds_initial_gates(owner, AllowedMerkleGatesRegis
 def test_registry_constructor_reverts_on_initial_length_mismatch(owner, AllowedMerkleGatesRegistry, MerkleGateStub):
     gate = owner.deploy(MerkleGateStub)
     revert_reason = "INITIAL_GATES_AND_TITLES_LENGTH_MISMATCH"
-    try:
-        with reverts(revert_reason):
-            owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [gate], [])
-    except ValueError:
-        if revert_reason != get_last_tx_revert_reason():
-            raise
+    _assert_constructor_reverts(
+        revert_reason,
+        lambda: owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [gate], []),
+    )
 
 
 def test_registry_constructor_reverts_on_zero_admin(owner, AllowedMerkleGatesRegistry):
-    with reverts("ZERO_ADMIN_ADDRESS"):
-        owner.deploy(AllowedMerkleGatesRegistry, ZERO_ADDRESS, REGISTRY_NAME, [], [])
+    revert_reason = "ZERO_ADMIN_ADDRESS"
+    _assert_constructor_reverts(
+        revert_reason,
+        lambda: owner.deploy(AllowedMerkleGatesRegistry, ZERO_ADDRESS, REGISTRY_NAME, [], []),
+    )
 
 
 def test_registry_constructor_reverts_on_zero_gate_address(owner, AllowedMerkleGatesRegistry):
-    with reverts("ZERO_GATE_ADDRESS"):
-        owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [ZERO_ADDRESS], ["Zero Gate"])
+    revert_reason = "ZERO_GATE_ADDRESS"
+    _assert_constructor_reverts(
+        revert_reason,
+        lambda: owner.deploy(AllowedMerkleGatesRegistry, owner, REGISTRY_NAME, [ZERO_ADDRESS], ["Zero Gate"]),
+    )
 
 
 def test_add_gate_success(allowed_merkle_gates_registry, merkle_gate_with_interface):
