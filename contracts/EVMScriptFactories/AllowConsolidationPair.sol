@@ -38,6 +38,15 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    // ExternalOperatorLib.OperatorType.NOR
+    uint8 private constant EXT_OPERATOR_TYPE_NOR = 0;
+    // MetaRegistry.NO_GROUP_ID
+    uint256 private constant NO_GROUP_ID = 0;
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -64,15 +73,13 @@ contract AllowConsolidationPair is IEVMScriptFactory {
 
         address sourceModuleAddress = IConsolidationMigrator(_consolidationMigrator).sourceModule();
         address targetModuleAddress = IConsolidationMigrator(_consolidationMigrator).targetModule();
-        uint256 sourceModuleId_ = IConsolidationMigrator(_consolidationMigrator).sourceModuleId();
-        uint256 targetModuleId_ = IConsolidationMigrator(_consolidationMigrator).targetModuleId();
+        sourceModuleId = IConsolidationMigrator(_consolidationMigrator).sourceModuleId();
+        targetModuleId = IConsolidationMigrator(_consolidationMigrator).targetModuleId();
 
         sourceModule = INodeOperatorsRegistry(sourceModuleAddress);
         targetModule = ICuratedModule(targetModuleAddress);
-        sourceModuleId = sourceModuleId_;
-        targetModuleId = targetModuleId_;
         consolidationMigrator = IConsolidationMigrator(_consolidationMigrator);
-        metaRegistry = ICuratedModule(sourceModuleAddress).META_REGISTRY();
+        metaRegistry = ICuratedModule(targetModuleAddress).META_REGISTRY();
     }
 
     // -------------
@@ -141,6 +148,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         address creator,
         AllowConsolidationPairInput memory input
     ) private view {
+
         uint256 sourceCount = sourceModule.getNodeOperatorsCount();
         require(input.sourceOperatorId < sourceCount, ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST);
 
@@ -152,29 +160,27 @@ contract AllowConsolidationPair is IEVMScriptFactory {
 
         uint256[] memory roleParams = new uint256[](1);
         roleParams[0] = input.sourceOperatorId;
-
         require(
             creator == rewardAddress ||
                 sourceModule.canPerform(creator, MANAGE_SIGNING_KEYS_ROLE, roleParams),
             ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER
         );
 
-        _validateTargetOperatorIds(input.sourceOperatorId, input.targetOperatorIds);
+        uint256 sourceGroupId = _getSourceOperatorGroupId(input.sourceOperatorId);
+        require(
+            sourceGroupId != NO_GROUP_ID,
+            ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
+        );
+
+        _validateTargetOperatorIds(sourceGroupId, input.targetOperatorIds);
     }
 
     function _validateTargetOperatorIds(
-        uint256 sourceOperatorId,
+        uint256 sourceGroupId,
         uint256[] memory targetOperatorIds
     ) private view {
         uint256 targetsCount = targetOperatorIds.length;
         require(targetsCount > 0, ERROR_EMPTY_TARGET_OPERATOR_IDS);
-
-        uint256 noGroupId = metaRegistry.NO_GROUP_ID();
-        uint256 sourceGroupId = metaRegistry.getNodeOperatorGroupId(sourceOperatorId);
-        require(
-            sourceGroupId != noGroupId,
-            ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
-        );
 
         for (uint256 i; i < targetsCount; ++i) {
             uint256 targetOperatorId = targetOperatorIds[i];
@@ -192,22 +198,22 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             );
 
             require(
-                _getTargetOperatorGroupId(targetOperatorId) == sourceGroupId,
+                metaRegistry.getNodeOperatorGroupId(targetOperatorId) == sourceGroupId,
                 ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
             );
         }
     }
 
-    function _getTargetOperatorGroupId(
-        uint256 targetOperatorId
+    function _getSourceOperatorGroupId(
+        uint256 sourceOperatorId
     ) private view returns (uint256) {
         return
             metaRegistry.getExternalOperatorGroupId(
                 IMetaRegistry.ExternalOperator({
                     data: abi.encodePacked(
-                        bytes1(uint8(0)),
-                        uint8(targetModuleId),
-                        uint64(targetOperatorId)
+                        bytes1(EXT_OPERATOR_TYPE_NOR),
+                        uint8(sourceModuleId),
+                        uint64(sourceOperatorId)
                     )
                 })
             );

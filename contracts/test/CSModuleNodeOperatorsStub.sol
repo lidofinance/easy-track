@@ -9,6 +9,7 @@ import "../interfaces/ICSModule.sol";
 contract CSModuleNodeOperatorsStub is ICSModule {
     uint256 private _nodeOperatorsCount;
     address private _accounting;
+    address internal _metaRegistry;
     mapping(uint256 => bool) private _activeNodeOperators;
 
     function setNodeOperatorsCount(uint256 newCount) external {
@@ -25,6 +26,14 @@ contract CSModuleNodeOperatorsStub is ICSModule {
 
     function ACCOUNTING() external view override returns (address) {
         return _accounting;
+    }
+
+    function setMetaRegistry(address metaRegistry_) external {
+        _metaRegistry = metaRegistry_;
+    }
+
+    function META_REGISTRY() external view returns (address) {
+        return _metaRegistry;
     }
 
     function settleGeneralDelayedPenalty(uint256[] memory, uint256[] memory) external pure override {}

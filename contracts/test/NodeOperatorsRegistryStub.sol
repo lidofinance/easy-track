@@ -28,7 +28,6 @@ contract NodeOperatorsRegistryStub {
     mapping(uint256 => bytes) internal _signingKeys;
     mapping(address => mapping(bytes32 => mapping(uint256 => bool))) internal _canPerform;
     mapping(uint256 => mapping(uint256 => bool)) internal _signingKeyUsed;
-    address internal _metaRegistry;
 
 
     constructor(address _rewardAddress) {
@@ -152,14 +151,6 @@ contract NodeOperatorsRegistryStub {
             return _canPerform[_sender][_role][0];
         }
         return _canPerform[_sender][_role][_params[0]];
-    }
-
-    function setMetaRegistry(address metaRegistry_) external {
-        _metaRegistry = metaRegistry_;
-    }
-
-    function META_REGISTRY() external view returns (address) {
-        return _metaRegistry;
     }
 
     /// @notice Returns the signing key for a given node operator and index.

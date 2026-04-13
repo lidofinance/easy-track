@@ -1,5 +1,6 @@
 import pytest
 from brownie import (
+    interface,
     AllowConsolidationPair,
     ConsolidationMigratorStub,
     CSModuleNodeOperatorsStub,
@@ -44,7 +45,7 @@ def _decode_nor_external_operator_data(data):
     return raw[1], int.from_bytes(raw[2:], "big")
 
 
-def _find_linked_operator_ids(meta_registry, target_module_id):
+def _find_linked_operator_ids(meta_registry, source_module_id):
     for group_id in range(1, meta_registry.getOperatorGroupsCount()):
         group = meta_registry.getOperatorGroup(group_id)
         sub_node_operators = group[0]
@@ -52,24 +53,28 @@ def _find_linked_operator_ids(meta_registry, target_module_id):
         if len(sub_node_operators) == 0:
             continue
 
-        target_operator_ids = []
+        target_operator_ids = [sub_node_operator[0] for sub_node_operator in sub_node_operators]
+        if len(target_operator_ids) == 0:
+            continue
+
         for external_operator in external_operators:
             module_id, node_operator_id = _decode_nor_external_operator_data(
                 external_operator[0]
             )
-            if module_id == target_module_id:
-                target_operator_ids.append(node_operator_id)
-
-        if len(target_operator_ids) > 0:
-            return sub_node_operators[0][0], target_operator_ids
+            if module_id == source_module_id:
+                return node_operator_id, target_operator_ids
 
     raise AssertionError("No linked source/target operators found in MetaRegistry")
 
 
 @pytest.fixture(scope="module")
-def source_module(owner, use_deployed_contracts_from_env, active_curated_module):
+def source_module(
+    owner,
+    use_deployed_contracts_from_env,
+    active_nor_module,
+):
     if use_deployed_contracts_from_env:
-        return active_curated_module
+        return active_nor_module
 
     registry = owner.deploy(NodeOperatorsRegistryStub, owner)
     registry.setDesiredNodeOperatorCount(1, {"from": owner})
@@ -77,9 +82,9 @@ def source_module(owner, use_deployed_contracts_from_env, active_curated_module)
 
 
 @pytest.fixture(scope="module")
-def target_module(owner, use_deployed_contracts_from_env, active_cs_module):
+def target_module(owner, use_deployed_contracts_from_env, active_curated_module):
     if use_deployed_contracts_from_env:
-        return active_cs_module
+        return active_curated_module
 
     module = owner.deploy(CSModuleNodeOperatorsStub)
     all_local_target_operator_ids = LOCAL_TARGET_OPERATOR_IDS + [LOCAL_OVERWRITE_TARGET_OPERATOR_ID]
@@ -90,9 +95,9 @@ def target_module(owner, use_deployed_contracts_from_env, active_cs_module):
 
 
 @pytest.fixture(scope="module")
-def meta_registry_contract(owner, use_deployed_contracts_from_env, active_cm_meta_registry):
+def meta_registry_contract(owner, use_deployed_contracts_from_env, target_module):
     if use_deployed_contracts_from_env:
-        return active_cm_meta_registry
+        return interface.IMetaRegistry(target_module.META_REGISTRY())
 
     return owner.deploy(MetaRegistryStub)
 
@@ -106,6 +111,8 @@ def consolidation_migrator(
     target_module,
 ):
     if use_deployed_contracts_from_env:
+        assert active_sr_consolidation_migrator.sourceModule() == source_module.address
+        assert active_sr_consolidation_migrator.targetModule() == target_module.address
         return active_sr_consolidation_migrator
 
     return owner.deploy(
@@ -132,7 +139,7 @@ def allow_consolidation_pair_factory(
     if use_deployed_contracts_from_env:
         ensure_module_in_staking_router(target_module, "CM")
     else:
-        source_module.setMetaRegistry(meta_registry_contract.address, {"from": owner})
+        target_module.setMetaRegistry(meta_registry_contract.address, {"from": owner})
 
     factory = owner.deploy(
         AllowConsolidationPair,
@@ -163,20 +170,28 @@ def linked_operator_ids(
     ensure_legacy_module_operator,
 ):
     if use_deployed_contracts_from_env:
+        source_module_id = consolidation_migrator.sourceModuleId()
         return _find_linked_operator_ids(
             meta_registry_contract,
-            consolidation_migrator.targetModuleId(),
+            source_module_id,
         )
 
     source_operator_id = ensure_legacy_module_operator(source_module)
-    meta_registry_contract.setNodeOperatorGroupId(
-        source_operator_id,
+    # Local-stub setup for MetaRegistry link emulation:
+    # source operator is stored as external operator entry, target operators as sub node operators.
+    meta_registry_contract.setExternalOperatorGroupId(
+        _encode_nor_external_operator_data(SOURCE_MODULE_ID, source_operator_id),
         LOCAL_GROUP_ID,
         {"from": owner},
     )
-    for target_operator_id in LOCAL_TARGET_OPERATOR_IDS + [LOCAL_OVERWRITE_TARGET_OPERATOR_ID]:
-        meta_registry_contract.setExternalOperatorGroupId(
-            _encode_nor_external_operator_data(TARGET_MODULE_ID, target_operator_id),
+    meta_registry_contract.setNodeOperatorGroupId(
+        LOCAL_OVERWRITE_TARGET_OPERATOR_ID,
+        LOCAL_GROUP_ID,
+        {"from": owner},
+    )
+    for target_operator_id in LOCAL_TARGET_OPERATOR_IDS:
+        meta_registry_contract.setNodeOperatorGroupId(
+            target_operator_id,
             LOCAL_GROUP_ID,
             {"from": owner},
         )

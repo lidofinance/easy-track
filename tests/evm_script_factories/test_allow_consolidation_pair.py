@@ -1,5 +1,6 @@
 import pytest
 from brownie import (
+    ZERO_ADDRESS,
     AllowConsolidationPair,
     ConsolidationMigratorStub,
     CSModuleNodeOperatorsStub,
@@ -9,6 +10,7 @@ from brownie import (
 )  # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 SOURCE_MODULE_ID = 1
 TARGET_MODULE_ID = 2
@@ -18,6 +20,15 @@ LINKED_GROUP_ID = 1
 MANAGE_SIGNING_KEYS_ROLE = (
     "0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee"
 )
+
+
+def _assert_constructor_reverts(revert_reason, deploy):
+    try:
+        with reverts(revert_reason):
+            deploy()
+    except ValueError:
+        if revert_reason != get_last_tx_revert_reason():
+            raise
 
 
 def _encode_input_with_submitter(
@@ -77,13 +88,14 @@ def source_module_stub(owner):
 @pytest.fixture(scope="module")
 def meta_registry_stub(owner):
     registry = owner.deploy(MetaRegistryStub)
-    registry.setNodeOperatorGroupId(SOURCE_OPERATOR_ID, LINKED_GROUP_ID, {"from": owner})
+    registry.setExternalOperatorGroupId(
+        _encode_nor_external_operator_data(SOURCE_MODULE_ID, SOURCE_OPERATOR_ID),
+        LINKED_GROUP_ID,
+        {"from": owner},
+    )
     for target_operator_id in TARGET_OPERATOR_IDS:
-        registry.setExternalOperatorGroupId(
-            _encode_nor_external_operator_data(TARGET_MODULE_ID, target_operator_id),
-            LINKED_GROUP_ID,
-            {"from": owner},
-        )
+        registry.setNodeOperatorGroupId(target_operator_id, LINKED_GROUP_ID, {"from": owner})
+
     return registry
 
 
@@ -106,7 +118,7 @@ def allow_consolidation_pair_factory(
     consolidation_migrator_stub,
     meta_registry_stub,
 ):
-    source_module_stub.setMetaRegistry(meta_registry_stub, {"from": owner})
+    target_module_stub.setMetaRegistry(meta_registry_stub, {"from": owner})
     return owner.deploy(
         AllowConsolidationPair,
         consolidation_migrator_stub,
@@ -126,6 +138,14 @@ def test_deploy(
     assert allow_consolidation_pair_factory.metaRegistry() == meta_registry_stub
     assert allow_consolidation_pair_factory.sourceModuleId() == SOURCE_MODULE_ID
     assert allow_consolidation_pair_factory.targetModuleId() == TARGET_MODULE_ID
+
+
+def test_deploy_reverts_with_zero_migrator(owner):
+    _assert_constructor_reverts(
+        "ZERO_MIGRATOR",
+        lambda: owner.deploy(AllowConsolidationPair, ZERO_ADDRESS),
+    )
+
 
 def test_create_evm_script_called_by_stranger(stranger, allow_consolidation_pair_factory):
     calldata = _encode_input_with_submitter(stranger.address)
@@ -251,18 +271,36 @@ def test_target_operator_must_be_active(owner, target_module_stub, allow_consoli
     target_module_stub.setNodeOperatorIsActive(TARGET_OPERATOR_IDS[0], True, {"from": owner})
 
 
-def test_source_and_targets_must_be_linked_via_meta_registry(
+def test_source_must_have_group_id_in_meta_registry(
     owner,
     meta_registry_stub,
     allow_consolidation_pair_factory,
 ):
-    meta_registry_stub.setNodeOperatorGroupId(SOURCE_OPERATOR_ID, 0, {"from": owner})
+    meta_registry_stub.setExternalOperatorGroupId(
+        _encode_nor_external_operator_data(SOURCE_MODULE_ID, SOURCE_OPERATOR_ID),
+        0,
+        {"from": owner},
+    )
 
     calldata = _encode_input_with_submitter(owner.address)
     with reverts("OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
 
-    meta_registry_stub.setNodeOperatorGroupId(SOURCE_OPERATOR_ID, LINKED_GROUP_ID, {"from": owner})
+
+def test_source_and_targets_must_be_linked_via_meta_registry(
+    owner,
+    meta_registry_stub,
+    allow_consolidation_pair_factory,
+):
+    meta_registry_stub.setExternalOperatorGroupId(
+        _encode_nor_external_operator_data(SOURCE_MODULE_ID, SOURCE_OPERATOR_ID),
+        LINKED_GROUP_ID + 1,
+        {"from": owner},
+    )
+
+    calldata = _encode_input_with_submitter(owner.address)
+    with reverts("OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY"):
+        allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
 
 
 def test_target_operator_must_be_linked_via_meta_registry(
@@ -271,21 +309,11 @@ def test_target_operator_must_be_linked_via_meta_registry(
     allow_consolidation_pair_factory,
 ):
     target_operator_id = TARGET_OPERATOR_IDS[0]
-    meta_registry_stub.setExternalOperatorGroupId(
-        _encode_nor_external_operator_data(TARGET_MODULE_ID, target_operator_id),
-        LINKED_GROUP_ID + 1,
-        {"from": owner},
-    )
+    meta_registry_stub.setNodeOperatorGroupId(target_operator_id, LINKED_GROUP_ID + 1, {"from": owner})
 
     calldata = _encode_input_with_submitter(owner.address, target_operator_ids=[target_operator_id])
     with reverts("OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
-
-    meta_registry_stub.setExternalOperatorGroupId(
-        _encode_nor_external_operator_data(TARGET_MODULE_ID, target_operator_id),
-        LINKED_GROUP_ID,
-        {"from": owner},
-    )
 
 
 def test_create_evm_script_when_pair_is_already_allowed(
