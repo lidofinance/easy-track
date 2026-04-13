@@ -10,6 +10,8 @@ contract MetaRegistryStub is IMetaRegistry {
     address public override MODULE;
     address public override STAKING_ROUTER;
     OperatorGroup[] internal groups;
+    mapping(uint256 => uint256) internal nodeOperatorGroupIdById;
+    mapping(bytes32 => uint256) internal externalOperatorGroupIdByKey;
 
     error InvalidOperatorGroup();
     error InvalidOperatorGroupId();
@@ -47,8 +49,38 @@ contract MetaRegistryStub is IMetaRegistry {
         STAKING_ROUTER = _stakingRouter;
     }
 
+    function setNodeOperatorGroupId(
+        uint256 _nodeOperatorId,
+        uint256 _groupId
+    ) external {
+        nodeOperatorGroupIdById[_nodeOperatorId] = _groupId;
+    }
+
+    function setExternalOperatorGroupId(
+        bytes calldata _externalOperatorData,
+        uint256 _groupId
+    ) external {
+        externalOperatorGroupIdByKey[
+            keccak256(_externalOperatorData)
+        ] = _groupId;
+    }
+
     function getOperatorGroupsCount() external view override returns (uint256) {
         return groups.length;
+    }
+
+    function getNodeOperatorGroupId(
+        uint256 _nodeOperatorId
+    ) external view override returns (uint256) {
+        return nodeOperatorGroupIdById[_nodeOperatorId];
+    }
+
+    function getExternalOperatorGroupId(
+        ExternalOperator calldata _externalOperator
+    ) external view override returns (uint256) {
+        return externalOperatorGroupIdByKey[
+            keccak256(_externalOperator.data)
+        ];
     }
 
     function createOrUpdateOperatorGroup(

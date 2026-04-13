@@ -26,6 +26,14 @@ interface IMetaRegistry {
 
     function STAKING_ROUTER() external view returns (address);
 
+    function getNodeOperatorGroupId(
+        uint256 nodeOperatorId
+    ) external view returns (uint256 operatorGroupId);
+
+    function getExternalOperatorGroupId(
+        ExternalOperator calldata op
+    ) external view returns (uint256 operatorGroupId);
+
     function createOrUpdateOperatorGroup(
         uint256 groupId,
         OperatorGroup calldata groupInfo

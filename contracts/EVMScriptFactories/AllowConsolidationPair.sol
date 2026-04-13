@@ -6,8 +6,9 @@ pragma solidity 0.8.6;
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/INodeOperatorsRegistry.sol";
-import "../interfaces/ICSModule.sol";
+import "../interfaces/ICuratedModule.sol";
 import "../interfaces/IConsolidationMigrator.sol";
+import "../interfaces/IMetaRegistry.sol";
 
 /// @author vgorkavenko
 /// @notice Creates EVMScript to allow consolidation between a curated node operator and a target module operator
@@ -26,6 +27,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     string private constant ERROR_EMPTY_TARGET_OPERATOR_IDS = "EMPTY_TARGET_OPERATOR_IDS";
     string private constant ERROR_DUPLICATE_TARGET_OPERATOR_ID = "DUPLICATE_TARGET_OPERATOR_ID";
     string private constant ERROR_NODE_OPERATOR_IS_NOT_ACTIVE = "NODE_OPERATOR_IS_NOT_ACTIVE";
+    string private constant ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY =
+        "OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY";
     string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER =
         "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER";
     string private constant ERROR_ZERO_MIGRATOR = "ZERO_MIGRATOR";
@@ -42,9 +45,11 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     /// @dev The `sourceOperatorId` can reference only this module with the old NodeOperatorRegistry interface.
     INodeOperatorsRegistry public immutable sourceModule;
     /// @notice Target module the consolidation migrator points to.
-    ICSModule public immutable targetModule;
+    ICuratedModule public immutable targetModule;
     /// @notice Consolidation migrator contract that maintains the allowlist.
     IConsolidationMigrator public immutable consolidationMigrator;
+    /// @notice MetaRegistry used to verify source and target operator linkage.
+    IMetaRegistry public immutable metaRegistry;
     /// @notice Cached source module id that must equal the migrator binding.
     uint256 public immutable sourceModuleId;
     /// @notice Cached target module id that must equal the migrator binding.
@@ -57,12 +62,17 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     constructor(address _consolidationMigrator) {
         require(_consolidationMigrator != address(0), ERROR_ZERO_MIGRATOR);
 
-        sourceModule = INodeOperatorsRegistry(IConsolidationMigrator(_consolidationMigrator).sourceModule());
-        targetModule = ICSModule(IConsolidationMigrator(_consolidationMigrator).targetModule());
-        sourceModuleId = IConsolidationMigrator(_consolidationMigrator).sourceModuleId();
-        targetModuleId = IConsolidationMigrator(_consolidationMigrator).targetModuleId();
+        address sourceModuleAddress = IConsolidationMigrator(_consolidationMigrator).sourceModule();
+        address targetModuleAddress = IConsolidationMigrator(_consolidationMigrator).targetModule();
+        uint256 sourceModuleId_ = IConsolidationMigrator(_consolidationMigrator).sourceModuleId();
+        uint256 targetModuleId_ = IConsolidationMigrator(_consolidationMigrator).targetModuleId();
 
+        sourceModule = INodeOperatorsRegistry(sourceModuleAddress);
+        targetModule = ICuratedModule(targetModuleAddress);
+        sourceModuleId = sourceModuleId_;
+        targetModuleId = targetModuleId_;
         consolidationMigrator = IConsolidationMigrator(_consolidationMigrator);
+        metaRegistry = ICuratedModule(sourceModuleAddress).META_REGISTRY();
     }
 
     // -------------
@@ -159,6 +169,13 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         uint256 targetsCount = targetOperatorIds.length;
         require(targetsCount > 0, ERROR_EMPTY_TARGET_OPERATOR_IDS);
 
+        uint256 noGroupId = metaRegistry.NO_GROUP_ID();
+        uint256 sourceGroupId = metaRegistry.getNodeOperatorGroupId(sourceOperatorId);
+        require(
+            sourceGroupId != noGroupId,
+            ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
+        );
+
         for (uint256 i; i < targetsCount; ++i) {
             uint256 targetOperatorId = targetOperatorIds[i];
 
@@ -173,6 +190,26 @@ contract AllowConsolidationPair is IEVMScriptFactory {
                 targetModule.getNodeOperatorIsActive(targetOperatorId),
                 ERROR_NODE_OPERATOR_IS_NOT_ACTIVE
             );
+
+            require(
+                _getTargetOperatorGroupId(targetOperatorId) == sourceGroupId,
+                ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
+            );
         }
+    }
+
+    function _getTargetOperatorGroupId(
+        uint256 targetOperatorId
+    ) private view returns (uint256) {
+        return
+            metaRegistry.getExternalOperatorGroupId(
+                IMetaRegistry.ExternalOperator({
+                    data: abi.encodePacked(
+                        bytes1(uint8(0)),
+                        uint8(targetModuleId),
+                        uint64(targetOperatorId)
+                    )
+                })
+            );
     }
 }
