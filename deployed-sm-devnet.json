@@ -1,0 +1,114 @@
+{
+    "AllowedMerkleGatesRegistry:CSM": {
+        "contract": "AllowedMerkleGatesRegistry",
+        "address": "0xF7740F7a819825152383f12182d1F0cFdB1e19c7",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CSM",
+            [
+                "0xd04E46D444cD12eD1136Db229d9eB7357b0D4685"
+            ],
+            [
+                "VettedGate"
+            ]
+        ],
+        "txHash": "0x5aa6d5dca8f5f03abb2dcdf430ce1dbcddfe6edaf8a510e569d1d2a3664b5dbd",
+        "name": "CSM"
+    },
+    "SetMerkleGateTree:CSM": {
+        "contract": "SetMerkleGateTree",
+        "address": "0xF417BBcc9682B6d5B8312e8F8588Cd6489C5B85F",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CSM",
+            "0xF7740F7a819825152383f12182d1F0cFdB1e19c7"
+        ],
+        "txHash": "0xb8eadb55a521d42da8b05a7afaba9eca9af9cfa905d40946f5a3f9c4554c59db"
+    },
+    "ReportWithdrawalsForSlashedValidators:CSM": {
+        "contract": "ReportWithdrawalsForSlashedValidators",
+        "address": "0x8418692bf1390F1a9f2E3996475612514F746a77",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CSM",
+            "0x531C17C4E2Eef4cE6aA72CCA0aacf41FD06bcA84"
+        ],
+        "txHash": "0x63e8ac2e5d594fa9251778f8d51c785bedb344ecc041ff44789b5e930a8237f6"
+    },
+    "SettleGeneralDelayedPenalty:CSM": {
+        "contract": "SettleGeneralDelayedPenalty",
+        "address": "0xF3865826309f55cD3E104a22Ab9d04724d2D9020",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CSM",
+            "0x531C17C4E2Eef4cE6aA72CCA0aacf41FD06bcA84"
+        ],
+        "txHash": "0x6699bc453ae2105d692f1ca3c5eba69167e609a04ae79af5f2df38dbff3045b6"
+    },
+    "AllowedMerkleGatesRegistry:CM": {
+        "contract": "AllowedMerkleGatesRegistry",
+        "address": "0x92420b96A6ce5B4F00849A944e0489c58B9759F6",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CM",
+            [
+                "0x2DEa3B3076c8754961ec1859396714f2B4ce5363",
+                "0x3b44c668Ee186bc8A46EDdDa08c0213c1Ac2544A",
+                "0x1eEA2A3b7a4d840aef0B24601dee17D19E924Eba",
+                "0x279780a1dc127d0e38470f786924972Ef3aDdD71",
+                "0x13C3eb63B9B969DAA569bf793431EBF32e470e3c",
+                "0xc35D573f0415C86C120aC92d00722ee7C527289B"
+            ],
+            [
+                "CuratedGate0",
+                "CuratedGate1",
+                "CuratedGate2",
+                "CuratedGate3",
+                "CuratedGate4",
+                "CuratedGate5"
+            ]
+        ],
+        "txHash": "0x8505ce8e03a9fa952131c622df9fa4616588de038b10f222143a775a8ff7aa80",
+        "name": "CM"
+    },
+    "SetMerkleGateTree:CM": {
+        "contract": "SetMerkleGateTree",
+        "address": "0x9BC48d538C9d8dd7a559f4460CCb2327fF39C1f4",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CM",
+            "0x92420b96A6ce5B4F00849A944e0489c58B9759F6"
+        ],
+        "txHash": "0x21c757c375adffcd15edb911ab476d1d09b9c980b51277aaef75547d4bb13c09"
+    },
+    "ReportWithdrawalsForSlashedValidators:CM": {
+        "contract": "ReportWithdrawalsForSlashedValidators",
+        "address": "0x612d23ba265ad1fDc62B2e3A08722668E1D0ECa3",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CM",
+            "0x1c5A849640229610800c9E27F84039fCb6912f23"
+        ],
+        "txHash": "0x0cef8e8d883a43a36aaf0c4e523b8463fbc8033dad36e7912ab90bfd0288c81f"
+    },
+    "SettleGeneralDelayedPenalty:CM": {
+        "contract": "SettleGeneralDelayedPenalty",
+        "address": "0xd51c0d3C9BF00FF5690f901BBB8E85e976374BAE",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CM",
+            "0x1c5A849640229610800c9E27F84039fCb6912f23"
+        ],
+        "txHash": "0xc793a1547b37295ca9973cf00c175be02f415b55c33a9dcf936bc1237f99fecf"
+    },
+    "CreateOrUpdateOperatorGroup:CM": {
+        "contract": "CreateOrUpdateOperatorGroup",
+        "address": "0x29D272Db50946716466cf00bC7d4bc435d8Ea44E",
+        "constructorArgs": [
+            "0xE25583099BA105D9ec0A67f5Ae86D90e50036425",
+            "CM",
+            "0x4f856c14170976700cF162c34ba4ABbf2cC0b41e"
+        ],
+        "txHash": "0x2c93ec80cfbaea73248d384cd7965f78bd295fef945b9c4973223aba1cbfc80d"
+    }
+}

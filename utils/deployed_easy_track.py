@@ -1,4 +1,5 @@
 from typing import Optional
+import os
 from brownie import (
     EasyTrack,
     EVMScriptExecutor,
@@ -10,6 +11,17 @@ from brownie import (
     TopUpLegoProgram,
     Contract,
 )
+
+
+def _env(name, default=None):
+    if name not in os.environ:
+        if default is not None:
+            return default
+        raise EnvironmentError(f"Please set {name} env variable")
+    value = os.environ[name]
+    if default is None and value == "":
+        raise EnvironmentError(f"Please set {name} env variable")
+    return value
 
 
 def addresses(network="mainnet"):
@@ -70,7 +82,26 @@ def addresses(network="mainnet"):
                 reward_programs_registry=None,
             ),
         )
-    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, hoodi, holesky.""")
+    if network == "devnet" or network == "devnet-fork":
+        return EasyTrackSetup(
+            easy_track=_env("DEVNET_EASY_TRACK"),
+            evm_script_executor=_env("DEVNET_EVM_SCRIPT_EXECUTOR"),
+            increase_node_operator_staking_limit=None,
+            top_up_lego_program=None,
+            reward_programs=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+            referral_partners=RewardPrograms(
+                add_reward_program=None,
+                remove_reward_program=None,
+                top_up_reward_programs=None,
+                reward_programs_registry=None,
+            ),
+        )
+    raise NameError(f"""Unknown network "{network}". Supported networks: mainnet, hoodi, holesky, devnet.""")
 
 
 def contract_or_none(contract: Contract, addr: Optional[str]) -> Optional[Contract]:

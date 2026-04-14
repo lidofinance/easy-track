@@ -4,6 +4,13 @@ from utils import evm_script as evm_script_utils, config
 DEFAULT_NETWORK = "mainnet"
 
 
+def _env(name, default=None):
+    value = config.get_env(name, default)
+    if default is None and value == "":
+        raise EnvironmentError(f"Please set {name} env variable")
+    return value
+
+
 def addresses(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return LidoAddressesSetup(
@@ -83,8 +90,34 @@ def addresses(network=DEFAULT_NETWORK):
             emergency_protected_timelock="0x0A5E22782C0Bd4AddF10D771f0bF0406B038282d",
             evm_script_executor="0x79a20FD0FA36453B2F45eAbab19bfef43575Ba9E",
         )
+    if network == "devnet" or network == "devnet-fork":
+        return LidoAddressesSetup(
+            aragon=AragonSetup(
+                acl=_env("DEVNET_ARAGON_ACL"),
+                agent=_env("DEVNET_ARAGON_AGENT"),
+                voting=_env("DEVNET_ARAGON_VOTING"),
+                finance=_env("DEVNET_ARAGON_FINANCE"),
+                gov_token=_env("DEVNET_ARAGON_GOV_TOKEN"),
+                calls_script=_env("DEVNET_ARAGON_CALLS_SCRIPT"),
+                token_manager=_env("DEVNET_ARAGON_TOKEN_MANAGER"),
+                kernel=_env("DEVNET_ARAGON_KERNEL"),
+            ),
+            steth=_env("DEVNET_STETH"),
+            node_operators_registry=_env("DEVNET_NODE_OPERATORS_REGISTRY"),
+            simple_dvt=_env("DEVNET_SIMPLE_DVT"),
+            curated_module=_env("DEVNET_CURATED_MODULE"),
+            staking_router=_env("DEVNET_STAKING_ROUTER"),
+            consolidation_migrator=_env("DEVNET_CONSOLIDATION_MIGRATOR", ""),
+            locator=_env("DEVNET_LOCATOR"),
+            mev_boost_list=_env("DEVNET_MEV_BOOST_LIST", ""),
+            validators_exit_bus_oracle=_env("DEVNET_VALIDATORS_EXIT_BUS_ORACLE"),
+            dual_governance_admin_executor=_env("DEVNET_DUAL_GOVERNANCE_ADMIN_EXECUTOR", ""),
+            dual_governance=_env("DEVNET_DUAL_GOVERNANCE", ""),
+            emergency_protected_timelock=_env("DEVNET_EMERGENCY_PROTECTED_TIMELOCK", ""),
+            evm_script_executor=_env("DEVNET_EVM_SCRIPT_EXECUTOR"),
+        )
     raise NameError(
-        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork"""
+        f"""Unknown network "{network}". Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, holesky, holesky-fork, devnet, devnet-fork"""
     )
 
 
@@ -173,10 +206,28 @@ class LidoContractsSetup:
             else interface.IConsolidationMigrator(lido_addresses.consolidation_migrator)
         )
         self.locator = interface.ILidoLocator(lido_addresses.locator)
-        self.mev_boost_list = interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
-        self.dual_governance_admin_executor = interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
-        self.dual_governance = interface.DualGovernance(lido_addresses.dual_governance)
-        self.emergency_protected_timelock = interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
+        # Some environments do not have every optional peripheral Lido contract.
+        # Brownie eagerly checks code existence in `Contract.from_abi`, so binding
+        # an empty/missing optional address would raise `ContractNotFound` during
+        # setup even when the script never uses that contract.
+        self.mev_boost_list = (
+            None
+            if not lido_addresses.mev_boost_list
+            else interface.MEVBoostRelayAllowedList(lido_addresses.mev_boost_list)
+        )
+        self.dual_governance_admin_executor = (
+            None
+            if not lido_addresses.dual_governance_admin_executor
+            else interface.DualGovernanceExecutor(lido_addresses.dual_governance_admin_executor)
+        )
+        self.dual_governance = (
+            None if not lido_addresses.dual_governance else interface.DualGovernance(lido_addresses.dual_governance)
+        )
+        self.emergency_protected_timelock = (
+            None
+            if not lido_addresses.emergency_protected_timelock
+            else interface.EmergencyProtectedTimelock(lido_addresses.emergency_protected_timelock)
+        )
         self.validators_exit_bus_oracle = interface.ValidatorsExitBusOracle(lido_addresses.validators_exit_bus_oracle)
 
 

@@ -1,7 +1,14 @@
 from dataclasses import dataclass
+import os
 import brownie
 
 DEFAULT_NETWORK = "mainnet"
+
+
+def _env(name):
+    if name not in os.environ or os.environ[name] == "":
+        raise EnvironmentError(f"Please set {name} env variable")
+    return os.environ[name]
 
 
 def addresses(network=DEFAULT_NETWORK):
@@ -15,8 +22,13 @@ def addresses(network=DEFAULT_NETWORK):
             module="0x79CEf36D84743222f37765204Bec41E92a93E59d",
             allowed_merkle_gates_registry="",
         )
+    if network == "devnet" or network == "devnet-fork":
+        return CSMAddressesSetup(
+            module=_env("CSM_MODULE_ADDRESS"),
+            allowed_merkle_gates_registry=_env("CSM_ALLOWED_MERKLE_GATES_REGISTRY_ADDRESS"),
+        )
     raise NameError(
-        f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork"
+        f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork, devnet, devnet-fork"
     )
 
 

@@ -51,6 +51,9 @@ def _get_initial_gates_and_titles():
     for gate in gates:
         if not web3.is_address(gate):
             raise ValueError(f"{gate} is not a valid address in ALLOWED_MERKLE_GATES_ADDRESSES")
+    normalized_gates = [gate.lower() for gate in gates]
+    if len(normalized_gates) != len(set(normalized_gates)):
+        raise ValueError("ALLOWED_MERKLE_GATES_ADDRESSES contains duplicate addresses")
     for title in titles:
         if not isinstance(title, str):
             raise ValueError(f"{title} is not a valid title in ALLOWED_MERKLE_GATES_TITLES")

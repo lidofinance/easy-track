@@ -104,7 +104,11 @@ def lido_contracts():
     set_account_balance(contracts.lido_addresses.aragon.calls_script)
     set_account_balance(contracts.lido_addresses.aragon.token_manager)
     set_account_balance(contracts.lido_addresses.aragon.kernel)
-    set_account_balance(contracts.lido_addresses.dual_governance_admin_executor)
+    # Some environments can omit Dual Governance. Brownie's account
+    # impersonation/balance helpers still validate address input eagerly, so do
+    # not try to fund an empty optional address.
+    if contracts.lido_addresses.dual_governance_admin_executor:
+        set_account_balance(contracts.lido_addresses.dual_governance_admin_executor)
     return contracts
 
 

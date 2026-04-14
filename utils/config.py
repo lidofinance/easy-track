@@ -1,11 +1,69 @@
 import os
 import sys
+from pathlib import Path
 from brownie import network, accounts, web3
+from brownie.network import contract as brownie_contract
+from brownie._config import CONFIG
+from brownie.project.flattener import Flattener
 from utils import lido
 from typing import Optional
 
 
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+
+# Brownie has no maintained first-class Blockscout integration. `publish_source`
+# decides whether an explorer is usable through the private `_explorer_tokens`
+# hostname map and aborts with "Explorer API not set for this network" if it
+# cannot find a token env var for the configured explorer host.
+#
+# Blockscout exposes the legacy Etherscan-compatible API and may not require an
+# API key, so we register a dummy token name for Blockscout hosts.
+# Keep this as a local Brownie compatibility shim; it can go away with a verifier
+# path that does not depend on Brownie's private explorer registry.
+brownie_contract._explorer_tokens.setdefault("blockscout", "BLOCKSCOUT_TOKEN")
+os.environ.setdefault("BLOCKSCOUT_TOKEN", "dummy")
+
+_original_remap_import = Flattener.remap_import
+
+
+def _remap_import_from_project_root(self, import_path: str) -> str:
+    remapped = _original_remap_import(self, import_path)
+    # Brownie's flattener resolves `./dependencies/...` remaps relative to the
+    # importing contract directory during source publishing. For OpenZeppelin
+    # imports that gives a bogus path like `contracts/dependencies/...` and
+    # verification dies with FileNotFoundError before anything reaches
+    # Blockscout. Dependencies in this repo live at the project root, so force
+    # those remapped paths back to an absolute project-root path.
+    if remapped.startswith("./dependencies/"):
+        return PROJECT_ROOT.joinpath(remapped[2:]).as_posix()
+    return remapped
+
+
+Flattener.remap_import = _remap_import_from_project_root
+
+
+def _expand_active_network_env(name: str):
+    # Brownie keeps some custom network fields as literal `$ENV_VAR` strings in
+    # `CONFIG.active_network`. That breaks Blockscout verification because
+    # `publish_source` reads the explorer URL from this object directly. Expand
+    # the field after Brownie selects the network; the ConnectionError guard lets
+    # this module import before a network is connected.
+    try:
+        value = CONFIG.active_network.get(name)
+    except ConnectionError:
+        return
+    if isinstance(value, str):
+        CONFIG.active_network[name] = os.path.expandvars(value)
+
+
+_expand_active_network_env("explorer")
+
+
 def get_network_name() -> Optional[str]:
+    # Some Brownie code paths call helpers while `network.show_active()` is still
+    # unset, even though `--network` is already present in argv. Fall back to the
+    # CLI arg so scripts can still resolve network-specific config/artifacts.
+    _expand_active_network_env("explorer")
     full_network_name = network.show_active()
 
     if full_network_name is None:
@@ -21,7 +79,15 @@ def get_network_name() -> Optional[str]:
 
 
 def get_is_live():
-    dev_networks = ["development", "hardhat", "hardhat-fork", "mainnet-fork", "holesky-fork", "hoodi-fork"]
+    dev_networks = [
+        "development",
+        "hardhat",
+        "hardhat-fork",
+        "mainnet-fork",
+        "holesky-fork",
+        "hoodi-fork",
+        "devnet-fork",
+    ]
     return network.show_active() not in dev_networks
 
 

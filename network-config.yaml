@@ -26,6 +26,13 @@ live:
     name: Hoodi
     provider: custom
 
+  - chainid: 32382
+    explorer: $DEVNET_EXPLORER_API_URL
+    host: $DEVNET_URL
+    id: devnet
+    name: Devnet
+    provider: custom
+
 development:
   - cmd: "npx hardhat node"
     cmd_settings:
@@ -50,4 +57,12 @@ development:
     host: http://127.0.0.1
     id: hoodi-fork
     name: hoodi-fork
+    timeout: 360
+  - cmd: "npx hardhat node"
+    cmd_settings:
+      fork: devnet
+      port: 8545
+    host: http://127.0.0.1
+    id: devnet-fork
+    name: devnet-fork
     timeout: 360
