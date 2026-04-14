@@ -6,7 +6,8 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/ICSModule.sol";
+import "../interfaces/ICuratedModule.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IMetaRegistry.sol";
 import "../interfaces/IStakingRouter.sol";
 
@@ -57,8 +58,8 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of MetaRegistry contract
     IMetaRegistry public immutable metaRegistry;
-    /// @notice CS-like module taken from MetaRegistry at deployment time
-    ICSModule public immutable module;
+    /// @notice Curated module taken from MetaRegistry at deployment time
+    ICuratedModule public immutable module;
     /// @notice Staking router taken from MetaRegistry at deployment time
     IStakingRouter public immutable stakingRouter;
 
@@ -80,7 +81,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         metaRegistry = registry;
         // Snapshot dependencies at deploy time.
         // If MetaRegistry changes MODULE/STAKING_ROUTER, this factory must be redeployed.
-        module = ICSModule(registry.MODULE());
+        module = ICuratedModule(registry.MODULE());
         stakingRouter = IStakingRouter(registry.STAKING_ROUTER());
 
         name = _name;
@@ -238,7 +239,9 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
                 externalModuleAddress != address(0),
                 ERROR_EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST
             );
-            uint256 externalModuleNodeOperatorsCount = ICSModule(externalModuleAddress)
+            uint256 externalModuleNodeOperatorsCount = INodeOperatorsRegistry(
+                externalModuleAddress
+            )
                 .getNodeOperatorsCount();
             require(
                 externalNodeOperatorId < externalModuleNodeOperatorsCount,

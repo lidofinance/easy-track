@@ -316,7 +316,7 @@ def ensure_gate_unpaused(impersonate_account, first_role_holder):
 @pytest.fixture(scope="module")
 def ensure_module_locked_bond(impersonate_account, first_role_holder):
     def _ensure(module, node_operator_id, amount):
-        accounting = brownie.interface.ICSAccounting(module.ACCOUNTING())
+        accounting = brownie.interface.IAccounting(module.ACCOUNTING())
         current_locked = accounting.getActualLockedBond(node_operator_id)
         if current_locked > 0:
             return current_locked

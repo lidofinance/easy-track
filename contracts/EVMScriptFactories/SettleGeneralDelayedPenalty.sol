@@ -6,8 +6,8 @@ pragma solidity 0.8.6;
 import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
-import "../interfaces/ICSModule.sol";
-import "../interfaces/ICSAccounting.sol";
+import "../interfaces/IBaseModule.sol";
+import "../interfaces/IAccounting.sol";
 
 /// @author vgorkavenko
 /// @notice Creates EVMScript to settle general delayed penalty for a specific node operators
@@ -36,8 +36,8 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     string public name;
 
     /// @notice Address of Module Contract
-    ICSModule public immutable module;
-    ICSAccounting public immutable accounting;
+    IBaseModule public immutable module;
+    IAccounting public immutable accounting;
 
     // -------------
     // CONSTRUCTOR
@@ -47,8 +47,8 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         TrustedCaller(_trustedCaller)
     {
         name = _name;
-        module = ICSModule(_module);
-        accounting = ICSAccounting(ICSModule(_module).ACCOUNTING());
+        module = IBaseModule(_module);
+        accounting = IAccounting(IBaseModule(_module).ACCOUNTING());
     }
 
     // -------------
@@ -72,7 +72,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         return
             EVMScriptCreator.createEVMScript(
                 address(module),
-                ICSModule.settleGeneralDelayedPenalty.selector,
+                IBaseModule.settleGeneralDelayedPenalty.selector,
                 _evmScriptCallData
             );
     }

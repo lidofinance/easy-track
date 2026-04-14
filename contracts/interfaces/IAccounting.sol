@@ -1,10 +1,10 @@
-// SPDX-FileCopyrightText: 2024 Lido <info@lido.fi>
+// SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
 
- pragma solidity 0.8.6;
+pragma solidity 0.8.6;
 
-/// @title Lido's CSM accounting interface
-interface ICSAccounting {
+/// @title Lido's accounting interface
+interface IAccounting {
     /// @notice Get amount of the locked bond in ETH (stETH) by the given Node Operator
     /// @param nodeOperatorId ID of the Node Operator
     /// @return Amount of the actual locked bond

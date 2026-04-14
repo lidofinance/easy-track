@@ -3,12 +3,9 @@
 
 pragma solidity 0.8.6;
 
+import "./IBaseModule.sol";
 import "./IMetaRegistry.sol";
 
-interface ICuratedModule {
+interface ICuratedModule is IBaseModule {
     function META_REGISTRY() external view returns (IMetaRegistry);
-
-    function getNodeOperatorIsActive(
-        uint256 nodeOperatorId
-    ) external view returns (bool);
 }
