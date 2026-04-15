@@ -101,11 +101,15 @@ def meta_registry_stub(owner):
 
 
 @pytest.fixture(scope="module")
-def consolidation_migrator_stub(owner, source_module_stub, target_module_stub):
-    staking_router_stub = owner.deploy(StakingRouterStub)
-    staking_router_stub.setStakingModule(SOURCE_MODULE_ID, source_module_stub, {"from": owner})
-    staking_router_stub.setStakingModule(TARGET_MODULE_ID, target_module_stub, {"from": owner})
+def staking_router_stub(owner, source_module_stub, target_module_stub):
+    router = owner.deploy(StakingRouterStub)
+    router.setStakingModule(SOURCE_MODULE_ID, source_module_stub, {"from": owner})
+    router.setStakingModule(TARGET_MODULE_ID, target_module_stub, {"from": owner})
+    return router
 
+
+@pytest.fixture(scope="module")
+def consolidation_migrator_stub(owner, staking_router_stub):
     return owner.deploy(
         ConsolidationMigratorStub,
         SOURCE_MODULE_ID,
@@ -131,16 +135,13 @@ def allow_consolidation_pair_factory(
 
 def test_deploy(
     allow_consolidation_pair_factory,
-    source_module_stub,
-    target_module_stub,
     consolidation_migrator_stub,
-    meta_registry_stub,
+    staking_router_stub,
 ):
-    assert allow_consolidation_pair_factory.sourceModule() == source_module_stub
-    assert allow_consolidation_pair_factory.targetModule() == target_module_stub
     assert allow_consolidation_pair_factory.consolidationMigrator() == consolidation_migrator_stub
-    assert allow_consolidation_pair_factory.metaRegistry() == meta_registry_stub
+    assert allow_consolidation_pair_factory.stakingRouter() == staking_router_stub
     assert allow_consolidation_pair_factory.sourceModuleId() == SOURCE_MODULE_ID
+    assert allow_consolidation_pair_factory.targetModuleId() == TARGET_MODULE_ID
 
 
 def test_deploy_reverts_with_zero_migrator(owner):
