@@ -38,7 +38,7 @@ def module(
 @pytest.fixture(scope="module")
 def accounting(module, use_deployed_contracts_from_env):
     if use_deployed_contracts_from_env:
-        return brownie.interface.ICSAccounting(module.ACCOUNTING())
+        return brownie.interface.IAccounting(module.ACCOUNTING())
     return module
 
 

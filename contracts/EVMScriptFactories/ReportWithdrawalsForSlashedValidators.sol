@@ -6,7 +6,7 @@ pragma solidity 0.8.6;
 import {TrustedCaller} from "../TrustedCaller.sol";
 import {EVMScriptCreator} from "../libraries/EVMScriptCreator.sol";
 import {IEVMScriptFactory} from "../interfaces/IEVMScriptFactory.sol";
-import {ICSModule, WithdrawnValidatorInfo} from "../interfaces/ICSModule.sol";
+import {IBaseModule, WithdrawnValidatorInfo} from "../interfaces/IBaseModule.sol";
 
 /// @notice Creates an EVMScript to report slashed validators as withdrawn to a CSM-like module.
 contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFactory {
@@ -28,7 +28,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
     string public name;
 
     /// @notice Address of the module.
-    ICSModule public immutable module;
+    IBaseModule public immutable module;
 
     // -------------
     // CONSTRUCTOR
@@ -40,7 +40,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
         address _module
     ) TrustedCaller(_trustedCaller) {
         name = _name;
-        module = ICSModule(_module);
+        module = IBaseModule(_module);
     }
 
     // -------------

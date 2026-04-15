@@ -3,7 +3,7 @@
 
 pragma solidity ^0.8.4;
 
-import {WithdrawnValidatorInfo} from "../interfaces/ICSModule.sol";
+import {WithdrawnValidatorInfo} from "../interfaces/IBaseModule.sol";
 
 contract CSLikeModuleStub {
     uint256 internal _nodeOperatorsCount;
