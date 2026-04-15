@@ -9,6 +9,7 @@ import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/ICuratedModule.sol";
 import "../interfaces/IConsolidationMigrator.sol";
 import "../interfaces/IMetaRegistry.sol";
+import "../interfaces/IStakingRouter.sol";
 
 /// @author vgorkavenko
 /// @notice Creates EVMScript to allow consolidation between a curated node operator and a target module operator
@@ -61,8 +62,6 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     IMetaRegistry public immutable metaRegistry;
     /// @notice Cached source module id that must equal the migrator binding.
     uint256 public immutable sourceModuleId;
-    /// @notice Cached target module id that must equal the migrator binding.
-    uint256 public immutable targetModuleId;
 
     // -------------
     // CONSTRUCTOR
@@ -71,14 +70,18 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     constructor(address _consolidationMigrator) {
         require(_consolidationMigrator != address(0), ERROR_ZERO_MIGRATOR);
 
-        address sourceModuleAddress = IConsolidationMigrator(_consolidationMigrator).sourceModule();
-        address targetModuleAddress = IConsolidationMigrator(_consolidationMigrator).targetModule();
-        sourceModuleId = IConsolidationMigrator(_consolidationMigrator).sourceModuleId();
-        targetModuleId = IConsolidationMigrator(_consolidationMigrator).targetModuleId();
+        IConsolidationMigrator migrator = IConsolidationMigrator(_consolidationMigrator);
+        uint256 sourceModuleId_ = migrator.sourceModuleId();
+        uint256 targetModuleId_ = migrator.targetModuleId();
 
+        IStakingRouter stakingRouter = IStakingRouter(migrator.getStakingRouter());
+        address sourceModuleAddress = stakingRouter.getStakingModule(sourceModuleId_).stakingModuleAddress;
+        address targetModuleAddress = stakingRouter.getStakingModule(targetModuleId_).stakingModuleAddress;
+
+        sourceModuleId = sourceModuleId_;
         sourceModule = INodeOperatorsRegistry(sourceModuleAddress);
         targetModule = ICuratedModule(targetModuleAddress);
-        consolidationMigrator = IConsolidationMigrator(_consolidationMigrator);
+        consolidationMigrator = migrator;
         metaRegistry = ICuratedModule(targetModuleAddress).META_REGISTRY();
     }
 
