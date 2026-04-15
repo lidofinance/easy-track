@@ -12,8 +12,7 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
 
     uint256 private _sourceModuleId;
     uint256 private _targetModuleId;
-    address private _sourceModule;
-    address private _targetModule;
+    address private _stakingRouter;
 
     mapping(uint256 => mapping(uint256 => bool)) private _allowedPairs;
     mapping(uint256 => mapping(uint256 => address)) private _submitters;
@@ -22,13 +21,11 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
     constructor(
         uint256 sourceModuleId_,
         uint256 targetModuleId_,
-        address sourceModule_,
-        address targetModule_
+        address stakingRouter_
     ) {
         _sourceModuleId = sourceModuleId_;
         _targetModuleId = targetModuleId_;
-        _sourceModule = sourceModule_;
-        _targetModule = targetModule_;
+        _stakingRouter = stakingRouter_;
     }
 
     function setModuleIds(uint256 newSourceId, uint256 newTargetId) external {
@@ -36,9 +33,8 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
         _targetModuleId = newTargetId;
     }
 
-    function setModuleAddresses(address newSource, address newTarget) external {
-        _sourceModule = newSource;
-        _targetModule = newTarget;
+    function setStakingRouter(address newStakingRouter) external {
+        _stakingRouter = newStakingRouter;
     }
 
     function setPairStatus(
@@ -66,12 +62,8 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
         return _targetModuleId;
     }
 
-    function sourceModule() external view override returns (address) {
-        return _sourceModule;
-    }
-
-    function targetModule() external view override returns (address) {
-        return _targetModule;
+    function getStakingRouter() external view override returns (address) {
+        return _stakingRouter;
     }
 
     function isPairAllowed(

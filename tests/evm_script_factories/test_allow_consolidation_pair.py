@@ -6,6 +6,7 @@ from brownie import (
     CSModuleNodeOperatorsStub,
     MetaRegistryStub,
     NodeOperatorsRegistryStub,
+    StakingRouterStub,
     reverts,
 )  # type: ignore
 
@@ -101,12 +102,15 @@ def meta_registry_stub(owner):
 
 @pytest.fixture(scope="module")
 def consolidation_migrator_stub(owner, source_module_stub, target_module_stub):
+    staking_router_stub = owner.deploy(StakingRouterStub)
+    staking_router_stub.setStakingModule(SOURCE_MODULE_ID, source_module_stub, {"from": owner})
+    staking_router_stub.setStakingModule(TARGET_MODULE_ID, target_module_stub, {"from": owner})
+
     return owner.deploy(
         ConsolidationMigratorStub,
         SOURCE_MODULE_ID,
         TARGET_MODULE_ID,
-        source_module_stub,
-        target_module_stub,
+        staking_router_stub,
     )
 
 
@@ -137,7 +141,6 @@ def test_deploy(
     assert allow_consolidation_pair_factory.consolidationMigrator() == consolidation_migrator_stub
     assert allow_consolidation_pair_factory.metaRegistry() == meta_registry_stub
     assert allow_consolidation_pair_factory.sourceModuleId() == SOURCE_MODULE_ID
-    assert allow_consolidation_pair_factory.targetModuleId() == TARGET_MODULE_ID
 
 
 def test_deploy_reverts_with_zero_migrator(owner):

@@ -6,6 +6,7 @@ from brownie import (
     CSModuleNodeOperatorsStub,
     MetaRegistryStub,
     NodeOperatorsRegistryStub,
+    StakingRouterStub,
 )
 
 from utils.evm_script import encode_calldata
@@ -111,16 +112,22 @@ def consolidation_migrator(
     target_module,
 ):
     if use_deployed_contracts_from_env:
-        assert active_sr_consolidation_migrator.sourceModule() == source_module.address
-        assert active_sr_consolidation_migrator.targetModule() == target_module.address
+        staking_router = interface.IStakingRouter(active_sr_consolidation_migrator.getStakingRouter())
+        source_module_info = staking_router.getStakingModule(active_sr_consolidation_migrator.sourceModuleId())
+        target_module_info = staking_router.getStakingModule(active_sr_consolidation_migrator.targetModuleId())
+        assert source_module_info[1] == source_module.address
+        assert target_module_info[1] == target_module.address
         return active_sr_consolidation_migrator
+
+    staking_router = owner.deploy(StakingRouterStub)
+    staking_router.setStakingModule(SOURCE_MODULE_ID, source_module.address, {"from": owner})
+    staking_router.setStakingModule(TARGET_MODULE_ID, target_module.address, {"from": owner})
 
     return owner.deploy(
         ConsolidationMigratorStub,
         SOURCE_MODULE_ID,
         TARGET_MODULE_ID,
-        source_module.address,
-        target_module.address,
+        staking_router.address,
     )
 
 

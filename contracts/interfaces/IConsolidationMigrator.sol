@@ -36,11 +36,8 @@ interface IConsolidationMigrator {
     /// @notice Gets the target module ID this migrator is bound to.
     function targetModuleId() external view returns (uint256);
 
-    /// @notice Returns the address of the legacy curated module.
-    function sourceModule() external view returns (address);
-
-    /// @notice Returns the address of the destination module.
-    function targetModule() external view returns (address);
+    /// @notice Returns the staking router address used to resolve module ids.
+    function getStakingRouter() external view returns (address);
 
     /// @notice Returns true if consolidation from `sourceOperatorId` to `targetOperatorId` is allowed.
     function isPairAllowed(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (bool);
