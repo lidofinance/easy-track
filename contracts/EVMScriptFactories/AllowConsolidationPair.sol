@@ -51,17 +51,14 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Source module bound to the legacy NodeOperatorRegistry implementation.
-    /// @dev The `sourceOperatorId` can reference only this module with the old NodeOperatorRegistry interface.
-    INodeOperatorsRegistry public immutable sourceModule;
-    /// @notice Target module the consolidation migrator points to.
-    ICuratedModule public immutable targetModule;
     /// @notice Consolidation migrator contract that maintains the allowlist.
     IConsolidationMigrator public immutable consolidationMigrator;
-    /// @notice MetaRegistry used to verify source and target operator linkage.
-    IMetaRegistry public immutable metaRegistry;
+    /// @notice StakingRouter used to get module addresses for the source and target module ids.
+    IStakingRouter public immutable stakingRouter;
     /// @notice Cached source module id that must equal the migrator binding.
     uint256 public immutable sourceModuleId;
+    /// @notice Cached target module id that must equal the migrator binding.
+    uint256 public immutable targetModuleId;
 
     // -------------
     // CONSTRUCTOR
@@ -71,18 +68,12 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         require(_consolidationMigrator != address(0), ERROR_ZERO_MIGRATOR);
 
         IConsolidationMigrator migrator = IConsolidationMigrator(_consolidationMigrator);
-        uint256 sourceModuleId_ = migrator.sourceModuleId();
-        uint256 targetModuleId_ = migrator.targetModuleId();
 
-        IStakingRouter stakingRouter = IStakingRouter(migrator.getStakingRouter());
-        address sourceModuleAddress = stakingRouter.getStakingModule(sourceModuleId_).stakingModuleAddress;
-        address targetModuleAddress = stakingRouter.getStakingModule(targetModuleId_).stakingModuleAddress;
-
-        sourceModuleId = sourceModuleId_;
-        sourceModule = INodeOperatorsRegistry(sourceModuleAddress);
-        targetModule = ICuratedModule(targetModuleAddress);
+        stakingRouter = IStakingRouter(migrator.getStakingRouter());
+        sourceModuleId = migrator.sourceModuleId();
+        targetModuleId = migrator.targetModuleId();
+        
         consolidationMigrator = migrator;
-        metaRegistry = ICuratedModule(targetModuleAddress).META_REGISTRY();
     }
 
     // -------------
@@ -152,6 +143,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         AllowConsolidationPairInput memory input
     ) private view {
 
+        INodeOperatorsRegistry sourceModule = INodeOperatorsRegistry(stakingRouter.getStakingModule(sourceModuleId).stakingModuleAddress);
+
         uint256 sourceCount = sourceModule.getNodeOperatorsCount();
         require(input.sourceOperatorId < sourceCount, ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST);
 
@@ -169,19 +162,30 @@ contract AllowConsolidationPair is IEVMScriptFactory {
             ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER
         );
 
-        uint256 sourceGroupId = _getSourceOperatorGroupId(input.sourceOperatorId);
+        _validateOperatorIds(input.sourceOperatorId, input.targetOperatorIds);
+    }
+
+    function _validateOperatorIds(
+        uint256 sourceOperatorId,
+        uint256[] memory targetOperatorIds
+    ) private view {
+        ICuratedModule targetModule = ICuratedModule(stakingRouter.getStakingModule(targetModuleId).stakingModuleAddress);
+        IMetaRegistry metaRegistry = targetModule.META_REGISTRY();
+
+        uint256 sourceGroupId = metaRegistry.getExternalOperatorGroupId(
+            IMetaRegistry.ExternalOperator({
+                data: abi.encodePacked(
+                    bytes1(EXT_OPERATOR_TYPE_NOR),
+                    uint8(sourceModuleId),
+                    uint64(sourceOperatorId)
+                )
+            })
+        );
         require(
             sourceGroupId != NO_GROUP_ID,
             ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
         );
 
-        _validateTargetOperatorIds(sourceGroupId, input.targetOperatorIds);
-    }
-
-    function _validateTargetOperatorIds(
-        uint256 sourceGroupId,
-        uint256[] memory targetOperatorIds
-    ) private view {
         uint256 targetsCount = targetOperatorIds.length;
         require(targetsCount > 0, ERROR_EMPTY_TARGET_OPERATOR_IDS);
 
@@ -205,20 +209,5 @@ contract AllowConsolidationPair is IEVMScriptFactory {
                 ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
             );
         }
-    }
-
-    function _getSourceOperatorGroupId(
-        uint256 sourceOperatorId
-    ) private view returns (uint256) {
-        return
-            metaRegistry.getExternalOperatorGroupId(
-                IMetaRegistry.ExternalOperator({
-                    data: abi.encodePacked(
-                        bytes1(EXT_OPERATOR_TYPE_NOR),
-                        uint8(sourceModuleId),
-                        uint64(sourceOperatorId)
-                    )
-                })
-            );
     }
 }
