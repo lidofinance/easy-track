@@ -232,19 +232,11 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
                 uint64 externalNodeOperatorId
             ) = _decodeNORExtOperatorData(_externalOperators[i].data);
 
-            IStakingRouter.StakingModule memory stakingModule = stakingRouter
-                .getStakingModule(externalModuleId);
-            address externalModuleAddress = stakingModule.stakingModuleAddress;
-            require(
-                externalModuleAddress != address(0),
-                ERROR_EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST
+            INodeOperatorsRegistry externalModule = INodeOperatorsRegistry(
+                stakingRouter.getStakingModule(externalModuleId).stakingModuleAddress
             );
-            uint256 externalModuleNodeOperatorsCount = INodeOperatorsRegistry(
-                externalModuleAddress
-            )
-                .getNodeOperatorsCount();
             require(
-                externalNodeOperatorId < externalModuleNodeOperatorsCount,
+                externalNodeOperatorId < externalModule.getNodeOperatorsCount(),
                 ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST
             );
 

@@ -33,6 +33,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     string private constant ERROR_CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER =
         "CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER";
     string private constant ERROR_ZERO_MIGRATOR = "ZERO_MIGRATOR";
+    string private constant ERROR_ZERO_SUBMITTER = "ZERO_SUBMITTER";
 
     /// @notice keccak256("MANAGE_SIGNING_KEYS")
     bytes32 private constant MANAGE_SIGNING_KEYS_ROLE =
@@ -142,6 +143,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         address creator,
         AllowConsolidationPairInput memory input
     ) private view {
+        require(input.submitter != address(0), ERROR_ZERO_SUBMITTER);
 
         INodeOperatorsRegistry sourceModule = INodeOperatorsRegistry(stakingRouter.getStakingModule(sourceModuleId).stakingModuleAddress);
 

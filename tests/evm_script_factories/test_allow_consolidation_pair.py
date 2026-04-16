@@ -151,6 +151,12 @@ def test_deploy_reverts_with_zero_migrator(owner):
     )
 
 
+def test_submitter_must_not_be_zero(owner, allow_consolidation_pair_factory):
+    calldata = _encode_input_with_submitter(ZERO_ADDRESS)
+    with reverts("ZERO_SUBMITTER"):
+        allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
+
+
 def test_create_evm_script_called_by_stranger(stranger, allow_consolidation_pair_factory):
     calldata = _encode_input_with_submitter(stranger.address)
     with reverts("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER"):

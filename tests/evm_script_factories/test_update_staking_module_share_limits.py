@@ -5,8 +5,8 @@ from utils.evm_script import encode_call_script
 
 MODULE_ID = 3
 FACTORY_NAME = "Update module shares factory"
-CURRENT_STAKE_SHARE_LIMIT = 9_000
-CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 500
+CURRENT_STAKE_SHARE_LIMIT = 500
+CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 9_000
 
 
 def _encode_module_payload(current_stake, new_stake, current_priority, new_priority):
@@ -138,6 +138,23 @@ def test_reverts_when_priority_exit_threshold_delta_exceeds_cap(owner, StakingRo
     )
 
     with reverts("PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED"):
+        factory.createEVMScript(owner, calldata)
+
+
+def test_reverts_when_new_stake_share_exceeds_new_priority_exit_threshold(
+    owner, StakingRouterStub, UpdateStakingModuleShareLimits
+):
+    router = _deploy_router(owner, StakingRouterStub)
+    factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
+
+    calldata = _encode_module_payload(
+        CURRENT_STAKE_SHARE_LIMIT,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD + 1,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+    )
+
+    with reverts("INVALID_SHARE_PARAMS"):
         factory.createEVMScript(owner, calldata)
 
 
