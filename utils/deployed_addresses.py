@@ -11,16 +11,18 @@ _PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 @lru_cache(maxsize=1)
 def load_addresses():
-    """Load all addresses from integration-test-addresses-{network}.json."""
+    """Load all addresses from integration-test-addresses-{network}.json.
+
+    Returns an empty dict if the file doesn't exist, letting callers fall back
+    to local deployments on networks without a pre-populated addresses file.
+    """
     network_name = get_network_name()
     addresses_file = os.path.join(_PROJECT_ROOT, f'integration-test-addresses-{network_name}.json')
     try:
         with open(addresses_file) as f:
             return json.load(f)
-    except FileNotFoundError as exc:
-        raise FileNotFoundError(
-            f"Addresses file not found: {addresses_file}"
-        ) from exc
+    except FileNotFoundError:
+        return {}
     except json.JSONDecodeError as exc:
         raise ValueError(
             f"Invalid JSON in addresses file: {addresses_file}"
@@ -54,29 +56,41 @@ def get_easytrack_address():
 
 
 def get_single_token_config():
-    """Get single-token suite config: factory, builder, and instances."""
+    """Get single-token suite config: factory, builder, and instances.
+
+    Falls back to a single synthetic instance when none are configured, so
+    parametrized tests still run (deploying everything fresh) on networks
+    without an integration-test-addresses file.
+    """
     data = load_addresses()
     config = data.get("single_token", {})
     easytrack = data.get("easytrack", "")
+    instances = config.get("instances") or [{"name": "default"}]
     return {
         "easytrack": easytrack,
         "factory": config.get("factory", ""),
         "builder": config.get("builder", ""),
-        "instances": config.get("instances", []),
+        "instances": instances,
     }
 
 
 def get_multi_token_config():
-    """Get multi-token suite config: factory, builder, tokens_registry, and instances."""
+    """Get multi-token suite config: factory, builder, tokens_registry, and instances.
+
+    Falls back to a single synthetic instance when none are configured, so
+    parametrized tests still run (deploying everything fresh) on networks
+    without an integration-test-addresses file.
+    """
     data = load_addresses()
     config = data.get("multi_token", {})
     easytrack = data.get("easytrack", "")
+    instances = config.get("instances") or [{"name": "default"}]
     return {
         "easytrack": easytrack,
         "factory": config.get("factory", ""),
         "builder": config.get("builder", ""),
         "tokens_registry": config.get("tokens_registry", ""),
-        "instances": config.get("instances", []),
+        "instances": instances,
     }
 
 
