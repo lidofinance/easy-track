@@ -468,30 +468,21 @@ def cm_meta_registry(cm_contracts):
 
 
 @pytest.fixture(scope="module")
-def csm_allowed_merkle_gates_registry(csm_contracts):
-    return csm_contracts.allowed_merkle_gates_registry
-
-
-@pytest.fixture(scope="module")
-def cm_allowed_merkle_gates_registry(cm_contracts):
-    return cm_contracts.allowed_merkle_gates_registry
-
-
-def _first_allowed_gate(allowed_registry):
-    if allowed_registry is None:
+def csm_merkle_gate():
+    """Resolve CSM merkle gate address from CSM_MERKLE_GATE env var"""
+    addr = os.environ.get("CSM_MERKLE_GATE", "")
+    if not addr:
         return None
-    allowed_gates = allowed_registry.getAllowedGates()
-    return brownie.interface.IMerkleGate(allowed_gates[0])
+    return brownie.interface.IMerkleGate(addr)
 
 
 @pytest.fixture(scope="module")
-def csm_merkle_gate(csm_allowed_merkle_gates_registry):
-    return _first_allowed_gate(csm_allowed_merkle_gates_registry)
-
-
-@pytest.fixture(scope="module")
-def cm_merkle_gate(cm_allowed_merkle_gates_registry):
-    return _first_allowed_gate(cm_allowed_merkle_gates_registry)
+def cm_merkle_gate():
+    """Resolve CM merkle gate address from CM_MERKLE_GATE env var"""
+    addr = os.environ.get("CM_MERKLE_GATE", "")
+    if not addr:
+        return None
+    return brownie.interface.IMerkleGate(addr)
 
 
 @pytest.fixture(scope="module")

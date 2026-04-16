@@ -8,12 +8,10 @@ def addresses(network=DEFAULT_NETWORK):
     if network == "mainnet" or network == "mainnet-fork":
         return CMAddressesSetup(
             module="",
-            allowed_merkle_gates_registry="",
         )
     if network == "hoodi" or network == "hoodi-fork":
         return CMAddressesSetup(
             module="",
-            allowed_merkle_gates_registry="",
         )
     raise NameError(
         f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork"
@@ -30,12 +28,8 @@ class CMContractsSetup:
         self.meta_registry = interface.IMetaRegistry(
             interface.ICuratedModule(cm_addresses.module).META_REGISTRY()
         )
-        self.allowed_merkle_gates_registry = interface.IAllowedMerkleGatesRegistry(
-            cm_addresses.allowed_merkle_gates_registry
-        )
 
 
 @dataclass
 class CMAddressesSetup:
     module: str
-    allowed_merkle_gates_registry: str

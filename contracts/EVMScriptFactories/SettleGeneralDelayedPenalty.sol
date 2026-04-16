@@ -113,11 +113,11 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         for (uint256 i = 0; i < nodeOperatorsIds.length; ++i) {
             (uint256 nodeOperatorId, uint256 maxAmount) = (nodeOperatorsIds[i], maxAmounts[i]);
             require(nodeOperatorId < nodeOperatorsCount, ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID);
-            uint256 actualLocked = accounting.getLockedBond(
+            uint256 locked = accounting.getLockedBond(
                 nodeOperatorId
             );
             require(maxAmount > 0, ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO);
-            require(maxAmount >= actualLocked, ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED);
+            require(maxAmount >= locked, ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED);
         }
     }
 }

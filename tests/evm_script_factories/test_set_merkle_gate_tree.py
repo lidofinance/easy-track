@@ -1,11 +1,11 @@
 import pytest
-from brownie import reverts, SetMerkleGateTree, MerkleGateStub, AllowedMerkleGatesRegistry
+from brownie import reverts, SetMerkleGateTree, MerkleGateStub
 
 from utils.evm_script import encode_call_script, encode_calldata
 
 
 TEST_FACTORY_NAME = "CSMv3"
-TEST_REGISTRY_NAME = "CSM"
+
 
 def create_calldata(gate, current_tree_root, current_tree_cid, new_tree_root, new_tree_cid):
     return encode_calldata(
@@ -25,26 +25,13 @@ def merkle_gate_stub(owner):
 
 
 @pytest.fixture(scope="module")
-def allowed_gates_registry(owner, merkle_gate_stub):
-    registry = owner.deploy(
-        AllowedMerkleGatesRegistry,
-        owner,
-        TEST_REGISTRY_NAME,
-        [merkle_gate_stub],
-        ["Test Gate"],
-    )
-    return registry
+def set_merkle_gate_tree_factory(owner):
+    return SetMerkleGateTree.deploy(owner, TEST_FACTORY_NAME, {"from": owner})
 
 
-@pytest.fixture(scope="module") 
-def set_merkle_gate_tree_factory(owner, allowed_gates_registry):
-    return SetMerkleGateTree.deploy(owner, TEST_FACTORY_NAME, allowed_gates_registry, {"from": owner})
-
-
-def test_deploy(owner, allowed_gates_registry, set_merkle_gate_tree_factory):
+def test_deploy(owner, set_merkle_gate_tree_factory):
     """Must deploy contract with correct data"""
     assert set_merkle_gate_tree_factory.trustedCaller() == owner
-    assert set_merkle_gate_tree_factory.allowedMerkleGatesRegistry() == allowed_gates_registry
     assert set_merkle_gate_tree_factory.name() == TEST_FACTORY_NAME
 
 

@@ -7,7 +7,6 @@ import "../TrustedCaller.sol";
 import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IMerkleGate.sol";
-import "../interfaces/IAllowedMerkleGatesRegistry.sol";
 
 /// @author vgorkavenko
 /// @notice Creates EVMScript to set tree for Module's Gate that implements IMerkleGate
@@ -16,8 +15,6 @@ contract SetMerkleGateTree is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
-    string private constant ERROR_GATE_NOT_ALLOWED =
-        "GATE_NOT_ALLOWED";
     string private constant ERROR_EMPTY_TREE_ROOT =
         "EMPTY_TREE_ROOT";
     string private constant ERROR_EMPTY_TREE_CID =
@@ -36,18 +33,14 @@ contract SetMerkleGateTree is TrustedCaller, IEVMScriptFactory {
     /// @notice Alias for factory (e.g. "CSMv3")
     string public name;
 
-    /// @notice Address of AllowedMerkleGatesRegistry contract
-    IAllowedMerkleGatesRegistry public immutable allowedMerkleGatesRegistry;
-
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, string memory _name, address _allowedMerkleGatesRegistry)
+    constructor(address _trustedCaller, string memory _name)
         TrustedCaller(_trustedCaller)
     {
         name = _name;
-        allowedMerkleGatesRegistry = IAllowedMerkleGatesRegistry(_allowedMerkleGatesRegistry);
     }
 
     // -------------
@@ -123,8 +116,6 @@ contract SetMerkleGateTree is TrustedCaller, IEVMScriptFactory {
         bytes32 newTreeRoot,
         string memory newTreeCid
     ) private view {
-        require(allowedMerkleGatesRegistry.isGateAllowed(gate), ERROR_GATE_NOT_ALLOWED);
-
         IMerkleGate merkleGate = IMerkleGate(gate);
         bytes32 onChainTreeRoot = merkleGate.treeRoot();
         bytes32 onChainTreeCidHash = keccak256(bytes(merkleGate.treeCid()));

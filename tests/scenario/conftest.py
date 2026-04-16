@@ -150,13 +150,6 @@ def active_cm_meta_registry(request, use_deployed_contracts_from_env):
 
 
 @pytest.fixture(scope="module")
-def active_csm_allowed_merkle_gates_registry(request, use_deployed_contracts_from_env):
-    if not use_deployed_contracts_from_env:
-        return None
-    return request.getfixturevalue("csm_allowed_merkle_gates_registry")
-
-
-@pytest.fixture(scope="module")
 def active_csm_merkle_gate(request, use_deployed_contracts_from_env):
     if not use_deployed_contracts_from_env:
         return None

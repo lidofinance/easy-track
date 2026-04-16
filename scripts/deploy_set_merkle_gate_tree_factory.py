@@ -21,13 +21,6 @@ def _get_trusted_caller():
     return addr
 
 
-def _get_allowed_registry():
-    addr = os.environ.get("ALLOWED_MERKLE_GATES_REGISTRY")
-    if not addr:
-        raise EnvironmentError("Please set ALLOWED_MERKLE_GATES_REGISTRY env variable")
-    return addr
-
-
 def _get_factory_name():
     name = os.environ.get("FACTORY_NAME")
     if not name:
@@ -39,7 +32,6 @@ def main():
     network_name = get_network_name()
     deployer = get_deployer_account(get_is_live(), network=network_name, dev_ldo_transfer=False)
     trusted_caller = _get_trusted_caller()
-    allowed_registry = _get_allowed_registry()
     factory_name = _get_factory_name()
 
     log.br()
@@ -48,7 +40,6 @@ def main():
     log.ok("Deployer", deployer)
     log.br()
     log.ok("Trusted caller", trusted_caller)
-    log.ok("AllowedMerkleGatesRegistry", allowed_registry)
     log.ok("Factory name", factory_name)
 
     log.br()
@@ -65,7 +56,6 @@ def main():
     factory = SetMerkleGateTree.deploy(
         trusted_caller,
         factory_name,
-        allowed_registry,
         tx_params,
     )
 
@@ -79,7 +69,7 @@ def main():
             entry_key: {
                 "contract": "SetMerkleGateTree",
                 "address": factory.address,
-                "constructorArgs": [trusted_caller, factory_name, allowed_registry],
+                "constructorArgs": [trusted_caller, factory_name],
                 "txHash": factory.tx.txid,
             }
         }

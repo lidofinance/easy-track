@@ -33,7 +33,7 @@ def merkle_gate(
     and grant SET_TREE_ROLE to the owner for testing.
     """
     from brownie import MerkleGateStub
-    
+
     stub = owner.deploy(MerkleGateStub)
 
     # Initial tree parameters
@@ -49,26 +49,6 @@ def merkle_gate(
 
     return stub
 
-@pytest.fixture(scope="module")
-def allowed_gates_registry(
-    owner,
-    use_deployed_contracts_from_env,
-    active_csm_allowed_merkle_gates_registry,
-    merkle_gate,
-):
-    if use_deployed_contracts_from_env:
-        return active_csm_allowed_merkle_gates_registry
-
-    from brownie import AllowedMerkleGatesRegistry
-
-    return owner.deploy(
-        AllowedMerkleGatesRegistry,
-        owner,
-        "CSM",
-        [merkle_gate],
-        ["Scenario Gate"],
-    )
-
 
 @pytest.fixture(scope="module")
 def merkle_gate_set_tree_factory(
@@ -76,7 +56,6 @@ def merkle_gate_set_tree_factory(
     commitee_multisig,
     voting,
     et_contracts,
-    allowed_gates_registry,
     merkle_gate,
 ):
     """
@@ -88,17 +67,17 @@ def merkle_gate_set_tree_factory(
         SetMerkleGateTree,
         commitee_multisig,  # Trusted caller. It should be CSM committee multisig
         "CSMv3",
-        allowed_gates_registry.address,
     )
 
     # And add the factory to EasyTrack to activate it. It should be done on CSM v2 voting
+    # Permissions define which gates the factory is allowed to call
     permissions = merkle_gate.address + merkle_gate.setTreeParams.signature[2:]
     et_contracts.easy_track.addEVMScriptFactory(
         factory.address,
         permissions,
         {"from": voting}
     )
-    
+
     return factory
 
 
@@ -186,6 +165,148 @@ def test_merkle_gate_reverts_with_same_tree_cid_on_motion_creation(
     )
 
     with reverts("SAME_TREE_CID"):
+        et_contracts.easy_track.createMotion(
+            merkle_gate_set_tree_factory.address,
+            evm_script_calldata,
+            {"from": commitee_multisig},
+        )
+
+
+def test_merkle_gate_reverts_for_gate_not_in_permissions(
+    owner,
+    commitee_multisig,
+    et_contracts,
+    merkle_gate_set_tree_factory,
+):
+    """Motion creation must revert with HAS_NO_PERMISSIONS when targeting a gate
+    that is not listed in the factory's Easy Track permissions."""
+    from brownie import MerkleGateStub
+
+    # Deploy a second gate — NOT added to factory permissions
+    unpermitted_gate = owner.deploy(MerkleGateStub)
+    initial_root = bytes.fromhex("22" * 32)
+    initial_cid = "QmUnpermittedInitial"
+    unpermitted_gate.setTreeParams(initial_root, initial_cid, {"from": owner})
+
+    new_root = bytes.fromhex("33" * 32)
+    new_cid = "QmUnpermittedNew"
+    evm_script_calldata = create_calldata(
+        unpermitted_gate.address, initial_root, initial_cid, new_root, new_cid
+    )
+
+    with reverts("HAS_NO_PERMISSIONS"):
+        et_contracts.easy_track.createMotion(
+            merkle_gate_set_tree_factory.address,
+            evm_script_calldata,
+            {"from": commitee_multisig},
+        )
+
+
+def test_merkle_gate_permissions_update_adds_new_gate(
+    owner,
+    commitee_multisig,
+    voting,
+    et_contracts,
+    merkle_gate,
+    merkle_gate_set_tree_factory,
+    easytrack_executor,
+):
+    """After updating factory permissions to include a new gate,
+    motions targeting the new gate must succeed."""
+    from brownie import MerkleGateStub
+
+    # Deploy a new gate
+    new_gate = owner.deploy(MerkleGateStub)
+    initial_root = bytes.fromhex("44" * 32)
+    initial_cid = "QmNewGateInitial"
+    new_gate.setTreeParams(initial_root, initial_cid, {"from": owner})
+
+    # Grant SET_TREE_ROLE to the EVM script executor
+    set_tree_role = new_gate.SET_TREE_ROLE()
+    new_gate.grantRole(set_tree_role, et_contracts.evm_script_executor.address, {"from": owner})
+
+    # Update factory permissions: remove + re-add with both gates
+    et_contracts.easy_track.removeEVMScriptFactory(
+        merkle_gate_set_tree_factory.address,
+        {"from": voting},
+    )
+
+    selector = merkle_gate.setTreeParams.signature[2:]
+    permissions = (
+        merkle_gate.address + selector
+        + new_gate.address[2:] + selector
+    )
+    et_contracts.easy_track.addEVMScriptFactory(
+        merkle_gate_set_tree_factory.address,
+        permissions,
+        {"from": voting},
+    )
+
+    # Now a motion for the new gate should succeed
+    new_root = bytes.fromhex("55" * 32)
+    new_cid = "QmNewGateUpdated"
+    evm_script_calldata = create_calldata(
+        new_gate.address, initial_root, initial_cid, new_root, new_cid
+    )
+
+    easytrack_executor(
+        commitee_multisig, merkle_gate_set_tree_factory, evm_script_calldata
+    )
+
+    assert tree_root_hex(new_gate.treeRoot()) == "0x" + new_root.hex()
+    assert new_gate.treeCid() == new_cid
+
+
+def test_merkle_gate_permissions_update_removes_gate(
+    owner,
+    commitee_multisig,
+    voting,
+    et_contracts,
+    merkle_gate,
+    merkle_gate_set_tree_factory,
+):
+    """After removing a gate from factory permissions,
+    motions targeting that gate must revert with HAS_NO_PERMISSIONS."""
+    from brownie import MerkleGateStub
+
+    # Deploy a gate, add it to permissions
+    removable_gate = owner.deploy(MerkleGateStub)
+    initial_root = bytes.fromhex("66" * 32)
+    initial_cid = "QmRemovableGateInitial"
+    removable_gate.setTreeParams(initial_root, initial_cid, {"from": owner})
+
+    selector = merkle_gate.setTreeParams.signature[2:]
+
+    # Re-register factory with both gates
+    et_contracts.easy_track.removeEVMScriptFactory(
+        merkle_gate_set_tree_factory.address,
+        {"from": voting},
+    )
+    et_contracts.easy_track.addEVMScriptFactory(
+        merkle_gate_set_tree_factory.address,
+        merkle_gate.address + selector + removable_gate.address[2:] + selector,
+        {"from": voting},
+    )
+
+    # Now remove the removable gate from permissions (keep only merkle_gate)
+    et_contracts.easy_track.removeEVMScriptFactory(
+        merkle_gate_set_tree_factory.address,
+        {"from": voting},
+    )
+    et_contracts.easy_track.addEVMScriptFactory(
+        merkle_gate_set_tree_factory.address,
+        merkle_gate.address + selector,
+        {"from": voting},
+    )
+
+    # Motion targeting the removed gate must now fail
+    new_root = bytes.fromhex("77" * 32)
+    new_cid = "QmRemovableGateNew"
+    evm_script_calldata = create_calldata(
+        removable_gate.address, initial_root, initial_cid, new_root, new_cid
+    )
+
+    with reverts("HAS_NO_PERMISSIONS"):
         et_contracts.easy_track.createMotion(
             merkle_gate_set_tree_factory.address,
             evm_script_calldata,
