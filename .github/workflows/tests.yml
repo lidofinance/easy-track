@@ -20,34 +20,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          poetry install
-          npm ci
-
-      - name: Compile contracts
-        run: poetry run brownie compile
-
-      - name: Import network config
-        run: poetry run brownie networks import network-config.yaml True
+          poetry-version: ${{ env.POETRY_VERSION }}
 
       - name: Run DateTime library unit tests
         run: >
@@ -66,34 +43,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          poetry install
-          npm ci
-
-      - name: Compile contracts
-        run: poetry run brownie compile
-
-      - name: Import network config
-        run: poetry run brownie networks import network-config.yaml True
+          poetry-version: ${{ env.POETRY_VERSION }}
 
       - name: Run unit tests
         run: >
@@ -114,34 +68,11 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
         with:
           python-version: ${{ env.PYTHON_VERSION }}
-
-      - name: Install poetry
-        run: pipx install poetry==${{ env.POETRY_VERSION }}
-
-      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
-        with:
-          python-version: ${{ env.PYTHON_VERSION }}
-          cache: "poetry"
-
-      - name: Setup Node
-        uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
-        with:
-          node-version-file: ".nvmrc"
-          cache: "npm"
-
-      - name: Install dependencies
-        run: |
-          poetry install
-          npm ci
-
-      - name: Compile contracts
-        run: poetry run brownie compile
-
-      - name: Import network config
-        run: poetry run brownie networks import network-config.yaml True
+          poetry-version: ${{ env.POETRY_VERSION }}
 
       - name: Run integration tests
         run: >
