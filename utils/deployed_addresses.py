@@ -2,6 +2,7 @@ import json
 import os
 from functools import lru_cache
 
+import yaml
 import brownie
 from utils import log
 from utils.config import get_network_name
@@ -11,21 +12,21 @@ _PROJECT_ROOT = os.path.join(os.path.dirname(__file__), '..')
 
 @lru_cache(maxsize=1)
 def load_addresses():
-    """Load all addresses from integration-test-addresses-{network}.json.
+    """Load all addresses from integration-test-addresses-{network}.yaml.
 
     Returns an empty dict if the file doesn't exist, letting callers fall back
     to local deployments on networks without a pre-populated addresses file.
     """
     network_name = get_network_name()
-    addresses_file = os.path.join(_PROJECT_ROOT, f'integration-test-addresses-{network_name}.json')
+    addresses_file = os.path.join(_PROJECT_ROOT, f'integration-test-addresses-{network_name}.yaml')
     try:
         with open(addresses_file) as f:
-            return json.load(f)
+            return yaml.safe_load(f) or {}
     except FileNotFoundError:
         return {}
-    except json.JSONDecodeError as exc:
+    except yaml.YAMLError as exc:
         raise ValueError(
-            f"Invalid JSON in addresses file: {addresses_file}"
+            f"Invalid YAML in addresses file: {addresses_file}"
         ) from exc
 
 

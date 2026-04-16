@@ -39,7 +39,7 @@ def stranger(accounts):
 def deployed_contracts():
     """
     Merges contract addresses from two sources:
-    - integration-test-addresses-{network}.json (structured payout data, easytrack)
+    - integration-test-addresses-{network}.yaml (structured payout data, easytrack)
     - deployed-{network}.json (flat factory addresses, takes priority)
     """
     data = load_addresses()

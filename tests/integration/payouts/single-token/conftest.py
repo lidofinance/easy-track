@@ -66,7 +66,7 @@ _single_token_config = get_single_token_config()
 )
 def deployed_contracts(request):
     """
-    Parametrized over all single-token AllowedRecipients instances from integration-test-addresses.json.
+    Parametrized over all single-token AllowedRecipients instances from integration-test-addresses-{network}.yaml.
     Factory and builder are shared across all instances; add/remove are optional per instance.
     """
     instance = request.param
