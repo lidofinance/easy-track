@@ -26,7 +26,7 @@ contract AllowConsolidationPair is IEVMScriptFactory {
 
     string private constant ERROR_SOURCE_OPERATOR_ID_DOES_NOT_EXIST = "SOURCE_OPERATOR_ID_DOES_NOT_EXIST";
     string private constant ERROR_EMPTY_TARGET_OPERATOR_IDS = "EMPTY_TARGET_OPERATOR_IDS";
-    string private constant ERROR_DUPLICATE_TARGET_OPERATOR_ID = "DUPLICATE_TARGET_OPERATOR_ID";
+    string private constant ERROR_TARGET_OPERATOR_IDS_NOT_SORTED = "TARGET_OPERATOR_IDS_NOT_SORTED";
     string private constant ERROR_NODE_OPERATOR_IS_NOT_ACTIVE = "NODE_OPERATOR_IS_NOT_ACTIVE";
     string private constant ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY =
         "OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY";
@@ -35,13 +35,13 @@ contract AllowConsolidationPair is IEVMScriptFactory {
     string private constant ERROR_ZERO_MIGRATOR = "ZERO_MIGRATOR";
     string private constant ERROR_ZERO_SUBMITTER = "ZERO_SUBMITTER";
 
-    /// @notice keccak256("MANAGE_SIGNING_KEYS")
-    bytes32 private constant MANAGE_SIGNING_KEYS_ROLE =
-        0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
-
     // -------------
     // CONSTANTS
     // -------------
+
+    /// @notice keccak256("MANAGE_SIGNING_KEYS")
+    bytes32 private constant MANAGE_SIGNING_KEYS_ROLE =
+        0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
 
     // ExternalOperatorLib.OperatorType.NOR
     uint8 private constant EXT_OPERATOR_TYPE_NOR = 0;
@@ -191,13 +191,14 @@ contract AllowConsolidationPair is IEVMScriptFactory {
         uint256 targetsCount = targetOperatorIds.length;
         require(targetsCount > 0, ERROR_EMPTY_TARGET_OPERATOR_IDS);
 
+        uint256 prevTargetOperatorId;
         for (uint256 i; i < targetsCount; ++i) {
             uint256 targetOperatorId = targetOperatorIds[i];
 
-            for (uint256 j = i + 1; j < targetsCount; ++j) {
+            if (i > 0) {
                 require(
-                    targetOperatorId != targetOperatorIds[j],
-                    ERROR_DUPLICATE_TARGET_OPERATOR_ID
+                    targetOperatorId > prevTargetOperatorId,
+                    ERROR_TARGET_OPERATOR_IDS_NOT_SORTED
                 );
             }
 
@@ -210,6 +211,8 @@ contract AllowConsolidationPair is IEVMScriptFactory {
                 metaRegistry.getNodeOperatorGroupId(targetOperatorId) == sourceGroupId,
                 ERROR_OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY
             );
+
+            prevTargetOperatorId = targetOperatorId;
         }
     }
 }

@@ -19,12 +19,14 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
     string private constant ERROR_VALIDATOR_NOT_SLASHED = "VALIDATOR_NOT_SLASHED";
     string private constant ERROR_ZERO_EXIT_BALANCE = "ZERO_EXIT_BALANCE";
     string private constant ERROR_INVALID_SLASHING_PENALTY = "INVALID_SLASHING_PENALTY";
+    string private constant ERROR_ZERO_MODULE_ADDRESS = "ZERO_MODULE_ADDRESS";
+    string private constant ERROR_NOT_SORTED = "NOT_SORTED";
 
     // -------------
     // VARIABLES
     // -------------
 
-    // @notice Alias for the factory.
+    /// @notice Alias for the factory.
     string public name;
 
     /// @notice Address of the module.
@@ -39,6 +41,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
         string memory _name,
         address _module
     ) TrustedCaller(_trustedCaller) {
+        require(_module != address(0), ERROR_ZERO_MODULE_ADDRESS);
         name = _name;
         module = IBaseModule(_module);
     }
@@ -97,11 +100,21 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
         require(_decodedCallData.length > 0, ERROR_EMPTY_VALIDATOR_INFO_LIST);
 
         uint256 nosCount = module.getNodeOperatorsCount();
+        WithdrawnValidatorInfo memory prev;
         for (uint256 i; i < _decodedCallData.length; ++i) {
-            require(_decodedCallData[i].nodeOperatorId < nosCount, ERROR_OPERATOR_DOES_NOT_EXIST);
-            require(_decodedCallData[i].exitBalance > 0, ERROR_ZERO_EXIT_BALANCE);
-            require(_decodedCallData[i].isSlashed, ERROR_VALIDATOR_NOT_SLASHED);
-            require(_decodedCallData[i].slashingPenalty > 0, ERROR_INVALID_SLASHING_PENALTY);
+            WithdrawnValidatorInfo memory current = _decodedCallData[i];
+            require(current.nodeOperatorId < nosCount, ERROR_OPERATOR_DOES_NOT_EXIST);
+            require(current.exitBalance > 0, ERROR_ZERO_EXIT_BALANCE);
+            require(current.isSlashed, ERROR_VALIDATOR_NOT_SLASHED);
+            require(current.slashingPenalty > 0, ERROR_INVALID_SLASHING_PENALTY);
+
+            if (i > 0) {
+                require(
+                    current.nodeOperatorId > prev.nodeOperatorId,
+                    ERROR_NOT_SORTED
+                );
+            }
+            prev = current;
         }
     }
 }

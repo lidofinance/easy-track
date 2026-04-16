@@ -251,25 +251,15 @@ def test_target_operator_ids_must_not_be_empty(owner, allow_consolidation_pair_f
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
 
 
-def test_create_evm_script_preserves_unsorted_target_ids_order(
-    owner,
-    allow_consolidation_pair_factory,
-    consolidation_migrator_stub,
-):
-    unsorted_target_ids = [4, 3]
-    calldata = _encode_input_with_submitter(owner.address, target_operator_ids=unsorted_target_ids)
-    evm_script = allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
-
-    assert evm_script == _expected_evm_script(
-        consolidation_migrator_stub,
-        owner.address,
-        unsorted_target_ids,
-    )
+def test_target_operator_ids_must_be_sorted_ascending(owner, allow_consolidation_pair_factory):
+    calldata = _encode_input_with_submitter(owner.address, target_operator_ids=[4, 3])
+    with reverts("TARGET_OPERATOR_IDS_NOT_SORTED"):
+        allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
 
 
 def test_target_operator_ids_must_not_have_duplicates(owner, allow_consolidation_pair_factory):
     calldata = _encode_input_with_submitter(owner.address, target_operator_ids=[3, 3])
-    with reverts("DUPLICATE_TARGET_OPERATOR_ID"):
+    with reverts("TARGET_OPERATOR_IDS_NOT_SORTED"):
         allow_consolidation_pair_factory.createEVMScript(owner, calldata, {"from": owner})
 
 

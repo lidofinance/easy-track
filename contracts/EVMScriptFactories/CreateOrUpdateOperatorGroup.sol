@@ -25,10 +25,10 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         "INVALID_EMPTY_GROUP_UPDATE";
     string private constant ERROR_SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH =
         "SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH";
-    string private constant ERROR_DUPLICATE_SUB_NODE_OPERATOR =
-        "DUPLICATE_SUB_NODE_OPERATOR";
-    string private constant ERROR_DUPLICATE_EXTERNAL_OPERATOR =
-        "DUPLICATE_EXTERNAL_OPERATOR";
+    string private constant ERROR_SUB_NODE_OPERATORS_NOT_SORTED =
+        "SUB_NODE_OPERATORS_NOT_SORTED";
+    string private constant ERROR_EXTERNAL_OPERATORS_NOT_SORTED =
+        "EXTERNAL_OPERATORS_NOT_SORTED";
     string private constant ERROR_SUB_NODE_OPERATOR_DOES_NOT_EXIST =
         "SUB_NODE_OPERATOR_DOES_NOT_EXIST";
     string private constant ERROR_INVALID_EXTERNAL_OPERATOR_DATA_LENGTH =
@@ -204,6 +204,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         uint256 subNodeOperatorsCount = _subNodeOperators.length;
 
         uint256 sharesSum;
+        uint64 prevNodeOperatorId;
         for (uint256 i = 0; i < subNodeOperatorsCount; ++i) {
             uint64 nodeOperatorId = _subNodeOperators[i].nodeOperatorId;
             require(
@@ -212,12 +213,13 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
             );
             sharesSum += _subNodeOperators[i].share;
 
-            for (uint256 j = i + 1; j < subNodeOperatorsCount; ++j) {
+            if (i > 0) {
                 require(
-                    nodeOperatorId != _subNodeOperators[j].nodeOperatorId,
-                    ERROR_DUPLICATE_SUB_NODE_OPERATOR
+                    nodeOperatorId > prevNodeOperatorId,
+                    ERROR_SUB_NODE_OPERATORS_NOT_SORTED
                 );
             }
+            prevNodeOperatorId = nodeOperatorId;
         }
 
         require(
@@ -230,6 +232,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         IMetaRegistry.ExternalOperator[] memory _externalOperators
     ) private view {
         uint256 externalOperatorsCount = _externalOperators.length;
+        uint64 prevExternalNodeOperatorId;
         for (uint256 i = 0; i < externalOperatorsCount; ++i) {
             (
                 uint8 externalModuleId,
@@ -249,16 +252,13 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
                 ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST
             );
 
-            bytes32 externalOperatorHash = keccak256(
-                _externalOperators[i].data
-            );
-            for (uint256 j = i + 1; j < externalOperatorsCount; ++j) {
+            if (i > 0) {
                 require(
-                    externalOperatorHash !=
-                        keccak256(_externalOperators[j].data),
-                    ERROR_DUPLICATE_EXTERNAL_OPERATOR
+                    externalNodeOperatorId > prevExternalNodeOperatorId,
+                    ERROR_EXTERNAL_OPERATORS_NOT_SORTED
                 );
             }
+            prevExternalNodeOperatorId = externalNodeOperatorId;
         }
     }
 

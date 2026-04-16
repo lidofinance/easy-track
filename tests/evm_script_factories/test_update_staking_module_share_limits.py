@@ -1,6 +1,7 @@
 from brownie import reverts
 from eth_abi import encode
 from utils.evm_script import encode_call_script
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 
 MODULE_ID = 3
@@ -36,6 +37,26 @@ def _deploy_router(owner, StakingRouterStub):
     router.setStakingModule(MODULE_ID, owner.address)
     router.setModuleShares(MODULE_ID, CURRENT_STAKE_SHARE_LIMIT, CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD)
     return router
+
+
+def test_deploy_reverts_on_zero_staking_router(owner, UpdateStakingModuleShareLimits):
+    ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+    try:
+        with reverts("ZERO_STAKING_ROUTER"):
+            owner.deploy(
+                UpdateStakingModuleShareLimits,
+                owner,
+                FACTORY_NAME,
+                ZERO_ADDRESS,
+                MODULE_ID,
+                500,
+                400,
+                300,
+                200,
+            )
+    except ValueError:
+        if "ZERO_STAKING_ROUTER" != get_last_tx_revert_reason():
+            raise
 
 
 def test_create_evm_script(owner, StakingRouterStub, UpdateStakingModuleShareLimits):

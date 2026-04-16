@@ -18,12 +18,20 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         uint16 newPriorityExitShareThreshold;
     }
 
+    // -------------
+    // ERRORS
+    // -------------
+
     string private constant ERROR_CURRENT_VALUES_MISMATCH = "CURRENT_VALUES_MISMATCH";
-    string private constant ERROR_STAKING_MODULE_DOES_NOT_EXIST = "STAKING_MODULE_DOES_NOT_EXIST";
-    string private constant ERROR_SHARE_LIMITS = "STAKE_SHARE_LIMIT_DELTA_EXCEEDED";
-    string private constant ERROR_EXIT_THRESHOLD_LIMITS = "PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED";
+    string private constant ERROR_STAKE_SHARE_LIMIT_DELTA_EXCEEDED = "STAKE_SHARE_LIMIT_DELTA_EXCEEDED";
+    string private constant ERROR_PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED = "PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED";
     string private constant ERROR_INVALID_SHARE_PARAMS = "INVALID_SHARE_PARAMS";
     string private constant ERROR_NO_CHANGES = "NO_CHANGES";
+    string private constant ERROR_ZERO_STAKING_ROUTER = "ZERO_STAKING_ROUTER";
+
+    // -------------
+    // VARIABLES
+    // -------------
 
     string public name;
     IStakingRouter public immutable stakingRouter;
@@ -52,6 +60,7 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         uint16 _maxPriorityExitShareThresholdIncrease,
         uint16 _maxPriorityExitShareThresholdDecrease
     ) TrustedCaller(_trustedCaller) {
+        require(_stakingRouter != address(0), ERROR_ZERO_STAKING_ROUTER);
         name = _name;
         stakingRouter = IStakingRouter(_stakingRouter);
         stakingModuleId = _stakingModuleId;
@@ -71,13 +80,9 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        ModuleShareParams memory params = _decodeCallData(_evmScriptCallData);
+        ModuleShareParams memory params = _decodeEVMScriptCallData(_evmScriptCallData);
         IStakingRouter.StakingModule memory module =
             stakingRouter.getStakingModule(stakingModuleId);
-        require(
-            module.stakingModuleAddress != address(0),
-            ERROR_STAKING_MODULE_DOES_NOT_EXIST
-        );
 
         require(
             module.stakeShareLimit == params.currentStakeShareLimit &&
@@ -106,10 +111,10 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         pure
         returns (ModuleShareParams memory)
     {
-        return _decodeCallData(_evmScriptCallData);
+        return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
-    function _decodeCallData(bytes memory _evmScriptCallData)
+    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
         returns (ModuleShareParams memory params)
@@ -134,9 +139,9 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
                 int256(uint256(_params.newStakeShareLimit)) -
                 int256(uint256(_params.currentStakeShareLimit));
             if (delta > 0) {
-                require(uint256(delta) <= maxStakeShareLimitIncrease, ERROR_SHARE_LIMITS);
+                require(uint256(delta) <= maxStakeShareLimitIncrease, ERROR_STAKE_SHARE_LIMIT_DELTA_EXCEEDED);
             } else {
-                require(uint256(-delta) <= maxStakeShareLimitDecrease, ERROR_SHARE_LIMITS);
+                require(uint256(-delta) <= maxStakeShareLimitDecrease, ERROR_STAKE_SHARE_LIMIT_DELTA_EXCEEDED);
             }
         }
 
@@ -147,12 +152,12 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
             if (deltaPriority > 0) {
                 require(
                     uint256(deltaPriority) <= maxPriorityExitShareThresholdIncrease,
-                    ERROR_EXIT_THRESHOLD_LIMITS
+                    ERROR_PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED
                 );
             } else {
                 require(
                     uint256(-deltaPriority) <= maxPriorityExitShareThresholdDecrease,
-                    ERROR_EXIT_THRESHOLD_LIMITS
+                    ERROR_PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED
                 );
             }
         }

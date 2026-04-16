@@ -255,6 +255,17 @@ def test_create_group_reverts_with_empty_sub_node_operators_and_non_empty_extern
     )
 
 
+def test_create_group_reverts_with_unsorted_sub_node_operators(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(2, 5000), (1, 5000)],
+        external_operators=[],
+        revert_reason="SUB_NODE_OPERATORS_NOT_SORTED",
+    )
+
+
 def test_create_group_reverts_with_duplicate_sub_node_operators(owner, factory):
     assert_create_evm_script_reverts(
         factory=factory,
@@ -262,7 +273,7 @@ def test_create_group_reverts_with_duplicate_sub_node_operators(owner, factory):
         group_id=0,
         sub_node_operators=[(1, 5000), (1, 5000)],
         external_operators=[],
-        revert_reason="DUPLICATE_SUB_NODE_OPERATOR",
+        revert_reason="SUB_NODE_OPERATORS_NOT_SORTED",
     )
 
 
@@ -277,6 +288,20 @@ def test_create_group_reverts_with_shares_sum_mismatch(owner, factory):
     )
 
 
+def test_create_group_reverts_with_unsorted_external_operators(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[
+            make_nor_external_operator(1, 2),
+            make_nor_external_operator(1, 1),
+        ],
+        revert_reason="EXTERNAL_OPERATORS_NOT_SORTED",
+    )
+
+
 def test_create_group_reverts_with_duplicate_external_operators(owner, factory):
     duplicate_external_operator = make_nor_external_operator(1, 1)
     assert_create_evm_script_reverts(
@@ -288,7 +313,7 @@ def test_create_group_reverts_with_duplicate_external_operators(owner, factory):
             duplicate_external_operator,
             duplicate_external_operator,
         ],
-        revert_reason="DUPLICATE_EXTERNAL_OPERATOR",
+        revert_reason="EXTERNAL_OPERATORS_NOT_SORTED",
     )
 
 

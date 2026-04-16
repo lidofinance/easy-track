@@ -9,6 +9,7 @@ from brownie import (
 )
 
 from utils.evm_script import encode_call_script, encode_calldata
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 WithdrawnValidatorInfo = namedtuple(
     "WithdrawnValidatorInfo",
@@ -49,6 +50,20 @@ def test_deploy(owner, module, factory):
     assert factory.trustedCaller() == owner
     assert factory.name() == FACTORY_NAME
     assert factory.module() == module
+
+
+def test_deploy_reverts_on_zero_module_address(owner):
+    try:
+        with reverts("ZERO_MODULE_ADDRESS"):
+            ReportWithdrawalsForSlashedValidators.deploy(
+                owner,
+                FACTORY_NAME,
+                "0x0000000000000000000000000000000000000000",
+                {"from": owner},
+            )
+    except ValueError:
+        if "ZERO_MODULE_ADDRESS" != get_last_tx_revert_reason():
+            raise
 
 
 def test_create_evm_script_reverts_if_called_by_stranger(stranger, factory):
@@ -220,6 +235,55 @@ def test_create_evm_script_reverts_if_non_existing_operator(owner, factory, valu
 def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     with reverts("VALIDATOR_NOT_SLASHED"):
+        factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+
+@pytest.mark.parametrize(
+    "values",
+    [
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
+                    no_id=1,
+                    key_index=0,
+                    exit_balance=100500,
+                    slashing_penalty=16,
+                    is_slashed=True,
+                ),
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=1,
+                    exit_balance=30000,
+                    slashing_penalty=1,
+                    is_slashed=True,
+                ),
+            ],
+            id="descending_operator_ids",
+        ),
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=1,
+                    exit_balance=100500,
+                    slashing_penalty=16,
+                    is_slashed=True,
+                ),
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=5,
+                    exit_balance=30000,
+                    slashing_penalty=1,
+                    is_slashed=True,
+                ),
+            ],
+            id="same_operator_id",
+        ),
+    ],
+)
+def test_create_evm_script_reverts_if_not_sorted(owner, factory, values):
+    EVM_SCRIPT_CALLDATA = create_calldata(values)
+    with reverts("NOT_SORTED"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
 
 
