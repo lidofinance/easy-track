@@ -66,6 +66,10 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
         return _stakingRouter;
     }
 
+    function getConsolidationBus() external view override returns (address) {
+        return address(0);
+    }
+
     function isPairAllowed(
         uint256 sourceOperatorId,
         uint256 targetOperatorId
@@ -86,18 +90,10 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
         return _submitters[sourceOperatorId][targetOperatorId];
     }
 
-    function validateConsolidationBatch(
-        uint256,
-        uint256,
-        uint256[] calldata,
-        uint256[] calldata
-    ) external view override {}
-
     function submitConsolidationBatch(
         uint256,
         uint256,
-        uint256[] calldata,
-        uint256[] calldata
+        ConsolidationIndexGroup[] calldata
     ) external override {}
 
     function allowPair(
@@ -129,6 +125,18 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
         address submitter = _submitters[sourceOperatorId][targetOperatorId];
         _submitters[sourceOperatorId][targetOperatorId] = address(0);
         emit ConsolidationPairDisallowed(sourceOperatorId, targetOperatorId, submitter);
+    }
+
+    function selfDisallowPair(uint256 sourceOperatorId, uint256 targetOperatorId) external override {
+        require(
+            _submitters[sourceOperatorId][targetOperatorId] == msg.sender,
+            "NOT_AUTHORIZED"
+        );
+
+        _allowedPairs[sourceOperatorId][targetOperatorId] = false;
+        _removeAllowedTarget(sourceOperatorId, targetOperatorId);
+        _submitters[sourceOperatorId][targetOperatorId] = address(0);
+        emit ConsolidationPairDisallowed(sourceOperatorId, targetOperatorId, msg.sender);
     }
 
     function _removeAllowedTarget(uint256 sourceOperatorId, uint256 targetOperatorId) private {

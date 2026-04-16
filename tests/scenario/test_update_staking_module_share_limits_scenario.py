@@ -5,8 +5,8 @@ from utils.evm_script import encode_calldata
 
 
 FACTORY_NAME = "SR"
-CURRENT_STAKE_SHARE_LIMIT = 9000
-CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 500
+CURRENT_STAKE_SHARE_LIMIT = 500
+CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 9000
 
 
 def create_calldata(current_stake, new_stake, current_priority, new_priority):
@@ -161,7 +161,7 @@ def test_update_staking_module_share_limits_reverts_for_missing_module(
 
     evm_script_calldata = create_calldata(0, 100, 0, 100)
 
-    with reverts("STAKING_MODULE_DOES_NOT_EXIST"):
+    with reverts("StakingModuleUnregistered: "):
         et_contracts.easy_track.createMotion(
             factory.address,
             evm_script_calldata,

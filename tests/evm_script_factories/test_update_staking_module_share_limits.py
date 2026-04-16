@@ -178,7 +178,7 @@ def test_reverts_if_staking_module_does_not_exist(owner, StakingRouterStub, Upda
     factory = _deploy_factory_for_module_id(owner, router, UpdateStakingModuleShareLimits, MODULE_ID + 1)
     calldata = _encode_module_payload(0, 100, 0, 100)
 
-    with reverts("STAKING_MODULE_DOES_NOT_EXIST"):
+    with reverts("StakingModuleUnregistered: "):
         factory.createEVMScript(owner, calldata)
 
 

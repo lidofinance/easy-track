@@ -317,7 +317,7 @@ def ensure_gate_unpaused(impersonate_account, first_role_holder):
 def ensure_module_locked_bond(impersonate_account, first_role_holder):
     def _ensure(module, node_operator_id, amount):
         accounting = brownie.interface.IAccounting(module.ACCOUNTING())
-        current_locked = accounting.getActualLockedBond(node_operator_id)
+        current_locked = accounting.getLockedBond(node_operator_id)
         if current_locked > 0:
             return current_locked
 
@@ -330,7 +330,7 @@ def ensure_module_locked_bond(impersonate_account, first_role_holder):
             "scenario prep",
             {"from": reporter_sender},
         )
-        return accounting.getActualLockedBond(node_operator_id)
+        return accounting.getLockedBond(node_operator_id)
 
     return _ensure
 

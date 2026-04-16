@@ -327,7 +327,7 @@ def test_create_group_reverts_with_missing_external_module(owner, factory):
         group_id=0,
         sub_node_operators=[(1, 10000)],
         external_operators=[make_nor_external_operator(99, 1)],
-        revert_reason="EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST",
+        revert_reason="StakingModuleUnregistered: ",
     )
 
 

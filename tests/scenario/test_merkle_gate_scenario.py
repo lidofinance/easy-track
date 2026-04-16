@@ -3,9 +3,12 @@ from brownie import reverts
 from utils.evm_script import encode_calldata
 
 
-def create_calldata(gate, tree_root, tree_cid):
+def create_calldata(gate, current_tree_root, current_tree_cid, new_tree_root, new_tree_cid):
     """Helper function to create encoded calldata for setTreeParams"""
-    return encode_calldata(["address", "bytes32", "string"], [gate, tree_root, tree_cid])
+    return encode_calldata(
+        ["address", "bytes32", "string", "bytes32", "string"],
+        [gate, current_tree_root, current_tree_cid, new_tree_root, new_tree_cid],
+    )
 
 
 def tree_root_hex(tree_root):
@@ -117,8 +120,13 @@ def test_merkle_gate_scenario(
     ]
 
     for update in tree_updates:
+        # Fetch current on-chain values for staleness guard
+        current_root = merkle_gate.treeRoot()
+        current_cid = merkle_gate.treeCid()
         # Create EVM script for this update
-        evm_script_calldata = create_calldata(merkle_gate.address, update["root"], update["cid"])
+        evm_script_calldata = create_calldata(
+            merkle_gate.address, current_root, current_cid, update["root"], update["cid"]
+        )
         
         easytrack_executor(
             commitee_multisig, merkle_gate_set_tree_factory, evm_script_calldata
@@ -136,13 +144,16 @@ def test_merkle_gate_reverts_with_same_tree_root_on_motion_creation(
     merkle_gate_set_tree_factory,
 ):
     current_root = merkle_gate.treeRoot()
+    current_cid = merkle_gate.treeCid()
     new_cid = "QmScenarioNewCid123"
-    if merkle_gate.treeCid() == new_cid:
+    if current_cid == new_cid:
         new_cid = "QmScenarioNewCid456"
 
     evm_script_calldata = create_calldata(
         merkle_gate.address,
         current_root,
+        current_cid,
+        current_root,  # same root → should revert
         new_cid,
     )
 
@@ -160,16 +171,18 @@ def test_merkle_gate_reverts_with_same_tree_cid_on_motion_creation(
     merkle_gate,
     merkle_gate_set_tree_factory,
 ):
-    current_root = tree_root_hex(merkle_gate.treeRoot())
+    current_root = merkle_gate.treeRoot()
     current_cid = merkle_gate.treeCid()
     new_root = bytes.fromhex("cd" * 32)
-    if current_root == "0x" + new_root.hex():
+    if tree_root_hex(current_root) == "0x" + new_root.hex():
         new_root = bytes.fromhex("ef" * 32)
 
     evm_script_calldata = create_calldata(
         merkle_gate.address,
-        new_root,
+        current_root,
         current_cid,
+        new_root,
+        current_cid,  # same CID → should revert
     )
 
     with reverts("SAME_TREE_CID"):

@@ -31,7 +31,7 @@ def module(
 
     module = owner.deploy(CSLikeModuleStub)
     module.mock_setNodeOperatorsCount(1000, {"from": owner})
-    module.mock_setActualLockedBond(0, 1000, {"from": owner})
+    module.mock_setLockedBond(0, 1000, {"from": owner})
     return module
 
 
@@ -83,7 +83,7 @@ def test_settle_general_delayed_penalty_scenario(
 ):
     node_operator_ids = [node_operator_id]
     ensure_module_locked_bond(module, node_operator_ids[0], 10**16)
-    locked_before = accounting.getActualLockedBond(node_operator_ids[0])
+    locked_before = accounting.getLockedBond(node_operator_ids[0])
     assert locked_before > 0
     max_amounts = [locked_before]
     evm_script_calldata = create_calldata(node_operator_ids, max_amounts)
@@ -117,4 +117,4 @@ def test_settle_general_delayed_penalty_scenario(
         assert module.lastSettledCount() == 1
         assert module.lastSettledFirstNodeOperatorId() == node_operator_ids[0]
         assert module.lastSettledFirstMaxAmount() == max_amounts[0]
-    assert accounting.getActualLockedBond(node_operator_ids[0]) == 0
+    assert accounting.getLockedBond(node_operator_ids[0]) == 0

@@ -7,7 +7,7 @@ import {WithdrawnValidatorInfo} from "../interfaces/IBaseModule.sol";
 
 contract CSLikeModuleStub {
     uint256 internal _nodeOperatorsCount;
-    mapping(uint256 => uint256) internal _actualLockedBond;
+    mapping(uint256 => uint256) internal _lockedBond;
 
     uint256 public lastSettledCount;
     uint256 public lastSettledFirstNodeOperatorId;
@@ -34,12 +34,12 @@ contract CSLikeModuleStub {
         _nodeOperatorsCount = nodeOperatorsCount;
     }
 
-    function getActualLockedBond(uint256 nodeOperatorId) external view returns (uint256) {
-        return _actualLockedBond[nodeOperatorId];
+    function getLockedBond(uint256 nodeOperatorId) external view returns (uint256) {
+        return _lockedBond[nodeOperatorId];
     }
 
-    function mock_setActualLockedBond(uint256 nodeOperatorId, uint256 amount) external {
-        _actualLockedBond[nodeOperatorId] = amount;
+    function mock_setLockedBond(uint256 nodeOperatorId, uint256 amount) external {
+        _lockedBond[nodeOperatorId] = amount;
     }
 
     function settleGeneralDelayedPenalty(uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts) external {
@@ -52,7 +52,7 @@ contract CSLikeModuleStub {
         for (uint256 i; i < nodeOperatorIds.length; ++i) {
             uint256 nodeOperatorId = nodeOperatorIds[i];
             uint256 maxAmount = maxAmounts[i];
-            uint256 locked = _actualLockedBond[nodeOperatorId];
+            uint256 locked = _lockedBond[nodeOperatorId];
 
             if (locked == 0 || locked > maxAmount) {
                 continue;
@@ -63,7 +63,7 @@ contract CSLikeModuleStub {
                 lastSettledFirstMaxAmount = maxAmount;
             }
 
-            _actualLockedBond[nodeOperatorId] = 0;
+            _lockedBond[nodeOperatorId] = 0;
             ++lastSettledCount;
         }
 

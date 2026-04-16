@@ -35,8 +35,6 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         "INVALID_EXTERNAL_OPERATOR_DATA_LENGTH";
     string private constant ERROR_UNSUPPORTED_EXTERNAL_OPERATOR_TYPE =
         "UNSUPPORTED_EXTERNAL_OPERATOR_TYPE";
-    string private constant ERROR_EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST =
-        "EXTERNAL_OPERATOR_MODULE_DOES_NOT_EXIST";
     string private constant ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST =
         "EXTERNAL_OPERATOR_DOES_NOT_EXIST";
 

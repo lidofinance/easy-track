@@ -26,7 +26,7 @@ def factory(owner, module):
 
 @pytest.fixture()
 def fill_module(module, owner):
-    module.mock_setActualLockedBond(0, LOCKED_BOND_AMOUNT, {"from": owner})
+    module.mock_setLockedBond(0, LOCKED_BOND_AMOUNT, {"from": owner})
 
 
 def test_deploy(owner, module, factory):

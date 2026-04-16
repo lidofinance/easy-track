@@ -7,8 +7,8 @@ pragma solidity 0.8.6;
 interface IAccounting {
     /// @notice Get amount of the locked bond in ETH (stETH) by the given Node Operator
     /// @param nodeOperatorId ID of the Node Operator
-    /// @return Amount of the actual locked bond
-    function getActualLockedBond(
+    /// @return Amount of the locked bond
+    function getLockedBond(
         uint256 nodeOperatorId
     ) external view returns (uint256);
 }

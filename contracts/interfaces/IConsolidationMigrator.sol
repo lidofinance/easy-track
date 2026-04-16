@@ -7,6 +7,15 @@ pragma solidity 0.8.6;
 ///         between operators across two modules.
 interface IConsolidationMigrator {
     // =========
+    //  Structs
+    // =========
+
+    struct ConsolidationIndexGroup {
+        uint256[] sourceKeyIndices;
+        uint256 targetKeyIndex;
+    }
+
+    // =========
     //  Events
     // =========
     event ConsolidationPairAllowed(
@@ -22,8 +31,7 @@ interface IConsolidationMigrator {
     event ConsolidationSubmitted(
         uint256 indexed sourceOperatorId,
         uint256 indexed targetOperatorId,
-        uint256[] sourceValidatorIndices,
-        uint256[] targetValidatorIndices
+        ConsolidationIndexGroup[] groups
     );
 
     // ==================
@@ -39,6 +47,9 @@ interface IConsolidationMigrator {
     /// @notice Returns the staking router address used to resolve module ids.
     function getStakingRouter() external view returns (address);
 
+    /// @notice Returns the consolidation bus address.
+    function getConsolidationBus() external view returns (address);
+
     /// @notice Returns true if consolidation from `sourceOperatorId` to `targetOperatorId` is allowed.
     function isPairAllowed(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (bool);
 
@@ -49,25 +60,14 @@ interface IConsolidationMigrator {
     function getSubmitter(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (address);
 
     // =========================
-    //  Validation & Submission
+    //  Submission
     // =========================
 
-    /// @notice Validates a batch of consolidation requests without changing state.
-    /// @dev Reverts if invalid.
-    function validateConsolidationBatch(
-        uint256 sourceOperatorId,
-        uint256 targetOperatorId,
-        uint256[] calldata sourceValidatorIndices,
-        uint256[] calldata targetValidatorIndices
-    ) external view;
-
-    /// @notice Submits a batch of consolidation requests after validation.
-    /// @dev MUST revert if the batch would fail validation. Emits ConsolidationSubmitted on success.
+    /// @notice Submits a batch of consolidation requests.
     function submitConsolidationBatch(
         uint256 sourceOperatorId,
         uint256 targetOperatorId,
-        uint256[] calldata sourceValidatorIndices,
-        uint256[] calldata targetValidatorIndices
+        ConsolidationIndexGroup[] calldata groups
     ) external;
 
     // ======================
@@ -75,7 +75,6 @@ interface IConsolidationMigrator {
     // ======================
 
     /// @notice Allows consolidations from `sourceOperatorId` to `targetOperatorId`.
-    /// @dev Access-controlled in the implementation (role-based).
     function allowPair(
         uint256 sourceOperatorId,
         uint256 targetOperatorId,
@@ -83,6 +82,8 @@ interface IConsolidationMigrator {
     ) external;
 
     /// @notice Disallows consolidations from `sourceOperatorId` to `targetOperatorId`.
-    /// @dev Access-controlled in the implementation (role-based).
     function disallowPair(uint256 sourceOperatorId, uint256 targetOperatorId) external;
+
+    /// @notice Permissionless disallow — caller must be the designated submitter.
+    function selfDisallowPair(uint256 sourceOperatorId, uint256 targetOperatorId) external;
 }
