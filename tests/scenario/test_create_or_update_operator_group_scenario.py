@@ -62,16 +62,20 @@ def create_or_update_operator_group_factory(
 ):
     if use_deployed_contracts_from_env:
         ensure_module_in_staking_router(active_curated_module, "CM")
-        ensure_module_in_staking_router(active_cs_module, "CSM")
+        csm_module_id = ensure_module_in_staking_router(active_cs_module, "CSM")
         ensure_module_unpaused(active_cs_module)
         ensure_legacy_module_operator(active_curated_module)
         ensure_module_operator(active_cs_module)
+        allowed_ext_module_id = csm_module_id
+    else:
+        allowed_ext_module_id = 1
 
     factory = owner.deploy(
         CreateOrUpdateOperatorGroup,
         commitee_multisig,
         FACTORY_NAME,
         meta_registry_contract.address,
+        allowed_ext_module_id,
     )
 
     permissions = (

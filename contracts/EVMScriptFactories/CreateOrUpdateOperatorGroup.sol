@@ -37,6 +37,8 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         "UNSUPPORTED_EXTERNAL_OPERATOR_TYPE";
     string private constant ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST =
         "EXTERNAL_OPERATOR_DOES_NOT_EXIST";
+    string private constant ERROR_EXTERNAL_MODULE_NOT_ALLOWED =
+        "EXTERNAL_MODULE_NOT_ALLOWED";
 
     // -------------
     // CONSTANTS
@@ -60,6 +62,8 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     ICuratedModule public immutable module;
     /// @notice Staking router taken from MetaRegistry at deployment time
     IStakingRouter public immutable stakingRouter;
+    /// @notice Staking-router module ID of the NOR module accepted for external operators
+    uint256 public immutable allowedExternalModuleId;
 
     // -------------
     // CONSTRUCTOR
@@ -68,7 +72,8 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     constructor(
         address _trustedCaller,
         string memory _name,
-        address _metaRegistry
+        address _metaRegistry,
+        uint256 _allowedExtModuleId
     ) TrustedCaller(_trustedCaller) {
         require(
             _metaRegistry != address(0),
@@ -81,6 +86,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         // If MetaRegistry changes MODULE/STAKING_ROUTER, this factory must be redeployed.
         module = ICuratedModule(registry.MODULE());
         stakingRouter = IStakingRouter(registry.STAKING_ROUTER());
+        allowedExternalModuleId = _allowedExtModuleId;
 
         name = _name;
     }
@@ -229,6 +235,11 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
                 uint8 externalModuleId,
                 uint64 externalNodeOperatorId
             ) = _decodeNORExtOperatorData(_externalOperators[i].data);
+
+            require(
+                externalModuleId == allowedExternalModuleId,
+                ERROR_EXTERNAL_MODULE_NOT_ALLOWED
+            );
 
             INodeOperatorsRegistry externalModule = INodeOperatorsRegistry(
                 stakingRouter.getStakingModule(externalModuleId).stakingModuleAddress

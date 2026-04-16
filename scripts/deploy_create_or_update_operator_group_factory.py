@@ -23,6 +23,7 @@ def main():
     trusted_caller = _get_trusted_caller()
     meta_registry_address = _get_meta_registry_address()
     factory_name = _get_factory_name()
+    allowed_ext_module_id = _get_allowed_ext_module_id()
 
     log.br()
     log.nb("Current network", network_name, color_hl=log.color_magenta)
@@ -32,6 +33,7 @@ def main():
     log.ok("Trusted caller", trusted_caller)
     log.ok("MetaRegistry address", meta_registry_address)
     log.ok("Factory name", factory_name)
+    log.ok("Allowed ext module ID", allowed_ext_module_id)
 
     log.br()
     print("Proceed? [yes/no]: ")
@@ -48,6 +50,7 @@ def main():
         trusted_caller,
         factory_name,
         meta_registry_address,
+        allowed_ext_module_id,
     )
     factory = CreateOrUpdateOperatorGroup.deploy(*constructor_args, tx_params)
 
@@ -109,3 +112,12 @@ def _get_factory_name():
     if not name:
         raise ValueError("Please provide non-empty name via FACTORY_NAME env variable")
     return name
+
+
+def _get_allowed_ext_module_id():
+    raw = os.environ.get("ALLOWED_EXT_MODULE_ID", "").strip()
+    if not raw:
+        raise ValueError(
+            "Please provide NOR module ID via ALLOWED_EXT_MODULE_ID env variable"
+        )
+    return int(raw)

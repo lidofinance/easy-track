@@ -46,6 +46,7 @@ def assert_constructor_reverts(owner, trusted_caller, meta_registry, revert_reas
                 trusted_caller,
                 FACTORY_NAME,
                 meta_registry,
+                0,
                 {"from": owner},
             )
     except ValueError as err:
@@ -106,6 +107,9 @@ def meta_registry_stub(owner, CSLikeModuleStub, StakingRouterStub):
     return registry
 
 
+ALLOWED_EXT_MODULE_ID = 1
+
+
 @pytest.fixture(scope="module")
 def factory(owner, meta_registry_stub):
     return owner.deploy(
@@ -113,6 +117,7 @@ def factory(owner, meta_registry_stub):
         owner.address,
         FACTORY_NAME,
         meta_registry_stub.address,
+        ALLOWED_EXT_MODULE_ID,
     )
 
 
@@ -127,6 +132,7 @@ def test_deploy(owner, meta_registry_stub, factory):
     assert factory.metaRegistry() == meta_registry_stub
     assert factory.module() == meta_registry_stub.MODULE()
     assert factory.stakingRouter() == meta_registry_stub.STAKING_ROUTER()
+    assert factory.allowedExternalModuleId() == ALLOWED_EXT_MODULE_ID
 
 
 def test_deploy_reverts_with_zero_meta_registry(owner):
@@ -222,7 +228,7 @@ def test_create_group_success(owner, meta_registry_stub, factory):
         sub_node_operators=[(1, 7000), (2, 3000)],
         external_operators=[
             make_nor_external_operator(1, 1001),
-            make_nor_external_operator(2, 2002),
+            make_nor_external_operator(1, 2002),
         ],
     )
 
@@ -320,6 +326,18 @@ def test_create_group_reverts_with_unsupported_external_operator_type(owner, fac
     )
 
 
+def test_create_group_reverts_with_not_allowed_external_module(owner, factory):
+    # Module 2 exists in the router but is NOT the allowed one (allowed = 1)
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[make_nor_external_operator(2, 1)],
+        revert_reason="EXTERNAL_MODULE_NOT_ALLOWED",
+    )
+
+
 def test_create_group_reverts_with_missing_external_module(owner, factory):
     assert_create_evm_script_reverts(
         factory=factory,
@@ -327,7 +345,7 @@ def test_create_group_reverts_with_missing_external_module(owner, factory):
         group_id=0,
         sub_node_operators=[(1, 10000)],
         external_operators=[make_nor_external_operator(99, 1)],
-        revert_reason="StakingModuleUnregistered: ",
+        revert_reason="EXTERNAL_MODULE_NOT_ALLOWED",
     )
 
 
