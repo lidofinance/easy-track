@@ -17,8 +17,8 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_META_REGISTRY_IS_ZERO_ADDRESS =
-        "META_REGISTRY_IS_ZERO_ADDRESS";
+    string private constant ERROR_ZERO_MODULE_ADDRESS =
+        "ZERO_MODULE_ADDRESS";
     string private constant ERROR_INVALID_GROUP_ID = "INVALID_GROUP_ID";
     string private constant ERROR_EMPTY_GROUP = "EMPTY_GROUP";
     string private constant ERROR_INVALID_EMPTY_GROUP_UPDATE =
@@ -72,20 +72,18 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     constructor(
         address _trustedCaller,
         string memory _name,
-        address _metaRegistry,
+        address _module,
         uint256 _allowedExtModuleId
     ) TrustedCaller(_trustedCaller) {
         require(
-            _metaRegistry != address(0),
-            ERROR_META_REGISTRY_IS_ZERO_ADDRESS
+            _module != address(0),
+            ERROR_ZERO_MODULE_ADDRESS
         );
 
-        IMetaRegistry registry = IMetaRegistry(_metaRegistry);
-        metaRegistry = registry;
-        // Snapshot dependencies at deploy time.
-        // If MetaRegistry changes MODULE/STAKING_ROUTER, this factory must be redeployed.
-        module = ICuratedModule(registry.MODULE());
-        stakingRouter = IStakingRouter(registry.STAKING_ROUTER());
+        ICuratedModule curatedModule = ICuratedModule(_module);
+        module = curatedModule;
+        metaRegistry = curatedModule.META_REGISTRY();
+        stakingRouter = IStakingRouter(curatedModule.META_REGISTRY().STAKING_ROUTER());
         allowedExternalModuleId = _allowedExtModuleId;
 
         name = _name;

@@ -1,7 +1,8 @@
 import pytest
+import brownie
 from brownie import (
     CreateOrUpdateOperatorGroup,
-    CSLikeModuleStub,
+    CuratedModuleStub,
     MetaRegistryStub,
     StakingRouterStub,
 )
@@ -25,23 +26,38 @@ def make_nor_external_operator(module_id, node_operator_id):
 
 
 @pytest.fixture(scope="module")
-def meta_registry_contract(owner, use_deployed_contracts_from_env, active_cm_meta_registry):
+def curated_module_contract(owner, use_deployed_contracts_from_env, active_curated_module):
     if use_deployed_contracts_from_env:
-        return active_cm_meta_registry
+        return active_curated_module
+
+    module = owner.deploy(CuratedModuleStub)
+    module.mock_setNodeOperatorsCount(100, {"from": owner})
+    return module
+
+
+@pytest.fixture(scope="module")
+def meta_registry_contract(
+    owner,
+    use_deployed_contracts_from_env,
+    curated_module_contract,
+):
+    if use_deployed_contracts_from_env:
+        return brownie.interface.IMetaRegistry(curated_module_contract.META_REGISTRY())
 
     registry = owner.deploy(MetaRegistryStub)
 
-    module = owner.deploy(CSLikeModuleStub)
-    module.mock_setNodeOperatorsCount(100, {"from": owner})
-
-    external_module = owner.deploy(CSLikeModuleStub)
+    external_module = owner.deploy(CuratedModuleStub)
     external_module.mock_setNodeOperatorsCount(100, {"from": owner})
 
     staking_router = owner.deploy(StakingRouterStub)
     staking_router.setStakingModule(1, external_module.address, {"from": owner})
 
-    registry.setModule(module.address, {"from": owner})
+    registry.setModule(curated_module_contract.address, {"from": owner})
     registry.setStakingRouter(staking_router.address, {"from": owner})
+
+    # Wire the registry back onto the curated module so `module.META_REGISTRY()` resolves.
+    curated_module_contract.mock_setMetaRegistry(registry.address, {"from": owner})
+
     return registry
 
 
@@ -52,8 +68,8 @@ def create_or_update_operator_group_factory(
     voting,
     et_contracts,
     meta_registry_contract,
+    curated_module_contract,
     use_deployed_contracts_from_env,
-    active_curated_module,
     active_cs_module,
     ensure_module_in_staking_router,
     ensure_module_unpaused,
@@ -61,10 +77,10 @@ def create_or_update_operator_group_factory(
     ensure_module_operator,
 ):
     if use_deployed_contracts_from_env:
-        ensure_module_in_staking_router(active_curated_module, "CM")
+        ensure_module_in_staking_router(curated_module_contract, "CM")
         csm_module_id = ensure_module_in_staking_router(active_cs_module, "CSM")
         ensure_module_unpaused(active_cs_module)
-        ensure_legacy_module_operator(active_curated_module)
+        ensure_legacy_module_operator(curated_module_contract)
         ensure_module_operator(active_cs_module)
         allowed_ext_module_id = csm_module_id
     else:
@@ -74,7 +90,7 @@ def create_or_update_operator_group_factory(
         CreateOrUpdateOperatorGroup,
         commitee_multisig,
         FACTORY_NAME,
-        meta_registry_contract.address,
+        curated_module_contract.address,
         allowed_ext_module_id,
     )
 
@@ -96,7 +112,7 @@ def create_or_update_operator_group_factory(
 def scenario_group_input(
     use_deployed_contracts_from_env,
     meta_registry_contract,
-    active_curated_module,
+    curated_module_contract,
     active_cs_module,
     ensure_module_in_staking_router,
     ensure_legacy_module_operator,
@@ -110,7 +126,7 @@ def scenario_group_input(
         }
 
     csm_module_id = ensure_module_in_staking_router(active_cs_module, "CSM")
-    curated_operator_id = ensure_legacy_module_operator(active_curated_module)
+    curated_operator_id = ensure_legacy_module_operator(curated_module_contract)
     csm_operator_id = ensure_module_operator(active_cs_module)
     return {
         "group_id": meta_registry_contract.NO_GROUP_ID(),

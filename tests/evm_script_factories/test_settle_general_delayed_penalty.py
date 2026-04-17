@@ -1,5 +1,5 @@
 import pytest
-from brownie import CSLikeModuleStub, reverts, SettleGeneralDelayedPenalty
+from brownie import AccountingStub, BaseModuleStub, reverts, SettleGeneralDelayedPenalty
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -13,9 +13,15 @@ def create_calldata(ids, amounts):
 
 
 @pytest.fixture(scope="module")
-def module(owner):
-    module = owner.deploy(CSLikeModuleStub)
+def accounting(owner):
+    return owner.deploy(AccountingStub)
+
+
+@pytest.fixture(scope="module")
+def module(owner, accounting):
+    module = owner.deploy(BaseModuleStub)
     module.mock_setNodeOperatorsCount(1000, {"from": owner})
+    module.mock_setAccounting(accounting.address, {"from": owner})
     return module
 
 
@@ -25,8 +31,8 @@ def factory(owner, module):
 
 
 @pytest.fixture()
-def fill_module(module, owner):
-    module.mock_setLockedBond(0, LOCKED_BOND_AMOUNT, {"from": owner})
+def fill_module(accounting, owner):
+    accounting.mock_setLockedBond(0, LOCKED_BOND_AMOUNT, {"from": owner})
 
 
 def test_deploy(owner, module, factory):

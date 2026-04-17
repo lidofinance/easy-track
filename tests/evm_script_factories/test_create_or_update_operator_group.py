@@ -39,13 +39,13 @@ def expected_evm_script(meta_registry, group_id, sub_node_operators, external_op
     return encode_call_script([(meta_registry.address, call_data)])
 
 
-def assert_constructor_reverts(owner, trusted_caller, meta_registry, revert_reason):
+def assert_constructor_reverts(owner, trusted_caller, module, revert_reason):
     try:
         with reverts(revert_reason):
             CreateOrUpdateOperatorGroup.deploy(
                 trusted_caller,
                 FACTORY_NAME,
-                meta_registry,
+                module,
                 0,
                 {"from": owner},
             )
@@ -86,37 +86,45 @@ def assert_create_evm_script_reverts(
         factory.createEVMScript(creator, calldata)
 
 
+ALLOWED_EXT_MODULE_ID = 1
+
+
 @pytest.fixture(scope="module")
-def meta_registry_stub(owner, CSLikeModuleStub, StakingRouterStub):
+def curated_module_stub(owner, CuratedModuleStub):
+    module = owner.deploy(CuratedModuleStub)
+    module.mock_setNodeOperatorsCount(100, {"from": owner})
+    return module
+
+
+@pytest.fixture(scope="module")
+def meta_registry_stub(owner, curated_module_stub, CuratedModuleStub, StakingRouterStub):
     registry = owner.deploy(MetaRegistryStub)
 
-    module = owner.deploy(CSLikeModuleStub)
-    module.mock_setNodeOperatorsCount(100, {"from": owner})
-
-    external_module_1 = owner.deploy(CSLikeModuleStub)
+    external_module_1 = owner.deploy(CuratedModuleStub)
     external_module_1.mock_setNodeOperatorsCount(10_000, {"from": owner})
-    external_module_2 = owner.deploy(CSLikeModuleStub)
+    external_module_2 = owner.deploy(CuratedModuleStub)
     external_module_2.mock_setNodeOperatorsCount(10_000, {"from": owner})
 
     staking_router = owner.deploy(StakingRouterStub)
     staking_router.setStakingModule(1, external_module_1.address, {"from": owner})
     staking_router.setStakingModule(2, external_module_2.address, {"from": owner})
 
-    registry.setModule(module.address, {"from": owner})
+    registry.setModule(curated_module_stub.address, {"from": owner})
     registry.setStakingRouter(staking_router.address, {"from": owner})
+
+    # Wire the registry back onto the curated module so `module.META_REGISTRY()` resolves.
+    curated_module_stub.mock_setMetaRegistry(registry.address, {"from": owner})
+
     return registry
 
 
-ALLOWED_EXT_MODULE_ID = 1
-
-
 @pytest.fixture(scope="module")
-def factory(owner, meta_registry_stub):
+def factory(owner, curated_module_stub, meta_registry_stub):
     return owner.deploy(
         CreateOrUpdateOperatorGroup,
         owner.address,
         FACTORY_NAME,
-        meta_registry_stub.address,
+        curated_module_stub,
         ALLOWED_EXT_MODULE_ID,
     )
 
@@ -126,29 +134,29 @@ def factory(owner, meta_registry_stub):
 # -----------------------
 
 
-def test_deploy(owner, meta_registry_stub, factory):
+def test_deploy(owner, meta_registry_stub, curated_module_stub, factory):
     assert factory.trustedCaller() == owner
     assert factory.name() == FACTORY_NAME
+    assert factory.module() == curated_module_stub
     assert factory.metaRegistry() == meta_registry_stub
-    assert factory.module() == meta_registry_stub.MODULE()
     assert factory.stakingRouter() == meta_registry_stub.STAKING_ROUTER()
     assert factory.allowedExternalModuleId() == ALLOWED_EXT_MODULE_ID
 
 
-def test_deploy_reverts_with_zero_meta_registry(owner):
+def test_deploy_reverts_with_zero_module(owner):
     assert_constructor_reverts(
         owner=owner,
         trusted_caller=owner.address,
-        meta_registry=ZERO_ADDRESS,
-        revert_reason="META_REGISTRY_IS_ZERO_ADDRESS",
+        module=ZERO_ADDRESS,
+        revert_reason="ZERO_MODULE_ADDRESS",
     )
 
 
-def test_deploy_reverts_with_zero_trusted_caller(owner, meta_registry_stub):
+def test_deploy_reverts_with_zero_trusted_caller(owner, curated_module_stub):
     assert_constructor_reverts(
         owner=owner,
         trusted_caller=ZERO_ADDRESS,
-        meta_registry=meta_registry_stub.address,
+        module=curated_module_stub,
         revert_reason="TRUSTED_CALLER_IS_ZERO_ADDRESS",
     )
 

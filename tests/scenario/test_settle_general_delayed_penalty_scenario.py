@@ -15,10 +15,21 @@ def create_calldata(node_operator_ids, max_amounts):
 
 
 @pytest.fixture(scope="module")
+def accounting(owner, use_deployed_contracts_from_env, active_cs_module):
+    if use_deployed_contracts_from_env:
+        return brownie.interface.IAccounting(active_cs_module.ACCOUNTING())
+
+    from brownie import AccountingStub
+
+    return owner.deploy(AccountingStub)
+
+
+@pytest.fixture(scope="module")
 def module(
     owner,
     use_deployed_contracts_from_env,
     active_cs_module,
+    accounting,
     ensure_module_in_staking_router,
     ensure_module_unpaused,
 ):
@@ -27,18 +38,13 @@ def module(
         ensure_module_unpaused(active_cs_module)
         return active_cs_module
 
-    from brownie import CSLikeModuleStub
+    from brownie import BaseModuleStub
 
-    module = owner.deploy(CSLikeModuleStub)
+    module = owner.deploy(BaseModuleStub)
     module.mock_setNodeOperatorsCount(1000, {"from": owner})
-    module.mock_setLockedBond(0, 1000, {"from": owner})
-    return module
-
-
-@pytest.fixture(scope="module")
-def accounting(module, use_deployed_contracts_from_env):
-    if use_deployed_contracts_from_env:
-        return brownie.interface.IAccounting(module.ACCOUNTING())
+    module.mock_setAccounting(accounting.address, {"from": owner})
+    # Pre-set locked bond so `ensure_module_locked_bond` short-circuits for the stub path.
+    accounting.mock_setLockedBond(0, 1000, {"from": owner})
     return module
 
 

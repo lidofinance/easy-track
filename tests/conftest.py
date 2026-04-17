@@ -463,11 +463,6 @@ def csm0x02_module(csm0x02_contracts):
 
 
 @pytest.fixture(scope="module")
-def cm_meta_registry(cm_contracts):
-    return cm_contracts.meta_registry
-
-
-@pytest.fixture(scope="module")
 def csm_merkle_gate():
     """Resolve CSM merkle gate address from CSM_MERKLE_GATE env var"""
     addr = os.environ.get("CSM_MERKLE_GATE", "")

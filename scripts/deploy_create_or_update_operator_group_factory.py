@@ -21,7 +21,7 @@ def main():
         get_is_live(), network=network_name, dev_ldo_transfer=False
     )
     trusted_caller = _get_trusted_caller()
-    meta_registry_address = _get_meta_registry_address()
+    module_address = _get_module_address()
     factory_name = _get_factory_name()
     allowed_ext_module_id = _get_allowed_ext_module_id()
 
@@ -31,7 +31,7 @@ def main():
     log.ok("Deployer", deployer)
     log.br()
     log.ok("Trusted caller", trusted_caller)
-    log.ok("MetaRegistry address", meta_registry_address)
+    log.ok("Module address", module_address)
     log.ok("Factory name", factory_name)
     log.ok("Allowed ext module ID", allowed_ext_module_id)
 
@@ -49,7 +49,7 @@ def main():
     constructor_args = (
         trusted_caller,
         factory_name,
-        meta_registry_address,
+        module_address,
         allowed_ext_module_id,
     )
     factory = CreateOrUpdateOperatorGroup.deploy(*constructor_args, tx_params)
@@ -98,11 +98,11 @@ def _get_trusted_caller():
     return addr
 
 
-def _get_meta_registry_address():
-    addr = os.environ.get("META_REGISTRY_ADDRESS")
+def _get_module_address():
+    addr = os.environ.get("MODULE_ADDRESS")
     if not web3.is_address(addr):
         raise ValueError(
-            f"{addr} is not a valid address, check the META_REGISTRY_ADDRESS env variable"
+            f"{addr} is not a valid address, check the MODULE_ADDRESS env variable"
         )
     return addr
 

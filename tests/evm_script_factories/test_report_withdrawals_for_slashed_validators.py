@@ -3,7 +3,7 @@ from typing import Iterable
 
 import pytest
 from brownie import (
-    CSLikeModuleStub,
+    BaseModuleStub,
     ReportWithdrawalsForSlashedValidators,
     reverts,
 )
@@ -31,7 +31,7 @@ def create_calldata(values: Iterable[WithdrawnValidatorInfo]):
 
 @pytest.fixture(scope="module")
 def module(owner):
-    module = owner.deploy(CSLikeModuleStub)
+    module = owner.deploy(BaseModuleStub)
     module.mock_setNodeOperatorsCount(1000)
     return module
 

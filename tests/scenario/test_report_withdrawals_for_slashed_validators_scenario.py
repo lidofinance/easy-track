@@ -3,7 +3,7 @@ from typing import Iterable
 
 import pytest
 from brownie import (
-    CSLikeModuleStub,
+    BaseModuleStub,
     ReportWithdrawalsForSlashedValidators,
 )
 
@@ -40,7 +40,7 @@ def module(
         ensure_module_operator(active_cs_module)
         return active_cs_module
 
-    module = owner.deploy(CSLikeModuleStub)
+    module = owner.deploy(BaseModuleStub)
     module.mock_setNodeOperatorsCount(1000)
     return module
 
