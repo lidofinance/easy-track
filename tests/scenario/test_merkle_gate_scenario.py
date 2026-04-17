@@ -1,6 +1,10 @@
 import pytest
-from brownie import reverts
+from brownie import MerkleGateStub, SetMerkleGateTree, reverts
+
 from utils.evm_script import encode_calldata
+
+
+FACTORY_NAME = "CSM v3"
 
 
 def create_calldata(gate, current_tree_root, current_tree_cid, new_tree_root, new_tree_cid):
@@ -21,19 +25,17 @@ def merkle_gate(
     owner,
     et_contracts,
     use_deployed_contracts_from_env,
-    active_csm_merkle_gate,
+    active_module_merkle_gate,
     ensure_gate_unpaused,
 ):
     if use_deployed_contracts_from_env:
-        ensure_gate_unpaused(active_csm_merkle_gate)
-        return active_csm_merkle_gate
+        ensure_gate_unpaused(active_module_merkle_gate)
+        return active_module_merkle_gate
 
     """
     Create a mock MerkleGate contract with setTreeParams method
     and grant SET_TREE_ROLE to the owner for testing.
     """
-    from brownie import MerkleGateStub
-
     stub = owner.deploy(MerkleGateStub)
 
     # Initial tree parameters
@@ -61,12 +63,10 @@ def merkle_gate_set_tree_factory(
     """
     Deploy the SetMerkleGateTree factory with the MerkleGateStub
     """
-    from brownie import SetMerkleGateTree
-
     factory = owner.deploy(
         SetMerkleGateTree,
         commitee_multisig,  # Trusted caller. It should be CSM committee multisig
-        "CSMv3",
+        FACTORY_NAME,
     )
 
     # And add the factory to EasyTrack to activate it. It should be done on CSM v2 voting
@@ -180,8 +180,6 @@ def test_merkle_gate_reverts_for_gate_not_in_permissions(
 ):
     """Motion creation must revert with HAS_NO_PERMISSIONS when targeting a gate
     that is not listed in the factory's Easy Track permissions."""
-    from brownie import MerkleGateStub
-
     # Deploy a second gate — NOT added to factory permissions
     unpermitted_gate = owner.deploy(MerkleGateStub)
     initial_root = bytes.fromhex("22" * 32)
@@ -213,8 +211,6 @@ def test_merkle_gate_permissions_update_adds_new_gate(
 ):
     """After updating factory permissions to include a new gate,
     motions targeting the new gate must succeed."""
-    from brownie import MerkleGateStub
-
     # Deploy a new gate
     new_gate = owner.deploy(MerkleGateStub)
     initial_root = bytes.fromhex("44" * 32)
@@ -267,8 +263,6 @@ def test_merkle_gate_permissions_update_removes_gate(
 ):
     """After removing a gate from factory permissions,
     motions targeting that gate must revert with HAS_NO_PERMISSIONS."""
-    from brownie import MerkleGateStub
-
     # Deploy a gate, add it to permissions
     removable_gate = owner.deploy(MerkleGateStub)
     initial_root = bytes.fromhex("66" * 32)

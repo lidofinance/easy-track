@@ -143,10 +143,14 @@ def active_nor_module(request, use_deployed_contracts_from_env):
 
 
 @pytest.fixture(scope="module")
-def active_csm_merkle_gate(request, use_deployed_contracts_from_env):
+def active_module_merkle_gate(request, use_deployed_contracts_from_env):
     if not use_deployed_contracts_from_env:
         return None
-    return request.getfixturevalue("csm_merkle_gate")
+    module_merkle_gate = request.getfixturevalue("module_merkle_gate")
+    assert (
+        module_merkle_gate is not None
+    ), "module_merkle_gate is None; set MODULE_MERKLE_GATE env var for the selected network"
+    return module_merkle_gate
 
 
 @pytest.fixture(scope="module")

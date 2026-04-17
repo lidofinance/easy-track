@@ -7,9 +7,10 @@ from brownie import (
 )
 
 from utils.evm_script import encode_call_script, encode_calldata
+from utils.hardhat_helpers import get_last_tx_revert_reason
 
 
-FACTORY_NAME = "CMv2"
+FACTORY_NAME = "CM v2"
 
 
 def create_calldata(group_id, sub_node_operators, external_operators):
@@ -49,10 +50,9 @@ def assert_constructor_reverts(owner, trusted_caller, module, revert_reason):
                 0,
                 {"from": owner},
             )
-    except ValueError as err:
-        # Brownie may throw ValueError for zero-address constructor args
-        # even when constructor revert is emitted.
-        assert "not a valid ETH address" in str(err)
+    except ValueError:
+        if revert_reason != get_last_tx_revert_reason():
+            raise
 
 
 def assert_create_evm_script_equals(

@@ -463,18 +463,13 @@ def csm0x02_module(csm0x02_contracts):
 
 
 @pytest.fixture(scope="module")
-def csm_merkle_gate():
-    """Resolve CSM merkle gate address from CSM_MERKLE_GATE env var"""
-    addr = os.environ.get("CSM_MERKLE_GATE", "")
-    if not addr:
-        return None
-    return brownie.interface.IMerkleGate(addr)
+def module_merkle_gate():
+    """Resolve merkle gate address from MODULE_MERKLE_GATE env var.
 
-
-@pytest.fixture(scope="module")
-def cm_merkle_gate():
-    """Resolve CM merkle gate address from CM_MERKLE_GATE env var"""
-    addr = os.environ.get("CM_MERKLE_GATE", "")
+    The gate is module-agnostic — any module (CSM, CM, ...) can be wired
+    to a merkle gate, so the env var is not namespaced by module.
+    """
+    addr = os.environ.get("MODULE_MERKLE_GATE", "")
     if not addr:
         return None
     return brownie.interface.IMerkleGate(addr)

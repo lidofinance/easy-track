@@ -10,7 +10,7 @@ from brownie import (
 from utils.evm_script import encode_calldata
 
 
-FACTORY_NAME = "CMv2"
+FACTORY_NAME = "CM v2"
 
 
 def create_calldata(group_id, sub_node_operators, external_operators):

@@ -4,7 +4,7 @@ from brownie import AccountingStub, BaseModuleStub, reverts, SettleGeneralDelaye
 from utils.evm_script import encode_call_script, encode_calldata
 
 
-FACTORY_NAME = "MODULE"
+FACTORY_NAME = "CSM v3"
 LOCKED_BOND_AMOUNT = 1000
 
 

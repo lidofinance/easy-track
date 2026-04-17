@@ -9,6 +9,8 @@ from brownie import (
 
 from utils.evm_script import encode_calldata
 
+FACTORY_NAME = "CSM v3"
+
 WithdrawnValidatorInfo = namedtuple(
     "WithdrawnValidatorInfo",
     [
@@ -49,7 +51,7 @@ def module(
 def factory(owner, et_contracts, voting, module):
     factory = ReportWithdrawalsForSlashedValidators.deploy(
         owner,
-        "MY_LOVELY_FACTORY",
+        FACTORY_NAME,
         module,
         {"from": owner},
     )

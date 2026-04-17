@@ -1,10 +1,11 @@
 import pytest
 import brownie
+from brownie import AccountingStub, BaseModuleStub, SettleGeneralDelayedPenalty
 
 from utils.evm_script import encode_calldata
 
 
-FACTORY_NAME = "CSMv3"
+FACTORY_NAME = "CSM v3"
 GENERAL_DELAYED_PENALTY_SETTLED_TOPIC0 = brownie.web3.keccak(
     text="GeneralDelayedPenaltySettled(uint256[],uint256[])"
 ).hex()
@@ -18,8 +19,6 @@ def create_calldata(node_operator_ids, max_amounts):
 def accounting(owner, use_deployed_contracts_from_env, active_cs_module):
     if use_deployed_contracts_from_env:
         return brownie.interface.IAccounting(active_cs_module.ACCOUNTING())
-
-    from brownie import AccountingStub
 
     return owner.deploy(AccountingStub)
 
@@ -37,8 +36,6 @@ def module(
         ensure_module_in_staking_router(active_cs_module, "CSM")
         ensure_module_unpaused(active_cs_module)
         return active_cs_module
-
-    from brownie import BaseModuleStub
 
     module = owner.deploy(BaseModuleStub)
     module.mock_setNodeOperatorsCount(1000, {"from": owner})
@@ -61,8 +58,6 @@ def settle_general_delayed_penalty_factory(
     et_contracts,
     module,
 ):
-    from brownie import SettleGeneralDelayedPenalty
-
     factory = owner.deploy(
         SettleGeneralDelayedPenalty,
         commitee_multisig,

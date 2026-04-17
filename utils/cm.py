@@ -24,10 +24,11 @@ def contracts(network=DEFAULT_NETWORK):
 
 class CMContractsSetup:
     def __init__(self, interface, cm_addresses):
-        self.module = interface.CSModule(cm_addresses.module)
-        self.meta_registry = interface.IMetaRegistry(
-            interface.ICuratedModule(cm_addresses.module).META_REGISTRY()
+        assert cm_addresses.module, (
+            "CM module address is not set for the selected network; "
+            "fill utils/cm.py::addresses before running scenario tests in live mode"
         )
+        self.module = interface.ICuratedModule(cm_addresses.module)
 
 
 @dataclass

@@ -24,6 +24,10 @@ def contracts(network=DEFAULT_NETWORK):
 
 class CSMContractsSetup:
     def __init__(self, interface, csm_addresses):
+        assert csm_addresses.module, (
+            "CSM module address is not set for the selected network; "
+            "fill utils/csm.py::addresses before running scenario tests in live mode"
+        )
         self.module = interface.CSModule(csm_addresses.module)
 
 

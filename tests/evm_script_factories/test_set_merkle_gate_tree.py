@@ -4,7 +4,7 @@ from brownie import reverts, SetMerkleGateTree, MerkleGateStub
 from utils.evm_script import encode_call_script, encode_calldata
 
 
-TEST_FACTORY_NAME = "CSMv3"
+FACTORY_NAME = "CSM v3"
 
 
 def create_calldata(gate, current_tree_root, current_tree_cid, new_tree_root, new_tree_cid):
@@ -26,13 +26,13 @@ def merkle_gate_stub(owner):
 
 @pytest.fixture(scope="module")
 def set_merkle_gate_tree_factory(owner):
-    return SetMerkleGateTree.deploy(owner, TEST_FACTORY_NAME, {"from": owner})
+    return SetMerkleGateTree.deploy(owner, FACTORY_NAME, {"from": owner})
 
 
 def test_deploy(owner, set_merkle_gate_tree_factory):
     """Must deploy contract with correct data"""
     assert set_merkle_gate_tree_factory.trustedCaller() == owner
-    assert set_merkle_gate_tree_factory.name() == TEST_FACTORY_NAME
+    assert set_merkle_gate_tree_factory.name() == FACTORY_NAME
 
 
 def test_create_evm_script_called_by_stranger(stranger, set_merkle_gate_tree_factory):

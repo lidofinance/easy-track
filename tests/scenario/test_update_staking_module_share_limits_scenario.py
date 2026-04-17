@@ -4,7 +4,7 @@ from brownie import StakingRouterStub, UpdateStakingModuleShareLimits, reverts
 from utils.evm_script import encode_calldata
 
 
-FACTORY_NAME = "SR"
+FACTORY_NAME = "CSM v3"
 CURRENT_STAKE_SHARE_LIMIT = 500
 CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 9000
 

@@ -22,7 +22,7 @@ WithdrawnValidatorInfo = namedtuple(
     ],
 )
 
-FACTORY_NAME = "MY_LOVELY_FACTORY"
+FACTORY_NAME = "CSM v3"
 
 
 def create_calldata(values: Iterable[WithdrawnValidatorInfo]):
