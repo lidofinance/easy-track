@@ -77,6 +77,10 @@ def test_create_evm_script(owner, StakingRouterStub, UpdateStakingModuleShareLim
     expected = encode_call_script(
         [
             (
+                factory.address,
+                factory.validateParams.signature + calldata.hex(),
+            ),
+            (
                 router.address,
                 router.updateModuleShares.encode_input(
                     MODULE_ID,

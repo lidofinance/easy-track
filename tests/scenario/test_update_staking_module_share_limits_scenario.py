@@ -1,5 +1,7 @@
+from dataclasses import dataclass
+
 import pytest
-from brownie import StakingRouterStub, UpdateStakingModuleShareLimits, reverts
+from brownie import StakingRouterStub, UpdateStakingModuleShareLimits, chain, reverts
 
 from utils.evm_script import encode_calldata
 
@@ -9,11 +11,25 @@ CURRENT_STAKE_SHARE_LIMIT = 500
 CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD = 9000
 
 
+@dataclass(frozen=True)
+class ShareLimitsCase:
+    initial_stake_share_limit: int
+    initial_priority_exit_threshold: int
+    new_stake_share_limit: int
+    new_priority_exit_threshold: int
+    current_stake_share_limit: int
+    current_priority_exit_threshold: int
+
+
 def create_calldata(current_stake, new_stake, current_priority, new_priority):
     return encode_calldata(
         ["uint16", "uint16", "uint16", "uint16"],
         [current_stake, new_stake, current_priority, new_priority],
     )
+
+
+def wait_until_motion_is_enactable(easy_track):
+    chain.sleep(easy_track.motionDuration() + 100)
 
 
 @pytest.fixture(scope="module")
@@ -72,7 +88,9 @@ def update_staking_module_share_limits_factory(
     )
 
     permissions = (
-        staking_router_contract.address
+        factory.address
+        + factory.validateParams.signature[2:]
+        + staking_router_contract.address[2:]
         + staking_router_contract.updateModuleShares.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
@@ -150,7 +168,9 @@ def test_update_staking_module_share_limits_reverts_for_missing_module(
     )
 
     permissions = (
-        staking_router_contract.address
+        factory.address
+        + factory.validateParams.signature[2:]
+        + staking_router_contract.address[2:]
         + staking_router_contract.updateModuleShares.signature[2:]
     )
     et_contracts.easy_track.addEVMScriptFactory(
@@ -166,4 +186,82 @@ def test_update_staking_module_share_limits_reverts_for_missing_module(
             factory.address,
             evm_script_calldata,
             {"from": commitee_multisig},
+        )
+
+
+@pytest.mark.parametrize(
+    "case",
+    [
+        pytest.param(
+            ShareLimitsCase(
+                initial_stake_share_limit=500,
+                initial_priority_exit_threshold=9000,
+                new_stake_share_limit=600,
+                new_priority_exit_threshold=9000,
+                current_stake_share_limit=501,
+                current_priority_exit_threshold=9000,
+            ),
+            id="stake-share-changed",
+        ),
+        pytest.param(
+            ShareLimitsCase(
+                initial_stake_share_limit=500,
+                initial_priority_exit_threshold=9000,
+                new_stake_share_limit=600,
+                new_priority_exit_threshold=9100,
+                current_stake_share_limit=500,
+                current_priority_exit_threshold=9001,
+            ),
+            id="priority-exit-threshold-changed",
+        ),
+    ],
+)
+def test_update_staking_module_share_limits_reverts_on_enactment_if_current_values_changed(
+    commitee_multisig,
+    stranger,
+    et_contracts,
+    staking_router_contract,
+    update_staking_module_share_limits_factory,
+    module_id,
+    use_deployed_contracts_from_env,
+    case,
+):
+    if use_deployed_contracts_from_env:
+        pytest.skip("local stub only")
+
+    staking_router_contract.setModuleShares(
+        module_id,
+        case.initial_stake_share_limit,
+        case.initial_priority_exit_threshold,
+        {"from": commitee_multisig},
+    )
+
+    evm_script_calldata = create_calldata(
+        case.initial_stake_share_limit,
+        case.new_stake_share_limit,
+        case.initial_priority_exit_threshold,
+        case.new_priority_exit_threshold,
+    )
+
+    tx = et_contracts.easy_track.createMotion(
+        update_staking_module_share_limits_factory.address,
+        evm_script_calldata,
+        {"from": commitee_multisig},
+    )
+
+    staking_router_contract.setModuleShares(
+        module_id,
+        case.current_stake_share_limit,
+        case.current_priority_exit_threshold,
+        {"from": commitee_multisig},
+    )
+
+    wait_until_motion_is_enactable(et_contracts.easy_track)
+
+    motion_id = et_contracts.easy_track.getMotions()[-1][0]
+    with reverts("CURRENT_VALUES_MISMATCH"):
+        et_contracts.easy_track.enactMotion(
+            motion_id,
+            tx.events["MotionCreated"]["_evmScriptCallData"],
+            {"from": stranger},
         )

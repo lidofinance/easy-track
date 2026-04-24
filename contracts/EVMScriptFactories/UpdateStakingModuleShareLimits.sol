@@ -8,9 +8,7 @@ import "../libraries/EVMScriptCreator.sol";
 import "../interfaces/IEVMScriptFactory.sol";
 import "../interfaces/IStakingRouter.sol";
 
-/// @author Lido
-/// @notice Creates EVMScript to update staking module share limits in the Staking Router
-contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
+interface IUpdateStakingModuleShareLimits {
     struct ModuleShareParams {
         uint16 currentStakeShareLimit;
         uint16 newStakeShareLimit;
@@ -18,6 +16,12 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         uint16 newPriorityExitShareThreshold;
     }
 
+    function validateParams(ModuleShareParams memory params) external view;
+}
+
+/// @author Lido
+/// @notice Creates EVMScript to update staking module share limits in the Staking Router
+contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
@@ -81,8 +85,26 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         ModuleShareParams memory params = _decodeEVMScriptCallData(_evmScriptCallData);
-        IStakingRouter.StakingModule memory module =
-            stakingRouter.getStakingModule(stakingModuleId);
+
+        validateParams(params);
+
+        address[] memory to = new address[](2);
+        bytes4[] memory sel = new bytes4[](2);
+        bytes[] memory data = new bytes[](2);
+
+        to[0] = address(this);
+        sel[0] = IUpdateStakingModuleShareLimits.validateParams.selector;
+        data[0] = abi.encode(params);
+
+        to[1] = address(stakingRouter);
+        sel[1] = IStakingRouter.updateModuleShares.selector;
+        data[1] = abi.encode(stakingModuleId, params.newStakeShareLimit, params.newPriorityExitShareThreshold);
+
+        return EVMScriptCreator.createEVMScript(to, sel, data);
+    }
+
+    function validateParams(ModuleShareParams memory params) public view override {
+        IStakingRouter.StakingModule memory module = stakingRouter.getStakingModule(stakingModuleId);
 
         require(
             module.stakeShareLimit == params.currentStakeShareLimit &&
@@ -91,16 +113,6 @@ contract UpdateStakingModuleShareLimits is TrustedCaller, IEVMScriptFactory {
         );
 
         _validateDeltas(params);
-
-        bytes memory callData =
-            abi.encode(stakingModuleId, params.newStakeShareLimit, params.newPriorityExitShareThreshold);
-
-        return
-            EVMScriptCreator.createEVMScript(
-                address(stakingRouter),
-                IStakingRouter.updateModuleShares.selector,
-                callData
-            );
     }
 
     /// @notice Helper to decode EVMScript payload used by Easy Track UI/backends
