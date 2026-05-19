@@ -13,10 +13,10 @@ from utils.evm_script import encode_calldata
 FACTORY_NAME = "CM v2"
 
 
-def create_calldata(group_id, sub_node_operators, external_operators):
+def create_calldata(group_id, sub_node_operators, external_operators, name):
     return encode_calldata(
-        ["uint256", "((uint64,uint16)[],(bytes)[])"],
-        [group_id, (sub_node_operators, external_operators)],
+        ["uint256", "(string,(uint64,uint16)[],(bytes)[])"],
+        [group_id, (name, sub_node_operators, external_operators)],
     )
 
 
@@ -121,6 +121,7 @@ def scenario_group_input(
     if not use_deployed_contracts_from_env:
         return {
             "group_id": meta_registry_contract.NO_GROUP_ID(),
+            "name": "Test Group",
             "sub_node_operators": [(1, 6000), (2, 4000)],
             "external_operators": [make_nor_external_operator(1, 11)],
         }
@@ -130,6 +131,7 @@ def scenario_group_input(
     csm_operator_id = ensure_module_operator(active_cs_module)
     return {
         "group_id": meta_registry_contract.NO_GROUP_ID(),
+        "name": "Test Group",
         "sub_node_operators": [(curated_operator_id, 10_000)],
         "external_operators": [make_nor_external_operator(csm_module_id, csm_operator_id)],
     }
@@ -146,6 +148,7 @@ def test_create_operator_group_via_motion_scenario(
 
     evm_script_calldata = create_calldata(
         group_id=scenario_group_input["group_id"],
+        name=scenario_group_input["name"],
         sub_node_operators=scenario_group_input["sub_node_operators"],
         external_operators=scenario_group_input["external_operators"],
     )
@@ -162,7 +165,7 @@ def test_create_operator_group_via_motion_scenario(
     if isinstance(created_event, list):
         created_event = created_event[-1]
 
-    assert created_event["groupId"] == groups_count_before
+    assert created_event["groupId"] == groups_count_before + 1
 
 
 def test_update_operator_group_via_motion_scenario(
@@ -180,11 +183,12 @@ def test_update_operator_group_via_motion_scenario(
         create_or_update_operator_group_factory,
         create_calldata(
             group_id=scenario_group_input["group_id"],
+            name=scenario_group_input["name"],
             sub_node_operators=scenario_group_input["sub_node_operators"],
             external_operators=scenario_group_input["external_operators"],
         ),
     )
-    group_id = groups_count_before
+    group_id = groups_count_before + 1
 
     updated_sub_node_operators = list(scenario_group_input["sub_node_operators"])
     if len(updated_sub_node_operators) == 1:
@@ -199,6 +203,7 @@ def test_update_operator_group_via_motion_scenario(
         create_or_update_operator_group_factory,
         create_calldata(
             group_id=group_id,
+            name="Updated Group",
             sub_node_operators=updated_sub_node_operators,
             external_operators=scenario_group_input["external_operators"],
         ),
@@ -228,17 +233,19 @@ def test_clear_operator_group_via_motion_scenario(
         create_or_update_operator_group_factory,
         create_calldata(
             group_id=scenario_group_input["group_id"],
+            name=scenario_group_input["name"],
             sub_node_operators=scenario_group_input["sub_node_operators"],
             external_operators=scenario_group_input["external_operators"],
         ),
     )
-    group_id = groups_count_before
+    group_id = groups_count_before + 1
 
     clear_tx = easytrack_executor(
         commitee_multisig,
         create_or_update_operator_group_factory,
         create_calldata(
             group_id=group_id,
+            name="",
             sub_node_operators=[],
             external_operators=[],
         ),

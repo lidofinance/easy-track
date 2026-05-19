@@ -14,6 +14,7 @@ interface IMetaRegistry {
     }
 
     struct OperatorGroup {
+        string name;
         SubNodeOperator[] subNodeOperators;
         ExternalOperator[] externalOperators;
     }

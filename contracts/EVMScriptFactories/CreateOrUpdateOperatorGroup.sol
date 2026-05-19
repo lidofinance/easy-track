@@ -176,19 +176,20 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         uint256 subNodeOperatorsCount = groupInfo.subNodeOperators.length;
         uint256 externalOperatorsCount = groupInfo.externalOperators.length;
 
-        require(
-            groupId < metaRegistry.getOperatorGroupsCount(),
-            ERROR_INVALID_GROUP_ID
-        );
-
         if (groupId == metaRegistry.NO_GROUP_ID()) {
             require(subNodeOperatorsCount > 0, ERROR_EMPTY_GROUP);
-        } else if (subNodeOperatorsCount == 0) {
+        } else {
             require(
-                externalOperatorsCount == 0,
-                ERROR_INVALID_EMPTY_GROUP_UPDATE
+                groupId <= metaRegistry.getOperatorGroupsCount(),
+                ERROR_INVALID_GROUP_ID
             );
-            return;
+            if (subNodeOperatorsCount == 0) {
+                require(
+                    externalOperatorsCount == 0 && bytes(groupInfo.name).length == 0,
+                    ERROR_INVALID_EMPTY_GROUP_UPDATE
+                );
+                return;
+            }
         }
 
         _validateSubNodeOperators(groupInfo.subNodeOperators);

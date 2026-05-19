@@ -13,10 +13,10 @@ from utils.hardhat_helpers import get_last_tx_revert_reason
 FACTORY_NAME = "CM v2"
 
 
-def create_calldata(group_id, sub_node_operators, external_operators):
+def create_calldata(group_id, sub_node_operators, external_operators, name=""):
     return encode_calldata(
-        ["uint256", "((uint64,uint16)[],(bytes)[])"],
-        [group_id, (sub_node_operators, external_operators)],
+        ["uint256", "(string,(uint64,uint16)[],(bytes)[])"],
+        [group_id, (name, sub_node_operators, external_operators)],
     )
 
 
@@ -32,10 +32,10 @@ def as_decoded_external_operators(external_operators):
     return [("0x" + item[0].hex(),) for item in external_operators]
 
 
-def expected_evm_script(meta_registry, group_id, sub_node_operators, external_operators):
+def expected_evm_script(meta_registry, group_id, name, sub_node_operators, external_operators):
     call_data = meta_registry.createOrUpdateOperatorGroup.encode_input(
         group_id,
-        (sub_node_operators, external_operators),
+        (name, sub_node_operators, external_operators),
     )
     return encode_call_script([(meta_registry.address, call_data)])
 
@@ -60,14 +60,16 @@ def assert_create_evm_script_equals(
     creator,
     meta_registry,
     group_id,
+    name,
     sub_node_operators,
     external_operators,
 ):
-    calldata = create_calldata(group_id, sub_node_operators, external_operators)
+    calldata = create_calldata(group_id, sub_node_operators, external_operators, name)
     evm_script = factory.createEVMScript(creator, calldata)
     assert evm_script == expected_evm_script(
         meta_registry,
         group_id,
+        name,
         sub_node_operators,
         external_operators,
     )
@@ -80,8 +82,9 @@ def assert_create_evm_script_reverts(
     sub_node_operators,
     external_operators,
     revert_reason,
+    name="",
 ):
-    calldata = create_calldata(group_id, sub_node_operators, external_operators)
+    calldata = create_calldata(group_id, sub_node_operators, external_operators, name)
     with reverts(revert_reason):
         factory.createEVMScript(creator, calldata)
 
@@ -205,8 +208,9 @@ def test_decode_evm_script_call_data(factory):
     decoded_group_id, decoded_group_info = factory.decodeEVMScriptCallData(calldata)
 
     assert decoded_group_id == group_id
-    assert decoded_group_info[0] == sub_node_operators
-    assert decoded_group_info[1] == as_decoded_external_operators(
+    assert decoded_group_info[0] == ""
+    assert decoded_group_info[1] == sub_node_operators
+    assert decoded_group_info[2] == as_decoded_external_operators(
         external_operators
     )
 
@@ -233,6 +237,7 @@ def test_create_group_success(owner, meta_registry_stub, factory):
         creator=owner,
         meta_registry=meta_registry_stub,
         group_id=0,
+        name="Test Group",
         sub_node_operators=[(1, 7000), (2, 3000)],
         external_operators=[
             make_nor_external_operator(1, 1001),
@@ -405,6 +410,7 @@ def test_update_group_success(owner, meta_registry_stub, factory):
         creator=owner,
         meta_registry=meta_registry_stub,
         group_id=1,
+        name="Updated Group",
         sub_node_operators=[(10, 10000)],
         external_operators=[make_nor_external_operator(1, 1234)],
     )
@@ -417,6 +423,7 @@ def test_update_group_clear_success(owner, meta_registry_stub, factory):
         creator=owner,
         meta_registry=meta_registry_stub,
         group_id=1,
+        name="",
         sub_node_operators=[],
         external_operators=[],
     )
@@ -437,8 +444,8 @@ def test_update_group_reverts_with_invalid_empty_shape(owner, meta_registry_stub
 @pytest.mark.parametrize(
     "group_id, sub_node_operators, external_operators",
     [
-        pytest.param(2, [(1, 10000)], [], id="equal_to_groups_count"),
-        pytest.param(3, [(1, 10000)], [], id="greater_than_groups_count"),
+        pytest.param(3, [(1, 10000)], [], id="equal_to_groups_count_plus_one"),
+        pytest.param(4, [(1, 10000)], [], id="greater_than_groups_count"),
         pytest.param(3, [], [], id="clear_update"),
     ],
 )
@@ -476,7 +483,7 @@ def test_update_group_clear_reverts_with_invalid_group_id_when_no_group_id_is_no
     assert_create_evm_script_reverts(
         factory=factory,
         creator=owner,
-        group_id=2,
+        group_id=3,
         sub_node_operators=[],
         external_operators=[],
         revert_reason="INVALID_GROUP_ID",
@@ -492,6 +499,7 @@ def test_create_and_update_with_non_zero_no_group_id(owner, meta_registry_stub, 
         creator=owner,
         meta_registry=meta_registry_stub,
         group_id=10,
+        name="New Group",
         sub_node_operators=[(1, 6000), (2, 4000)],
         external_operators=[],
     )
@@ -500,24 +508,23 @@ def test_create_and_update_with_non_zero_no_group_id(owner, meta_registry_stub, 
         creator=owner,
         meta_registry=meta_registry_stub,
         group_id=1,
+        name="Existing Group",
         sub_node_operators=[(3, 10000)],
         external_operators=[],
     )
 
 
-def test_create_reverts_with_invalid_group_id_when_no_group_id_is_out_of_range(
-    owner,
-    meta_registry_stub,
-    factory,
-):
-    meta_registry_stub.setNoGroupId(10, {"from": owner})
+def test_update_reverts_with_group_id_beyond_count(owner, meta_registry_stub, factory):
+    """Update must revert when group_id exceeds the current groups count."""
     meta_registry_stub.setGroupsCount(2, {"from": owner})
-
     assert_create_evm_script_reverts(
         factory=factory,
         creator=owner,
-        group_id=10,
+        group_id=5,
+        name="",
         sub_node_operators=[(1, 10000)],
         external_operators=[],
         revert_reason="INVALID_GROUP_ID",
     )
+
+

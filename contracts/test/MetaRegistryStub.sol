@@ -9,7 +9,8 @@ contract MetaRegistryStub is IMetaRegistry {
     uint256 public override NO_GROUP_ID;
     address public override MODULE;
     address public override STAKING_ROUTER;
-    OperatorGroup[] internal groups;
+    uint256 private groupsCount;
+    mapping(uint256 => OperatorGroup) internal groups;
     mapping(uint256 => uint256) internal nodeOperatorGroupIdById;
     mapping(bytes32 => uint256) internal externalOperatorGroupIdByKey;
 
@@ -22,8 +23,6 @@ contract MetaRegistryStub is IMetaRegistry {
 
     constructor() {
         NO_GROUP_ID = 0;
-        // Reserve NO_GROUP_ID as a sentinel "no group" entry, like in MetaRegistry.
-        groups.push();
     }
 
     /// @dev Test-only helper to emulate non-zero sentinel values.
@@ -31,14 +30,9 @@ contract MetaRegistryStub is IMetaRegistry {
         NO_GROUP_ID = _noGroupId;
     }
 
-    /// @dev Test-only helper to force a specific groups length.
+    /// @dev Test-only helper to force a specific groups count.
     function setGroupsCount(uint256 _groupsCount) external {
-        while (groups.length < _groupsCount) {
-            groups.push();
-        }
-        while (groups.length > _groupsCount) {
-            groups.pop();
-        }
+        groupsCount = _groupsCount;
     }
 
     function setModule(address _module) external {
@@ -66,7 +60,7 @@ contract MetaRegistryStub is IMetaRegistry {
     }
 
     function getOperatorGroupsCount() external view override returns (uint256) {
-        return groups.length;
+        return groupsCount;
     }
 
     function getNodeOperatorGroupId(
@@ -87,19 +81,19 @@ contract MetaRegistryStub is IMetaRegistry {
         uint256 groupId,
         OperatorGroup calldata groupInfo
     ) external override {
-        if (groupId >= groups.length) revert InvalidOperatorGroupId();
-
         if (groupId == NO_GROUP_ID) {
             if (groupInfo.subNodeOperators.length == 0) {
                 revert InvalidOperatorGroup();
             }
-            groups.push();
-            emit OperatorGroupCreated(groups.length - 1, groupInfo);
+            groupsCount++;
+            emit OperatorGroupCreated(groupsCount, groupInfo);
             return;
         }
 
+        if (groupId > groupsCount) revert InvalidOperatorGroupId();
+
         if (groupInfo.subNodeOperators.length == 0) {
-            if (groupInfo.externalOperators.length != 0) {
+            if (groupInfo.externalOperators.length != 0 || bytes(groupInfo.name).length != 0) {
                 revert InvalidOperatorGroup();
             }
             emit OperatorGroupCleared(groupId);
