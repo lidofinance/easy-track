@@ -218,6 +218,207 @@ def test_update_operator_group_via_motion_scenario(
         assert updated_event["groupId"] == group_id
 
 
+def test_migrate_sub_operator_between_groups_scenario(
+    commitee_multisig,
+    easytrack_executor,
+    et_contracts,
+    stranger,
+    chain,
+    meta_registry_contract,
+    create_or_update_operator_group_factory,
+    scenario_group_input,
+    use_deployed_contracts_from_env,
+):
+    """
+    Two motions are created while both are still pending (before either is
+    enacted), then enacted one by one in the correct order:
+
+      Motion 1 update group A to remove operator X
+      Motion 2 create group B with operator X   (created BEFORE motion 1 executes)
+
+    The factory is stateless so it cannot detect the overlap at creation time.
+    Executing motion 1 first frees operator X so that motion 2 succeeds.
+    """
+    sub_ops = list(scenario_group_input["sub_node_operators"])
+
+    if len(sub_ops) < 2:
+        if use_deployed_contracts_from_env:
+            pytest.skip("need at least 2 sub-operators for migration test on live contracts")
+        pytest.skip("need at least 2 sub-operators")
+
+    # -----------------------------------------------------------------
+    # Prerequisite – create group A (enact immediately, not part of the
+    # concurrent pair being tested)
+    # -----------------------------------------------------------------
+    groups_count_before = meta_registry_contract.getOperatorGroupsCount()
+
+    easytrack_executor(
+        commitee_multisig,
+        create_or_update_operator_group_factory,
+        create_calldata(
+            group_id=scenario_group_input["group_id"],
+            name=scenario_group_input["name"],
+            sub_node_operators=sub_ops,
+            external_operators=scenario_group_input["external_operators"],
+        ),
+    )
+    group_a_id = groups_count_before + 1
+
+    migrating_op_id = sub_ops[-1][0]
+    remaining_ops = [(sub_ops[0][0], 10_000)]
+    group_b_ops = [(migrating_op_id, 10_000)]
+
+    # -----------------------------------------------------------------
+    # Create both motions BEFORE enacting either of them
+    # -----------------------------------------------------------------
+    calldata_update_a = create_calldata(
+        group_id=group_a_id,
+        name=scenario_group_input["name"],
+        sub_node_operators=remaining_ops,
+        external_operators=scenario_group_input["external_operators"],
+    )
+    calldata_create_b = create_calldata(
+        group_id=scenario_group_input["group_id"],
+        name="Group B",
+        sub_node_operators=group_b_ops,
+        external_operators=[],
+    )
+
+    tx_motion1 = et_contracts.easy_track.createMotion(
+        create_or_update_operator_group_factory,
+        calldata_update_a,
+        {"from": commitee_multisig},
+    )
+    tx_motion2 = et_contracts.easy_track.createMotion(
+        create_or_update_operator_group_factory,
+        calldata_create_b,
+        {"from": commitee_multisig},
+    )
+
+    motions = et_contracts.easy_track.getMotions()
+    motion1_id = motions[-2][0]
+    motion2_id = motions[-1][0]
+
+    chain.sleep(72 * 60 * 60 + 100)
+
+    # -----------------------------------------------------------------
+    # Enact motion 1 first (removes operator X from group A)
+    # -----------------------------------------------------------------
+    et_contracts.easy_track.enactMotion(
+        motion1_id,
+        tx_motion1.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
+    )
+
+    # -----------------------------------------------------------------
+    # Enact motion 2 (creates group B with now-free operator X)
+    # -----------------------------------------------------------------
+    enact_b_tx = et_contracts.easy_track.enactMotion(
+        motion2_id,
+        tx_motion2.events["MotionCreated"]["_evmScriptCallData"],
+        {"from": stranger},
+    )
+
+    group_b_id = groups_count_before + 2
+    assert meta_registry_contract.getOperatorGroupsCount() == groups_count_before + 2
+
+    if not use_deployed_contracts_from_env:
+        created_b_event = enact_b_tx.events["OperatorGroupCreated"]
+        if isinstance(created_b_event, list):
+            created_b_event = created_b_event[-1]
+        assert created_b_event["groupId"] == group_b_id
+
+
+def test_migrate_sub_operator_conflict_scenario(
+    commitee_multisig,
+    easytrack_executor,
+    et_contracts,
+    stranger,
+    chain,
+    meta_registry_contract,
+    create_or_update_operator_group_factory,
+    scenario_group_input,
+    use_deployed_contracts_from_env,
+):
+    """
+    Two motions are created while both are still pending, but enacted in the
+    WRONG order — motion 2 (create group B with operator X) fires BEFORE
+    motion 1 (remove operator X from group A).
+
+    MetaRegistry must reject motion 2 because operator X is still assigned
+    to group A at execution time.
+    """
+    sub_ops = list(scenario_group_input["sub_node_operators"])
+
+    if len(sub_ops) < 2:
+        if use_deployed_contracts_from_env:
+            pytest.skip("need at least 2 sub-operators for migration test on live contracts")
+        pytest.skip("need at least 2 sub-operators")
+
+    groups_count_before = meta_registry_contract.getOperatorGroupsCount()
+
+    easytrack_executor(
+        commitee_multisig,
+        create_or_update_operator_group_factory,
+        create_calldata(
+            group_id=scenario_group_input["group_id"],
+            name=scenario_group_input["name"],
+            sub_node_operators=sub_ops,
+            external_operators=scenario_group_input["external_operators"],
+        ),
+    )
+    group_a_id = groups_count_before + 1
+
+    migrating_op_id = sub_ops[-1][0]
+    remaining_ops = [(sub_ops[0][0], 10_000)]
+    group_b_ops = [(migrating_op_id, 10_000)]
+
+    calldata_update_a = create_calldata(
+        group_id=group_a_id,
+        name=scenario_group_input["name"],
+        sub_node_operators=remaining_ops,
+        external_operators=scenario_group_input["external_operators"],
+    )
+    calldata_create_b = create_calldata(
+        group_id=scenario_group_input["group_id"],
+        name="Group B",
+        sub_node_operators=group_b_ops,
+        external_operators=[],
+    )
+
+    tx_motion1 = et_contracts.easy_track.createMotion(
+        create_or_update_operator_group_factory,
+        calldata_update_a,
+        {"from": commitee_multisig},
+    )
+    tx_motion2 = et_contracts.easy_track.createMotion(
+        create_or_update_operator_group_factory,
+        calldata_create_b,
+        {"from": commitee_multisig},
+    )
+
+    motions = et_contracts.easy_track.getMotions()
+    motion1_id = motions[-2][0]
+    motion2_id = motions[-1][0]
+
+    chain.sleep(72 * 60 * 60 + 100)
+
+    # Enact motion 2 FIRST — operator X is still in group A → must revert
+    with brownie.reverts():
+        et_contracts.easy_track.enactMotion(
+            motion2_id,
+            tx_motion2.events["MotionCreated"]["_evmScriptCallData"],
+            {"from": stranger},
+        )
+
+    # Clean up: cancel both motions
+    et_contracts.easy_track.cancelMotion(motion2_id, {"from": commitee_multisig})
+    et_contracts.easy_track.cancelMotion(motion1_id, {"from": commitee_multisig})
+
+    # Group count unchanged — neither motion landed
+    assert meta_registry_contract.getOperatorGroupsCount() == groups_count_before + 1
+
+
 def test_clear_operator_group_via_motion_scenario(
     commitee_multisig,
     easytrack_executor,
