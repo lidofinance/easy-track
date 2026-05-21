@@ -59,13 +59,13 @@
     },
     "CreateOrUpdateOperatorGroup:CM": {
         "contract": "CreateOrUpdateOperatorGroup",
-        "address": "0x47DA6206965CD722591e87f5eC43604812705e88",
+        "address": "0xD3De4d7dCc0E81131032Fb4C32243f4b2B90e8b7",
         "constructorArgs": [
             "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
             "CM",
             "0x87EB69Ae51317405FD285efD2326a4a11f6173b9",
             1
         ],
-        "txHash": "0x7ee81f34e855c7f562d76a41ccc58a40895035ea0ea8231aef41ff21324c9a16"
+        "txHash": "0x14dab6c33a39c0ba850aaf67fb12063a766e97fa3820842005e7067c41f966c6"
     }
 }
