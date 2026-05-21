@@ -264,6 +264,25 @@ def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
             [
                 WithdrawnValidatorInfo(
                     no_id=0,
+                    key_index=5,
+                    exit_balance=100500,
+                    slashing_penalty=16,
+                    is_slashed=True,
+                ),
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=1,
+                    exit_balance=30000,
+                    slashing_penalty=1,
+                    is_slashed=True,
+                ),
+            ],
+            id="same_operator_id_descending_key_indices",
+        ),
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
+                    no_id=0,
                     key_index=1,
                     exit_balance=100500,
                     slashing_penalty=16,
@@ -271,13 +290,13 @@ def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
                 ),
                 WithdrawnValidatorInfo(
                     no_id=0,
-                    key_index=5,
+                    key_index=1,
                     exit_balance=30000,
                     slashing_penalty=1,
                     is_slashed=True,
                 ),
             ],
-            id="same_operator_id",
+            id="same_operator_id_duplicate_key_indices",
         ),
     ],
 )
@@ -318,6 +337,25 @@ def test_create_evm_script_reverts_if_not_sorted(owner, factory, values):
                     is_slashed=True,
                 ),
             ]
+        ),
+        pytest.param(
+            [
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=1,
+                    exit_balance=100500,
+                    slashing_penalty=16,
+                    is_slashed=True,
+                ),
+                WithdrawnValidatorInfo(
+                    no_id=0,
+                    key_index=5,
+                    exit_balance=30000,
+                    slashing_penalty=1,
+                    is_slashed=True,
+                ),
+            ],
+            id="same_operator_id_increasing_key_indices",
         ),
     ],
 )

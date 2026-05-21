@@ -109,10 +109,11 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
             require(current.slashingPenalty > 0, ERROR_INVALID_SLASHING_PENALTY);
 
             if (i > 0) {
-                require(
-                    current.nodeOperatorId > prev.nodeOperatorId,
-                    ERROR_NOT_SORTED
-                );
+                if (current.nodeOperatorId == prev.nodeOperatorId) {
+                    require(current.keyIndex > prev.keyIndex, ERROR_NOT_SORTED);
+                } else {
+                    require(current.nodeOperatorId > prev.nodeOperatorId, ERROR_NOT_SORTED);
+                }
             }
             prev = current;
         }
