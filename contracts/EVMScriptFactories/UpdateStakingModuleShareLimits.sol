@@ -88,19 +88,19 @@ contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, Trus
 
         validateParams(params);
 
-        address[] memory to = new address[](2);
-        bytes4[] memory sel = new bytes4[](2);
+        address[] memory toAddresses = new address[](2);
+        bytes4[] memory methodIds = new bytes4[](2);
         bytes[] memory data = new bytes[](2);
 
-        to[0] = address(this);
-        sel[0] = IUpdateStakingModuleShareLimits.validateParams.selector;
+        toAddresses[0] = address(this);
+        methodIds[0] = IUpdateStakingModuleShareLimits.validateParams.selector;
         data[0] = abi.encode(params);
 
-        to[1] = address(stakingRouter);
-        sel[1] = IStakingRouter.updateModuleShares.selector;
+        toAddresses[1] = address(stakingRouter);
+        methodIds[1] = IStakingRouter.updateModuleShares.selector;
         data[1] = abi.encode(stakingModuleId, params.newStakeShareLimit, params.newPriorityExitShareThreshold);
 
-        return EVMScriptCreator.createEVMScript(to, sel, data);
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, data);
     }
 
     function validateParams(ModuleShareParams memory params) public view override {
