@@ -10,13 +10,13 @@
     },
     "ReportWithdrawalsForSlashedValidators:CSM": {
         "contract": "ReportWithdrawalsForSlashedValidators",
-        "address": "0x4EaB04775837A6F0218750A10454119f349258FE",
+        "address": "0x22dd4ca53Be286e3d4FE3D92082dfcE0C3b5bA66",
         "constructorArgs": [
             "0x4AF43Ee34a6fcD1fEcA1e1F832124C763561dA53",
             "CSM",
             "0x79CEf36D84743222f37765204Bec41E92a93E59d"
         ],
-        "txHash": "0xb6f5b7e61d3a6eb9b9c467f424dda63838613e69293dc752091022070cb3916f"
+        "txHash": "0xcb2ec4fee589bbd168d69ec69b60a62dd78ef6397631560cf5c3d50eaa959815"
     },
     "SettleGeneralDelayedPenalty:CSM": {
         "contract": "SettleGeneralDelayedPenalty",
@@ -39,13 +39,13 @@
     },
     "ReportWithdrawalsForSlashedValidators:CM": {
         "contract": "ReportWithdrawalsForSlashedValidators",
-        "address": "0x6E40FED7c28bAA93a798cA10f8A93965a19eC52e",
+        "address": "0x262E68B4A607b7fb705112C2a29df43727F8EE8e",
         "constructorArgs": [
             "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
             "CM",
             "0x87EB69Ae51317405FD285efD2326a4a11f6173b9"
         ],
-        "txHash": "0x65c2fc741927c45d720f656a8ff814337664dac7355bfe96af91ff8aa9ddf847"
+        "txHash": "0xa605e67a51e3256aca109bff7c17e9c19edf94cc17b1719efbc68b7664b82c59"
     },
     "SettleGeneralDelayedPenalty:CM": {
         "contract": "SettleGeneralDelayedPenalty",
