@@ -398,6 +398,30 @@ def test_create_group_reverts_with_missing_external_operator(owner, factory):
     )
 
 
+def test_create_group_reverts_with_name_too_long(owner, factory):
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        name="x" * 257,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[],
+        revert_reason="GROUP_NAME_TOO_LONG",
+    )
+
+
+def test_create_group_succeeds_with_max_length_name(owner, meta_registry_stub, factory):
+    assert_create_evm_script_equals(
+        factory=factory,
+        creator=owner,
+        group_id=0,
+        name="x" * 256,
+        sub_node_operators=[(1, 10000)],
+        external_operators=[],
+        meta_registry=meta_registry_stub,
+    )
+
+
 # -----------------------
 # Update Path
 # -----------------------
@@ -413,6 +437,19 @@ def test_update_group_success(owner, meta_registry_stub, factory):
         name="Updated Group",
         sub_node_operators=[(10, 10000)],
         external_operators=[make_nor_external_operator(1, 1234)],
+    )
+
+
+def test_update_group_reverts_with_name_too_long(owner, meta_registry_stub, factory):
+    meta_registry_stub.setGroupsCount(3, {"from": owner})
+    assert_create_evm_script_reverts(
+        factory=factory,
+        creator=owner,
+        group_id=1,
+        name="x" * 257,
+        sub_node_operators=[(10, 10000)],
+        external_operators=[],
+        revert_reason="GROUP_NAME_TOO_LONG",
     )
 
 

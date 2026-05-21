@@ -39,12 +39,15 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         "EXTERNAL_OPERATOR_DOES_NOT_EXIST";
     string private constant ERROR_EXTERNAL_MODULE_NOT_ALLOWED =
         "EXTERNAL_MODULE_NOT_ALLOWED";
+    string private constant ERROR_GROUP_NAME_TOO_LONG =
+        "GROUP_NAME_TOO_LONG";
 
     // -------------
     // CONSTANTS
     // -------------
 
     uint256 private constant MAX_BP = 10000;
+    uint256 private constant MAX_NAME_LENGTH = 256;
     // ExternalOperatorLib.OperatorType.NOR
     uint8 private constant EXT_OPERATOR_TYPE_NOR = 0;
     uint256 private constant EXT_OPERATOR_DATA_LENGTH = 10;
@@ -192,6 +195,10 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
             }
         }
 
+        require(
+            bytes(groupInfo.name).length <= MAX_NAME_LENGTH,
+            ERROR_GROUP_NAME_TOO_LONG
+        );
         _validateSubNodeOperators(groupInfo.subNodeOperators);
         _validateExternalOperators(groupInfo.externalOperators);
     }
