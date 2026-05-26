@@ -11,7 +11,7 @@ def addresses(network=DEFAULT_NETWORK):
         )
     if network == "hoodi" or network == "hoodi-fork":
         return CMAddressesSetup(
-            module="",
+            module="0x87EB69Ae51317405FD285efD2326a4a11f6173b9",
         )
     raise NameError(
         f"Unknown network '{network}'. Supported networks: mainnet, mainnet-fork, hoodi, hoodi-fork"
