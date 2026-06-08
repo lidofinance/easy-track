@@ -1,0 +1,57 @@
+name: "Setup Brownie"
+description: "Install Python, Node, Poetry, npm deps, compile contracts, and import network config"
+
+inputs:
+  python-version:
+    description: "Python version to install"
+    required: true
+  poetry-version:
+    description: "Poetry version to install"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install poetry
+      shell: bash
+      run: pipx install poetry==${{ inputs.poetry-version }}
+
+    - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      with:
+        python-version: ${{ inputs.python-version }}
+        cache: "poetry"
+
+    - name: Setup Node
+      uses: actions/setup-node@53b83947a5a98c8d113130e565377fae1a50d02f # v6.3.0
+      with:
+        node-version-file: ".nvmrc"
+        cache: "npm"
+
+    - name: Install dependencies
+      shell: bash
+      run: |
+        poetry install
+        npm ci
+
+    - name: Compile contracts
+      shell: bash
+      run: poetry run brownie compile
+
+    - name: Import network config
+      shell: bash
+      run: poetry run brownie networks import network-config.yaml True
+
+    - name: System info
+      shell: bash
+      run: |
+        echo "Memory and swap:"
+        free -h
+        echo
+        echo "Disk:"
+        df -h /
+        echo
+        echo "CPUs: $(nproc --all)"

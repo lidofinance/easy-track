@@ -1,0 +1,91 @@
+name: Tests
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+
+env:
+  PYTHON_VERSION: "3.10.6"
+  POETRY_VERSION: "1.8.5"
+
+jobs:
+  unit-tests-datetime:
+    name: Unit Tests - DateTime Library
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run DateTime library unit tests
+        run: >
+          poetry run brownie test
+          tests/test_bokky_poo_bahs_date-time-library.py
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+  unit-tests-core:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run unit tests
+        run: >
+          poetry run brownie test
+          --ignore=tests/integration
+          --ignore=tests/scenario
+          --ignore=tests/test_bokky_poo_bahs_date-time-library.py
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+  integration-and-scenario-tests:
+    name: Integration & Scenario Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run integration tests
+        run: >
+          poetry run brownie test
+          tests/integration/
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+      - name: Run scenario tests
+        run: >
+          poetry run brownie test
+          tests/scenario/
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
