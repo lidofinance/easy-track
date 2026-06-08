@@ -37,6 +37,17 @@ runs:
         poetry install
         npm ci
 
+    - name: Install solc 0.8.6
+      shell: bash
+      run: |
+        SOLC=~/.solcx/solc-v0.8.6
+        mkdir -p ~/.solcx
+        wget -qO "$SOLC" \
+          https://github.com/ethereum/solidity/releases/download/v0.8.6/solc-static-linux
+        echo "abd5c4f3f262bc3ed7951b968c63f98e83f66d9a5c3568ab306eac49250aec3e  $SOLC" | sha256sum -c -
+        chmod +x "$SOLC"
+        "$SOLC" --version
+
     - name: Compile contracts
       shell: bash
       run: poetry run brownie compile
