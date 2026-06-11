@@ -11,12 +11,31 @@ from utils.hardhat_helpers import get_last_tx_revert_reason
 
 
 FACTORY_NAME = "CM v2"
+GROUP_INFO_TYPE = "(string,(uint64,uint16)[],(bytes)[])"
 
 
-def create_calldata(group_id, sub_node_operators, external_operators, name=""):
+def empty_group_info():
+    return ("", [], [])
+
+
+def encode_operator_group_calldata(group_id, current_group_info, group_info):
     return encode_calldata(
-        ["uint256", "(string,(uint64,uint16)[],(bytes)[])"],
-        [group_id, (name, sub_node_operators, external_operators)],
+        ["uint256", GROUP_INFO_TYPE, GROUP_INFO_TYPE],
+        [group_id, current_group_info, group_info],
+    )
+
+
+def create_calldata(
+    group_id,
+    sub_node_operators,
+    external_operators,
+    name="",
+    current_group_info=None,
+):
+    return encode_operator_group_calldata(
+        group_id,
+        current_group_info or empty_group_info(),
+        (name, sub_node_operators, external_operators),
     )
 
 
@@ -32,12 +51,32 @@ def as_decoded_external_operators(external_operators):
     return [("0x" + item[0].hex(),) for item in external_operators]
 
 
-def expected_evm_script(meta_registry, group_id, name, sub_node_operators, external_operators):
-    call_data = meta_registry.createOrUpdateOperatorGroup.encode_input(
+def expected_evm_script(
+    factory,
+    meta_registry,
+    group_id,
+    name,
+    sub_node_operators,
+    external_operators,
+    current_group_info=None,
+):
+    current_group_info = current_group_info or empty_group_info()
+    group_info = (name, sub_node_operators, external_operators)
+    validate_call_data = factory.validateInputData.encode_input(
         group_id,
-        (name, sub_node_operators, external_operators),
+        current_group_info,
+        group_info,
     )
-    return encode_call_script([(meta_registry.address, call_data)])
+    update_call_data = meta_registry.createOrUpdateOperatorGroup.encode_input(
+        group_id,
+        group_info,
+    )
+    return encode_call_script(
+        [
+            (factory.address, validate_call_data),
+            (meta_registry.address, update_call_data),
+        ]
+    )
 
 
 def assert_constructor_reverts(owner, trusted_caller, module, revert_reason):
@@ -63,15 +102,24 @@ def assert_create_evm_script_equals(
     name,
     sub_node_operators,
     external_operators,
+    current_group_info=None,
 ):
-    calldata = create_calldata(group_id, sub_node_operators, external_operators, name)
+    calldata = create_calldata(
+        group_id,
+        sub_node_operators,
+        external_operators,
+        name,
+        current_group_info=current_group_info,
+    )
     evm_script = factory.createEVMScript(creator, calldata)
     assert evm_script == expected_evm_script(
+        factory,
         meta_registry,
         group_id,
         name,
         sub_node_operators,
         external_operators,
+        current_group_info,
     )
 
 
@@ -83,8 +131,15 @@ def assert_create_evm_script_reverts(
     external_operators,
     revert_reason,
     name="",
+    current_group_info=None,
 ):
-    calldata = create_calldata(group_id, sub_node_operators, external_operators, name)
+    calldata = create_calldata(
+        group_id,
+        sub_node_operators,
+        external_operators,
+        name,
+        current_group_info=current_group_info,
+    )
     with reverts(revert_reason):
         factory.createEVMScript(creator, calldata)
 
@@ -198,21 +253,23 @@ def test_decode_nor_external_operator_data(factory):
 
 def test_decode_evm_script_call_data(factory):
     group_id = 0
+    group_name = "some_name"
     sub_node_operators = [(1, 6000), (2, 4000)]
     external_operators = [
         make_nor_external_operator(1, 11),
         make_nor_external_operator(2, 22),
     ]
-    calldata = create_calldata(group_id, sub_node_operators, external_operators)
+    calldata = create_calldata(group_id, sub_node_operators, external_operators, group_name)
 
-    decoded_group_id, decoded_group_info = factory.decodeEVMScriptCallData(calldata)
+    decoded_group_id, decoded_current_group_info, decoded_group_info = factory.decodeEVMScriptCallData(calldata)
 
     assert decoded_group_id == group_id
-    assert decoded_group_info[0] == ""
+    assert decoded_current_group_info[0] == ""
+    assert decoded_current_group_info[1] == []
+    assert decoded_current_group_info[2] == []
+    assert decoded_group_info[0] == group_name
     assert decoded_group_info[1] == sub_node_operators
-    assert decoded_group_info[2] == as_decoded_external_operators(
-        external_operators
-    )
+    assert decoded_group_info[2] == as_decoded_external_operators(external_operators)
 
 
 @pytest.mark.parametrize("invalid_calldata", ["0x", "0x01"], ids=["empty", "malformed"])
@@ -422,6 +479,32 @@ def test_create_group_succeeds_with_max_length_name(owner, meta_registry_stub, f
     )
 
 
+def test_validate_input_data_reverts_if_current_group_changed(
+    owner,
+    meta_registry_stub,
+    factory,
+):
+    """Must commit expected current group state for enactment-time validation"""
+    meta_registry_stub.createOrUpdateOperatorGroup(
+        meta_registry_stub.NO_GROUP_ID(),
+        ("Initial Group", [(10, 10_000)], []),
+        {"from": owner},
+    )
+    group_id = meta_registry_stub.getOperatorGroupsCount()
+    current_group_info = meta_registry_stub.getOperatorGroup(group_id)
+    new_group_info = ("Updated Group", [(10, 10_000)], [])
+
+    factory.validateInputData(group_id, current_group_info, new_group_info)
+    meta_registry_stub.createOrUpdateOperatorGroup(
+        group_id,
+        ("Changed Group", [(11, 10_000)], []),
+        {"from": owner},
+    )
+
+    with reverts("CURRENT_VALUES_MISMATCH"):
+        factory.validateInputData(group_id, current_group_info, new_group_info)
+
+
 # -----------------------
 # Update Path
 # -----------------------
@@ -563,5 +646,3 @@ def test_update_reverts_with_group_id_beyond_count(owner, meta_registry_stub, fa
         external_operators=[],
         revert_reason="INVALID_GROUP_ID",
     )
-
-

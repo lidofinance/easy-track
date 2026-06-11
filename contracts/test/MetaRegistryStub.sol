@@ -20,6 +20,7 @@ contract MetaRegistryStub is IMetaRegistry {
 
     uint256 private groupsCount;
     mapping(uint256 => CachedOperatorGroup) internal groups;
+    mapping(uint256 => OperatorGroup) internal groupInfos;
     mapping(uint256 => uint256) internal groupIdByOperatorId;
     mapping(bytes32 => uint256) internal groupIdByExternalKey;
 
@@ -81,10 +82,19 @@ contract MetaRegistryStub is IMetaRegistry {
         return groupIdByExternalKey[keccak256(_externalOperator.data)];
     }
 
-    function createOrUpdateOperatorGroup(
-        uint256 groupId,
-        OperatorGroup calldata groupInfo
-    ) external override {
+    function getOperatorGroup(uint256 groupId)
+        external
+        view
+        override
+        returns (OperatorGroup memory)
+    {
+        return groupInfos[groupId];
+    }
+
+    function createOrUpdateOperatorGroup(uint256 groupId, OperatorGroup calldata groupInfo)
+        external
+        override
+    {
         if (groupId == NO_GROUP_ID) {
             _createGroup(groupInfo);
         } else {
@@ -131,11 +141,24 @@ contract MetaRegistryStub is IMetaRegistry {
 
         delete group.subNodeOperatorIds;
         delete group.externalOperators;
+        delete groupInfos[groupId];
     }
 
     function _storeGroupData(uint256 groupId, OperatorGroup calldata groupInfo) internal {
+        _storeGroupInfo(groupId, groupInfo);
         _storeSubOperators(groupId, groupInfo.subNodeOperators);
         _storeExternalOperators(groupId, groupInfo.externalOperators);
+    }
+
+    function _storeGroupInfo(uint256 groupId, OperatorGroup calldata groupInfo) internal {
+        OperatorGroup storage stored = groupInfos[groupId];
+        stored.name = groupInfo.name;
+        for (uint256 i; i < groupInfo.subNodeOperators.length; ++i) {
+            stored.subNodeOperators.push(groupInfo.subNodeOperators[i]);
+        }
+        for (uint256 i; i < groupInfo.externalOperators.length; ++i) {
+            stored.externalOperators.push(groupInfo.externalOperators[i]);
+        }
     }
 
     function _storeSubOperators(uint256 groupId, SubNodeOperator[] calldata ops) internal {

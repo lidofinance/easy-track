@@ -11,8 +11,16 @@ import "../interfaces/INodeOperatorsRegistry.sol";
 import "../interfaces/IMetaRegistry.sol";
 import "../interfaces/IStakingRouter.sol";
 
+interface ICreateOrUpdateOperatorGroup is IEVMScriptFactory {
+    function validateInputData(
+        uint256 groupId,
+        IMetaRegistry.OperatorGroup memory currentGroupInfo,
+        IMetaRegistry.OperatorGroup memory newGroupInfo
+    ) external view;
+}
+
 /// @notice Creates EVMScript to create or update a MetaRegistry operator group.
-contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
+contract CreateOrUpdateOperatorGroup is TrustedCaller, ICreateOrUpdateOperatorGroup {
     // -------------
     // ERRORS
     // -------------
@@ -41,6 +49,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         "EXTERNAL_MODULE_NOT_ALLOWED";
     string private constant ERROR_GROUP_NAME_TOO_LONG =
         "GROUP_NAME_TOO_LONG";
+    string private constant ERROR_CURRENT_VALUES_MISMATCH = "CURRENT_VALUES_MISMATCH";
 
     // -------------
     // CONSTANTS
@@ -99,7 +108,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     /// @notice Creates EVMScript for `MetaRegistry.createOrUpdateOperatorGroup`.
     /// @param _creator Address who creates EVMScript.
     /// @param _evmScriptCallData Encoded method arguments in format
-    ///        `abi.encode(uint256 groupId, IMetaRegistry.OperatorGroup groupInfo)`.
+    ///        `abi.encode(uint256 groupId, IMetaRegistry.OperatorGroup currentGroupInfo, IMetaRegistry.OperatorGroup newGroupInfo)`.
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -109,27 +118,40 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     {
         (
             uint256 groupId,
-            IMetaRegistry.OperatorGroup memory groupInfo
+            IMetaRegistry.OperatorGroup memory currentGroupInfo,
+            IMetaRegistry.OperatorGroup memory newGroupInfo
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(groupId, groupInfo);
+        validateInputData(groupId, currentGroupInfo, newGroupInfo);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(metaRegistry),
-                IMetaRegistry.createOrUpdateOperatorGroup.selector,
-                _evmScriptCallData
-            );
+        address[] memory toAddresses = new address[](2);
+        bytes4[] memory methodIds = new bytes4[](2);
+        bytes[] memory data = new bytes[](2);
+
+        toAddresses[0] = address(this);
+        methodIds[0] = ICreateOrUpdateOperatorGroup.validateInputData.selector;
+        data[0] = abi.encode(groupId, currentGroupInfo, newGroupInfo);
+
+        toAddresses[1] = address(metaRegistry);
+        methodIds[1] = IMetaRegistry.createOrUpdateOperatorGroup.selector;
+        data[1] = abi.encode(groupId, newGroupInfo);
+
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, data);
     }
 
     /// @notice Decodes call data used by createEVMScript method.
-    /// @param _evmScriptCallData Encoded tuple: (uint256 groupId, IMetaRegistry.OperatorGroup groupInfo)
+    /// @param _evmScriptCallData Encoded tuple: (uint256 groupId, IMetaRegistry.OperatorGroup currentGroupInfo, IMetaRegistry.OperatorGroup groupInfo)
     /// @return groupId Group ID to update, or NO_GROUP_ID to create.
+    /// @return currentGroupInfo Expected current group definition.
     /// @return groupInfo Group definition.
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (uint256 groupId, IMetaRegistry.OperatorGroup memory groupInfo)
+        returns (
+            uint256 groupId,
+            IMetaRegistry.OperatorGroup memory currentGroupInfo,
+            IMetaRegistry.OperatorGroup memory groupInfo
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -160,6 +182,14 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         return _decodeNORExtOperatorData(_externalOperatorData);
     }
 
+    function validateInputData(
+        uint256 groupId,
+        IMetaRegistry.OperatorGroup memory currentGroupInfo,
+        IMetaRegistry.OperatorGroup memory newGroupInfo
+    ) public view override {
+        _validateInputData(groupId, currentGroupInfo, newGroupInfo);
+    }
+
     // ------------------
     // PRIVATE METHODS
     // ------------------
@@ -167,28 +197,61 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (uint256 groupId, IMetaRegistry.OperatorGroup memory groupInfo)
+        returns (
+            uint256 groupId,
+            IMetaRegistry.OperatorGroup memory currentGroupInfo,
+            IMetaRegistry.OperatorGroup memory groupInfo
+        )
     {
-        return abi.decode(_evmScriptCallData, (uint256, IMetaRegistry.OperatorGroup));
+        return abi.decode(
+            _evmScriptCallData,
+            (uint256, IMetaRegistry.OperatorGroup, IMetaRegistry.OperatorGroup)
+        );
+    }
+
+    function _isEmptyGroupInfo(IMetaRegistry.OperatorGroup memory groupInfo)
+        private
+        pure
+        returns (bool)
+    {
+        return
+            bytes(groupInfo.name).length == 0 &&
+            groupInfo.subNodeOperators.length == 0 &&
+            groupInfo.externalOperators.length == 0;
+    }
+
+    function _hashGroupInfo(IMetaRegistry.OperatorGroup memory groupInfo)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(groupInfo));
     }
 
     function _validateInputData(
         uint256 groupId,
-        IMetaRegistry.OperatorGroup memory groupInfo
+        IMetaRegistry.OperatorGroup memory currentGroupInfo,
+        IMetaRegistry.OperatorGroup memory newGroupInfo
     ) private view {
-        uint256 subNodeOperatorsCount = groupInfo.subNodeOperators.length;
-        uint256 externalOperatorsCount = groupInfo.externalOperators.length;
+        uint256 subNodeOperatorsCount = newGroupInfo.subNodeOperators.length;
+        uint256 externalOperatorsCount = newGroupInfo.externalOperators.length;
 
         if (groupId == metaRegistry.NO_GROUP_ID()) {
+            require(_isEmptyGroupInfo(currentGroupInfo), ERROR_CURRENT_VALUES_MISMATCH);
             require(subNodeOperatorsCount > 0, ERROR_EMPTY_GROUP);
         } else {
             require(
                 groupId <= metaRegistry.getOperatorGroupsCount(),
                 ERROR_INVALID_GROUP_ID
             );
+            require(
+                _hashGroupInfo(currentGroupInfo) ==
+                _hashGroupInfo(metaRegistry.getOperatorGroup(groupId)),
+                ERROR_CURRENT_VALUES_MISMATCH
+            );
             if (subNodeOperatorsCount == 0) {
                 require(
-                    externalOperatorsCount == 0 && bytes(groupInfo.name).length == 0,
+                    externalOperatorsCount == 0 && bytes(newGroupInfo.name).length == 0,
                     ERROR_INVALID_EMPTY_GROUP_UPDATE
                 );
                 return;
@@ -196,11 +259,11 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
         }
 
         require(
-            bytes(groupInfo.name).length <= MAX_NAME_LENGTH,
+            bytes(newGroupInfo.name).length <= MAX_NAME_LENGTH,
             ERROR_GROUP_NAME_TOO_LONG
         );
-        _validateSubNodeOperators(groupInfo.subNodeOperators);
-        _validateExternalOperators(groupInfo.externalOperators);
+        _validateSubNodeOperators(newGroupInfo.subNodeOperators);
+        _validateExternalOperators(newGroupInfo.externalOperators);
     }
 
     function _validateSubNodeOperators(
