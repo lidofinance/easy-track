@@ -61,7 +61,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of MetaRegistry contract
     IMetaRegistry public immutable metaRegistry;
-    /// @notice Curated module taken from MetaRegistry at deployment time
+    /// @notice Curated module
     ICuratedModule public immutable module;
     /// @notice Staking router taken from MetaRegistry at deployment time
     IStakingRouter public immutable stakingRouter;
