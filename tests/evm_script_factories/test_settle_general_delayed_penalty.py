@@ -55,6 +55,17 @@ def test_empty_calldata(owner, factory):
         factory.createEVMScript(owner, EMPTY_CALLDATA)
 
 
+def test_non_sorted_calldata(owner, factory):
+    "Must revert with message 'NODE_OPERATORS_IS_NOT_SORTED' when operator ids aren't sorted"
+    with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
+        NON_SORTED_CALLDATA = create_calldata([1, 0], [1, 1])
+        factory.createEVMScript(owner, NON_SORTED_CALLDATA)
+
+    with reverts("NODE_OPERATORS_IS_NOT_SORTED"):
+        NON_SORTED_CALLDATA = create_calldata([0, 0], [1, 1])
+        factory.createEVMScript(owner, NON_SORTED_CALLDATA)
+
+
 def test_operator_id_out_of_range(owner, factory, module):
     "Must revert with message 'OUT_OF_RANGE_NODE_OPERATOR_ID' when operator id gt operators count"
     node_operators_count = module.getNodeOperatorsCount()

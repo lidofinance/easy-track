@@ -21,6 +21,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         "EMPTY_NODE_OPERATORS_IDS";
     string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID =
         "OUT_OF_RANGE_NODE_OPERATOR_ID";
+    string private constant ERROR_NODE_OPERATORS_IS_NOT_SORTED = "NODE_OPERATORS_IS_NOT_SORTED";
     string private constant ERROR_NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH =
         "NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH";
     string private constant ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED =
@@ -112,6 +113,10 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         uint256 nodeOperatorsCount = module.getNodeOperatorsCount();
         for (uint256 i = 0; i < nodeOperatorsIds.length; ++i) {
             (uint256 nodeOperatorId, uint256 maxAmount) = (nodeOperatorsIds[i], maxAmounts[i]);
+            require(
+                i == 0 || nodeOperatorId > nodeOperatorsIds[i - 1],
+                ERROR_NODE_OPERATORS_IS_NOT_SORTED
+            );
             require(nodeOperatorId < nodeOperatorsCount, ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID);
             uint256 locked = accounting.getLockedBond(
                 nodeOperatorId
