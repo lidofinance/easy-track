@@ -10,6 +10,7 @@ import {WithdrawnValidatorInfo} from "../interfaces/IBaseModule.sol";
 contract BaseModuleStub {
     uint256 internal _nodeOperatorsCount;
     address internal _accounting;
+    mapping(uint256 => mapping(uint256 => bool)) internal _isValidatorSlashed;
 
     uint256 public lastSettledCount;
     uint256 public lastSettledFirstNodeOperatorId;
@@ -34,13 +35,34 @@ contract BaseModuleStub {
         _nodeOperatorsCount = nodeOperatorsCount;
     }
 
-    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external {
+    function mock_setValidatorSlashed(
+        uint256 nodeOperatorId,
+        uint256 keyIndex,
+        bool isSlashed
+    ) external {
+        _isValidatorSlashed[nodeOperatorId][keyIndex] = isSlashed;
+    }
+
+    function isValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex)
+        external
+        view
+        returns (bool)
+    {
+        return _isValidatorSlashed[nodeOperatorId][keyIndex];
+    }
+
+    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos)
+        external
+    {
         for (uint256 i; i < validatorInfos.length; ++i) {
             emit GotValidatorInfo(validatorInfos[i]);
         }
     }
 
-    function settleGeneralDelayedPenalty(uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts) external {
+    function settleGeneralDelayedPenalty(
+        uint256[] memory nodeOperatorIds,
+        uint256[] memory maxAmounts
+    ) external {
         require(nodeOperatorIds.length == maxAmounts.length, "LENGTH_MISMATCH");
 
         lastSettledCount = 0;

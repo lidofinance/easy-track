@@ -17,6 +17,7 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
     string private constant ERROR_EMPTY_VALIDATOR_INFO_LIST = "EMPTY_VALIDATOR_INFO_LIST";
     string private constant ERROR_OPERATOR_DOES_NOT_EXIST = "OPERATOR_DOES_NOT_EXIST";
     string private constant ERROR_VALIDATOR_NOT_SLASHED = "VALIDATOR_NOT_SLASHED";
+    string private constant ERROR_IS_SLASHED_IS_NOT_SET = "IS_SLASHED_IS_NOT_SET";
     string private constant ERROR_ZERO_EXIT_BALANCE = "ZERO_EXIT_BALANCE";
     string private constant ERROR_INVALID_SLASHING_PENALTY = "INVALID_SLASHING_PENALTY";
     string private constant ERROR_ZERO_MODULE_ADDRESS = "ZERO_MODULE_ADDRESS";
@@ -105,8 +106,12 @@ contract ReportWithdrawalsForSlashedValidators is TrustedCaller, IEVMScriptFacto
             WithdrawnValidatorInfo memory current = _decodedCallData[i];
             require(current.nodeOperatorId < nosCount, ERROR_OPERATOR_DOES_NOT_EXIST);
             require(current.exitBalance > 0, ERROR_ZERO_EXIT_BALANCE);
-            require(current.isSlashed, ERROR_VALIDATOR_NOT_SLASHED);
+            require(current.isSlashed, ERROR_IS_SLASHED_IS_NOT_SET);
             require(current.slashingPenalty > 0, ERROR_INVALID_SLASHING_PENALTY);
+            require(
+                module.isValidatorSlashed(current.nodeOperatorId, current.keyIndex),
+                ERROR_VALIDATOR_NOT_SLASHED
+            );
 
             if (i > 0) {
                 if (current.nodeOperatorId == prev.nodeOperatorId) {
