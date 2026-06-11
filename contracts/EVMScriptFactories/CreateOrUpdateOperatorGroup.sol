@@ -239,6 +239,11 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
     ) private view {
         uint256 externalOperatorsCount = _externalOperators.length;
         uint64 prevExternalNodeOperatorId;
+
+        INodeOperatorsRegistry externalModule = INodeOperatorsRegistry(
+            stakingRouter.getStakingModule(allowedExternalModuleId).stakingModuleAddress
+        );
+
         for (uint256 i = 0; i < externalOperatorsCount; ++i) {
             (
                 uint8 externalModuleId,
@@ -250,9 +255,6 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, IEVMScriptFactory {
                 ERROR_EXTERNAL_MODULE_NOT_ALLOWED
             );
 
-            INodeOperatorsRegistry externalModule = INodeOperatorsRegistry(
-                stakingRouter.getStakingModule(externalModuleId).stakingModuleAddress
-            );
             require(
                 externalNodeOperatorId < externalModule.getNodeOperatorsCount(),
                 ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST
