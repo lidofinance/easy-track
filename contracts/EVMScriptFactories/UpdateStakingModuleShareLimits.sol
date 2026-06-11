@@ -34,6 +34,12 @@ contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, Trus
     string private constant ERROR_ZERO_STAKING_ROUTER = "ZERO_STAKING_ROUTER";
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 private constant MAX_BP = 10000;
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -144,6 +150,7 @@ contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, Trus
         bool exitThresholdChanged =
             _params.currentPriorityExitShareThreshold != _params.newPriorityExitShareThreshold;
         require(_params.newStakeShareLimit <= _params.newPriorityExitShareThreshold, ERROR_INVALID_SHARE_PARAMS);
+        require(_params.newPriorityExitShareThreshold <= MAX_BP, ERROR_INVALID_SHARE_PARAMS);
         require(shareChanged || exitThresholdChanged, ERROR_NO_CHANGES);
 
         if (shareChanged) {
