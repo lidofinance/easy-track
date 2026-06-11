@@ -11,8 +11,8 @@ GENERAL_DELAYED_PENALTY_SETTLED_TOPIC0 = brownie.web3.keccak(
 ).hex()
 
 
-def create_calldata(node_operator_ids, max_amounts):
-    return encode_calldata(["uint256[]", "uint256[]"], [node_operator_ids, max_amounts])
+def create_calldata(lock_info_list):
+    return encode_calldata(["(uint256,uint256,uint256)[]"], [lock_info_list])
 
 
 @pytest.fixture(scope="module")
@@ -41,7 +41,7 @@ def module(
     module.mock_setNodeOperatorsCount(1000, {"from": owner})
     module.mock_setAccounting(accounting.address, {"from": owner})
     # Pre-set locked bond so `ensure_module_locked_bond` short-circuits for the stub path.
-    accounting.mock_setLockedBond(0, 1000, {"from": owner})
+    accounting.mock_setLockedBondInfo(0, 1000, 123456, {"from": owner})
     return module
 
 
@@ -84,10 +84,13 @@ def test_settle_general_delayed_penalty_scenario(
 ):
     node_operator_ids = [node_operator_id]
     ensure_module_locked_bond(module, node_operator_ids[0], 10**16)
-    locked_before = accounting.getLockedBond(node_operator_ids[0])
+    lock_info = accounting.getLockedBondInfo(node_operator_ids[0])
+    locked_before = lock_info[0]
     assert locked_before > 0
     max_amounts = [locked_before]
-    evm_script_calldata = create_calldata(node_operator_ids, max_amounts)
+    evm_script_calldata = create_calldata(
+        [(node_operator_ids[0], max_amounts[0], lock_info[1])]
+    )
 
     tx = easytrack_executor(
         commitee_multisig,
@@ -118,4 +121,4 @@ def test_settle_general_delayed_penalty_scenario(
         assert module.lastSettledCount() == 1
         assert module.lastSettledFirstNodeOperatorId() == node_operator_ids[0]
         assert module.lastSettledFirstMaxAmount() == max_amounts[0]
-    assert accounting.getLockedBond(node_operator_ids[0]) == 0
+    assert accounting.getLockedBondInfo(node_operator_ids[0])[0] == 0

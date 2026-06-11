@@ -73,12 +73,12 @@ contract BaseModuleStub {
             uint256 nodeOperatorId = nodeOperatorIds[i];
             uint256 maxAmount = maxAmounts[i];
 
-            // Read locked bond from the accounting contract
+            // Read locked bond from the accounting contract.
             (bool ok, bytes memory data) = _accounting.staticcall(
-                abi.encodeWithSignature("getLockedBond(uint256)", nodeOperatorId)
+                abi.encodeWithSignature("getLockedBondInfo(uint256)", nodeOperatorId)
             );
             require(ok, "ACCOUNTING_CALL_FAILED");
-            uint256 locked = abi.decode(data, (uint256));
+            (uint128 locked, ) = abi.decode(data, (uint128, uint128));
 
             if (locked == 0 || locked > maxAmount) {
                 continue;
