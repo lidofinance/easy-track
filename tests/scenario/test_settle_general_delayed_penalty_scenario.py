@@ -1,18 +1,18 @@
 import pytest
 import brownie
-from brownie import AccountingStub, BaseModuleStub, SettleGeneralDelayedPenalty
+from brownie import AccountingStub, BaseModuleStub, SettleGeneralDelayedPenalty, Wei
 
 from utils.evm_script import encode_calldata
 
 
 FACTORY_NAME = "CSM v3"
 GENERAL_DELAYED_PENALTY_SETTLED_TOPIC0 = brownie.web3.keccak(
-    text="GeneralDelayedPenaltySettled(uint256[],uint256[])"
+    text="GeneralDelayedPenaltySettled(uint256)"
 ).hex()
 
 
 def create_calldata(lock_info_list):
-    return encode_calldata(["(uint256,uint256,uint256)[]"], [lock_info_list])
+    return encode_calldata(["(uint256,uint256)[]"], [lock_info_list])
 
 
 @pytest.fixture(scope="module")
@@ -41,7 +41,7 @@ def module(
     module.mock_setNodeOperatorsCount(1000, {"from": owner})
     module.mock_setAccounting(accounting.address, {"from": owner})
     # Pre-set locked bond so `ensure_module_locked_bond` short-circuits for the stub path.
-    accounting.mock_setLockedBondInfo(0, 1000, 123456, {"from": owner})
+    accounting.mock_setLock(0, Wei(1000), 42, {"from": owner})
     return module
 
 
@@ -78,19 +78,12 @@ def test_settle_general_delayed_penalty_scenario(
     module,
     accounting,
     node_operator_id,
-    use_deployed_contracts_from_env,
     settle_general_delayed_penalty_factory,
     ensure_module_locked_bond,
 ):
-    node_operator_ids = [node_operator_id]
-    ensure_module_locked_bond(module, node_operator_ids[0], 10**16)
-    lock_info = accounting.getLockedBondInfo(node_operator_ids[0])
-    locked_before = lock_info[0]
-    assert locked_before > 0
-    max_amounts = [locked_before]
-    evm_script_calldata = create_calldata(
-        [(node_operator_ids[0], max_amounts[0], lock_info[1])]
-    )
+    ensure_module_locked_bond(module, node_operator_id, 10**16)
+    nonce = accounting.getBondLockNonce(node_operator_id)
+    evm_script_calldata = create_calldata([(node_operator_id, nonce)])
 
     tx = easytrack_executor(
         commitee_multisig,
@@ -98,27 +91,6 @@ def test_settle_general_delayed_penalty_scenario(
         evm_script_calldata,
     )
 
-    has_settle_event = False
-    for log in tx.logs:
-        log_address = log.get("address")
-        topics = log.get("topics", [])
-        if not topics:
-            continue
-        topic0 = topics[0]
-        topic0 = topic0.hex() if hasattr(topic0, "hex") else str(topic0)
-        if not topic0.startswith("0x"):
-            topic0 = "0x" + topic0
-        if (
-            log_address.lower() == module.address.lower()
-            and topic0.lower() == GENERAL_DELAYED_PENALTY_SETTLED_TOPIC0.lower()
-        ):
-            has_settle_event = True
-            break
-
-    assert has_settle_event, "GeneralDelayedPenaltySettled event was not found in raw logs"
-
-    if not use_deployed_contracts_from_env:
-        assert module.lastSettledCount() == 1
-        assert module.lastSettledFirstNodeOperatorId() == node_operator_ids[0]
-        assert module.lastSettledFirstMaxAmount() == max_amounts[0]
-    assert accounting.getLockedBondInfo(node_operator_ids[0])[0] == 0
+    assert "GeneralDelayedPenaltySettled" in tx.events, "GeneralDelayedPenaltySettled event not found"
+    assert tx.events["GeneralDelayedPenaltySettled"]["nodeOperatorId"] == node_operator_id
+    assert accounting.getLockedBond(node_operator_id) == 0
