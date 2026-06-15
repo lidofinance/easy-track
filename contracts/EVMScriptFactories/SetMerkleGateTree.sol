@@ -74,7 +74,7 @@ contract SetMerkleGateTree is TrustedCaller, ISetMerkleGateTree {
             string memory newTreeCid
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        validateInputData(gate, currentTreeRoot, currentTreeCid, newTreeRoot, newTreeCid);
+        _validateInputData(gate, currentTreeRoot, currentTreeCid, newTreeRoot, newTreeCid);
 
         address[] memory toAddresses = new address[](2);
         bytes4[] memory methodIds = new bytes4[](2);

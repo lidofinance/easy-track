@@ -122,7 +122,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, ICreateOrUpdateOperatorGr
             IMetaRegistry.OperatorGroup memory newGroupInfo
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        validateInputData(groupId, currentGroupInfo, newGroupInfo);
+        _validateInputData(groupId, currentGroupInfo, newGroupInfo);
 
         address[] memory toAddresses = new address[](2);
         bytes4[] memory methodIds = new bytes4[](2);
