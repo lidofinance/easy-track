@@ -131,11 +131,11 @@ contract SetMerkleGateTree is TrustedCaller, ISetMerkleGateTree {
         private
         pure
         returns (
-            address,
-            bytes32,
-            string memory,
-            bytes32,
-            string memory
+            address gate,
+            bytes32 currentTreeRoot,
+            string memory currentTreeCid,
+            bytes32 newTreeRoot,
+            string memory newTreeCid
         )
     {
         return abi.decode(_evmScriptCallData, (address, bytes32, string, bytes32, string));

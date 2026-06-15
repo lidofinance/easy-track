@@ -200,7 +200,7 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, ICreateOrUpdateOperatorGr
         returns (
             uint256 groupId,
             IMetaRegistry.OperatorGroup memory currentGroupInfo,
-            IMetaRegistry.OperatorGroup memory groupInfo
+            IMetaRegistry.OperatorGroup memory newGroupInfo
         )
     {
         return abi.decode(
