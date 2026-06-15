@@ -5,25 +5,23 @@ pragma solidity ^0.8.4;
 
 import {WithdrawnValidatorInfo} from "../interfaces/IBaseModule.sol";
 
+import {AccountingStub} from "./AccountingStub.sol";
+
 /// @notice Test stub implementing the IBaseModule method surface.
 /// Specialized module stubs (e.g. curated) inherit from this contract.
 contract BaseModuleStub {
     uint256 internal _nodeOperatorsCount;
-    address internal _accounting;
+    AccountingStub internal _accounting;
     mapping(uint256 => mapping(uint256 => bool)) internal _isValidatorSlashed;
 
-    uint256 public lastSettledCount;
-    uint256 public lastSettledFirstNodeOperatorId;
-    uint256 public lastSettledFirstMaxAmount;
-
     event GotValidatorInfo(WithdrawnValidatorInfo info);
-    event GeneralDelayedPenaltySettled(uint256[] nodeOperatorIds, uint256[] maxAmounts);
+    event GeneralDelayedPenaltySettled(uint256 nodeOperatorId);
 
     function ACCOUNTING() external view returns (address) {
-        return _accounting;
+        return address(_accounting);
     }
 
-    function mock_setAccounting(address accounting_) external {
+    function mock_setAccounting(AccountingStub accounting_) external {
         _accounting = accounting_;
     }
 
@@ -59,45 +57,26 @@ contract BaseModuleStub {
         }
     }
 
-    function settleGeneralDelayedPenalty(
-        uint256[] memory nodeOperatorIds,
-        uint256[] memory maxAmounts
-    ) external {
-        require(nodeOperatorIds.length == maxAmounts.length, "LENGTH_MISMATCH");
-
-        lastSettledCount = 0;
-        lastSettledFirstNodeOperatorId = 0;
-        lastSettledFirstMaxAmount = 0;
+    function settleGeneralDelayedPenalty(uint256[] memory nodeOperatorIds, uint256[] memory nonces)
+        external
+    {
+        require(nodeOperatorIds.length == nonces.length, "LENGTH_MISMATCH");
 
         for (uint256 i; i < nodeOperatorIds.length; ++i) {
             uint256 nodeOperatorId = nodeOperatorIds[i];
-            uint256 maxAmount = maxAmounts[i];
+            uint256 nonce = nonces[i];
 
             // Read locked bond from the accounting contract.
-            (bool ok, bytes memory data) = _accounting.staticcall(
-                abi.encodeWithSignature("getLockedBondInfo(uint256)", nodeOperatorId)
-            );
-            require(ok, "ACCOUNTING_CALL_FAILED");
-            (uint128 locked, ) = abi.decode(data, (uint128, uint128));
-
-            if (locked == 0 || locked > maxAmount) {
+            uint256 locked = _accounting.getLockedBond(nodeOperatorId);
+            if (locked == 0) {
                 continue;
             }
 
-            if (lastSettledCount == 0) {
-                lastSettledFirstNodeOperatorId = nodeOperatorId;
-                lastSettledFirstMaxAmount = maxAmount;
-            }
+            require(nonce == _accounting.getBondLockNonce(nodeOperatorId), "LOCK_NONCE_MISMATCH");
 
+            emit GeneralDelayedPenaltySettled(nodeOperatorId);
             // Clear locked bond on accounting
-            (bool ok2, ) = _accounting.call(
-                abi.encodeWithSignature("mock_clearLockedBond(uint256)", nodeOperatorId)
-            );
-            require(ok2, "ACCOUNTING_CLEAR_FAILED");
-
-            ++lastSettledCount;
+            _accounting.mock_clearLock(nodeOperatorId);
         }
-
-        emit GeneralDelayedPenaltySettled(nodeOperatorIds, maxAmounts);
     }
 }
