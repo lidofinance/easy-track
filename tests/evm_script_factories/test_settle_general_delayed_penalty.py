@@ -132,11 +132,11 @@ def test_lock_should_be_greater_than_zero(owner, factory):
 @pytest.mark.parametrize('lock_bond', [(0,)], indirect=True)
 @pytest.mark.usefixtures('lock_bond')
 def test_lock_should_have_expected_nonce(owner, factory):
-    "Must revert with message 'OUTDATED_LOCK_SETTLE' when nonce mismatches"
+    "Must revert with message 'INVALID_LOCK_NONCE' when nonce mismatches"
     CALLDATA = create_calldata([LockInfo(0, LOCK_NONCE - 1)])
-    with reverts("OUTDATED_LOCK_SETTLE"):
+    with reverts("INVALID_LOCK_NONCE"):
         factory.createEVMScript(owner, CALLDATA)
 
     CALLDATA = create_calldata([LockInfo(0, LOCK_NONCE + 1)])
-    with reverts("OUTDATED_LOCK_SETTLE"):
+    with reverts("INVALID_LOCK_NONCE"):
         factory.createEVMScript(owner, CALLDATA)

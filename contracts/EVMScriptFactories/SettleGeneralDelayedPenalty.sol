@@ -25,7 +25,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID = "OUT_OF_RANGE_NODE_OPERATOR_ID";
     string private constant ERROR_NODE_OPERATORS_OUT_OF_ORDER = "NODE_OPERATORS_OUT_OF_ORDER";
     string private constant ERROR_NO_LOCK_TO_SETTLE = "NO_LOCK_TO_SETTLE";
-    string private constant ERROR_OUTDATED_LOCK_SETTLE = "OUTDATED_LOCK_SETTLE";
+    string private constant ERROR_INVALID_LOCK_NONCE = "INVALID_LOCK_NONCE";
 
     // -------------
     // VARIABLES
@@ -122,7 +122,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
             uint256 lockAmount = accounting.getLockedBond(info.nodeOperatorId);
             require(lockAmount > 0, ERROR_NO_LOCK_TO_SETTLE);
             uint256 lockNonce = accounting.getBondLockNonce(info.nodeOperatorId);
-            require(info.nonce == lockNonce, ERROR_OUTDATED_LOCK_SETTLE);
+            require(info.nonce == lockNonce, ERROR_INVALID_LOCK_NONCE);
         }
     }
 }
