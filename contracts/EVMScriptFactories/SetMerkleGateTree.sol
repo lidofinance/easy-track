@@ -103,11 +103,11 @@ contract SetMerkleGateTree is TrustedCaller, ISetMerkleGateTree {
         external
         pure
         returns (
-            address,
-            bytes32,
-            string memory,
-            bytes32,
-            string memory
+            address gate,
+            bytes32 currentTreeRoot,
+            string memory currentTreeCid,
+            bytes32 newTreeRoot,
+            string memory newTreeCid
         )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
