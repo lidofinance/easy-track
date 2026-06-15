@@ -120,19 +120,7 @@ contract SetMerkleGateTree is TrustedCaller, ISetMerkleGateTree {
         bytes32 newTreeRoot,
         string memory newTreeCid
     ) public view override {
-        IMerkleGate merkleGate = IMerkleGate(gate);
-        bytes32 onChainTreeRoot = merkleGate.treeRoot();
-        bytes32 onChainTreeCidHash = keccak256(bytes(merkleGate.treeCid()));
-
-        require(currentTreeRoot == onChainTreeRoot, ERROR_CURRENT_VALUES_MISMATCH);
-        require(
-            keccak256(bytes(currentTreeCid)) == onChainTreeCidHash,
-            ERROR_CURRENT_VALUES_MISMATCH
-        );
-        require(newTreeRoot != bytes32(0), ERROR_EMPTY_TREE_ROOT);
-        require(bytes(newTreeCid).length > 0, ERROR_EMPTY_TREE_CID);
-        require(newTreeRoot != onChainTreeRoot, ERROR_SAME_TREE_ROOT);
-        require(keccak256(bytes(newTreeCid)) != onChainTreeCidHash, ERROR_SAME_TREE_CID);
+        _validateInputData(gate, currentTreeRoot, currentTreeCid, newTreeRoot, newTreeCid);
     }
 
     // ------------------
@@ -151,5 +139,27 @@ contract SetMerkleGateTree is TrustedCaller, ISetMerkleGateTree {
         )
     {
         return abi.decode(_evmScriptCallData, (address, bytes32, string, bytes32, string));
+    }
+
+    function _validateInputData(
+        address gate,
+        bytes32 currentTreeRoot,
+        string memory currentTreeCid,
+        bytes32 newTreeRoot,
+        string memory newTreeCid
+    ) private view {
+        IMerkleGate merkleGate = IMerkleGate(gate);
+        bytes32 onChainTreeRoot = merkleGate.treeRoot();
+        bytes32 onChainTreeCidHash = keccak256(bytes(merkleGate.treeCid()));
+
+        require(currentTreeRoot == onChainTreeRoot, ERROR_CURRENT_VALUES_MISMATCH);
+        require(
+            keccak256(bytes(currentTreeCid)) == onChainTreeCidHash,
+            ERROR_CURRENT_VALUES_MISMATCH
+        );
+        require(newTreeRoot != bytes32(0), ERROR_EMPTY_TREE_ROOT);
+        require(bytes(newTreeCid).length > 0, ERROR_EMPTY_TREE_CID);
+        require(newTreeRoot != onChainTreeRoot, ERROR_SAME_TREE_ROOT);
+        require(keccak256(bytes(newTreeCid)) != onChainTreeCidHash, ERROR_SAME_TREE_CID);
     }
 }
