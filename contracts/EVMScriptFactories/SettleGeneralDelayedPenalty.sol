@@ -14,8 +14,7 @@ import "../interfaces/IAccounting.sol";
 contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     struct LockInfo {
         uint256 nodeOperatorId;
-        uint256 maxAmount;
-        uint256 until;
+        uint256 nonce;
     }
 
     // -------------
@@ -25,10 +24,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_LOCK_INFO_LIST = "EMPTY_LOCK_INFO_LIST";
     string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID = "OUT_OF_RANGE_NODE_OPERATOR_ID";
     string private constant ERROR_NODE_OPERATORS_OUT_OF_ORDER = "NODE_OPERATORS_OUT_OF_ORDER";
-    string private constant ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED =
-        "MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED";
-    string private constant ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO =
-        "MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO";
+    string private constant ERROR_NO_LOCK_TO_SETTLE = "NO_LOCK_TO_SETTLE";
     string private constant ERROR_OUTDATED_LOCK_SETTLE = "OUTDATED_LOCK_SETTLE";
 
     // -------------
@@ -75,23 +71,23 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         _validateInputData(lockInfoList);
 
         uint256[] memory nodeOperatorIds = new uint256[](lockInfoList.length);
-        uint256[] memory maxAmounts = new uint256[](lockInfoList.length);
+        uint256[] memory nonces = new uint256[](lockInfoList.length);
 
         for (uint256 i; i < lockInfoList.length; i++) {
             nodeOperatorIds[i] = lockInfoList[i].nodeOperatorId;
-            maxAmounts[i] = lockInfoList[i].maxAmount;
+            nonces[i] = lockInfoList[i].nonce;
         }
 
         return
             EVMScriptCreator.createEVMScript(
                 address(module),
                 IBaseModule.settleGeneralDelayedPenalty.selector,
-                abi.encode(nodeOperatorIds, maxAmounts)
+                abi.encode(nodeOperatorIds, nonces)
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts
+    /// @param _evmScriptCallData Encoded: LockInfo[]
     /// @return Node operator IDs and max amounts to settle general delayed penalty
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
@@ -123,15 +119,10 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
                 ERROR_NODE_OPERATORS_OUT_OF_ORDER
             );
             require(info.nodeOperatorId < nodeOperatorsCount, ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID);
-            IAccounting.BondLockData memory lockData = accounting.getLockedBondInfo(
-                info.nodeOperatorId
-            );
-            require(info.maxAmount > 0, ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO);
-            require(
-                info.maxAmount >= lockData.amount,
-                ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED
-            );
-            require(info.until == lockData.until, ERROR_OUTDATED_LOCK_SETTLE);
+            uint256 lockAmount = accounting.getLockedBond(info.nodeOperatorId);
+            require(lockAmount > 0, ERROR_NO_LOCK_TO_SETTLE);
+            uint256 lockNonce = accounting.getBondLockNonce(info.nodeOperatorId);
+            require(info.nonce == lockNonce, ERROR_OUTDATED_LOCK_SETTLE);
         }
     }
 }

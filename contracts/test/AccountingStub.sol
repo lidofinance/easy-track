@@ -3,24 +3,28 @@
 
 pragma solidity 0.8.6;
 
-/// @notice Test stub for CSAccounting (implements IAccounting methods).
-contract AccountingStub {
-    struct BondLockData {
-        uint128 amount;
-        uint128 until;
+import {IAccounting} from "contracts/interfaces/IAccounting.sol";
+
+/// @notice Test stub for Accounting.
+contract AccountingStub is IAccounting {
+    mapping(uint256 => uint256) internal _lockAmount;
+    mapping(uint256 => uint256) internal _lockNonce;
+
+    function getBondLockNonce(uint256 nodeOperatorId) external view override returns (uint256) {
+        return _lockNonce[nodeOperatorId];
     }
 
-    mapping(uint256 => BondLockData) internal _lockedBondInfo;
-
-    function getLockedBondInfo(uint256 nodeOperatorId) external view returns (BondLockData memory) {
-        return _lockedBondInfo[nodeOperatorId];
+    function getLockedBond(uint256 nodeOperatorId) external view override returns (uint256) {
+        return _lockAmount[nodeOperatorId];
     }
 
-    function mock_setLockedBondInfo(uint256 nodeOperatorId, uint128 amount, uint128 until) external {
-        _lockedBondInfo[nodeOperatorId] = BondLockData(amount, until);
+    function mock_setLock(uint256 nodeOperatorId, uint256 amount, uint256 nonce) external {
+        _lockAmount[nodeOperatorId] = amount;
+        _lockNonce[nodeOperatorId] = nonce;
     }
 
-    function mock_clearLockedBond(uint256 nodeOperatorId) external {
-        delete _lockedBondInfo[nodeOperatorId];
+    function mock_clearLock(uint256 nodeOperatorId) external {
+        delete _lockAmount[nodeOperatorId];
+        delete _lockNonce[nodeOperatorId];
     }
 }

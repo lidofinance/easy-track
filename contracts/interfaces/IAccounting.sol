@@ -10,9 +10,13 @@ interface IAccounting {
         uint128 until;
     }
 
-    /// @notice Get information about the locked bond for the given Node Operator
+    /// @notice Get amount of the locked bond in ETH (stETH) by the given Node Operator
     /// @param nodeOperatorId ID of the Node Operator
-    /// @return Locked bond info
-    function getLockedBondInfo(uint256 nodeOperatorId) external view returns (BondLockData memory);
+    /// @return Amount of the actual locked bond
+    function getLockedBond(uint256 nodeOperatorId) external view returns (uint256);
 
+    /// @notice Get bond lock nonce for the given Node Operator
+    /// @param nodeOperatorId ID of the Node Operator
+    /// @return Bond lock nonce
+    function getBondLockNonce(uint256 nodeOperatorId) external view returns (uint256);
 }
