@@ -304,6 +304,20 @@ def ensure_gate_unpaused(impersonate_account, first_role_holder):
 
 
 @pytest.fixture(scope="module")
+def ensure_key_reported_slashed(impersonate_account, first_role_holder):
+    def _ensure(module, node_operator_id, key_index):
+        reporter = first_role_holder(module, module.VERIFIER_ROLE())
+        reporter_sender = impersonate_account(reporter)
+        module.reportValidatorSlashing(
+            node_operator_id,
+            key_index,
+            {"from": reporter_sender},
+        )
+
+    return _ensure
+
+
+@pytest.fixture(scope="module")
 def ensure_module_locked_bond(impersonate_account, first_role_holder):
     def _ensure(module, node_operator_id, amount):
         accounting = brownie.interface.IAccounting(module.ACCOUNTING())

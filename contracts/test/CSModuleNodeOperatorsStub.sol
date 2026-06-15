@@ -54,6 +54,8 @@ contract CSModuleNodeOperatorsStub is ICSModule {
         return false;
     }
 
+    function reportValidatorSlashing(uint256, uint256) external override {}
+
     function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata)
         external
         pure

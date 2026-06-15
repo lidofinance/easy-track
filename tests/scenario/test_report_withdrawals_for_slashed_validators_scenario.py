@@ -107,11 +107,13 @@ def test_submit_withdrawals_scenario(
     use_deployed_contracts_from_env,
     module,
     ensure_module_operator,
+    ensure_key_reported_slashed,
     values: list[WithdrawnValidatorInfo],
 ):
     """Must create correct EVMScript if all requirements are met"""
     if use_deployed_contracts_from_env:
         no_id = ensure_module_operator(module)
+        ensure_key_reported_slashed(module, no_id, key_index=0)
         values = [
             WithdrawnValidatorInfo(
                 no_id=no_id,
@@ -121,6 +123,9 @@ def test_submit_withdrawals_scenario(
                 is_slashed=True,
             ),
         ]
+    else:
+        for v in values:
+            module.mock_setValidatorSlashed(v.no_id, v.key_index, True)
 
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     if use_deployed_contracts_from_env:

@@ -38,7 +38,7 @@ def mark_validators_slashed(module, values: Iterable[WithdrawnValidatorInfo]):
             and value.slashing_penalty > 0
             and value.is_slashed
         ):
-            module.mock_setValidatorSlashed(value.no_id, value.key_index, True)
+            module.reportValidatorSlashing(value.no_id, value.key_index)
 
 
 @pytest.fixture(scope="module")
