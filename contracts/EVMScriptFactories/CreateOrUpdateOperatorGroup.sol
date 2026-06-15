@@ -128,6 +128,8 @@ contract CreateOrUpdateOperatorGroup is TrustedCaller, ICreateOrUpdateOperatorGr
         bytes4[] memory methodIds = new bytes4[](2);
         bytes[] memory data = new bytes[](2);
 
+        // NOTE: Committing the call to `validateInputData` with the original input data to prevent input data
+        // manipulation for motion execution against changed contract state.
         toAddresses[0] = address(this);
         methodIds[0] = ICreateOrUpdateOperatorGroup.validateInputData.selector;
         data[0] = abi.encode(groupId, currentGroupInfo, newGroupInfo);
