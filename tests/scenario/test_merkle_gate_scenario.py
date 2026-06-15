@@ -20,6 +20,14 @@ def tree_root_hex(tree_root):
     return "0x" + tree_root.hex()
 
 
+def permissions_for_gates(factory, gates):
+    permissions = factory.address + factory.validateInputData.signature[2:]
+    set_tree_selector = gates[0].setTreeParams.signature[2:]
+    for gate in gates:
+        permissions += gate.address[2:] + set_tree_selector
+    return permissions
+
+
 @pytest.fixture(scope="module")
 def merkle_gate(
     owner,
@@ -71,7 +79,7 @@ def merkle_gate_set_tree_factory(
 
     # And add the factory to EasyTrack to activate it. It should be done on CSM v2 voting
     # Permissions define which gates the factory is allowed to call
-    permissions = merkle_gate.address + merkle_gate.setTreeParams.signature[2:]
+    permissions = permissions_for_gates(factory, [merkle_gate])
     et_contracts.easy_track.addEVMScriptFactory(
         factory.address,
         permissions,
@@ -227,11 +235,7 @@ def test_merkle_gate_permissions_update_adds_new_gate(
         {"from": voting},
     )
 
-    selector = merkle_gate.setTreeParams.signature[2:]
-    permissions = (
-        merkle_gate.address + selector
-        + new_gate.address[2:] + selector
-    )
+    permissions = permissions_for_gates(merkle_gate_set_tree_factory, [merkle_gate, new_gate])
     et_contracts.easy_track.addEVMScriptFactory(
         merkle_gate_set_tree_factory.address,
         permissions,
@@ -269,8 +273,6 @@ def test_merkle_gate_permissions_update_removes_gate(
     initial_cid = "QmRemovableGateInitial"
     removable_gate.setTreeParams(initial_root, initial_cid, {"from": owner})
 
-    selector = merkle_gate.setTreeParams.signature[2:]
-
     # Re-register factory with both gates
     et_contracts.easy_track.removeEVMScriptFactory(
         merkle_gate_set_tree_factory.address,
@@ -278,7 +280,7 @@ def test_merkle_gate_permissions_update_removes_gate(
     )
     et_contracts.easy_track.addEVMScriptFactory(
         merkle_gate_set_tree_factory.address,
-        merkle_gate.address + selector + removable_gate.address[2:] + selector,
+        permissions_for_gates(merkle_gate_set_tree_factory, [merkle_gate, removable_gate]),
         {"from": voting},
     )
 
@@ -289,7 +291,7 @@ def test_merkle_gate_permissions_update_removes_gate(
     )
     et_contracts.easy_track.addEVMScriptFactory(
         merkle_gate_set_tree_factory.address,
-        merkle_gate.address + selector,
+        permissions_for_gates(merkle_gate_set_tree_factory, [merkle_gate]),
         {"from": voting},
     )
 

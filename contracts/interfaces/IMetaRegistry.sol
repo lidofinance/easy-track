@@ -35,6 +35,11 @@ interface IMetaRegistry {
         ExternalOperator calldata op
     ) external view returns (uint256 operatorGroupId);
 
+    function getOperatorGroup(uint256 groupId)
+        external
+        view
+        returns (OperatorGroup memory groupInfo);
+
     function createOrUpdateOperatorGroup(
         uint256 groupId,
         OperatorGroup calldata groupInfo

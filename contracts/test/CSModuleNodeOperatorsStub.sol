@@ -36,7 +36,11 @@ contract CSModuleNodeOperatorsStub is ICSModule {
         return _metaRegistry;
     }
 
-    function settleGeneralDelayedPenalty(uint256[] memory, uint256[] memory) external pure override {}
+    function settleGeneralDelayedPenalty(uint256[] memory, uint256[] memory)
+        external
+        pure
+        override
+    {}
 
     function getNodeOperatorsCount() external view override returns (uint256) {
         return _nodeOperatorsCount;
@@ -46,5 +50,13 @@ contract CSModuleNodeOperatorsStub is ICSModule {
         return _activeNodeOperators[nodeOperatorId];
     }
 
-    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata) external pure override {}
+    function isValidatorSlashed(uint256, uint256) external pure override returns (bool) {
+        return false;
+    }
+
+    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata)
+        external
+        pure
+        override
+    {}
 }

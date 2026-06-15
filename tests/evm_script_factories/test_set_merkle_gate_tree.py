@@ -149,10 +149,47 @@ def test_create_evm_script(owner, set_merkle_gate_tree_factory, merkle_gate_stub
     )
     evm_script = set_merkle_gate_tree_factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
     expected_evm_script = encode_call_script(
-        [(merkle_gate_stub.address, merkle_gate_stub.setTreeParams.encode_input(new_tree_root, new_tree_cid))]
+        [
+            (
+                set_merkle_gate_tree_factory.address,
+                set_merkle_gate_tree_factory.validateInputData.encode_input(
+                    merkle_gate_stub.address,
+                    current_tree_root,
+                    current_tree_cid,
+                    new_tree_root,
+                    new_tree_cid,
+                ),
+            ),
+            (
+                merkle_gate_stub.address,
+                merkle_gate_stub.setTreeParams.encode_input(new_tree_root, new_tree_cid),
+            ),
+        ]
     )
 
     assert evm_script == expected_evm_script
+
+
+def test_validate_input_data_reverts_if_tree_state_changed(
+    owner, set_merkle_gate_tree_factory, merkle_gate_stub
+):
+    """Must commit expected current tree state for enactment-time validation"""
+    old_tree_root = merkle_gate_stub.treeRoot()
+    old_tree_cid = merkle_gate_stub.treeCid()
+
+    new_tree_root = bytes.fromhex("1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef")
+    new_tree_cid = "QmTest123456789"
+
+    merkle_gate_stub.setTreeParams(bytes.fromhex("ab" * 32), "QmChangedCid", {"from": owner})
+
+    with reverts("CURRENT_VALUES_MISMATCH"):
+        set_merkle_gate_tree_factory.validateInputData(
+            merkle_gate_stub.address,
+            old_tree_root,
+            old_tree_cid,
+            new_tree_root,
+            new_tree_cid,
+        )
 
 
 def test_decode_evm_script_call_data(set_merkle_gate_tree_factory, merkle_gate_stub):

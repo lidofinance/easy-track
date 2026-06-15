@@ -34,6 +34,12 @@ contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, Trus
     string private constant ERROR_ZERO_STAKING_ROUTER = "ZERO_STAKING_ROUTER";
 
     // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 private constant MAX_BP = 10000;
+
+    // -------------
     // VARIABLES
     // -------------
 
@@ -92,6 +98,8 @@ contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, Trus
         bytes4[] memory methodIds = new bytes4[](2);
         bytes[] memory data = new bytes[](2);
 
+        // NOTE: Committing the call to `validateParams` with the original input data to prevent input data
+        // manipulation for motion execution against changed contract state.
         toAddresses[0] = address(this);
         methodIds[0] = IUpdateStakingModuleShareLimits.validateParams.selector;
         data[0] = abi.encode(params);
@@ -144,6 +152,7 @@ contract UpdateStakingModuleShareLimits is IUpdateStakingModuleShareLimits, Trus
         bool exitThresholdChanged =
             _params.currentPriorityExitShareThreshold != _params.newPriorityExitShareThreshold;
         require(_params.newStakeShareLimit <= _params.newPriorityExitShareThreshold, ERROR_INVALID_SHARE_PARAMS);
+        require(_params.newPriorityExitShareThreshold <= MAX_BP, ERROR_INVALID_SHARE_PARAMS);
         require(shareChanged || exitThresholdChanged, ERROR_NO_CHANGES);
 
         if (shareChanged) {

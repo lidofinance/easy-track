@@ -24,5 +24,7 @@ interface IBaseModule {
 
     function getNodeOperatorIsActive(uint256 nodeOperatorId) external view returns (bool);
 
+    function isValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex) external view returns (bool);
+
     function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external;
 }

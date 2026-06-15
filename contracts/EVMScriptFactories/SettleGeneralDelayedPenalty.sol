@@ -12,21 +12,20 @@ import "../interfaces/IAccounting.sol";
 /// @author vgorkavenko
 /// @notice Creates EVMScript to settle general delayed penalty for a specific node operators
 contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
+    struct LockInfo {
+        uint256 nodeOperatorId;
+        uint256 nonce;
+    }
 
     // -------------
     // ERRORS
     // -------------
 
-    string private constant ERROR_EMPTY_NODE_OPERATORS_IDS =
-        "EMPTY_NODE_OPERATORS_IDS";
-    string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID =
-        "OUT_OF_RANGE_NODE_OPERATOR_ID";
-    string private constant ERROR_NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH =
-        "NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH";
-    string private constant ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED =
-        "MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED";
-    string private constant ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO =
-        "MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO";
+    string private constant ERROR_EMPTY_LOCK_INFO_LIST = "EMPTY_LOCK_INFO_LIST";
+    string private constant ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID = "OUT_OF_RANGE_NODE_OPERATOR_ID";
+    string private constant ERROR_NODE_OPERATORS_OUT_OF_ORDER = "NODE_OPERATORS_OUT_OF_ORDER";
+    string private constant ERROR_NO_LOCK_TO_SETTLE = "NO_LOCK_TO_SETTLE";
+    string private constant ERROR_INVALID_LOCK_NONCE = "INVALID_LOCK_NONCE";
 
     // -------------
     // VARIABLES
@@ -43,9 +42,11 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, string memory _name, address _module)
-        TrustedCaller(_trustedCaller)
-    {
+    constructor(
+        address _trustedCaller,
+        string memory _name,
+        address _module
+    ) TrustedCaller(_trustedCaller) {
         name = _name;
         module = IBaseModule(_module);
         accounting = IAccounting(IBaseModule(_module).ACCOUNTING());
@@ -57,7 +58,7 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to settle general delayed penalty for the specific node operators
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts
+    /// @param _evmScriptCallData Encoded: LockInfo[]
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -65,25 +66,33 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts) = _decodeEVMScriptCallData(_evmScriptCallData);
+        LockInfo[] memory lockInfoList = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        _validateInputData(nodeOperatorIds, maxAmounts);
+        _validateInputData(lockInfoList);
+
+        uint256[] memory nodeOperatorIds = new uint256[](lockInfoList.length);
+        uint256[] memory nonces = new uint256[](lockInfoList.length);
+
+        for (uint256 i; i < lockInfoList.length; i++) {
+            nodeOperatorIds[i] = lockInfoList[i].nodeOperatorId;
+            nonces[i] = lockInfoList[i].nonce;
+        }
 
         return
             EVMScriptCreator.createEVMScript(
                 address(module),
                 IBaseModule.settleGeneralDelayedPenalty.selector,
-                _evmScriptCallData
+                abi.encode(nodeOperatorIds, nonces)
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded: uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts
+    /// @param _evmScriptCallData Encoded: LockInfo[]
     /// @return Node operator IDs and max amounts to settle general delayed penalty
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (uint256[] memory, uint256[] memory)
+        returns (LockInfo[] memory)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -95,29 +104,25 @@ contract SettleGeneralDelayedPenalty is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (uint256[] memory, uint256[] memory)
+        returns (LockInfo[] memory)
     {
-        return abi.decode(_evmScriptCallData, (uint256[], uint256[]));
+        return abi.decode(_evmScriptCallData, (LockInfo[]));
     }
 
-    function _validateInputData(
-        uint256[] memory nodeOperatorsIds,
-        uint256[] memory maxAmounts
-    ) private view {
-        require(nodeOperatorsIds.length > 0, ERROR_EMPTY_NODE_OPERATORS_IDS);
-        require(
-            nodeOperatorsIds.length == maxAmounts.length,
-            ERROR_NODE_OPERATORS_IDS_AND_MAX_AMOUNTS_LENGTH_MISMATCH
-        );
+    function _validateInputData(LockInfo[] memory lockInfoList) private view {
+        require(lockInfoList.length > 0, ERROR_EMPTY_LOCK_INFO_LIST);
         uint256 nodeOperatorsCount = module.getNodeOperatorsCount();
-        for (uint256 i = 0; i < nodeOperatorsIds.length; ++i) {
-            (uint256 nodeOperatorId, uint256 maxAmount) = (nodeOperatorsIds[i], maxAmounts[i]);
-            require(nodeOperatorId < nodeOperatorsCount, ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID);
-            uint256 locked = accounting.getLockedBond(
-                nodeOperatorId
+        for (uint256 i = 0; i < lockInfoList.length; ++i) {
+            LockInfo memory info = lockInfoList[i];
+            require(
+                i == 0 || info.nodeOperatorId > lockInfoList[i - 1].nodeOperatorId,
+                ERROR_NODE_OPERATORS_OUT_OF_ORDER
             );
-            require(maxAmount > 0, ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_THAN_ZERO);
-            require(maxAmount >= locked, ERROR_MAX_AMOUNT_SHOULD_BE_GREATER_OR_EQUAL_THAN_ACTUAL_LOCKED);
+            require(info.nodeOperatorId < nodeOperatorsCount, ERROR_OUT_OF_RANGE_NODE_OPERATOR_ID);
+            uint256 lockAmount = accounting.getLockedBond(info.nodeOperatorId);
+            require(lockAmount > 0, ERROR_NO_LOCK_TO_SETTLE);
+            uint256 lockNonce = accounting.getBondLockNonce(info.nodeOperatorId);
+            require(info.nonce == lockNonce, ERROR_INVALID_LOCK_NONCE);
         }
     }
 }

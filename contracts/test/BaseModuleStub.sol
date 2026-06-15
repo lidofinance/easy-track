@@ -10,6 +10,7 @@ import {WithdrawnValidatorInfo} from "../interfaces/IBaseModule.sol";
 contract BaseModuleStub {
     uint256 internal _nodeOperatorsCount;
     address internal _accounting;
+    mapping(uint256 => mapping(uint256 => bool)) internal _isValidatorSlashed;
 
     uint256 public lastSettledCount;
     uint256 public lastSettledFirstNodeOperatorId;
@@ -34,13 +35,34 @@ contract BaseModuleStub {
         _nodeOperatorsCount = nodeOperatorsCount;
     }
 
-    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external {
+    function mock_setValidatorSlashed(
+        uint256 nodeOperatorId,
+        uint256 keyIndex,
+        bool isSlashed
+    ) external {
+        _isValidatorSlashed[nodeOperatorId][keyIndex] = isSlashed;
+    }
+
+    function isValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex)
+        external
+        view
+        returns (bool)
+    {
+        return _isValidatorSlashed[nodeOperatorId][keyIndex];
+    }
+
+    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos)
+        external
+    {
         for (uint256 i; i < validatorInfos.length; ++i) {
             emit GotValidatorInfo(validatorInfos[i]);
         }
     }
 
-    function settleGeneralDelayedPenalty(uint256[] memory nodeOperatorIds, uint256[] memory maxAmounts) external {
+    function settleGeneralDelayedPenalty(
+        uint256[] memory nodeOperatorIds,
+        uint256[] memory maxAmounts
+    ) external {
         require(nodeOperatorIds.length == maxAmounts.length, "LENGTH_MISMATCH");
 
         lastSettledCount = 0;
@@ -51,12 +73,12 @@ contract BaseModuleStub {
             uint256 nodeOperatorId = nodeOperatorIds[i];
             uint256 maxAmount = maxAmounts[i];
 
-            // Read locked bond from the accounting contract
+            // Read locked bond from the accounting contract.
             (bool ok, bytes memory data) = _accounting.staticcall(
-                abi.encodeWithSignature("getLockedBond(uint256)", nodeOperatorId)
+                abi.encodeWithSignature("getLockedBondInfo(uint256)", nodeOperatorId)
             );
             require(ok, "ACCOUNTING_CALL_FAILED");
-            uint256 locked = abi.decode(data, (uint256));
+            (uint128 locked, ) = abi.decode(data, (uint128, uint128));
 
             if (locked == 0 || locked > maxAmount) {
                 continue;

@@ -29,6 +29,18 @@ def create_calldata(values: Iterable[WithdrawnValidatorInfo]):
     return encode_calldata("(uint256,uint256,uint256,uint256,bool)[]", [values])
 
 
+def mark_validators_slashed(module, values: Iterable[WithdrawnValidatorInfo]):
+    node_operators_count = module.getNodeOperatorsCount()
+    for value in values:
+        if (
+            value.no_id < node_operators_count
+            and value.exit_balance > 0
+            and value.slashing_penalty > 0
+            and value.is_slashed
+        ):
+            module.mock_setValidatorSlashed(value.no_id, value.key_index, True)
+
+
 @pytest.fixture(scope="module")
 def module(owner):
     module = owner.deploy(BaseModuleStub)
@@ -112,7 +124,8 @@ def test_create_evm_script_reverts_if_empty_withdrawal_list(owner, factory):
         ),
     ],
 )
-def test_create_evm_script_reverts_if_zero_exit_balance(owner, factory, values):
+def test_create_evm_script_reverts_if_zero_exit_balance(owner, factory, module, values):
+    mark_validators_slashed(module, values)
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     with reverts("ZERO_EXIT_BALANCE"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -152,7 +165,8 @@ def test_create_evm_script_reverts_if_zero_exit_balance(owner, factory, values):
         ),
     ],
 )
-def test_create_evm_script_reverts_if_zero_slashing_penalty(owner, factory, values):
+def test_create_evm_script_reverts_if_zero_slashing_penalty(owner, factory, module, values):
+    mark_validators_slashed(module, values)
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     with reverts("INVALID_SLASHING_PENALTY"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -192,7 +206,8 @@ def test_create_evm_script_reverts_if_zero_slashing_penalty(owner, factory, valu
         ),
     ],
 )
-def test_create_evm_script_reverts_if_non_existing_operator(owner, factory, values):
+def test_create_evm_script_reverts_if_non_existing_operator(owner, factory, module, values):
+    mark_validators_slashed(module, values)
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     with reverts("OPERATOR_DOES_NOT_EXIST"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -232,7 +247,23 @@ def test_create_evm_script_reverts_if_non_existing_operator(owner, factory, valu
         ),
     ],
 )
-def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
+def test_create_evm_script_reverts_if_is_slashed_is_not_set(owner, factory, values):
+    EVM_SCRIPT_CALLDATA = create_calldata(values)
+    with reverts("IS_SLASHED_IS_NOT_SET"):
+        factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
+
+
+def test_create_evm_script_reverts_if_validator_not_slashed(owner, factory):
+    values = [
+        WithdrawnValidatorInfo(
+            no_id=0,
+            key_index=0,
+            exit_balance=100500,
+            slashing_penalty=16,
+            is_slashed=True,
+        )
+    ]
+
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     with reverts("VALIDATOR_NOT_SLASHED"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -300,7 +331,8 @@ def test_create_evm_script_reverts_if_not_slashed(owner, factory, values):
         ),
     ],
 )
-def test_create_evm_script_reverts_if_not_sorted(owner, factory, values):
+def test_create_evm_script_reverts_if_not_sorted(owner, factory, module, values):
+    mark_validators_slashed(module, values)
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     with reverts("NOT_SORTED"):
         factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)
@@ -361,6 +393,7 @@ def test_create_evm_script_reverts_if_not_sorted(owner, factory, values):
 )
 def test_create_evm_script(owner, factory, module, values):
     """Must create correct EVMScript if all requirements are met"""
+    mark_validators_slashed(module, values)
 
     EVM_SCRIPT_CALLDATA = create_calldata(values)
     evm_script = factory.createEVMScript(owner, EVM_SCRIPT_CALLDATA)

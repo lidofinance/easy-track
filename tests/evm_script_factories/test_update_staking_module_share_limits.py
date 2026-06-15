@@ -182,6 +182,23 @@ def test_reverts_when_new_stake_share_exceeds_new_priority_exit_threshold(
         factory.createEVMScript(owner, calldata)
 
 
+def test_reverts_when_new_priority_exit_threshold_exceeds_max_bp(
+    owner, StakingRouterStub, UpdateStakingModuleShareLimits
+):
+    router = _deploy_router(owner, StakingRouterStub)
+    factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
+
+    calldata = _encode_module_payload(
+        CURRENT_STAKE_SHARE_LIMIT,
+        CURRENT_STAKE_SHARE_LIMIT,
+        CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD,
+        10_001,
+    )
+
+    with reverts("INVALID_SHARE_PARAMS"):
+        factory.createEVMScript(owner, calldata)
+
+
 def test_reverts_when_no_changes(owner, StakingRouterStub, UpdateStakingModuleShareLimits):
     router = _deploy_router(owner, StakingRouterStub)
     factory = _deploy_factory(owner, router, UpdateStakingModuleShareLimits)
