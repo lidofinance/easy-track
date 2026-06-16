@@ -4,6 +4,8 @@
 pragma solidity 0.8.6;
 
 import "./IBaseModule.sol";
+import "./IMetaRegistry.sol";
 
-/// @title Lido's Community Staking Module interface (compatibility subset)
-interface ICSModule is IBaseModule {}
+interface ICuratedModule is IBaseModule {
+    function META_REGISTRY() external view returns (IMetaRegistry);
+}

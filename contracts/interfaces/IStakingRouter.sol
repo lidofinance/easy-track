@@ -19,9 +19,17 @@ interface IStakingRouter {
         uint16 priorityExitShareThreshold;
         uint64 maxDepositsPerBlock;
         uint64 minDepositBlockDistance;
+        uint8 withdrawalCredentialsType;
+        uint64 validatorsBalanceGwei;
     }
 
     function getStakingModule(
         uint256 _stakingModuleId
     ) external view returns (StakingModule memory);
+
+    function updateModuleShares(
+        uint256 _stakingModuleId,
+        uint16 _newStakeShareLimit,
+        uint16 _newPriorityExitShareThreshold
+    ) external;
 }

@@ -58,6 +58,8 @@ def submit_exit_request_hashes(
     module_type,
     node_operator,
     owner,
+    curated_registry_stub,  # noqa: F811 — ensure both modules are registered in the router
+    sdvt_registry_stub,  # noqa: F811 — ensure both modules are registered in the router
 ):
     registry_stub = request.getfixturevalue(module_type["registry_fixture"])
     creator = node_operator.address if module_type["creator_fixture"] == "node_operator" else owner

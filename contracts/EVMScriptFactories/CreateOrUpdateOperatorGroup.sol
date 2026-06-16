@@ -1,0 +1,376 @@
+// SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity 0.8.6;
+
+import "../TrustedCaller.sol";
+import "../libraries/EVMScriptCreator.sol";
+import "../interfaces/IEVMScriptFactory.sol";
+import "../interfaces/ICuratedModule.sol";
+import "../interfaces/INodeOperatorsRegistry.sol";
+import "../interfaces/IMetaRegistry.sol";
+import "../interfaces/IStakingRouter.sol";
+
+interface ICreateOrUpdateOperatorGroup is IEVMScriptFactory {
+    function validateInputData(
+        uint256 groupId,
+        IMetaRegistry.OperatorGroup memory currentGroupInfo,
+        IMetaRegistry.OperatorGroup memory newGroupInfo
+    ) external view;
+}
+
+/// @notice Creates EVMScript to create or update a MetaRegistry operator group.
+contract CreateOrUpdateOperatorGroup is TrustedCaller, ICreateOrUpdateOperatorGroup {
+    // -------------
+    // ERRORS
+    // -------------
+
+    string private constant ERROR_ZERO_MODULE_ADDRESS =
+        "ZERO_MODULE_ADDRESS";
+    string private constant ERROR_INVALID_GROUP_ID = "INVALID_GROUP_ID";
+    string private constant ERROR_EMPTY_GROUP = "EMPTY_GROUP";
+    string private constant ERROR_INVALID_EMPTY_GROUP_UPDATE =
+        "INVALID_EMPTY_GROUP_UPDATE";
+    string private constant ERROR_SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH =
+        "SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH";
+    string private constant ERROR_SUB_NODE_OPERATORS_NOT_SORTED =
+        "SUB_NODE_OPERATORS_NOT_SORTED";
+    string private constant ERROR_EXTERNAL_OPERATORS_NOT_SORTED =
+        "EXTERNAL_OPERATORS_NOT_SORTED";
+    string private constant ERROR_SUB_NODE_OPERATOR_DOES_NOT_EXIST =
+        "SUB_NODE_OPERATOR_DOES_NOT_EXIST";
+    string private constant ERROR_INVALID_EXTERNAL_OPERATOR_DATA_LENGTH =
+        "INVALID_EXTERNAL_OPERATOR_DATA_LENGTH";
+    string private constant ERROR_UNSUPPORTED_EXTERNAL_OPERATOR_TYPE =
+        "UNSUPPORTED_EXTERNAL_OPERATOR_TYPE";
+    string private constant ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST =
+        "EXTERNAL_OPERATOR_DOES_NOT_EXIST";
+    string private constant ERROR_EXTERNAL_MODULE_NOT_ALLOWED =
+        "EXTERNAL_MODULE_NOT_ALLOWED";
+    string private constant ERROR_GROUP_NAME_TOO_LONG =
+        "GROUP_NAME_TOO_LONG";
+    string private constant ERROR_CURRENT_VALUES_MISMATCH = "CURRENT_VALUES_MISMATCH";
+
+    // -------------
+    // CONSTANTS
+    // -------------
+
+    uint256 private constant MAX_BP = 10000;
+    uint256 private constant MAX_NAME_LENGTH = 256;
+    // ExternalOperatorLib.OperatorType.NOR
+    uint8 private constant EXT_OPERATOR_TYPE_NOR = 0;
+    uint256 private constant EXT_OPERATOR_DATA_LENGTH = 10;
+
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Alias for factory (e.g. "CMv2")
+    string public name;
+
+    /// @notice Address of MetaRegistry contract
+    IMetaRegistry public immutable metaRegistry;
+    /// @notice Curated module
+    ICuratedModule public immutable module;
+    /// @notice Staking router taken from MetaRegistry at deployment time
+    IStakingRouter public immutable stakingRouter;
+    /// @notice Staking-router module ID of the NOR module accepted for external operators
+    uint256 public immutable allowedExternalModuleId;
+
+    // -------------
+    // CONSTRUCTOR
+    // -------------
+
+    constructor(
+        address _trustedCaller,
+        string memory _name,
+        address _module,
+        uint256 _allowedExtModuleId
+    ) TrustedCaller(_trustedCaller) {
+        require(
+            _module != address(0),
+            ERROR_ZERO_MODULE_ADDRESS
+        );
+
+        ICuratedModule curatedModule = ICuratedModule(_module);
+        module = curatedModule;
+        metaRegistry = curatedModule.META_REGISTRY();
+        stakingRouter = IStakingRouter(curatedModule.META_REGISTRY().STAKING_ROUTER());
+        allowedExternalModuleId = _allowedExtModuleId;
+
+        name = _name;
+    }
+
+    // -------------
+    // EXTERNAL METHODS
+    // -------------
+
+    /// @notice Creates EVMScript for `MetaRegistry.createOrUpdateOperatorGroup`.
+    /// @param _creator Address who creates EVMScript.
+    /// @param _evmScriptCallData Encoded method arguments in format
+    ///        `abi.encode(uint256 groupId, IMetaRegistry.OperatorGroup currentGroupInfo, IMetaRegistry.OperatorGroup newGroupInfo)`.
+    function createEVMScript(address _creator, bytes memory _evmScriptCallData)
+        external
+        view
+        override
+        onlyTrustedCaller(_creator)
+        returns (bytes memory)
+    {
+        (
+            uint256 groupId,
+            IMetaRegistry.OperatorGroup memory currentGroupInfo,
+            IMetaRegistry.OperatorGroup memory newGroupInfo
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
+
+        _validateInputData(groupId, currentGroupInfo, newGroupInfo);
+
+        address[] memory toAddresses = new address[](2);
+        bytes4[] memory methodIds = new bytes4[](2);
+        bytes[] memory data = new bytes[](2);
+
+        // NOTE: Committing the call to `validateInputData` with the original input data to prevent input data
+        // manipulation for motion execution against changed contract state.
+        toAddresses[0] = address(this);
+        methodIds[0] = ICreateOrUpdateOperatorGroup.validateInputData.selector;
+        data[0] = abi.encode(groupId, currentGroupInfo, newGroupInfo);
+
+        toAddresses[1] = address(metaRegistry);
+        methodIds[1] = IMetaRegistry.createOrUpdateOperatorGroup.selector;
+        data[1] = abi.encode(groupId, newGroupInfo);
+
+        return EVMScriptCreator.createEVMScript(toAddresses, methodIds, data);
+    }
+
+    /// @notice Decodes call data used by createEVMScript method.
+    /// @param _evmScriptCallData Encoded tuple: (uint256 groupId, IMetaRegistry.OperatorGroup currentGroupInfo, IMetaRegistry.OperatorGroup groupInfo)
+    /// @return groupId Group ID to update, or NO_GROUP_ID to create.
+    /// @return currentGroupInfo Expected current group definition.
+    /// @return groupInfo Group definition.
+    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        external
+        pure
+        returns (
+            uint256 groupId,
+            IMetaRegistry.OperatorGroup memory currentGroupInfo,
+            IMetaRegistry.OperatorGroup memory groupInfo
+        )
+    {
+        return _decodeEVMScriptCallData(_evmScriptCallData);
+    }
+
+    /// @notice Encodes `ExternalOperator.data` for a NOR external operator.
+    /// @dev Format:
+    /// `[operatorType:1 byte][moduleId:1 byte][nodeOperatorId:8 bytes]`.
+    function encodeNORExtOperatorData(uint8 moduleId, uint64 nodeOperatorId)
+        external
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(
+            bytes1(EXT_OPERATOR_TYPE_NOR),
+            moduleId,
+            nodeOperatorId
+        );
+    }
+
+    /// @notice Decodes `ExternalOperator.data` for a NOR external operator.
+    /// @dev Expected format:
+    /// `[operatorType:1 byte][moduleId:1 byte][nodeOperatorId:8 bytes]`.
+    function decodeNORExtOperatorData(bytes memory _externalOperatorData)
+        external
+        pure
+        returns (uint8 moduleId, uint64 nodeOperatorId)
+    {
+        return _decodeNORExtOperatorData(_externalOperatorData);
+    }
+
+    function validateInputData(
+        uint256 groupId,
+        IMetaRegistry.OperatorGroup memory currentGroupInfo,
+        IMetaRegistry.OperatorGroup memory newGroupInfo
+    ) public view override {
+        _validateInputData(groupId, currentGroupInfo, newGroupInfo);
+    }
+
+    // ------------------
+    // PRIVATE METHODS
+    // ------------------
+
+    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        private
+        pure
+        returns (
+            uint256 groupId,
+            IMetaRegistry.OperatorGroup memory currentGroupInfo,
+            IMetaRegistry.OperatorGroup memory newGroupInfo
+        )
+    {
+        return abi.decode(
+            _evmScriptCallData,
+            (uint256, IMetaRegistry.OperatorGroup, IMetaRegistry.OperatorGroup)
+        );
+    }
+
+    function _isEmptyGroupInfo(IMetaRegistry.OperatorGroup memory groupInfo)
+        private
+        pure
+        returns (bool)
+    {
+        return
+            bytes(groupInfo.name).length == 0 &&
+            groupInfo.subNodeOperators.length == 0 &&
+            groupInfo.externalOperators.length == 0;
+    }
+
+    function _hashGroupInfo(IMetaRegistry.OperatorGroup memory groupInfo)
+        private
+        pure
+        returns (bytes32)
+    {
+        return keccak256(abi.encode(groupInfo));
+    }
+
+    function _validateInputData(
+        uint256 groupId,
+        IMetaRegistry.OperatorGroup memory currentGroupInfo,
+        IMetaRegistry.OperatorGroup memory newGroupInfo
+    ) private view {
+        uint256 subNodeOperatorsCount = newGroupInfo.subNodeOperators.length;
+        uint256 externalOperatorsCount = newGroupInfo.externalOperators.length;
+
+        if (groupId == metaRegistry.NO_GROUP_ID()) {
+            require(_isEmptyGroupInfo(currentGroupInfo), ERROR_CURRENT_VALUES_MISMATCH);
+            require(subNodeOperatorsCount > 0, ERROR_EMPTY_GROUP);
+        } else {
+            require(
+                groupId <= metaRegistry.getOperatorGroupsCount(),
+                ERROR_INVALID_GROUP_ID
+            );
+            require(
+                _hashGroupInfo(currentGroupInfo) ==
+                _hashGroupInfo(metaRegistry.getOperatorGroup(groupId)),
+                ERROR_CURRENT_VALUES_MISMATCH
+            );
+            if (subNodeOperatorsCount == 0) {
+                require(
+                    externalOperatorsCount == 0 && bytes(newGroupInfo.name).length == 0,
+                    ERROR_INVALID_EMPTY_GROUP_UPDATE
+                );
+                return;
+            }
+        }
+
+        require(
+            bytes(newGroupInfo.name).length <= MAX_NAME_LENGTH,
+            ERROR_GROUP_NAME_TOO_LONG
+        );
+        _validateSubNodeOperators(newGroupInfo.subNodeOperators);
+        _validateExternalOperators(newGroupInfo.externalOperators);
+    }
+
+    function _validateSubNodeOperators(
+        IMetaRegistry.SubNodeOperator[] memory _subNodeOperators
+    ) private view {
+        uint256 moduleNodeOperatorsCount = module.getNodeOperatorsCount();
+        uint256 subNodeOperatorsCount = _subNodeOperators.length;
+
+        uint256 sharesSum;
+        uint64 prevNodeOperatorId;
+        for (uint256 i = 0; i < subNodeOperatorsCount; ++i) {
+            uint64 nodeOperatorId = _subNodeOperators[i].nodeOperatorId;
+            require(
+                nodeOperatorId < moduleNodeOperatorsCount,
+                ERROR_SUB_NODE_OPERATOR_DOES_NOT_EXIST
+            );
+            sharesSum += _subNodeOperators[i].share;
+
+            if (i > 0) {
+                require(
+                    nodeOperatorId > prevNodeOperatorId,
+                    ERROR_SUB_NODE_OPERATORS_NOT_SORTED
+                );
+            }
+            prevNodeOperatorId = nodeOperatorId;
+        }
+
+        require(
+            sharesSum == MAX_BP,
+            ERROR_SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH
+        );
+    }
+
+    function _validateExternalOperators(
+        IMetaRegistry.ExternalOperator[] memory _externalOperators
+    ) private view {
+        uint256 externalOperatorsCount = _externalOperators.length;
+        uint64 prevExternalNodeOperatorId;
+
+        INodeOperatorsRegistry externalModule = INodeOperatorsRegistry(
+            stakingRouter.getStakingModule(allowedExternalModuleId).stakingModuleAddress
+        );
+
+        for (uint256 i = 0; i < externalOperatorsCount; ++i) {
+            (
+                uint8 externalModuleId,
+                uint64 externalNodeOperatorId
+            ) = _decodeNORExtOperatorData(_externalOperators[i].data);
+
+            require(
+                externalModuleId == allowedExternalModuleId,
+                ERROR_EXTERNAL_MODULE_NOT_ALLOWED
+            );
+
+            require(
+                externalNodeOperatorId < externalModule.getNodeOperatorsCount(),
+                ERROR_EXTERNAL_OPERATOR_DOES_NOT_EXIST
+            );
+
+            if (i > 0) {
+                require(
+                    externalNodeOperatorId > prevExternalNodeOperatorId,
+                    ERROR_EXTERNAL_OPERATORS_NOT_SORTED
+                );
+            }
+            prevExternalNodeOperatorId = externalNodeOperatorId;
+        }
+    }
+
+    function _decodeNORExtOperatorData(bytes memory _externalOperatorData)
+        private
+        pure
+        returns (uint8 moduleId, uint64 nodeOperatorId)
+    {
+        require(
+            _externalOperatorData.length == EXT_OPERATOR_DATA_LENGTH,
+            ERROR_INVALID_EXTERNAL_OPERATOR_DATA_LENGTH
+        );
+        require(
+            uint8(_externalOperatorData[0]) == EXT_OPERATOR_TYPE_NOR,
+            ERROR_UNSUPPORTED_EXTERNAL_OPERATOR_TYPE
+        );
+
+        moduleId = _moduleIdNOR(_externalOperatorData);
+        nodeOperatorId = _nodeOperatorIdNOR(_externalOperatorData);
+    }
+
+    function _moduleIdNOR(bytes memory _externalOperatorData)
+        private
+        pure
+        returns (uint8)
+    {
+        return uint8(_externalOperatorData[1]);
+    }
+
+    function _nodeOperatorIdNOR(bytes memory _externalOperatorData)
+        private
+        pure
+        returns (uint64 ret)
+    {
+        assembly {
+            // bytes layout in memory: [length (32 bytes)][data...]
+            // data[2..9] starts at (_externalOperatorData + 34).
+            // Keep the top 8 bytes as uint64.
+            ret := shr(192, mload(add(_externalOperatorData, 34)))
+        }
+    }
+}
