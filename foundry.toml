@@ -1,0 +1,31 @@
+# Two profiles:
+#   default   — the fork-based scenario suite (modern solc/EVM; only test/foundry is compiled,
+#               with its own modern-pragma interfaces). Run: `forge test` / `forge build`.
+#   contracts — the project contracts under contracts/ (solc 0.8.6, EVM "berlin"), so the
+#               EVMScriptFactories can be built and deployed with Foundry.
+#               Run: `FOUNDRY_PROFILE=contracts forge build`
+#                    `FOUNDRY_PROFILE=contracts forge script/create ...`
+[profile.default]
+src = "test/foundry"
+test = "test/foundry"
+out = "foundry-out"
+cache_path = ".forge-cache"
+# forge-std is managed via npm (package.json -> node_modules), not a git submodule.
+libs = ["node_modules"]
+evm_version = "prague"
+# Allow vm.readFile() to load the deployed-*.json artifacts from the repo root.
+fs_permissions = [{ access = "read", path = "./" }]
+remappings = ["forge-std/=node_modules/forge-std/src/"]
+
+[profile.contracts]
+src = "contracts"
+test = "contracts"
+out = "out"
+cache_path = "cache"
+libs = []
+solc = "0.8.6"
+evm_version = "berlin"
+optimizer = false
+remappings = ["OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"]
+
+# See https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options
