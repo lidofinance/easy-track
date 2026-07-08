@@ -29,6 +29,8 @@ abstract contract EasyTrackScenarioBase is Test {
         string smArtifact;
         address easyTrack;
         address agent; // admin of most protocol roles
+        address csmModule; // CSM staking module
+        address cmModule; // curated staking module
     }
 
     struct Env {
@@ -89,7 +91,9 @@ abstract contract EasyTrackScenarioBase is Test {
                 srArtifact: "deployed-sr-hoodi.json",
                 smArtifact: "deployed-sm-hoodi.json",
                 easyTrack: 0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a,
-                agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD
+                agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD,
+                csmModule: 0x79CEf36D84743222f37765204Bec41E92a93E59d,
+                cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9
             });
         }
         if (_eq(name, "mainnet")) {
@@ -99,7 +103,9 @@ abstract contract EasyTrackScenarioBase is Test {
                 srArtifact: "deployed-sr-mainnet.json",
                 smArtifact: "deployed-sm-mainnet.json",
                 easyTrack: 0xF0211b7660680B49De1A7E9f25C65660F0a13Fea,
-                agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c
+                agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c,
+                csmModule: 0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F,
+                cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1
             });
         }
         revert(string.concat("unknown CHAIN: ", name));

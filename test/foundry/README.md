@@ -59,6 +59,7 @@ pre-existing state) via module admin roles.
 - **Interfaces** (`interfaces/{External,Factories,EasyTrack}.sol`) are self-contained (modern pragma) so
   the suite never compiles `contracts/`. Build/deploy the factories with the separate profile:
   `FOUNDRY_PROFILE=contracts forge build`.
-- **Merkle gates** for `SetMerkleGateTree` are resolved per chain inside the test (they are not in the
-  sr/sm artifacts). Other addresses are discovered from the factory getters at runtime.
+- **Gate discovery.** `SetMerkleGateTree`'s gate is the module's
+  `CREATE_NODE_OPERATOR_ROLE` holder the executor may set the tree on. The staking-module addresses live
+  in `_networkConfig`; every other target comes from the factory getters at runtime.
 ```
