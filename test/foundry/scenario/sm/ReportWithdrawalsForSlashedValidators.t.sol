@@ -48,6 +48,26 @@ abstract contract ReportWithdrawalsForSlashedValidatorsScenario is EasyTrackScen
         assertTrue(module.isValidatorWithdrawn(nodeOperatorId, keyIndex), "idempotent re-report changed state");
     }
 
+    function test_revertsOnZeroSlashingPenalty() external onlyForked {
+        // A slashed validator must be reported with a positive penalty; a zero penalty is rejected.
+        (uint256 nodeOperatorId, uint256 keyIndex) = _givenSlashedValidator();
+
+        bytes memory callData = _encodeWithdrawn(nodeOperatorId, keyIndex, 32 ether, 0);
+        vm.prank(creator);
+        vm.expectRevert("INVALID_SLASHING_PENALTY");
+        easyTrack.createMotion(subject, callData);
+    }
+
+    function test_revertsOnZeroExitBalance() external onlyForked {
+        // A withdrawn validator must be reported with a positive exit balance; zero is rejected.
+        (uint256 nodeOperatorId, uint256 keyIndex) = _givenSlashedValidator();
+
+        bytes memory callData = _encodeWithdrawn(nodeOperatorId, keyIndex, 0, 1 ether);
+        vm.prank(creator);
+        vm.expectRevert("ZERO_EXIT_BALANCE");
+        easyTrack.createMotion(subject, callData);
+    }
+
     /// @dev Assert the module emitted `ValidatorWithdrawn` for the operator with the expected exit
     ///      balance and slashing penalty (the charge).
     function _assertValidatorWithdrawn(
@@ -81,12 +101,20 @@ abstract contract ReportWithdrawalsForSlashedValidatorsScenario is EasyTrackScen
     }
 
     function _encodeWithdrawn(uint256 nodeOperatorId, uint256 keyIndex) private pure returns (bytes memory) {
+        return _encodeWithdrawn(nodeOperatorId, keyIndex, 32 ether, 1 ether);
+    }
+
+    function _encodeWithdrawn(uint256 nodeOperatorId, uint256 keyIndex, uint256 exitBalance, uint256 slashingPenalty)
+        private
+        pure
+        returns (bytes memory)
+    {
         WithdrawnValidatorInfo[] memory infos = new WithdrawnValidatorInfo[](1);
         infos[0] = WithdrawnValidatorInfo({
             nodeOperatorId: nodeOperatorId,
             keyIndex: keyIndex,
-            exitBalance: 32 ether,
-            slashingPenalty: 1 ether,
+            exitBalance: exitBalance,
+            slashingPenalty: slashingPenalty,
             isSlashed: true
         });
         return abi.encode(infos);

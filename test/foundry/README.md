@@ -39,17 +39,17 @@ snapshots/reverts (`vm.snapshotState` / `vm.revertToState`), leaving a reused fo
 
 ## Coverage
 
-One test per deployed factory. Every precondition is **constructed** on the fork (no scanning for
+Every deployed factory is covered. Preconditions are **constructed** on the fork (no scanning for
 pre-existing state) via module admin roles.
 
-| Factory (deployed-*.json key) | Test | Precondition |
+| Factory (deployed-*.json key) | Test | Scenarios |
 |---|---|---|
-| `UpdateStakingModuleShareLimits:CSM` (sr) | `sr/UpdateStakingModuleShareLimits.t.sol` | — |
-| `AllowConsolidationPair` (sr) | `sr/AllowConsolidationPair.t.sol` | a source + target operator in one MetaRegistry group |
-| `SettleGeneralDelayedPenalty:CSM/CM` (sm) | `sm/SettleGeneralDelayedPenalty.t.sol` | a bonded operator with a locked penalty |
-| `SetMerkleGateTree:CSM/CM` (sm) | `sm/SetMerkleGateTree.t.sol` | — |
-| `ReportWithdrawalsForSlashedValidators:CSM/CM` (sm) | `sm/ReportWithdrawalsForSlashedValidators.t.sol` | a deposited operator, marked slashed |
-| `CreateOrUpdateOperatorGroup:CM` (sm) | `sm/CreateOrUpdateOperatorGroup.t.sol` | a fresh (ungrouped) sub + external operator |
+| `UpdateStakingModuleShareLimits:CSM` (sr) | `sr/UpdateStakingModuleShareLimits.t.sol` | increase / decrease the limits; reject a stale committed current value |
+| `AllowConsolidationPair` (sr) | `sr/AllowConsolidationPair.t.sol` | allow a pair (source+target in one MetaRegistry group); update its submitter |
+| `SettleGeneralDelayedPenalty:CSM/CM` (sm) | `sm/SettleGeneralDelayedPenalty.t.sol` | settle one / multiple locked penalties; reject nothing-to-settle, an already-settled lock, or a stale nonce |
+| `SetMerkleGateTree:CSM/CM` (sm) | `sm/SetMerkleGateTree.t.sol` | update a gate's tree; reject a stale committed current tree |
+| `ReportWithdrawalsForSlashedValidators:CSM/CM` (sm) | `sm/ReportWithdrawalsForSlashedValidators.t.sol` | report a slashed validator withdrawn (idempotent); reject a zero penalty or zero exit balance |
+| `CreateOrUpdateOperatorGroup:CM` (sm) | `sm/CreateOrUpdateOperatorGroup.t.sol` | create a group; update it to non-empty / empty / empty→empty; reject a stale committed group |
 
 ## Notes
 
@@ -62,4 +62,7 @@ pre-existing state) via module admin roles.
 - **Gate discovery.** `SetMerkleGateTree`'s gate is the module's
   `CREATE_NODE_OPERATOR_ROLE` holder the executor may set the tree on. The staking-module addresses live
   in `_networkConfig`; every other target comes from the factory getters at runtime.
+- **Commit re-validation.** Factories that commit a current value at creation (share limits, gate tree,
+  operator group, lock nonce) re-check it at enactment; each has a test that mutates that value after
+  `createMotion` and asserts `enactMotion` then reverts.
 ```

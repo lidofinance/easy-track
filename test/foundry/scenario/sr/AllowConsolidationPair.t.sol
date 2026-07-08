@@ -40,9 +40,23 @@ contract AllowConsolidationPairScenario is EasyTrackScenarioBase {
     function test_allowsConsolidationPair() external onlyForked {
         (uint256 sourceOperatorId, uint256 targetOperatorId) = _givenLinkedConsolidationPair();
 
-        enact(_encodePair(sourceOperatorId, targetOperatorId));
+        enact(_encodePair(sourceOperatorId, targetOperatorId, creator));
 
         assertTrue(migrator.isPairAllowed(sourceOperatorId, targetOperatorId), "consolidation pair not allowed");
+    }
+
+    /// @notice Re-allowing an already-allowed pair with a different submitter updates the stored submitter.
+    function test_updatesSubmitter() external onlyForked {
+        (uint256 sourceOperatorId, uint256 targetOperatorId) = _givenLinkedConsolidationPair();
+
+        address submitterA = makeAddr("submitter-a");
+        enact(_encodePair(sourceOperatorId, targetOperatorId, submitterA));
+        assertEq(migrator.getSubmitter(sourceOperatorId, targetOperatorId), submitterA, "submitter A not set");
+
+        address submitterB = makeAddr("submitter-b");
+        enact(_encodePair(sourceOperatorId, targetOperatorId, submitterB));
+        assertEq(migrator.getSubmitter(sourceOperatorId, targetOperatorId), submitterB, "submitter not updated");
+        assertTrue(migrator.isPairAllowed(sourceOperatorId, targetOperatorId), "pair no longer allowed");
     }
 
     // --- scenario helpers ---
@@ -72,10 +86,14 @@ contract AllowConsolidationPairScenario is EasyTrackScenarioBase {
         );
     }
 
-    function _encodePair(uint256 sourceOperatorId, uint256 targetOperatorId) private view returns (bytes memory) {
+    function _encodePair(uint256 sourceOperatorId, uint256 targetOperatorId, address submitter)
+        private
+        pure
+        returns (bytes memory)
+    {
         uint256[] memory targets = new uint256[](1);
         targets[0] = targetOperatorId;
         // input = (address submitter, uint256 sourceOperatorId, uint256[] targetOperatorIds)
-        return abi.encode(creator, sourceOperatorId, targets);
+        return abi.encode(submitter, sourceOperatorId, targets);
     }
 }

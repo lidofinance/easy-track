@@ -132,6 +132,8 @@ interface IBaseModule {
         string calldata description
     ) external;
 
+    function settleGeneralDelayedPenalty(uint256[] calldata nodeOperatorIds, uint256[] calldata bondLockNonces) external;
+
     function reportValidatorSlashing(uint256 nodeOperatorId, uint256 keyIndex) external;
 
     function isValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex) external view returns (bool);
@@ -219,6 +221,8 @@ interface IConsolidationMigrator {
     function getStakingRouter() external view returns (address);
 
     function isPairAllowed(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (bool);
+
+    function getSubmitter(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (address);
 }
 
 /// @notice Legacy curated NodeOperatorsRegistry (consolidation source / external-operator module).

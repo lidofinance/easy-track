@@ -34,6 +34,22 @@ abstract contract SetMerkleGateTreeScenario is EasyTrackScenarioBase {
         assertEq(keccak256(bytes(gate.treeCid())), keccak256(bytes(newCid)), "treeCid not updated");
     }
 
+    function test_revertsWhenCurrentTreeChangesBeforeEnact() external onlyForked {
+        (,, bytes memory callData) = _plannedTreeUpdate(); // commits the current tree root/cid
+
+        vm.prank(creator);
+        uint256 motionId = easyTrack.createMotion(subject, callData);
+
+        // change the gate's tree so the committed current root/cid no longer match
+        vm.prank(executor);
+        gate.setTreeParams(keccak256("interfering-root"), "interfering-cid");
+
+        vm.warp(block.timestamp + easyTrack.motionDuration() + 1);
+        vm.prank(makeAddr("stranger"));
+        vm.expectRevert("CURRENT_VALUES_MISMATCH");
+        easyTrack.enactMotion(motionId, callData);
+    }
+
     function _managedGate(address module) private view returns (address) {
         IAccessControlEnumerable ac = IAccessControlEnumerable(module);
         bytes32 createRole = _role("CREATE_NODE_OPERATOR_ROLE");
