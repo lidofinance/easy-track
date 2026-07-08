@@ -1,0 +1,25 @@
+{
+    "AllowConsolidationPair": {
+        "contract": "AllowConsolidationPair",
+        "address": "0x29e23B1EF0c9fffAc8330F9abaCebDDD827E4b5C",
+        "constructorArgs": [
+            "0x9Dc70b5A4f4F5E4AF9058C983D560564F031f1D7"
+        ],
+        "txHash": "0x53952d397aca05bfc33cb1ea2b0e47a5e9101609df790114bad84012de5229ae"
+    },
+    "UpdateStakingModuleShareLimits:CSM": {
+        "contract": "UpdateStakingModuleShareLimits",
+        "address": "0x0C6703F1d8D9DdfB6c6e5F57b4f7432a6500D6D8",
+        "constructorArgs": [
+            "0xC52fC3081123073078698F1EAc2f1Dc7Bd71880f",
+            "CSM",
+            "0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
+            3,
+            500,
+            500,
+            600,
+            600
+        ],
+        "txHash": "0xab060de07029c52920ca590e65ce0123ceb691506129223b2b91e0c1cbf23d71"
+    }
+}
