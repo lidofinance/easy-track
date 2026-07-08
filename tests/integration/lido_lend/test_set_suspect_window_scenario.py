@@ -1,0 +1,19 @@
+from brownie import LidoLendSetSuspectWindow
+from eth_abi import encode
+
+NEW_WINDOW = 7200
+
+
+def test_set_suspect_window_scenario(
+    lido_lend, created_market, easy_track, deployer, trusted_caller, permission, register_factory, enact_motion
+):
+    "A Manager Committee motion sets the suspect window on the market's GuardianSignals registry."
+    gs = lido_lend.contract("guardianSignals")
+    market_id = lido_lend.market["id"]
+    assert gs.getSuspectWindow() != NEW_WINDOW
+
+    factory = deployer.deploy(LidoLendSetSuspectWindow, trusted_caller, lido_lend.contract("core"))
+    register_factory(factory, permission((gs, gs.setSuspectWindow)))
+    enact_motion(easy_track, factory, "0x" + encode(["bytes32", "uint256"], [market_id, NEW_WINDOW]).hex(), trusted_caller)
+
+    assert gs.getSuspectWindow() == NEW_WINDOW

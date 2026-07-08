@@ -1,0 +1,24 @@
+[
+  {
+    "inputs": [],
+    "name": "getCurveParams",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "int256", "name": "curveSteepness", "type": "int256" },
+          { "internalType": "int256", "name": "adjustmentSpeed", "type": "int256" },
+          { "internalType": "int256", "name": "targetUtilization", "type": "int256" },
+          { "internalType": "int256", "name": "initialRateAtTarget", "type": "int256" },
+          { "internalType": "int256", "name": "minRateAtTarget", "type": "int256" },
+          { "internalType": "int256", "name": "maxRateAtTarget", "type": "int256" },
+          { "internalType": "uint256", "name": "maxBorrowRate", "type": "uint256" }
+        ],
+        "internalType": "struct AdaptiveCurveParams",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]
