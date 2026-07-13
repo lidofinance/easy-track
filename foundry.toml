@@ -19,7 +19,9 @@ remappings = ["forge-std/=node_modules/forge-std/src/"]
 
 [profile.contracts]
 src = "contracts"
-test = "contracts"
+# No Solidity tests here (the suite lives under the default profile); point `test` at an empty path so
+# tooling that skips the configured test dir (e.g. crytic-compile/Slither) does not skip `contracts`.
+test = "test/none"
 out = "out"
 cache_path = "cache"
 libs = []
