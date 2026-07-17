@@ -1,10 +1,13 @@
 import pytest
-from brownie import reverts, LidoLendActivateMarket, EasyTrack, accounts, web3
+from brownie import reverts, LidoLendActivateMarket, web3
 from eth_abi import encode
 
 PAUSER_COMMITTEE = "0x" + "cc" * 20
 
-ACTIVATE_TYPES = ["(address,address,address,address,uint256)", "address", "address", "address", "bool"]
+from utils.lido_lend import MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
+
+CURVE_PARAMS = (4000000000000000000, 1585489599188, 900000000000000000, 634195839, 31709791, 63419583967, 0)
+ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_TYPE, "address", "address", "bool"]
 
 
 def _market_params(lido_lend):
@@ -12,39 +15,38 @@ def _market_params(lido_lend):
     return (m["loanToken"], m["collateralToken"], m["oracle"], m["irm"], m["lltv"])
 
 
-def _activate_prereqs(lido_lend):
-    "Common skips + handles for the activation scenarios; skips cleanly if the scenario cannot run here."
+def _activate_prereqs(lido_lend, easy_track):
+    "Common handles for the activation scenarios against the fresh local EasyTrack fixture."
     core = lido_lend.contract("core")
     if core.market(lido_lend.market["id"])["lastUpdate"] != 0:
         pytest.skip("descriptor market already created on the core; activate scenario needs a fresh market")
-    if not lido_lend.has("circuitBreaker") or not lido_lend.easy_track:
-        pytest.skip("descriptor lacks circuitBreaker / real easyTrack; activate scenario needs both")
+    if not lido_lend.has("circuitBreaker"):
+        pytest.skip("descriptor lacks circuitBreaker; activation scenario needs it")
     circuit_breaker = lido_lend.contract("circuitBreaker")
-    easy_track = EasyTrack.at(lido_lend.easy_track)
+
     if easy_track.evmScriptExecutor() != circuit_breaker.ADMIN():
-        pytest.skip("descriptor easyTrack executor is not the CircuitBreaker admin; activation cannot run through it")
+        pytest.skip("EasyTrack executor is not the CircuitBreaker admin; activation cannot run through it")
     return core, circuit_breaker, easy_track
 
 
-def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track):
-    "Deploy an ActivateMarket factory and register it on the real EasyTrack (3-call activation permission)."
+def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin):
+    "Deploy an ActivateMarket factory and register it on EasyTrack (4-call activation permission)."
     owner = lido_lend.contract("owner")
     irm_router = lido_lend.contract("irmRouter")
+    adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     circuit_breaker = lido_lend.contract("circuitBreaker")
-    factory = deployer.deploy(LidoLendActivateMarket, trusted_caller, owner, irm_router, circuit_breaker)
+    factory = deployer.deploy(
+        LidoLendActivateMarket, trusted_caller, owner, irm_router, adaptive_curve_irm, circuit_breaker
+    )
     create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
     perm = (
         "0x"
+        + adaptive_curve_irm.address[2:] + adaptive_curve_irm.setMarketCurveParams.signature[2:]
         + irm_router.address[2:] + irm_router.setMarketIrm.signature[2:]
         + owner.address[2:] + create_sel
         + circuit_breaker.address[2:] + circuit_breaker.registerPauser.signature[2:]
     )
-    voting = accounts.at(lido_lend.easy_track_admin, force=True)
-    web3.provider.make_request("anvil_setBalance", [voting.address, hex(10**22)])
-    easy_track.addEVMScriptFactory(factory, perm, {"from": voting})
-
-    admin = accounts.at(lido_lend.admin, force=True)
-    web3.provider.make_request("anvil_setBalance", [admin.address, hex(10**22)])
+    easy_track.addEVMScriptFactory(factory, perm, {"from": deployer})
     executor = easy_track.evmScriptExecutor()
     owner.grantRole(owner.MARKET_CREATOR_ROLE(), executor, {"from": admin})
     return factory, irm_router
@@ -53,19 +55,20 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track):
 def _calldata(lido_lend, enable_settlement):
     m = lido_lend.market
     return "0x" + encode(
-        ACTIVATE_TYPES,
-        [_market_params(lido_lend), m["curve"], m["controller"], PAUSER_COMMITTEE, enable_settlement],
+        ACTIVATE_TYPES, [_market_params(lido_lend), CURVE_PARAMS, m["controller"], PAUSER_COMMITTEE, enable_settlement],
     ).hex()
 
 
-def test_activate_market_scenario(lido_lend, deployer, trusted_caller, stranger, enact_motion, advance_time):
+def test_activate_market_scenario(
+    lido_lend, easy_track, deployer, trusted_caller, stranger, enact_motion, advance_time, admin
+):
     "Activate a deployed-but-INERT market: bind the IRM curve, create it on the core, register the pauser."
-    core, circuit_breaker, easy_track = _activate_prereqs(lido_lend)
+    core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track)
     m = lido_lend.market
     market_id = m["id"]
 
     assert core.market(market_id)["lastUpdate"] == 0
-    factory, irm_router = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track)
+    factory, irm_router = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
     calldata = _calldata(lido_lend, True)
     enact_motion(easy_track, factory, calldata, trusted_caller)
@@ -82,12 +85,14 @@ def test_activate_market_scenario(lido_lend, deployer, trusted_caller, stranger,
         easy_track.enactMotion(motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger})
 
 
-def test_activate_market_without_settlement_scenario(lido_lend, deployer, trusted_caller, enact_motion):
+def test_activate_market_without_settlement_scenario(
+    lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin
+):
     "Activate with enableSettlement=False: the market is created with its settlement queue disabled."
-    core, _, easy_track = _activate_prereqs(lido_lend)
+    core, _, easy_track = _activate_prereqs(lido_lend, easy_track)
     market_id = lido_lend.market["id"]
 
-    factory, _ = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track)
+    factory, _ = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
     enact_motion(easy_track, factory, _calldata(lido_lend, False), trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0

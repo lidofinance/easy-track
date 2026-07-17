@@ -12,7 +12,7 @@ from brownie import (
 
 from utils.evm_script import encode_call_script
 
-MP_TYPE = "(address,address,address,address,uint256)"
+from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE
 CALLDATA_TYPES = [MP_TYPE, "address", "bool"]
 
 LOAN_TOKEN = f"0x{1:040x}"

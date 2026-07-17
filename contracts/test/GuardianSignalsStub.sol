@@ -8,16 +8,29 @@ pragma solidity 0.8.6;
 /// covering the surface the guardian factories call into (`unban` / `isBanned`, the guardian set,
 /// and the quorum).
 contract GuardianSignalsStub {
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant ACCESS_RESTORER_ROLE = keccak256("ACCESS_RESTORER_ROLE");
+    bytes32 public constant ACCESS_LIMITER_ROLE = keccak256("ACCESS_LIMITER_ROLE");
+
     mapping(bytes32 => mapping(address => bool)) public isBanned;
     mapping(address => bool) public isGuardian;
+    mapping(bytes32 => mapping(address => bool)) public hasRole;
     uint256 private _quorum;
     uint256 private _guardianCount;
     uint256 private _suspectWindow;
     bytes32 public lastUnbannedMarketId;
     address public lastUnbannedAccount;
 
+    function grantRole(bytes32 role, address account) external {
+        hasRole[role][account] = true;
+    }
+
     function setBanned(bytes32 marketId, address account, bool banned) external {
         isBanned[marketId][account] = banned;
+    }
+
+    function ban(bytes32 marketId, address account) external {
+        isBanned[marketId][account] = true;
     }
 
     function setGuardian(address guardian, bool value) external {

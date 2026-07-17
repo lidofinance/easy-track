@@ -13,7 +13,7 @@ COLLATERAL_TOKEN = f"0x{2:040x}"
 ORACLE = f"0x{3:040x}"
 LLTV = 800000000000000000
 
-CURVE_PARAMS_TYPE = "(int256,int256,int256,int256,int256,int256,uint256)"
+from utils.lido_lend import CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
 NEW_CURVE_PARAMS = (
     4 * 10**18,
     50 * 10**16,

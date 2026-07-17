@@ -6,7 +6,7 @@ from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
-CONFIG_TYPE = "(uint16,uint96,uint96,uint16)"
+from utils.lido_lend import SETTLEMENT_CONFIG_ABI_TYPE as CONFIG_TYPE
 NEW_CONFIG = (100, 200, 300, 400)
 BPS = 10_000
 

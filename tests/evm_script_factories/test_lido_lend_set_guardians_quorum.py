@@ -72,6 +72,14 @@ def test_create_evm_script_bad_quorum(owner, guardian_signals_stub, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_QUORUM))
 
 
+def test_create_evm_script_zero_quorum(owner, guardian_signals_stub, factory):
+    "Must revert with 'INVALID_QUORUM' for a zero quorum (the other INVALID_QUORUM sub-branch)"
+    # Current quorum must be non-zero, otherwise SAME_QUORUM would mask the zero-quorum branch.
+    guardian_signals_stub.setQuorum(1, {"from": owner})
+    with reverts("INVALID_QUORUM"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, 0))
+
+
 def test_create_evm_script(owner, guardian_signals_stub, factory):
     "Must create correct EVMScript when the new quorum differs and is within the guardian count"
     guardian_signals_stub.addGuardian(f"0x{0xa1:040x}", {"from": owner})

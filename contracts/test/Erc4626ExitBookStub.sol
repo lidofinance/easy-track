@@ -8,11 +8,20 @@ pragma solidity 0.8.6;
 /// `LidoLendActivateMarket` targets. Never called during EVMScript creation; used only so tests can
 /// reproduce the exact selector and ABI encoding brownie would produce for the real call.
 contract Erc4626ExitBookStub {
+    bytes32 public constant ALLOWLIST_MANAGER_ROLE = keccak256("ALLOWLIST_MANAGER_ROLE");
+
     address public lastVault;
     bool public lastAllowed;
+    mapping(address => bool) public isVaultAllowed;
+    mapping(bytes32 => mapping(address => bool)) public hasRole;
+
+    function grantRole(bytes32 role, address account) external {
+        hasRole[role][account] = true;
+    }
 
     function setVaultAllowed(address vault, bool allowed) external {
         lastVault = vault;
         lastAllowed = allowed;
+        isVaultAllowed[vault] = allowed;
     }
 }

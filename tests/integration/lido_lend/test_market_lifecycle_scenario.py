@@ -6,13 +6,15 @@ from brownie import (
     LidoLendUnfreezeMarket,
 )
 from eth_abi import encode
+from utils.lido_lend import (
+    COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as ACTIVATION_TYPE,
+    SETTLEMENT_CONFIG_ABI_TYPE as SETTLEMENT_TYPE,
+)
 
 NEW_CAP = 5_000_000 * 10**18
 
-ACTIVATION_TYPE = "(uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40)"
 ACTIVATION_CONFIG = (600, 7200, 1000 * 10**18, 10 * 10**18, 3600, 10**16, 10800, 300, 150)
 
-SETTLEMENT_TYPE = "(uint16,uint96,uint96,uint16)"
 SETTLEMENT_CONFIG = (500, 1000 * 10**18, 5 * 10**18, 100)
 
 

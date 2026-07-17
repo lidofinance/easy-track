@@ -1,7 +1,7 @@
 from brownie import LidoLendSetSettlementConfig
 from eth_abi import encode
 
-CONFIG_TYPE = "(uint16,uint96,uint96,uint16)"
+from utils.lido_lend import SETTLEMENT_CONFIG_ABI_TYPE as CONFIG_TYPE
 NEW_CONFIG = (500, 1000 * 10**18, 5 * 10**18, 100)
 
 

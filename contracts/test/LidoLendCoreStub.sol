@@ -8,6 +8,8 @@ pragma solidity 0.8.6;
 /// factories read at motion time: `marketController(id)` and `idToMarketParams(id)`. An unset market
 /// resolves to the zero controller / zero-`irm` params, so factories hit their MARKET_NOT_FOUND guard.
 contract LidoLendCoreStub {
+    string private constant ERROR_MARKET_ALREADY_ACTIVATED = "MARKET_ALREADY_ACTIVATED";
+
     struct MarketParams {
         address loanToken;
         address collateralToken;
@@ -16,8 +18,19 @@ contract LidoLendCoreStub {
         uint256 lltv;
     }
 
+    struct Market {
+        uint128 totalSupplyAssets;
+        uint128 totalSupplyShares;
+        uint128 totalBorrowAssets;
+        uint128 totalBorrowShares;
+        uint128 lastUpdate;
+        uint128 fee;
+    }
+
     mapping(bytes32 => address) public marketController;
     mapping(bytes32 => MarketParams) private _idToMarketParams;
+    mapping(bytes32 => Market) private _market;
+    mapping(bytes32 => bool) public isSettlementEnabled;
 
     function setMarketController(bytes32 marketId, address controller) external {
         marketController[marketId] = controller;
@@ -29,5 +42,16 @@ contract LidoLendCoreStub {
 
     function idToMarketParams(bytes32 marketId) external view returns (MarketParams memory) {
         return _idToMarketParams[marketId];
+    }
+
+    function market(bytes32 marketId) external view returns (Market memory) {
+        return _market[marketId];
+    }
+
+    function activateMarket(bytes32 marketId, MarketParams calldata marketParams, bool settlementEnabled) external {
+        require(_market[marketId].lastUpdate == 0, ERROR_MARKET_ALREADY_ACTIVATED);
+        _idToMarketParams[marketId] = marketParams;
+        _market[marketId].lastUpdate = uint128(block.timestamp == 0 ? 1 : block.timestamp);
+        isSettlementEnabled[marketId] = settlementEnabled;
     }
 }

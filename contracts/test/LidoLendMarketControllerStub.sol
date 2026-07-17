@@ -8,6 +8,10 @@ pragma solidity 0.8.6;
 /// covering only the surface the collateral-activation, settlement-config, supply-cap, and unfreeze factories
 /// call into.
 contract LidoLendMarketControllerStub {
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    bytes32 public constant UNFREEZER_ROLE = keccak256("UNFREEZER_ROLE");
+    bytes32 public constant FREEZER_ROLE = keccak256("FREEZER_ROLE");
+
     struct CollateralActivationConfig {
         uint40 minActivationDelay;
         uint40 maxActivationDelay;
@@ -32,8 +36,13 @@ contract LidoLendMarketControllerStub {
     uint256 public supplyCap;
     bool public isFrozen;
     mapping(address => bool) public hasInstantActivation;
+    mapping(bytes32 => mapping(address => bool)) public hasRole;
     address public guardianSignals;
     bytes32 public marketId;
+
+    function grantRole(bytes32 role, address account) external {
+        hasRole[role][account] = true;
+    }
 
     function setGuardianSignals(address registry) external {
         guardianSignals = registry;
@@ -49,6 +58,10 @@ contract LidoLendMarketControllerStub {
 
     function setFrozen(bool value) external {
         isFrozen = value;
+    }
+
+    function freeze() external {
+        isFrozen = true;
     }
 
     function unfreeze() external {

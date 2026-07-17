@@ -15,11 +15,14 @@ contract LidoLendRemoveRiskSteward is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_STEWARD_NOT_FOUND = "STEWARD_NOT_FOUND";
+    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
     // VARIABLES
     // -------------
 
+    /// @notice Address of the LidoLend core (validates the market exists by id)
+    ILidoLend public immutable lidoLend;
     /// @notice Address of the RiskStewardDashboard
     IRiskStewardDashboard public immutable riskStewardDashboard;
 
@@ -27,7 +30,10 @@ contract LidoLendRemoveRiskSteward is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _riskStewardDashboard) TrustedCaller(_trustedCaller) {
+    constructor(address _trustedCaller, address _lidoLend, address _riskStewardDashboard)
+        TrustedCaller(_trustedCaller)
+    {
+        lidoLend = ILidoLend(_lidoLend);
         riskStewardDashboard = IRiskStewardDashboard(_riskStewardDashboard);
     }
 
@@ -46,6 +52,7 @@ contract LidoLendRemoveRiskSteward is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (bytes32 marketId, address steward) = _decodeEVMScriptCallData(_evmScriptCallData);
+        require(lidoLend.marketController(marketId) != address(0), ERROR_MARKET_NOT_FOUND);
         require(riskStewardDashboard.isMarketSteward(marketId, steward), ERROR_STEWARD_NOT_FOUND);
 
         return

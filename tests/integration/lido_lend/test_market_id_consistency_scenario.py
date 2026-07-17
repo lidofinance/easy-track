@@ -1,7 +1,7 @@
 from brownie import web3
 from eth_abi import encode
 
-MP_TYPE = "(address,address,address,address,uint256)"
+from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE
 
 
 def test_market_id_derivation(lido_lend):

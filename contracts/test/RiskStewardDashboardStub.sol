@@ -7,7 +7,14 @@ pragma solidity 0.8.6;
 /// @notice Test-only stub of `RiskStewardDashboard` (lido-lend-market/src/periphery/RiskStewardDashboard.sol),
 /// covering only the steward-management surface the risk-steward factories call into.
 contract RiskStewardDashboardStub {
+    bytes32 public constant STEWARD_ADMIN_ROLE = keccak256("STEWARD_ADMIN_ROLE");
+
     mapping(bytes32 => mapping(address => bool)) public isMarketSteward;
+    mapping(bytes32 => mapping(address => bool)) public hasRole;
+
+    function grantRole(bytes32 role, address account) external {
+        hasRole[role][account] = true;
+    }
 
     function setMarketSteward(bytes32 marketId, address steward, bool value) external {
         isMarketSteward[marketId][steward] = value;

@@ -1,7 +1,7 @@
 from brownie import LidoLendSetCollateralActivationConfig
 from eth_abi import encode
 
-CONFIG_TYPE = "(uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40)"
+from utils.lido_lend import COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as CONFIG_TYPE
 NEW_CONFIG = (600, 7200, 1000 * 10**18, 10 * 10**18, 3600, 10**16, 10800, 300, 150)
 
 

@@ -6,7 +6,7 @@ from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
-CONFIG_TYPE = "(uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40)"
+from utils.lido_lend import COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as CONFIG_TYPE
 NEW_CONFIG = (10, 20, 30, 40, 50, 60, 70, 80, 90)
 
 
@@ -72,6 +72,29 @@ def test_create_evm_script_malformed_config(owner, factory, cfg, error):
     "Must reject a malformed config at creation (mirrors the controller's well-formedness invariants)"
     with reverts(error):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, cfg))
+
+
+@pytest.mark.parametrize(
+    "cfg",
+    [
+        (10, 20, 30, 40, 50, 60, 0, 80, 90),   # maxGuardiansQuorumDelay == 0 is explicitly allowed
+        (10, 20, 30, 40, 50, 60, 21, 80, 90),  # maxGuardiansQuorumDelay == maxActivationDelay + 1 (lower boundary)
+    ],
+)
+def test_create_evm_script_accepts_quorum_delay_boundaries(owner, controller_stub, factory, cfg):
+    "maxGuardiansQuorumDelay is valid when zero or strictly greater than maxActivationDelay"
+    calldata = create_calldata(MARKET_ID, cfg)
+    evm_script = factory.createEVMScript(owner, calldata)
+
+    expected_evm_script = encode_call_script(
+        [
+            (
+                controller_stub.address,
+                controller_stub.setCollateralActivationConfig.encode_input(cfg),
+            )
+        ]
+    )
+    assert evm_script == expected_evm_script
 
 
 def test_create_evm_script(owner, controller_stub, factory):

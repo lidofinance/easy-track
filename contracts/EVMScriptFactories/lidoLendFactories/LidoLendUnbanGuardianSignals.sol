@@ -8,13 +8,14 @@ import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
-/// @notice Creates EVMScript to unban a previously-banned address on one Lido Lend market
+/// @notice Creates EVMScript to unban a previously-banned address on one or more Lido Lend markets
 contract LidoLendUnbanGuardianSignals is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_ACCOUNT_IS_NOT_BANNED = "ACCOUNT_IS_NOT_BANNED";
+    string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
@@ -36,9 +37,9 @@ contract LidoLendUnbanGuardianSignals is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to unban a previously-banned address on one Lido Lend market
+    /// @notice Creates EVMScript to unban a previously-banned address on one or more Lido Lend markets
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (bytes32 marketId, address account)
+    /// @param _evmScriptCallData Encoded tuple: (bytes32[] marketIds, address account)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -46,25 +47,34 @@ contract LidoLendUnbanGuardianSignals is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, address account) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (bytes32[] memory marketIds, address account) = _decodeEVMScriptCallData(_evmScriptCallData);
+        require(marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
 
-        IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
-        require(guardianSignals.isBanned(marketId, account), ERROR_ACCOUNT_IS_NOT_BANNED);
+        address[] memory targets = new address[](marketIds.length);
+        bytes4[] memory selectors = new bytes4[](marketIds.length);
+        bytes[] memory calldatas = new bytes[](marketIds.length);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(guardianSignals), guardianSignals.unban.selector, abi.encode(marketId, account)
-            );
+        for (uint256 i = 0; i < marketIds.length; ++i) {
+            bytes32 marketId = marketIds[i];
+            IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
+            require(guardianSignals.isBanned(marketId, account), ERROR_ACCOUNT_IS_NOT_BANNED);
+
+            targets[i] = address(guardianSignals);
+            selectors[i] = guardianSignals.unban.selector;
+            calldatas[i] = abi.encode(marketId, account);
+        }
+
+        return EVMScriptCreator.createEVMScript(targets, selectors, calldatas);
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (bytes32 marketId, address account)
-    /// @return marketId Id of the market
+    /// @param _evmScriptCallData Encoded tuple: (bytes32[] marketIds, address account)
+    /// @return marketIds Ids of the markets
     /// @return account Address to unban
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (bytes32 marketId, address account)
+        returns (bytes32[] memory marketIds, address account)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -82,8 +92,8 @@ contract LidoLendUnbanGuardianSignals is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (bytes32 marketId, address account)
+        returns (bytes32[] memory marketIds, address account)
     {
-        (marketId, account) = abi.decode(_evmScriptCallData, (bytes32, address));
+        (marketIds, account) = abi.decode(_evmScriptCallData, (bytes32[], address));
     }
 }

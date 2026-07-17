@@ -1,10 +1,17 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendRemoveRiskSteward, RiskStewardDashboardStub
+from brownie import (
+    reverts,
+    LidoLendRemoveRiskSteward,
+    RiskStewardDashboardStub,
+    LidoLendCoreStub,
+    LidoLendMarketControllerStub,
+)
 
 from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
+UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 
 
 def create_calldata(market_id, steward):
@@ -17,13 +24,23 @@ def dashboard_stub(owner):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, dashboard_stub):
-    return LidoLendRemoveRiskSteward.deploy(owner, dashboard_stub, {"from": owner})
+def core_stub(owner):
+    "A core with a controller registered for MARKET_ID, so the market-existence check resolves."
+    controller = LidoLendMarketControllerStub.deploy({"from": owner})
+    core = LidoLendCoreStub.deploy({"from": owner})
+    core.setMarketController(MARKET_ID, controller, {"from": owner})
+    return core
 
 
-def test_deploy(owner, dashboard_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, core_stub, dashboard_stub):
+    return LidoLendRemoveRiskSteward.deploy(owner, core_stub, dashboard_stub, {"from": owner})
+
+
+def test_deploy(owner, core_stub, dashboard_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLend() == core_stub
     assert factory.riskStewardDashboard() == dashboard_stub
 
 
@@ -31,6 +48,13 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger))
+
+
+def test_create_evm_script_market_not_found(owner, dashboard_stub, factory, stranger):
+    "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
+    dashboard_stub.setMarketSteward(UNKNOWN_MARKET_ID, stranger, True, {"from": owner})
+    with reverts("MARKET_NOT_FOUND"):
+        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
 
 
 def test_create_evm_script_not_steward(owner, dashboard_stub, factory, stranger):

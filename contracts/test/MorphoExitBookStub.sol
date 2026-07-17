@@ -8,6 +8,8 @@ pragma solidity 0.8.6;
 /// `LidoLendActivateMarket` targets. Never called during EVMScript creation; used only so tests can
 /// reproduce the exact selector and ABI encoding brownie would produce for the real call.
 contract MorphoExitBookStub {
+    bytes32 public constant ALLOWLIST_MANAGER_ROLE = keccak256("ALLOWLIST_MANAGER_ROLE");
+
     struct MarketParams {
         address loanToken;
         address collateralToken;
@@ -18,9 +20,21 @@ contract MorphoExitBookStub {
 
     MarketParams public lastMarketParams;
     bool public lastAllowed;
+    mapping(bytes32 => address) public marketIdToVault;
+    mapping(bytes32 => bool) public isMarketAllowed;
+    mapping(bytes32 => mapping(address => bool)) public hasRole;
+
+    function grantRole(bytes32 role, address account) external {
+        hasRole[role][account] = true;
+    }
+
+    function setMarketVault(bytes32 marketId, address vault) external {
+        marketIdToVault[marketId] = vault;
+    }
 
     function setMarketAllowed(MarketParams calldata marketParams, bool allowed) external {
         lastMarketParams = marketParams;
         lastAllowed = allowed;
+        isMarketAllowed[keccak256(abi.encode(marketParams))] = allowed;
     }
 }
