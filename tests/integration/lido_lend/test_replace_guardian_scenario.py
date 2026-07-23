@@ -17,8 +17,9 @@ def test_replace_guardian_scenario(
     assert gs.isGuardian(OLD_GUARDIAN)
     assert not gs.isGuardian(NEW_GUARDIAN)
 
-    factory = deployer.deploy(LidoLendReplaceGuardian, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((gs, gs.removeGuardian), (gs, gs.addGuardian)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendReplaceGuardian, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.removeGuardian), (owner, owner.addGuardian)))
     enact_motion(
         easy_track,
         factory,

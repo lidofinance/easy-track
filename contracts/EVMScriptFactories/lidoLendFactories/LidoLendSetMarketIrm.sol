@@ -9,6 +9,8 @@ import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
 /// @notice Creates EVMScript to re-route one Lido Lend market to a different IRM model on the shared router
+/// @dev The call target is the configured IrmRouter singleton. The market id selects only the market params
+///      encoded in calldata, so one fixed EasyTrack permission serves every domain market.
 contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -17,6 +19,7 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_IRM = "ZERO_IRM";
     string private constant ERROR_IRM_NOT_CONTRACT = "IRM_NOT_CONTRACT";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
+    string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
 
     // -------------
     // VARIABLES
@@ -24,13 +27,20 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of the LidoLend core (resolves a market's params by id)
     ILidoLend public immutable lidoLend;
+    /// @notice Address of the domain's IrmRouter committed to every supported market id
+    address public immutable irmRouter;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
+    constructor(
+        address _trustedCaller,
+        address _lidoLend,
+        address _irmRouter
+    ) TrustedCaller(_trustedCaller) {
         lidoLend = ILidoLend(_lidoLend);
+        irmRouter = _irmRouter;
     }
 
     // -------------
@@ -53,10 +63,13 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
 
         MarketParams memory marketParams = lidoLend.idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
+        require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
 
         return
             EVMScriptCreator.createEVMScript(
-                marketParams.irm, IIrmRouter.setMarketIrm.selector, abi.encode(marketParams, newIrm)
+                irmRouter,
+                IIrmRouter.setMarketIrm.selector,
+                abi.encode(marketParams, newIrm)
             );
     }
 

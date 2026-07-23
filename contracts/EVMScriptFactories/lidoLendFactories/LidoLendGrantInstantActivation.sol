@@ -15,22 +15,26 @@ contract LidoLendGrantInstantActivation is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_ZERO_CALLER = "ZERO_CALLER";
-    string private constant ERROR_INSTANT_ACTIVATION_ALREADY_GRANTED = "INSTANT_ACTIVATION_ALREADY_GRANTED";
+    string private constant ERROR_INSTANT_ACTIVATION_ALREADY_GRANTED =
+        "INSTANT_ACTIVATION_ALREADY_GRANTED";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (resolves a market's controller by id)
+    /// @notice Address of the LidoLendOwner facade
+    ILidoLendOwner public immutable lidoLendOwner;
+    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
+        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
+        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
     }
 
     // -------------
@@ -51,11 +55,16 @@ contract LidoLendGrantInstantActivation is TrustedCaller, IEVMScriptFactory {
         require(caller != address(0), ERROR_ZERO_CALLER);
 
         ILidoLendMarketController marketController = _controllerOf(marketId);
-        require(!marketController.hasInstantActivation(caller), ERROR_INSTANT_ACTIVATION_ALREADY_GRANTED);
+        require(
+            !marketController.hasInstantActivation(caller),
+            ERROR_INSTANT_ACTIVATION_ALREADY_GRANTED
+        );
 
         return
             EVMScriptCreator.createEVMScript(
-                address(marketController), marketController.grantInstantActivation.selector, abi.encode(caller)
+                address(lidoLendOwner),
+                lidoLendOwner.grantMarketInstantActivation.selector,
+                abi.encode(marketId, caller)
             );
     }
 

@@ -6,6 +6,7 @@ from brownie import (
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
+    LidoLendOwnerStub,
 )
 
 from utils.evm_script import encode_call_script
@@ -33,13 +34,21 @@ def core_stub(owner, guardian_signals_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendRemoveGuardian.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendRemoveGuardian.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -71,7 +80,7 @@ def test_create_evm_script_would_break_quorum(owner, guardian_signals_stub, fact
         factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
 
 
-def test_create_evm_script(owner, guardian_signals_stub, factory, stranger):
+def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
     "Must create correct EVMScript when the account is currently a guardian"
     guardian_signals_stub.setGuardian(stranger, True, {"from": owner})
     assert guardian_signals_stub.isGuardian(stranger)
@@ -82,8 +91,8 @@ def test_create_evm_script(owner, guardian_signals_stub, factory, stranger):
     expected_evm_script = encode_call_script(
         [
             (
-                guardian_signals_stub.address,
-                guardian_signals_stub.removeGuardian.encode_input(stranger),
+                owner_facade.address,
+                owner_facade.removeGuardian.encode_input(MARKET_ID, stranger),
             )
         ]
     )

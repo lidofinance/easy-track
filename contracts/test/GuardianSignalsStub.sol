@@ -15,21 +15,38 @@ contract GuardianSignalsStub {
     mapping(bytes32 => mapping(address => bool)) public isBanned;
     mapping(address => bool) public isGuardian;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
+    bool public enforceRoles;
     uint256 private _quorum;
     uint256 private _guardianCount;
     uint256 private _suspectWindow;
     bytes32 public lastUnbannedMarketId;
     address public lastUnbannedAccount;
 
+    modifier onlyRoleWhenEnforced(bytes32 role) {
+        require(!enforceRoles || hasRole[role][msg.sender], "GUARDIANS_MISSING_ROLE");
+        _;
+    }
+
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
     }
 
-    function setBanned(bytes32 marketId, address account, bool banned) external {
+    function setEnforceRoles(bool value) external {
+        enforceRoles = value;
+    }
+
+    function setBanned(
+        bytes32 marketId,
+        address account,
+        bool banned
+    ) external {
         isBanned[marketId][account] = banned;
     }
 
-    function ban(bytes32 marketId, address account) external {
+    function ban(bytes32 marketId, address account)
+        external
+        onlyRoleWhenEnforced(ACCESS_LIMITER_ROLE)
+    {
         isBanned[marketId][account] = true;
     }
 
@@ -37,17 +54,20 @@ contract GuardianSignalsStub {
         _setGuardian(guardian, value);
     }
 
-    function unban(bytes32 marketId, address account) external {
+    function unban(bytes32 marketId, address account)
+        external
+        onlyRoleWhenEnforced(ACCESS_RESTORER_ROLE)
+    {
         isBanned[marketId][account] = false;
         lastUnbannedMarketId = marketId;
         lastUnbannedAccount = account;
     }
 
-    function addGuardian(address guardian) external {
+    function addGuardian(address guardian) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         _setGuardian(guardian, true);
     }
 
-    function removeGuardian(address guardian) external {
+    function removeGuardian(address guardian) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         _setGuardian(guardian, false);
     }
 
@@ -61,7 +81,7 @@ contract GuardianSignalsStub {
         return _guardianCount;
     }
 
-    function setQuorum(uint256 newQuorum) external {
+    function setQuorum(uint256 newQuorum) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         _quorum = newQuorum;
     }
 
@@ -69,7 +89,7 @@ contract GuardianSignalsStub {
         return _quorum;
     }
 
-    function setSuspectWindow(uint256 suspectWindow) external {
+    function setSuspectWindow(uint256 suspectWindow) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         _suspectWindow = suspectWindow;
     }
 

@@ -24,15 +24,18 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (resolves a market's controller by id)
+    /// @notice Address of the LidoLendOwner facade
+    ILidoLendOwner public immutable lidoLendOwner;
+    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
+        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
+        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
     }
 
     // -------------
@@ -49,25 +52,30 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, address oldGuardian, address newGuardian) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (bytes32 marketId, address oldGuardian, address newGuardian) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
         require(newGuardian != address(0), ERROR_ZERO_GUARDIAN);
 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(guardianSignals.isGuardian(oldGuardian), ERROR_GUARDIAN_NOT_FOUND);
         require(!guardianSignals.isGuardian(newGuardian), ERROR_GUARDIAN_ALREADY_ADDED);
-        require(guardianSignals.getGuardianCount() > guardianSignals.getQuorum(), ERROR_WOULD_BREAK_QUORUM);
+        require(
+            guardianSignals.getGuardianCount() > guardianSignals.getQuorum(),
+            ERROR_WOULD_BREAK_QUORUM
+        );
 
         address[] memory to = new address[](2);
-        to[0] = address(guardianSignals);
-        to[1] = address(guardianSignals);
+        to[0] = address(lidoLendOwner);
+        to[1] = address(lidoLendOwner);
 
         bytes4[] memory methodIds = new bytes4[](2);
-        methodIds[0] = guardianSignals.removeGuardian.selector;
-        methodIds[1] = guardianSignals.addGuardian.selector;
+        methodIds[0] = lidoLendOwner.removeGuardian.selector;
+        methodIds[1] = lidoLendOwner.addGuardian.selector;
 
         bytes[] memory callData = new bytes[](2);
-        callData[0] = abi.encode(oldGuardian);
-        callData[1] = abi.encode(newGuardian);
+        callData[0] = abi.encode(marketId, oldGuardian);
+        callData[1] = abi.encode(marketId, newGuardian);
 
         return EVMScriptCreator.createEVMScript(to, methodIds, callData);
     }
@@ -80,7 +88,11 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (bytes32 marketId, address oldGuardian, address newGuardian)
+        returns (
+            bytes32 marketId,
+            address oldGuardian,
+            address newGuardian
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -98,8 +110,15 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (bytes32 marketId, address oldGuardian, address newGuardian)
+        returns (
+            bytes32 marketId,
+            address oldGuardian,
+            address newGuardian
+        )
     {
-        (marketId, oldGuardian, newGuardian) = abi.decode(_evmScriptCallData, (bytes32, address, address));
+        (marketId, oldGuardian, newGuardian) = abi.decode(
+            _evmScriptCallData,
+            (bytes32, address, address)
+        );
     }
 }

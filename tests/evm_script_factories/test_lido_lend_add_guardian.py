@@ -6,6 +6,7 @@ from brownie import (
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
+    LidoLendOwnerStub,
     ZERO_ADDRESS,
 )
 
@@ -34,13 +35,21 @@ def core_stub(owner, guardian_signals_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendAddGuardian.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendAddGuardian.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -71,7 +80,7 @@ def test_create_evm_script_already_guardian(owner, guardian_signals_stub, factor
         factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
 
 
-def test_create_evm_script(owner, guardian_signals_stub, factory, stranger):
+def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
     "Must create correct EVMScript when the account is not yet a guardian"
     assert not guardian_signals_stub.isGuardian(stranger)
 
@@ -81,8 +90,8 @@ def test_create_evm_script(owner, guardian_signals_stub, factory, stranger):
     expected_evm_script = encode_call_script(
         [
             (
-                guardian_signals_stub.address,
-                guardian_signals_stub.addGuardian.encode_input(stranger),
+                owner_facade.address,
+                owner_facade.addGuardian.encode_input(MARKET_ID, stranger),
             )
         ]
     )
@@ -97,23 +106,22 @@ def test_decode_evm_script_call_data(factory, stranger):
     assert decoded_guardian == stranger
 
 
-def test_resolves_registry_per_market_id(owner, stranger):
-    "The target registry is resolved from the calldata marketId — one factory serves each market's own registry, so EasyTrack's permission (bound to a resolved registry) is what scopes which market a motion can touch."
+def test_targets_facade_for_every_market(owner, stranger):
+    "The registry is resolved from the calldata marketId inside the facade, so the factory always targets the one fixed facade — one registration serves every market's registry. Two markets yield scripts that differ only by the embedded marketId, never the target."
     core = LidoLendCoreStub.deploy({"from": owner})
     market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    registries = {}
     for mid in (market_a, market_b):
         gs = GuardianSignalsStub.deploy({"from": owner})
         controller = LidoLendMarketControllerStub.deploy({"from": owner})
         controller.setGuardianSignals(gs, {"from": owner})
         core.setMarketController(mid, controller, {"from": owner})
-        registries[mid] = gs
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core, {"from": owner})
 
-    factory = LidoLendAddGuardian.deploy(owner, core, {"from": owner})
+    factory = LidoLendAddGuardian.deploy(owner, facade, {"from": owner})
     script_a = factory.createEVMScript(owner, create_calldata(market_a, stranger))
     script_b = factory.createEVMScript(owner, create_calldata(market_b, stranger))
 
-    gs_a, gs_b = registries[market_a], registries[market_b]
-    assert script_a == encode_call_script([(gs_a.address, gs_a.addGuardian.encode_input(stranger))])
-    assert script_b == encode_call_script([(gs_b.address, gs_b.addGuardian.encode_input(stranger))])
+    assert script_a == encode_call_script([(facade.address, facade.addGuardian.encode_input(market_a, stranger))])
+    assert script_b == encode_call_script([(facade.address, facade.addGuardian.encode_input(market_b, stranger))])
     assert script_a != script_b

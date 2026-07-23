@@ -12,8 +12,9 @@ def test_grant_instant_activation_scenario(
     market_id = lido_lend.market["id"]
     assert not controller.hasInstantActivation(CALLER)
 
-    factory = deployer.deploy(LidoLendGrantInstantActivation, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((controller, controller.grantInstantActivation)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendGrantInstantActivation, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.grantMarketInstantActivation)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, CALLER]).hex(), trusted_caller)
 
     assert controller.hasInstantActivation(CALLER)

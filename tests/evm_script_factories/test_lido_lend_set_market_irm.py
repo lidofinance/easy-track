@@ -40,14 +40,15 @@ def core_stub(owner, market_params):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendSetMarketIrm.deploy(owner, core_stub, {"from": owner})
+def factory(owner, core_stub, router_stub):
+    return LidoLendSetMarketIrm.deploy(owner, core_stub, router_stub, {"from": owner})
 
 
-def test_deploy(owner, core_stub, factory):
+def test_deploy(owner, core_stub, router_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
     assert factory.lidoLend() == core_stub
+    assert factory.irmRouter() == router_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory, new_irm):
@@ -72,6 +73,17 @@ def test_create_evm_script_market_not_found(owner, factory, new_irm):
     "Must revert with 'MARKET_NOT_FOUND' if the market was never created on the core (no params.irm)"
     with reverts("MARKET_NOT_FOUND"):
         factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, new_irm))
+
+
+def test_create_evm_script_irm_not_router(owner, core_stub, factory, new_irm):
+    "Must reject a market whose id commits to an IRM other than the configured domain router"
+    foreign_router = IrmRouterStub.deploy({"from": owner})
+    foreign_market_id = (3).to_bytes(32, "big")
+    foreign_params = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, foreign_router.address, LLTV)
+    core_stub.setMarketParams(foreign_market_id, foreign_params, {"from": owner})
+
+    with reverts("IRM_NOT_ROUTER"):
+        factory.createEVMScript(owner, create_calldata(foreign_market_id, new_irm))
 
 
 def test_create_evm_script(owner, router_stub, market_params, new_irm, factory):
@@ -100,7 +112,7 @@ def test_target_is_the_shared_router_regardless_of_market_id(owner, new_irm):
     core.setMarketParams(market_a, mp_a, {"from": owner})
     core.setMarketParams(market_b, mp_b, {"from": owner})
 
-    factory = LidoLendSetMarketIrm.deploy(owner, core, {"from": owner})
+    factory = LidoLendSetMarketIrm.deploy(owner, core, router, {"from": owner})
     script_a = factory.createEVMScript(owner, create_calldata(market_a, new_irm))
     script_b = factory.createEVMScript(owner, create_calldata(market_b, new_irm))
 

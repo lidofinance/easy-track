@@ -15,8 +15,9 @@ def test_remove_guardian_scenario(
     gs.addGuardian(GUARDIAN, {"from": admin})
     assert gs.isGuardian(GUARDIAN)
 
-    factory = deployer.deploy(LidoLendRemoveGuardian, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((gs, gs.removeGuardian)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendRemoveGuardian, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.removeGuardian)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, GUARDIAN]).hex(), trusted_caller)
 
     assert not gs.isGuardian(GUARDIAN)

@@ -1,6 +1,6 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendSetSupplyCap, LidoLendCoreStub, LidoLendMarketControllerStub
+from brownie import reverts, LidoLendSetSupplyCap, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
 
 from utils.evm_script import encode_call_script
 
@@ -26,13 +26,21 @@ def core_stub(owner, controller_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendSetSupplyCap.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendSetSupplyCap.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -67,7 +75,7 @@ def test_create_evm_script_cap_not_higher(owner, controller_stub, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, 400))
 
 
-def test_create_evm_script_accepts_cap_above_current(owner, controller_stub, factory):
+def test_create_evm_script_accepts_cap_above_current(owner, owner_facade, controller_stub, factory):
     "Must accept a new cap exactly one above the current one"
     controller_stub.setSupplyCap(500, {"from": owner})
 
@@ -75,15 +83,15 @@ def test_create_evm_script_accepts_cap_above_current(owner, controller_stub, fac
     expected_evm_script = encode_call_script(
         [
             (
-                controller_stub.address,
-                controller_stub.setSupplyCap.encode_input(501),
+                owner_facade.address,
+                owner_facade.setMarketSupplyCap.encode_input(MARKET_ID, 501),
             )
         ]
     )
     assert evm_script == expected_evm_script
 
 
-def test_create_evm_script(owner, controller_stub, factory):
+def test_create_evm_script(owner, owner_facade, controller_stub, factory):
     "Must create correct EVMScript when the new cap is higher than the current one (0 by default)"
     assert controller_stub.supplyCap() == 0
 
@@ -93,8 +101,8 @@ def test_create_evm_script(owner, controller_stub, factory):
     expected_evm_script = encode_call_script(
         [
             (
-                controller_stub.address,
-                controller_stub.setSupplyCap.encode_input(NEW_CAP),
+                owner_facade.address,
+                owner_facade.setMarketSupplyCap.encode_input(MARKET_ID, NEW_CAP),
             )
         ]
     )
@@ -108,19 +116,21 @@ def test_decode_evm_script_call_data(factory):
     assert decoded_cap == NEW_CAP
 
 
-def test_resolves_controller_per_market_id(owner):
-    "The target controller is resolved from the calldata marketId — one factory serves each market's controller."
+def test_targets_facade_for_every_market(owner):
+    "The controller is resolved from the calldata marketId inside the facade, so the factory always targets the one fixed facade — one registration serves every market. Two markets yield scripts that differ only by the embedded marketId, never the target."
     core = LidoLendCoreStub.deploy({"from": owner})
     market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
     ctrl_a = LidoLendMarketControllerStub.deploy({"from": owner})
     ctrl_b = LidoLendMarketControllerStub.deploy({"from": owner})
     core.setMarketController(market_a, ctrl_a, {"from": owner})
     core.setMarketController(market_b, ctrl_b, {"from": owner})
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core, {"from": owner})
 
-    factory = LidoLendSetSupplyCap.deploy(owner, core, {"from": owner})
+    factory = LidoLendSetSupplyCap.deploy(owner, facade, {"from": owner})
     script_a = factory.createEVMScript(owner, create_calldata(market_a, NEW_CAP))
     script_b = factory.createEVMScript(owner, create_calldata(market_b, NEW_CAP))
 
-    assert script_a == encode_call_script([(ctrl_a.address, ctrl_a.setSupplyCap.encode_input(NEW_CAP))])
-    assert script_b == encode_call_script([(ctrl_b.address, ctrl_b.setSupplyCap.encode_input(NEW_CAP))])
+    assert script_a == encode_call_script([(facade.address, facade.setMarketSupplyCap.encode_input(market_a, NEW_CAP))])
+    assert script_b == encode_call_script([(facade.address, facade.setMarketSupplyCap.encode_input(market_b, NEW_CAP))])
     assert script_a != script_b

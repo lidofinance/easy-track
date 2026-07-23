@@ -14,10 +14,6 @@ contract LidoLendSetMarketExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_ZERO_LOAN_TOKEN = "ZERO_LOAN_TOKEN";
-    string private constant ERROR_ZERO_COLLATERAL_TOKEN = "ZERO_COLLATERAL_TOKEN";
-    string private constant ERROR_ZERO_ORACLE = "ZERO_ORACLE";
-    string private constant ERROR_ZERO_IRM = "ZERO_IRM";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
     string private constant ERROR_VAULT_MARKET_MISMATCH = "VAULT_MARKET_MISMATCH";
 
@@ -34,9 +30,11 @@ contract LidoLendSetMarketExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _morphoExitBook, address _erc4626ExitBook)
-        TrustedCaller(_trustedCaller)
-    {
+    constructor(
+        address _trustedCaller,
+        address _morphoExitBook,
+        address _erc4626ExitBook
+    ) TrustedCaller(_trustedCaller) {
         morphoExitBook = _morphoExitBook;
         erc4626ExitBook = _erc4626ExitBook;
     }
@@ -55,15 +53,13 @@ contract LidoLendSetMarketExitBookAllowed is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (MarketParams memory marketParams, address vault, bool allowed) =
-            _decodeEVMScriptCallData(_evmScriptCallData);
-        require(marketParams.loanToken != address(0), ERROR_ZERO_LOAN_TOKEN);
-        require(marketParams.collateralToken != address(0), ERROR_ZERO_COLLATERAL_TOKEN);
-        require(marketParams.oracle != address(0), ERROR_ZERO_ORACLE);
-        require(marketParams.irm != address(0), ERROR_ZERO_IRM);
+        (MarketParams memory marketParams, address vault, bool allowed) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
         require(vault != address(0), ERROR_ZERO_VAULT);
         require(
-            ILidoLendVault(vault).marketId() == keccak256(abi.encode(marketParams)), ERROR_VAULT_MARKET_MISMATCH
+            ILidoLendVault(vault).marketId() == keccak256(abi.encode(marketParams)),
+            ERROR_VAULT_MARKET_MISMATCH
         );
 
         address[] memory to = new address[](2);
@@ -89,7 +85,11 @@ contract LidoLendSetMarketExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (MarketParams memory marketParams, address vault, bool allowed)
+        returns (
+            MarketParams memory marketParams,
+            address vault,
+            bool allowed
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -101,9 +101,15 @@ contract LidoLendSetMarketExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (MarketParams memory marketParams, address vault, bool allowed)
+        returns (
+            MarketParams memory marketParams,
+            address vault,
+            bool allowed
+        )
     {
-        (marketParams, vault, allowed) =
-            abi.decode(_evmScriptCallData, (MarketParams, address, bool));
+        (marketParams, vault, allowed) = abi.decode(
+            _evmScriptCallData,
+            (MarketParams, address, bool)
+        );
     }
 }

@@ -140,23 +140,6 @@ def test_create_evm_script_max_lltv(owner, factory, controller):
         )
 
 
-@pytest.mark.parametrize(
-    "curve_params,error",
-    [
-        ((4_000000000000000000, -1, 900000000000000000, 2, 1, 3, 0), "INVALID_ADJUSTMENT_SPEED"),
-        ((4_000000000000000000, 1, 0, 2, 1, 3, 0), "INVALID_TARGET_UTILIZATION"),
-        ((4_000000000000000000, 1, 900000000000000000, 2, 0, 3, 0), "INVALID_RATE_BOUNDS"),
-        ((4_000000000000000000, 1, 900000000000000000, 4, 1, 3, 0), "INVALID_INITIAL_RATE"),
-    ],
-)
-def test_create_evm_script_invalid_curve_params(owner, factory, controller, market_params, curve_params, error):
-    "Must revert if the supplied activation curve params violate the same bounds as live-market retunes"
-    with reverts(error):
-        factory.createEVMScript(
-            owner, create_calldata(market_params, curve_params, controller.address, PAUSER_COMMITTEE, False)
-        )
-
-
 def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     "Must revert with 'CONTROLLER_MISMATCH' if the controller does not belong to the market"
     other = LidoLendMarketControllerStub.deploy({"from": owner})

@@ -2,11 +2,7 @@ import pytest
 from brownie import reverts, LidoLendActivateMarket, web3
 from eth_abi import encode
 
-PAUSER_COMMITTEE = "0x" + "cc" * 20
-
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
-
-CURVE_PARAMS = (4000000000000000000, 1585489599188, 900000000000000000, 634195839, 31709791, 63419583967, 0)
 ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_TYPE, "address", "address", "bool"]
 
 
@@ -22,6 +18,8 @@ def _activate_prereqs(lido_lend, easy_track):
         pytest.skip("descriptor market already created on the core; activate scenario needs a fresh market")
     if not lido_lend.has("circuitBreaker"):
         pytest.skip("descriptor lacks circuitBreaker; activation scenario needs it")
+    if lido_lend.market["pauser"] == "0x" + "00" * 20:
+        pytest.skip("activation plan has a zero pauser_committee; fill its TODO before testing activation")
     circuit_breaker = lido_lend.contract("circuitBreaker")
 
     if easy_track.evmScriptExecutor() != circuit_breaker.ADMIN():
@@ -55,7 +53,14 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 def _calldata(lido_lend, enable_settlement):
     m = lido_lend.market
     return "0x" + encode(
-        ACTIVATE_TYPES, [_market_params(lido_lend), CURVE_PARAMS, m["controller"], PAUSER_COMMITTEE, enable_settlement],
+        ACTIVATE_TYPES,
+        [
+            _market_params(lido_lend),
+            m["curveParams"],
+            m["controller"],
+            m["pauser"],
+            enable_settlement,
+        ],
     ).hex()
 
 
@@ -75,7 +80,7 @@ def test_activate_market_scenario(
 
     assert core.market(market_id)["lastUpdate"] != 0
     assert irm_router.marketIrm(market_id) == m["curve"]
-    assert circuit_breaker.getPauser(m["controller"]) == PAUSER_COMMITTEE
+    assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
     assert core.isSettlementEnabled(market_id)
 
     tx = easy_track.createMotion(factory, calldata, {"from": trusted_caller})

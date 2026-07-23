@@ -37,11 +37,21 @@ contract LidoLendMarketControllerStub {
     bool public isFrozen;
     mapping(address => bool) public hasInstantActivation;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
+    bool public enforceRoles;
     address public guardianSignals;
     bytes32 public marketId;
 
+    modifier onlyRoleWhenEnforced(bytes32 role) {
+        require(!enforceRoles || hasRole[role][msg.sender], "CONTROLLER_MISSING_ROLE");
+        _;
+    }
+
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
+    }
+
+    function setEnforceRoles(bool value) external {
+        enforceRoles = value;
     }
 
     function setGuardianSignals(address registry) external {
@@ -52,7 +62,7 @@ contract LidoLendMarketControllerStub {
         marketId = marketId_;
     }
 
-    function grantInstantActivation(address caller) external {
+    function grantInstantActivation(address caller) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         hasInstantActivation[caller] = true;
     }
 
@@ -60,23 +70,33 @@ contract LidoLendMarketControllerStub {
         isFrozen = value;
     }
 
-    function freeze() external {
+    function freeze() external onlyRoleWhenEnforced(FREEZER_ROLE) {
         isFrozen = true;
     }
 
-    function unfreeze() external {
+    function unfreeze() external onlyRoleWhenEnforced(UNFREEZER_ROLE) {
         isFrozen = false;
     }
 
-    function setCollateralActivationConfig(CollateralActivationConfig calldata cfg) external {
+    function setCollateralActivationConfig(CollateralActivationConfig calldata cfg)
+        external
+        onlyRoleWhenEnforced(MANAGER_ROLE)
+    {
         _activationConfig = cfg;
     }
 
-    function collateralActivationConfig() external view returns (CollateralActivationConfig memory) {
+    function collateralActivationConfig()
+        external
+        view
+        returns (CollateralActivationConfig memory)
+    {
         return _activationConfig;
     }
 
-    function setSettlementConfig(SettlementConfig calldata config) external {
+    function setSettlementConfig(SettlementConfig calldata config)
+        external
+        onlyRoleWhenEnforced(MANAGER_ROLE)
+    {
         _settlementConfig = config;
     }
 
@@ -84,7 +104,7 @@ contract LidoLendMarketControllerStub {
         return _settlementConfig;
     }
 
-    function setSupplyCap(uint256 cap) external {
+    function setSupplyCap(uint256 cap) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         supplyCap = cap;
     }
 }

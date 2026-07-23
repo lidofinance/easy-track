@@ -16,8 +16,9 @@ def test_unban_guardian_signals_scenario(
     gs.ban(market_id, BANNED_ACCOUNT, {"from": admin})
     assert gs.isBanned(market_id, BANNED_ACCOUNT)
 
-    factory = deployer.deploy(LidoLendUnbanGuardianSignals, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((gs, gs.unban)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendUnbanGuardianSignals, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
     enact_motion(
         easy_track,
         factory,
@@ -52,8 +53,10 @@ def test_unban_guardian_signals_multi_market_scenario(
     assert gs1.isBanned(market_id_1, BANNED_ACCOUNT)
     assert gs2.isBanned(market_id_2, BANNED_ACCOUNT)
 
-    factory = deployer.deploy(LidoLendUnbanGuardianSignals, trusted_caller, core)
-    register_factory(factory, permission((gs1, gs1.unban), (gs2, gs2.unban)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendUnbanGuardianSignals, trusted_caller, owner)
+    # One permission for the facade covers every market the batch touches — no per-registry enumeration.
+    register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
     enact_motion(
         easy_track,
         factory,

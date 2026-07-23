@@ -9,17 +9,15 @@ import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
 /// @notice Creates EVMScript to update the IRM curve params of one Lido Lend market
+/// @dev The call target is the configured AdaptiveCurveIrm singleton. The market id selects only the
+///      market params encoded in calldata, so one fixed EasyTrack permission serves every domain market.
 contract LidoLendSetIrmCurveParams is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
-    string private constant ERROR_INVALID_ADJUSTMENT_SPEED = "INVALID_ADJUSTMENT_SPEED";
-    string private constant ERROR_INVALID_TARGET_UTILIZATION = "INVALID_TARGET_UTILIZATION";
-    string private constant ERROR_INVALID_RATE_BOUNDS = "INVALID_RATE_BOUNDS";
-    string private constant ERROR_INVALID_INITIAL_RATE = "INVALID_INITIAL_RATE";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-    string private constant ERROR_CURVE_NOT_FOUND = "CURVE_NOT_FOUND";
+    string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
 
     // -------------
     // VARIABLES
@@ -27,13 +25,24 @@ contract LidoLendSetIrmCurveParams is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of the LidoLend core (resolves a market's params by id)
     ILidoLend public immutable lidoLend;
+    /// @notice Address of the domain's IrmRouter committed to every supported market id
+    address public immutable irmRouter;
+    /// @notice Address of the domain's AdaptiveCurveIrm singleton
+    address public immutable adaptiveCurveIrm;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
+    constructor(
+        address _trustedCaller,
+        address _lidoLend,
+        address _irmRouter,
+        address _adaptiveCurveIrm
+    ) TrustedCaller(_trustedCaller) {
         lidoLend = ILidoLend(_lidoLend);
+        irmRouter = _irmRouter;
+        adaptiveCurveIrm = _adaptiveCurveIrm;
     }
 
     // -------------
@@ -50,28 +59,19 @@ contract LidoLendSetIrmCurveParams is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, AdaptiveCurveParams memory curveParams) =
-            _decodeEVMScriptCallData(_evmScriptCallData);
-        require(curveParams.adjustmentSpeed >= 0, ERROR_INVALID_ADJUSTMENT_SPEED);
-        require(curveParams.targetUtilization > 0, ERROR_INVALID_TARGET_UTILIZATION);
-        require(
-            curveParams.minRateAtTarget > 0 && curveParams.maxRateAtTarget >= curveParams.minRateAtTarget,
-            ERROR_INVALID_RATE_BOUNDS
-        );
-        require(
-            curveParams.initialRateAtTarget >= curveParams.minRateAtTarget
-                && curveParams.initialRateAtTarget <= curveParams.maxRateAtTarget,
-            ERROR_INVALID_INITIAL_RATE
+        (bytes32 marketId, AdaptiveCurveParams memory curveParams) = _decodeEVMScriptCallData(
+            _evmScriptCallData
         );
 
         MarketParams memory marketParams = lidoLend.idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
-        address curve = IIrmRouter(marketParams.irm).marketIrm(marketId);
-        require(curve != address(0), ERROR_CURVE_NOT_FOUND);
+        require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
 
         return
             EVMScriptCreator.createEVMScript(
-                curve, IAdaptiveCurveIrm.setMarketCurveParams.selector, abi.encode(marketParams, curveParams)
+                adaptiveCurveIrm,
+                IAdaptiveCurveIrm.setMarketCurveParams.selector,
+                abi.encode(marketParams, curveParams)
             );
     }
 

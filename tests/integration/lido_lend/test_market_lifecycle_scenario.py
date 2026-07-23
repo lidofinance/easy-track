@@ -28,15 +28,16 @@ def test_market_lifecycle_scenario(
 
     controller.grantRole(controller.FREEZER_ROLE(), admin, {"from": admin})
 
-    cap_factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, core)
-    activation_factory = deployer.deploy(LidoLendSetCollateralActivationConfig, trusted_caller, core)
-    settlement_factory = deployer.deploy(LidoLendSetSettlementConfig, trusted_caller, core)
-    unfreeze_factory = deployer.deploy(LidoLendUnfreezeMarket, trusted_caller, core)
+    owner = lido_lend.contract("owner")
+    cap_factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, owner)
+    activation_factory = deployer.deploy(LidoLendSetCollateralActivationConfig, trusted_caller, owner)
+    settlement_factory = deployer.deploy(LidoLendSetSettlementConfig, trusted_caller, owner)
+    unfreeze_factory = deployer.deploy(LidoLendUnfreezeMarket, trusted_caller, owner)
 
-    register_factory(cap_factory, permission((controller, controller.setSupplyCap)))
-    register_factory(activation_factory, permission((controller, controller.setCollateralActivationConfig)))
-    register_factory(settlement_factory, permission((controller, controller.setSettlementConfig)))
-    register_factory(unfreeze_factory, permission((controller, controller.unfreeze)))
+    register_factory(cap_factory, permission((owner, owner.setMarketSupplyCap)))
+    register_factory(activation_factory, permission((owner, owner.setMarketCollateralActivationConfig)))
+    register_factory(settlement_factory, permission((owner, owner.setMarketSettlementConfig)))
+    register_factory(unfreeze_factory, permission((owner, owner.unfreezeMarket)))
 
     assert controller.supplyCap() < NEW_CAP
     enact_motion(easy_track, cap_factory, "0x" + encode(["bytes32", "uint256"], [market_id, NEW_CAP]).hex(), trusted_caller)

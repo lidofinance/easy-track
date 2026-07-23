@@ -28,10 +28,6 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MAX_LLTV_EXCEEDED = "MAX_LLTV_EXCEEDED";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
     string private constant ERROR_CONTROLLER_MISMATCH = "CONTROLLER_MISMATCH";
-    string private constant ERROR_INVALID_ADJUSTMENT_SPEED = "INVALID_ADJUSTMENT_SPEED";
-    string private constant ERROR_INVALID_TARGET_UTILIZATION = "INVALID_TARGET_UTILIZATION";
-    string private constant ERROR_INVALID_RATE_BOUNDS = "INVALID_RATE_BOUNDS";
-    string private constant ERROR_INVALID_INITIAL_RATE = "INVALID_INITIAL_RATE";
 
     uint256 private constant WAD = 1e18;
 
@@ -101,8 +97,6 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
             ILidoLendMarketController(controller).marketId() == keccak256(abi.encode(marketParams)),
             ERROR_CONTROLLER_MISMATCH
         );
-        _validateCurveParams(curveParams);
-
         address[] memory to = new address[](4);
         bytes4[] memory methodIds = new bytes4[](4);
         bytes[] memory callData = new bytes[](4);
@@ -155,22 +149,6 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    /// @dev Same bounds `LidoLendSetIrmCurveParams` enforces on a live-market retune; the deeper validation
-    ///      runs in the `AdaptiveCurveConfig` constructor at enactment.
-    function _validateCurveParams(AdaptiveCurveParams memory curveParams) private pure {
-        require(curveParams.adjustmentSpeed >= 0, ERROR_INVALID_ADJUSTMENT_SPEED);
-        require(curveParams.targetUtilization > 0, ERROR_INVALID_TARGET_UTILIZATION);
-        require(
-            curveParams.minRateAtTarget > 0 && curveParams.maxRateAtTarget >= curveParams.minRateAtTarget,
-            ERROR_INVALID_RATE_BOUNDS
-        );
-        require(
-            curveParams.initialRateAtTarget >= curveParams.minRateAtTarget
-                && curveParams.initialRateAtTarget <= curveParams.maxRateAtTarget,
-            ERROR_INVALID_INITIAL_RATE
-        );
-    }
-
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
@@ -182,7 +160,9 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
             bool enableSettlement
         )
     {
-        (marketParams, curveParams, controller, pauserCommittee, enableSettlement) =
-            abi.decode(_evmScriptCallData, (MarketParams, AdaptiveCurveParams, address, address, bool));
+        (marketParams, curveParams, controller, pauserCommittee, enableSettlement) = abi.decode(
+            _evmScriptCallData,
+            (MarketParams, AdaptiveCurveParams, address, address, bool)
+        );
     }
 }

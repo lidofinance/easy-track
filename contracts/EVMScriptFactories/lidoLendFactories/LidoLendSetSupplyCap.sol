@@ -21,15 +21,18 @@ contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (resolves a market's controller by id)
+    /// @notice Address of the LidoLendOwner facade
+    ILidoLendOwner public immutable lidoLendOwner;
+    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
+        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
+        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
     }
 
     // -------------
@@ -49,11 +52,13 @@ contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
         (bytes32 marketId, uint256 newCap) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         ILidoLendMarketController marketController = _controllerOf(marketId);
-        require(newCap != 0 && newCap > marketController.supplyCap(), ERROR_CAP_NOT_HIGHER);
+        require(newCap > marketController.supplyCap(), ERROR_CAP_NOT_HIGHER);
 
         return
             EVMScriptCreator.createEVMScript(
-                address(marketController), marketController.setSupplyCap.selector, abi.encode(newCap)
+                address(lidoLendOwner),
+                lidoLendOwner.setMarketSupplyCap.selector,
+                abi.encode(marketId, newCap)
             );
     }
 

@@ -21,6 +21,16 @@ _EXPECTED_SIGNATURES = {
     ],
     "LidoLendOwner": [
         "createMarket((address,address,address,address,uint256),address,bool)",
+        "setMarketSupplyCap(bytes32,uint256)",
+        "unfreezeMarket(bytes32)",
+        "setMarketCollateralActivationConfig(bytes32,(uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40))",
+        "setMarketSettlementConfig(bytes32,(uint16,uint96,uint96,uint16))",
+        "grantMarketInstantActivation(bytes32,address)",
+        "addGuardian(bytes32,address)",
+        "removeGuardian(bytes32,address)",
+        "setGuardiansQuorum(bytes32,uint256)",
+        "setGuardiansSuspectWindow(bytes32,uint256)",
+        "unbanGuardianSignals(bytes32[],address)",
     ],
     "IrmRouter": [
         "setMarketIrm((address,address,address,address,uint256),address)",

@@ -14,25 +14,25 @@ contract LidoLendSetSettlementConfig is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_SLICE_FLOOR_BPS_TOO_HIGH = "SLICE_FLOOR_BPS_TOO_HIGH";
-    string private constant ERROR_LTV_STEP_BPS_TOO_HIGH = "LTV_STEP_BPS_TOO_HIGH";
     string private constant ERROR_SAME_CONFIG = "SAME_CONFIG";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-    uint16 private constant BPS = 10_000;
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (resolves a market's controller by id)
+    /// @notice Address of the LidoLendOwner facade
+    ILidoLendOwner public immutable lidoLendOwner;
+    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
+        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
+        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
     }
 
     // -------------
@@ -49,21 +49,23 @@ contract LidoLendSetSettlementConfig is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, ILidoLendMarketController.SettlementConfig memory newConfig) =
-            _decodeEVMScriptCallData(_evmScriptCallData);
-
-        require(newConfig.sliceFloorBps <= BPS, ERROR_SLICE_FLOOR_BPS_TOO_HIGH);
-        require(newConfig.ltvStepBps <= BPS, ERROR_LTV_STEP_BPS_TOO_HIGH);
+        (
+            bytes32 marketId,
+            ILidoLendMarketController.SettlementConfig memory newConfig
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         ILidoLendMarketController marketController = _controllerOf(marketId);
         require(
-            keccak256(abi.encode(newConfig)) != keccak256(abi.encode(marketController.settlementConfig())),
+            keccak256(abi.encode(newConfig)) !=
+                keccak256(abi.encode(marketController.settlementConfig())),
             ERROR_SAME_CONFIG
         );
 
         return
             EVMScriptCreator.createEVMScript(
-                address(marketController), marketController.setSettlementConfig.selector, abi.encode(newConfig)
+                address(lidoLendOwner),
+                lidoLendOwner.setMarketSettlementConfig.selector,
+                abi.encode(marketId, newConfig)
             );
     }
 
@@ -94,6 +96,9 @@ contract LidoLendSetSettlementConfig is TrustedCaller, IEVMScriptFactory {
         pure
         returns (bytes32 marketId, ILidoLendMarketController.SettlementConfig memory config)
     {
-        (marketId, config) = abi.decode(_evmScriptCallData, (bytes32, ILidoLendMarketController.SettlementConfig));
+        (marketId, config) = abi.decode(
+            _evmScriptCallData,
+            (bytes32, ILidoLendMarketController.SettlementConfig)
+        );
     }
 }

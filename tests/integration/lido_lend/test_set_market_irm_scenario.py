@@ -17,7 +17,12 @@ def test_set_market_irm_scenario(
         new_irm = AdaptiveCurveIrmStub.deploy({"from": deployer}).address
         assert new_irm != old_irm
 
-    factory = deployer.deploy(LidoLendSetMarketIrm, trusted_caller, lido_lend.contract("core"))
+    factory = deployer.deploy(
+        LidoLendSetMarketIrm,
+        trusted_caller,
+        lido_lend.contract("core"),
+        irm_router,
+    )
     register_factory(factory, permission((irm_router, irm_router.setMarketIrm)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, new_irm]).hex(), trusted_caller)
 

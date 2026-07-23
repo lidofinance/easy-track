@@ -13,8 +13,9 @@ def test_unfreeze_market_scenario(
     controller.freeze({"from": admin})
     assert controller.isFrozen()
 
-    factory = deployer.deploy(LidoLendUnfreezeMarket, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((controller, controller.unfreeze)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendUnfreezeMarket, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.unfreezeMarket)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32"], [market_id]).hex(), trusted_caller)
 
     assert not controller.isFrozen()

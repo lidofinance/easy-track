@@ -18,8 +18,9 @@ def test_set_guardians_quorum_scenario(
     assert gs.getGuardianCount() >= NEW_QUORUM
     assert gs.getQuorum() != NEW_QUORUM
 
-    factory = deployer.deploy(LidoLendSetGuardiansQuorum, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((gs, gs.setQuorum)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendSetGuardiansQuorum, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.setGuardiansQuorum)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32", "uint256"], [market_id, NEW_QUORUM]).hex(), trusted_caller)
 
     assert gs.getQuorum() == NEW_QUORUM

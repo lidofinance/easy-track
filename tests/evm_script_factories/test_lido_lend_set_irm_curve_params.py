@@ -6,7 +6,6 @@ from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
-CURVE_UNSET_MARKET_ID = (3).to_bytes(32, "big")
 
 LOAN_TOKEN = f"0x{1:040x}"
 COLLATERAL_TOKEN = f"0x{2:040x}"
@@ -23,8 +22,6 @@ NEW_CURVE_PARAMS = (
     2 * 10**18 // (365 * 24 * 3600),
     10**18,
 )
-MIN_RATE = 1 * 10**15 // (365 * 24 * 3600)
-MAX_RATE = 2 * 10**18 // (365 * 24 * 3600)
 
 
 def create_calldata(market_id, curve_params):
@@ -47,23 +44,23 @@ def market_params(router_stub):
 
 
 @pytest.fixture(scope="module")
-def core_stub(owner, market_params, router_stub, curve_stub):
+def core_stub(owner, market_params):
     core = LidoLendCoreStub.deploy({"from": owner})
     core.setMarketParams(MARKET_ID, market_params, {"from": owner})
-    core.setMarketParams(CURVE_UNSET_MARKET_ID, market_params, {"from": owner})
-    router_stub.setMarketCurve(MARKET_ID, curve_stub, {"from": owner})
     return core
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendSetIrmCurveParams.deploy(owner, core_stub, {"from": owner})
+def factory(owner, core_stub, router_stub, curve_stub):
+    return LidoLendSetIrmCurveParams.deploy(owner, core_stub, router_stub, curve_stub, {"from": owner})
 
 
-def test_deploy(owner, core_stub, factory):
+def test_deploy(owner, core_stub, router_stub, curve_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
     assert factory.lidoLend() == core_stub
+    assert factory.irmRouter() == router_stub
+    assert factory.adaptiveCurveIrm() == curve_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
@@ -72,43 +69,25 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID, NEW_CURVE_PARAMS))
 
 
-def _mut(idx, val):
-    t = list(NEW_CURVE_PARAMS)
-    t[idx] = val
-    return tuple(t)
-
-
-@pytest.mark.parametrize(
-    "params,error",
-    [
-        (_mut(1, -1), "INVALID_ADJUSTMENT_SPEED"),
-        (_mut(2, 0), "INVALID_TARGET_UTILIZATION"),
-        (_mut(4, 0), "INVALID_RATE_BOUNDS"),
-        (_mut(5, MIN_RATE - 1), "INVALID_RATE_BOUNDS"),
-        (_mut(3, MIN_RATE - 1), "INVALID_INITIAL_RATE"),
-        (_mut(3, MAX_RATE + 1), "INVALID_INITIAL_RATE"),
-    ],
-)
-def test_create_evm_script_malformed_params(owner, factory, params, error):
-    "Must reject malformed curve params at creation (mirrors AdaptiveCurveConfig's relational invariants)"
-    with reverts(error):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, params))
-
-
 def test_create_evm_script_market_not_found(owner, factory):
     "Must revert with 'MARKET_NOT_FOUND' if the market was never created on the core (no params.irm)"
     with reverts("MARKET_NOT_FOUND"):
         factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, NEW_CURVE_PARAMS))
 
 
-def test_create_evm_script_curve_not_found(owner, factory):
-    "Must revert with 'CURVE_NOT_FOUND' if the market exists but the router routes it to no curve"
-    with reverts("CURVE_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(CURVE_UNSET_MARKET_ID, NEW_CURVE_PARAMS))
+def test_create_evm_script_irm_not_router(owner, core_stub, factory):
+    "Must reject a market whose id commits to an IRM other than the configured domain router"
+    foreign_router = IrmRouterStub.deploy({"from": owner})
+    foreign_market_id = (3).to_bytes(32, "big")
+    foreign_params = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, foreign_router.address, LLTV)
+    core_stub.setMarketParams(foreign_market_id, foreign_params, {"from": owner})
+
+    with reverts("IRM_NOT_ROUTER"):
+        factory.createEVMScript(owner, create_calldata(foreign_market_id, NEW_CURVE_PARAMS))
 
 
 def test_create_evm_script(owner, curve_stub, market_params, factory):
-    "Must create correct EVMScript targeting the market's curve when all requirements are met"
+    "Must create correct EVMScript targeting the configured AdaptiveCurveIrm singleton"
     calldata = create_calldata(MARKET_ID, NEW_CURVE_PARAMS)
     evm_script = factory.createEVMScript(owner, calldata)
 
@@ -130,26 +109,25 @@ def test_decode_evm_script_call_data(factory):
     assert decoded_params == NEW_CURVE_PARAMS
 
 
-def test_resolves_curve_per_market_id(owner):
-    "The target curve is resolved from the calldata marketId via core -> router.marketIrm(id), so one factory reparametrizes each market's own curve."
+def test_target_is_the_adaptive_curve_singleton_regardless_of_market_id(owner):
+    "Every supported market uses the same static target; the market id only changes the payload."
     router = IrmRouterStub.deploy({"from": owner})
-    mp = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
+    mp_a = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
+    mp_b = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV + 1)
     core = LidoLendCoreStub.deploy({"from": owner})
     market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    curve_a = AdaptiveCurveIrmStub.deploy({"from": owner})
-    curve_b = AdaptiveCurveIrmStub.deploy({"from": owner})
-    for mid, curve in ((market_a, curve_a), (market_b, curve_b)):
-        core.setMarketParams(mid, mp, {"from": owner})
-        router.setMarketCurve(mid, curve, {"from": owner})
+    curve = AdaptiveCurveIrmStub.deploy({"from": owner})
+    core.setMarketParams(market_a, mp_a, {"from": owner})
+    core.setMarketParams(market_b, mp_b, {"from": owner})
 
-    factory = LidoLendSetIrmCurveParams.deploy(owner, core, {"from": owner})
+    factory = LidoLendSetIrmCurveParams.deploy(owner, core, router, curve, {"from": owner})
     script_a = factory.createEVMScript(owner, create_calldata(market_a, NEW_CURVE_PARAMS))
     script_b = factory.createEVMScript(owner, create_calldata(market_b, NEW_CURVE_PARAMS))
 
     assert script_a == encode_call_script(
-        [(curve_a.address, curve_a.setMarketCurveParams.encode_input(mp, NEW_CURVE_PARAMS))]
+        [(curve.address, curve.setMarketCurveParams.encode_input(mp_a, NEW_CURVE_PARAMS))]
     )
     assert script_b == encode_call_script(
-        [(curve_b.address, curve_b.setMarketCurveParams.encode_input(mp, NEW_CURVE_PARAMS))]
+        [(curve.address, curve.setMarketCurveParams.encode_input(mp_b, NEW_CURVE_PARAMS))]
     )
     assert script_a != script_b

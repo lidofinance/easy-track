@@ -13,8 +13,9 @@ def test_set_collateral_activation_config_scenario(
     market_id = lido_lend.market["id"]
     assert controller.collateralActivationConfig() != NEW_CONFIG
 
-    factory = deployer.deploy(LidoLendSetCollateralActivationConfig, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((controller, controller.setCollateralActivationConfig)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendSetCollateralActivationConfig, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.setMarketCollateralActivationConfig)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32", CONFIG_TYPE], [market_id, NEW_CONFIG]).hex(), trusted_caller)
 
     assert controller.collateralActivationConfig() == NEW_CONFIG

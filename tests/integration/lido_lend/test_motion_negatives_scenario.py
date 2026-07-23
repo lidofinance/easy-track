@@ -1,6 +1,5 @@
-
 import pytest
-from brownie import reverts, accounts, web3, LidoLendAddGuardian, LidoLendSetSupplyCap
+from brownie import reverts, LidoLendAddGuardian, LidoLendSetSupplyCap
 from eth_abi import encode
 
 GUARDIAN_A = "0x" + "a1" * 20
@@ -16,11 +15,12 @@ def _calldata(market_id, addr):
 def registered_add_guardian(
     lido_lend, created_market, easy_track, deployer, trusted_caller, admin, permission, register_factory
 ):
-    "A registered AddGuardian factory over the market's GuardianSignals registry (resolved via the core)."
+    "A registered AddGuardian factory routing through the LidoLendOwner facade (resolves the registry by id)."
     gs = lido_lend.contract("guardianSignals")
+    owner = lido_lend.contract("owner")
     gs.grantRole(gs.MANAGER_ROLE(), admin, {"from": admin})
-    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((gs, gs.addGuardian)))
+    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.addGuardian)))
     return factory, gs, lido_lend.market["id"]
 
 
@@ -33,7 +33,7 @@ def test_stranger_cannot_open_motion(easy_track, registered_add_guardian, strang
 
 def test_unregistered_factory_cannot_open_motion(lido_lend, created_market, easy_track, deployer, trusted_caller):
     "createMotion for a factory never added to EasyTrack must revert (EVM_SCRIPT_FACTORY_NOT_FOUND)."
-    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, lido_lend.contract("core"))
+    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, lido_lend.contract("owner"))
     with reverts():
         easy_track.createMotion(factory, _calldata(lido_lend.market["id"], GUARDIAN_A), {"from": trusted_caller})
 
@@ -73,15 +73,16 @@ def test_stale_precondition_reverts_on_enact(easy_track, registered_add_guardian
         easy_track.enactMotion(motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger})
 
 
-def test_motion_rejected_by_objection(easy_track, registered_add_guardian, trusted_caller, stranger, advance_time):
+def test_motion_rejected_by_objection(
+    easy_track, registered_add_guardian, trusted_caller, stranger, advance_time, impersonate
+):
     "A motion objected above the 0.5%-LDO threshold is rejected and removed, so it can never be enacted."
     factory, _, market_id = registered_add_guardian
     tx = easy_track.createMotion(factory, _calldata(market_id, GUARDIAN_A), {"from": trusted_caller})
     motion_id = tx.events["MotionCreated"]["_motionId"]
     assert len(easy_track.getMotions()) == 1
 
-    whale = accounts.at(LDO_WHALE, force=True)
-    web3.provider.make_request("anvil_setBalance", [whale.address, hex(10**22)])
+    whale = impersonate(LDO_WHALE)
     easy_track.objectToMotion(motion_id, {"from": whale})
 
     assert len(easy_track.getMotions()) == 0
@@ -94,22 +95,11 @@ def test_factory_with_wrong_permission_rejects_motion(
     lido_lend, created_market, easy_track, deployer, trusted_caller, permission, register_factory
 ):
     "A factory registered with a permission for a different call must have its motions rejected (HAS_NO_PERMISSIONS)."
-    controller = lido_lend.contract("controller")
-    factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((controller, controller.setSettlementConfig)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, owner)
+    # Right target (facade), wrong selector: SetSupplyCap emits setMarketSupplyCap, permission lists another call.
+    register_factory(factory, permission((owner, owner.setMarketSettlementConfig)))
     with reverts():
         easy_track.createMotion(
             factory, "0x" + encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24]).hex(), {"from": trusted_caller}
         )
-
-
-def test_motion_for_unpermissioned_target_rejected(
-    lido_lend, created_market, easy_track, deployer, trusted_caller, permission, register_factory
-):
-    "Per-market scoping backstop: a domain-scoped factory reaches only the target its permission lists. Registered with the RIGHT selector but a target that is NOT this market's resolved registry, its motion is rejected at createMotion (HAS_NO_PERMISSIONS). Since the factory resolves the registry per calldata marketId, this is exactly what stops a factory permissioned for one market from acting on another (whose resolved registry differs). A literal two-market check needs a second market on the deploy (single-market fork here)."
-    gs = lido_lend.contract("guardianSignals")
-    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, lido_lend.contract("core"))
-    # Right selector (addGuardian), wrong target (controller, standing in for another market's registry).
-    register_factory(factory, permission((lido_lend.contract("controller"), gs.addGuardian)))
-    with reverts():
-        easy_track.createMotion(factory, _calldata(lido_lend.market["id"], GUARDIAN_A), {"from": trusted_caller})

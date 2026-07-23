@@ -15,26 +15,24 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
     // -------------
 
     string private constant ERROR_SAME_CONFIG = "SAME_CONFIG";
-    string private constant ERROR_ZERO_MIN_ACTIVATION_DELAY = "ZERO_MIN_ACTIVATION_DELAY";
-    string private constant ERROR_INVALID_ACTIVATION_DELAYS = "INVALID_ACTIVATION_DELAYS";
-    string private constant ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY = "INVALID_MAX_GUARDIANS_QUORUM_DELAY";
-    string private constant ERROR_ZERO_MIN_ACTIVATION_AMOUNT = "ZERO_MIN_ACTIVATION_AMOUNT";
-    string private constant ERROR_ZERO_MAX_DELAY_INFLOW = "ZERO_MAX_DELAY_INFLOW";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (resolves a market's controller by id)
+    /// @notice Address of the LidoLendOwner facade
+    ILidoLendOwner public immutable lidoLendOwner;
+    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
+        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
+        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
     }
 
     // -------------
@@ -51,27 +49,23 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, ILidoLendMarketController.CollateralActivationConfig memory newCfg) =
-            _decodeEVMScriptCallData(_evmScriptCallData);
-
-        require(newCfg.minActivationDelay != 0, ERROR_ZERO_MIN_ACTIVATION_DELAY);
-        require(newCfg.minActivationDelay <= newCfg.maxActivationDelay, ERROR_INVALID_ACTIVATION_DELAYS);
-        require(
-            newCfg.maxGuardiansQuorumDelay == 0 || newCfg.maxGuardiansQuorumDelay > newCfg.maxActivationDelay,
-            ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY
-        );
-        require(newCfg.minActivationAmount != 0, ERROR_ZERO_MIN_ACTIVATION_AMOUNT);
-        require(newCfg.maxDelayInflow != 0, ERROR_ZERO_MAX_DELAY_INFLOW);
+        (
+            bytes32 marketId,
+            ILidoLendMarketController.CollateralActivationConfig memory newCfg
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
 
         ILidoLendMarketController marketController = _controllerOf(marketId);
         require(
-            keccak256(abi.encode(newCfg)) != keccak256(abi.encode(marketController.collateralActivationConfig())),
+            keccak256(abi.encode(newCfg)) !=
+                keccak256(abi.encode(marketController.collateralActivationConfig())),
             ERROR_SAME_CONFIG
         );
 
         return
             EVMScriptCreator.createEVMScript(
-                address(marketController), marketController.setCollateralActivationConfig.selector, abi.encode(newCfg)
+                address(lidoLendOwner),
+                lidoLendOwner.setMarketCollateralActivationConfig.selector,
+                abi.encode(marketId, newCfg)
             );
     }
 
@@ -102,7 +96,9 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
         pure
         returns (bytes32 marketId, ILidoLendMarketController.CollateralActivationConfig memory cfg)
     {
-        (marketId, cfg) =
-            abi.decode(_evmScriptCallData, (bytes32, ILidoLendMarketController.CollateralActivationConfig));
+        (marketId, cfg) = abi.decode(
+            _evmScriptCallData,
+            (bytes32, ILidoLendMarketController.CollateralActivationConfig)
+        );
     }
 }

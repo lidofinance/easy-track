@@ -14,12 +14,21 @@ contract Erc4626ExitBookStub {
     bool public lastAllowed;
     mapping(address => bool) public isVaultAllowed;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
+    bool public enforceRoles;
 
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
     }
 
+    function setEnforceRoles(bool enforce) external {
+        enforceRoles = enforce;
+    }
+
     function setVaultAllowed(address vault, bool allowed) external {
+        require(
+            !enforceRoles || hasRole[ALLOWLIST_MANAGER_ROLE][msg.sender],
+            "MISSING_ALLOWLIST_MANAGER_ROLE"
+        );
         lastVault = vault;
         lastAllowed = allowed;
         isVaultAllowed[vault] = allowed;

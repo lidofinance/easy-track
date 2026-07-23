@@ -12,8 +12,9 @@ def test_add_guardian_scenario(
     market_id = lido_lend.market["id"]
     assert not gs.isGuardian(NEW_GUARDIAN)
 
-    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, lido_lend.contract("core"))
-    register_factory(factory, permission((gs, gs.addGuardian)))
+    owner = lido_lend.contract("owner")
+    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, owner)
+    register_factory(factory, permission((owner, owner.addGuardian)))
     enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, NEW_GUARDIAN]).hex(), trusted_caller)
 
     assert gs.isGuardian(NEW_GUARDIAN)

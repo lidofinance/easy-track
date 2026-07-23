@@ -27,11 +27,44 @@ struct AdaptiveCurveParams {
 
 interface ILidoLend {
     function marketController(bytes32 marketId) external view returns (address);
+
     function idToMarketParams(bytes32 marketId) external view returns (MarketParams memory);
 }
 
 interface ILidoLendOwner {
-    function createMarket(MarketParams calldata marketParams, address controller, bool enableSettlement) external;
+    function LIDO_LEND() external view returns (ILidoLend);
+
+    function createMarket(
+        MarketParams calldata marketParams,
+        address controller,
+        bool enableSettlement
+    ) external;
+
+    function setMarketSupplyCap(bytes32 marketId, uint256 cap) external;
+
+    function unfreezeMarket(bytes32 marketId) external;
+
+    function setMarketCollateralActivationConfig(
+        bytes32 marketId,
+        ILidoLendMarketController.CollateralActivationConfig calldata config
+    ) external;
+
+    function setMarketSettlementConfig(
+        bytes32 marketId,
+        ILidoLendMarketController.SettlementConfig calldata config
+    ) external;
+
+    function grantMarketInstantActivation(bytes32 marketId, address caller) external;
+
+    function addGuardian(bytes32 marketId, address guardian) external;
+
+    function removeGuardian(bytes32 marketId, address guardian) external;
+
+    function setGuardiansQuorum(bytes32 marketId, uint256 quorum) external;
+
+    function setGuardiansSuspectWindow(bytes32 marketId, uint256 suspectWindow) external;
+
+    function unbanGuardianSignals(bytes32[] calldata marketIds, address account) external;
 }
 
 interface ILidoLendMarketController {
@@ -55,27 +88,41 @@ interface ILidoLendMarketController {
     }
 
     function marketId() external view returns (bytes32);
+
     function guardianSignals() external view returns (address);
+
     function grantInstantActivation(address caller) external;
+
     function hasInstantActivation(address caller) external view returns (bool);
+
     function setCollateralActivationConfig(CollateralActivationConfig calldata cfg) external;
+
     function collateralActivationConfig() external view returns (CollateralActivationConfig memory);
+
     function setSettlementConfig(SettlementConfig calldata config) external;
+
     function settlementConfig() external view returns (SettlementConfig memory);
+
     function setSupplyCap(uint256 cap) external;
+
     function supplyCap() external view returns (uint256);
+
     function unfreeze() external;
+
     function isFrozen() external view returns (bool);
 }
 
 interface IIrmRouter {
     function setMarketIrm(MarketParams calldata marketParams, address irm) external;
+
     function marketIrm(bytes32 marketId) external view returns (address);
 }
 
 interface IAdaptiveCurveIrm {
-    function setMarketCurveParams(MarketParams calldata marketParams, AdaptiveCurveParams calldata curveParams)
-        external;
+    function setMarketCurveParams(
+        MarketParams calldata marketParams,
+        AdaptiveCurveParams calldata curveParams
+    ) external;
 }
 
 interface ICircuitBreaker {
@@ -84,20 +131,31 @@ interface ICircuitBreaker {
 
 interface IGuardianSignals {
     function addGuardian(address guardian) external;
+
     function removeGuardian(address guardian) external;
+
     function isGuardian(address account) external view returns (bool);
+
     function getGuardianCount() external view returns (uint256);
+
     function getQuorum() external view returns (uint256);
+
     function setQuorum(uint256 newQuorum) external;
+
     function setSuspectWindow(uint256 suspectWindow) external;
+
     function getSuspectWindow() external view returns (uint256);
+
     function unban(bytes32 marketId, address account) external;
+
     function isBanned(bytes32 marketId, address account) external view returns (bool);
 }
 
 interface IRiskStewardDashboard {
     function addMarketSteward(bytes32 marketId, address steward) external;
+
     function removeMarketSteward(bytes32 marketId, address steward) external;
+
     function isMarketSteward(bytes32 marketId, address steward) external view returns (bool);
 }
 

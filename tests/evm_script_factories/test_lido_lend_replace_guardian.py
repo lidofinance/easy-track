@@ -6,6 +6,7 @@ from brownie import (
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
+    LidoLendOwnerStub,
     ZERO_ADDRESS,
 )
 
@@ -35,13 +36,21 @@ def core_stub(owner, guardian_signals_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendReplaceGuardian.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendReplaceGuardian.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -95,8 +104,8 @@ def test_create_evm_script_old_equals_new(owner, guardian_signals_stub, factory)
         factory.createEVMScript(owner, create_calldata(MARKET_ID, OLD_GUARDIAN, OLD_GUARDIAN))
 
 
-def test_create_evm_script(owner, guardian_signals_stub, factory, stranger):
-    "Must create correct EVMScript (remove old + add new) when old is a guardian and new is not"
+def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
+    "Must create correct EVMScript (remove old + add new via the facade) when old is a guardian and new is not"
     guardian_signals_stub.setGuardian(OLD_GUARDIAN, True, {"from": owner})
     assert guardian_signals_stub.isGuardian(OLD_GUARDIAN)
     assert not guardian_signals_stub.isGuardian(stranger)
@@ -107,12 +116,12 @@ def test_create_evm_script(owner, guardian_signals_stub, factory, stranger):
     expected_evm_script = encode_call_script(
         [
             (
-                guardian_signals_stub.address,
-                guardian_signals_stub.removeGuardian.encode_input(OLD_GUARDIAN),
+                owner_facade.address,
+                owner_facade.removeGuardian.encode_input(MARKET_ID, OLD_GUARDIAN),
             ),
             (
-                guardian_signals_stub.address,
-                guardian_signals_stub.addGuardian.encode_input(stranger),
+                owner_facade.address,
+                owner_facade.addGuardian.encode_input(MARKET_ID, stranger),
             ),
         ]
     )

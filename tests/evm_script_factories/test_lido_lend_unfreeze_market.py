@@ -1,6 +1,6 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendUnfreezeMarket, LidoLendCoreStub, LidoLendMarketControllerStub
+from brownie import reverts, LidoLendUnfreezeMarket, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
 
 from utils.evm_script import encode_call_script
 
@@ -25,13 +25,21 @@ def core_stub(owner, controller_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendUnfreezeMarket.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendUnfreezeMarket.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -55,7 +63,7 @@ def test_create_evm_script_not_frozen(owner, controller_stub, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID))
 
 
-def test_create_evm_script(owner, controller_stub, factory):
+def test_create_evm_script(owner, owner_facade, controller_stub, factory):
     "Must create correct EVMScript when the market is currently frozen"
     controller_stub.setFrozen(True, {"from": owner})
     assert controller_stub.isFrozen()
@@ -65,8 +73,8 @@ def test_create_evm_script(owner, controller_stub, factory):
     expected_evm_script = encode_call_script(
         [
             (
-                controller_stub.address,
-                controller_stub.unfreeze.encode_input(),
+                owner_facade.address,
+                owner_facade.unfreezeMarket.encode_input(MARKET_ID),
             )
         ]
     )

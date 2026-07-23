@@ -21,15 +21,18 @@ contract LidoLendUnfreezeMarket is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (resolves a market's controller by id)
+    /// @notice Address of the LidoLendOwner facade
+    ILidoLendOwner public immutable lidoLendOwner;
+    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
+        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
+        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
     }
 
     // -------------
@@ -53,14 +56,20 @@ contract LidoLendUnfreezeMarket is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                address(marketController), marketController.unfreeze.selector, new bytes(0)
+                address(lidoLendOwner),
+                lidoLendOwner.unfreezeMarket.selector,
+                abi.encode(marketId)
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded (bytes32 marketId)
     /// @return Id of the market to unfreeze
-    function decodeEVMScriptCallData(bytes memory _evmScriptCallData) external pure returns (bytes32) {
+    function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        external
+        pure
+        returns (bytes32)
+    {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
 
@@ -74,7 +83,11 @@ contract LidoLendUnfreezeMarket is TrustedCaller, IEVMScriptFactory {
         return ILidoLendMarketController(controller);
     }
 
-    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData) private pure returns (bytes32 marketId) {
+    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
+        private
+        pure
+        returns (bytes32 marketId)
+    {
         (marketId) = abi.decode(_evmScriptCallData, (bytes32));
     }
 }

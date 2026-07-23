@@ -1,6 +1,6 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendSetCollateralActivationConfig, LidoLendCoreStub, LidoLendMarketControllerStub
+from brownie import reverts, LidoLendSetCollateralActivationConfig, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
 
 from utils.evm_script import encode_call_script
 
@@ -27,13 +27,21 @@ def core_stub(owner, controller_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendSetCollateralActivationConfig.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendSetCollateralActivationConfig.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -58,46 +66,7 @@ def test_create_evm_script_same_config(owner, controller_stub, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_CONFIG))
 
 
-@pytest.mark.parametrize(
-    "cfg,error",
-    [
-        ((0, 20, 30, 40, 50, 60, 70, 80, 90), "ZERO_MIN_ACTIVATION_DELAY"),
-        ((30, 20, 30, 40, 50, 60, 70, 80, 90), "INVALID_ACTIVATION_DELAYS"),
-        ((10, 20, 30, 40, 50, 60, 20, 80, 90), "INVALID_MAX_GUARDIANS_QUORUM_DELAY"),
-        ((10, 20, 30, 40, 50, 0, 70, 80, 90), "ZERO_MIN_ACTIVATION_AMOUNT"),
-        ((10, 20, 0, 40, 50, 60, 70, 80, 90), "ZERO_MAX_DELAY_INFLOW"),
-    ],
-)
-def test_create_evm_script_malformed_config(owner, factory, cfg, error):
-    "Must reject a malformed config at creation (mirrors the controller's well-formedness invariants)"
-    with reverts(error):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, cfg))
-
-
-@pytest.mark.parametrize(
-    "cfg",
-    [
-        (10, 20, 30, 40, 50, 60, 0, 80, 90),   # maxGuardiansQuorumDelay == 0 is explicitly allowed
-        (10, 20, 30, 40, 50, 60, 21, 80, 90),  # maxGuardiansQuorumDelay == maxActivationDelay + 1 (lower boundary)
-    ],
-)
-def test_create_evm_script_accepts_quorum_delay_boundaries(owner, controller_stub, factory, cfg):
-    "maxGuardiansQuorumDelay is valid when zero or strictly greater than maxActivationDelay"
-    calldata = create_calldata(MARKET_ID, cfg)
-    evm_script = factory.createEVMScript(owner, calldata)
-
-    expected_evm_script = encode_call_script(
-        [
-            (
-                controller_stub.address,
-                controller_stub.setCollateralActivationConfig.encode_input(cfg),
-            )
-        ]
-    )
-    assert evm_script == expected_evm_script
-
-
-def test_create_evm_script(owner, controller_stub, factory):
+def test_create_evm_script(owner, owner_facade, factory):
     "Must create correct EVMScript if all requirements are met"
     calldata = create_calldata(MARKET_ID, NEW_CONFIG)
     evm_script = factory.createEVMScript(owner, calldata)
@@ -105,8 +74,8 @@ def test_create_evm_script(owner, controller_stub, factory):
     expected_evm_script = encode_call_script(
         [
             (
-                controller_stub.address,
-                controller_stub.setCollateralActivationConfig.encode_input(NEW_CONFIG),
+                owner_facade.address,
+                owner_facade.setMarketCollateralActivationConfig.encode_input(MARKET_ID, NEW_CONFIG),
             )
         ]
     )

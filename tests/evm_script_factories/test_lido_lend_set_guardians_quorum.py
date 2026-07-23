@@ -6,6 +6,7 @@ from brownie import (
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
+    LidoLendOwnerStub,
 )
 
 from utils.evm_script import encode_call_script
@@ -34,13 +35,21 @@ def core_stub(owner, guardian_signals_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendSetGuardiansQuorum.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendSetGuardiansQuorum.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -80,7 +89,7 @@ def test_create_evm_script_zero_quorum(owner, guardian_signals_stub, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, 0))
 
 
-def test_create_evm_script(owner, guardian_signals_stub, factory):
+def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory):
     "Must create correct EVMScript when the new quorum differs and is within the guardian count"
     guardian_signals_stub.addGuardian(f"0x{0xa1:040x}", {"from": owner})
     guardian_signals_stub.addGuardian(f"0x{0xa2:040x}", {"from": owner})
@@ -92,8 +101,8 @@ def test_create_evm_script(owner, guardian_signals_stub, factory):
     expected_evm_script = encode_call_script(
         [
             (
-                guardian_signals_stub.address,
-                guardian_signals_stub.setQuorum.encode_input(NEW_QUORUM),
+                owner_facade.address,
+                owner_facade.setGuardiansQuorum.encode_input(MARKET_ID, NEW_QUORUM),
             )
         ]
     )

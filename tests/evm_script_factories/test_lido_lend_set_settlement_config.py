@@ -1,6 +1,6 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendSetSettlementConfig, LidoLendCoreStub, LidoLendMarketControllerStub
+from brownie import reverts, LidoLendSetSettlementConfig, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
 
 from utils.evm_script import encode_call_script
 
@@ -8,7 +8,6 @@ MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 from utils.lido_lend import SETTLEMENT_CONFIG_ABI_TYPE as CONFIG_TYPE
 NEW_CONFIG = (100, 200, 300, 400)
-BPS = 10_000
 
 
 def create_calldata(market_id, cfg):
@@ -28,13 +27,21 @@ def core_stub(owner, controller_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub):
-    return LidoLendSetSettlementConfig.deploy(owner, core_stub, {"from": owner})
+def owner_facade(owner, core_stub):
+    facade = LidoLendOwnerStub.deploy({"from": owner})
+    facade.setCore(core_stub, {"from": owner})
+    return facade
 
 
-def test_deploy(owner, core_stub, factory):
+@pytest.fixture(scope="module")
+def factory(owner, owner_facade):
+    return LidoLendSetSettlementConfig.deploy(owner, owner_facade, {"from": owner})
+
+
+def test_deploy(owner, owner_facade, core_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
+    assert factory.lidoLendOwner() == owner_facade
     assert factory.lidoLend() == core_stub
 
 
@@ -42,18 +49,6 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID, NEW_CONFIG))
-
-
-def test_create_evm_script_slice_floor_bps_too_high(owner, factory):
-    "Must revert with message 'SLICE_FLOOR_BPS_TOO_HIGH' if sliceFloorBps exceeds BPS"
-    with reverts("SLICE_FLOOR_BPS_TOO_HIGH"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, (BPS + 1, 200, 300, 400)))
-
-
-def test_create_evm_script_ltv_step_bps_too_high(owner, factory):
-    "Must revert with message 'LTV_STEP_BPS_TOO_HIGH' if ltvStepBps exceeds BPS"
-    with reverts("LTV_STEP_BPS_TOO_HIGH"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, (100, 200, 300, BPS + 1)))
 
 
 def test_create_evm_script_market_not_found(owner, factory):
@@ -71,23 +66,7 @@ def test_create_evm_script_same_config(owner, controller_stub, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_CONFIG))
 
 
-def test_create_evm_script_accepts_bps_boundary(owner, controller_stub, factory):
-    "Must accept sliceFloorBps and ltvStepBps exactly equal to BPS"
-    config = (BPS, 200, 300, BPS)
-    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, config))
-
-    expected_evm_script = encode_call_script(
-        [
-            (
-                controller_stub.address,
-                controller_stub.setSettlementConfig.encode_input(config),
-            )
-        ]
-    )
-    assert evm_script == expected_evm_script
-
-
-def test_create_evm_script(owner, controller_stub, factory):
+def test_create_evm_script(owner, owner_facade, factory):
     "Must create correct EVMScript if all requirements are met"
     calldata = create_calldata(MARKET_ID, NEW_CONFIG)
     evm_script = factory.createEVMScript(owner, calldata)
@@ -95,8 +74,8 @@ def test_create_evm_script(owner, controller_stub, factory):
     expected_evm_script = encode_call_script(
         [
             (
-                controller_stub.address,
-                controller_stub.setSettlementConfig.encode_input(NEW_CONFIG),
+                owner_facade.address,
+                owner_facade.setMarketSettlementConfig.encode_input(MARKET_ID, NEW_CONFIG),
             )
         ]
     )

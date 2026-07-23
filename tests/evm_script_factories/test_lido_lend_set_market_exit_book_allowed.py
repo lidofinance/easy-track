@@ -69,18 +69,10 @@ def test_create_evm_script_called_by_stranger(stranger, factory, vault):
         factory.createEVMScript(stranger, calldata)
 
 
-def test_create_evm_script_zero_address(owner, factory, vault):
-    "Must revert with the matching ZERO_* message if any required address is the zero address"
-    cases = [
-        ((ZERO_ADDRESS, COLLATERAL_TOKEN, ORACLE, IRM, LLTV), vault.address, "ZERO_LOAN_TOKEN"),
-        ((LOAN_TOKEN, ZERO_ADDRESS, ORACLE, IRM, LLTV), vault.address, "ZERO_COLLATERAL_TOKEN"),
-        ((LOAN_TOKEN, COLLATERAL_TOKEN, ZERO_ADDRESS, IRM, LLTV), vault.address, "ZERO_ORACLE"),
-        ((LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, ZERO_ADDRESS, LLTV), vault.address, "ZERO_IRM"),
-        (MARKET_PARAMS, ZERO_ADDRESS, "ZERO_VAULT"),
-    ]
-    for market_params, vlt, error in cases:
-        with reverts(error):
-            factory.createEVMScript(owner, create_calldata(market_params, vlt, True))
+def test_create_evm_script_zero_vault(owner, factory):
+    "Must revert with 'ZERO_VAULT' before attempting the vault-to-market cross-check"
+    with reverts("ZERO_VAULT"):
+        factory.createEVMScript(owner, create_calldata(MARKET_PARAMS, ZERO_ADDRESS, True))
 
 
 def test_create_evm_script_vault_market_mismatch(owner, factory):

@@ -11,20 +11,37 @@ contract RiskStewardDashboardStub {
 
     mapping(bytes32 => mapping(address => bool)) public isMarketSteward;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
+    bool public enforceRoles;
 
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
     }
 
-    function setMarketSteward(bytes32 marketId, address steward, bool value) external {
+    function setEnforceRoles(bool enforce) external {
+        enforceRoles = enforce;
+    }
+
+    function setMarketSteward(
+        bytes32 marketId,
+        address steward,
+        bool value
+    ) external {
         isMarketSteward[marketId][steward] = value;
     }
 
     function addMarketSteward(bytes32 marketId, address steward) external {
+        require(
+            !enforceRoles || hasRole[STEWARD_ADMIN_ROLE][msg.sender],
+            "MISSING_STEWARD_ADMIN_ROLE"
+        );
         isMarketSteward[marketId][steward] = true;
     }
 
     function removeMarketSteward(bytes32 marketId, address steward) external {
+        require(
+            !enforceRoles || hasRole[STEWARD_ADMIN_ROLE][msg.sender],
+            "MISSING_STEWARD_ADMIN_ROLE"
+        );
         isMarketSteward[marketId][steward] = false;
     }
 }
