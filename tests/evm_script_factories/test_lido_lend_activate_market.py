@@ -24,6 +24,9 @@ ORACLE = f"0x{3:040x}"
 IRM = f"0x{4:040x}"
 LLTV = 800000000000000000
 WAD = 10**18
+MAX_ADJUSTMENT_SPEED = 10_000 * WAD // (365 * 24 * 60 * 60)
+MAX_RATE_AT_TARGET = 10_000 * WAD // (365 * 24 * 60 * 60)
+MAX_BORROW_RATE = MAX_RATE_AT_TARGET * 100
 CONTROLLER = f"0x{6:040x}"
 PAUSER_COMMITTEE = f"0x{7:040x}"
 CURVE_PARAMS = (4_000000000000000000, 1, 900000000000000000, 2, 1, 3, 0)
@@ -32,10 +35,17 @@ CURVE_PARAMS = (4_000000000000000000, 1, 900000000000000000, 2, 1, 3, 0)
 MARKET_PARAMS = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, IRM, LLTV)
 
 
+def with_curve_param(index, value):
+    params = list(CURVE_PARAMS)
+    params[index] = value
+    return tuple(params)
+
+
 def create_calldata(market_params, curve_params, controller, pauser_committee, enable_settlement):
-    return "0x" + encode(
-        ACTIVATE_TYPES, [market_params, curve_params, controller, pauser_committee, enable_settlement]
-    ).hex()
+    return (
+        "0x"
+        + encode(ACTIVATE_TYPES, [market_params, curve_params, controller, pauser_committee, enable_settlement]).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -70,10 +80,11 @@ def market_id(market_params):
 
 
 @pytest.fixture(scope="module")
-def controller(owner, market_id):
+def controller(owner, market_id, circuit_breaker_stub):
     "A controller whose marketId matches market_params (so the factory's cross-check passes)."
     c = LidoLendMarketControllerStub.deploy({"from": owner})
     c.setMarketId(market_id, {"from": owner})
+    c.grantRole(c.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
     return c
 
 
@@ -108,9 +119,27 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
 @pytest.mark.parametrize(
     "market_params,curve_params,controller,pauser,error",
     [
-        ((ZERO_ADDRESS, COLLATERAL_TOKEN, ORACLE, IRM, LLTV), CURVE_PARAMS, CONTROLLER, PAUSER_COMMITTEE, "ZERO_LOAN_TOKEN"),
-        ((LOAN_TOKEN, ZERO_ADDRESS, ORACLE, IRM, LLTV), CURVE_PARAMS, CONTROLLER, PAUSER_COMMITTEE, "ZERO_COLLATERAL_TOKEN"),
-        ((LOAN_TOKEN, COLLATERAL_TOKEN, ZERO_ADDRESS, IRM, LLTV), CURVE_PARAMS, CONTROLLER, PAUSER_COMMITTEE, "ZERO_ORACLE"),
+        (
+            (ZERO_ADDRESS, COLLATERAL_TOKEN, ORACLE, IRM, LLTV),
+            CURVE_PARAMS,
+            CONTROLLER,
+            PAUSER_COMMITTEE,
+            "ZERO_LOAN_TOKEN",
+        ),
+        (
+            (LOAN_TOKEN, ZERO_ADDRESS, ORACLE, IRM, LLTV),
+            CURVE_PARAMS,
+            CONTROLLER,
+            PAUSER_COMMITTEE,
+            "ZERO_COLLATERAL_TOKEN",
+        ),
+        (
+            (LOAN_TOKEN, COLLATERAL_TOKEN, ZERO_ADDRESS, IRM, LLTV),
+            CURVE_PARAMS,
+            CONTROLLER,
+            PAUSER_COMMITTEE,
+            "ZERO_ORACLE",
+        ),
         (MARKET_PARAMS, CURVE_PARAMS, ZERO_ADDRESS, PAUSER_COMMITTEE, "ZERO_CONTROLLER"),
         (MARKET_PARAMS, CURVE_PARAMS, CONTROLLER, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
     ],
@@ -140,6 +169,45 @@ def test_create_evm_script_max_lltv(owner, factory, controller):
         )
 
 
+@pytest.mark.parametrize(
+    "curve_params,error",
+    [
+        (with_curve_param(0, WAD - 1), "invalid curveSteepness"),
+        (with_curve_param(0, 100 * WAD + 1), "invalid curveSteepness"),
+        (with_curve_param(1, -1), "invalid adjustmentSpeed"),
+        (with_curve_param(1, MAX_ADJUSTMENT_SPEED + 1), "invalid adjustmentSpeed"),
+        (with_curve_param(2, 0), "invalid targetUtilization"),
+        (with_curve_param(2, WAD), "invalid targetUtilization"),
+        (with_curve_param(4, 0), "invalid rate bounds"),
+        (with_curve_param(5, CURVE_PARAMS[4] - 1), "invalid rate bounds"),
+        (with_curve_param(5, MAX_RATE_AT_TARGET + 1), "invalid rate bounds"),
+        (with_curve_param(3, CURVE_PARAMS[4] - 1), "invalid initialRateAtTarget"),
+        (with_curve_param(3, CURVE_PARAMS[5] + 1), "invalid initialRateAtTarget"),
+        (with_curve_param(6, MAX_BORROW_RATE + 1), "invalid maxBorrowRate"),
+    ],
+)
+def test_create_evm_script_invalid_curve_params(
+    owner,
+    factory,
+    market_params,
+    controller,
+    curve_params,
+    error,
+):
+    "Activation must apply the same curve preflight as the standalone curve-params factory"
+    with reverts(error):
+        factory.createEVMScript(
+            owner,
+            create_calldata(
+                market_params,
+                curve_params,
+                controller.address,
+                PAUSER_COMMITTEE,
+                False,
+            ),
+        )
+
+
 def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     "Must revert with 'CONTROLLER_MISMATCH' if the controller does not belong to the market"
     other = LidoLendMarketControllerStub.deploy({"from": owner})
@@ -150,9 +218,46 @@ def test_create_evm_script_controller_mismatch(owner, factory, market_params):
         )
 
 
+def test_create_evm_script_circuit_breaker_without_pauser_role(
+    owner,
+    LidoLendActivateMarket,
+    CircuitBreakerStub,
+    owner_stub,
+    irm_router_stub,
+    adaptive_curve_irm_stub,
+    circuit_breaker_stub,
+    controller,
+    market_params,
+):
+    "Must reject a CircuitBreaker with the right ADMIN but no PAUSER_ROLE on the controller."
+    wrong_circuit_breaker = CircuitBreakerStub.deploy(circuit_breaker_stub.ADMIN(), {"from": owner})
+    factory = LidoLendActivateMarket.deploy(
+        owner,
+        owner_stub,
+        irm_router_stub,
+        adaptive_curve_irm_stub,
+        wrong_circuit_breaker,
+        {"from": owner},
+    )
+
+    with reverts("CIRCUIT_BREAKER_NOT_PAUSER"):
+        factory.createEVMScript(
+            owner,
+            create_calldata(market_params, CURVE_PARAMS, controller.address, PAUSER_COMMITTEE, False),
+        )
+
+
 @pytest.mark.parametrize("enable_settlement", [False, True])
 def test_create_evm_script(
-    owner, owner_stub, irm_router_stub, adaptive_curve_irm_stub, circuit_breaker_stub, controller, market_params, factory, enable_settlement
+    owner,
+    owner_stub,
+    irm_router_stub,
+    adaptive_curve_irm_stub,
+    circuit_breaker_stub,
+    controller,
+    market_params,
+    factory,
+    enable_settlement,
 ):
     "Must create the four activation calls in order, routing the market to the singleton AdaptiveCurveIrm"
     calldata = create_calldata(market_params, CURVE_PARAMS, controller.address, PAUSER_COMMITTEE, enable_settlement)

@@ -4,6 +4,7 @@ ILidoLend.sol; if the real protocol renames a method, changes a parameter type, 
 the redeclared interface silently diverges and the produced EVMScript would call a wrong/nonexistent method.
 This runs in plain CI (no fork) — it only reads the committed ABI JSON.
 """
+
 import json
 import os
 
@@ -27,6 +28,7 @@ _EXPECTED_SIGNATURES = {
         "setMarketSettlementConfig(bytes32,(uint16,uint96,uint96,uint16))",
         "grantMarketInstantActivation(bytes32,address)",
         "addGuardian(bytes32,address)",
+        "replaceGuardian(bytes32,address,address)",
         "removeGuardian(bytes32,address)",
         "setGuardiansQuorum(bytes32,uint256)",
         "setGuardiansSuspectWindow(bytes32,uint256)",
@@ -86,7 +88,15 @@ _EXPECTED_SIGNATURES = {
 # silently misbehaves. Keyed by (file, getter) -> expected component types of the returned struct.
 _EXPECTED_RETURN_STRUCTS = {
     ("LidoLendMarketController", "collateralActivationConfig"): [
-        "uint40", "uint40", "uint128", "uint128", "uint40", "uint128", "uint40", "uint40", "uint40"
+        "uint40",
+        "uint40",
+        "uint128",
+        "uint128",
+        "uint40",
+        "uint128",
+        "uint40",
+        "uint40",
+        "uint40",
     ],
     ("LidoLendMarketController", "settlementConfig"): ["uint16", "uint96", "uint96", "uint16"],
 }
@@ -103,7 +113,7 @@ def _canon_type(component):
     t = component["type"]
     if t.startswith("tuple"):
         inner = ",".join(_canon_type(c) for c in component["components"])
-        return "(" + inner + ")" + t[len("tuple"):]
+        return "(" + inner + ")" + t[len("tuple") :]
     return t
 
 

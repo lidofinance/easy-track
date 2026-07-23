@@ -13,14 +13,19 @@ ORACLE = f"0x{3:040x}"
 LLTV = 800000000000000000
 
 from utils.lido_lend import CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
+
+WAD = 10**18
+MAX_ADJUSTMENT_SPEED = 10_000 * WAD // (365 * 24 * 60 * 60)
+MAX_RATE_AT_TARGET = 10_000 * WAD // (365 * 24 * 60 * 60)
+MAX_BORROW_RATE = MAX_RATE_AT_TARGET * 100
 NEW_CURVE_PARAMS = (
-    4 * 10**18,
-    50 * 10**16,
+    4 * WAD,
+    1_585_489_599_188,
     90 * 10**16,
-    4 * 10**16 // (365 * 24 * 3600),
-    1 * 10**15 // (365 * 24 * 3600),
-    2 * 10**18 // (365 * 24 * 3600),
-    10**18,
+    1_268_391_679,
+    31_709_791,
+    63_419_583_967,
+    0,
 )
 
 
@@ -84,6 +89,35 @@ def test_create_evm_script_irm_not_router(owner, core_stub, factory):
 
     with reverts("IRM_NOT_ROUTER"):
         factory.createEVMScript(owner, create_calldata(foreign_market_id, NEW_CURVE_PARAMS))
+
+
+def _with_curve_param(index, value):
+    params = list(NEW_CURVE_PARAMS)
+    params[index] = value
+    return tuple(params)
+
+
+@pytest.mark.parametrize(
+    "curve_params,error",
+    [
+        (_with_curve_param(0, WAD - 1), "invalid curveSteepness"),
+        (_with_curve_param(0, 100 * WAD + 1), "invalid curveSteepness"),
+        (_with_curve_param(1, -1), "invalid adjustmentSpeed"),
+        (_with_curve_param(1, MAX_ADJUSTMENT_SPEED + 1), "invalid adjustmentSpeed"),
+        (_with_curve_param(2, 0), "invalid targetUtilization"),
+        (_with_curve_param(2, WAD), "invalid targetUtilization"),
+        (_with_curve_param(4, 0), "invalid rate bounds"),
+        (_with_curve_param(5, NEW_CURVE_PARAMS[4] - 1), "invalid rate bounds"),
+        (_with_curve_param(5, MAX_RATE_AT_TARGET + 1), "invalid rate bounds"),
+        (_with_curve_param(3, NEW_CURVE_PARAMS[4] - 1), "invalid initialRateAtTarget"),
+        (_with_curve_param(3, NEW_CURVE_PARAMS[5] + 1), "invalid initialRateAtTarget"),
+        (_with_curve_param(6, MAX_BORROW_RATE + 1), "invalid maxBorrowRate"),
+    ],
+)
+def test_create_evm_script_invalid_curve_params(owner, factory, curve_params, error):
+    "Must reject every curve configuration that AdaptiveCurveIrm would reject when enacted"
+    with reverts(error):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, curve_params))
 
 
 def test_create_evm_script(owner, curve_stub, market_params, factory):

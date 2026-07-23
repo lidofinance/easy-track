@@ -14,6 +14,7 @@ from utils.evm_script import encode_call_script
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 NEW_WINDOW = 7200
+MAX_SUSPECT_WINDOW = 30 * 24 * 60 * 60
 
 
 def create_calldata(market_id, window):
@@ -72,6 +73,12 @@ def test_create_evm_script_same_suspect_window(owner, guardian_signals_stub, fac
 
     with reverts("SAME_SUSPECT_WINDOW"):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_WINDOW))
+
+
+def test_create_evm_script_suspect_window_too_high(owner, factory):
+    "Must reject a suspect window that GuardianSignals would reject when the motion is enacted"
+    with reverts("SUSPECT_WINDOW_TOO_HIGH"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, MAX_SUSPECT_WINDOW + 1))
 
 
 def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory):

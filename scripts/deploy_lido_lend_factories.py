@@ -1,23 +1,15 @@
 """Deploys the Lido Lend EasyTrack factories.
 
-Protocol addresses are read from environment variables because the Lido Lend backbone is deployed
-separately from EasyTrack. Set:
+Protocol addresses are read from one immutable Lido Lend deployment directory. Set:
 
-  TRUSTED_CALLER                     - committee address allowed to create motions
-  LIDO_LEND_CORE                     - LidoLend core (OssifiableProxy hosting all markets)
-  LIDO_LEND_OWNER                    - LidoLendOwner facade
-  LIDO_LEND_IRM_ROUTER               - IrmRouter
-  LIDO_LEND_ADAPTIVE_CURVE_IRM       - AdaptiveCurveIrm singleton
-  LIDO_LEND_CIRCUIT_BREAKER          - CircuitBreaker
-  LIDO_LEND_RISK_STEWARD_DASHBOARD   - RiskStewardDashboard
-  LIDO_LEND_MORPHO_EXIT_BOOK         - MorphoExitBook
-  LIDO_LEND_ERC4626_EXIT_BOOK        - Erc4626ExitBook
-  LIDO_LEND_FACTORIES                - optional comma-separated factory names; defaults to all
+  LIDO_LEND_ARTIFACTS_DIR - directory containing protocol.toml, markets/, and optional exit-books.toml
+  TRUSTED_CALLER          - committee address allowed to create motions
+  LIDO_LEND_FACTORIES     - optional comma-separated factory names; defaults to all
 
-Only addresses used by the selected factories are required (apart from the core and CircuitBreaker used by
-the preflight). Before deployment the script verifies that these contracts belong to one Lido Lend deployment
-and that the EVMScriptExecutor (`CircuitBreaker.ADMIN`) has the roles required by the selected factories. The
-output artifact includes the exact fixed EasyTrack permission blob for each deployed factory.
+Before deployment the script verifies artifact consistency, that the actual EasyTrack EVMScriptExecutor
+matches the protocol artifact, and that it has the roles required by the selected factories. ActivateMarket
+additionally requires one shared CircuitBreaker across the deployment and verifies its ADMIN. The output
+artifact includes the exact fixed EasyTrack permission blob for each deployed factory.
 """
 
 import json
@@ -48,6 +40,8 @@ from brownie import (
 )
 
 from utils import log
+from utils.deployed_easy_track import addresses as easy_track_addresses
+from utils.lido_lend_artifacts import load_lido_lend_artifacts
 from utils.config import (
     get_is_live,
     get_deployer_account,
@@ -99,11 +93,7 @@ GUARDIAN_MANAGER_FACTORIES = {
     "LidoLendSetSuspectWindow",
     "LidoLendUnbanGuardianSignals",
 }
-OWNER_FACTORIES = (
-    {"LidoLendActivateMarket"}
-    | MARKET_MANAGER_FACTORIES
-    | GUARDIAN_MANAGER_FACTORIES
-)
+OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
 IRM_ROUTER_FACTORIES = {
     "LidoLendActivateMarket",
     "LidoLendSetIrmCurveParams",
@@ -150,7 +140,9 @@ def _parse_factory_selection(value):
 
 def _required_address_keys(factory_names):
     selected = set(factory_names)
-    keys = {"trusted_caller", "core", "circuit_breaker"}
+    keys = {"trusted_caller", "core"}
+    if "LidoLendActivateMarket" in selected:
+        keys.add("circuit_breaker")
     if selected & OWNER_FACTORIES:
         keys.add("owner")
     if selected & IRM_ROUTER_FACTORIES:
@@ -164,43 +156,91 @@ def _required_address_keys(factory_names):
     return keys
 
 
-ADDRESS_ENV_VARS = {
-    "trusted_caller": "TRUSTED_CALLER",
-    "core": "LIDO_LEND_CORE",
-    "owner": "LIDO_LEND_OWNER",
-    "irm_router": "LIDO_LEND_IRM_ROUTER",
-    "adaptive_curve_irm": "LIDO_LEND_ADAPTIVE_CURVE_IRM",
-    "circuit_breaker": "LIDO_LEND_CIRCUIT_BREAKER",
-    "risk_steward_dashboard": "LIDO_LEND_RISK_STEWARD_DASHBOARD",
-    "morpho_exit_book": "LIDO_LEND_MORPHO_EXIT_BOOK",
-    "erc4626_exit_book": "LIDO_LEND_ERC4626_EXIT_BOOK",
-}
-
-
-def _read_addresses(factory_names):
+def _read_addresses(factory_names, artifacts_dir=None):
     required_keys = _required_address_keys(factory_names)
-    return {key: _env_address(env_var) for key, env_var in ADDRESS_ENV_VARS.items() if key in required_keys}
+    if artifacts_dir is None:
+        artifacts_dir = os.environ.get("LIDO_LEND_ARTIFACTS_DIR")
+    if not artifacts_dir:
+        raise EnvironmentError("Please set LIDO_LEND_ARTIFACTS_DIR env variable")
+
+    deployment = load_lido_lend_artifacts(
+        artifacts_dir,
+        require_exit_books=bool(set(factory_names) & EXIT_BOOK_FACTORIES),
+    )
+    artifact_chain_id = int(deployment["metadata"]["chain_id"])
+    if artifact_chain_id != chain.id:
+        raise ValueError(f"artifact chain id {artifact_chain_id} does not match connected chain id {chain.id}")
+
+    protocol = deployment["protocol"]["protocol"]
+    available = {
+        "trusted_caller": _env_address("TRUSTED_CALLER"),
+        "core": protocol["core"],
+        "owner": protocol["owner_facade"],
+        "irm_router": protocol["irm_router"],
+        "adaptive_curve_irm": protocol["adaptive_curve_irm"],
+        "risk_steward_dashboard": protocol["risk_steward_dashboard"],
+        "evm_script_executor": protocol["evm_script_executor"],
+    }
+    if "circuit_breaker" in required_keys:
+        circuit_breakers = {
+            artifact["market"]["circuit_breaker"].lower(): artifact["market"]["circuit_breaker"]
+            for artifact in deployment["markets"].values()
+        }
+        if len(circuit_breakers) != 1:
+            raise ValueError(
+                "ActivateMarket requires exactly one CircuitBreaker across all market artifacts; "
+                f"found {len(circuit_breakers)}"
+            )
+        available["circuit_breaker"] = next(iter(circuit_breakers.values()))
+    if required_keys & {"morpho_exit_book", "erc4626_exit_book"}:
+        exit_books = deployment["exit_books"]["exit_books"]
+        available["morpho_exit_book"] = exit_books["morpho"]
+        available["erc4626_exit_book"] = exit_books["erc4626"]
+
+    return {key: value for key, value in available.items() if key in required_keys or key == "evm_script_executor"}
 
 
-def _validate_protocol_bindings(a, factory_names=ALL_FACTORY_NAMES):
+def _easy_track_executor(network_name):
+    easy_track = easy_track_addresses(network_name)
+    if not web3.eth.get_code(easy_track.easy_track):
+        raise ValueError(f"EasyTrack has no contract code: {easy_track.easy_track}")
+    return interface.IEasyTrack(easy_track.easy_track).evmScriptExecutor()
+
+
+def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_NAMES):
     """Fail fast if the selected factories' addresses form one executor-ready deployment."""
     selected = set(factory_names)
     for key in _required_address_keys(factory_names) - {"trusted_caller"}:
         if not web3.eth.get_code(a[key]):
             raise ValueError(f"{key} has no contract code: {a[key]}")
 
-    circuit_breaker = interface.CircuitBreaker(a["circuit_breaker"])
-    executor = circuit_breaker.ADMIN()
-    if str(executor).lower() == "0x0000000000000000000000000000000000000000":
-        raise ValueError("circuit_breaker.ADMIN is the zero address")
+    executor = expected_executor
+    artifact_executor = a.get("evm_script_executor", expected_executor)
+    if str(artifact_executor).lower() != str(expected_executor).lower():
+        raise ValueError(
+            "protocol artifact executor does not match EasyTrack evmScriptExecutor: "
+            f"{artifact_executor} != {expected_executor}"
+        )
+    if "LidoLendActivateMarket" in selected:
+        circuit_breaker = interface.CircuitBreaker(a["circuit_breaker"])
+        circuit_breaker_admin = circuit_breaker.ADMIN()
+        if str(circuit_breaker_admin).lower() == "0x0000000000000000000000000000000000000000":
+            raise ValueError("circuit_breaker.ADMIN is the zero address")
+        if str(circuit_breaker_admin).lower() != str(executor).lower():
+            raise ValueError(
+                "circuit_breaker.ADMIN does not match EasyTrack evmScriptExecutor: "
+                f"{circuit_breaker_admin} != {executor}"
+            )
 
     def require_address(label, actual, expected):
         if str(actual).lower() != str(expected).lower():
             raise ValueError(f"{label} mismatch: {actual} != {expected}")
 
     if selected & OWNER_FACTORIES:
+        core = interface.LidoLend(a["core"])
         owner = interface.LidoLendOwner(a["owner"])
         require_address("owner.LIDO_LEND", owner.LIDO_LEND(), a["core"])
+        require_address("core.owner", core.owner(), a["owner"])
 
         required_owner_roles = set()
         if "LidoLendActivateMarket" in selected:
@@ -330,10 +370,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
     if "LidoLendRemoveGuardian" in selected:
         permissions["LidoLendRemoveGuardian"] = _permission((owner, owner.removeGuardian.signature))
     if "LidoLendReplaceGuardian" in selected:
-        permissions["LidoLendReplaceGuardian"] = _permission(
-            (owner, owner.removeGuardian.signature),
-            (owner, owner.addGuardian.signature),
-        )
+        permissions["LidoLendReplaceGuardian"] = _permission((owner, owner.replaceGuardian.signature))
     if "LidoLendGrantInstantActivation" in selected:
         permissions["LidoLendGrantInstantActivation"] = _permission(
             (owner, owner.grantMarketInstantActivation.signature)
@@ -403,7 +440,8 @@ def main():
     network_name = get_network_name()
     factory_names = _parse_factory_selection(os.environ.get("LIDO_LEND_FACTORIES"))
     addresses = _read_addresses(factory_names)
-    executor = _validate_protocol_bindings(addresses, factory_names)
+    expected_executor = _easy_track_executor(network_name)
+    executor = _validate_protocol_bindings(addresses, expected_executor, factory_names)
     deployer = get_deployer_account(get_is_live(), network=network_name)
 
     log.br()
@@ -412,6 +450,7 @@ def main():
     log.ok("Deployer", deployer)
     log.ok("EVMScriptExecutor", executor)
     log.ok("Factories", ", ".join(name.removeprefix("LidoLend") for name in factory_names))
+    log.ok("Lido Lend artifacts", os.environ["LIDO_LEND_ARTIFACTS_DIR"])
     log.br()
     for key, value in addresses.items():
         log.nb(key, value)

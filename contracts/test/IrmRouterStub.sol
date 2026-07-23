@@ -23,6 +23,7 @@ contract IrmRouterStub {
     RouterStubMarketParams public lastMarketParams;
     address public lastIrm;
     address public manager;
+    address public MORPHO;
 
     /// @notice Per-market curve the router routes to (read by LidoLendSetIrmCurveParams).
     mapping(bytes32 => address) public marketIrm;
@@ -33,6 +34,10 @@ contract IrmRouterStub {
 
     function setManager(address manager_) external {
         manager = manager_;
+    }
+
+    function setMorpho(address morpho_) external {
+        MORPHO = morpho_;
     }
 
     /// @notice Test-only helper to seed routing without the manager gate (used to set up unit-test state).

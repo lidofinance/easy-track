@@ -1,12 +1,19 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendSetSettlementConfig, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
+from brownie import (
+    reverts,
+    LidoLendSetSettlementConfig,
+    LidoLendCoreStub,
+    LidoLendMarketControllerStub,
+    LidoLendOwnerStub,
+)
 
 from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 from utils.lido_lend import SETTLEMENT_CONFIG_ABI_TYPE as CONFIG_TYPE
+
 NEW_CONFIG = (100, 200, 300, 400)
 
 
@@ -64,6 +71,19 @@ def test_create_evm_script_same_config(owner, controller_stub, factory):
 
     with reverts("SAME_CONFIG"):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_CONFIG))
+
+
+@pytest.mark.parametrize(
+    "config",
+    [
+        (10_001, 200, 300, 400),
+        (100, 200, 300, 10_001),
+    ],
+)
+def test_create_evm_script_config_out_of_range(owner, factory, config):
+    "Must reject BPS values that the controller would reject when the motion is enacted"
+    with reverts("SETTLEMENT_CONFIG_OUT_OF_RANGE"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, config))
 
 
 def test_create_evm_script(owner, owner_facade, factory):

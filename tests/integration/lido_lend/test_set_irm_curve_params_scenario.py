@@ -1,8 +1,13 @@
-from brownie import LidoLendSetIrmCurveParams, ZERO_ADDRESS
+from brownie import interface, LidoLendSetIrmCurveParams, ZERO_ADDRESS
 from eth_abi import encode
 
 from utils.lido_lend import CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
-NEW_CURVE_PARAMS = (4000000000000000000, 1585489599188, 900000000000000000, 634195839, 31709791, 63419583967, 0)
+
+
+def _different_curve_params(current):
+    params = list(current)
+    params[2] = 850000000000000000 if params[2] != 850000000000000000 else 800000000000000000
+    return tuple(params)
 
 
 def test_set_irm_curve_params_scenario(
@@ -11,6 +16,15 @@ def test_set_irm_curve_params_scenario(
     "A Manager Committee motion reparametrizes the market on the configured AdaptiveCurveIrm singleton."
     market_id = lido_lend.market["id"]
     curve_irm = lido_lend.contract("adaptiveCurveIrm")
+    if lido_lend.easy_track:
+        config_before = curve_irm.marketCurveConfig(market_id)
+        assert config_before != ZERO_ADDRESS
+        params_before = tuple(interface.AdaptiveCurveConfig(config_before).getCurveParams())
+    else:
+        config_before = None
+        params_before = tuple(curve_irm.lastCurveParams())
+    new_curve_params = _different_curve_params(params_before)
+    assert params_before != new_curve_params
 
     factory = deployer.deploy(
         LidoLendSetIrmCurveParams,
@@ -20,12 +34,17 @@ def test_set_irm_curve_params_scenario(
         curve_irm,
     )
     register_factory(factory, permission((curve_irm, curve_irm.setMarketCurveParams)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", CURVE_PARAMS_TYPE], [market_id, NEW_CURVE_PARAMS]).hex(), trusted_caller)
+    enact_motion(
+        easy_track,
+        factory,
+        "0x" + encode(["bytes32", CURVE_PARAMS_TYPE], [market_id, new_curve_params]).hex(),
+        trusted_caller,
+    )
 
     # Post-state: the motion actually wrote the market's curve params on the singleton.
     if lido_lend.easy_track:
-        # Real AdaptiveCurveIrm: setMarketCurveParams deploys/binds a config for the market id.
-        assert curve_irm.marketCurveConfig(market_id) != ZERO_ADDRESS
+        config_after = curve_irm.marketCurveConfig(market_id)
+        assert config_after != config_before
+        assert tuple(interface.AdaptiveCurveConfig(config_after).getCurveParams()) == new_curve_params
     else:
-        # The stub records the exact params it was last called with.
-        assert curve_irm.lastCurveParams() == NEW_CURVE_PARAMS
+        assert tuple(curve_irm.lastCurveParams()) == new_curve_params

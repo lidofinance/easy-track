@@ -80,6 +80,16 @@ def test_create_evm_script_already_guardian(owner, guardian_signals_stub, factor
         factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
 
 
+def test_create_evm_script_max_guardians_reached(owner, guardian_signals_stub, factory):
+    "Must reject the 33rd guardian before creating a motion that would fail when enacted"
+    for guardian_number in range(1, 33):
+        guardian_signals_stub.setGuardian(f"0x{guardian_number:040x}", True, {"from": owner})
+    assert guardian_signals_stub.getGuardianCount() == guardian_signals_stub.MAX_GUARDIANS_COUNT() == 32
+
+    with reverts("MAX_GUARDIANS_REACHED"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, f"0x{33:040x}"))
+
+
 def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
     "Must create correct EVMScript when the account is not yet a guardian"
     assert not guardian_signals_stub.isGuardian(stranger)

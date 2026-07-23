@@ -27,9 +27,19 @@ contract AdaptiveCurveIrmStub {
         uint256 maxBorrowRate;
     }
 
+    struct Market {
+        uint128 totalSupplyAssets;
+        uint128 totalSupplyShares;
+        uint128 totalBorrowAssets;
+        uint128 totalBorrowShares;
+        uint128 lastUpdate;
+        uint128 fee;
+    }
+
     MarketParams public lastMarketParams;
     AdaptiveCurveParams private _lastCurveParams;
     address public manager;
+    address public ROUTER;
     /// @notice Per-market flag: were this market's curve params ever set? Gates `borrowRate`.
     mapping(bytes32 => bool) public isCurveConfigured;
 
@@ -41,9 +51,11 @@ contract AdaptiveCurveIrmStub {
         manager = manager_;
     }
 
-    function setMarketCurveParams(MarketParams memory marketParams, AdaptiveCurveParams calldata curveParams)
-        external
-    {
+    function setRouter(address router_) external {
+        ROUTER = router_;
+    }
+
+    function setMarketCurveParams(MarketParams memory marketParams, AdaptiveCurveParams calldata curveParams) external {
         require(msg.sender == manager, "NOT_MANAGER");
         lastMarketParams = marketParams;
         _lastCurveParams = curveParams;
@@ -58,6 +70,11 @@ contract AdaptiveCurveIrmStub {
     /// unset. `createMarket` performs this ping, so activation must set the curve params first.
     function borrowRate(MarketParams calldata marketParams) external view returns (uint256) {
         require(isCurveConfigured[keccak256(abi.encode(marketParams))], "CURVE_NOT_CONFIGURED");
+        return 0;
+    }
+
+    /// @notice Production IrmRouter probes this Morpho-compatible overload when re-routing a live market.
+    function borrowRate(MarketParams calldata, Market calldata) external pure returns (uint256) {
         return 0;
     }
 }

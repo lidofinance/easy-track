@@ -11,6 +11,8 @@ contract GuardianSignalsStub {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant ACCESS_RESTORER_ROLE = keccak256("ACCESS_RESTORER_ROLE");
     bytes32 public constant ACCESS_LIMITER_ROLE = keccak256("ACCESS_LIMITER_ROLE");
+    uint256 public constant MAX_GUARDIANS_COUNT = 32;
+    uint256 public constant MAX_SUSPECT_WINDOW = 30 days;
 
     mapping(bytes32 => mapping(address => bool)) public isBanned;
     mapping(address => bool) public isGuardian;

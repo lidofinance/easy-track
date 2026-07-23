@@ -58,6 +58,12 @@ interface ILidoLendOwner {
 
     function addGuardian(bytes32 marketId, address guardian) external;
 
+    function replaceGuardian(
+        bytes32 marketId,
+        address oldGuardian,
+        address newGuardian
+    ) external;
+
     function removeGuardian(bytes32 marketId, address guardian) external;
 
     function setGuardiansQuorum(bytes32 marketId, uint256 quorum) external;
@@ -86,6 +92,10 @@ interface ILidoLendMarketController {
         uint96 fullCutBelowCollateral;
         uint16 ltvStepBps;
     }
+
+    function PAUSER_ROLE() external view returns (bytes32);
+
+    function hasRole(bytes32 role, address account) external view returns (bool);
 
     function marketId() external view returns (bytes32);
 
@@ -130,6 +140,10 @@ interface ICircuitBreaker {
 }
 
 interface IGuardianSignals {
+    function MAX_GUARDIANS_COUNT() external view returns (uint256);
+
+    function MAX_SUSPECT_WINDOW() external view returns (uint256);
+
     function addGuardian(address guardian) external;
 
     function removeGuardian(address guardian) external;

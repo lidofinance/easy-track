@@ -134,6 +134,28 @@ contract LidoLendOwnerStub {
         IGuardianSignals(_guardianSignalsOf(marketId)).addGuardian(guardian);
     }
 
+    function replaceGuardian(
+        bytes32 marketId,
+        address oldGuardian,
+        address newGuardian
+    ) external onlyRoleWhenEnforced(GUARDIAN_MANAGER_ROLE) {
+        IGuardianSignals guardians = IGuardianSignals(_guardianSignalsOf(marketId));
+        uint256 guardianCount = guardians.getGuardianCount();
+
+        if (guardianCount < guardians.MAX_GUARDIANS_COUNT()) {
+            guardians.addGuardian(newGuardian);
+            guardians.removeGuardian(oldGuardian);
+            return;
+        }
+
+        uint256 quorum = guardians.getQuorum();
+        bool restoreQuorum = quorum == guardianCount;
+        if (restoreQuorum) guardians.setQuorum(quorum - 1);
+        guardians.removeGuardian(oldGuardian);
+        guardians.addGuardian(newGuardian);
+        if (restoreQuorum) guardians.setQuorum(quorum);
+    }
+
     function removeGuardian(bytes32 marketId, address guardian)
         external
         onlyRoleWhenEnforced(GUARDIAN_MANAGER_ROLE)

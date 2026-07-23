@@ -16,6 +16,19 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
 
     string private constant ERROR_SAME_CONFIG = "SAME_CONFIG";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
+    string private constant ERROR_ZERO_MIN_ACTIVATION_DELAY = "ZERO_MIN_ACTIVATION_DELAY";
+    string private constant ERROR_INVALID_ACTIVATION_DELAYS = "INVALID_ACTIVATION_DELAYS";
+    string private constant ERROR_MAX_ACTIVATION_DELAY_EXCEEDED = "MAX_ACTIVATION_DELAY_EXCEEDED";
+    string private constant ERROR_MAX_ACTIVATING_LOCK_DURATION_EXCEEDED =
+        "MAX_ACTIVATING_LOCK_DURATION_EXCEEDED";
+    string private constant ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY =
+        "INVALID_MAX_GUARDIANS_QUORUM_DELAY";
+    string private constant ERROR_ZERO_MIN_ACTIVATION_AMOUNT = "ZERO_MIN_ACTIVATION_AMOUNT";
+    string private constant ERROR_ZERO_MAX_DELAY_INFLOW = "ZERO_MAX_DELAY_INFLOW";
+    string private constant ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED = "MAX_DELAY_PER_STRIKE_EXCEEDED";
+    string private constant ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED = "MAX_DELAY_PER_SUSPECT_EXCEEDED";
+
+    uint256 private constant MAX_DELAY_DURATION = 7 days;
 
     // -------------
     // VARIABLES
@@ -53,8 +66,9 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
             bytes32 marketId,
             ILidoLendMarketController.CollateralActivationConfig memory newCfg
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
-
         ILidoLendMarketController marketController = _controllerOf(marketId);
+
+        _validateConfig(newCfg);
         require(
             keccak256(abi.encode(newCfg)) !=
                 keccak256(abi.encode(marketController.collateralActivationConfig())),
@@ -89,6 +103,28 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
         address controller = lidoLend.marketController(marketId);
         require(controller != address(0), ERROR_MARKET_NOT_FOUND);
         return ILidoLendMarketController(controller);
+    }
+
+    function _validateConfig(ILidoLendMarketController.CollateralActivationConfig memory cfg)
+        private
+        pure
+    {
+        require(cfg.minActivationDelay != 0, ERROR_ZERO_MIN_ACTIVATION_DELAY);
+        require(cfg.minActivationDelay <= cfg.maxActivationDelay, ERROR_INVALID_ACTIVATION_DELAYS);
+        require(cfg.maxActivationDelay <= MAX_DELAY_DURATION, ERROR_MAX_ACTIVATION_DELAY_EXCEEDED);
+        require(
+            cfg.activatingLockDuration <= MAX_DELAY_DURATION,
+            ERROR_MAX_ACTIVATING_LOCK_DURATION_EXCEEDED
+        );
+        require(
+            cfg.maxGuardiansQuorumDelay == 0 ||
+                cfg.maxGuardiansQuorumDelay > cfg.maxActivationDelay,
+            ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY
+        );
+        require(cfg.minActivationAmount != 0, ERROR_ZERO_MIN_ACTIVATION_AMOUNT);
+        require(cfg.maxDelayInflow != 0, ERROR_ZERO_MAX_DELAY_INFLOW);
+        require(cfg.delayPerStrike <= MAX_DELAY_DURATION, ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED);
+        require(cfg.delayPerSuspect <= MAX_DELAY_DURATION, ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED);
     }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)

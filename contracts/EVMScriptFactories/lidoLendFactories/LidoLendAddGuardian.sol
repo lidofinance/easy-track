@@ -17,6 +17,7 @@ contract LidoLendAddGuardian is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_GUARDIAN = "ZERO_GUARDIAN";
     string private constant ERROR_GUARDIAN_ALREADY_ADDED = "GUARDIAN_ALREADY_ADDED";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
+    string private constant ERROR_MAX_GUARDIANS_REACHED = "MAX_GUARDIANS_REACHED";
 
     // -------------
     // VARIABLES
@@ -55,6 +56,10 @@ contract LidoLendAddGuardian is TrustedCaller, IEVMScriptFactory {
 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(!guardianSignals.isGuardian(guardian), ERROR_GUARDIAN_ALREADY_ADDED);
+        require(
+            guardianSignals.getGuardianCount() < guardianSignals.MAX_GUARDIANS_COUNT(),
+            ERROR_MAX_GUARDIANS_REACHED
+        );
 
         return
             EVMScriptCreator.createEVMScript(

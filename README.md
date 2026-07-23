@@ -130,10 +130,10 @@ Script requires next ENV variables to be set:
 ### `deploy_lido_lend_factories.py`
 
 Deploys a selected set of Lido Lend EVMScript factories and produces their exact fixed EasyTrack permission
-blobs. The protocol is deployed separately, so the script validates its supplied addresses and executor roles
-before sending factory deployment transactions.
+blobs. The protocol is deployed separately, so the script reads one immutable Lido Lend artifact directory
+and validates its addresses, metadata, and executor roles before sending factory deployment transactions.
 
-See the [Lido Lend factories deployment runbook](scripts/LIDO_LEND_DEPLOYMENT.md) for the Hardhat rehearsal,
+See the [Lido Lend factories deployment runbook](scripts/LIDO_LEND_DEPLOYMENT.md) for the Anvil rehearsal,
 production inputs, factory selection, preflight checks, and deployment artifacts.
 
 ### `final_check.py`

@@ -28,8 +28,19 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MAX_LLTV_EXCEEDED = "MAX_LLTV_EXCEEDED";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
     string private constant ERROR_CONTROLLER_MISMATCH = "CONTROLLER_MISMATCH";
+    string private constant ERROR_CIRCUIT_BREAKER_NOT_PAUSER = "CIRCUIT_BREAKER_NOT_PAUSER";
+    string private constant ERROR_INVALID_CURVE_STEEPNESS = "invalid curveSteepness";
+    string private constant ERROR_INVALID_ADJUSTMENT_SPEED = "invalid adjustmentSpeed";
+    string private constant ERROR_INVALID_TARGET_UTILIZATION = "invalid targetUtilization";
+    string private constant ERROR_INVALID_RATE_BOUNDS = "invalid rate bounds";
+    string private constant ERROR_INVALID_INITIAL_RATE_AT_TARGET = "invalid initialRateAtTarget";
+    string private constant ERROR_INVALID_MAX_BORROW_RATE = "invalid maxBorrowRate";
 
-    uint256 private constant WAD = 1e18;
+    int256 private constant WAD = 1e18;
+    int256 private constant MAX_CURVE_STEEPNESS = 100e18;
+    int256 private constant MAX_ADJUSTMENT_SPEED = 10_000e18 / int256(365 days);
+    int256 private constant MAX_RATE_AT_TARGET = 10_000e18 / int256(365 days);
+    uint256 private constant MAX_BORROW_RATE = uint256(MAX_RATE_AT_TARGET) * 100;
 
     // -------------
     // VARIABLES
@@ -89,13 +100,19 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         require(marketParams.oracle != address(0), ERROR_ZERO_ORACLE);
         require(controller != address(0), ERROR_ZERO_CONTROLLER);
         require(pauserCommittee != address(0), ERROR_ZERO_PAUSER_COMMITTEE);
-        require(marketParams.lltv < WAD, ERROR_MAX_LLTV_EXCEEDED);
+        require(marketParams.lltv < uint256(WAD), ERROR_MAX_LLTV_EXCEEDED);
+        _validateCurveParams(curveParams);
         // The market id commits to the `irm` field; anything but the domain's router is a phantom market that
         // `setMarketIrm` would reject at enactment anyway — fail at motion creation instead.
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
+        ILidoLendMarketController marketController = ILidoLendMarketController(controller);
         require(
-            ILidoLendMarketController(controller).marketId() == keccak256(abi.encode(marketParams)),
+            marketController.marketId() == keccak256(abi.encode(marketParams)),
             ERROR_CONTROLLER_MISMATCH
+        );
+        require(
+            marketController.hasRole(marketController.PAUSER_ROLE(), circuitBreaker),
+            ERROR_CIRCUIT_BREAKER_NOT_PAUSER
         );
         address[] memory to = new address[](4);
         bytes4[] memory methodIds = new bytes4[](4);
@@ -148,6 +165,36 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // ------------------
     // PRIVATE METHODS
     // ------------------
+
+    function _validateCurveParams(AdaptiveCurveParams memory params) private pure {
+        require(
+            params.curveSteepness >= WAD && params.curveSteepness <= MAX_CURVE_STEEPNESS,
+            ERROR_INVALID_CURVE_STEEPNESS
+        );
+        require(
+            params.adjustmentSpeed >= 0 && params.adjustmentSpeed <= MAX_ADJUSTMENT_SPEED,
+            ERROR_INVALID_ADJUSTMENT_SPEED
+        );
+        require(
+            params.targetUtilization > 0 && params.targetUtilization < WAD,
+            ERROR_INVALID_TARGET_UTILIZATION
+        );
+        require(
+            params.minRateAtTarget > 0 &&
+                params.maxRateAtTarget >= params.minRateAtTarget &&
+                params.maxRateAtTarget <= MAX_RATE_AT_TARGET,
+            ERROR_INVALID_RATE_BOUNDS
+        );
+        require(
+            params.initialRateAtTarget >= params.minRateAtTarget &&
+                params.initialRateAtTarget <= params.maxRateAtTarget,
+            ERROR_INVALID_INITIAL_RATE_AT_TARGET
+        );
+        require(
+            params.maxBorrowRate == 0 || params.maxBorrowRate <= MAX_BORROW_RATE,
+            ERROR_INVALID_MAX_BORROW_RATE
+        );
+    }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private

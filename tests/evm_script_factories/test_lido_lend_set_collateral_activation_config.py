@@ -1,13 +1,21 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendSetCollateralActivationConfig, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
+from brownie import (
+    reverts,
+    LidoLendSetCollateralActivationConfig,
+    LidoLendCoreStub,
+    LidoLendMarketControllerStub,
+    LidoLendOwnerStub,
+)
 
 from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 from utils.lido_lend import COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as CONFIG_TYPE
-NEW_CONFIG = (10, 20, 30, 40, 50, 60, 70, 80, 90)
+
+NEW_CONFIG = (10, 20, 30, 40, 50, 60, 30, 80, 90)
+MAX_DELAY_DURATION = 7 * 24 * 60 * 60
 
 
 def create_calldata(market_id, cfg):
@@ -64,6 +72,38 @@ def test_create_evm_script_same_config(owner, controller_stub, factory):
 
     with reverts("SAME_CONFIG"):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_CONFIG))
+
+
+@pytest.mark.parametrize(
+    "config,error",
+    [
+        ((0, 20, 30, 40, 50, 60, 30, 80, 90), "ZERO_MIN_ACTIVATION_DELAY"),
+        ((21, 20, 30, 40, 50, 60, 30, 80, 90), "INVALID_ACTIVATION_DELAYS"),
+        (
+            (10, MAX_DELAY_DURATION + 1, 30, 40, 50, 60, 0, 80, 90),
+            "MAX_ACTIVATION_DELAY_EXCEEDED",
+        ),
+        (
+            (10, 20, 30, 40, MAX_DELAY_DURATION + 1, 60, 30, 80, 90),
+            "MAX_ACTIVATING_LOCK_DURATION_EXCEEDED",
+        ),
+        ((10, 20, 30, 40, 50, 60, 20, 80, 90), "INVALID_MAX_GUARDIANS_QUORUM_DELAY"),
+        ((10, 20, 30, 40, 50, 0, 30, 80, 90), "ZERO_MIN_ACTIVATION_AMOUNT"),
+        ((10, 20, 0, 40, 50, 60, 30, 80, 90), "ZERO_MAX_DELAY_INFLOW"),
+        (
+            (10, 20, 30, 40, 50, 60, 30, MAX_DELAY_DURATION + 1, 90),
+            "MAX_DELAY_PER_STRIKE_EXCEEDED",
+        ),
+        (
+            (10, 20, 30, 40, 50, 60, 30, 80, MAX_DELAY_DURATION + 1),
+            "MAX_DELAY_PER_SUSPECT_EXCEEDED",
+        ),
+    ],
+)
+def test_create_evm_script_invalid_config(owner, factory, config, error):
+    "Must reject every config that the controller would reject when the motion is enacted"
+    with reverts(error):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, config))
 
 
 def test_create_evm_script(owner, owner_facade, factory):

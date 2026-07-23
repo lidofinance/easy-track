@@ -8,7 +8,8 @@ import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
-/// @notice Creates EVMScript to replace a guardian (remove old + add new) on one Lido Lend market's registry
+/// @notice Creates EVMScript to atomically replace a guardian through the LidoLendOwner facade
+/// @dev The facade selects a safe add/remove order and temporarily adjusts a full quorum when necessary.
 contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -17,7 +18,6 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_GUARDIAN = "ZERO_GUARDIAN";
     string private constant ERROR_GUARDIAN_NOT_FOUND = "GUARDIAN_NOT_FOUND";
     string private constant ERROR_GUARDIAN_ALREADY_ADDED = "GUARDIAN_ALREADY_ADDED";
-    string private constant ERROR_WOULD_BREAK_QUORUM = "WOULD_BREAK_QUORUM";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
@@ -26,7 +26,7 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Address of the LidoLendOwner facade
     ILidoLendOwner public immutable lidoLendOwner;
-    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
+    /// @notice Address of the LidoLend core (resolves a market's GuardianSignals for validation)
     ILidoLend public immutable lidoLend;
 
     // -------------
@@ -42,9 +42,9 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to replace a guardian (remove old + add new) on one Lido Lend market's registry
+    /// @notice Creates EVMScript to replace one guardian with another
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (bytes32 marketId, address oldGuardian, address newGuardian)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address oldGuardian, address newGuardian)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -60,31 +60,16 @@ contract LidoLendReplaceGuardian is TrustedCaller, IEVMScriptFactory {
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(guardianSignals.isGuardian(oldGuardian), ERROR_GUARDIAN_NOT_FOUND);
         require(!guardianSignals.isGuardian(newGuardian), ERROR_GUARDIAN_ALREADY_ADDED);
-        require(
-            guardianSignals.getGuardianCount() > guardianSignals.getQuorum(),
-            ERROR_WOULD_BREAK_QUORUM
-        );
 
-        address[] memory to = new address[](2);
-        to[0] = address(lidoLendOwner);
-        to[1] = address(lidoLendOwner);
-
-        bytes4[] memory methodIds = new bytes4[](2);
-        methodIds[0] = lidoLendOwner.removeGuardian.selector;
-        methodIds[1] = lidoLendOwner.addGuardian.selector;
-
-        bytes[] memory callData = new bytes[](2);
-        callData[0] = abi.encode(marketId, oldGuardian);
-        callData[1] = abi.encode(marketId, newGuardian);
-
-        return EVMScriptCreator.createEVMScript(to, methodIds, callData);
+        return
+            EVMScriptCreator.createEVMScript(
+                address(lidoLendOwner),
+                lidoLendOwner.replaceGuardian.selector,
+                abi.encode(marketId, oldGuardian, newGuardian)
+            );
     }
 
-    /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (bytes32 marketId, address oldGuardian, address newGuardian)
-    /// @return marketId Id of the market whose registry to edit
-    /// @return oldGuardian Guardian address to remove
-    /// @return newGuardian Guardian address to add
+    /// @notice Decodes call data used by createEVMScript
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

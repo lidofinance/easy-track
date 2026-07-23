@@ -16,6 +16,9 @@ contract LidoLendSetSettlementConfig is TrustedCaller, IEVMScriptFactory {
 
     string private constant ERROR_SAME_CONFIG = "SAME_CONFIG";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
+    string private constant ERROR_CONFIG_OUT_OF_RANGE = "SETTLEMENT_CONFIG_OUT_OF_RANGE";
+
+    uint256 private constant BPS = 10_000;
 
     // -------------
     // VARIABLES
@@ -53,8 +56,12 @@ contract LidoLendSetSettlementConfig is TrustedCaller, IEVMScriptFactory {
             bytes32 marketId,
             ILidoLendMarketController.SettlementConfig memory newConfig
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
-
         ILidoLendMarketController marketController = _controllerOf(marketId);
+
+        require(
+            newConfig.sliceFloorBps <= BPS && newConfig.ltvStepBps <= BPS,
+            ERROR_CONFIG_OUT_OF_RANGE
+        );
         require(
             keccak256(abi.encode(newConfig)) !=
                 keccak256(abi.encode(marketController.settlementConfig())),

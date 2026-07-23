@@ -3,6 +3,7 @@ from brownie import reverts, LidoLendActivateMarket, web3
 from eth_abi import encode
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
+
 ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_TYPE, "address", "address", "bool"]
 
 
@@ -13,17 +14,23 @@ def _market_params(lido_lend):
 
 def _activate_prereqs(lido_lend, easy_track):
     "Common handles for the activation scenarios against the fresh local EasyTrack fixture."
+
+    def unavailable(message):
+        if lido_lend.local:
+            pytest.skip(message)
+        raise pytest.UsageError(message)
+
     core = lido_lend.contract("core")
     if core.market(lido_lend.market["id"])["lastUpdate"] != 0:
-        pytest.skip("descriptor market already created on the core; activate scenario needs a fresh market")
+        unavailable("descriptor market already created on the core; activate scenario needs a fresh market")
     if not lido_lend.has("circuitBreaker"):
-        pytest.skip("descriptor lacks circuitBreaker; activation scenario needs it")
+        unavailable("descriptor lacks circuitBreaker; activation scenario needs it")
     if lido_lend.market["pauser"] == "0x" + "00" * 20:
-        pytest.skip("activation plan has a zero pauser_committee; fill its TODO before testing activation")
+        unavailable("activation scenario requires a nonzero pauser committee")
     circuit_breaker = lido_lend.contract("circuitBreaker")
 
     if easy_track.evmScriptExecutor() != circuit_breaker.ADMIN():
-        pytest.skip("EasyTrack executor is not the CircuitBreaker admin; activation cannot run through it")
+        unavailable("EasyTrack executor is not the CircuitBreaker admin; activation cannot run through it")
     return core, circuit_breaker, easy_track
 
 
@@ -39,10 +46,14 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
     create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
     perm = (
         "0x"
-        + adaptive_curve_irm.address[2:] + adaptive_curve_irm.setMarketCurveParams.signature[2:]
-        + irm_router.address[2:] + irm_router.setMarketIrm.signature[2:]
-        + owner.address[2:] + create_sel
-        + circuit_breaker.address[2:] + circuit_breaker.registerPauser.signature[2:]
+        + adaptive_curve_irm.address[2:]
+        + adaptive_curve_irm.setMarketCurveParams.signature[2:]
+        + irm_router.address[2:]
+        + irm_router.setMarketIrm.signature[2:]
+        + owner.address[2:]
+        + create_sel
+        + circuit_breaker.address[2:]
+        + circuit_breaker.registerPauser.signature[2:]
     )
     easy_track.addEVMScriptFactory(factory, perm, {"from": deployer})
     executor = easy_track.evmScriptExecutor()
@@ -52,20 +63,31 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
 def _calldata(lido_lend, enable_settlement):
     m = lido_lend.market
-    return "0x" + encode(
-        ACTIVATE_TYPES,
-        [
-            _market_params(lido_lend),
-            m["curveParams"],
-            m["controller"],
-            m["pauser"],
-            enable_settlement,
-        ],
-    ).hex()
+    return (
+        "0x"
+        + encode(
+            ACTIVATE_TYPES,
+            [
+                _market_params(lido_lend),
+                m["curveParams"],
+                m["controller"],
+                m["pauser"],
+                enable_settlement,
+            ],
+        ).hex()
+    )
 
 
 def test_activate_market_scenario(
-    lido_lend, easy_track, deployer, trusted_caller, stranger, enact_motion, advance_time, admin
+    lido_lend,
+    easy_track,
+    deployer,
+    trusted_caller,
+    stranger,
+    enact_motion,
+    create_motion,
+    advance_time,
+    admin,
 ):
     "Activate a deployed-but-INERT market: bind the IRM curve, create it on the core, register the pauser."
     core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track)
@@ -83,11 +105,10 @@ def test_activate_market_scenario(
     assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
     assert core.isSettlementEnabled(market_id)
 
-    tx = easy_track.createMotion(factory, calldata, {"from": trusted_caller})
-    motion_id = tx.events["MotionCreated"]["_motionId"]
+    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
     advance_time(easy_track.motionDuration() + 100)
     with reverts():
-        easy_track.enactMotion(motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger})
+        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
 
 
 def test_activate_market_without_settlement_scenario(

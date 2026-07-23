@@ -2,15 +2,17 @@
 
 The suite has two modes:
 
-- without `LIDO_LEND_REGISTRY`, it deploys strict local stubs and checks the complete EasyTrack motion flow;
-- with `LIDO_LEND_REGISTRY`, it attaches to an existing Anvil mainnet fork, reads the Lido Lend deployment
-  registry plus `activation-<market>.toml`, and exercises the deployed contracts through the real mainnet
-  EasyTrack and EVMScriptExecutor.
+- without `LIDO_LEND_ARTIFACTS_DIR`, it deploys strict local stubs and checks the complete EasyTrack motion flow;
+- with `LIDO_LEND_ARTIFACTS_DIR`, it attaches to an existing Anvil mainnet fork, reads the Lido Lend deployment
+  protocol and `markets/*.toml` artifacts, and exercises the deployed contracts
+  through the real mainnet EasyTrack and EVMScriptExecutor.
 
-The fork loader rejects mismatched registry/activation market parameters, addresses without bytecode, or an
-executor different from the configured EasyTrack executor. It deliberately does not compare the artifact chain
-ID with `eth_chainId`: a local Hardhat/Anvil fork may report `31337` while hosting an Ethereum deployment whose
-artifacts correctly identify chain ID `1`.
+The fork loader is fail-closed: it checks the connected chain ID, `[artifact]`/`[protocol]` metadata,
+market parameters, bytecode for every market component, both exit books, each
+controller/CircuitBreaker role binding, and the executor read from the actual EasyTrack. Every market in the
+deployment is parameterized through the scenarios, and the cross-market scenario executes one motion over two
+market IDs. GuardianSignals and CircuitBreaker instances may be shared by multiple markets. Missing acceptance
+artifacts are usage errors in artifact mode, not skips.
 
 ## Local stub scenarios
 
@@ -20,7 +22,7 @@ From the EasyTrack repository:
 poetry run brownie test tests/integration/lido_lend --network mainnet-fork -s
 ```
 
-Do not set `LIDO_LEND_REGISTRY` for this run.
+Do not set `LIDO_LEND_ARTIFACTS_DIR` for this run.
 
 ## Anvil fork scenarios
 
@@ -42,13 +44,17 @@ make deploy-run \
   CONFIG=mainnet \
   RUN=anvil-easy-track \
   RPC_URL=http://127.0.0.1:8545 \
-  DEPLOYER_PRIVATE_KEY="$ANVIL_DEPLOYER_PRIVATE_KEY"
+  DEPLOYER_PRIVATE_KEY="$ANVIL_DEPLOYER_PRIVATE_KEY" \
+  VERIFY=false
 ```
 
-The generated activation plan intentionally contains a zero `pauser_committee` TODO. Fill
-`deployed/anvil-easy-track/activation-<market>.toml` with the committee address that the activation scenarios
-should register. Management scenarios can run before this is filled; activation-dependent scenarios will
-skip with an explicit reason.
+Use a temporary deployment config whose market `pausers` list contains its intended CircuitBreaker; do not
+edit the committed config merely to run a rehearsal.
+
+No separate activation artifact is generated or required. Each `deployed/<RUN>/markets/<market-name>.toml`
+contains the resolved market, curve, role, and CircuitBreaker values. The pauser committee and settlement flag
+remain runtime motion choices: the scenarios use the Agent as a deterministic nonzero committee and exercise
+both settlement values.
 
 Then run the EasyTrack scenarios in terminal 2:
 
@@ -56,8 +62,7 @@ Then run the EasyTrack scenarios in terminal 2:
 cd /path/to/easy-track
 
 LIDO_LEND_ATTACH=1 \
-LIDO_LEND_REGISTRY=/path/to/lido-lend-market/deployed/anvil-easy-track/registry.toml \
-LIDO_LEND_MARKET=weth-wsteth \
+LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-market/deployed/anvil-easy-track \
 poetry run brownie test tests/integration/lido_lend --network mainnet-fork -s
 ```
 

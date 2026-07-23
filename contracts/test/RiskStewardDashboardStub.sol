@@ -12,6 +12,11 @@ contract RiskStewardDashboardStub {
     mapping(bytes32 => mapping(address => bool)) public isMarketSteward;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
     bool public enforceRoles;
+    address public LIDO_LEND;
+
+    function setLidoLend(address lidoLend_) external {
+        LIDO_LEND = lidoLend_;
+    }
 
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
@@ -21,27 +26,17 @@ contract RiskStewardDashboardStub {
         enforceRoles = enforce;
     }
 
-    function setMarketSteward(
-        bytes32 marketId,
-        address steward,
-        bool value
-    ) external {
+    function setMarketSteward(bytes32 marketId, address steward, bool value) external {
         isMarketSteward[marketId][steward] = value;
     }
 
     function addMarketSteward(bytes32 marketId, address steward) external {
-        require(
-            !enforceRoles || hasRole[STEWARD_ADMIN_ROLE][msg.sender],
-            "MISSING_STEWARD_ADMIN_ROLE"
-        );
+        require(!enforceRoles || hasRole[STEWARD_ADMIN_ROLE][msg.sender], "MISSING_STEWARD_ADMIN_ROLE");
         isMarketSteward[marketId][steward] = true;
     }
 
     function removeMarketSteward(bytes32 marketId, address steward) external {
-        require(
-            !enforceRoles || hasRole[STEWARD_ADMIN_ROLE][msg.sender],
-            "MISSING_STEWARD_ADMIN_ROLE"
-        );
+        require(!enforceRoles || hasRole[STEWARD_ADMIN_ROLE][msg.sender], "MISSING_STEWARD_ADMIN_ROLE");
         isMarketSteward[marketId][steward] = false;
     }
 }

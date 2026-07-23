@@ -11,6 +11,7 @@ contract LidoLendMarketControllerStub {
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
     bytes32 public constant UNFREEZER_ROLE = keccak256("UNFREEZER_ROLE");
     bytes32 public constant FREEZER_ROLE = keccak256("FREEZER_ROLE");
+    bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
 
     struct CollateralActivationConfig {
         uint40 minActivationDelay;
@@ -85,18 +86,11 @@ contract LidoLendMarketControllerStub {
         _activationConfig = cfg;
     }
 
-    function collateralActivationConfig()
-        external
-        view
-        returns (CollateralActivationConfig memory)
-    {
+    function collateralActivationConfig() external view returns (CollateralActivationConfig memory) {
         return _activationConfig;
     }
 
-    function setSettlementConfig(SettlementConfig calldata config)
-        external
-        onlyRoleWhenEnforced(MANAGER_ROLE)
-    {
+    function setSettlementConfig(SettlementConfig calldata config) external onlyRoleWhenEnforced(MANAGER_ROLE) {
         _settlementConfig = config;
     }
 

@@ -10,12 +10,10 @@ def test_set_market_irm_scenario(
     market_id = lido_lend.market["id"]
 
     old_irm = irm_router.marketIrm(market_id)  # created_market routed this to the market's curve
-    if lido_lend.easy_track:
-        new_irm = lido_lend.market["curve"]  # real deployment: (re)route to the domain curve
-    else:
-        # Local mock: a distinct curve so the motion causes an observable re-route, not a no-op.
-        new_irm = AdaptiveCurveIrmStub.deploy({"from": deployer}).address
-        assert new_irm != old_irm
+    # The production router probes a new IRM before storing it. This stub implements that probe and gives both
+    # local and artifact modes an address observably different from the fixture's existing route.
+    new_irm = AdaptiveCurveIrmStub.deploy({"from": deployer}).address
+    assert new_irm != old_irm
 
     factory = deployer.deploy(
         LidoLendSetMarketIrm,

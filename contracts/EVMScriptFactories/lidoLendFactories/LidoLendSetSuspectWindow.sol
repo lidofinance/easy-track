@@ -16,6 +16,7 @@ contract LidoLendSetSuspectWindow is TrustedCaller, IEVMScriptFactory {
 
     string private constant ERROR_SAME_SUSPECT_WINDOW = "SAME_SUSPECT_WINDOW";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
+    string private constant ERROR_SUSPECT_WINDOW_TOO_HIGH = "SUSPECT_WINDOW_TOO_HIGH";
 
     // -------------
     // VARIABLES
@@ -50,8 +51,12 @@ contract LidoLendSetSuspectWindow is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (bytes32 marketId, uint256 newSuspectWindow) = _decodeEVMScriptCallData(_evmScriptCallData);
-
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
+
+        require(
+            newSuspectWindow <= guardianSignals.MAX_SUSPECT_WINDOW(),
+            ERROR_SUSPECT_WINDOW_TOO_HIGH
+        );
         require(newSuspectWindow != guardianSignals.getSuspectWindow(), ERROR_SAME_SUSPECT_WINDOW);
 
         return

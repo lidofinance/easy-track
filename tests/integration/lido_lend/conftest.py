@@ -1,26 +1,22 @@
 """
 Lido Lend EasyTrack scenario tests: drive each factory through the real EasyTrack + EVMScriptExecutor +
 Aragon stack on a mainnet-like fork, then assert the effect. Without external configuration the suite deploys
-strict local stubs. Set LIDO_LEND_REGISTRY to a Lido Lend registry.toml and optionally LIDO_LEND_MARKET to the
-primary market name; the loader reads activation-<market>.toml files next to the registry. Set
-LIDO_LEND_ATTACH=1 to attach to an already-running external Anvil (see the monkeypatch below).
+strict local stubs. Set LIDO_LEND_ARTIFACTS_DIR to an immutable Lido Lend deployment directory; every artifact
+in its markets/ directory is exercised. Set LIDO_LEND_ATTACH=1 to attach to an already-running external Anvil
+(see the monkeypatch below).
 """
 
 import os
-from pathlib import Path
 
 import pytest
 from brownie import interface, web3
 from eth_abi import encode
-try:
-    import tomllib
-except ImportError:
-    import tomli as tomllib
 
 import constants
 from utils.config import get_network_name
 from utils.deployed_easy_track import addresses as easy_track_addresses
 from utils.lido import addresses as lido_addresses
+from utils.lido_lend_artifacts import load_lido_lend_artifacts
 from utils.test_helpers import set_account_balance
 
 
@@ -93,9 +89,10 @@ class _Deployment:
         market_params = (m["loanToken"], m["collateralToken"], m["oracle"], m["irm"], m["lltv"])
         derived_id = bytes(web3.keccak(encode([_MP_TYPE], [market_params])))
         if "id" in self.market:
-            assert self.market["id"] == derived_id, "registry market id does not match its activation market params"
+            assert self.market["id"] == derived_id, "market artifact id does not match its parameters"
         else:
             self.market["id"] = derived_id
+        self.markets = [dict(market) for market in data["markets"]] if "markets" in data else [self.market]
         self.local = local
 
     def has(self, name):
@@ -107,7 +104,7 @@ class _Deployment:
         return value if self.local else getattr(interface, _INTERFACE[name])(value)
 
 
-# Deployment-specific addresses come exclusively from the external registry.
+# Deployment-specific addresses come exclusively from immutable Lido Lend artifacts.
 _ZERO = "0x0000000000000000000000000000000000000000"
 
 # Generic valid curve used by the locally deployed test market.
@@ -122,14 +119,6 @@ _DEFAULT_TEST_CURVE_PARAMS = (
 )
 
 
-def _read_toml(path, label):
-    path = Path(path).expanduser().resolve()
-    if not path.is_file():
-        raise pytest.UsageError(f"{label} does not exist: {path}")
-    with path.open("rb") as stream:
-        return tomllib.load(stream)
-
-
 def _as_int(value):
     return int(value, 0) if isinstance(value, str) else int(value)
 
@@ -141,20 +130,14 @@ def _as_bytes32(value):
     return bytes.fromhex(raw)
 
 
-def _market_from_artifacts(name, registry_market, protocol, activation):
-    params = activation["market_params"]
-    curve = activation["curve_params"]
-    activation_settings = activation["activation"]
-    registry_id = _as_bytes32(registry_market["id"])
-    if params["oracle"].lower() != registry_market["oracle"].lower():
-        raise pytest.UsageError(f"market {name!r}: registry and activation plan disagree on oracle")
-    if activation_settings["controller"].lower() != registry_market["controller"].lower():
-        raise pytest.UsageError(f"market {name!r}: registry and activation plan disagree on controller")
-    pausers = registry_market.get("pausers", [])
-    if pausers and activation_settings["circuit_breaker"].lower() != pausers[0].lower():
-        raise pytest.UsageError(f"market {name!r}: activation plan circuit breaker is not the first registry pauser")
+def _market_from_artifact(name, market_artifact, protocol):
+    params = market_artifact["market"]
+    curve = market_artifact["curve"]
+    market_id = _as_bytes32(params["id"])
+    circuit_breaker = params["circuit_breaker"]
     market = {
-        "id": registry_id,
+        "name": name,
+        "id": market_id,
         "loanToken": params["loan_token"],
         "collateralToken": params["collateral_token"],
         "oracle": params["oracle"],
@@ -170,9 +153,14 @@ def _market_from_artifacts(name, registry_market, protocol, activation):
             _as_int(curve["max_rate_at_target"]),
             _as_int(curve["max_borrow_rate"]),
         ),
-        "controller": registry_market["controller"],
-        "vault": registry_market["vault"],
-        "pauser": activation_settings.get("pauser_committee", _ZERO),
+        "controller": params["controller"],
+        "guardianSignals": params["guardian_signals"],
+        "circuitBreaker": circuit_breaker,
+        "vault": params["vault"],
+        # The committee and settlement flag are runtime motion choices, not Lido Lend deployment artifacts.
+        # Artifact acceptance uses the Agent as a deterministic nonzero committee; activation scenarios cover
+        # both settlement choices explicitly.
+        "pauser": protocol["agent"],
     }
     derived_id = bytes(
         web3.keccak(
@@ -182,74 +170,87 @@ def _market_from_artifacts(name, registry_market, protocol, activation):
             )
         )
     )
-    if registry_id != derived_id:
-        raise pytest.UsageError(
-            f"market {name!r}: registry id does not match activation plan market params"
-        )
+    if market_id != derived_id:
+        raise pytest.UsageError(f"market {name!r}: artifact id does not match its market params")
     return market
 
 
-def _load_registry_deployment():
-    registry_path = os.environ.get("LIDO_LEND_REGISTRY")
-    if not registry_path:
+def _configured_market_names():
+    artifacts_dir = os.environ.get("LIDO_LEND_ARTIFACTS_DIR")
+    if not artifacts_dir:
+        return (None,)
+    try:
+        deployment = load_lido_lend_artifacts(artifacts_dir, require_exit_books=True)
+    except ValueError as error:
+        raise pytest.UsageError(str(error)) from error
+    return tuple(deployment["markets"])
+
+
+_MARKET_CASES = _configured_market_names()
+
+
+def _load_artifact_deployment(primary_name):
+    artifacts_dir = os.environ.get("LIDO_LEND_ARTIFACTS_DIR")
+    if not artifacts_dir:
         return None
 
-    registry_path = Path(registry_path).expanduser().resolve()
-    registry = _read_toml(registry_path, "LIDO_LEND_REGISTRY")
-    if registry.get("artifact", {}).get("kind") != "protocol-registry":
-        raise pytest.UsageError(f"not a protocol registry: {registry_path}")
+    try:
+        deployment = load_lido_lend_artifacts(artifacts_dir, require_exit_books=True)
+    except ValueError as error:
+        raise pytest.UsageError(str(error)) from error
+    artifact = deployment["metadata"]
+    protocol = deployment["protocol"]["protocol"]
+    artifact_chain_id = _as_int(artifact["chain_id"])
+    if artifact_chain_id != web3.eth.chain_id:
+        raise pytest.UsageError(
+            f"artifact chain id {artifact_chain_id} does not match connected chain id {web3.eth.chain_id}"
+        )
 
-    protocol = registry["protocol"]
     # `protocol.network` is deployment metadata and may contain an arbitrary deployment label. Resolve the
     # pre-existing EasyTrack/Lido addresses from the Brownie network actually running the tests.
     network_name = get_network_name()
     et = easy_track_addresses(network_name)
     lido = lido_addresses(network_name)
-    if protocol["evm_script_executor"].lower() != et.evm_script_executor.lower():
+    if len(web3.eth.get_code(et.easy_track)) == 0:
+        raise pytest.UsageError(f"configured EasyTrack has no code on the connected fork: {et.easy_track}")
+    actual_executor = interface.IEasyTrack(et.easy_track).evmScriptExecutor()
+    if protocol["evm_script_executor"].lower() != actual_executor.lower():
         raise pytest.UsageError(
-            "registry executor does not match the deployed EasyTrack executor for "
-            f"{network_name}: {protocol['evm_script_executor']} != {et.evm_script_executor}"
+            "protocol artifact executor does not match the actual EasyTrack executor for "
+            f"{network_name}: {protocol['evm_script_executor']} != {actual_executor}"
         )
 
-    registry_markets = registry.get("markets", {})
-    if not registry_markets:
-        raise pytest.UsageError(f"registry has no markets: {registry_path}")
-    primary_name = os.environ.get("LIDO_LEND_MARKET", next(iter(registry_markets)))
-    if primary_name not in registry_markets:
+    market_names = tuple(deployment["markets"])
+    if primary_name not in market_names:
         raise pytest.UsageError(
-            f"LIDO_LEND_MARKET={primary_name!r} is absent from {registry_path}; "
-            f"available: {', '.join(registry_markets)}"
+            f"market {primary_name!r} is absent from {deployment['root'] / 'markets'}; "
+            f"available: {', '.join(market_names)}"
         )
 
-    activation_path = registry_path.parent / f"activation-{primary_name}.toml"
-    activation = _read_toml(activation_path, f"activation plan for market {primary_name!r}")
-    if activation.get("artifact", {}).get("kind") != "activation-plan":
-        raise pytest.UsageError(f"not an activation plan: {activation_path}")
-    for field in ("deployment", "chain_id", "config_hash"):
-        if activation["artifact"].get(field) != registry["artifact"].get(field):
-            raise pytest.UsageError(
-                f"activation plan for market {primary_name!r} has a different artifact {field}"
-            )
+    markets = []
+    for market_name in market_names:
+        market_artifact = deployment["markets"][market_name]
+        market = _market_from_artifact(market_name, market_artifact, protocol)
+        markets.append(market)
 
-    registry_market = registry_markets[primary_name]
-    primary = _market_from_artifacts(primary_name, registry_market, protocol, activation)
-    pausers = registry_market.get("pausers", [])
+    primary = next(market for market in markets if market["name"] == primary_name)
     contracts = {
         "core": protocol["core"],
         "owner": protocol["owner_facade"],
         "controller": primary["controller"],
-        "guardianSignals": registry_market["guardian_signals"],
+        "guardianSignals": primary["guardianSignals"],
         "riskStewardDashboard": protocol["risk_steward_dashboard"],
         "irmRouter": protocol["irm_router"],
         "adaptiveCurveIrm": protocol["adaptive_curve_irm"],
     }
-    exit_books = registry.get("exit_books", {})
-    if "morpho" in exit_books:
-        contracts["morphoExitBook"] = exit_books["morpho"]
-    if "erc4626" in exit_books:
-        contracts["erc4626ExitBook"] = exit_books["erc4626"]
-    if pausers:
-        contracts["circuitBreaker"] = pausers[0]
+    exit_books_artifact = deployment["exit_books"]
+    exit_books = exit_books_artifact.get("exit_books", {})
+    for key in ("morpho", "erc4626"):
+        if key not in exit_books:
+            raise pytest.UsageError(f"exit books artifact has no {key} address")
+    contracts["morphoExitBook"] = exit_books["morpho"]
+    contracts["erc4626ExitBook"] = exit_books["erc4626"]
+    contracts["circuitBreaker"] = primary["circuitBreaker"]
 
     required_code = {
         **contracts,
@@ -258,6 +259,17 @@ def _load_registry_deployment():
         "market.collateral_token": primary["collateralToken"],
         "market.oracle": primary["oracle"],
     }
+    for market in markets:
+        prefix = f"markets.{market['name']}"
+        required_code.update(
+            {
+                f"{prefix}.controller": market["controller"],
+                f"{prefix}.guardianSignals": market["guardianSignals"],
+                f"{prefix}.circuitBreaker": market["circuitBreaker"],
+                f"{prefix}.vault": market["vault"],
+                f"{prefix}.oracle": market["oracle"],
+            }
+        )
     missing_code = [
         f"{label}={address}"
         for label, address in required_code.items()
@@ -265,22 +277,30 @@ def _load_registry_deployment():
     ]
     if missing_code:
         raise pytest.UsageError(
-            "registry points to addresses without code on the connected Anvil fork: "
-            + ", ".join(missing_code)
+            "artifacts point to addresses without code on the connected Anvil fork: " + ", ".join(missing_code)
         )
+    for market in markets:
+        circuit_breaker = interface.CircuitBreaker(market["circuitBreaker"])
+        if circuit_breaker.ADMIN().lower() != actual_executor.lower():
+            raise pytest.UsageError(f"market {market['name']!r} CircuitBreaker ADMIN does not match EasyTrack executor")
+        controller = interface.LidoLendMarketController(market["controller"])
+        if not controller.hasRole(controller.PAUSER_ROLE(), market["circuitBreaker"]):
+            raise pytest.UsageError(f"market {market['name']!r} CircuitBreaker lacks controller PAUSER_ROLE")
 
     return {
         "admin": protocol["agent"],
         "easyTrack": et.easy_track,
         "easyTrackAdmin": lido.aragon.voting,
-        "evmScriptExecutor": protocol["evm_script_executor"],
+        "evmScriptExecutor": actual_executor,
         "contracts": contracts,
         "market": primary,
+        "markets": markets,
     }
 
 
-@pytest.fixture
+@pytest.fixture(params=_MARKET_CASES, ids=lambda value: value or "local")
 def lido_lend(
+    request,
     deployer,
     accounts,
     MockERC20,
@@ -296,8 +316,8 @@ def lido_lend(
     CircuitBreakerStub,
     LidoLendVaultStub,
 ):
-    "Handles to registry-provided Lido Lend contracts or strict local stubs."
-    data = _load_registry_deployment()
+    "Handles to artifact-provided Lido Lend contracts or strict local stubs."
+    data = _load_artifact_deployment(request.param) if request.param is not None else None
     if data is not None:
         return _Deployment(data)
 
@@ -315,6 +335,7 @@ def lido_lend(
     core = LidoLendCoreStub.deploy({"from": deployer})
     owner = LidoLendOwnerStub.deploy({"from": deployer})
     owner.setCore(core, {"from": deployer})
+    core.setOwner(owner, {"from": deployer})
     controller = LidoLendMarketControllerStub.deploy({"from": deployer})
     guardian_signals = GuardianSignalsStub.deploy({"from": deployer})
     dashboard = RiskStewardDashboardStub.deploy({"from": deployer})
@@ -324,8 +345,13 @@ def lido_lend(
     erc4626 = Erc4626ExitBookStub.deploy({"from": deployer})
     circuit_breaker = CircuitBreakerStub.deploy(_ZERO, {"from": deployer})
     vault = LidoLendVaultStub.deploy({"from": deployer})
+    irm_router.setMorpho(core, {"from": deployer})
+    curve.setRouter(irm_router, {"from": deployer})
+    dashboard.setLidoLend(core, {"from": deployer})
+    morpho.setMorpho(core, {"from": deployer})
 
     market = {
+        "name": "local",
         "loanToken": loan_token.address,
         "collateralToken": collateral_token.address,
         "oracle": oracle.address,
@@ -334,6 +360,8 @@ def lido_lend(
         "curve": curve.address,
         "curveParams": _DEFAULT_TEST_CURVE_PARAMS,
         "controller": controller.address,
+        "guardianSignals": guardian_signals.address,
+        "circuitBreaker": circuit_breaker.address,
         "vault": vault.address,
         "pauser": admin.address,
     }
@@ -388,6 +416,7 @@ def lido_lend(
     controller.grantRole(controller.MANAGER_ROLE(), admin, {"from": deployer})
     controller.grantRole(controller.UNFREEZER_ROLE(), admin, {"from": deployer})
     controller.grantRole(controller.FREEZER_ROLE(), admin, {"from": deployer})
+    controller.grantRole(controller.PAUSER_ROLE(), circuit_breaker, {"from": deployer})
     guardian_signals.grantRole(guardian_signals.MANAGER_ROLE(), admin, {"from": deployer})
     guardian_signals.grantRole(guardian_signals.ACCESS_RESTORER_ROLE(), admin, {"from": deployer})
     guardian_signals.grantRole(guardian_signals.ACCESS_LIMITER_ROLE(), admin, {"from": deployer})
@@ -443,6 +472,8 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
         assert owner.hasRole(_role("MARKET_CREATOR_ROLE"), executor)
         assert owner.hasRole(_role("MARKET_MANAGER_ROLE"), executor)
         assert owner.hasRole(_role("GUARDIAN_MANAGER_ROLE"), executor)
+        assert not owner.hasRole(_role("FEE_MANAGER_ROLE"), executor)
+        assert owner.hasRole(_role("FEE_MANAGER_ROLE"), lido_lend.admin)
 
         controller = lido_lend.contract("controller")
         guardian_signals = lido_lend.contract("guardianSignals")
@@ -528,15 +559,21 @@ def _ensure_market_created(lido_lend, market, accounts, executor):
     _set_curve_params(lido_lend, market, accounts)
     _route_curve(lido_lend, market, accounts)
     caller = _impersonated_account(executor, accounts)
-    lido_lend.contract("owner").createMarket(
-        _market_params(market), market["controller"], False, {"from": caller}
-    )
+    lido_lend.contract("owner").createMarket(_market_params(market), market["controller"], False, {"from": caller})
 
 
 @pytest.fixture
 def created_market(lido_lend, easy_track, accounts):
     "Ensure the descriptor market is activated on the core so the domain-scoped factories can resolve `marketController(id)` / `idToMarketParams(id)` / `router.marketIrm(id)`. Mirrors the on-chain activation order: route the IRM curve, then createMarket (which requires the IRM already set)."
     _ensure_market_created(lido_lend, lido_lend.market, accounts, easy_track.evmScriptExecutor())
+    return lido_lend
+
+
+@pytest.fixture
+def created_markets(lido_lend, easy_track, accounts):
+    "Ensure every artifact-provided market exists for cross-market motions."
+    for market in lido_lend.markets:
+        _ensure_market_created(lido_lend, market, accounts, easy_track.evmScriptExecutor())
     return lido_lend
 
 
@@ -577,16 +614,27 @@ def advance_time():
 
 
 @pytest.fixture
-def enact_motion(stranger):
+def create_motion():
+    "Create a motion and resolve its id from EasyTrack state without relying on Brownie event decoding."
+
+    def _create(easy_track, factory, calldata, trusted_caller):
+        motion_ids_before = {motion[0] for motion in easy_track.getMotions()}
+        tx = easy_track.createMotion(factory, calldata, {"from": trusted_caller})
+        created = [motion for motion in easy_track.getMotions() if motion[0] not in motion_ids_before]
+        assert len(created) == 1, "createMotion must add exactly one active motion"
+        return tx, created[0][0]
+
+    return _create
+
+
+@pytest.fixture
+def enact_motion(stranger, create_motion):
     "Runs a full motion lifecycle against the real EasyTrack: create -> wait out the objection window -> enact."
 
     def _enact(easy_track, factory, calldata, trusted_caller):
-        tx = easy_track.createMotion(factory, calldata, {"from": trusted_caller})
-        motion_id = tx.events["MotionCreated"]["_motionId"]
+        tx, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
         _advance_time(easy_track.motionDuration() + 100)
-        easy_track.enactMotion(
-            motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger}
-        )
+        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
         return tx
 
     return _enact

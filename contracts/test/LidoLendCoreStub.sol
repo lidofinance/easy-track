@@ -31,6 +31,11 @@ contract LidoLendCoreStub {
     mapping(bytes32 => MarketParams) private _idToMarketParams;
     mapping(bytes32 => Market) private _market;
     mapping(bytes32 => bool) public isSettlementEnabled;
+    address public owner;
+
+    function setOwner(address owner_) external {
+        owner = owner_;
+    }
 
     function setMarketController(bytes32 marketId, address controller) external {
         marketController[marketId] = controller;

@@ -18,6 +18,18 @@ contract LidoLendSetIrmCurveParams is TrustedCaller, IEVMScriptFactory {
 
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
+    string private constant ERROR_INVALID_CURVE_STEEPNESS = "invalid curveSteepness";
+    string private constant ERROR_INVALID_ADJUSTMENT_SPEED = "invalid adjustmentSpeed";
+    string private constant ERROR_INVALID_TARGET_UTILIZATION = "invalid targetUtilization";
+    string private constant ERROR_INVALID_RATE_BOUNDS = "invalid rate bounds";
+    string private constant ERROR_INVALID_INITIAL_RATE_AT_TARGET = "invalid initialRateAtTarget";
+    string private constant ERROR_INVALID_MAX_BORROW_RATE = "invalid maxBorrowRate";
+
+    int256 private constant WAD = 1e18;
+    int256 private constant MAX_CURVE_STEEPNESS = 100e18;
+    int256 private constant MAX_ADJUSTMENT_SPEED = 10_000e18 / int256(365 days);
+    int256 private constant MAX_RATE_AT_TARGET = 10_000e18 / int256(365 days);
+    uint256 private constant MAX_BORROW_RATE = uint256(MAX_RATE_AT_TARGET) * 100;
 
     // -------------
     // VARIABLES
@@ -66,6 +78,7 @@ contract LidoLendSetIrmCurveParams is TrustedCaller, IEVMScriptFactory {
         MarketParams memory marketParams = lidoLend.idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
+        _validateCurveParams(curveParams);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -90,6 +103,36 @@ contract LidoLendSetIrmCurveParams is TrustedCaller, IEVMScriptFactory {
     // ------------------
     // PRIVATE METHODS
     // ------------------
+
+    function _validateCurveParams(AdaptiveCurveParams memory params) private pure {
+        require(
+            params.curveSteepness >= WAD && params.curveSteepness <= MAX_CURVE_STEEPNESS,
+            ERROR_INVALID_CURVE_STEEPNESS
+        );
+        require(
+            params.adjustmentSpeed >= 0 && params.adjustmentSpeed <= MAX_ADJUSTMENT_SPEED,
+            ERROR_INVALID_ADJUSTMENT_SPEED
+        );
+        require(
+            params.targetUtilization > 0 && params.targetUtilization < WAD,
+            ERROR_INVALID_TARGET_UTILIZATION
+        );
+        require(
+            params.minRateAtTarget > 0 &&
+                params.maxRateAtTarget >= params.minRateAtTarget &&
+                params.maxRateAtTarget <= MAX_RATE_AT_TARGET,
+            ERROR_INVALID_RATE_BOUNDS
+        );
+        require(
+            params.initialRateAtTarget >= params.minRateAtTarget &&
+                params.initialRateAtTarget <= params.maxRateAtTarget,
+            ERROR_INVALID_INITIAL_RATE_AT_TARGET
+        );
+        require(
+            params.maxBorrowRate == 0 || params.maxBorrowRate <= MAX_BORROW_RATE,
+            ERROR_INVALID_MAX_BORROW_RATE
+        );
+    }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private

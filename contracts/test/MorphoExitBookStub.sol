@@ -24,6 +24,11 @@ contract MorphoExitBookStub {
     mapping(bytes32 => bool) public isMarketAllowed;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
     bool public enforceRoles;
+    address public MORPHO;
+
+    function setMorpho(address morpho_) external {
+        MORPHO = morpho_;
+    }
 
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
@@ -38,10 +43,7 @@ contract MorphoExitBookStub {
     }
 
     function setMarketAllowed(MarketParams calldata marketParams, bool allowed) external {
-        require(
-            !enforceRoles || hasRole[ALLOWLIST_MANAGER_ROLE][msg.sender],
-            "MISSING_ALLOWLIST_MANAGER_ROLE"
-        );
+        require(!enforceRoles || hasRole[ALLOWLIST_MANAGER_ROLE][msg.sender], "MISSING_ALLOWLIST_MANAGER_ROLE");
         lastMarketParams = marketParams;
         lastAllowed = allowed;
         isMarketAllowed[keccak256(abi.encode(marketParams))] = allowed;

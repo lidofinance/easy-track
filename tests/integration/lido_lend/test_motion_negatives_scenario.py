@@ -38,31 +38,42 @@ def test_unregistered_factory_cannot_open_motion(lido_lend, created_market, easy
         easy_track.createMotion(factory, _calldata(lido_lend.market["id"], GUARDIAN_A), {"from": trusted_caller})
 
 
-def test_cannot_enact_before_objection_window(easy_track, registered_add_guardian, trusted_caller, stranger):
+def test_cannot_enact_before_objection_window(
+    easy_track, registered_add_guardian, trusted_caller, stranger, create_motion
+):
     "enactMotion before the objection window elapses must revert (MOTION_NOT_PASSED)."
     factory, _, market_id = registered_add_guardian
-    tx = easy_track.createMotion(factory, _calldata(market_id, GUARDIAN_A), {"from": trusted_caller})
-    motion_id = tx.events["MotionCreated"]["_motionId"]
+    calldata = _calldata(market_id, GUARDIAN_A)
+    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
     with reverts():
-        easy_track.enactMotion(motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger})
+        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
 
 
-def test_cannot_enact_with_tampered_calldata(easy_track, registered_add_guardian, trusted_caller, stranger, advance_time):
+def test_cannot_enact_with_tampered_calldata(
+    easy_track, registered_add_guardian, trusted_caller, stranger, create_motion, advance_time
+):
     "enactMotion with calldata different from what was recorded at creation must revert (UNEXPECTED_EVM_SCRIPT)."
     factory, _, market_id = registered_add_guardian
-    tx = easy_track.createMotion(factory, _calldata(market_id, GUARDIAN_A), {"from": trusted_caller})
-    motion_id = tx.events["MotionCreated"]["_motionId"]
+    _, motion_id = create_motion(easy_track, factory, _calldata(market_id, GUARDIAN_A), trusted_caller)
     advance_time(easy_track.motionDuration() + 100)
     with reverts():
         easy_track.enactMotion(motion_id, _calldata(market_id, GUARDIAN_B), {"from": stranger})
 
 
-def test_stale_precondition_reverts_on_enact(easy_track, registered_add_guardian, admin, trusted_caller, stranger, advance_time):
+def test_stale_precondition_reverts_on_enact(
+    easy_track,
+    registered_add_guardian,
+    admin,
+    trusted_caller,
+    stranger,
+    create_motion,
+    advance_time,
+):
     "If the factory's precondition is invalidated between creation and enactment, the stored script must revert at the target."
     factory, gs, market_id = registered_add_guardian
 
-    tx = easy_track.createMotion(factory, _calldata(market_id, GUARDIAN_A), {"from": trusted_caller})
-    motion_id = tx.events["MotionCreated"]["_motionId"]
+    calldata = _calldata(market_id, GUARDIAN_A)
+    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
 
     gs.addGuardian(GUARDIAN_A, {"from": admin})
     assert gs.isGuardian(GUARDIAN_A)
@@ -70,25 +81,32 @@ def test_stale_precondition_reverts_on_enact(easy_track, registered_add_guardian
     advance_time(easy_track.motionDuration() + 100)
 
     with reverts():
-        easy_track.enactMotion(motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger})
+        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
 
 
 def test_motion_rejected_by_objection(
-    easy_track, registered_add_guardian, trusted_caller, stranger, advance_time, impersonate
+    easy_track,
+    registered_add_guardian,
+    trusted_caller,
+    stranger,
+    create_motion,
+    advance_time,
+    impersonate,
 ):
     "A motion objected above the 0.5%-LDO threshold is rejected and removed, so it can never be enacted."
     factory, _, market_id = registered_add_guardian
-    tx = easy_track.createMotion(factory, _calldata(market_id, GUARDIAN_A), {"from": trusted_caller})
-    motion_id = tx.events["MotionCreated"]["_motionId"]
-    assert len(easy_track.getMotions()) == 1
+    calldata = _calldata(market_id, GUARDIAN_A)
+    existing_motion_ids = {motion[0] for motion in easy_track.getMotions()}
+    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
+    assert {motion[0] for motion in easy_track.getMotions()} == existing_motion_ids | {motion_id}
 
     whale = impersonate(LDO_WHALE)
     easy_track.objectToMotion(motion_id, {"from": whale})
 
-    assert len(easy_track.getMotions()) == 0
+    assert {motion[0] for motion in easy_track.getMotions()} == existing_motion_ids
     advance_time(easy_track.motionDuration() + 100)
     with reverts():
-        easy_track.enactMotion(motion_id, tx.events["MotionCreated"]["_evmScriptCallData"], {"from": stranger})
+        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
 
 
 def test_factory_with_wrong_permission_rejects_motion(
@@ -101,5 +119,7 @@ def test_factory_with_wrong_permission_rejects_motion(
     register_factory(factory, permission((owner, owner.setMarketSettlementConfig)))
     with reverts():
         easy_track.createMotion(
-            factory, "0x" + encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24]).hex(), {"from": trusted_caller}
+            factory,
+            "0x" + encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24]).hex(),
+            {"from": trusted_caller},
         )

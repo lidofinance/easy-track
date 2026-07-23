@@ -516,6 +516,29 @@
         "internalType": "Id",
         "name": "marketId",
         "type": "bytes32"
+      },
+      {
+        "internalType": "address",
+        "name": "oldGuardian",
+        "type": "address"
+      },
+      {
+        "internalType": "address",
+        "name": "newGuardian",
+        "type": "address"
+      }
+    ],
+    "name": "replaceGuardian",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "Id",
+        "name": "marketId",
+        "type": "bytes32"
       }
     ],
     "name": "unfreezeMarket",
