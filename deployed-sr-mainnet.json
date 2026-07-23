@@ -9,17 +9,17 @@
     },
     "UpdateStakingModuleShareLimits:CSM": {
         "contract": "UpdateStakingModuleShareLimits",
-        "address": "0x0C6703F1d8D9DdfB6c6e5F57b4f7432a6500D6D8",
+        "address": "0xde3e46E3129fA4e4e3f66c9024B0A3Ad509b27a1",
         "constructorArgs": [
             "0xC52fC3081123073078698F1EAc2f1Dc7Bd71880f",
             "CSM",
             "0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
             3,
-            500,
-            500,
-            600,
-            600
+            50,
+            50,
+            60,
+            60
         ],
-        "txHash": "0xab060de07029c52920ca590e65ce0123ceb691506129223b2b91e0c1cbf23d71"
+        "txHash": "0xf5a3ceb35edcf7733bcc619e27fc4fd1a15868d4265dafd3642a7700be0db6be"
     }
 }
