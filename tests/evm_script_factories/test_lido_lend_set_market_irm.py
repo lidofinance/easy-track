@@ -1,6 +1,13 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendSetMarketIrm, LidoLendCoreStub, IrmRouterStub, ZERO_ADDRESS
+from brownie import (
+    AdaptiveCurveIrmStub,
+    reverts,
+    LidoLendSetMarketIrm,
+    LidoLendCoreStub,
+    IrmRouterStub,
+    ZERO_ADDRESS,
+)
 
 from utils.evm_script import encode_call_script
 
@@ -29,7 +36,7 @@ def market_params(router_stub):
 
 @pytest.fixture(scope="module")
 def new_irm(owner):
-    return IrmRouterStub.deploy({"from": owner})
+    return AdaptiveCurveIrmStub.deploy({"from": owner})
 
 
 @pytest.fixture(scope="module")
@@ -103,7 +110,7 @@ def test_decode_evm_script_call_data(factory, new_irm):
 
 
 def test_target_is_the_shared_router_regardless_of_market_id(owner, new_irm):
-    "Unlike the guardian/controller factories, the resolved target here is the domain's shared IrmRouter (`marketParams.irm`), the same for every market — the marketId only selects the payload. So EasyTrack's permission `(router, setMarketIrm)` does NOT scope this factory to a single market; any market's IRM can be re-routed through one registration."
+    "The shared router is fixed, while marketId and target IRM select the setMarketIrm payload."
     router = IrmRouterStub.deploy({"from": owner})
     mp_a = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
     mp_b = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV + 1)

@@ -8,15 +8,14 @@ import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
-/// @notice Creates EVMScript to grant instant collateral activation to one caller on one Lido Lend market
-contract LidoLendGrantInstantActivation is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to set instant collateral activation for one caller on one Lido Lend market
+contract LidoLendSetInstantActivation is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_ZERO_CALLER = "ZERO_CALLER";
-    string private constant ERROR_INSTANT_ACTIVATION_ALREADY_GRANTED =
-        "INSTANT_ACTIVATION_ALREADY_GRANTED";
+    string private constant ERROR_SAME_INSTANT_ACTIVATION_STATUS = "SAME_INSTANT_ACTIVATION_STATUS";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
@@ -41,9 +40,9 @@ contract LidoLendGrantInstantActivation is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to grant instant collateral activation to one caller on one Lido Lend market
+    /// @notice Creates EVMScript to set instant collateral activation for one caller on one Lido Lend market
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded (bytes32 marketId, address caller)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address caller, bool enabled)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -51,31 +50,38 @@ contract LidoLendGrantInstantActivation is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, address caller) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (bytes32 marketId, address caller, bool enabled) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
         require(caller != address(0), ERROR_ZERO_CALLER);
 
         ILidoLendMarketController marketController = _controllerOf(marketId);
         require(
-            !marketController.hasInstantActivation(caller),
-            ERROR_INSTANT_ACTIVATION_ALREADY_GRANTED
+            marketController.hasInstantActivation(caller) != enabled,
+            ERROR_SAME_INSTANT_ACTIVATION_STATUS
         );
 
         return
             EVMScriptCreator.createEVMScript(
                 address(lidoLendOwner),
-                lidoLendOwner.grantMarketInstantActivation.selector,
-                abi.encode(marketId, caller)
+                lidoLendOwner.setInstantActivation.selector,
+                abi.encode(marketId, caller, enabled)
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded (bytes32 marketId, address caller)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address caller, bool enabled)
     /// @return marketId Id of the market
-    /// @return caller Caller to grant instant activation
+    /// @return caller Caller whose instant activation status is set
+    /// @return enabled Target instant activation status
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (bytes32 marketId, address caller)
+        returns (
+            bytes32 marketId,
+            address caller,
+            bool enabled
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -93,8 +99,12 @@ contract LidoLendGrantInstantActivation is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (bytes32 marketId, address caller)
+        returns (
+            bytes32 marketId,
+            address caller,
+            bool enabled
+        )
     {
-        (marketId, caller) = abi.decode(_evmScriptCallData, (bytes32, address));
+        (marketId, caller, enabled) = abi.decode(_evmScriptCallData, (bytes32, address, bool));
     }
 }

@@ -26,7 +26,7 @@ _EXPECTED_SIGNATURES = {
         "unfreezeMarket(bytes32)",
         "setMarketCollateralActivationConfig(bytes32,(uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40))",
         "setMarketSettlementConfig(bytes32,(uint16,uint96,uint96,uint16))",
-        "grantMarketInstantActivation(bytes32,address)",
+        "setInstantActivation(bytes32,address,bool)",
         "addGuardian(bytes32,address)",
         "replaceGuardian(bytes32,address,address)",
         "removeGuardian(bytes32,address)",
@@ -39,7 +39,7 @@ _EXPECTED_SIGNATURES = {
         "marketIrm(bytes32)",
     ],
     "AdaptiveCurveIrm": [
-        "setMarketCurveParams((address,address,address,address,uint256),(int256,int256,int256,int256,int256,int256,uint256))",
+        "applyIrmConfig((address,address,address,address,uint256),address)",
     ],
     "CircuitBreaker": [
         "registerPauser(address,address)",
@@ -47,7 +47,7 @@ _EXPECTED_SIGNATURES = {
     "LidoLendMarketController": [
         "marketId()",
         "guardianSignals()",
-        "grantInstantActivation(address)",
+        "setInstantActivation(address,bool)",
         "hasInstantActivation(address)",
         "setCollateralActivationConfig((uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40))",
         "collateralActivationConfig()",

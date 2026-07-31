@@ -15,16 +15,6 @@ struct MarketParams {
     uint256 lltv;
 }
 
-struct AdaptiveCurveParams {
-    int256 curveSteepness;
-    int256 adjustmentSpeed;
-    int256 targetUtilization;
-    int256 initialRateAtTarget;
-    int256 minRateAtTarget;
-    int256 maxRateAtTarget;
-    uint256 maxBorrowRate;
-}
-
 interface ILidoLend {
     function marketController(bytes32 marketId) external view returns (address);
 
@@ -54,7 +44,11 @@ interface ILidoLendOwner {
         ILidoLendMarketController.SettlementConfig calldata config
     ) external;
 
-    function grantMarketInstantActivation(bytes32 marketId, address caller) external;
+    function setInstantActivation(
+        bytes32 marketId,
+        address caller,
+        bool enabled
+    ) external;
 
     function addGuardian(bytes32 marketId, address guardian) external;
 
@@ -101,7 +95,7 @@ interface ILidoLendMarketController {
 
     function guardianSignals() external view returns (address);
 
-    function grantInstantActivation(address caller) external;
+    function setInstantActivation(address caller, bool enabled) external;
 
     function hasInstantActivation(address caller) external view returns (bool);
 
@@ -128,11 +122,8 @@ interface IIrmRouter {
     function marketIrm(bytes32 marketId) external view returns (address);
 }
 
-interface IAdaptiveCurveIrm {
-    function setMarketCurveParams(
-        MarketParams calldata marketParams,
-        AdaptiveCurveParams calldata curveParams
-    ) external;
+interface IConfigurableIrm {
+    function applyIrmConfig(MarketParams calldata marketParams, address config) external;
 }
 
 interface ICircuitBreaker {

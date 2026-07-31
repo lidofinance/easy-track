@@ -14,9 +14,9 @@ from brownie import (
 
 from utils.evm_script import encode_call_script
 
-from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE, CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
+from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE
 
-ACTIVATE_TYPES = [MP_TYPE, CURVE_PARAMS_TYPE, "address", "address", "bool"]
+ACTIVATE_TYPES = [MP_TYPE, "address", "address", "address", "bool"]
 
 LOAN_TOKEN = f"0x{1:040x}"
 COLLATERAL_TOKEN = f"0x{2:040x}"
@@ -24,27 +24,18 @@ ORACLE = f"0x{3:040x}"
 IRM = f"0x{4:040x}"
 LLTV = 800000000000000000
 WAD = 10**18
-MAX_ADJUSTMENT_SPEED = 10_000 * WAD // (365 * 24 * 60 * 60)
-MAX_RATE_AT_TARGET = 10_000 * WAD // (365 * 24 * 60 * 60)
-MAX_BORROW_RATE = MAX_RATE_AT_TARGET * 100
+IRM_CONFIG = f"0x{5:040x}"
 CONTROLLER = f"0x{6:040x}"
 PAUSER_COMMITTEE = f"0x{7:040x}"
-CURVE_PARAMS = (4_000000000000000000, 1, 900000000000000000, 2, 1, 3, 0)
 
 # Placeholder params for checks that revert BEFORE the "irm is the router" check (irm value irrelevant there).
 MARKET_PARAMS = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, IRM, LLTV)
 
 
-def with_curve_param(index, value):
-    params = list(CURVE_PARAMS)
-    params[index] = value
-    return tuple(params)
-
-
-def create_calldata(market_params, curve_params, controller, pauser_committee, enable_settlement):
+def create_calldata(market_params, irm_config, controller, pauser_committee, enable_settlement):
     return (
         "0x"
-        + encode(ACTIVATE_TYPES, [market_params, curve_params, controller, pauser_committee, enable_settlement]).hex()
+        + encode(ACTIVATE_TYPES, [market_params, irm_config, controller, pauser_committee, enable_settlement]).hex()
     )
 
 
@@ -111,42 +102,42 @@ def test_deploy(owner, owner_stub, irm_router_stub, adaptive_curve_irm_stub, cir
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    calldata = create_calldata(MARKET_PARAMS, CURVE_PARAMS, CONTROLLER, PAUSER_COMMITTEE, False)
+    calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, PAUSER_COMMITTEE, False)
     with reverts("CALLER_IS_FORBIDDEN"):
         factory.createEVMScript(stranger, calldata)
 
 
 @pytest.mark.parametrize(
-    "market_params,curve_params,controller,pauser,error",
+    "market_params,irm_config,controller,pauser,error",
     [
         (
             (ZERO_ADDRESS, COLLATERAL_TOKEN, ORACLE, IRM, LLTV),
-            CURVE_PARAMS,
+            IRM_CONFIG,
             CONTROLLER,
             PAUSER_COMMITTEE,
             "ZERO_LOAN_TOKEN",
         ),
         (
             (LOAN_TOKEN, ZERO_ADDRESS, ORACLE, IRM, LLTV),
-            CURVE_PARAMS,
+            IRM_CONFIG,
             CONTROLLER,
             PAUSER_COMMITTEE,
             "ZERO_COLLATERAL_TOKEN",
         ),
         (
             (LOAN_TOKEN, COLLATERAL_TOKEN, ZERO_ADDRESS, IRM, LLTV),
-            CURVE_PARAMS,
+            IRM_CONFIG,
             CONTROLLER,
             PAUSER_COMMITTEE,
             "ZERO_ORACLE",
         ),
-        (MARKET_PARAMS, CURVE_PARAMS, ZERO_ADDRESS, PAUSER_COMMITTEE, "ZERO_CONTROLLER"),
-        (MARKET_PARAMS, CURVE_PARAMS, CONTROLLER, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
+        (MARKET_PARAMS, IRM_CONFIG, ZERO_ADDRESS, PAUSER_COMMITTEE, "ZERO_CONTROLLER"),
+        (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
     ],
 )
-def test_create_evm_script_zero_address(owner, factory, market_params, curve_params, controller, pauser, error):
+def test_create_evm_script_zero_address(owner, factory, market_params, irm_config, controller, pauser, error):
     "Must revert with the matching ZERO_* message if any required address is the zero address"
-    calldata = create_calldata(market_params, curve_params, controller, pauser, False)
+    calldata = create_calldata(market_params, irm_config, controller, pauser, False)
     with reverts(error):
         factory.createEVMScript(owner, calldata)
 
@@ -156,7 +147,7 @@ def test_create_evm_script_irm_not_router(owner, factory, controller):
     market_params = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, f"0x{123:040x}", LLTV)
     with reverts("IRM_NOT_ROUTER"):
         factory.createEVMScript(
-            owner, create_calldata(market_params, CURVE_PARAMS, controller.address, PAUSER_COMMITTEE, False)
+            owner, create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, False)
         )
 
 
@@ -165,46 +156,7 @@ def test_create_evm_script_max_lltv(owner, factory, controller):
     market_params = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, IRM, WAD)
     with reverts("MAX_LLTV_EXCEEDED"):
         factory.createEVMScript(
-            owner, create_calldata(market_params, CURVE_PARAMS, controller.address, PAUSER_COMMITTEE, False)
-        )
-
-
-@pytest.mark.parametrize(
-    "curve_params,error",
-    [
-        (with_curve_param(0, WAD - 1), "invalid curveSteepness"),
-        (with_curve_param(0, 100 * WAD + 1), "invalid curveSteepness"),
-        (with_curve_param(1, -1), "invalid adjustmentSpeed"),
-        (with_curve_param(1, MAX_ADJUSTMENT_SPEED + 1), "invalid adjustmentSpeed"),
-        (with_curve_param(2, 0), "invalid targetUtilization"),
-        (with_curve_param(2, WAD), "invalid targetUtilization"),
-        (with_curve_param(4, 0), "invalid rate bounds"),
-        (with_curve_param(5, CURVE_PARAMS[4] - 1), "invalid rate bounds"),
-        (with_curve_param(5, MAX_RATE_AT_TARGET + 1), "invalid rate bounds"),
-        (with_curve_param(3, CURVE_PARAMS[4] - 1), "invalid initialRateAtTarget"),
-        (with_curve_param(3, CURVE_PARAMS[5] + 1), "invalid initialRateAtTarget"),
-        (with_curve_param(6, MAX_BORROW_RATE + 1), "invalid maxBorrowRate"),
-    ],
-)
-def test_create_evm_script_invalid_curve_params(
-    owner,
-    factory,
-    market_params,
-    controller,
-    curve_params,
-    error,
-):
-    "Activation must apply the same curve preflight as the standalone curve-params factory"
-    with reverts(error):
-        factory.createEVMScript(
-            owner,
-            create_calldata(
-                market_params,
-                curve_params,
-                controller.address,
-                PAUSER_COMMITTEE,
-                False,
-            ),
+            owner, create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, False)
         )
 
 
@@ -214,7 +166,7 @@ def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     other.setMarketId(keccak(b"other"), {"from": owner})
     with reverts("CONTROLLER_MISMATCH"):
         factory.createEVMScript(
-            owner, create_calldata(market_params, CURVE_PARAMS, other.address, PAUSER_COMMITTEE, False)
+            owner, create_calldata(market_params, IRM_CONFIG, other.address, PAUSER_COMMITTEE, False)
         )
 
 
@@ -243,7 +195,7 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
     with reverts("CIRCUIT_BREAKER_NOT_PAUSER"):
         factory.createEVMScript(
             owner,
-            create_calldata(market_params, CURVE_PARAMS, controller.address, PAUSER_COMMITTEE, False),
+            create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, False),
         )
 
 
@@ -260,14 +212,14 @@ def test_create_evm_script(
     enable_settlement,
 ):
     "Must create the four activation calls in order, routing the market to the singleton AdaptiveCurveIrm"
-    calldata = create_calldata(market_params, CURVE_PARAMS, controller.address, PAUSER_COMMITTEE, enable_settlement)
+    calldata = create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, enable_settlement)
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
         [
             (
                 adaptive_curve_irm_stub.address,
-                adaptive_curve_irm_stub.setMarketCurveParams.encode_input(market_params, CURVE_PARAMS),
+                adaptive_curve_irm_stub.applyIrmConfig.encode_input(market_params, IRM_CONFIG),
             ),
             (
                 irm_router_stub.address,
@@ -288,11 +240,11 @@ def test_create_evm_script(
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    calldata = create_calldata(MARKET_PARAMS, CURVE_PARAMS, CONTROLLER, PAUSER_COMMITTEE, True)
+    calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, PAUSER_COMMITTEE, True)
     decoded = factory.decodeEVMScriptCallData(calldata)
-    market_params, curve_params, controller, pauser, enable_settlement = decoded
+    market_params, irm_config, controller, pauser, enable_settlement = decoded
     assert market_params == MARKET_PARAMS
-    assert curve_params == CURVE_PARAMS
+    assert irm_config == IRM_CONFIG
     assert controller == CONTROLLER
     assert pauser == PAUSER_COMMITTEE
     assert enable_settlement is True

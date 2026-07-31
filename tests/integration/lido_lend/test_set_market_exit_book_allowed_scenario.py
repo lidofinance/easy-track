@@ -1,7 +1,7 @@
 import pytest
-from brownie import LidoLendActivateMarket, LidoLendSetMarketExitBookAllowed, web3
+from brownie import AdaptiveCurveConfigStub, LidoLendActivateMarket, LidoLendSetMarketExitBookAllowed, web3
 from eth_abi import encode
-from utils.lido_lend import MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
+from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
 
 
 def _market_params(lido_lend):
@@ -22,11 +22,12 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
     factory = deployer.deploy(
         LidoLendActivateMarket, trusted_caller, owner, irm_router, adaptive_curve_irm, circuit_breaker
     )
+    irm_config = deployer.deploy(AdaptiveCurveConfigStub, lido_lend.market["curveParams"])
     create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
     perm = (
         "0x"
         + adaptive_curve_irm.address[2:]
-        + adaptive_curve_irm.setMarketCurveParams.signature[2:]
+        + adaptive_curve_irm.applyIrmConfig.signature[2:]
         + irm_router.address[2:]
         + irm_router.setMarketIrm.signature[2:]
         + owner.address[2:]
@@ -39,10 +40,10 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
     calldata = (
         "0x"
         + encode(
-            [MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_TYPE, "address", "address", "bool"],
+            [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "bool"],
             [
                 _market_params(lido_lend),
-                lido_lend.market["curveParams"],
+                irm_config.address,
                 lido_lend.market["controller"],
                 lido_lend.market["pauser"],
                 True,

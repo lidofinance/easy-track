@@ -16,7 +16,7 @@ FACADE_FACTORIES = {
     "LidoLendAddGuardian",
     "LidoLendRemoveGuardian",
     "LidoLendReplaceGuardian",
-    "LidoLendGrantInstantActivation",
+    "LidoLendSetInstantActivation",
     "LidoLendSetGuardiansQuorum",
     "LidoLendSetSuspectWindow",
     "LidoLendUnbanGuardianSignals",
@@ -188,7 +188,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         "LidoLendAddGuardian": [addresses["owner"].lower()],
         "LidoLendRemoveGuardian": [addresses["owner"].lower()],
         "LidoLendReplaceGuardian": [addresses["owner"].lower()],
-        "LidoLendGrantInstantActivation": [addresses["owner"].lower()],
+        "LidoLendSetInstantActivation": [addresses["owner"].lower()],
         "LidoLendSetGuardiansQuorum": [addresses["owner"].lower()],
         "LidoLendSetSuspectWindow": [addresses["owner"].lower()],
         "LidoLendUnbanGuardianSignals": [addresses["owner"].lower()],
@@ -196,7 +196,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         "LidoLendSetSettlementConfig": [addresses["owner"].lower()],
         "LidoLendSetSupplyCap": [addresses["owner"].lower()],
         "LidoLendUnfreezeMarket": [addresses["owner"].lower()],
-        "LidoLendSetIrmCurveParams": [addresses["adaptive_curve_irm"].lower()],
+        "LidoLendSetIrmConfig": [addresses["adaptive_curve_irm"].lower()],
         "LidoLendSetMarketIrm": [addresses["irm_router"].lower()],
         "LidoLendAddRiskSteward": [addresses["risk_steward_dashboard"].lower()],
         "LidoLendRemoveRiskSteward": [addresses["risk_steward_dashboard"].lower()],
@@ -219,10 +219,10 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         assert instances[name].lidoLendOwner() == owner
         assert instances[name].lidoLend() == core
 
-    irm_curve = instances["LidoLendSetIrmCurveParams"]
-    assert irm_curve.lidoLend() == core
-    assert irm_curve.irmRouter() == addresses["irm_router"]
-    assert irm_curve.adaptiveCurveIrm() == addresses["adaptive_curve_irm"]
+    irm_config = instances["LidoLendSetIrmConfig"]
+    assert irm_config.lidoLend() == core
+    assert irm_config.irmRouter() == addresses["irm_router"]
+    assert irm_config.adaptiveCurveIrm() == addresses["adaptive_curve_irm"]
 
     market_irm = instances["LidoLendSetMarketIrm"]
     assert market_irm.lidoLend() == core

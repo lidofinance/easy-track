@@ -1,6 +1,13 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendGrantInstantActivation, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub, ZERO_ADDRESS
+from brownie import (
+    reverts,
+    LidoLendSetInstantActivation,
+    LidoLendCoreStub,
+    LidoLendMarketControllerStub,
+    LidoLendOwnerStub,
+    ZERO_ADDRESS,
+)
 
 from utils.evm_script import encode_call_script
 
@@ -9,8 +16,8 @@ UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 CALLER = "0x" + "a1" * 20
 
 
-def create_calldata(market_id, caller):
-    return "0x" + encode(["bytes32", "address"], [market_id, str(caller)]).hex()
+def create_calldata(market_id, caller, enabled):
+    return "0x" + encode(["bytes32", "address", "bool"], [market_id, str(caller), enabled]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -34,7 +41,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendGrantInstantActivation.deploy(owner, owner_facade, {"from": owner})
+    return LidoLendSetInstantActivation.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_deploy(owner, owner_facade, core_stub, factory):
@@ -47,43 +54,47 @@ def test_deploy(owner, owner_facade, core_stub, factory):
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, CALLER))
+        factory.createEVMScript(stranger, create_calldata(MARKET_ID, CALLER, True))
 
 
 def test_create_evm_script_zero_caller(owner, factory):
     "Must revert with message 'ZERO_CALLER' if the caller is the zero address"
     with reverts("ZERO_CALLER"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS, True))
 
 
 def test_create_evm_script_market_not_found(owner, factory):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
     with reverts("MARKET_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, CALLER))
+        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, CALLER, True))
 
 
-def test_create_evm_script_already_granted(owner, controller_stub, factory):
-    "Must revert with message 'INSTANT_ACTIVATION_ALREADY_GRANTED' if the caller already has it"
-    controller_stub.grantInstantActivation(CALLER, {"from": owner})
-    assert controller_stub.hasInstantActivation(CALLER)
+@pytest.mark.parametrize("enabled", [True, False])
+def test_create_evm_script_same_status(owner, controller_stub, factory, enabled):
+    "Must revert if the caller already has the requested instant activation status"
+    controller_stub.setInstantActivation(CALLER, enabled, {"from": owner})
 
-    with reverts("INSTANT_ACTIVATION_ALREADY_GRANTED"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, CALLER))
+    with reverts("SAME_INSTANT_ACTIVATION_STATUS"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, CALLER, enabled))
 
 
-def test_create_evm_script(owner, owner_facade, controller_stub, factory):
-    "Must create correct EVMScript when the caller does not yet have instant activation"
-    assert not controller_stub.hasInstantActivation(CALLER)
+@pytest.mark.parametrize("enabled", [True, False])
+def test_create_evm_script(owner, owner_facade, controller_stub, factory, enabled):
+    "Must create correct EVMScript when changing the caller's instant activation status"
+    controller_stub.setInstantActivation(CALLER, not enabled, {"from": owner})
 
-    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, CALLER))
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, CALLER, enabled))
     expected_evm_script = encode_call_script(
-        [(owner_facade.address, owner_facade.grantMarketInstantActivation.encode_input(MARKET_ID, CALLER))]
+        [(owner_facade.address, owner_facade.setInstantActivation.encode_input(MARKET_ID, CALLER, enabled))]
     )
     assert evm_script == expected_evm_script
 
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    decoded_market_id, decoded_caller = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, CALLER))
+    decoded_market_id, decoded_caller, decoded_enabled = factory.decodeEVMScriptCallData(
+        create_calldata(MARKET_ID, CALLER, True)
+    )
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_caller == CALLER
+    assert decoded_enabled is True

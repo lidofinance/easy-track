@@ -1,10 +1,10 @@
 import pytest
-from brownie import reverts, LidoLendActivateMarket, web3
+from brownie import AdaptiveCurveConfigStub, LidoLendActivateMarket, reverts, web3
 from eth_abi import encode
 
-from utils.lido_lend import MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_ABI_TYPE as CURVE_PARAMS_TYPE
+from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
 
-ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, CURVE_PARAMS_TYPE, "address", "address", "bool"]
+ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "bool"]
 
 
 def _market_params(lido_lend):
@@ -43,11 +43,12 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
     factory = deployer.deploy(
         LidoLendActivateMarket, trusted_caller, owner, irm_router, adaptive_curve_irm, circuit_breaker
     )
+    irm_config = deployer.deploy(AdaptiveCurveConfigStub, lido_lend.market["curveParams"])
     create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
     perm = (
         "0x"
         + adaptive_curve_irm.address[2:]
-        + adaptive_curve_irm.setMarketCurveParams.signature[2:]
+        + adaptive_curve_irm.applyIrmConfig.signature[2:]
         + irm_router.address[2:]
         + irm_router.setMarketIrm.signature[2:]
         + owner.address[2:]
@@ -58,10 +59,10 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
     easy_track.addEVMScriptFactory(factory, perm, {"from": deployer})
     executor = easy_track.evmScriptExecutor()
     owner.grantRole(owner.MARKET_CREATOR_ROLE(), executor, {"from": admin})
-    return factory, irm_router
+    return factory, irm_router, irm_config
 
 
-def _calldata(lido_lend, enable_settlement):
+def _calldata(lido_lend, irm_config, enable_settlement):
     m = lido_lend.market
     return (
         "0x"
@@ -69,7 +70,7 @@ def _calldata(lido_lend, enable_settlement):
             ACTIVATE_TYPES,
             [
                 _market_params(lido_lend),
-                m["curveParams"],
+                irm_config,
                 m["controller"],
                 m["pauser"],
                 enable_settlement,
@@ -95,9 +96,9 @@ def test_activate_market_scenario(
     market_id = m["id"]
 
     assert core.market(market_id)["lastUpdate"] == 0
-    factory, irm_router = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
+    factory, irm_router, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
-    calldata = _calldata(lido_lend, True)
+    calldata = _calldata(lido_lend, irm_config.address, True)
     enact_motion(easy_track, factory, calldata, trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0
@@ -118,8 +119,8 @@ def test_activate_market_without_settlement_scenario(
     core, _, easy_track = _activate_prereqs(lido_lend, easy_track)
     market_id = lido_lend.market["id"]
 
-    factory, _ = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
-    enact_motion(easy_track, factory, _calldata(lido_lend, False), trusted_caller)
+    factory, _, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
+    enact_motion(easy_track, factory, _calldata(lido_lend, irm_config.address, False), trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0
     assert not core.isSettlementEnabled(market_id)

@@ -662,9 +662,14 @@
         "internalType": "address",
         "name": "caller",
         "type": "address"
+      },
+      {
+        "internalType": "bool",
+        "name": "enabled",
+        "type": "bool"
       }
     ],
-    "name": "grantMarketInstantActivation",
+    "name": "setInstantActivation",
     "outputs": [],
     "stateMutability": "nonpayable",
     "type": "function"

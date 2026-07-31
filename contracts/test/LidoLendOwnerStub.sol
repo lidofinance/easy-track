@@ -81,7 +81,7 @@ contract LidoLendOwnerStub {
         }
         // Mirror the real createMarket's first borrowRate ping (LidoLend.sol): reverts if the market's IRM
         // is unrouted or its curve params are unset. This is what makes the activation order mandatory —
-        // setMarketCurveParams and setMarketIrm must both precede createMarket.
+        // applyIrmConfig and setMarketIrm must both precede createMarket.
         if (marketParams.irm != address(0)) {
             IIrmProbe(marketParams.irm).borrowRate(marketParams);
         }
@@ -116,11 +116,12 @@ contract LidoLendOwnerStub {
         ILidoLendMarketController(_controllerOf(marketId)).setSettlementConfig(config);
     }
 
-    function grantMarketInstantActivation(bytes32 marketId, address caller)
-        external
-        onlyRoleWhenEnforced(MARKET_MANAGER_ROLE)
-    {
-        ILidoLendMarketController(_controllerOf(marketId)).grantInstantActivation(caller);
+    function setInstantActivation(
+        bytes32 marketId,
+        address caller,
+        bool enabled
+    ) external onlyRoleWhenEnforced(MARKET_MANAGER_ROLE) {
+        ILidoLendMarketController(_controllerOf(marketId)).setInstantActivation(caller, enabled);
     }
 
     // ---

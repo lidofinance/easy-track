@@ -24,7 +24,7 @@ from brownie import (
     LidoLendAddGuardian,
     LidoLendRemoveGuardian,
     LidoLendReplaceGuardian,
-    LidoLendGrantInstantActivation,
+    LidoLendSetInstantActivation,
     LidoLendSetGuardiansQuorum,
     LidoLendSetSuspectWindow,
     LidoLendUnbanGuardianSignals,
@@ -32,7 +32,7 @@ from brownie import (
     LidoLendSetSettlementConfig,
     LidoLendSetSupplyCap,
     LidoLendUnfreezeMarket,
-    LidoLendSetIrmCurveParams,
+    LidoLendSetIrmConfig,
     LidoLendSetMarketIrm,
     LidoLendAddRiskSteward,
     LidoLendRemoveRiskSteward,
@@ -63,7 +63,7 @@ ALL_FACTORY_NAMES = (
     "LidoLendAddGuardian",
     "LidoLendRemoveGuardian",
     "LidoLendReplaceGuardian",
-    "LidoLendGrantInstantActivation",
+    "LidoLendSetInstantActivation",
     "LidoLendSetGuardiansQuorum",
     "LidoLendSetSuspectWindow",
     "LidoLendUnbanGuardianSignals",
@@ -71,7 +71,7 @@ ALL_FACTORY_NAMES = (
     "LidoLendSetSettlementConfig",
     "LidoLendSetSupplyCap",
     "LidoLendUnfreezeMarket",
-    "LidoLendSetIrmCurveParams",
+    "LidoLendSetIrmConfig",
     "LidoLendSetMarketIrm",
     "LidoLendAddRiskSteward",
     "LidoLendRemoveRiskSteward",
@@ -79,7 +79,7 @@ ALL_FACTORY_NAMES = (
 )
 
 MARKET_MANAGER_FACTORIES = {
-    "LidoLendGrantInstantActivation",
+    "LidoLendSetInstantActivation",
     "LidoLendSetCollateralActivationConfig",
     "LidoLendSetSettlementConfig",
     "LidoLendSetSupplyCap",
@@ -96,7 +96,7 @@ GUARDIAN_MANAGER_FACTORIES = {
 OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
 IRM_ROUTER_FACTORIES = {
     "LidoLendActivateMarket",
-    "LidoLendSetIrmCurveParams",
+    "LidoLendSetIrmConfig",
     "LidoLendSetMarketIrm",
 }
 IRM_ROUTER_TARGET_FACTORIES = {
@@ -105,7 +105,7 @@ IRM_ROUTER_TARGET_FACTORIES = {
 }
 ADAPTIVE_CURVE_IRM_FACTORIES = {
     "LidoLendActivateMarket",
-    "LidoLendSetIrmCurveParams",
+    "LidoLendSetIrmConfig",
 }
 RISK_STEWARD_FACTORIES = {
     "LidoLendAddRiskSteward",
@@ -313,7 +313,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         LidoLendAddGuardian,
         LidoLendRemoveGuardian,
         LidoLendReplaceGuardian,
-        LidoLendGrantInstantActivation,
+        LidoLendSetInstantActivation,
         LidoLendSetGuardiansQuorum,
         LidoLendSetSuspectWindow,
         LidoLendUnbanGuardianSignals,
@@ -325,7 +325,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         add(Factory, lambda: [tc, a["owner"]])
     # IRM management targets the configured router / AdaptiveCurveIrm singletons directly.
     add(
-        LidoLendSetIrmCurveParams,
+        LidoLendSetIrmConfig,
         lambda: [tc, core, a["irm_router"], a["adaptive_curve_irm"]],
     )
     add(LidoLendSetMarketIrm, lambda: [tc, core, a["irm_router"]])
@@ -360,7 +360,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             "0x" + web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
         )
         permissions["LidoLendActivateMarket"] = _permission(
-            (adaptive_curve_irm, adaptive_curve_irm.setMarketCurveParams.signature),
+            (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature),
             (irm_router, irm_router.setMarketIrm.signature),
             (owner, controlled_market_create_selector),
             (circuit_breaker, circuit_breaker.registerPauser.signature),
@@ -371,10 +371,8 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions["LidoLendRemoveGuardian"] = _permission((owner, owner.removeGuardian.signature))
     if "LidoLendReplaceGuardian" in selected:
         permissions["LidoLendReplaceGuardian"] = _permission((owner, owner.replaceGuardian.signature))
-    if "LidoLendGrantInstantActivation" in selected:
-        permissions["LidoLendGrantInstantActivation"] = _permission(
-            (owner, owner.grantMarketInstantActivation.signature)
-        )
+    if "LidoLendSetInstantActivation" in selected:
+        permissions["LidoLendSetInstantActivation"] = _permission((owner, owner.setInstantActivation.signature))
     if "LidoLendSetGuardiansQuorum" in selected:
         permissions["LidoLendSetGuardiansQuorum"] = _permission((owner, owner.setGuardiansQuorum.signature))
     if "LidoLendSetSuspectWindow" in selected:
@@ -391,9 +389,9 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions["LidoLendSetSupplyCap"] = _permission((owner, owner.setMarketSupplyCap.signature))
     if "LidoLendUnfreezeMarket" in selected:
         permissions["LidoLendUnfreezeMarket"] = _permission((owner, owner.unfreezeMarket.signature))
-    if "LidoLendSetIrmCurveParams" in selected:
-        permissions["LidoLendSetIrmCurveParams"] = _permission(
-            (adaptive_curve_irm, adaptive_curve_irm.setMarketCurveParams.signature)
+    if "LidoLendSetIrmConfig" in selected:
+        permissions["LidoLendSetIrmConfig"] = _permission(
+            (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature)
         )
     if "LidoLendSetMarketIrm" in selected:
         permissions["LidoLendSetMarketIrm"] = _permission((irm_router, irm_router.setMarketIrm.signature))

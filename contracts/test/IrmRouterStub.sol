@@ -12,7 +12,10 @@ struct RouterStubMarketParams {
 }
 
 interface IAdaptiveCurveProbe {
-    function borrowRate(RouterStubMarketParams calldata marketParams) external view returns (uint256);
+    function borrowRate(RouterStubMarketParams calldata marketParams)
+        external
+        view
+        returns (uint256);
 }
 
 /// @author (draft)
@@ -25,7 +28,7 @@ contract IrmRouterStub {
     address public manager;
     address public MORPHO;
 
-    /// @notice Per-market curve the router routes to (read by LidoLendSetIrmCurveParams).
+    /// @notice Per-market curve the router routes to (read by LidoLendSetIrmConfig).
     mapping(bytes32 => address) public marketIrm;
 
     constructor() {
@@ -54,7 +57,11 @@ contract IrmRouterStub {
 
     /// @notice Mirrors the router: reverts if the market is unrouted, else delegates to the routed curve
     /// (whose own ping reverts if its params are unset). `createMarket` calls this on the market's `irm`.
-    function borrowRate(RouterStubMarketParams calldata marketParams) external view returns (uint256) {
+    function borrowRate(RouterStubMarketParams calldata marketParams)
+        external
+        view
+        returns (uint256)
+    {
         address irm = marketIrm[keccak256(abi.encode(marketParams))];
         require(irm != address(0), "MARKET_NOT_ROUTED");
         return IAdaptiveCurveProbe(irm).borrowRate(marketParams);

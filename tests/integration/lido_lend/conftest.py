@@ -9,7 +9,7 @@ in its markets/ directory is exercised. Set LIDO_LEND_ATTACH=1 to attach to an a
 import os
 
 import pytest
-from brownie import interface, web3
+from brownie import AdaptiveCurveConfigStub, interface, web3
 from eth_abi import encode
 
 import constants
@@ -545,18 +545,19 @@ def _route_curve(lido_lend, market, accounts):
     router.setMarketIrm(_market_params(market), market["curve"], {"from": mgr})
 
 
-def _set_curve_params(lido_lend, market, accounts):
-    "Set the market's curve params on the AdaptiveCurveIrm as its current manager (createMarket's borrowRate ping reverts otherwise)."
+def _apply_irm_config(lido_lend, market, accounts):
+    "Apply a config to the AdaptiveCurveIrm as its current manager (createMarket's borrowRate ping reverts otherwise)."
     curve = lido_lend.contract("adaptiveCurveIrm")
     mgr = _impersonated_account(curve.manager(), accounts)
-    curve.setMarketCurveParams(_market_params(market), market["curveParams"], {"from": mgr})
+    config = AdaptiveCurveConfigStub.deploy(market["curveParams"], {"from": mgr})
+    curve.applyIrmConfig(_market_params(market), config, {"from": mgr})
 
 
 def _ensure_market_created(lido_lend, market, accounts, executor):
     core = lido_lend.contract("core")
     if core.market(market["id"])["lastUpdate"] != 0:
         return
-    _set_curve_params(lido_lend, market, accounts)
+    _apply_irm_config(lido_lend, market, accounts)
     _route_curve(lido_lend, market, accounts)
     caller = _impersonated_account(executor, accounts)
     lido_lend.contract("owner").createMarket(_market_params(market), market["controller"], False, {"from": caller})

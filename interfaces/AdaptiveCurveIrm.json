@@ -201,25 +201,6 @@
   },
   {
     "type": "function",
-    "name": "deployedCurveConfigs",
-    "inputs": [
-      {
-        "name": "",
-        "type": "bytes32",
-        "internalType": "bytes32"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "address",
-        "internalType": "contract IAdaptiveCurveConfig"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "manager",
     "inputs": [],
     "outputs": [
@@ -297,7 +278,7 @@
   },
   {
     "type": "function",
-    "name": "setMarketCurveParams",
+    "name": "applyIrmConfig",
     "inputs": [
       {
         "name": "marketParams",
@@ -332,46 +313,9 @@
         ]
       },
       {
-        "name": "curveParams",
-        "type": "tuple",
-        "internalType": "struct AdaptiveCurveParams",
-        "components": [
-          {
-            "name": "curveSteepness",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "adjustmentSpeed",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "targetUtilization",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "initialRateAtTarget",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "minRateAtTarget",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "maxRateAtTarget",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "maxBorrowRate",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
+        "name": "config",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -417,25 +361,6 @@
   },
   {
     "type": "event",
-    "name": "ConfigDeployed",
-    "inputs": [
-      {
-        "name": "paramsHash",
-        "type": "bytes32",
-        "indexed": true,
-        "internalType": "bytes32"
-      },
-      {
-        "name": "config",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "ManagerSet",
     "inputs": [
       {
@@ -449,10 +374,10 @@
   },
   {
     "type": "event",
-    "name": "MarketCurveParamsSet",
+    "name": "IrmConfigApplied",
     "inputs": [
       {
-        "name": "id",
+        "name": "marketId",
         "type": "bytes32",
         "indexed": true,
         "internalType": "Id"
@@ -462,49 +387,6 @@
         "type": "address",
         "indexed": true,
         "internalType": "address"
-      },
-      {
-        "name": "curveParams",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct AdaptiveCurveParams",
-        "components": [
-          {
-            "name": "curveSteepness",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "adjustmentSpeed",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "targetUtilization",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "initialRateAtTarget",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "minRateAtTarget",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "maxRateAtTarget",
-            "type": "int256",
-            "internalType": "int256"
-          },
-          {
-            "name": "maxBorrowRate",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
       }
     ],
     "anonymous": false

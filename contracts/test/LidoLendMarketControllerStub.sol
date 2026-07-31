@@ -63,8 +63,11 @@ contract LidoLendMarketControllerStub {
         marketId = marketId_;
     }
 
-    function grantInstantActivation(address caller) external onlyRoleWhenEnforced(MANAGER_ROLE) {
-        hasInstantActivation[caller] = true;
+    function setInstantActivation(address caller, bool enabled)
+        external
+        onlyRoleWhenEnforced(MANAGER_ROLE)
+    {
+        hasInstantActivation[caller] = enabled;
     }
 
     function setFrozen(bool value) external {
@@ -86,11 +89,18 @@ contract LidoLendMarketControllerStub {
         _activationConfig = cfg;
     }
 
-    function collateralActivationConfig() external view returns (CollateralActivationConfig memory) {
+    function collateralActivationConfig()
+        external
+        view
+        returns (CollateralActivationConfig memory)
+    {
         return _activationConfig;
     }
 
-    function setSettlementConfig(SettlementConfig calldata config) external onlyRoleWhenEnforced(MANAGER_ROLE) {
+    function setSettlementConfig(SettlementConfig calldata config)
+        external
+        onlyRoleWhenEnforced(MANAGER_ROLE)
+    {
         _settlementConfig = config;
     }
 

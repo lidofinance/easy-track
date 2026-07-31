@@ -5,9 +5,9 @@ pragma solidity 0.8.6;
 
 /// @author (draft)
 /// @notice Test-only stub of `AdaptiveCurveIrm` (lido-lend-irm/src/adaptive-curve-irm/AdaptiveCurveIrm.sol).
-/// Models two behaviours the activation flow depends on: `setMarketCurveParams` is manager-gated (so an
+/// Models two behaviours the activation flow depends on: `applyIrmConfig` is manager-gated (so an
 /// executor lacking the manager role is caught), and the `borrowRate` ping reverts until a market's curve
-/// params are set — which is what makes `createMarket` revert when activation is mis-ordered.
+/// config is applied — which is what makes `createMarket` revert when activation is mis-ordered.
 contract AdaptiveCurveIrmStub {
     struct MarketParams {
         address loanToken;
@@ -15,16 +15,6 @@ contract AdaptiveCurveIrmStub {
         address oracle;
         address irm;
         uint256 lltv;
-    }
-
-    struct AdaptiveCurveParams {
-        int256 curveSteepness;
-        int256 adjustmentSpeed;
-        int256 targetUtilization;
-        int256 initialRateAtTarget;
-        int256 minRateAtTarget;
-        int256 maxRateAtTarget;
-        uint256 maxBorrowRate;
     }
 
     struct Market {
@@ -37,10 +27,11 @@ contract AdaptiveCurveIrmStub {
     }
 
     MarketParams public lastMarketParams;
-    AdaptiveCurveParams private _lastCurveParams;
+    address public lastConfig;
     address public manager;
     address public ROUTER;
-    /// @notice Per-market flag: were this market's curve params ever set? Gates `borrowRate`.
+    mapping(bytes32 => address) public marketCurveConfig;
+    /// @notice Per-market flag: was a config ever applied to this market? Gates `borrowRate`.
     mapping(bytes32 => bool) public isCurveConfigured;
 
     constructor() {
@@ -55,26 +46,29 @@ contract AdaptiveCurveIrmStub {
         ROUTER = router_;
     }
 
-    function setMarketCurveParams(MarketParams memory marketParams, AdaptiveCurveParams calldata curveParams) external {
+    function applyIrmConfig(MarketParams calldata marketParams, address config) external {
         require(msg.sender == manager, "NOT_MANAGER");
         lastMarketParams = marketParams;
-        _lastCurveParams = curveParams;
-        isCurveConfigured[keccak256(abi.encode(marketParams))] = true;
+        lastConfig = config;
+        bytes32 marketId = keccak256(abi.encode(marketParams));
+        marketCurveConfig[marketId] = config;
+        isCurveConfigured[marketId] = true;
     }
 
-    function lastCurveParams() external view returns (AdaptiveCurveParams memory) {
-        return _lastCurveParams;
-    }
-
-    /// @notice Mirrors the real IRM: the first `borrowRate` ping reverts while the market's curve params are
-    /// unset. `createMarket` performs this ping, so activation must set the curve params first.
+    /// @notice Mirrors the real IRM: the first `borrowRate` ping reverts while the market's config is
+    /// unset. `createMarket` performs this ping, so activation must apply the config first.
     function borrowRate(MarketParams calldata marketParams) external view returns (uint256) {
         require(isCurveConfigured[keccak256(abi.encode(marketParams))], "CURVE_NOT_CONFIGURED");
         return 0;
     }
 
     /// @notice Production IrmRouter probes this Morpho-compatible overload when re-routing a live market.
-    function borrowRate(MarketParams calldata, Market calldata) external pure returns (uint256) {
+    function borrowRate(MarketParams calldata marketParams, Market calldata)
+        external
+        view
+        returns (uint256)
+    {
+        require(isCurveConfigured[keccak256(abi.encode(marketParams))], "CURVE_NOT_CONFIGURED");
         return 0;
     }
 }
