@@ -14,7 +14,7 @@ import "../../interfaces/ILidoLend.sol";
 ///      itself. The call order is mandatory, not stylistic: `applyIrmConfig` and `setMarketIrm` must both
 ///      precede `createMarket`, whose first `borrowRate` ping reverts while the market is unrouted or its
 ///      config is unset. Exit-book allow-listing is deliberately NOT part of this motion — not
-///      every market gets exit books; it runs separately via `LidoLendSetMarketExitBookAllowed`.
+///      every market gets exit books; it runs separately via the dedicated exit-book factories.
 contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS

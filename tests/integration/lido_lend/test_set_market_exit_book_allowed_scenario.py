@@ -1,5 +1,11 @@
 import pytest
-from brownie import AdaptiveCurveConfigStub, LidoLendActivateMarket, LidoLendSetMarketExitBookAllowed, web3
+from brownie import (
+    AdaptiveCurveConfigStub,
+    LidoLendActivateMarket,
+    LidoLendSetErc4626ExitBookAllowed,
+    LidoLendSetMorphoExitBookAllowed,
+    web3,
+)
 from eth_abi import encode
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
 
@@ -54,7 +60,7 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
 
 
 def test_set_market_exit_book_allowed_scenario(lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin):
-    "Allow-list a freshly-activated market on both exit books via one motion, then dis-allow via another."
+    "Allow-list a freshly-activated market independently on both exit books."
     core = lido_lend.contract("core")
     m = lido_lend.market
     market_id = m["id"]
@@ -88,29 +94,39 @@ def test_set_market_exit_book_allowed_scenario(lido_lend, easy_track, deployer, 
     morpho.grantRole(morpho.ALLOWLIST_MANAGER_ROLE(), executor, {"from": admin})
     erc4626.grantRole(erc4626.ALLOWLIST_MANAGER_ROLE(), executor, {"from": admin})
 
-    factory = deployer.deploy(LidoLendSetMarketExitBookAllowed, trusted_caller, morpho, erc4626)
-    perm = (
-        "0x"
-        + morpho.address[2:]
-        + morpho.setMarketAllowed.signature[2:]
-        + erc4626.address[2:]
-        + erc4626.setVaultAllowed.signature[2:]
+    morpho_factory = deployer.deploy(LidoLendSetMorphoExitBookAllowed, trusted_caller, morpho)
+    erc4626_factory = deployer.deploy(LidoLendSetErc4626ExitBookAllowed, trusted_caller, erc4626)
+    _register(
+        easy_track,
+        deployer,
+        morpho_factory,
+        "0x" + morpho.address[2:] + morpho.setMarketAllowed.signature[2:],
     )
-    _register(easy_track, deployer, factory, perm)
+    _register(
+        easy_track,
+        deployer,
+        erc4626_factory,
+        "0x" + erc4626.address[2:] + erc4626.setVaultAllowed.signature[2:],
+    )
 
-    def calldata(allowed):
-        return (
-            "0x"
-            + encode(
-                [MARKET_PARAMS_ABI_TYPE, "address", "bool"],
-                [_market_params(lido_lend), m["vault"], allowed],
-            ).hex()
-        )
+    def morpho_calldata(allowed):
+        return "0x" + encode([MARKET_PARAMS_ABI_TYPE, "bool"], [_market_params(lido_lend), allowed]).hex()
 
-    enact_motion(easy_track, factory, calldata(True), trusted_caller)
+    def erc4626_calldata(allowed):
+        return "0x" + encode(["address", "bool"], [m["vault"], allowed]).hex()
+
+    enact_motion(easy_track, morpho_factory, morpho_calldata(True), trusted_caller)
+    assert morpho.isMarketAllowed(market_id)
+    assert not erc4626.isVaultAllowed(m["vault"])
+
+    enact_motion(easy_track, erc4626_factory, erc4626_calldata(True), trusted_caller)
     assert morpho.isMarketAllowed(market_id)
     assert erc4626.isVaultAllowed(m["vault"])
 
-    enact_motion(easy_track, factory, calldata(False), trusted_caller)
+    enact_motion(easy_track, morpho_factory, morpho_calldata(False), trusted_caller)
+    assert not morpho.isMarketAllowed(market_id)
+    assert erc4626.isVaultAllowed(m["vault"])
+
+    enact_motion(easy_track, erc4626_factory, erc4626_calldata(False), trusted_caller)
     assert not morpho.isMarketAllowed(market_id)
     assert not erc4626.isVaultAllowed(m["vault"])

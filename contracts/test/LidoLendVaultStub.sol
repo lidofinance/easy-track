@@ -4,8 +4,7 @@
 pragma solidity 0.8.6;
 
 /// @author (draft)
-/// @notice Test-only stub of `LidoLendERC4626`, covering only `marketId()` — the link
-/// `LidoLendSetMarketExitBookAllowed` uses to cross-check that a vault belongs to the given market.
+/// @notice Test-only stub of `LidoLendERC4626`, covering only `marketId()`.
 contract LidoLendVaultStub {
     bytes32 public marketId;
 

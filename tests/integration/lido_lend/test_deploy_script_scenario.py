@@ -58,10 +58,14 @@ def test_selected_factory_only_requires_its_protocol_dependencies():
         "core",
         "owner",
     }
-    assert _required_address_keys(("LidoLendSetMarketExitBookAllowed",)) == {
+    assert _required_address_keys(("LidoLendSetMorphoExitBookAllowed",)) == {
         "trusted_caller",
         "core",
         "morpho_exit_book",
+    }
+    assert _required_address_keys(("LidoLendSetErc4626ExitBookAllowed",)) == {
+        "trusted_caller",
+        "core",
         "erc4626_exit_book",
     }
 
@@ -149,7 +153,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     artifacts, deployed = deploy_lido_lend_factories(addresses, {"from": deployer})
     instances = {Factory._name: instance for Factory, instance in deployed}
 
-    assert len(instances) == 17
+    assert len(instances) == 18
     assert set(artifacts) == set(instances)
     for name, instance in instances.items():
         assert instance.trustedCaller() == trusted_caller
@@ -165,16 +169,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     }
     assert all(entries for entries in permission_entries.values())
     assert len(permission_entries["LidoLendActivateMarket"]) == 4
-    assert len(permission_entries["LidoLendSetMarketExitBookAllowed"]) == 2
-    assert all(
-        len(entries) == 1
-        for name, entries in permission_entries.items()
-        if name
-        not in {
-            "LidoLendActivateMarket",
-            "LidoLendSetMarketExitBookAllowed",
-        }
-    )
+    assert all(len(entries) == 1 for name, entries in permission_entries.items() if name != "LidoLendActivateMarket")
     permission_targets = {
         name: ["0x" + entry[:40].lower() for entry in entries] for name, entries in permission_entries.items()
     }
@@ -200,10 +195,8 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         "LidoLendSetMarketIrm": [addresses["irm_router"].lower()],
         "LidoLendAddRiskSteward": [addresses["risk_steward_dashboard"].lower()],
         "LidoLendRemoveRiskSteward": [addresses["risk_steward_dashboard"].lower()],
-        "LidoLendSetMarketExitBookAllowed": [
-            addresses["morpho_exit_book"].lower(),
-            addresses["erc4626_exit_book"].lower(),
-        ],
+        "LidoLendSetMorphoExitBookAllowed": [addresses["morpho_exit_book"].lower()],
+        "LidoLendSetErc4626ExitBookAllowed": [addresses["erc4626_exit_book"].lower()],
     }
 
     owner = lido_lend.contract("owner")
@@ -232,9 +225,8 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         assert instances[name].lidoLend() == core
         assert instances[name].riskStewardDashboard() == addresses["risk_steward_dashboard"]
 
-    exit_books = instances["LidoLendSetMarketExitBookAllowed"]
-    assert exit_books.morphoExitBook() == addresses["morpho_exit_book"]
-    assert exit_books.erc4626ExitBook() == addresses["erc4626_exit_book"]
+    assert instances["LidoLendSetMorphoExitBookAllowed"].morphoExitBook() == addresses["morpho_exit_book"]
+    assert instances["LidoLendSetErc4626ExitBookAllowed"].erc4626ExitBook() == addresses["erc4626_exit_book"]
 
 
 def test_preflight_rejects_executor_other_than_easy_track(lido_lend, easy_track, trusted_caller, stranger):

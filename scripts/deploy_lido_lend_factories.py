@@ -36,7 +36,8 @@ from brownie import (
     LidoLendSetMarketIrm,
     LidoLendAddRiskSteward,
     LidoLendRemoveRiskSteward,
-    LidoLendSetMarketExitBookAllowed,
+    LidoLendSetMorphoExitBookAllowed,
+    LidoLendSetErc4626ExitBookAllowed,
 )
 
 from utils import log
@@ -58,6 +59,9 @@ def _env_address(name):
     return value
 
 
+MORPHO_EXIT_BOOK_FACTORY = "LidoLendSetMorphoExitBookAllowed"
+ERC4626_EXIT_BOOK_FACTORY = "LidoLendSetErc4626ExitBookAllowed"
+
 ALL_FACTORY_NAMES = (
     "LidoLendActivateMarket",
     "LidoLendAddGuardian",
@@ -75,7 +79,8 @@ ALL_FACTORY_NAMES = (
     "LidoLendSetMarketIrm",
     "LidoLendAddRiskSteward",
     "LidoLendRemoveRiskSteward",
-    "LidoLendSetMarketExitBookAllowed",
+    MORPHO_EXIT_BOOK_FACTORY,
+    ERC4626_EXIT_BOOK_FACTORY,
 )
 
 MARKET_MANAGER_FACTORIES = {
@@ -111,7 +116,7 @@ RISK_STEWARD_FACTORIES = {
     "LidoLendAddRiskSteward",
     "LidoLendRemoveRiskSteward",
 }
-EXIT_BOOK_FACTORIES = {"LidoLendSetMarketExitBookAllowed"}
+EXIT_BOOK_FACTORIES = {MORPHO_EXIT_BOOK_FACTORY, ERC4626_EXIT_BOOK_FACTORY}
 
 
 def _parse_factory_selection(value):
@@ -151,8 +156,10 @@ def _required_address_keys(factory_names):
         keys.add("adaptive_curve_irm")
     if selected & RISK_STEWARD_FACTORIES:
         keys.add("risk_steward_dashboard")
-    if selected & EXIT_BOOK_FACTORIES:
-        keys.update(("morpho_exit_book", "erc4626_exit_book"))
+    if MORPHO_EXIT_BOOK_FACTORY in selected:
+        keys.add("morpho_exit_book")
+    if ERC4626_EXIT_BOOK_FACTORY in selected:
+        keys.add("erc4626_exit_book")
     return keys
 
 
@@ -194,8 +201,10 @@ def _read_addresses(factory_names, artifacts_dir=None):
         available["circuit_breaker"] = next(iter(circuit_breakers.values()))
     if required_keys & {"morpho_exit_book", "erc4626_exit_book"}:
         exit_books = deployment["exit_books"]["exit_books"]
-        available["morpho_exit_book"] = exit_books["morpho"]
-        available["erc4626_exit_book"] = exit_books["erc4626"]
+        if "morpho_exit_book" in required_keys:
+            available["morpho_exit_book"] = exit_books["morpho"]
+        if "erc4626_exit_book" in required_keys:
+            available["erc4626_exit_book"] = exit_books["erc4626"]
 
     return {key: value for key, value in available.items() if key in required_keys or key == "evm_script_executor"}
 
@@ -277,17 +286,18 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
             raise ValueError(f"executor lacks risk_steward_dashboard.STEWARD_ADMIN_ROLE: {executor}")
 
     if selected & EXIT_BOOK_FACTORIES:
-        morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
-        erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
-        require_address("morpho_exit_book.MORPHO", morpho_exit_book.MORPHO(), a["core"])
-
         allowlist_manager_role = web3.keccak(text="ALLOWLIST_MANAGER_ROLE")
-        for label, exit_book in (
-            ("morpho_exit_book", morpho_exit_book),
-            ("erc4626_exit_book", erc4626_exit_book),
-        ):
-            if not exit_book.hasRole(allowlist_manager_role, executor):
-                raise ValueError(f"executor lacks {label}.ALLOWLIST_MANAGER_ROLE: {executor}")
+
+    if MORPHO_EXIT_BOOK_FACTORY in selected:
+        morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
+        require_address("morpho_exit_book.MORPHO", morpho_exit_book.MORPHO(), a["core"])
+        if not morpho_exit_book.hasRole(allowlist_manager_role, executor):
+            raise ValueError(f"executor lacks morpho_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
+
+    if ERC4626_EXIT_BOOK_FACTORY in selected:
+        erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
+        if not erc4626_exit_book.hasRole(allowlist_manager_role, executor):
+            raise ValueError(f"executor lacks erc4626_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
 
     return executor
 
@@ -331,10 +341,8 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
     add(LidoLendSetMarketIrm, lambda: [tc, core, a["irm_router"]])
     add(LidoLendAddRiskSteward, lambda: [tc, core, a["risk_steward_dashboard"]])
     add(LidoLendRemoveRiskSteward, lambda: [tc, core, a["risk_steward_dashboard"]])
-    add(
-        LidoLendSetMarketExitBookAllowed,
-        lambda: [tc, a["morpho_exit_book"], a["erc4626_exit_book"]],
-    )
+    add(LidoLendSetMorphoExitBookAllowed, lambda: [tc, a["morpho_exit_book"]])
+    add(LidoLendSetErc4626ExitBookAllowed, lambda: [tc, a["erc4626_exit_book"]])
     return [(Factory, args()) for Factory, args in plan]
 
 
@@ -405,12 +413,15 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions["LidoLendRemoveRiskSteward"] = _permission(
             (risk_steward_dashboard, risk_steward_dashboard.removeMarketSteward.signature)
         )
-    if selected & EXIT_BOOK_FACTORIES:
+    if MORPHO_EXIT_BOOK_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
+        permissions[MORPHO_EXIT_BOOK_FACTORY] = _permission(
+            (morpho_exit_book, morpho_exit_book.setMarketAllowed.signature)
+        )
+    if ERC4626_EXIT_BOOK_FACTORY in selected:
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
-        permissions["LidoLendSetMarketExitBookAllowed"] = _permission(
-            (morpho_exit_book, morpho_exit_book.setMarketAllowed.signature),
-            (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature),
+        permissions[ERC4626_EXIT_BOOK_FACTORY] = _permission(
+            (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature)
         )
     return permissions
 

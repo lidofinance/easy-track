@@ -171,7 +171,3 @@ interface IMorphoExitBook {
 interface IErc4626ExitBook {
     function setVaultAllowed(address vault, bool allowed) external;
 }
-
-interface ILidoLendVault {
-    function marketId() external view returns (bytes32);
-}

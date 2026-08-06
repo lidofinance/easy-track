@@ -82,7 +82,8 @@ SetIrmCurveParams
 SetMarketIrm
 AddRiskSteward
 RemoveRiskSteward
-SetMarketExitBookAllowed
+SetMorphoExitBookAllowed
+SetErc4626ExitBookAllowed
 ```
 
 An empty list, an unknown name, or a duplicate is rejected before deployment.
@@ -95,7 +96,7 @@ factory. Other factories do not depend on a CircuitBreaker.
 | --- | --- |
 | All selections | `protocol.toml` and at least one `markets/*.toml` |
 | Activate | all market artifacts must name one shared CircuitBreaker |
-| Exit book factory | `exit-books.toml` |
+| Exit book factories | `exit-books.toml` |
 
 ## Anvil rehearsal
 
