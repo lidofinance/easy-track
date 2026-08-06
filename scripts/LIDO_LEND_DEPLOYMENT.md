@@ -73,7 +73,7 @@ ReplaceGuardian
 GrantInstantActivation
 SetGuardiansQuorum
 SetSuspectWindow
-UnbanGuardianSignals
+UnbanAccount
 SetCollateralActivationConfig
 SetSettlementConfig
 SetSupplyCap

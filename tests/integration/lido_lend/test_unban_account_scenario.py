@@ -1,11 +1,11 @@
 import pytest
-from brownie import interface, LidoLendUnbanGuardianSignals, LidoLendMarketControllerStub, GuardianSignalsStub
+from brownie import interface, LidoLendUnbanAccount, LidoLendMarketControllerStub, GuardianSignalsStub
 from eth_abi import encode
 
 BANNED_ACCOUNT = "0x" + "55" * 20
 
 
-def test_unban_guardian_signals_scenario(
+def test_unban_account_scenario(
     lido_lend, created_market, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
 ):
     "A Manager Committee motion lifts a ban previously latched on the market's GuardianSignals registry."
@@ -17,7 +17,7 @@ def test_unban_guardian_signals_scenario(
     assert gs.isBanned(market_id, BANNED_ACCOUNT)
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendUnbanGuardianSignals, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendUnbanAccount, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
     enact_motion(
         easy_track,
@@ -29,7 +29,7 @@ def test_unban_guardian_signals_scenario(
     assert not gs.isBanned(market_id, BANNED_ACCOUNT)
 
 
-def test_unban_guardian_signals_multi_market_scenario(
+def test_unban_account_multi_market_scenario(
     lido_lend, created_markets, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
 ):
     "A single motion lifts the same account's ban across two markets, including a shared-registry topology."
@@ -63,7 +63,7 @@ def test_unban_guardian_signals_multi_market_scenario(
     assert gs2.isBanned(market_id_2, BANNED_ACCOUNT)
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendUnbanGuardianSignals, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendUnbanAccount, trusted_caller, owner)
     # One permission for the facade covers every market the batch touches — no per-registry enumeration.
     register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
     enact_motion(

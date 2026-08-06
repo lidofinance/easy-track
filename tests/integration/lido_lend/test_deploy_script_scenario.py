@@ -19,7 +19,7 @@ FACADE_FACTORIES = {
     "LidoLendSetInstantActivation",
     "LidoLendSetGuardiansQuorum",
     "LidoLendSetSuspectWindow",
-    "LidoLendUnbanGuardianSignals",
+    "LidoLendUnbanAccount",
     "LidoLendSetCollateralActivationConfig",
     "LidoLendSetSettlementConfig",
     "LidoLendSetSupplyCap",
@@ -36,6 +36,7 @@ def test_factory_selection_accepts_short_and_full_names_in_canonical_order():
         "LidoLendAddGuardian",
         "LidoLendSetSupplyCap",
     )
+    assert _parse_factory_selection("UnbanAccount") == ("LidoLendUnbanAccount",)
 
 
 @pytest.mark.parametrize(
@@ -192,7 +193,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         "LidoLendSetInstantActivation": [addresses["owner"].lower()],
         "LidoLendSetGuardiansQuorum": [addresses["owner"].lower()],
         "LidoLendSetSuspectWindow": [addresses["owner"].lower()],
-        "LidoLendUnbanGuardianSignals": [addresses["owner"].lower()],
+        "LidoLendUnbanAccount": [addresses["owner"].lower()],
         "LidoLendSetCollateralActivationConfig": [addresses["owner"].lower()],
         "LidoLendSetSettlementConfig": [addresses["owner"].lower()],
         "LidoLendSetSupplyCap": [addresses["owner"].lower()],

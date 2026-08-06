@@ -27,7 +27,7 @@ from brownie import (
     LidoLendSetInstantActivation,
     LidoLendSetGuardiansQuorum,
     LidoLendSetSuspectWindow,
-    LidoLendUnbanGuardianSignals,
+    LidoLendUnbanAccount,
     LidoLendSetCollateralActivationConfig,
     LidoLendSetSettlementConfig,
     LidoLendSetSupplyCap,
@@ -70,7 +70,7 @@ ALL_FACTORY_NAMES = (
     "LidoLendSetInstantActivation",
     "LidoLendSetGuardiansQuorum",
     "LidoLendSetSuspectWindow",
-    "LidoLendUnbanGuardianSignals",
+    "LidoLendUnbanAccount",
     "LidoLendSetCollateralActivationConfig",
     "LidoLendSetSettlementConfig",
     "LidoLendSetSupplyCap",
@@ -96,7 +96,7 @@ GUARDIAN_MANAGER_FACTORIES = {
     "LidoLendReplaceGuardian",
     "LidoLendSetGuardiansQuorum",
     "LidoLendSetSuspectWindow",
-    "LidoLendUnbanGuardianSignals",
+    "LidoLendUnbanAccount",
 }
 OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
 IRM_ROUTER_FACTORIES = {
@@ -326,7 +326,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         LidoLendSetInstantActivation,
         LidoLendSetGuardiansQuorum,
         LidoLendSetSuspectWindow,
-        LidoLendUnbanGuardianSignals,
+        LidoLendUnbanAccount,
         LidoLendSetCollateralActivationConfig,
         LidoLendSetSettlementConfig,
         LidoLendSetSupplyCap,
@@ -391,8 +391,8 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions["LidoLendSetGuardiansQuorum"] = _permission((owner, owner.setGuardiansQuorum.signature))
     if "LidoLendSetSuspectWindow" in selected:
         permissions["LidoLendSetSuspectWindow"] = _permission((owner, owner.setGuardiansSuspectWindow.signature))
-    if "LidoLendUnbanGuardianSignals" in selected:
-        permissions["LidoLendUnbanGuardianSignals"] = _permission((owner, owner.unbanGuardianSignals.signature))
+    if "LidoLendUnbanAccount" in selected:
+        permissions["LidoLendUnbanAccount"] = _permission((owner, owner.unbanGuardianSignals.signature))
     if "LidoLendSetCollateralActivationConfig" in selected:
         permissions["LidoLendSetCollateralActivationConfig"] = _permission(
             (owner, owner.setMarketCollateralActivationConfig.signature)

@@ -9,7 +9,7 @@ import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
 /// @notice Creates EVMScript to unban a previously-banned address on one or more Lido Lend markets
-contract LidoLendUnbanGuardianSignals is TrustedCaller, IEVMScriptFactory {
+contract LidoLendUnbanAccount is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------

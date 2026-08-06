@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendUnbanGuardianSignals,
+    LidoLendUnbanAccount,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
@@ -48,7 +48,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendUnbanGuardianSignals.deploy(owner, owner_facade, {"from": owner})
+    return LidoLendUnbanAccount.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_deploy(owner, owner_facade, core_stub, factory):
