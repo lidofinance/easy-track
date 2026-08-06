@@ -169,7 +169,13 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     }
     assert all(entries for entries in permission_entries.values())
     assert len(permission_entries["LidoLendActivateMarket"]) == 4
-    assert all(len(entries) == 1 for name, entries in permission_entries.items() if name != "LidoLendActivateMarket")
+    assert len(permission_entries["LidoLendAddGuardian"]) == 2
+    assert len(permission_entries["LidoLendRemoveGuardian"]) == 2
+    assert all(
+        len(entries) == 1
+        for name, entries in permission_entries.items()
+        if name not in {"LidoLendActivateMarket", "LidoLendAddGuardian", "LidoLendRemoveGuardian"}
+    )
     permission_targets = {
         name: ["0x" + entry[:40].lower() for entry in entries] for name, entries in permission_entries.items()
     }
@@ -180,8 +186,8 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             addresses["owner"].lower(),
             addresses["circuit_breaker"].lower(),
         ],
-        "LidoLendAddGuardian": [addresses["owner"].lower()],
-        "LidoLendRemoveGuardian": [addresses["owner"].lower()],
+        "LidoLendAddGuardian": [addresses["owner"].lower(), addresses["owner"].lower()],
+        "LidoLendRemoveGuardian": [addresses["owner"].lower(), addresses["owner"].lower()],
         "LidoLendReplaceGuardian": [addresses["owner"].lower()],
         "LidoLendSetInstantActivation": [addresses["owner"].lower()],
         "LidoLendSetGuardiansQuorum": [addresses["owner"].lower()],

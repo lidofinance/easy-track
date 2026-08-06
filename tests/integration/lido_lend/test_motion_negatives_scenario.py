@@ -8,7 +8,7 @@ LDO_WHALE = "0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c"
 
 
 def _calldata(market_id, addr):
-    return "0x" + encode(["bytes32", "address"], [market_id, str(addr)]).hex()
+    return "0x" + encode(["bytes32", "address", "uint256"], [market_id, str(addr), 1]).hex()
 
 
 @pytest.fixture
@@ -20,7 +20,10 @@ def registered_add_guardian(
     owner = lido_lend.contract("owner")
     gs.grantRole(gs.MANAGER_ROLE(), admin, {"from": admin})
     factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, owner)
-    register_factory(factory, permission((owner, owner.addGuardian)))
+    register_factory(
+        factory,
+        permission((owner, owner.addGuardian), (owner, owner.setGuardiansQuorum)),
+    )
     return factory, gs, lido_lend.market["id"]
 
 

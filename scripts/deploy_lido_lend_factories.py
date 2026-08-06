@@ -374,9 +374,15 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (circuit_breaker, circuit_breaker.registerPauser.signature),
         )
     if "LidoLendAddGuardian" in selected:
-        permissions["LidoLendAddGuardian"] = _permission((owner, owner.addGuardian.signature))
+        permissions["LidoLendAddGuardian"] = _permission(
+            (owner, owner.addGuardian.signature),
+            (owner, owner.setGuardiansQuorum.signature),
+        )
     if "LidoLendRemoveGuardian" in selected:
-        permissions["LidoLendRemoveGuardian"] = _permission((owner, owner.removeGuardian.signature))
+        permissions["LidoLendRemoveGuardian"] = _permission(
+            (owner, owner.setGuardiansQuorum.signature),
+            (owner, owner.removeGuardian.signature),
+        )
     if "LidoLendReplaceGuardian" in selected:
         permissions["LidoLendReplaceGuardian"] = _permission((owner, owner.replaceGuardian.signature))
     if "LidoLendSetInstantActivation" in selected:

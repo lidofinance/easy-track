@@ -15,8 +15,14 @@ MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 
 
-def create_calldata(market_id, guardian):
-    return "0x" + encode(["bytes32", "address"], [market_id, str(guardian)]).hex()
+def create_calldata(market_id, guardian, new_quorum):
+    return (
+        "0x"
+        + encode(
+            ["bytes32", "address", "uint256"],
+            [market_id, str(guardian), new_quorum],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -55,13 +61,13 @@ def test_deploy(owner, owner_facade, core_stub, factory):
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger))
+        factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger, 1))
 
 
 def test_create_evm_script_market_not_found(owner, factory, stranger):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
     with reverts("MARKET_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
+        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger, 1))
 
 
 def test_create_evm_script_not_guardian(owner, guardian_signals_stub, factory, stranger):
@@ -69,31 +75,63 @@ def test_create_evm_script_not_guardian(owner, guardian_signals_stub, factory, s
     assert not guardian_signals_stub.isGuardian(stranger)
 
     with reverts("GUARDIAN_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 1))
 
 
-def test_create_evm_script_would_break_quorum(owner, guardian_signals_stub, factory, stranger):
-    "Must revert with 'WOULD_BREAK_QUORUM' if removing the guardian would drop the set below quorum"
+def test_create_evm_script_last_guardian(owner, guardian_signals_stub, factory, stranger):
+    "Must not remove the last guardian"
     guardian_signals_stub.setGuardian(stranger, True, {"from": owner})
     guardian_signals_stub.setQuorum(1, {"from": owner})
-    with reverts("WOULD_BREAK_QUORUM"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
+    with reverts("INVALID_QUORUM"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 1))
 
 
-def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
-    "Must create correct EVMScript when the account is currently a guardian"
+def test_create_evm_script_zero_quorum(owner, guardian_signals_stub, factory, stranger):
     guardian_signals_stub.setGuardian(stranger, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "44" * 20, True, {"from": owner})
+    with reverts("INVALID_QUORUM"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 0))
+
+
+def test_create_evm_script_quorum_exceeds_remaining_guardians(owner, guardian_signals_stub, factory, stranger):
+    guardian_signals_stub.setGuardian(stranger, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "44" * 20, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "55" * 20, True, {"from": owner})
+    guardian_signals_stub.setQuorum(3, {"from": owner})
+    with reverts("INVALID_QUORUM"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 3))
+
+
+@pytest.mark.parametrize("current_quorum,new_quorum", [(2, 1), (1, 1), (1, 2)])
+def test_create_evm_script(
+    owner,
+    owner_facade,
+    guardian_signals_stub,
+    factory,
+    stranger,
+    current_quorum,
+    new_quorum,
+):
+    "Must set the requested quorum before removing the guardian"
+    guardian_signals_stub.setGuardian(stranger, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "44" * 20, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "55" * 20, True, {"from": owner})
+    guardian_signals_stub.setQuorum(current_quorum, {"from": owner})
     assert guardian_signals_stub.isGuardian(stranger)
 
-    calldata = create_calldata(MARKET_ID, stranger)
+    calldata = create_calldata(MARKET_ID, stranger, new_quorum)
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
         [
             (
                 owner_facade.address,
+                owner_facade.setGuardiansQuorum.encode_input(MARKET_ID, new_quorum),
+            ),
+            (
+                owner_facade.address,
                 owner_facade.removeGuardian.encode_input(MARKET_ID, stranger),
-            )
+            ),
         ]
     )
     assert evm_script == expected_evm_script
@@ -101,7 +139,8 @@ def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, 
 
 def test_decode_evm_script_call_data(factory, stranger):
     "Must decode EVMScript call data correctly"
-    calldata = create_calldata(MARKET_ID, stranger)
-    decoded_market_id, decoded_guardian = factory.decodeEVMScriptCallData(calldata)
+    calldata = create_calldata(MARKET_ID, stranger, 1)
+    decoded_market_id, decoded_guardian, decoded_new_quorum = factory.decodeEVMScriptCallData(calldata)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_guardian == stranger
+    assert decoded_new_quorum == 1

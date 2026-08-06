@@ -18,6 +18,7 @@ contract LidoLendAddGuardian is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_GUARDIAN_ALREADY_ADDED = "GUARDIAN_ALREADY_ADDED";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
     string private constant ERROR_MAX_GUARDIANS_REACHED = "MAX_GUARDIANS_REACHED";
+    string private constant ERROR_INVALID_QUORUM = "INVALID_QUORUM";
 
     // -------------
     // VARIABLES
@@ -43,7 +44,7 @@ contract LidoLendAddGuardian is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to add a guardian to one Lido Lend market's GuardianSignals registry
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian, uint256 newQuorum)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -51,32 +52,41 @@ contract LidoLendAddGuardian is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, address guardian) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (bytes32 marketId, address guardian, uint256 newQuorum) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
         require(guardian != address(0), ERROR_ZERO_GUARDIAN);
 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(!guardianSignals.isGuardian(guardian), ERROR_GUARDIAN_ALREADY_ADDED);
-        require(
-            guardianSignals.getGuardianCount() < guardianSignals.MAX_GUARDIANS_COUNT(),
-            ERROR_MAX_GUARDIANS_REACHED
-        );
+        uint256 guardianCount = guardianSignals.getGuardianCount();
+        require(guardianCount < guardianSignals.MAX_GUARDIANS_COUNT(), ERROR_MAX_GUARDIANS_REACHED);
+        require(newQuorum != 0 && newQuorum <= guardianCount + 1, ERROR_INVALID_QUORUM);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.addGuardian.selector,
-                abi.encode(marketId, guardian)
-            );
+        bytes4[] memory methodIds = new bytes4[](2);
+        methodIds[0] = lidoLendOwner.addGuardian.selector;
+        methodIds[1] = lidoLendOwner.setGuardiansQuorum.selector;
+
+        bytes[] memory encodedCalldata = new bytes[](2);
+        encodedCalldata[0] = abi.encode(marketId, guardian);
+        encodedCalldata[1] = abi.encode(marketId, newQuorum);
+
+        return EVMScriptCreator.createEVMScript(address(lidoLendOwner), methodIds, encodedCalldata);
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian, uint256 newQuorum)
     /// @return marketId Id of the market whose registry to add to
     /// @return guardian Guardian address to add
+    /// @return newQuorum Quorum to set after adding the guardian
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (bytes32 marketId, address guardian)
+        returns (
+            bytes32 marketId,
+            address guardian,
+            uint256 newQuorum
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -94,8 +104,15 @@ contract LidoLendAddGuardian is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (bytes32 marketId, address guardian)
+        returns (
+            bytes32 marketId,
+            address guardian,
+            uint256 newQuorum
+        )
     {
-        (marketId, guardian) = abi.decode(_evmScriptCallData, (bytes32, address));
+        (marketId, guardian, newQuorum) = abi.decode(
+            _evmScriptCallData,
+            (bytes32, address, uint256)
+        );
     }
 }

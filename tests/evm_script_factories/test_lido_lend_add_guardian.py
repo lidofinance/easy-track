@@ -16,8 +16,14 @@ MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 
 
-def create_calldata(market_id, guardian):
-    return "0x" + encode(["bytes32", "address"], [market_id, str(guardian)]).hex()
+def create_calldata(market_id, guardian, new_quorum):
+    return (
+        "0x"
+        + encode(
+            ["bytes32", "address", "uint256"],
+            [market_id, str(guardian), new_quorum],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -56,19 +62,19 @@ def test_deploy(owner, owner_facade, core_stub, factory):
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger))
+        factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger, 1))
 
 
 def test_create_evm_script_zero_guardian(owner, factory):
     "Must revert with message 'ZERO_GUARDIAN' if the guardian is the zero address"
     with reverts("ZERO_GUARDIAN"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS, 1))
 
 
 def test_create_evm_script_market_not_found(owner, factory, stranger):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
     with reverts("MARKET_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
+        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger, 1))
 
 
 def test_create_evm_script_already_guardian(owner, guardian_signals_stub, factory, stranger):
@@ -77,7 +83,7 @@ def test_create_evm_script_already_guardian(owner, guardian_signals_stub, factor
     assert guardian_signals_stub.isGuardian(stranger)
 
     with reverts("GUARDIAN_ALREADY_ADDED"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 1))
 
 
 def test_create_evm_script_max_guardians_reached(owner, guardian_signals_stub, factory):
@@ -87,14 +93,25 @@ def test_create_evm_script_max_guardians_reached(owner, guardian_signals_stub, f
     assert guardian_signals_stub.getGuardianCount() == guardian_signals_stub.MAX_GUARDIANS_COUNT() == 32
 
     with reverts("MAX_GUARDIANS_REACHED"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, f"0x{33:040x}"))
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, f"0x{33:040x}", 1))
+
+
+@pytest.mark.parametrize("new_quorum", [0, 2])
+def test_create_evm_script_invalid_quorum(owner, factory, stranger, new_quorum):
+    "Must reject a quorum that is invalid after adding the first guardian"
+    with reverts("INVALID_QUORUM"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, new_quorum))
 
 
 def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
-    "Must create correct EVMScript when the account is not yet a guardian"
+    "Must add the guardian and set the requested quorum"
     assert not guardian_signals_stub.isGuardian(stranger)
+    guardian_signals_stub.setGuardian("0x" + "44" * 20, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "55" * 20, True, {"from": owner})
+    guardian_signals_stub.setGuardian("0x" + "66" * 20, True, {"from": owner})
+    guardian_signals_stub.setQuorum(3, {"from": owner})
 
-    calldata = create_calldata(MARKET_ID, stranger)
+    calldata = create_calldata(MARKET_ID, stranger, 4)
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
@@ -102,7 +119,11 @@ def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, 
             (
                 owner_facade.address,
                 owner_facade.addGuardian.encode_input(MARKET_ID, stranger),
-            )
+            ),
+            (
+                owner_facade.address,
+                owner_facade.setGuardiansQuorum.encode_input(MARKET_ID, 4),
+            ),
         ]
     )
     assert evm_script == expected_evm_script
@@ -110,10 +131,11 @@ def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, 
 
 def test_decode_evm_script_call_data(factory, stranger):
     "Must decode EVMScript call data correctly"
-    calldata = create_calldata(MARKET_ID, stranger)
-    decoded_market_id, decoded_guardian = factory.decodeEVMScriptCallData(calldata)
+    calldata = create_calldata(MARKET_ID, stranger, 4)
+    decoded_market_id, decoded_guardian, decoded_new_quorum = factory.decodeEVMScriptCallData(calldata)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_guardian == stranger
+    assert decoded_new_quorum == 4
 
 
 def test_targets_facade_for_every_market(owner, stranger):
@@ -129,9 +151,19 @@ def test_targets_facade_for_every_market(owner, stranger):
     facade.setCore(core, {"from": owner})
 
     factory = LidoLendAddGuardian.deploy(owner, facade, {"from": owner})
-    script_a = factory.createEVMScript(owner, create_calldata(market_a, stranger))
-    script_b = factory.createEVMScript(owner, create_calldata(market_b, stranger))
+    script_a = factory.createEVMScript(owner, create_calldata(market_a, stranger, 1))
+    script_b = factory.createEVMScript(owner, create_calldata(market_b, stranger, 1))
 
-    assert script_a == encode_call_script([(facade.address, facade.addGuardian.encode_input(market_a, stranger))])
-    assert script_b == encode_call_script([(facade.address, facade.addGuardian.encode_input(market_b, stranger))])
+    assert script_a == encode_call_script(
+        [
+            (facade.address, facade.addGuardian.encode_input(market_a, stranger)),
+            (facade.address, facade.setGuardiansQuorum.encode_input(market_a, 1)),
+        ]
+    )
+    assert script_b == encode_call_script(
+        [
+            (facade.address, facade.addGuardian.encode_input(market_b, stranger)),
+            (facade.address, facade.setGuardiansQuorum.encode_input(market_b, 1)),
+        ]
+    )
     assert script_a != script_b

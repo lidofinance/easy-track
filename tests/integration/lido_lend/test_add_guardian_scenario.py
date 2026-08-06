@@ -11,10 +11,20 @@ def test_add_guardian_scenario(
     gs = lido_lend.contract("guardianSignals")
     market_id = lido_lend.market["id"]
     assert not gs.isGuardian(NEW_GUARDIAN)
+    old_quorum = gs.getQuorum()
 
     owner = lido_lend.contract("owner")
     factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, owner)
-    register_factory(factory, permission((owner, owner.addGuardian)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, NEW_GUARDIAN]).hex(), trusted_caller)
+    register_factory(
+        factory,
+        permission((owner, owner.addGuardian), (owner, owner.setGuardiansQuorum)),
+    )
+    enact_motion(
+        easy_track,
+        factory,
+        "0x" + encode(["bytes32", "address", "uint256"], [market_id, NEW_GUARDIAN, old_quorum + 1]).hex(),
+        trusted_caller,
+    )
 
     assert gs.isGuardian(NEW_GUARDIAN)
+    assert gs.getQuorum() == old_quorum + 1

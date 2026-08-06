@@ -15,7 +15,7 @@ contract LidoLendRemoveGuardian is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     string private constant ERROR_GUARDIAN_NOT_FOUND = "GUARDIAN_NOT_FOUND";
-    string private constant ERROR_WOULD_BREAK_QUORUM = "WOULD_BREAK_QUORUM";
+    string private constant ERROR_INVALID_QUORUM = "INVALID_QUORUM";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
@@ -42,7 +42,7 @@ contract LidoLendRemoveGuardian is TrustedCaller, IEVMScriptFactory {
 
     /// @notice Creates EVMScript to remove a guardian from one Lido Lend market's GuardianSignals registry
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian, uint256 newQuorum)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -50,31 +50,41 @@ contract LidoLendRemoveGuardian is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32 marketId, address guardian) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (bytes32 marketId, address guardian, uint256 newQuorum) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(guardianSignals.isGuardian(guardian), ERROR_GUARDIAN_NOT_FOUND);
         require(
-            guardianSignals.getGuardianCount() > guardianSignals.getQuorum(),
-            ERROR_WOULD_BREAK_QUORUM
+            newQuorum != 0 && newQuorum < guardianSignals.getGuardianCount(),
+            ERROR_INVALID_QUORUM
         );
 
-        return
-            EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.removeGuardian.selector,
-                abi.encode(marketId, guardian)
-            );
+        bytes4[] memory methodIds = new bytes4[](2);
+        methodIds[0] = lidoLendOwner.setGuardiansQuorum.selector;
+        methodIds[1] = lidoLendOwner.removeGuardian.selector;
+
+        bytes[] memory encodedCalldata = new bytes[](2);
+        encodedCalldata[0] = abi.encode(marketId, newQuorum);
+        encodedCalldata[1] = abi.encode(marketId, guardian);
+
+        return EVMScriptCreator.createEVMScript(address(lidoLendOwner), methodIds, encodedCalldata);
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian)
+    /// @param _evmScriptCallData Encoded (bytes32 marketId, address guardian, uint256 newQuorum)
     /// @return marketId Id of the market whose registry to remove from
     /// @return guardian Guardian address to remove
+    /// @return newQuorum Quorum to set before removing the guardian
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (bytes32 marketId, address guardian)
+        returns (
+            bytes32 marketId,
+            address guardian,
+            uint256 newQuorum
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -92,8 +102,15 @@ contract LidoLendRemoveGuardian is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (bytes32 marketId, address guardian)
+        returns (
+            bytes32 marketId,
+            address guardian,
+            uint256 newQuorum
+        )
     {
-        (marketId, guardian) = abi.decode(_evmScriptCallData, (bytes32, address));
+        (marketId, guardian, newQuorum) = abi.decode(
+            _evmScriptCallData,
+            (bytes32, address, uint256)
+        );
     }
 }

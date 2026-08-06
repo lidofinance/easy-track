@@ -13,11 +13,21 @@ def test_remove_guardian_scenario(
 
     gs.grantRole(gs.MANAGER_ROLE(), admin, {"from": admin})
     gs.addGuardian(GUARDIAN, {"from": admin})
+    gs.setQuorum(2, {"from": admin})
     assert gs.isGuardian(GUARDIAN)
 
     owner = lido_lend.contract("owner")
     factory = deployer.deploy(LidoLendRemoveGuardian, trusted_caller, owner)
-    register_factory(factory, permission((owner, owner.removeGuardian)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, GUARDIAN]).hex(), trusted_caller)
+    register_factory(
+        factory,
+        permission((owner, owner.setGuardiansQuorum), (owner, owner.removeGuardian)),
+    )
+    enact_motion(
+        easy_track,
+        factory,
+        "0x" + encode(["bytes32", "address", "uint256"], [market_id, GUARDIAN, 1]).hex(),
+        trusted_caller,
+    )
 
     assert not gs.isGuardian(GUARDIAN)
+    assert gs.getQuorum() == 1
