@@ -878,11 +878,6 @@
         ]
       },
       {
-        "name": "supplyShares",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
         "name": "borrowShares",
         "type": "uint256",
         "internalType": "uint256"

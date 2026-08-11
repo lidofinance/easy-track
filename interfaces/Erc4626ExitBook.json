@@ -95,7 +95,33 @@
   },
   {
     "type": "function",
+    "name": "PAUSER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "RECOVERER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "RESUMER_ROLE",
     "inputs": [],
     "outputs": [
       {
@@ -142,14 +168,14 @@
         "internalType": "uint256"
       },
       {
-        "name": "depositAssets",
+        "name": "fillAssets",
         "type": "uint256",
         "internalType": "uint256"
       },
       {
-        "name": "minAssetsOut",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "rewardRecipient",
+        "type": "address",
+        "internalType": "address"
       }
     ],
     "outputs": [],
@@ -177,22 +203,47 @@
             "internalType": "address"
           },
           {
+            "name": "createdAt",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "deadline",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "receiver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum ExitStatus"
+          },
+          {
             "name": "asset",
             "type": "address",
             "internalType": "contract IERC20"
           },
           {
-            "name": "sizeRemaining",
+            "name": "assetsRemaining",
             "type": "uint128",
             "internalType": "uint128"
           },
           {
-            "name": "sizeTotal",
+            "name": "assetsTotal",
             "type": "uint128",
             "internalType": "uint128"
           },
           {
-            "name": "pricePerShare",
+            "name": "minFillAssets",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxShareBurn",
             "type": "uint128",
             "internalType": "uint128"
           },
@@ -215,26 +266,6 @@
             "name": "rampEnd",
             "type": "uint32",
             "internalType": "uint32"
-          },
-          {
-            "name": "createdAt",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "deadline",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "fullFillOnly",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum ExitStatus"
           }
         ]
       }
@@ -291,114 +322,6 @@
   },
   {
     "type": "function",
-    "name": "getRequestPreviews",
-    "inputs": [
-      {
-        "name": "ids",
-        "type": "uint256[]",
-        "internalType": "uint256[]"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "previews",
-        "type": "tuple[]",
-        "internalType": "struct RequestPreview[]",
-        "components": [
-          {
-            "name": "id",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "request",
-            "type": "tuple",
-            "internalType": "struct Request",
-            "components": [
-              {
-                "name": "owner",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "asset",
-                "type": "address",
-                "internalType": "contract IERC20"
-              },
-              {
-                "name": "sizeRemaining",
-                "type": "uint128",
-                "internalType": "uint128"
-              },
-              {
-                "name": "sizeTotal",
-                "type": "uint128",
-                "internalType": "uint128"
-              },
-              {
-                "name": "pricePerShare",
-                "type": "uint128",
-                "internalType": "uint128"
-              },
-              {
-                "name": "startRate",
-                "type": "uint96",
-                "internalType": "uint96"
-              },
-              {
-                "name": "endRate",
-                "type": "uint96",
-                "internalType": "uint96"
-              },
-              {
-                "name": "rampStart",
-                "type": "uint32",
-                "internalType": "uint32"
-              },
-              {
-                "name": "rampEnd",
-                "type": "uint32",
-                "internalType": "uint32"
-              },
-              {
-                "name": "createdAt",
-                "type": "uint40",
-                "internalType": "uint40"
-              },
-              {
-                "name": "deadline",
-                "type": "uint40",
-                "internalType": "uint40"
-              },
-              {
-                "name": "fullFillOnly",
-                "type": "bool",
-                "internalType": "bool"
-              },
-              {
-                "name": "status",
-                "type": "uint8",
-                "internalType": "enum ExitStatus"
-              }
-            ]
-          },
-          {
-            "name": "filledShares",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "assetsOut",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "getRequests",
     "inputs": [
       {
@@ -419,22 +342,47 @@
             "internalType": "address"
           },
           {
+            "name": "createdAt",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "deadline",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "receiver",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "status",
+            "type": "uint8",
+            "internalType": "enum ExitStatus"
+          },
+          {
             "name": "asset",
             "type": "address",
             "internalType": "contract IERC20"
           },
           {
-            "name": "sizeRemaining",
+            "name": "assetsRemaining",
             "type": "uint128",
             "internalType": "uint128"
           },
           {
-            "name": "sizeTotal",
+            "name": "assetsTotal",
             "type": "uint128",
             "internalType": "uint128"
           },
           {
-            "name": "pricePerShare",
+            "name": "minFillAssets",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxShareBurn",
             "type": "uint128",
             "internalType": "uint128"
           },
@@ -457,26 +405,6 @@
             "name": "rampEnd",
             "type": "uint32",
             "internalType": "uint32"
-          },
-          {
-            "name": "createdAt",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "deadline",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "fullFillOnly",
-            "type": "bool",
-            "internalType": "bool"
-          },
-          {
-            "name": "status",
-            "type": "uint8",
-            "internalType": "enum ExitStatus"
           }
         ]
       }
@@ -498,6 +426,68 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMember",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMemberCount",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMembers",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
       }
     ],
     "stateMutability": "view"
@@ -578,6 +568,26 @@
   },
   {
     "type": "function",
+    "name": "pause",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "paused",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "placeExitRequest",
     "inputs": [
       {
@@ -586,7 +596,22 @@
         "internalType": "contract IERC4626"
       },
       {
-        "name": "shares",
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "receiver",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "minFillAssets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxShareBurn",
         "type": "uint256",
         "internalType": "uint256"
       },
@@ -621,11 +646,6 @@
         "name": "deadline",
         "type": "uint256",
         "internalType": "uint256"
-      },
-      {
-        "name": "fullFillOnly",
-        "type": "bool",
-        "internalType": "bool"
       }
     ],
     "outputs": [
@@ -636,114 +656,6 @@
       }
     ],
     "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
-    "name": "previewFill",
-    "inputs": [
-      {
-        "name": "id",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "outputs": [
-      {
-        "name": "",
-        "type": "tuple",
-        "internalType": "struct RequestPreview",
-        "components": [
-          {
-            "name": "id",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "request",
-            "type": "tuple",
-            "internalType": "struct Request",
-            "components": [
-              {
-                "name": "owner",
-                "type": "address",
-                "internalType": "address"
-              },
-              {
-                "name": "asset",
-                "type": "address",
-                "internalType": "contract IERC20"
-              },
-              {
-                "name": "sizeRemaining",
-                "type": "uint128",
-                "internalType": "uint128"
-              },
-              {
-                "name": "sizeTotal",
-                "type": "uint128",
-                "internalType": "uint128"
-              },
-              {
-                "name": "pricePerShare",
-                "type": "uint128",
-                "internalType": "uint128"
-              },
-              {
-                "name": "startRate",
-                "type": "uint96",
-                "internalType": "uint96"
-              },
-              {
-                "name": "endRate",
-                "type": "uint96",
-                "internalType": "uint96"
-              },
-              {
-                "name": "rampStart",
-                "type": "uint32",
-                "internalType": "uint32"
-              },
-              {
-                "name": "rampEnd",
-                "type": "uint32",
-                "internalType": "uint32"
-              },
-              {
-                "name": "createdAt",
-                "type": "uint40",
-                "internalType": "uint40"
-              },
-              {
-                "name": "deadline",
-                "type": "uint40",
-                "internalType": "uint40"
-              },
-              {
-                "name": "fullFillOnly",
-                "type": "bool",
-                "internalType": "bool"
-              },
-              {
-                "name": "status",
-                "type": "uint8",
-                "internalType": "enum ExitStatus"
-              }
-            ]
-          },
-          {
-            "name": "filledShares",
-            "type": "uint256",
-            "internalType": "uint256"
-          },
-          {
-            "name": "assetsOut",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      }
-    ],
-    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -842,6 +754,13 @@
         "internalType": "address"
       }
     ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "resume",
+    "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
   },
@@ -1074,7 +993,13 @@
         "internalType": "uint256"
       },
       {
-        "name": "filler",
+        "name": "executor",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "rewardRecipient",
         "type": "address",
         "indexed": true,
         "internalType": "address"
@@ -1086,19 +1011,19 @@
         "internalType": "address"
       },
       {
-        "name": "filledShares",
+        "name": "filledAssets",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "lenderAssets",
+        "name": "sharesBurned",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
       },
       {
-        "name": "fillerFee",
+        "name": "fillerReward",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1129,13 +1054,31 @@
         "internalType": "address"
       },
       {
+        "name": "receiver",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
         "name": "asset",
         "type": "address",
         "indexed": false,
         "internalType": "address"
       },
       {
-        "name": "shares",
+        "name": "assets",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "minFillAssets",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxShareBurn",
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
@@ -1173,12 +1116,19 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
-      },
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Paused",
+    "inputs": [
       {
-        "name": "fullFillOnly",
-        "type": "bool",
+        "name": "account",
+        "type": "address",
         "indexed": false,
-        "internalType": "bool"
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1279,6 +1229,19 @@
   },
   {
     "type": "event",
+    "name": "Unpaused",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
     "name": "VaultAllowedSet",
     "inputs": [
       {
@@ -1319,8 +1282,19 @@
   },
   {
     "type": "error",
-    "name": "AssetsOutBelowMin",
-    "inputs": []
+    "name": "AssetsOutMismatch",
+    "inputs": [
+      {
+        "name": "expected",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "actual",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -1330,6 +1304,11 @@
   {
     "type": "error",
     "name": "DeadlineTooFar",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "EnforcedPause",
     "inputs": []
   },
   {
@@ -1349,18 +1328,56 @@
   },
   {
     "type": "error",
+    "name": "FillBelowMinimum",
+    "inputs": [
+      {
+        "name": "requested",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minimum",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "FillExceedsRemaining",
+    "inputs": [
+      {
+        "name": "requested",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "remaining",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "InsufficientBacking",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "NoAssetsRedeemed",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "NoFillableShares",
-    "inputs": []
+    "name": "MaxShareBurnBelowQuote",
+    "inputs": [
+      {
+        "name": "maximum",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "quote",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -1421,6 +1438,22 @@
   },
   {
     "type": "error",
+    "name": "ShareBurnExceedsMaximum",
+    "inputs": [
+      {
+        "name": "actual",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maximum",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "StartFeeAboveEnd",
     "inputs": []
   },
@@ -1436,22 +1469,17 @@
   },
   {
     "type": "error",
+    "name": "ZeroAssets",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "ZeroMaxLifetime",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "ZeroPricePerShare",
-    "inputs": []
-  },
-  {
-    "type": "error",
     "name": "ZeroRecipient",
-    "inputs": []
-  },
-  {
-    "type": "error",
-    "name": "ZeroShares",
     "inputs": []
   },
   {

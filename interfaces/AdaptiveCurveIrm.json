@@ -35,6 +35,51 @@
   },
   {
     "type": "function",
+    "name": "applyIrmConfig",
+    "inputs": [
+      {
+        "name": "marketParams",
+        "type": "tuple",
+        "internalType": "struct MarketParams",
+        "components": [
+          {
+            "name": "loanToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "collateralToken",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "oracle",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "irm",
+            "type": "address",
+            "internalType": "address"
+          },
+          {
+            "name": "lltv",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      },
+      {
+        "name": "config",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "borrowRate",
     "inputs": [
       {
@@ -278,51 +323,6 @@
   },
   {
     "type": "function",
-    "name": "applyIrmConfig",
-    "inputs": [
-      {
-        "name": "marketParams",
-        "type": "tuple",
-        "internalType": "struct MarketParams",
-        "components": [
-          {
-            "name": "loanToken",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "collateralToken",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "oracle",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "irm",
-            "type": "address",
-            "internalType": "address"
-          },
-          {
-            "name": "lltv",
-            "type": "uint256",
-            "internalType": "uint256"
-          }
-        ]
-      },
-      {
-        "name": "config",
-        "type": "address",
-        "internalType": "address"
-      }
-    ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
-  },
-  {
-    "type": "function",
     "name": "transferOwnership",
     "inputs": [
       {
@@ -361,19 +361,6 @@
   },
   {
     "type": "event",
-    "name": "ManagerSet",
-    "inputs": [
-      {
-        "name": "manager",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "IrmConfigApplied",
     "inputs": [
       {
@@ -384,6 +371,19 @@
       },
       {
         "name": "config",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "ManagerSet",
+    "inputs": [
+      {
+        "name": "manager",
         "type": "address",
         "indexed": true,
         "internalType": "address"

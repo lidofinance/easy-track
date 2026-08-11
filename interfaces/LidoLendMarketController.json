@@ -25,19 +25,6 @@
   },
   {
     "type": "function",
-    "name": "DUST_MARKET_MIN_BORROW",
-    "inputs": [],
-    "outputs": [
-      {
-        "name": "",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ],
-    "stateMutability": "view"
-  },
-  {
-    "type": "function",
     "name": "FREEZER_ROLE",
     "inputs": [],
     "outputs": [
@@ -71,6 +58,19 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_BORROW_SHARE_RATE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "stateMutability": "view"
@@ -260,21 +260,65 @@
   },
   {
     "type": "function",
-    "name": "setInstantActivation",
+    "name": "getRoleMember",
     "inputs": [
       {
-        "name": "caller",
-        "type": "address",
-        "internalType": "address"
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
       },
       {
-        "name": "enabled",
-        "type": "bool",
-        "internalType": "bool"
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
-    "outputs": [],
-    "stateMutability": "nonpayable"
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMemberCount",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMembers",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -293,6 +337,19 @@
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "guardianSignals",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -526,7 +583,13 @@
   {
     "type": "function",
     "name": "nextSettlementBorrower",
-    "inputs": [],
+    "inputs": [
+      {
+        "name": "budgetSupplyShares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
     "outputs": [
       {
         "name": "borrower",
@@ -534,19 +597,26 @@
         "internalType": "address"
       },
       {
-        "name": "supplyShares",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "borrowShares",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "remainingBorrowShares",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "slice",
+        "type": "tuple",
+        "internalType": "struct SettlementSlice",
+        "components": [
+          {
+            "name": "supplyShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "borrowShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "remainingBorrowShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -649,7 +719,12 @@
             "internalType": "bool"
           },
           {
-            "name": "slice",
+            "name": "personalSliceAssets",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "queueRootSliceAssets",
             "type": "uint256",
             "internalType": "uint256"
           }
@@ -756,6 +831,24 @@
             "internalType": "uint40"
           }
         ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setInstantActivation",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "enabled",
+        "type": "bool",
+        "internalType": "bool"
       }
     ],
     "outputs": [],
@@ -907,23 +1000,64 @@
         "name": "borrower",
         "type": "address",
         "internalType": "address"
+      },
+      {
+        "name": "budgetSupplyShares",
+        "type": "uint256",
+        "internalType": "uint256"
       }
     ],
     "outputs": [
       {
-        "name": "supplyShares",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "borrowShares",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "remainingBorrowShares",
-        "type": "uint256",
-        "internalType": "uint256"
+        "name": "quote",
+        "type": "tuple",
+        "internalType": "struct SettlementQuote",
+        "components": [
+          {
+            "name": "personal",
+            "type": "tuple",
+            "internalType": "struct SettlementSlice",
+            "components": [
+              {
+                "name": "supplyShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "borrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "remainingBorrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "queueRoot",
+            "type": "tuple",
+            "internalType": "struct SettlementSlice",
+            "components": [
+              {
+                "name": "supplyShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "borrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "remainingBorrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
       }
     ],
     "stateMutability": "view"
@@ -1203,6 +1337,12 @@
         "internalType": "address"
       },
       {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
         "name": "position",
         "type": "tuple",
         "indexed": false,
@@ -1292,6 +1432,19 @@
       },
       {
         "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GuardianSignalsSet",
+    "inputs": [
+      {
+        "name": "guardianSignals",
         "type": "address",
         "indexed": true,
         "internalType": "address"
@@ -1521,24 +1674,18 @@
   },
   {
     "type": "error",
+    "name": "ActivationLockActive",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "AddressBanned",
     "inputs": []
   },
   {
     "type": "error",
-    "name": "BorrowBelowDustMarketMinimum",
-    "inputs": [
-      {
-        "name": "minimum",
-        "type": "uint256",
-        "internalType": "uint256"
-      },
-      {
-        "name": "attempted",
-        "type": "uint256",
-        "internalType": "uint256"
-      }
-    ]
+    "name": "BorrowShareRateExceeded",
+    "inputs": []
   },
   {
     "type": "error",
@@ -1602,6 +1749,11 @@
   },
   {
     "type": "error",
+    "name": "MaxGuardiansQuorumDelayExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "NotInitializing",
     "inputs": []
   },
@@ -1658,6 +1810,11 @@
   },
   {
     "type": "error",
+    "name": "SettlementExceedsSettleableSupply",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "SettlementLtvOutOfRange",
     "inputs": []
   },
@@ -1689,6 +1846,11 @@
   },
   {
     "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "ZeroBorrowAssets",
     "inputs": []
   },
@@ -1711,18 +1873,5 @@
     "type": "error",
     "name": "ZeroPauseDuration",
     "inputs": []
-  },
-  {
-    "inputs": [],
-    "name": "guardianSignals",
-    "outputs": [
-      {
-        "internalType": "address",
-        "name": "",
-        "type": "address"
-      }
-    ],
-    "stateMutability": "view",
-    "type": "function"
   }
 ]

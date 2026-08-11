@@ -105,6 +105,24 @@
   },
   {
     "type": "function",
+    "name": "addGuardian",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "guardian",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "createMarket",
     "inputs": [
       {
@@ -214,6 +232,68 @@
   },
   {
     "type": "function",
+    "name": "getRoleMember",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMemberCount",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMembers",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
     "name": "grantRole",
     "inputs": [
       {
@@ -256,6 +336,24 @@
   },
   {
     "type": "function",
+    "name": "removeGuardian",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "guardian",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "renounceRole",
     "inputs": [
       {
@@ -265,6 +363,29 @@
       },
       {
         "name": "callerConfirmation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "replaceGuardian",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "oldGuardian",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newGuardian",
         "type": "address",
         "internalType": "address"
       }
@@ -350,6 +471,188 @@
   },
   {
     "type": "function",
+    "name": "setGuardiansQuorum",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "quorum",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setGuardiansSuspectWindow",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "suspectWindow",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setInstantActivation",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "enabled",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMarketCollateralActivationConfig",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct CollateralActivationConfig",
+        "components": [
+          {
+            "name": "minActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxDelayInflow",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingLockAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingLockDuration",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "minActivationAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxGuardiansQuorumDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerStrike",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerSuspect",
+            "type": "uint40",
+            "internalType": "uint40"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMarketSettlementConfig",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct SettlementConfig",
+        "components": [
+          {
+            "name": "sliceFloorBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "sliceFloorAssets",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "fullCutBelowCollateral",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "ltvStepBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setMarketSupplyCap",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "cap",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "supportsInterface",
     "inputs": [
       {
@@ -375,6 +678,37 @@
         "name": "newOwner",
         "type": "address",
         "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "unbanGuardianSignals",
+    "inputs": [
+      {
+        "name": "marketIds",
+        "type": "bytes32[]",
+        "internalType": "Id[]"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "unfreezeMarket",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
       }
     ],
     "outputs": [],
@@ -491,277 +825,5 @@
     "type": "error",
     "name": "ZeroAddress",
     "inputs": []
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "cap",
-        "type": "uint256"
-      }
-    ],
-    "name": "setMarketSupplyCap",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "oldGuardian",
-        "type": "address"
-      },
-      {
-        "internalType": "address",
-        "name": "newGuardian",
-        "type": "address"
-      }
-    ],
-    "name": "replaceGuardian",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      }
-    ],
-    "name": "unfreezeMarket",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint40",
-            "name": "minActivationDelay",
-            "type": "uint40"
-          },
-          {
-            "internalType": "uint40",
-            "name": "maxActivationDelay",
-            "type": "uint40"
-          },
-          {
-            "internalType": "uint128",
-            "name": "maxDelayInflow",
-            "type": "uint128"
-          },
-          {
-            "internalType": "uint128",
-            "name": "activatingLockAmount",
-            "type": "uint128"
-          },
-          {
-            "internalType": "uint40",
-            "name": "activatingLockDuration",
-            "type": "uint40"
-          },
-          {
-            "internalType": "uint128",
-            "name": "minActivationAmount",
-            "type": "uint128"
-          },
-          {
-            "internalType": "uint40",
-            "name": "maxGuardiansQuorumDelay",
-            "type": "uint40"
-          },
-          {
-            "internalType": "uint40",
-            "name": "delayPerStrike",
-            "type": "uint40"
-          },
-          {
-            "internalType": "uint40",
-            "name": "delayPerSuspect",
-            "type": "uint40"
-          }
-        ],
-        "internalType": "struct CollateralActivationConfig",
-        "name": "config",
-        "type": "tuple"
-      }
-    ],
-    "name": "setMarketCollateralActivationConfig",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "components": [
-          {
-            "internalType": "uint16",
-            "name": "sliceFloorBps",
-            "type": "uint16"
-          },
-          {
-            "internalType": "uint96",
-            "name": "sliceFloorAssets",
-            "type": "uint96"
-          },
-          {
-            "internalType": "uint96",
-            "name": "fullCutBelowCollateral",
-            "type": "uint96"
-          },
-          {
-            "internalType": "uint16",
-            "name": "ltvStepBps",
-            "type": "uint16"
-          }
-        ],
-        "internalType": "struct SettlementConfig",
-        "name": "config",
-        "type": "tuple"
-      }
-    ],
-    "name": "setMarketSettlementConfig",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "caller",
-        "type": "address"
-      },
-      {
-        "internalType": "bool",
-        "name": "enabled",
-        "type": "bool"
-      }
-    ],
-    "name": "setInstantActivation",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "guardian",
-        "type": "address"
-      }
-    ],
-    "name": "addGuardian",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "address",
-        "name": "guardian",
-        "type": "address"
-      }
-    ],
-    "name": "removeGuardian",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "quorum",
-        "type": "uint256"
-      }
-    ],
-    "name": "setGuardiansQuorum",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id",
-        "name": "marketId",
-        "type": "bytes32"
-      },
-      {
-        "internalType": "uint256",
-        "name": "suspectWindow",
-        "type": "uint256"
-      }
-    ],
-    "name": "setGuardiansSuspectWindow",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
-  },
-  {
-    "inputs": [
-      {
-        "internalType": "Id[]",
-        "name": "marketIds",
-        "type": "bytes32[]"
-      },
-      {
-        "internalType": "address",
-        "name": "account",
-        "type": "address"
-      }
-    ],
-    "name": "unbanGuardianSignals",
-    "outputs": [],
-    "stateMutability": "nonpayable",
-    "type": "function"
   }
 ]

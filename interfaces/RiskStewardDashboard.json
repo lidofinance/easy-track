@@ -74,6 +74,19 @@
   },
   {
     "type": "function",
+    "name": "freezeMarket",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "getRoleAdmin",
     "inputs": [
       {
@@ -87,6 +100,68 @@
         "name": "",
         "type": "bytes32",
         "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMember",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMemberCount",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMembers",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
       }
     ],
     "stateMutability": "view"
@@ -166,12 +241,17 @@
         "internalType": "Id"
       },
       {
-        "name": "newMin",
+        "name": "newMinActivationDelay",
         "type": "uint40",
         "internalType": "uint40"
       },
       {
-        "name": "newMax",
+        "name": "newMaxActivationDelay",
+        "type": "uint40",
+        "internalType": "uint40"
+      },
+      {
+        "name": "newMaxGuardiansQuorumDelay",
         "type": "uint40",
         "internalType": "uint40"
       }
@@ -325,15 +405,15 @@
       },
       {
         "name": "newAmount",
-        "type": "uint128",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint128"
+        "internalType": "uint256"
       },
       {
         "name": "newDuration",
-        "type": "uint40",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint40"
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -349,16 +429,41 @@
         "internalType": "Id"
       },
       {
-        "name": "newMin",
-        "type": "uint40",
+        "name": "newMinActivationDelay",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint40"
+        "internalType": "uint256"
       },
       {
-        "name": "newMax",
-        "type": "uint40",
+        "name": "newMaxActivationDelay",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint40"
+        "internalType": "uint256"
+      },
+      {
+        "name": "newMaxGuardiansQuorumDelay",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InstantActivationRevoked",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "Id"
+      },
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -504,5 +609,15 @@
         "internalType": "Id"
       }
     ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroSteward",
+    "inputs": []
   }
 ]

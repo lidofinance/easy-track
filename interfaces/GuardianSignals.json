@@ -123,35 +123,37 @@
         "internalType": "Id"
       },
       {
+        "name": "onBehalf",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "accounts",
         "type": "address[]",
         "internalType": "address[]"
-      },
-      {
-        "name": "lastScannedBlock",
-        "type": "tuple",
-        "internalType": "struct BlockInfoWithHash",
-        "components": [
-          {
-            "name": "hash",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "number",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "timestamp",
-            "type": "uint40",
-            "internalType": "uint40"
-          }
-        ]
       }
     ],
     "outputs": [],
     "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getDelegate",
+    "inputs": [
+      {
+        "name": "guardian",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
   },
   {
     "type": "function",
@@ -196,7 +198,12 @@
     "inputs": [],
     "outputs": [
       {
-        "name": "",
+        "name": "guardians",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "delegates",
         "type": "address[]",
         "internalType": "address[]"
       }
@@ -487,6 +494,11 @@
     "name": "heartbeat",
     "inputs": [
       {
+        "name": "onBehalf",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "lastScannedBlock",
         "type": "tuple",
         "internalType": "struct BlockInfoWithHash",
@@ -629,6 +641,24 @@
   },
   {
     "type": "function",
+    "name": "replaceGuardian",
+    "inputs": [
+      {
+        "name": "oldGuardian",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "newGuardian",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
     "name": "revokeRole",
     "inputs": [
       {
@@ -638,6 +668,19 @@
       },
       {
         "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setDelegate",
+    "inputs": [
+      {
+        "name": "newDelegate",
         "type": "address",
         "internalType": "address"
       }
@@ -700,31 +743,14 @@
         "internalType": "Id"
       },
       {
+        "name": "onBehalf",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "accounts",
         "type": "address[]",
         "internalType": "address[]"
-      },
-      {
-        "name": "lastScannedBlock",
-        "type": "tuple",
-        "internalType": "struct BlockInfoWithHash",
-        "components": [
-          {
-            "name": "hash",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "number",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "timestamp",
-            "type": "uint40",
-            "internalType": "uint40"
-          }
-        ]
       }
     ],
     "outputs": [],
@@ -732,7 +758,7 @@
   },
   {
     "type": "function",
-    "name": "syncQuorumBlock",
+    "name": "syncQuorumFrontier",
     "inputs": [],
     "outputs": [],
     "stateMutability": "nonpayable"
@@ -765,31 +791,14 @@
         "internalType": "Id"
       },
       {
+        "name": "onBehalf",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "accounts",
         "type": "address[]",
         "internalType": "address[]"
-      },
-      {
-        "name": "lastScannedBlock",
-        "type": "tuple",
-        "internalType": "struct BlockInfoWithHash",
-        "components": [
-          {
-            "name": "hash",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "number",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "timestamp",
-            "type": "uint40",
-            "internalType": "uint40"
-          }
-        ]
       }
     ],
     "outputs": [],
@@ -805,31 +814,14 @@
         "internalType": "Id"
       },
       {
+        "name": "onBehalf",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
         "name": "accounts",
         "type": "address[]",
         "internalType": "address[]"
-      },
-      {
-        "name": "lastScannedBlock",
-        "type": "tuple",
-        "internalType": "struct BlockInfoWithHash",
-        "components": [
-          {
-            "name": "hash",
-            "type": "bytes32",
-            "internalType": "bytes32"
-          },
-          {
-            "name": "number",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "timestamp",
-            "type": "uint40",
-            "internalType": "uint40"
-          }
-        ]
       }
     ],
     "outputs": [],
@@ -847,6 +839,31 @@
       },
       {
         "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "DelegateSet",
+    "inputs": [
+      {
+        "name": "guardian",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "oldDelegate",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newDelegate",
         "type": "address",
         "indexed": true,
         "internalType": "address"
@@ -878,9 +895,9 @@
       },
       {
         "name": "strikes",
-        "type": "uint16",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint16"
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -908,10 +925,16 @@
         "internalType": "address"
       },
       {
-        "name": "strikes",
-        "type": "uint16",
+        "name": "actor",
+        "type": "address",
         "indexed": false,
-        "internalType": "uint16"
+        "internalType": "address"
+      },
+      {
+        "name": "strikes",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -954,15 +977,15 @@
       },
       {
         "name": "blockNumber",
-        "type": "uint40",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint40"
+        "internalType": "uint256"
       },
       {
         "name": "timestamp",
-        "type": "uint40",
+        "type": "uint256",
         "indexed": false,
-        "internalType": "uint40"
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -976,6 +999,25 @@
         "type": "uint64",
         "indexed": false,
         "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "QuorumFrontierAdvanced",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1089,6 +1131,12 @@
         "type": "address",
         "indexed": true,
         "internalType": "address"
+      },
+      {
+        "name": "actor",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
       }
     ],
     "anonymous": false
@@ -1154,6 +1202,12 @@
         "internalType": "address"
       },
       {
+        "name": "actor",
+        "type": "address",
+        "indexed": false,
+        "internalType": "address"
+      },
+      {
         "name": "timestamp",
         "type": "uint256",
         "indexed": false,
@@ -1210,10 +1264,16 @@
         "internalType": "address"
       },
       {
-        "name": "strikes",
-        "type": "uint16",
+        "name": "actor",
+        "type": "address",
         "indexed": false,
-        "internalType": "uint16"
+        "internalType": "address"
+      },
+      {
+        "name": "strikes",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false
@@ -1308,6 +1368,11 @@
   {
     "type": "error",
     "name": "TimestampInTheFuture",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "Unauthorized",
     "inputs": []
   },
   {
