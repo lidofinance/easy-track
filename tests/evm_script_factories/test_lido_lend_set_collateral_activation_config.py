@@ -88,6 +88,12 @@ def test_create_evm_script_same_config(owner, controller_stub, factory):
             "MAX_ACTIVATING_LOCK_DURATION_EXCEEDED",
         ),
         ((10, 20, 30, 40, 50, 60, 20, 80, 90), "INVALID_MAX_GUARDIANS_QUORUM_DELAY"),
+        # Above the cap but still above maxActivationDelay, so it clears the check before it and can only
+        # be caught by the cap check itself.
+        (
+            (10, 20, 30, 40, 50, 60, MAX_DELAY_DURATION + 1, 80, 90),
+            "MAX_GUARDIANS_QUORUM_DELAY_EXCEEDED",
+        ),
         ((10, 20, 30, 40, 50, 0, 30, 80, 90), "ZERO_MIN_ACTIVATION_AMOUNT"),
         ((10, 20, 0, 40, 50, 60, 30, 80, 90), "ZERO_MAX_DELAY_INFLOW"),
         (

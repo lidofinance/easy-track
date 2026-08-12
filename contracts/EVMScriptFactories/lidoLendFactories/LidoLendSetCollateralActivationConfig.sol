@@ -23,6 +23,8 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
         "MAX_ACTIVATING_LOCK_DURATION_EXCEEDED";
     string private constant ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY =
         "INVALID_MAX_GUARDIANS_QUORUM_DELAY";
+    string private constant ERROR_MAX_GUARDIANS_QUORUM_DELAY_EXCEEDED =
+        "MAX_GUARDIANS_QUORUM_DELAY_EXCEEDED";
     string private constant ERROR_ZERO_MIN_ACTIVATION_AMOUNT = "ZERO_MIN_ACTIVATION_AMOUNT";
     string private constant ERROR_ZERO_MAX_DELAY_INFLOW = "ZERO_MAX_DELAY_INFLOW";
     string private constant ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED = "MAX_DELAY_PER_STRIKE_EXCEEDED";
@@ -120,6 +122,10 @@ contract LidoLendSetCollateralActivationConfig is TrustedCaller, IEVMScriptFacto
             cfg.maxGuardiansQuorumDelay == 0 ||
                 cfg.maxGuardiansQuorumDelay > cfg.maxActivationDelay,
             ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY
+        );
+        require(
+            cfg.maxGuardiansQuorumDelay <= MAX_DELAY_DURATION,
+            ERROR_MAX_GUARDIANS_QUORUM_DELAY_EXCEEDED
         );
         require(cfg.minActivationAmount != 0, ERROR_ZERO_MIN_ACTIVATION_AMOUNT);
         require(cfg.maxDelayInflow != 0, ERROR_ZERO_MAX_DELAY_INFLOW);
