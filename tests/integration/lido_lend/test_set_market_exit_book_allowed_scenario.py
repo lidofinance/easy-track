@@ -59,7 +59,9 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
     enact_motion(easy_track, factory, calldata, trusted_caller)
 
 
-def test_set_market_exit_book_allowed_scenario(lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin):
+def test_set_market_exit_book_allowed_scenario(
+    lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin, skip_if_already_activated
+):
     "Allow-list a freshly-activated market independently on both exit books."
     core = lido_lend.contract("core")
     m = lido_lend.market
@@ -70,12 +72,11 @@ def test_set_market_exit_book_allowed_scenario(lido_lend, easy_track, deployer, 
             pytest.skip(message)
         raise pytest.UsageError(message)
 
-    if core.market(market_id)["lastUpdate"] != 0:
-        unavailable("descriptor market already created on the core; this scenario activates a fresh market first")
-    if not lido_lend.has("circuitBreaker"):
-        unavailable("descriptor lacks circuitBreaker; scenario needs it")
     if not lido_lend.has("morphoExitBook") or not lido_lend.has("erc4626ExitBook"):
         unavailable("deployment has no exit books")
+    skip_if_already_activated(check_exit_books=True)
+    if not lido_lend.has("circuitBreaker"):
+        unavailable("descriptor lacks circuitBreaker; scenario needs it")
     if m["pauser"] == "0x" + "00" * 20:
         unavailable("activation scenario requires a nonzero pauser committee")
     circuit_breaker = lido_lend.contract("circuitBreaker")

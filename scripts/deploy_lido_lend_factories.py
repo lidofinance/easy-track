@@ -186,19 +186,9 @@ def _read_addresses(factory_names, artifacts_dir=None):
         "irm_router": protocol["irm_router"],
         "adaptive_curve_irm": protocol["adaptive_curve_irm"],
         "risk_steward_dashboard": protocol["risk_steward_dashboard"],
+        "circuit_breaker": protocol["circuit_breaker"],
         "evm_script_executor": protocol["evm_script_executor"],
     }
-    if "circuit_breaker" in required_keys:
-        circuit_breakers = {
-            artifact["market"]["circuit_breaker"].lower(): artifact["market"]["circuit_breaker"]
-            for artifact in deployment["markets"].values()
-        }
-        if len(circuit_breakers) != 1:
-            raise ValueError(
-                "ActivateMarket requires exactly one CircuitBreaker across all market artifacts; "
-                f"found {len(circuit_breakers)}"
-            )
-        available["circuit_breaker"] = next(iter(circuit_breakers.values()))
     if required_keys & {"morpho_exit_book", "erc4626_exit_book"}:
         exit_books = deployment["exit_books"]["exit_books"]
         if "morpho_exit_book" in required_keys:

@@ -2,8 +2,8 @@
 Lido Lend EasyTrack scenario tests: drive each factory through the real EasyTrack + EVMScriptExecutor +
 Aragon stack on a mainnet-like fork, then assert the effect. Without external configuration the suite deploys
 strict local stubs. Set LIDO_LEND_ARTIFACTS_DIR to an immutable Lido Lend deployment directory; every artifact
-in its markets/ directory is exercised. Set LIDO_LEND_ATTACH=1 to attach to an already-running external Anvil
-(see the monkeypatch below).
+in its markets/ directory is exercised. Set ATTACH_EXTERNAL_NODE=true to attach to an already-running,
+externally-owned Anvil instead of letting Brownie launch its own node (see the monkeypatch below).
 """
 
 import os
@@ -20,10 +20,16 @@ from utils.lido_lend_artifacts import load_lido_lend_artifacts
 from utils.test_helpers import set_account_balance
 
 
-# Attaching to an external anvil needs two brownie internals patched (opt-in via LIDO_LEND_ATTACH): register
-# the native anvil backend (else attach falls back to ganache, whose impersonation RPC anvil lacks), and stub
-# `_find_rpc_process_pid` (it hangs on macOS; we must not kill an externally-owned node anyway).
-if os.environ.get("LIDO_LEND_ATTACH") == "1":
+def _env_flag(name):
+    return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+
+
+# Brownie already picks attach over launch on its own when the configured port is busy. What it gets wrong is
+# what happens next, so two internals need patching (opt-in via ATTACH_EXTERNAL_NODE): register the native
+# anvil backend (ATTACH_BACKENDS has no anvil entry, so the backend silently stays ganache, whose impersonation
+# RPC anvil lacks), and stub `_find_rpc_process_pid` (it hangs on macOS; we must not kill an externally-owned
+# node anyway).
+if _env_flag("ATTACH_EXTERNAL_NODE"):
     import importlib
 
     _rpc = importlib.import_module("brownie.network.rpc")  # the module (the attr is shadowed by an Rpc instance)
@@ -134,7 +140,9 @@ def _market_from_artifact(name, market_artifact, protocol):
     params = market_artifact["market"]
     curve = market_artifact["curve"]
     market_id = _as_bytes32(params["id"])
-    circuit_breaker = params["circuit_breaker"]
+    # One CircuitBreaker serves the core's market factory and every market it deploys, so it is a
+    # protocol-level address; market artifacts no longer carry their own.
+    circuit_breaker = protocol["circuit_breaker"]
     market = {
         "name": name,
         "id": market_id,
@@ -576,6 +584,49 @@ def created_markets(lido_lend, easy_track, accounts):
     for market in lido_lend.markets:
         _ensure_market_created(lido_lend, market, accounts, easy_track.evmScriptExecutor())
     return lido_lend
+
+
+@pytest.fixture
+def skip_if_already_activated(lido_lend):
+    """Skip a scenario that activates a market when the deployment arrived already activated.
+
+    A provisioning run may activate its markets itself (`make activate-markets`), leaving nothing for these
+    scenarios to do. That is a legitimate deployment shape, not a misconfiguration, so it skips rather than
+    erroring — but only after asserting the activation this scenario would have performed actually landed.
+    Otherwise a half-activated deployment would look indistinguishable from a correct one.
+    """
+
+    def _skip_if_already_activated(check_exit_books=False):
+        market = lido_lend.market
+        market_id = market["id"]
+        if lido_lend.contract("core").market(market_id)["lastUpdate"] == 0:
+            return  # inert market: the scenario runs for real
+
+        assert lido_lend.contract("core").marketController(market_id) == market["controller"], (
+            "market is created on the core but bound to a different controller than the artifact records"
+        )
+        assert lido_lend.contract("irmRouter").marketIrm(market_id) == market["curve"], (
+            "market is activated but its IRM is not routed to the domain curve"
+        )
+        if lido_lend.has("circuitBreaker"):
+            assert lido_lend.contract("circuitBreaker").getPauser(market["controller"]) == market["pauser"], (
+                "market is activated but its runtime pauser is not registered on the CircuitBreaker"
+            )
+        if check_exit_books:
+            assert lido_lend.contract("morphoExitBook").isMarketAllowed(market_id), (
+                "market is activated but not allow-listed on the MorphoExitBook"
+            )
+            assert lido_lend.contract("erc4626ExitBook").isVaultAllowed(market["vault"]), (
+                "market is activated but its vault is not allow-listed on the Erc4626ExitBook"
+            )
+
+        pytest.skip(
+            f"market {market['name']!r} is already activated on this deployment (verified: created on the core, "
+            "IRM routed, pauser registered" + (", both exit books allow-listed" if check_exit_books else "") + "); "
+            "provision without `make activate-markets` to exercise this scenario"
+        )
+
+    return _skip_if_already_activated
 
 
 @pytest.fixture

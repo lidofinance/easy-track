@@ -13,7 +13,6 @@ except ImportError:
 
 MARKET_PARAMS_ABI_TYPE = "(address,address,address,address,uint256)"
 METADATA_FIELDS = ("deployment", "chain_id", "config_hash")
-ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 PROTOCOL_FIELDS = (
     "deployment",
     "network",
@@ -23,8 +22,9 @@ PROTOCOL_FIELDS = (
     "owner_facade",
     "irm_router",
     "adaptive_curve_irm",
-    "builder",
+    "factory",
     "risk_steward_dashboard",
+    "circuit_breaker",
     "agent",
     "evm_script_executor",
 )
@@ -37,10 +37,9 @@ MARKET_FIELDS = (
     "irm",
     "lltv",
     "guardian_signals",
-    "builder",
+    "factory",
     "controller",
     "vault",
-    "circuit_breaker",
 )
 CURVE_FIELDS = (
     "curve_steepness",
@@ -157,14 +156,10 @@ def load_lido_lend_artifacts(directory, require_exit_books=False):
             raise ValueError(f"{path}: market.name {name!r} does not match the file name")
         if name in markets:
             raise ValueError(f"duplicate market artifact name: {name}")
-        if market.get("builder", "").lower() != protocol.get("builder", "").lower():
-            raise ValueError(f"market {name!r}: builder does not match protocol artifact")
+        if market.get("factory", "").lower() != protocol.get("factory", "").lower():
+            raise ValueError(f"market {name!r}: factory does not match protocol artifact")
         if market.get("irm", "").lower() != protocol.get("irm_router", "").lower():
             raise ValueError(f"market {name!r}: IRM does not match protocol artifact")
-        pausers = artifact.get("roles", {}).get("pausers", [])
-        circuit_breaker = market.get("circuit_breaker", ZERO_ADDRESS)
-        if not pausers or circuit_breaker.lower() != pausers[0].lower():
-            raise ValueError(f"market {name!r}: CircuitBreaker must be the first pauser")
         derived_id = _market_id(market)
         if derived_id.lower() != market.get("id", "").lower():
             raise ValueError(f"market {name!r}: artifact id does not match its market params")

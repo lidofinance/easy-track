@@ -61,13 +61,15 @@ Then run the EasyTrack scenarios in terminal 2:
 ```bash
 cd /path/to/easy-track
 
-LIDO_LEND_ATTACH=1 \
+ATTACH_EXTERNAL_NODE=true \
 LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-market/deployed/anvil-easy-track \
 poetry run brownie test tests/integration/lido_lend --network mainnet-fork -s
 ```
 
 Brownie attaches to the already-listening Anvil because `mainnet-fork` points at port 8545. Keep Anvil running;
 otherwise Brownie starts the network command configured for `mainnet-fork`, which is a different test setup.
+`ATTACH_EXTERNAL_NODE` accepts `1`, `true`, `yes`, or `on`, case-insensitive. Leave it unset for the local stub
+run, where Brownie owns the node.
 
 ## Useful focused run
 

@@ -12,7 +12,7 @@ def _market_params(lido_lend):
     return (m["loanToken"], m["collateralToken"], m["oracle"], m["irm"], m["lltv"])
 
 
-def _activate_prereqs(lido_lend, easy_track):
+def _activate_prereqs(lido_lend, easy_track, skip_if_already_activated):
     "Common handles for the activation scenarios against the fresh local EasyTrack fixture."
 
     def unavailable(message):
@@ -21,8 +21,7 @@ def _activate_prereqs(lido_lend, easy_track):
         raise pytest.UsageError(message)
 
     core = lido_lend.contract("core")
-    if core.market(lido_lend.market["id"])["lastUpdate"] != 0:
-        unavailable("descriptor market already created on the core; activate scenario needs a fresh market")
+    skip_if_already_activated()
     if not lido_lend.has("circuitBreaker"):
         unavailable("descriptor lacks circuitBreaker; activation scenario needs it")
     if lido_lend.market["pauser"] == "0x" + "00" * 20:
@@ -89,9 +88,10 @@ def test_activate_market_scenario(
     create_motion,
     advance_time,
     admin,
+    skip_if_already_activated,
 ):
     "Activate a deployed-but-INERT market: bind the IRM curve, create it on the core, register the pauser."
-    core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track)
+    core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
     m = lido_lend.market
     market_id = m["id"]
 
@@ -113,10 +113,10 @@ def test_activate_market_scenario(
 
 
 def test_activate_market_without_settlement_scenario(
-    lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin
+    lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin, skip_if_already_activated
 ):
     "Activate with enableSettlement=False: the market is created with its settlement queue disabled."
-    core, _, easy_track = _activate_prereqs(lido_lend, easy_track)
+    core, _, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
     market_id = lido_lend.market["id"]
 
     factory, _, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
