@@ -8,13 +8,12 @@ import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
-/// @notice Creates EVMScript to raise the supply cap of one Lido Lend market
+/// @notice Creates EVMScript to set the supply cap of one Lido Lend market
 contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
-    string private constant ERROR_CAP_NOT_HIGHER = "CAP_NOT_HIGHER";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
@@ -39,7 +38,7 @@ contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to raise the supply cap of one Lido Lend market
+    /// @notice Creates EVMScript to set the supply cap of one Lido Lend market
     /// @param _creator Address who creates EVMScript
     /// @param _evmScriptCallData Encoded (bytes32 marketId, uint256 cap)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
@@ -51,8 +50,7 @@ contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
     {
         (bytes32 marketId, uint256 newCap) = _decodeEVMScriptCallData(_evmScriptCallData);
 
-        ILidoLendMarketController marketController = _controllerOf(marketId);
-        require(newCap > marketController.supplyCap(), ERROR_CAP_NOT_HIGHER);
+        _controllerOf(marketId);
 
         return
             EVMScriptCreator.createEVMScript(

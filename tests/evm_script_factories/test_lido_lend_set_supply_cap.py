@@ -56,35 +56,17 @@ def test_create_evm_script_market_not_found(owner, factory):
         factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, NEW_CAP))
 
 
-def test_create_evm_script_zero_cap(owner, controller_stub, factory):
-    "Must revert with message 'CAP_NOT_HIGHER' if the new cap is zero (0 means uncapped)"
-    assert controller_stub.supplyCap() == 0
-    with reverts("CAP_NOT_HIGHER"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, 0))
-
-
-def test_create_evm_script_cap_not_higher(owner, controller_stub, factory):
-    "Must revert with message 'CAP_NOT_HIGHER' if the new cap equals or is below the current one"
-    controller_stub.setSupplyCap(500, {"from": owner})
-    assert controller_stub.supplyCap() == 500
-
-    with reverts("CAP_NOT_HIGHER"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, 500))
-
-    with reverts("CAP_NOT_HIGHER"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, 400))
-
-
-def test_create_evm_script_accepts_cap_above_current(owner, owner_facade, controller_stub, factory):
-    "Must accept a new cap exactly one above the current one"
+@pytest.mark.parametrize("new_cap", [0, 400, 500, 501])
+def test_create_evm_script_accepts_any_cap(owner, owner_facade, controller_stub, factory, new_cap):
+    "Must accept zero, lower, equal, and higher supply caps"
     controller_stub.setSupplyCap(500, {"from": owner})
 
-    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, 501))
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, new_cap))
     expected_evm_script = encode_call_script(
         [
             (
                 owner_facade.address,
-                owner_facade.setMarketSupplyCap.encode_input(MARKET_ID, 501),
+                owner_facade.setMarketSupplyCap.encode_input(MARKET_ID, new_cap),
             )
         ]
     )
@@ -92,7 +74,7 @@ def test_create_evm_script_accepts_cap_above_current(owner, owner_facade, contro
 
 
 def test_create_evm_script(owner, owner_facade, controller_stub, factory):
-    "Must create correct EVMScript when the new cap is higher than the current one (0 by default)"
+    "Must create correct EVMScript for the requested cap"
     assert controller_stub.supplyCap() == 0
 
     calldata = create_calldata(MARKET_ID, NEW_CAP)
