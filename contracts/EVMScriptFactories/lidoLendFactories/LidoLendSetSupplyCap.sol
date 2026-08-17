@@ -3,36 +3,20 @@
 
 pragma solidity 0.8.6;
 
-import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
+import "./LidoLendOwnerFactoryBase.sol";
 
 /// @notice Creates EVMScript to set the supply cap of one Lido Lend market
-contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
-    // -------------
-    // ERRORS
-    // -------------
-
-    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-
-    // -------------
-    // VARIABLES
-    // -------------
-
-    /// @notice Address of the LidoLendOwner facade
-    ILidoLendOwner public immutable lidoLendOwner;
-    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
-    ILidoLend public immutable lidoLend;
-
+contract LidoLendSetSupplyCap is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
-        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
-        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
-    }
+    constructor(address _trustedCaller, address _lidoLendOwner)
+        LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner)
+    {}
 
     // -------------
     // EXTERNAL METHODS
@@ -52,10 +36,11 @@ contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
 
         _controllerOf(marketId);
 
+        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.setMarketSupplyCap.selector,
+                lidoLendOwner,
+                owner.setMarketSupplyCap.selector,
                 abi.encode(marketId, newCap)
             );
     }
@@ -75,12 +60,6 @@ contract LidoLendSetSupplyCap is TrustedCaller, IEVMScriptFactory {
     // ------------------
     // PRIVATE METHODS
     // ------------------
-
-    function _controllerOf(bytes32 marketId) private view returns (ILidoLendMarketController) {
-        address controller = lidoLend.marketController(marketId);
-        require(controller != address(0), ERROR_MARKET_NOT_FOUND);
-        return ILidoLendMarketController(controller);
-    }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private

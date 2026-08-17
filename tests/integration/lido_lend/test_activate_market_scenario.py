@@ -4,7 +4,7 @@ from eth_abi import encode
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
 
-ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "bool"]
+ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool"]
 
 
 def _market_params(lido_lend):
@@ -34,13 +34,20 @@ def _activate_prereqs(lido_lend, easy_track, skip_if_already_activated):
 
 
 def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin):
-    "Deploy an ActivateMarket factory and register it on EasyTrack (4-call activation permission)."
+    "Deploy an ActivateMarket factory and register it on EasyTrack (5-call activation permission)."
     owner = lido_lend.contract("owner")
     irm_router = lido_lend.contract("irmRouter")
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     circuit_breaker = lido_lend.contract("circuitBreaker")
+    dashboard = lido_lend.contract("riskStewardDashboard")
     factory = deployer.deploy(
-        LidoLendActivateMarket, trusted_caller, owner, irm_router, adaptive_curve_irm, circuit_breaker
+        LidoLendActivateMarket,
+        trusted_caller,
+        owner,
+        irm_router,
+        adaptive_curve_irm,
+        circuit_breaker,
+        dashboard,
     )
     irm_config = deployer.deploy(AdaptiveCurveConfigStub, lido_lend.market["curveParams"])
     create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
@@ -52,6 +59,8 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
         + irm_router.setMarketIrm.signature[2:]
         + owner.address[2:]
         + create_sel
+        + dashboard.address[2:]
+        + dashboard.addMarketSteward.signature[2:]
         + circuit_breaker.address[2:]
         + circuit_breaker.registerPauser.signature[2:]
     )
@@ -71,6 +80,7 @@ def _calldata(lido_lend, irm_config, enable_settlement):
                 _market_params(lido_lend),
                 irm_config,
                 m["controller"],
+                m["steward"],
                 m["pauser"],
                 enable_settlement,
             ],
@@ -90,12 +100,14 @@ def test_activate_market_scenario(
     admin,
     skip_if_already_activated,
 ):
-    "Activate a deployed-but-INERT market: bind the IRM curve, create it on the core, register the pauser."
+    "Activate an inert market, appoint its steward, and register its independent pauser."
     core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
     m = lido_lend.market
     market_id = m["id"]
 
     assert core.market(market_id)["lastUpdate"] == 0
+    dashboard = lido_lend.contract("riskStewardDashboard")
+    assert not dashboard.isMarketSteward(market_id, m["steward"])
     factory, irm_router, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
     calldata = _calldata(lido_lend, irm_config.address, True)
@@ -103,6 +115,7 @@ def test_activate_market_scenario(
 
     assert core.market(market_id)["lastUpdate"] != 0
     assert irm_router.marketIrm(market_id) == m["curve"]
+    assert dashboard.isMarketSteward(market_id, m["steward"])
     assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
     assert core.isSettlementEnabled(market_id)
 
@@ -123,4 +136,5 @@ def test_activate_market_without_settlement_scenario(
     enact_motion(easy_track, factory, _calldata(lido_lend, irm_config.address, False), trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0
+    assert lido_lend.contract("riskStewardDashboard").isMarketSteward(market_id, lido_lend.market["steward"])
     assert not core.isSettlementEnabled(market_id)

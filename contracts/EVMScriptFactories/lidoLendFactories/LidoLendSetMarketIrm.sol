@@ -26,7 +26,7 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     /// @notice Address of the LidoLend core (resolves a market's params by id)
-    ILidoLend public immutable lidoLend;
+    address public immutable lidoLend;
     /// @notice Address of the domain's IrmRouter committed to every supported market id
     address public immutable irmRouter;
 
@@ -39,7 +39,7 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
         address _lidoLend,
         address _irmRouter
     ) TrustedCaller(_trustedCaller) {
-        lidoLend = ILidoLend(_lidoLend);
+        lidoLend = _lidoLend;
         irmRouter = _irmRouter;
     }
 
@@ -61,7 +61,8 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
         require(newIrm != address(0), ERROR_ZERO_IRM);
         require(newIrm.code.length > 0, ERROR_IRM_NOT_CONTRACT);
 
-        MarketParams memory marketParams = lidoLend.idToMarketParams(marketId);
+        ILidoLend core = ILidoLend(lidoLend);
+        MarketParams memory marketParams = core.idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
 

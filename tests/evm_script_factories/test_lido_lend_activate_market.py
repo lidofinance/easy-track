@@ -5,18 +5,20 @@ from brownie import (
     reverts,
     ZERO_ADDRESS,
     LidoLendActivateMarket,
+    LidoLendCoreStub,
     LidoLendOwnerStub,
     IrmRouterStub,
     AdaptiveCurveIrmStub,
     CircuitBreakerStub,
     LidoLendMarketControllerStub,
+    RiskStewardDashboardStub,
 )
 
 from utils.evm_script import encode_call_script
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE
 
-ACTIVATE_TYPES = [MP_TYPE, "address", "address", "address", "bool"]
+ACTIVATE_TYPES = [MP_TYPE, "address", "address", "address", "address", "bool"]
 
 LOAN_TOKEN = f"0x{1:040x}"
 COLLATERAL_TOKEN = f"0x{2:040x}"
@@ -27,21 +29,32 @@ WAD = 10**18
 IRM_CONFIG = f"0x{5:040x}"
 CONTROLLER = f"0x{6:040x}"
 PAUSER_COMMITTEE = f"0x{7:040x}"
+STEWARD = f"0x{8:040x}"
 
 # Placeholder params for checks that revert BEFORE the "irm is the router" check (irm value irrelevant there).
 MARKET_PARAMS = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, IRM, LLTV)
 
 
-def create_calldata(market_params, irm_config, controller, pauser_committee, enable_settlement):
+def create_calldata(market_params, irm_config, controller, steward, pauser_committee, enable_settlement):
     return (
         "0x"
-        + encode(ACTIVATE_TYPES, [market_params, irm_config, controller, pauser_committee, enable_settlement]).hex()
+        + encode(
+            ACTIVATE_TYPES,
+            [market_params, irm_config, controller, steward, pauser_committee, enable_settlement],
+        ).hex()
     )
 
 
 @pytest.fixture(scope="module")
-def owner_stub(owner):
-    return LidoLendOwnerStub.deploy({"from": owner})
+def core_stub(owner):
+    return LidoLendCoreStub.deploy({"from": owner})
+
+
+@pytest.fixture(scope="module")
+def owner_stub(owner, core_stub):
+    owner_facade = LidoLendOwnerStub.deploy({"from": owner})
+    owner_facade.setCore(core_stub, {"from": owner})
+    return owner_facade
 
 
 @pytest.fixture(scope="module")
@@ -57,6 +70,11 @@ def adaptive_curve_irm_stub(owner):
 @pytest.fixture(scope="module")
 def circuit_breaker_stub(owner):
     return CircuitBreakerStub.deploy(owner, {"from": owner})
+
+
+@pytest.fixture(scope="module")
+def risk_steward_dashboard_stub(owner):
+    return RiskStewardDashboardStub.deploy({"from": owner})
 
 
 @pytest.fixture(scope="module")
@@ -80,40 +98,58 @@ def controller(owner, market_id, circuit_breaker_stub):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, owner_stub, irm_router_stub, adaptive_curve_irm_stub, circuit_breaker_stub):
+def factory(
+    owner,
+    owner_stub,
+    irm_router_stub,
+    adaptive_curve_irm_stub,
+    circuit_breaker_stub,
+    risk_steward_dashboard_stub,
+):
     return LidoLendActivateMarket.deploy(
         owner,
         owner_stub,
         irm_router_stub,
         adaptive_curve_irm_stub,
         circuit_breaker_stub,
+        risk_steward_dashboard_stub,
         {"from": owner},
     )
 
 
-def test_deploy(owner, owner_stub, irm_router_stub, adaptive_curve_irm_stub, circuit_breaker_stub, factory):
+def test_deploy(
+    owner,
+    owner_stub,
+    irm_router_stub,
+    adaptive_curve_irm_stub,
+    circuit_breaker_stub,
+    risk_steward_dashboard_stub,
+    factory,
+):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
     assert factory.lidoLendOwner() == owner_stub
     assert factory.irmRouter() == irm_router_stub
     assert factory.adaptiveCurveIrm() == adaptive_curve_irm_stub
     assert factory.circuitBreaker() == circuit_breaker_stub
+    assert factory.riskStewardDashboard() == risk_steward_dashboard_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, PAUSER_COMMITTEE, False)
+    calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, PAUSER_COMMITTEE, False)
     with reverts("CALLER_IS_FORBIDDEN"):
         factory.createEVMScript(stranger, calldata)
 
 
 @pytest.mark.parametrize(
-    "market_params,irm_config,controller,pauser,error",
+    "market_params,irm_config,controller,steward,pauser,error",
     [
         (
             (ZERO_ADDRESS, COLLATERAL_TOKEN, ORACLE, IRM, LLTV),
             IRM_CONFIG,
             CONTROLLER,
+            STEWARD,
             PAUSER_COMMITTEE,
             "ZERO_LOAN_TOKEN",
         ),
@@ -121,6 +157,7 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
             (LOAN_TOKEN, ZERO_ADDRESS, ORACLE, IRM, LLTV),
             IRM_CONFIG,
             CONTROLLER,
+            STEWARD,
             PAUSER_COMMITTEE,
             "ZERO_COLLATERAL_TOKEN",
         ),
@@ -128,16 +165,18 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
             (LOAN_TOKEN, COLLATERAL_TOKEN, ZERO_ADDRESS, IRM, LLTV),
             IRM_CONFIG,
             CONTROLLER,
+            STEWARD,
             PAUSER_COMMITTEE,
             "ZERO_ORACLE",
         ),
-        (MARKET_PARAMS, IRM_CONFIG, ZERO_ADDRESS, PAUSER_COMMITTEE, "ZERO_CONTROLLER"),
-        (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
+        (MARKET_PARAMS, IRM_CONFIG, ZERO_ADDRESS, STEWARD, PAUSER_COMMITTEE, "ZERO_CONTROLLER"),
+        (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, ZERO_ADDRESS, PAUSER_COMMITTEE, "ZERO_STEWARD"),
+        (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
     ],
 )
-def test_create_evm_script_zero_address(owner, factory, market_params, irm_config, controller, pauser, error):
+def test_create_evm_script_zero_address(owner, factory, market_params, irm_config, controller, steward, pauser, error):
     "Must revert with the matching ZERO_* message if any required address is the zero address"
-    calldata = create_calldata(market_params, irm_config, controller, pauser, False)
+    calldata = create_calldata(market_params, irm_config, controller, steward, pauser, False)
     with reverts(error):
         factory.createEVMScript(owner, calldata)
 
@@ -147,7 +186,18 @@ def test_create_evm_script_irm_not_router(owner, factory, controller):
     market_params = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, f"0x{123:040x}", LLTV)
     with reverts("IRM_NOT_ROUTER"):
         factory.createEVMScript(
-            owner, create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, False)
+            owner, create_calldata(market_params, IRM_CONFIG, controller.address, STEWARD, PAUSER_COMMITTEE, False)
+        )
+
+
+def test_create_evm_script_market_already_created(owner, core_stub, factory, market_id, market_params, controller):
+    "Must revert if a market with the given params is already created"
+    core_stub.activateMarket(market_id, market_params, False, {"from": owner})
+
+    with reverts("MARKET_ALREADY_CREATED"):
+        factory.createEVMScript(
+            owner,
+            create_calldata(market_params, IRM_CONFIG, controller.address, STEWARD, PAUSER_COMMITTEE, False),
         )
 
 
@@ -156,7 +206,7 @@ def test_create_evm_script_max_lltv(owner, factory, controller):
     market_params = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, IRM, WAD)
     with reverts("MAX_LLTV_EXCEEDED"):
         factory.createEVMScript(
-            owner, create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, False)
+            owner, create_calldata(market_params, IRM_CONFIG, controller.address, STEWARD, PAUSER_COMMITTEE, False)
         )
 
 
@@ -166,7 +216,7 @@ def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     other.setMarketId(keccak(b"other"), {"from": owner})
     with reverts("CONTROLLER_MISMATCH"):
         factory.createEVMScript(
-            owner, create_calldata(market_params, IRM_CONFIG, other.address, PAUSER_COMMITTEE, False)
+            owner, create_calldata(market_params, IRM_CONFIG, other.address, STEWARD, PAUSER_COMMITTEE, False)
         )
 
 
@@ -178,6 +228,7 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
     irm_router_stub,
     adaptive_curve_irm_stub,
     circuit_breaker_stub,
+    risk_steward_dashboard_stub,
     controller,
     market_params,
 ):
@@ -189,13 +240,14 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
         irm_router_stub,
         adaptive_curve_irm_stub,
         wrong_circuit_breaker,
+        risk_steward_dashboard_stub,
         {"from": owner},
     )
 
     with reverts("CIRCUIT_BREAKER_NOT_PAUSER"):
         factory.createEVMScript(
             owner,
-            create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, False),
+            create_calldata(market_params, IRM_CONFIG, controller.address, STEWARD, PAUSER_COMMITTEE, False),
         )
 
 
@@ -206,13 +258,22 @@ def test_create_evm_script(
     irm_router_stub,
     adaptive_curve_irm_stub,
     circuit_breaker_stub,
+    risk_steward_dashboard_stub,
     controller,
+    market_id,
     market_params,
     factory,
     enable_settlement,
 ):
-    "Must create the four activation calls in order, routing the market to the singleton AdaptiveCurveIrm"
-    calldata = create_calldata(market_params, IRM_CONFIG, controller.address, PAUSER_COMMITTEE, enable_settlement)
+    "Must create the five activation calls in order, including the independently supplied market steward"
+    calldata = create_calldata(
+        market_params,
+        IRM_CONFIG,
+        controller.address,
+        STEWARD,
+        PAUSER_COMMITTEE,
+        enable_settlement,
+    )
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
@@ -230,6 +291,10 @@ def test_create_evm_script(
                 owner_stub.createMarket.encode_input(market_params, controller.address, enable_settlement),
             ),
             (
+                risk_steward_dashboard_stub.address,
+                risk_steward_dashboard_stub.addMarketSteward.encode_input(market_id, STEWARD),
+            ),
+            (
                 circuit_breaker_stub.address,
                 circuit_breaker_stub.registerPauser.encode_input(controller.address, PAUSER_COMMITTEE),
             ),
@@ -240,11 +305,12 @@ def test_create_evm_script(
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, PAUSER_COMMITTEE, True)
+    calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, PAUSER_COMMITTEE, True)
     decoded = factory.decodeEVMScriptCallData(calldata)
-    market_params, irm_config, controller, pauser, enable_settlement = decoded
+    market_params, irm_config, controller, steward, pauser, enable_settlement = decoded
     assert market_params == MARKET_PARAMS
     assert irm_config == IRM_CONFIG
     assert controller == CONTROLLER
+    assert steward == STEWARD
     assert pauser == PAUSER_COMMITTEE
     assert enable_settlement is True

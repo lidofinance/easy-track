@@ -51,11 +51,10 @@ def factory(owner, owner_facade):
     return LidoLendRemoveGuardian.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, core_stub, factory):
+def test_deploy(owner, owner_facade, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
     assert factory.lidoLendOwner() == owner_facade
-    assert factory.lidoLend() == core_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):

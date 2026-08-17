@@ -22,20 +22,17 @@ contract LidoLendAddRiskSteward is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLend core (validates the market exists by id)
-    ILidoLend public immutable lidoLend;
     /// @notice Address of the RiskStewardDashboard
-    IRiskStewardDashboard public immutable riskStewardDashboard;
+    address public immutable riskStewardDashboard;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLend, address _riskStewardDashboard)
+    constructor(address _trustedCaller, address _riskStewardDashboard)
         TrustedCaller(_trustedCaller)
     {
-        lidoLend = ILidoLend(_lidoLend);
-        riskStewardDashboard = IRiskStewardDashboard(_riskStewardDashboard);
+        riskStewardDashboard = _riskStewardDashboard;
     }
 
     // -------------
@@ -54,12 +51,16 @@ contract LidoLendAddRiskSteward is TrustedCaller, IEVMScriptFactory {
     {
         (bytes32 marketId, address steward) = _decodeEVMScriptCallData(_evmScriptCallData);
         require(steward != address(0), ERROR_ZERO_STEWARD);
-        require(lidoLend.marketController(marketId) != address(0), ERROR_MARKET_NOT_FOUND);
-        require(!riskStewardDashboard.isMarketSteward(marketId, steward), ERROR_STEWARD_ALREADY_ADDED);
+        IRiskStewardDashboard dashboard = IRiskStewardDashboard(riskStewardDashboard);
+        ILidoLend core = dashboard.LIDO_LEND();
+        require(core.marketController(marketId) != address(0), ERROR_MARKET_NOT_FOUND);
+        require(!dashboard.isMarketSteward(marketId, steward), ERROR_STEWARD_ALREADY_ADDED);
 
         return
             EVMScriptCreator.createEVMScript(
-                address(riskStewardDashboard), riskStewardDashboard.addMarketSteward.selector, _evmScriptCallData
+                riskStewardDashboard,
+                dashboard.addMarketSteward.selector,
+                _evmScriptCallData
             );
     }
 

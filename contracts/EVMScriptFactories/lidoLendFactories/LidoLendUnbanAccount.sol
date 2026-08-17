@@ -3,45 +3,35 @@
 
 pragma solidity 0.8.6;
 
-import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
+import "./LidoLendOwnerFactoryBase.sol";
 
-/// @notice Creates EVMScript to unban a previously-banned address on one or more Lido Lend markets
-contract LidoLendUnbanAccount is TrustedCaller, IEVMScriptFactory {
+/// @notice Creates EVMScript to unban accounts on one or more Lido Lend markets
+contract LidoLendUnbanAccount is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
-    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-
-    // -------------
-    // VARIABLES
-    // -------------
-
-    /// @notice Address of the LidoLendOwner facade
-    ILidoLendOwner public immutable lidoLendOwner;
-    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
-    ILidoLend public immutable lidoLend;
+    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
-        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
-        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
-    }
+    constructor(address _trustedCaller, address _lidoLendOwner)
+        LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner)
+    {}
 
     // -------------
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates EVMScript to unban a previously-banned address on one or more Lido Lend markets
+    /// @notice Creates EVMScript to unban accounts on one or more Lido Lend markets
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (bytes32[] marketIds, address account)
+    /// @param _evmScriptCallData Encoded tuple: (bytes32[] marketIds, address[] accounts)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -49,33 +39,37 @@ contract LidoLendUnbanAccount is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (bytes32[] memory marketIds, address account) = _decodeEVMScriptCallData(
+        (bytes32[] memory marketIds, address[] memory accounts) = _decodeEVMScriptCallData(
             _evmScriptCallData
         );
         require(marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
+        require(marketIds.length == accounts.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
-        // Validate that every market can be resolved. `unban` is idempotent, so a mixed batch containing
-        // already-unbanned accounts remains valid and is forwarded as one call to the facade.
+        bytes[] memory encodedCalldata = new bytes[](marketIds.length);
+        bytes32[] memory singleMarket = new bytes32[](1);
         for (uint256 i = 0; i < marketIds.length; ++i) {
             _guardianSignalsOf(marketIds[i]);
+            singleMarket[0] = marketIds[i];
+            encodedCalldata[i] = abi.encode(singleMarket, accounts[i]);
         }
 
+        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.unbanGuardianSignals.selector,
-                abi.encode(marketIds, account)
+                lidoLendOwner,
+                owner.unbanGuardianSignals.selector,
+                encodedCalldata
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (bytes32[] marketIds, address account)
+    /// @param _evmScriptCallData Encoded tuple: (bytes32[] marketIds, address[] accounts)
     /// @return marketIds Ids of the markets
-    /// @return account Address to unban
+    /// @return accounts Addresses to unban
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (bytes32[] memory marketIds, address account)
+        returns (bytes32[] memory marketIds, address[] memory accounts)
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -84,17 +78,11 @@ contract LidoLendUnbanAccount is TrustedCaller, IEVMScriptFactory {
     // PRIVATE METHODS
     // ------------------
 
-    function _guardianSignalsOf(bytes32 marketId) private view returns (IGuardianSignals) {
-        address controller = lidoLend.marketController(marketId);
-        require(controller != address(0), ERROR_MARKET_NOT_FOUND);
-        return IGuardianSignals(ILidoLendMarketController(controller).guardianSignals());
-    }
-
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (bytes32[] memory marketIds, address account)
+        returns (bytes32[] memory marketIds, address[] memory accounts)
     {
-        (marketIds, account) = abi.decode(_evmScriptCallData, (bytes32[], address));
+        (marketIds, accounts) = abi.decode(_evmScriptCallData, (bytes32[], address[]));
     }
 }

@@ -58,5 +58,5 @@ def test_market_lifecycle_scenario(
     controller.freeze({"from": admin})
     assert controller.isFrozen()
 
-    enact_motion(easy_track, unfreeze_factory, "0x" + encode(["bytes32"], [market_id]).hex(), trusted_caller)
+    enact_motion(easy_track, unfreeze_factory, "0x" + encode(["bytes32[]"], [[market_id]]).hex(), trusted_caller)
     assert not controller.isFrozen()

@@ -3,38 +3,27 @@
 
 pragma solidity 0.8.6;
 
-import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
+import "./LidoLendOwnerFactoryBase.sol";
 
 /// @notice Creates EVMScript to set the guardian quorum on one Lido Lend market's GuardianSignals registry
-contract LidoLendSetGuardiansQuorum is TrustedCaller, IEVMScriptFactory {
+contract LidoLendSetGuardiansQuorum is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_SAME_QUORUM = "SAME_QUORUM";
     string private constant ERROR_INVALID_QUORUM = "INVALID_QUORUM";
-    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-
-    // -------------
-    // VARIABLES
-    // -------------
-
-    /// @notice Address of the LidoLendOwner facade
-    ILidoLendOwner public immutable lidoLendOwner;
-    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
-    ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
-        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
-        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
-    }
+    constructor(address _trustedCaller, address _lidoLendOwner)
+        LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner)
+    {}
 
     // -------------
     // EXTERNAL METHODS
@@ -59,10 +48,11 @@ contract LidoLendSetGuardiansQuorum is TrustedCaller, IEVMScriptFactory {
             ERROR_INVALID_QUORUM
         );
 
+        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.setGuardiansQuorum.selector,
+                lidoLendOwner,
+                owner.setGuardiansQuorum.selector,
                 abi.encode(marketId, newQuorum)
             );
     }
@@ -82,12 +72,6 @@ contract LidoLendSetGuardiansQuorum is TrustedCaller, IEVMScriptFactory {
     // ------------------
     // PRIVATE METHODS
     // ------------------
-
-    function _guardianSignalsOf(bytes32 marketId) private view returns (IGuardianSignals) {
-        address controller = lidoLend.marketController(marketId);
-        require(controller != address(0), ERROR_MARKET_NOT_FOUND);
-        return IGuardianSignals(ILidoLendMarketController(controller).guardianSignals());
-    }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private

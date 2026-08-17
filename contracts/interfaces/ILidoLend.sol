@@ -15,7 +15,18 @@ struct MarketParams {
     uint256 lltv;
 }
 
+struct Market {
+    uint128 totalSupplyAssets;
+    uint128 totalSupplyShares;
+    uint128 totalBorrowAssets;
+    uint128 totalBorrowShares;
+    uint128 lastUpdate;
+    uint128 fee;
+}
+
 interface ILidoLend {
+    function market(bytes32 marketId) external view returns (Market memory);
+
     function marketController(bytes32 marketId) external view returns (address);
 
     function idToMarketParams(bytes32 marketId) external view returns (MarketParams memory);
@@ -157,6 +168,8 @@ interface IGuardianSignals {
 }
 
 interface IRiskStewardDashboard {
+    function LIDO_LEND() external view returns (ILidoLend);
+
     function addMarketSteward(bytes32 marketId, address steward) external;
 
     function removeMarketSteward(bytes32 marketId, address steward) external;

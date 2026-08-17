@@ -3,6 +3,7 @@ from brownie import interface, LidoLendUnbanAccount, LidoLendMarketControllerStu
 from eth_abi import encode
 
 BANNED_ACCOUNT = "0x" + "55" * 20
+SECOND_BANNED_ACCOUNT = "0x" + "56" * 20
 
 
 def test_unban_account_scenario(
@@ -22,7 +23,7 @@ def test_unban_account_scenario(
     enact_motion(
         easy_track,
         factory,
-        "0x" + encode(["bytes32[]", "address"], [[market_id], BANNED_ACCOUNT]).hex(),
+        "0x" + encode(["bytes32[]", "address[]"], [[market_id], [BANNED_ACCOUNT]]).hex(),
         trusted_caller,
     )
 
@@ -32,7 +33,7 @@ def test_unban_account_scenario(
 def test_unban_account_multi_market_scenario(
     lido_lend, created_markets, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
 ):
-    "A single motion lifts the same account's ban across two markets, including a shared-registry topology."
+    "A single motion lifts different accounts' bans across two markets, including a shared-registry topology."
     if lido_lend.easy_track:
         if len(lido_lend.markets) < 2:
             raise pytest.UsageError("artifact mode requires at least two markets for the cross-market scenario")
@@ -43,7 +44,7 @@ def test_unban_account_multi_market_scenario(
         for gs in (gs1, gs2):
             gs.grantRole(gs.ACCESS_LIMITER_ROLE(), admin, {"from": admin})
         gs1.ban(market_id_1, BANNED_ACCOUNT, {"from": admin})
-        gs2.ban(market_id_2, BANNED_ACCOUNT, {"from": admin})
+        gs2.ban(market_id_2, SECOND_BANNED_ACCOUNT, {"from": admin})
     else:
         core = lido_lend.contract("core")
         gs1 = lido_lend.contract("guardianSignals")
@@ -58,9 +59,9 @@ def test_unban_account_multi_market_scenario(
 
         gs1.grantRole(gs1.ACCESS_LIMITER_ROLE(), admin, {"from": admin})
         gs1.ban(market_id_1, BANNED_ACCOUNT, {"from": admin})
-        gs2.ban(market_id_2, BANNED_ACCOUNT, {"from": deployer})
+        gs2.ban(market_id_2, SECOND_BANNED_ACCOUNT, {"from": deployer})
     assert gs1.isBanned(market_id_1, BANNED_ACCOUNT)
-    assert gs2.isBanned(market_id_2, BANNED_ACCOUNT)
+    assert gs2.isBanned(market_id_2, SECOND_BANNED_ACCOUNT)
 
     owner = lido_lend.contract("owner")
     factory = deployer.deploy(LidoLendUnbanAccount, trusted_caller, owner)
@@ -69,9 +70,13 @@ def test_unban_account_multi_market_scenario(
     enact_motion(
         easy_track,
         factory,
-        "0x" + encode(["bytes32[]", "address"], [[market_id_1, market_id_2], BANNED_ACCOUNT]).hex(),
+        "0x"
+        + encode(
+            ["bytes32[]", "address[]"],
+            [[market_id_1, market_id_2], [BANNED_ACCOUNT, SECOND_BANNED_ACCOUNT]],
+        ).hex(),
         trusted_caller,
     )
 
     assert not gs1.isBanned(market_id_1, BANNED_ACCOUNT)
-    assert not gs2.isBanned(market_id_2, BANNED_ACCOUNT)
+    assert not gs2.isBanned(market_id_2, SECOND_BANNED_ACCOUNT)

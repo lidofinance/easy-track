@@ -165,9 +165,10 @@ def _market_from_artifact(name, market_artifact, protocol):
         "guardianSignals": params["guardian_signals"],
         "circuitBreaker": circuit_breaker,
         "vault": params["vault"],
-        # The committee and settlement flag are runtime motion choices, not Lido Lend deployment artifacts.
-        # Artifact acceptance uses the Agent as a deterministic nonzero committee; activation scenarios cover
-        # both settlement choices explicitly.
+        # The steward, pauser committee, and settlement flag are runtime motion choices, not deployment artifacts.
+        # Artifact acceptance uses deterministic nonzero addresses; activation scenarios cover both settlement
+        # choices explicitly.
+        "steward": "0x" + "66" * 20,
         "pauser": protocol["agent"],
     }
     derived_id = bytes(
@@ -371,6 +372,7 @@ def lido_lend(
         "guardianSignals": guardian_signals.address,
         "circuitBreaker": circuit_breaker.address,
         "vault": vault.address,
+        "steward": accounts[5].address,
         "pauser": admin.address,
     }
     deployment = _Deployment(
@@ -612,6 +614,9 @@ def skip_if_already_activated(lido_lend):
             assert lido_lend.contract("circuitBreaker").getPauser(market["controller"]) == market["pauser"], (
                 "market is activated but its runtime pauser is not registered on the CircuitBreaker"
             )
+        assert lido_lend.contract("riskStewardDashboard").isMarketSteward(
+            market_id, market["steward"]
+        ), "market is activated but its steward is not appointed on the RiskStewardDashboard"
         if check_exit_books:
             assert lido_lend.contract("morphoExitBook").isMarketAllowed(market_id), (
                 "market is activated but not allow-listed on the MorphoExitBook"
@@ -622,7 +627,9 @@ def skip_if_already_activated(lido_lend):
 
         pytest.skip(
             f"market {market['name']!r} is already activated on this deployment (verified: created on the core, "
-            "IRM routed, pauser registered" + (", both exit books allow-listed" if check_exit_books else "") + "); "
+            "IRM routed, steward appointed, pauser registered"
+            + (", both exit books allow-listed" if check_exit_books else "")
+            + "); "
             "provision without `make activate-markets` to exercise this scenario"
         )
 

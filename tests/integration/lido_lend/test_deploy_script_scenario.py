@@ -54,6 +54,15 @@ def test_factory_selection_rejects_invalid_values(value, error):
 
 
 def test_selected_factory_only_requires_its_protocol_dependencies():
+    assert _required_address_keys(("LidoLendActivateMarket",)) == {
+        "trusted_caller",
+        "core",
+        "owner",
+        "irm_router",
+        "adaptive_curve_irm",
+        "risk_steward_dashboard",
+        "circuit_breaker",
+    }
     assert _required_address_keys(("LidoLendSetSupplyCap",)) == {
         "trusted_caller",
         "core",
@@ -169,7 +178,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         name: [blob[i : i + 48] for i in range(2, len(blob), 48)] for name, blob in expected_permissions.items()
     }
     assert all(entries for entries in permission_entries.values())
-    assert len(permission_entries["LidoLendActivateMarket"]) == 4
+    assert len(permission_entries["LidoLendActivateMarket"]) == 5
     assert len(permission_entries["LidoLendAddGuardian"]) == 2
     assert len(permission_entries["LidoLendRemoveGuardian"]) == 2
     assert all(
@@ -185,6 +194,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             addresses["adaptive_curve_irm"].lower(),
             addresses["irm_router"].lower(),
             addresses["owner"].lower(),
+            addresses["risk_steward_dashboard"].lower(),
             addresses["circuit_breaker"].lower(),
         ],
         "LidoLendAddGuardian": [addresses["owner"].lower(), addresses["owner"].lower()],
@@ -214,10 +224,10 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     assert activation.irmRouter() == addresses["irm_router"]
     assert activation.adaptiveCurveIrm() == addresses["adaptive_curve_irm"]
     assert activation.circuitBreaker() == addresses["circuit_breaker"]
+    assert activation.riskStewardDashboard() == addresses["risk_steward_dashboard"]
 
     for name in FACADE_FACTORIES:
         assert instances[name].lidoLendOwner() == owner
-        assert instances[name].lidoLend() == core
 
     irm_config = instances["LidoLendSetIrmConfig"]
     assert irm_config.lidoLend() == core
@@ -229,7 +239,6 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     assert market_irm.irmRouter() == addresses["irm_router"]
 
     for name in ("LidoLendAddRiskSteward", "LidoLendRemoveRiskSteward"):
-        assert instances[name].lidoLend() == core
         assert instances[name].riskStewardDashboard() == addresses["risk_steward_dashboard"]
 
     assert instances["LidoLendSetMorphoExitBookAllowed"].morphoExitBook() == addresses["morpho_exit_book"]
@@ -333,6 +342,25 @@ def test_preflight_rejects_circuit_breaker_with_wrong_admin(
         "irm_router": str(lido_lend.contracts["irmRouter"]),
         "adaptive_curve_irm": str(lido_lend.contracts["adaptiveCurveIrm"]),
         "circuit_breaker": wrong_circuit_breaker.address,
+        "risk_steward_dashboard": str(lido_lend.contracts["riskStewardDashboard"]),
     }
     with pytest.raises(ValueError, match="does not match EasyTrack evmScriptExecutor"):
+        _validate_protocol_bindings(addresses, easy_track.evmScriptExecutor(), ("LidoLendActivateMarket",))
+
+
+def test_preflight_rejects_activation_without_dashboard_executor_role(
+    lido_lend, easy_track, deployer, trusted_caller, RiskStewardDashboardStub
+):
+    dashboard = RiskStewardDashboardStub.deploy({"from": deployer})
+    dashboard.setLidoLend(lido_lend.contracts["core"], {"from": deployer})
+    addresses = {
+        "trusted_caller": trusted_caller.address,
+        "core": str(lido_lend.contracts["core"]),
+        "owner": str(lido_lend.contracts["owner"]),
+        "irm_router": str(lido_lend.contracts["irmRouter"]),
+        "adaptive_curve_irm": str(lido_lend.contracts["adaptiveCurveIrm"]),
+        "circuit_breaker": str(lido_lend.contracts["circuitBreaker"]),
+        "risk_steward_dashboard": dashboard.address,
+    }
+    with pytest.raises(ValueError, match="executor lacks risk_steward_dashboard.STEWARD_ADMIN_ROLE"):
         _validate_protocol_bindings(addresses, easy_track.evmScriptExecutor(), ("LidoLendActivateMarket",))

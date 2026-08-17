@@ -16,8 +16,8 @@ SECOND_MARKET_ID = (2).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (3).to_bytes(32, "big")
 
 
-def create_calldata(market_ids, account):
-    return "0x" + encode(["bytes32[]", "address"], [market_ids, str(account)]).hex()
+def create_calldata(market_ids, accounts):
+    return "0x" + encode(["bytes32[]", "address[]"], [market_ids, [str(account) for account in accounts]]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -51,59 +51,72 @@ def factory(owner, owner_facade):
     return LidoLendUnbanAccount.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, core_stub, factory):
+def test_deploy(owner, owner_facade, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
     assert factory.lidoLendOwner() == owner_facade
-    assert factory.lidoLend() == core_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata([MARKET_ID], stranger))
+        factory.createEVMScript(stranger, create_calldata([MARKET_ID], [stranger]))
 
 
 def test_create_evm_script_empty_market_ids(owner, factory, stranger):
     "Must revert with 'EMPTY_MARKETS_LIST' if no market ids were provided"
     with reverts("EMPTY_MARKETS_LIST"):
-        factory.createEVMScript(owner, create_calldata([], stranger))
+        factory.createEVMScript(owner, create_calldata([], []))
+
+
+def test_create_evm_script_array_length_mismatch(owner, factory, stranger):
+    "Must revert if market and account arrays have different lengths"
+    with reverts("ARRAY_LENGTH_MISMATCH"):
+        factory.createEVMScript(owner, create_calldata([MARKET_ID], [stranger, owner]))
 
 
 def test_create_evm_script_market_not_found(owner, factory, stranger):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for one of the market ids"
     with reverts("MARKET_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata([MARKET_ID, UNKNOWN_MARKET_ID], stranger))
+        factory.createEVMScript(owner, create_calldata([MARKET_ID, UNKNOWN_MARKET_ID], [stranger, owner]))
 
 
 def test_create_evm_script_accepts_mixed_ban_state(owner, owner_facade, guardian_signals_stub, factory, stranger):
     "Must accept a batch containing an already-unbanned market because the downstream operation is idempotent"
     guardian_signals_stub.setBanned(MARKET_ID, stranger, True, {"from": owner})
     assert guardian_signals_stub.isBanned(MARKET_ID, stranger)
-    assert not guardian_signals_stub.isBanned(SECOND_MARKET_ID, stranger)
+    assert not guardian_signals_stub.isBanned(SECOND_MARKET_ID, owner)
 
-    calldata = create_calldata([MARKET_ID, SECOND_MARKET_ID], stranger)
+    calldata = create_calldata([MARKET_ID, SECOND_MARKET_ID], [stranger, owner])
     assert factory.createEVMScript(owner, calldata) == encode_call_script(
         [
             (
                 owner_facade.address,
-                owner_facade.unbanGuardianSignals.encode_input([MARKET_ID, SECOND_MARKET_ID], stranger),
-            )
+                owner_facade.unbanGuardianSignals.encode_input([MARKET_ID], stranger),
+            ),
+            (
+                owner_facade.address,
+                owner_facade.unbanGuardianSignals.encode_input([SECOND_MARKET_ID], owner),
+            ),
         ]
     )
 
 
 def test_create_evm_script(owner, owner_facade, factory, stranger):
-    "Must create one facade call carrying the whole market-id batch"
-    calldata = create_calldata([MARKET_ID, SECOND_MARKET_ID], stranger)
+    "Must create one facade call per market-account pair"
+    calldata = create_calldata([MARKET_ID, SECOND_MARKET_ID], [stranger, owner])
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
         [
             (
                 owner_facade.address,
-                owner_facade.unbanGuardianSignals.encode_input([MARKET_ID, SECOND_MARKET_ID], stranger),
-            )
+                owner_facade.unbanGuardianSignals.encode_input([MARKET_ID], stranger),
+            ),
+            (
+                owner_facade.address,
+                owner_facade.unbanGuardianSignals.encode_input([SECOND_MARKET_ID], owner),
+            ),
         ]
     )
     assert evm_script == expected_evm_script
@@ -111,7 +124,7 @@ def test_create_evm_script(owner, owner_facade, factory, stranger):
 
 def test_decode_evm_script_call_data(factory, stranger):
     "Must decode EVMScript call data correctly"
-    calldata = create_calldata([MARKET_ID, SECOND_MARKET_ID], stranger)
-    decoded_market_ids, decoded_account = factory.decodeEVMScriptCallData(calldata)
+    calldata = create_calldata([MARKET_ID, SECOND_MARKET_ID], [stranger, factory])
+    decoded_market_ids, decoded_accounts = factory.decodeEVMScriptCallData(calldata)
     assert decoded_market_ids == ["0x" + MARKET_ID.hex(), "0x" + SECOND_MARKET_ID.hex()]
-    assert decoded_account == stranger
+    assert decoded_accounts == [stranger, factory]

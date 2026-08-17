@@ -5,10 +5,11 @@ from eth_abi import encode
 from utils.evm_script import encode_call_script
 
 VAULT = f"0x{1:040x}"
+SECOND_VAULT = f"0x{2:040x}"
 
 
-def calldata(vault, allowed):
-    return "0x" + encode(["address", "bool"], [vault, allowed]).hex()
+def calldata(vaults, allowed):
+    return "0x" + encode(["address[]", "bool"], [vaults, allowed]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -28,22 +29,30 @@ def test_deploy(owner, erc4626_exit_book, factory):
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
     with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, calldata(VAULT, True))
+        factory.createEVMScript(stranger, calldata([VAULT], True))
+
+
+def test_create_evm_script_empty_vaults(owner, factory):
+    with reverts("EMPTY_VAULTS"):
+        factory.createEVMScript(owner, calldata([], True))
 
 
 def test_create_evm_script_zero_vault(owner, factory):
     with reverts("ZERO_VAULT"):
-        factory.createEVMScript(owner, calldata(ZERO_ADDRESS, True))
+        factory.createEVMScript(owner, calldata([VAULT, ZERO_ADDRESS], True))
 
 
 @pytest.mark.parametrize("allowed", [True, False])
 def test_create_evm_script(owner, erc4626_exit_book, factory, allowed):
-    assert factory.createEVMScript(owner, calldata(VAULT, allowed)) == encode_call_script(
-        [(erc4626_exit_book.address, erc4626_exit_book.setVaultAllowed.encode_input(VAULT, allowed))]
+    assert factory.createEVMScript(owner, calldata([VAULT, SECOND_VAULT], allowed)) == encode_call_script(
+        [
+            (erc4626_exit_book.address, erc4626_exit_book.setVaultAllowed.encode_input(VAULT, allowed)),
+            (erc4626_exit_book.address, erc4626_exit_book.setVaultAllowed.encode_input(SECOND_VAULT, allowed)),
+        ]
     )
 
 
 def test_decode_evm_script_call_data(factory):
-    vault, allowed = factory.decodeEVMScriptCallData(calldata(VAULT, True))
-    assert vault == VAULT
+    vaults, allowed = factory.decodeEVMScriptCallData(calldata([VAULT, SECOND_VAULT], True))
+    assert vaults == [VAULT, SECOND_VAULT]
     assert allowed is True

@@ -3,38 +3,27 @@
 
 pragma solidity 0.8.6;
 
-import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
+import "./LidoLendOwnerFactoryBase.sol";
 
 /// @notice Creates EVMScript to set the suspect window on one Lido Lend market's GuardianSignals registry
-contract LidoLendSetSuspectWindow is TrustedCaller, IEVMScriptFactory {
+contract LidoLendSetSuspectWindow is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_SAME_SUSPECT_WINDOW = "SAME_SUSPECT_WINDOW";
-    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
     string private constant ERROR_SUSPECT_WINDOW_TOO_HIGH = "SUSPECT_WINDOW_TOO_HIGH";
-
-    // -------------
-    // VARIABLES
-    // -------------
-
-    /// @notice Address of the LidoLendOwner facade
-    ILidoLendOwner public immutable lidoLendOwner;
-    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
-    ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
-        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
-        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
-    }
+    constructor(address _trustedCaller, address _lidoLendOwner)
+        LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner)
+    {}
 
     // -------------
     // EXTERNAL METHODS
@@ -59,10 +48,11 @@ contract LidoLendSetSuspectWindow is TrustedCaller, IEVMScriptFactory {
         );
         require(newSuspectWindow != guardianSignals.getSuspectWindow(), ERROR_SAME_SUSPECT_WINDOW);
 
+        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.setGuardiansSuspectWindow.selector,
+                lidoLendOwner,
+                owner.setGuardiansSuspectWindow.selector,
                 abi.encode(marketId, newSuspectWindow)
             );
     }
@@ -82,12 +72,6 @@ contract LidoLendSetSuspectWindow is TrustedCaller, IEVMScriptFactory {
     // ------------------
     // PRIVATE METHODS
     // ------------------
-
-    function _guardianSignalsOf(bytes32 marketId) private view returns (IGuardianSignals) {
-        address controller = lidoLend.marketController(marketId);
-        require(controller != address(0), ERROR_MARKET_NOT_FOUND);
-        return IGuardianSignals(ILidoLendMarketController(controller).guardianSignals());
-    }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private

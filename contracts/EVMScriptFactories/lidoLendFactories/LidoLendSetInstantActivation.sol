@@ -3,38 +3,27 @@
 
 pragma solidity 0.8.6;
 
-import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
+import "./LidoLendOwnerFactoryBase.sol";
 
 /// @notice Creates EVMScript to set instant collateral activation for one caller on one Lido Lend market
-contract LidoLendSetInstantActivation is TrustedCaller, IEVMScriptFactory {
+contract LidoLendSetInstantActivation is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     // -------------
     // ERRORS
     // -------------
 
     string private constant ERROR_ZERO_CALLER = "ZERO_CALLER";
     string private constant ERROR_SAME_INSTANT_ACTIVATION_STATUS = "SAME_INSTANT_ACTIVATION_STATUS";
-    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-
-    // -------------
-    // VARIABLES
-    // -------------
-
-    /// @notice Address of the LidoLendOwner facade
-    ILidoLendOwner public immutable lidoLendOwner;
-    /// @notice Address of the LidoLend core (resolves a market's controller by id, for validation)
-    ILidoLend public immutable lidoLend;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller, address _lidoLendOwner) TrustedCaller(_trustedCaller) {
-        lidoLendOwner = ILidoLendOwner(_lidoLendOwner);
-        lidoLend = ILidoLendOwner(_lidoLendOwner).LIDO_LEND();
-    }
+    constructor(address _trustedCaller, address _lidoLendOwner)
+        LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner)
+    {}
 
     // -------------
     // EXTERNAL METHODS
@@ -61,10 +50,11 @@ contract LidoLendSetInstantActivation is TrustedCaller, IEVMScriptFactory {
             ERROR_SAME_INSTANT_ACTIVATION_STATUS
         );
 
+        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
-                address(lidoLendOwner),
-                lidoLendOwner.setInstantActivation.selector,
+                lidoLendOwner,
+                owner.setInstantActivation.selector,
                 abi.encode(marketId, caller, enabled)
             );
     }
@@ -89,12 +79,6 @@ contract LidoLendSetInstantActivation is TrustedCaller, IEVMScriptFactory {
     // ------------------
     // PRIVATE METHODS
     // ------------------
-
-    function _controllerOf(bytes32 marketId) private view returns (ILidoLendMarketController) {
-        address controller = lidoLend.marketController(marketId);
-        require(controller != address(0), ERROR_MARKET_NOT_FOUND);
-        return ILidoLendMarketController(controller);
-    }
 
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private

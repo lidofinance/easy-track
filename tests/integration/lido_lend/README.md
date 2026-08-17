@@ -52,9 +52,9 @@ Use a temporary deployment config whose market `pausers` list contains its inten
 edit the committed config merely to run a rehearsal.
 
 No separate activation artifact is generated or required. Each `deployed/<RUN>/markets/<market-name>.toml`
-contains the resolved market, curve, role, and CircuitBreaker values. The pauser committee and settlement flag
-remain runtime motion choices: the scenarios use the Agent as a deterministic nonzero committee and exercise
-both settlement values.
+contains the resolved market, curve, role, and CircuitBreaker values. The market steward, pauser committee,
+and settlement flag remain runtime motion choices: the scenarios use deterministic nonzero addresses and
+exercise both settlement values.
 
 Then run the EasyTrack scenarios in terminal 2:
 

@@ -113,6 +113,7 @@ ADAPTIVE_CURVE_IRM_FACTORIES = {
     "LidoLendSetIrmConfig",
 }
 RISK_STEWARD_FACTORIES = {
+    "LidoLendActivateMarket",
     "LidoLendAddRiskSteward",
     "LidoLendRemoveRiskSteward",
 }
@@ -305,7 +306,14 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
 
     add(
         LidoLendActivateMarket,
-        lambda: [tc, a["owner"], a["irm_router"], a["adaptive_curve_irm"], a["circuit_breaker"]],
+        lambda: [
+            tc,
+            a["owner"],
+            a["irm_router"],
+            a["adaptive_curve_irm"],
+            a["circuit_breaker"],
+            a["risk_steward_dashboard"],
+        ],
     )
     # Market/guardian management routes through the LidoLendOwner facade (fixed EVMScript target); the
     # factories derive the core from `owner.LIDO_LEND()` for validation.
@@ -329,8 +337,8 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         lambda: [tc, core, a["irm_router"], a["adaptive_curve_irm"]],
     )
     add(LidoLendSetMarketIrm, lambda: [tc, core, a["irm_router"]])
-    add(LidoLendAddRiskSteward, lambda: [tc, core, a["risk_steward_dashboard"]])
-    add(LidoLendRemoveRiskSteward, lambda: [tc, core, a["risk_steward_dashboard"]])
+    add(LidoLendAddRiskSteward, lambda: [tc, a["risk_steward_dashboard"]])
+    add(LidoLendRemoveRiskSteward, lambda: [tc, a["risk_steward_dashboard"]])
     add(LidoLendSetMorphoExitBookAllowed, lambda: [tc, a["morpho_exit_book"]])
     add(LidoLendSetErc4626ExitBookAllowed, lambda: [tc, a["erc4626_exit_book"]])
     return [(Factory, args()) for Factory, args in plan]
@@ -352,6 +360,8 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         irm_router = interface.IrmRouter(a["irm_router"])
     if selected & ADAPTIVE_CURVE_IRM_FACTORIES:
         adaptive_curve_irm = interface.AdaptiveCurveIrm(a["adaptive_curve_irm"])
+    if selected & RISK_STEWARD_FACTORIES:
+        risk_steward_dashboard = interface.RiskStewardDashboard(a["risk_steward_dashboard"])
     if "LidoLendActivateMarket" in selected:
         circuit_breaker = interface.CircuitBreaker(a["circuit_breaker"])
         controlled_market_create_selector = (
@@ -361,6 +371,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature),
             (irm_router, irm_router.setMarketIrm.signature),
             (owner, controlled_market_create_selector),
+            (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
             (circuit_breaker, circuit_breaker.registerPauser.signature),
         )
     if "LidoLendAddGuardian" in selected:
@@ -399,8 +410,6 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         )
     if "LidoLendSetMarketIrm" in selected:
         permissions["LidoLendSetMarketIrm"] = _permission((irm_router, irm_router.setMarketIrm.signature))
-    if selected & RISK_STEWARD_FACTORIES:
-        risk_steward_dashboard = interface.RiskStewardDashboard(a["risk_steward_dashboard"])
     if "LidoLendAddRiskSteward" in selected:
         permissions["LidoLendAddRiskSteward"] = _permission(
             (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature)

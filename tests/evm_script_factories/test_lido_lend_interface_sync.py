@@ -17,6 +17,7 @@ _INTERFACES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "interface
 # MarketParams / config structs appear as fully-expanded tuples — matching what the factories abi.encode.
 _EXPECTED_SIGNATURES = {
     "LidoLend": [
+        "market(bytes32)",
         "marketController(bytes32)",
         "idToMarketParams(bytes32)",
     ],
@@ -71,6 +72,7 @@ _EXPECTED_SIGNATURES = {
         "isBanned(bytes32,address)",
     ],
     "RiskStewardDashboard": [
+        "LIDO_LEND()",
         "addMarketSteward(bytes32,address)",
         "removeMarketSteward(bytes32,address)",
         "isMarketSteward(bytes32,address)",
@@ -83,10 +85,10 @@ _EXPECTED_SIGNATURES = {
     ],
 }
 
-# The two configs the factories re-encode and compare by keccak against the on-chain getter's return value:
-# the getter's returned struct layout must match ILidoLend.sol field-for-field, else the SAME_CONFIG guard
-# silently misbehaves. Keyed by (file, getter) -> expected component types of the returned struct.
+# Struct layouts read by the factories must match ILidoLend.sol field-for-field. Keyed by
+# (file, getter) -> expected component types of the returned struct.
 _EXPECTED_RETURN_STRUCTS = {
+    ("LidoLend", "market"): ["uint128", "uint128", "uint128", "uint128", "uint128", "uint128"],
     ("LidoLendMarketController", "collateralActivationConfig"): [
         "uint40",
         "uint40",
@@ -135,11 +137,11 @@ def test_factory_called_method_exists_in_deployed_abi(abi_name, signature):
     "abi_name,getter,expected_components",
     [(f, g, comps) for (f, g), comps in _EXPECTED_RETURN_STRUCTS.items()],
 )
-def test_config_getter_return_struct_layout(abi_name, getter, expected_components):
-    "The config getters return a struct whose field layout must match ILidoLend.sol (keccak-compared by factories)."
+def test_factory_read_struct_layout(abi_name, getter, expected_components):
+    "Struct fields read by factories must match ILidoLend.sol, including flattened public mapping getters."
     fns = [e for e in _load_abi(abi_name) if e.get("type") == "function" and e["name"] == getter]
     assert fns, f"{getter} missing from interfaces/{abi_name}.json"
     outputs = fns[0]["outputs"]
-    assert len(outputs) == 1 and outputs[0]["type"].startswith("tuple"), f"{getter} must return a single struct"
-    actual = [_canon_type(c) for c in outputs[0]["components"]]
+    components = outputs[0]["components"] if len(outputs) == 1 and outputs[0]["type"].startswith("tuple") else outputs
+    actual = [_canon_type(c) for c in components]
     assert actual == expected_components, f"{getter} struct layout drifted: {actual} != {expected_components}"

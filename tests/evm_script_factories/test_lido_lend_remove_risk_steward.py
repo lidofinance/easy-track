@@ -19,8 +19,10 @@ def create_calldata(market_id, steward):
 
 
 @pytest.fixture(scope="module")
-def dashboard_stub(owner):
-    return RiskStewardDashboardStub.deploy({"from": owner})
+def dashboard_stub(owner, core_stub):
+    dashboard = RiskStewardDashboardStub.deploy({"from": owner})
+    dashboard.setLidoLend(core_stub, {"from": owner})
+    return dashboard
 
 
 @pytest.fixture(scope="module")
@@ -33,14 +35,13 @@ def core_stub(owner):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub, dashboard_stub):
-    return LidoLendRemoveRiskSteward.deploy(owner, core_stub, dashboard_stub, {"from": owner})
+def factory(owner, dashboard_stub):
+    return LidoLendRemoveRiskSteward.deploy(owner, dashboard_stub, {"from": owner})
 
 
-def test_deploy(owner, core_stub, dashboard_stub, factory):
+def test_deploy(owner, dashboard_stub, factory):
     "Must deploy contract with correct data"
     assert factory.trustedCaller() == owner
-    assert factory.lidoLend() == core_stub
     assert factory.riskStewardDashboard() == dashboard_stub
 
 

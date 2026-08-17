@@ -20,13 +20,20 @@ def _register(easy_track, deployer, factory, perm):
 
 
 def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, admin):
-    "Create the market via an ActivateMarket motion (setMarketIrm -> createMarket -> registerPauser)."
+    "Create the market via an ActivateMarket motion, appoint its steward, and register its pauser."
     owner = lido_lend.contract("owner")
     irm_router = lido_lend.contract("irmRouter")
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     circuit_breaker = lido_lend.contract("circuitBreaker")
+    dashboard = lido_lend.contract("riskStewardDashboard")
     factory = deployer.deploy(
-        LidoLendActivateMarket, trusted_caller, owner, irm_router, adaptive_curve_irm, circuit_breaker
+        LidoLendActivateMarket,
+        trusted_caller,
+        owner,
+        irm_router,
+        adaptive_curve_irm,
+        circuit_breaker,
+        dashboard,
     )
     irm_config = deployer.deploy(AdaptiveCurveConfigStub, lido_lend.market["curveParams"])
     create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
@@ -38,6 +45,8 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
         + irm_router.setMarketIrm.signature[2:]
         + owner.address[2:]
         + create_sel
+        + dashboard.address[2:]
+        + dashboard.addMarketSteward.signature[2:]
         + circuit_breaker.address[2:]
         + circuit_breaker.registerPauser.signature[2:]
     )
@@ -46,11 +55,12 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
     calldata = (
         "0x"
         + encode(
-            [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "bool"],
+            [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool"],
             [
                 _market_params(lido_lend),
                 irm_config.address,
                 lido_lend.market["controller"],
+                lido_lend.market["steward"],
                 lido_lend.market["pauser"],
                 True,
             ],
@@ -88,6 +98,7 @@ def test_set_market_exit_book_allowed_scenario(
 
     _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, admin)
     assert core.market(market_id)["lastUpdate"] != 0
+    assert lido_lend.contract("riskStewardDashboard").isMarketSteward(market_id, m["steward"])
     assert not morpho.isMarketAllowed(market_id)
     assert not erc4626.isVaultAllowed(m["vault"])
 
@@ -111,10 +122,10 @@ def test_set_market_exit_book_allowed_scenario(
     )
 
     def morpho_calldata(allowed):
-        return "0x" + encode([MARKET_PARAMS_ABI_TYPE, "bool"], [_market_params(lido_lend), allowed]).hex()
+        return "0x" + encode([f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"], [[_market_params(lido_lend)], allowed]).hex()
 
     def erc4626_calldata(allowed):
-        return "0x" + encode(["address", "bool"], [m["vault"], allowed]).hex()
+        return "0x" + encode(["address[]", "bool"], [[m["vault"]], allowed]).hex()
 
     enact_motion(easy_track, morpho_factory, morpho_calldata(True), trusted_caller)
     assert morpho.isMarketAllowed(market_id)
