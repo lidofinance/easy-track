@@ -8,7 +8,7 @@ Protocol addresses are read from one immutable Lido Lend deployment directory. S
 
 Before deployment the script verifies artifact consistency, that the actual EasyTrack EVMScriptExecutor
 matches the protocol artifact, and that it has the roles required by the selected factories. ActivateMarket
-additionally requires one shared CircuitBreaker across the deployment and verifies its ADMIN. The output
+and RegisterPauser additionally verify the shared CircuitBreaker's ADMIN. The output
 artifact includes the exact fixed EasyTrack permission blob for each deployed factory.
 """
 
@@ -21,6 +21,7 @@ from brownie import (
     network,
     web3,
     LidoLendActivateMarket,
+    LidoLendRegisterPauser,
     LidoLendAddGuardian,
     LidoLendRemoveGuardian,
     LidoLendReplaceGuardian,
@@ -64,6 +65,7 @@ ERC4626_EXIT_BOOK_FACTORY = "LidoLendSetErc4626ExitBookAllowed"
 
 ALL_FACTORY_NAMES = (
     "LidoLendActivateMarket",
+    "LidoLendRegisterPauser",
     "LidoLendAddGuardian",
     "LidoLendRemoveGuardian",
     "LidoLendReplaceGuardian",
@@ -117,6 +119,7 @@ RISK_STEWARD_FACTORIES = {
     "LidoLendAddRiskSteward",
     "LidoLendRemoveRiskSteward",
 }
+CIRCUIT_BREAKER_FACTORIES = {"LidoLendActivateMarket", "LidoLendRegisterPauser"}
 EXIT_BOOK_FACTORIES = {MORPHO_EXIT_BOOK_FACTORY, ERC4626_EXIT_BOOK_FACTORY}
 
 
@@ -147,7 +150,7 @@ def _parse_factory_selection(value):
 def _required_address_keys(factory_names):
     selected = set(factory_names)
     keys = {"trusted_caller", "core"}
-    if "LidoLendActivateMarket" in selected:
+    if selected & CIRCUIT_BREAKER_FACTORIES:
         keys.add("circuit_breaker")
     if selected & OWNER_FACTORIES:
         keys.add("owner")
@@ -221,7 +224,7 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
             "protocol artifact executor does not match EasyTrack evmScriptExecutor: "
             f"{artifact_executor} != {expected_executor}"
         )
-    if "LidoLendActivateMarket" in selected:
+    if selected & CIRCUIT_BREAKER_FACTORIES:
         circuit_breaker = interface.CircuitBreaker(a["circuit_breaker"])
         circuit_breaker_admin = circuit_breaker.ADMIN()
         if str(circuit_breaker_admin).lower() == "0x0000000000000000000000000000000000000000":
@@ -315,6 +318,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
             a["risk_steward_dashboard"],
         ],
     )
+    add(LidoLendRegisterPauser, lambda: [tc, core, a["circuit_breaker"]])
     # Market/guardian management routes through the LidoLendOwner facade (fixed EVMScript target); the
     # factories derive the core from `owner.LIDO_LEND()` for validation.
     for Factory in (
@@ -362,8 +366,9 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         adaptive_curve_irm = interface.AdaptiveCurveIrm(a["adaptive_curve_irm"])
     if selected & RISK_STEWARD_FACTORIES:
         risk_steward_dashboard = interface.RiskStewardDashboard(a["risk_steward_dashboard"])
-    if "LidoLendActivateMarket" in selected:
+    if selected & CIRCUIT_BREAKER_FACTORIES:
         circuit_breaker = interface.CircuitBreaker(a["circuit_breaker"])
+    if "LidoLendActivateMarket" in selected:
         controlled_market_create_selector = (
             "0x" + web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
         )
@@ -374,6 +379,8 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
             (circuit_breaker, circuit_breaker.registerPauser.signature),
         )
+    if "LidoLendRegisterPauser" in selected:
+        permissions["LidoLendRegisterPauser"] = _permission((circuit_breaker, circuit_breaker.registerPauser.signature))
     if "LidoLendAddGuardian" in selected:
         permissions["LidoLendAddGuardian"] = _permission(
             (owner, owner.addGuardian.signature),

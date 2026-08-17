@@ -42,7 +42,7 @@ cross-checks each market with its linked oracle and GuardianSignals artifacts.
 The generated permissions do not contain market-controller or GuardianSignals addresses. Market and guardian
 factories call the fixed `LidoLendOwner` facade, which resolves the market-specific contracts from `marketId`.
 IRM factories call the fixed IrmRouter and AdaptiveCurveIrm instances; the remaining factories call the fixed
-dashboard or exit books supplied at deployment.
+dashboard, CircuitBreaker, or exit books supplied at deployment.
 
 Adding a market or giving it a fresh GuardianSignals registry therefore does not require changing an existing
 factory's EasyTrack permission. A permission changes only when its fixed protocol target changes or a factory
@@ -67,6 +67,7 @@ The supported short names are:
 
 ```text
 ActivateMarket
+RegisterPauser
 AddGuardian
 RemoveGuardian
 ReplaceGuardian
@@ -89,14 +90,15 @@ SetErc4626ExitBookAllowed
 An empty list, an unknown name, or a duplicate is rejected before deployment.
 
 The script resolves only the protocol components used by the selected factories. `ActivateMarket` requires
-the protocol RiskStewardDashboard and exactly one unique CircuitBreaker across the market artifacts because
-both addresses are immutable in the factory. Other factories do not depend on a CircuitBreaker.
-The market steward and pauser committee remain separate runtime motion parameters.
+the protocol RiskStewardDashboard and shared CircuitBreaker; `RegisterPauser` requires the shared
+CircuitBreaker. Activation still performs the initial pauser registration, while `RegisterPauser` supports a
+standalone registration or replacement motion.
 
 | Selected factories | Required artifacts |
 | --- | --- |
 | All selections | `protocol.toml` and at least one `markets/*.toml` |
-| Activate | protocol RiskStewardDashboard and one shared CircuitBreaker |
+| ActivateMarket | protocol RiskStewardDashboard and shared CircuitBreaker |
+| RegisterPauser | shared CircuitBreaker |
 | Exit book factories | `exit-books.toml` |
 
 ## Anvil rehearsal
@@ -169,8 +171,8 @@ selected topology:
 - the facade points to the expected core and `core.owner()` points back to that facade;
 - IRM router, curve, dashboard, and exit book bindings point to the expected core/router;
 - the executor read from the actual EasyTrack contract equals the protocol artifact executor;
-- for `ActivateMarket`, the shared `CircuitBreaker.ADMIN` equals that executor and the executor has the
-  dashboard's `STEWARD_ADMIN_ROLE`;
+- for `ActivateMarket` and `RegisterPauser`, the shared `CircuitBreaker.ADMIN` equals that executor;
+- for `ActivateMarket`, the executor has the dashboard's `STEWARD_ADMIN_ROLE`;
 - the executor has the owner, IRM, dashboard, and exit-book roles required by the selected factories.
 
 Any failure stops the script before factory deployment.

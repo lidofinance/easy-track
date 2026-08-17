@@ -37,6 +37,7 @@ def test_factory_selection_accepts_short_and_full_names_in_canonical_order():
         "LidoLendSetSupplyCap",
     )
     assert _parse_factory_selection("UnbanAccount") == ("LidoLendUnbanAccount",)
+    assert _parse_factory_selection("RegisterPauser") == ("LidoLendRegisterPauser",)
 
 
 @pytest.mark.parametrize(
@@ -61,6 +62,11 @@ def test_selected_factory_only_requires_its_protocol_dependencies():
         "irm_router",
         "adaptive_curve_irm",
         "risk_steward_dashboard",
+        "circuit_breaker",
+    }
+    assert _required_address_keys(("LidoLendRegisterPauser",)) == {
+        "trusted_caller",
+        "core",
         "circuit_breaker",
     }
     assert _required_address_keys(("LidoLendSetSupplyCap",)) == {
@@ -163,7 +169,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     artifacts, deployed = deploy_lido_lend_factories(addresses, {"from": deployer})
     instances = {Factory._name: instance for Factory, instance in deployed}
 
-    assert len(instances) == 18
+    assert len(instances) == 19
     assert set(artifacts) == set(instances)
     for name, instance in instances.items():
         assert instance.trustedCaller() == trusted_caller
@@ -197,6 +203,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             addresses["risk_steward_dashboard"].lower(),
             addresses["circuit_breaker"].lower(),
         ],
+        "LidoLendRegisterPauser": [addresses["circuit_breaker"].lower()],
         "LidoLendAddGuardian": [addresses["owner"].lower(), addresses["owner"].lower()],
         "LidoLendRemoveGuardian": [addresses["owner"].lower(), addresses["owner"].lower()],
         "LidoLendReplaceGuardian": [addresses["owner"].lower()],
@@ -225,6 +232,10 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     assert activation.adaptiveCurveIrm() == addresses["adaptive_curve_irm"]
     assert activation.circuitBreaker() == addresses["circuit_breaker"]
     assert activation.riskStewardDashboard() == addresses["risk_steward_dashboard"]
+
+    register_pauser = instances["LidoLendRegisterPauser"]
+    assert register_pauser.lidoLend() == core
+    assert register_pauser.circuitBreaker() == addresses["circuit_breaker"]
 
     for name in FACADE_FACTORIES:
         assert instances[name].lidoLendOwner() == owner
