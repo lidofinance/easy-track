@@ -64,16 +64,22 @@ def test_create_evm_script_called_by_stranger(stranger, factory, new_irm):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID, new_irm))
 
 
-def test_create_evm_script_zero_irm(owner, factory):
-    "Must revert with message 'ZERO_IRM' if the new IRM is the zero address"
-    with reverts("ZERO_IRM"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
+def test_create_evm_script_zero_irm(owner, router_stub, market_params, factory):
+    "Must leave zero-address validation to the router, consistently with IRM config validation"
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
+
+    assert evm_script == encode_call_script(
+        [(router_stub.address, router_stub.setMarketIrm.encode_input(market_params, ZERO_ADDRESS))]
+    )
 
 
-def test_create_evm_script_irm_not_contract(owner, factory):
-    "Must revert with message 'IRM_NOT_CONTRACT' if the new IRM has no code"
-    with reverts("IRM_NOT_CONTRACT"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, EOA))
+def test_create_evm_script_does_not_validate_irm(owner, router_stub, market_params, factory):
+    "Must leave validation of the selected IRM to the committee and router"
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, EOA))
+
+    assert evm_script == encode_call_script(
+        [(router_stub.address, router_stub.setMarketIrm.encode_input(market_params, EOA))]
+    )
 
 
 def test_create_evm_script_market_not_found(owner, factory, new_irm):
@@ -94,7 +100,7 @@ def test_create_evm_script_irm_not_router(owner, core_stub, factory, new_irm):
 
 
 def test_create_evm_script(owner, router_stub, market_params, new_irm, factory):
-    "Must create correct EVMScript targeting the market's router when the new IRM is a non-zero contract"
+    "Must create correct EVMScript targeting the market's router"
     evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, new_irm))
     expected_evm_script = encode_call_script(
         [(router_stub.address, router_stub.setMarketIrm.encode_input(market_params, new_irm))]

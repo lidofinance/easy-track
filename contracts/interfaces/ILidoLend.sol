@@ -98,6 +98,8 @@ interface ILidoLendMarketController {
         uint16 ltvStepBps;
     }
 
+    function LIDO_LEND() external view returns (ILidoLend);
+
     function PAUSER_ROLE() external view returns (bytes32);
 
     function hasRole(bytes32 role, address account) external view returns (bool);

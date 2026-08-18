@@ -93,10 +93,7 @@ def test_activate_market_scenario(
     easy_track,
     deployer,
     trusted_caller,
-    stranger,
     enact_motion,
-    create_motion,
-    advance_time,
     admin,
     skip_if_already_activated,
 ):
@@ -119,10 +116,8 @@ def test_activate_market_scenario(
     assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
     assert core.isSettlementEnabled(market_id)
 
-    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
-    advance_time(easy_track.motionDuration() + 100)
     with reverts():
-        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
+        easy_track.createMotion(factory, calldata, {"from": trusted_caller})
 
 
 def test_activate_market_without_settlement_scenario(

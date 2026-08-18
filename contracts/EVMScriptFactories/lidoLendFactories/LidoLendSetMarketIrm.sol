@@ -16,8 +16,6 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
-    string private constant ERROR_ZERO_IRM = "ZERO_IRM";
-    string private constant ERROR_IRM_NOT_CONTRACT = "IRM_NOT_CONTRACT";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
 
@@ -58,8 +56,6 @@ contract LidoLendSetMarketIrm is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (bytes32 marketId, address newIrm) = _decodeEVMScriptCallData(_evmScriptCallData);
-        require(newIrm != address(0), ERROR_ZERO_IRM);
-        require(newIrm.code.length > 0, ERROR_IRM_NOT_CONTRACT);
 
         ILidoLend core = ILidoLend(lidoLend);
         MarketParams memory marketParams = core.idToMarketParams(marketId);

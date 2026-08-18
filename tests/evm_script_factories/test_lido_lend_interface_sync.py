@@ -46,6 +46,7 @@ _EXPECTED_SIGNATURES = {
         "registerPauser(address,address)",
     ],
     "LidoLendMarketController": [
+        "LIDO_LEND()",
         "marketId()",
         "guardianSignals()",
         "setInstantActivation(address,bool)",

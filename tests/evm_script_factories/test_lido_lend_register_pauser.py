@@ -56,10 +56,18 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger))
 
 
-def test_create_evm_script_zero_pauser_committee(owner, factory):
-    "Must reject unregistering through the registration factory"
-    with reverts("ZERO_PAUSER_COMMITTEE"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
+def test_create_evm_script_zero_pauser_unregisters(owner, circuit_breaker_stub, controller, factory):
+    "Must unregister the controller's pauser when the supplied address is zero"
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
+
+    assert evm_script == encode_call_script(
+        [
+            (
+                circuit_breaker_stub.address,
+                circuit_breaker_stub.registerPauser.encode_input(controller.address, ZERO_ADDRESS),
+            )
+        ]
+    )
 
 
 def test_create_evm_script_zero_controller(owner, factory, stranger):

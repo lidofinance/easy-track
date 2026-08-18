@@ -89,9 +89,10 @@ def market_id(market_params):
 
 
 @pytest.fixture(scope="module")
-def controller(owner, market_id, circuit_breaker_stub):
+def controller(owner, core_stub, market_id, circuit_breaker_stub):
     "A controller whose marketId matches market_params (so the factory's cross-check passes)."
     c = LidoLendMarketControllerStub.deploy({"from": owner})
+    c.setLidoLend(core_stub, {"from": owner})
     c.setMarketId(market_id, {"from": owner})
     c.grantRole(c.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
     return c
@@ -215,6 +216,20 @@ def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     other = LidoLendMarketControllerStub.deploy({"from": owner})
     other.setMarketId(keccak(b"other"), {"from": owner})
     with reverts("CONTROLLER_MISMATCH"):
+        factory.createEVMScript(
+            owner, create_calldata(market_params, IRM_CONFIG, other.address, STEWARD, PAUSER_COMMITTEE, False)
+        )
+
+
+def test_create_evm_script_controller_core_mismatch(owner, factory, market_id, market_params, circuit_breaker_stub):
+    "Must reject a controller bound to a different Lido Lend core"
+    wrong_core = LidoLendCoreStub.deploy({"from": owner})
+    other = LidoLendMarketControllerStub.deploy({"from": owner})
+    other.setLidoLend(wrong_core, {"from": owner})
+    other.setMarketId(market_id, {"from": owner})
+    other.grantRole(other.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
+
+    with reverts("CONTROLLER_CORE_MISMATCH"):
         factory.createEVMScript(
             owner, create_calldata(market_params, IRM_CONFIG, other.address, STEWARD, PAUSER_COMMITTEE, False)
         )

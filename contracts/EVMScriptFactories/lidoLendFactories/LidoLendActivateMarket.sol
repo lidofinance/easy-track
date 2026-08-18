@@ -31,6 +31,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
     string private constant ERROR_MARKET_ALREADY_CREATED = "MARKET_ALREADY_CREATED";
     string private constant ERROR_CONTROLLER_MISMATCH = "CONTROLLER_MISMATCH";
+    string private constant ERROR_CONTROLLER_CORE_MISMATCH = "CONTROLLER_CORE_MISMATCH";
     string private constant ERROR_CIRCUIT_BREAKER_NOT_PAUSER = "CIRCUIT_BREAKER_NOT_PAUSER";
 
     // -------------
@@ -104,14 +105,14 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         require(steward != address(0), ERROR_ZERO_STEWARD);
         require(pauserCommittee != address(0), ERROR_ZERO_PAUSER_COMMITTEE);
         require(marketParams.lltv < uint256(WAD), ERROR_MAX_LLTV_EXCEEDED);
-        // The market id commits to the `irm` field; anything but the domain's router is a phantom market that
-        // `setMarketIrm` would reject at enactment anyway — fail at motion creation instead.
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
         bytes32 marketId = keccak256(abi.encode(marketParams));
         ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
-        require(owner.LIDO_LEND().market(marketId).lastUpdate == 0, ERROR_MARKET_ALREADY_CREATED);
+        ILidoLend core = owner.LIDO_LEND();
+        require(core.market(marketId).lastUpdate == 0, ERROR_MARKET_ALREADY_CREATED);
         ILidoLendMarketController marketController = ILidoLendMarketController(controller);
         require(marketController.marketId() == marketId, ERROR_CONTROLLER_MISMATCH);
+        require(marketController.LIDO_LEND() == core, ERROR_CONTROLLER_CORE_MISMATCH);
         require(
             marketController.hasRole(marketController.PAUSER_ROLE(), circuitBreaker),
             ERROR_CIRCUIT_BREAKER_NOT_PAUSER

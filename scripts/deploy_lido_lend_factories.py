@@ -205,18 +205,12 @@ def _read_addresses(factory_names, artifacts_dir=None):
 
 def _easy_track_executor(network_name):
     easy_track = easy_track_addresses(network_name)
-    if not web3.eth.get_code(easy_track.easy_track):
-        raise ValueError(f"EasyTrack has no contract code: {easy_track.easy_track}")
     return interface.IEasyTrack(easy_track.easy_track).evmScriptExecutor()
 
 
 def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_NAMES):
     """Fail fast if the selected factories' addresses form one executor-ready deployment."""
     selected = set(factory_names)
-    for key in _required_address_keys(factory_names) - {"trusted_caller"}:
-        if not web3.eth.get_code(a[key]):
-            raise ValueError(f"{key} has no contract code: {a[key]}")
-
     executor = expected_executor
     artifact_executor = a.get("evm_script_executor", expected_executor)
     if str(artifact_executor).lower() != str(expected_executor).lower():
