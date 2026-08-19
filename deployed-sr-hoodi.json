@@ -21,5 +21,20 @@
             600
         ],
         "txHash": "0x04b889924b1963ee3ea2d9473dadbf913c98f5753aa9545817ea87b4fee96ebc"
+    },
+    "UpdateStakingModuleShareLimits:CSM0x02": {
+        "contract": "UpdateStakingModuleShareLimits",
+        "address": "0x05F2F2eb01A8e8C20FDD07EAb93640cd8304aaC9",
+        "constructorArgs": [
+            "0x4af43ee34a6fcd1feca1e1f832124c763561da53",
+            "CSM0x02",
+            "0xCc820558B39ee15C7C45B59390B503b83fb499A8",
+            6,
+            50,
+            50,
+            60,
+            60
+        ],
+        "txHash": "0x71c11e0bce8e5bc18eace57928826f4f48d289d04107d9d0a88d079d3bfabd2a"
     }
 }

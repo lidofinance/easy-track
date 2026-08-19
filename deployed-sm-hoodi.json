@@ -67,5 +67,25 @@
             1
         ],
         "txHash": "0x14dab6c33a39c0ba850aaf67fb12063a766e97fa3820842005e7067c41f966c6"
+    },
+    "ReportWithdrawalsForSlashedValidators:CSM0x02": {
+        "contract": "ReportWithdrawalsForSlashedValidators",
+        "address": "0x0b384D661101Fe7F56caa421547b243e03ED4E65",
+        "constructorArgs": [
+            "0x4af43ee34a6fcd1feca1e1f832124c763561da53",
+            "CSM0x02",
+            "0xbb7dd81FAC80f3Effa10eA8b973c15AE65a4CAf9"
+        ],
+        "txHash": "0xffc0b4ba8f458ad59043f19af6d94b3de3e6d64ead0f8a0c7930224b5e12cee4"
+    },
+    "SettleGeneralDelayedPenalty:CSM0x02": {
+        "contract": "SettleGeneralDelayedPenalty",
+        "address": "0x2eCf179d5e840e56054E214438008F19E46711bC",
+        "constructorArgs": [
+            "0x4af43ee34a6fcd1feca1e1f832124c763561da53",
+            "CSM0x02",
+            "0xbb7dd81FAC80f3Effa10eA8b973c15AE65a4CAf9"
+        ],
+        "txHash": "0x5d987da6c803de0c0c5b7a109b50cd526c56724adba55cf347b69892a5032109"
     }
 }
