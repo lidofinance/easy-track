@@ -18,7 +18,7 @@ from utils.evm_script import encode_call_script
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE
 
-ACTIVATE_TYPES = [MP_TYPE, "address", "address", "address", "address", "bool"]
+ACTIVATE_TYPES = [MP_TYPE, "address", "address", "address", "address", "bool", "uint256"]
 
 LOAN_TOKEN = f"0x{1:040x}"
 COLLATERAL_TOKEN = f"0x{2:040x}"
@@ -30,17 +30,27 @@ IRM_CONFIG = f"0x{5:040x}"
 CONTROLLER = f"0x{6:040x}"
 PAUSER_COMMITTEE = f"0x{7:040x}"
 STEWARD = f"0x{8:040x}"
+INITIAL_FEE = 10**17
+MAX_FEE = 25 * 10**16
 
 # Placeholder params for checks that revert BEFORE the "irm is the router" check (irm value irrelevant there).
 MARKET_PARAMS = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, IRM, LLTV)
 
 
-def create_calldata(market_params, irm_config, controller, steward, pauser_committee, enable_settlement):
+def create_calldata(
+    market_params,
+    irm_config,
+    controller,
+    steward,
+    pauser_committee,
+    enable_settlement,
+    fee=INITIAL_FEE,
+):
     return (
         "0x"
         + encode(
             ACTIVATE_TYPES,
-            [market_params, irm_config, controller, steward, pauser_committee, enable_settlement],
+            [market_params, irm_config, controller, steward, pauser_committee, enable_settlement, fee],
         ).hex()
     )
 
@@ -211,6 +221,23 @@ def test_create_evm_script_max_lltv(owner, factory, controller):
         )
 
 
+def test_create_evm_script_max_fee(owner, factory, market_params, controller):
+    "Must revert with 'MAX_FEE_EXCEEDED' when the initial fee exceeds the core's 25% cap"
+    with reverts("MAX_FEE_EXCEEDED"):
+        factory.createEVMScript(
+            owner,
+            create_calldata(
+                market_params,
+                IRM_CONFIG,
+                controller.address,
+                STEWARD,
+                PAUSER_COMMITTEE,
+                False,
+                fee=MAX_FEE + 1,
+            ),
+        )
+
+
 def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     "Must revert with 'CONTROLLER_MISMATCH' if the controller does not belong to the market"
     other = LidoLendMarketControllerStub.deploy({"from": owner})
@@ -267,6 +294,7 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
 
 
 @pytest.mark.parametrize("enable_settlement", [False, True])
+@pytest.mark.parametrize("fee", [0, INITIAL_FEE])
 def test_create_evm_script(
     owner,
     owner_stub,
@@ -279,8 +307,9 @@ def test_create_evm_script(
     market_params,
     factory,
     enable_settlement,
+    fee,
 ):
-    "Must create the five activation calls in order, including the independently supplied market steward"
+    "Must append setFee after the fixed activation calls exactly when the requested initial fee is nonzero"
     calldata = create_calldata(
         market_params,
         IRM_CONFIG,
@@ -288,23 +317,26 @@ def test_create_evm_script(
         STEWARD,
         PAUSER_COMMITTEE,
         enable_settlement,
+        fee,
     )
     evm_script = factory.createEVMScript(owner, calldata)
 
-    expected_evm_script = encode_call_script(
+    expected_calls = [
+        (
+            adaptive_curve_irm_stub.address,
+            adaptive_curve_irm_stub.applyIrmConfig.encode_input(market_params, IRM_CONFIG),
+        ),
+        (
+            irm_router_stub.address,
+            irm_router_stub.setMarketIrm.encode_input(market_params, adaptive_curve_irm_stub.address),
+        ),
+        (
+            owner_stub.address,
+            owner_stub.createMarket.encode_input(market_params, controller.address, enable_settlement),
+        ),
+    ]
+    expected_calls.extend(
         [
-            (
-                adaptive_curve_irm_stub.address,
-                adaptive_curve_irm_stub.applyIrmConfig.encode_input(market_params, IRM_CONFIG),
-            ),
-            (
-                irm_router_stub.address,
-                irm_router_stub.setMarketIrm.encode_input(market_params, adaptive_curve_irm_stub.address),
-            ),
-            (
-                owner_stub.address,
-                owner_stub.createMarket.encode_input(market_params, controller.address, enable_settlement),
-            ),
             (
                 risk_steward_dashboard_stub.address,
                 risk_steward_dashboard_stub.addMarketSteward.encode_input(market_id, STEWARD),
@@ -315,17 +347,66 @@ def test_create_evm_script(
             ),
         ]
     )
+    if fee != 0:
+        expected_calls.append((owner_stub.address, owner_stub.setFee.encode_input(market_params, fee)))
+    expected_evm_script = encode_call_script(expected_calls)
     assert evm_script == expected_evm_script
+
+
+@pytest.mark.parametrize("fee", [0, INITIAL_FEE])
+def test_activation_permission_accepts_both_fee_script_shapes(
+    owner,
+    owner_stub,
+    irm_router_stub,
+    adaptive_curve_irm_stub,
+    circuit_breaker_stub,
+    risk_steward_dashboard_stub,
+    controller,
+    market_params,
+    factory,
+    EVMScriptPermissionsWrapper,
+    fee,
+):
+    permission = (
+        adaptive_curve_irm_stub.address
+        + adaptive_curve_irm_stub.applyIrmConfig.signature[2:]
+        + irm_router_stub.address[2:]
+        + irm_router_stub.setMarketIrm.signature[2:]
+        + owner_stub.address[2:]
+        + owner_stub.createMarket.signature[2:]
+        + risk_steward_dashboard_stub.address[2:]
+        + risk_steward_dashboard_stub.addMarketSteward.signature[2:]
+        + circuit_breaker_stub.address[2:]
+        + circuit_breaker_stub.registerPauser.signature[2:]
+        + owner_stub.address[2:]
+        + owner_stub.setFee.signature[2:]
+    )
+    evm_script = factory.createEVMScript(
+        owner,
+        create_calldata(
+            market_params,
+            IRM_CONFIG,
+            controller.address,
+            STEWARD,
+            PAUSER_COMMITTEE,
+            False,
+            fee,
+        ),
+    )
+    permissions = EVMScriptPermissionsWrapper.deploy({"from": owner})
+
+    assert permissions.canExecuteEVMScript(permission, evm_script)
 
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
     calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, PAUSER_COMMITTEE, True)
     decoded = factory.decodeEVMScriptCallData(calldata)
-    market_params, irm_config, controller, steward, pauser, enable_settlement = decoded
+    market_params, irm_config, controller, steward, pauser, enable_settlement, fee = decoded
     assert market_params == MARKET_PARAMS
     assert irm_config == IRM_CONFIG
     assert controller == CONTROLLER
     assert steward == STEWARD
     assert pauser == PAUSER_COMMITTEE
     assert enable_settlement is True
+    assert fee == INITIAL_FEE

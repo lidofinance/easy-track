@@ -11,17 +11,13 @@ import "../../interfaces/ILidoLend.sol";
 /// @notice Creates EVMScript to set Lido Lend markets' allow-list state on MorphoExitBook
 contract LidoLendSetMorphoExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
+    string private constant ERROR_ZERO_EXIT_BOOK = "ZERO_EXIT_BOOK";
 
-    /// @notice Address of the domain's MorphoExitBook
-    address public immutable morphoExitBook;
-
-    constructor(address _trustedCaller, address _morphoExitBook) TrustedCaller(_trustedCaller) {
-        morphoExitBook = _morphoExitBook;
-    }
+    constructor(address _trustedCaller) TrustedCaller(_trustedCaller) {}
 
     /// @notice Creates EVMScript to set markets' allow-list state on MorphoExitBook
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (MarketParams[] marketParams, bool allowed)
+    /// @param _evmScriptCallData Encoded tuple: (address exitBook, MarketParams[] marketParams, bool allowed)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -29,9 +25,12 @@ contract LidoLendSetMorphoExitBookAllowed is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (MarketParams[] memory marketParams, bool allowed) = _decodeEVMScriptCallData(
-            _evmScriptCallData
-        );
+        (
+            address exitBook,
+            MarketParams[] memory marketParams,
+            bool allowed
+        ) = _decodeEVMScriptCallData(_evmScriptCallData);
+        require(exitBook != address(0), ERROR_ZERO_EXIT_BOOK);
         require(marketParams.length > 0, ERROR_EMPTY_MARKETS_LIST);
 
         bytes[] memory encodedCalldata = new bytes[](marketParams.length);
@@ -41,20 +40,25 @@ contract LidoLendSetMorphoExitBookAllowed is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                morphoExitBook,
+                exitBook,
                 IMorphoExitBook.setMarketAllowed.selector,
                 encodedCalldata
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (MarketParams[] marketParams, bool allowed)
+    /// @param _evmScriptCallData Encoded tuple: (address exitBook, MarketParams[] marketParams, bool allowed)
+    /// @return exitBook MorphoExitBook whose allow-list state is set
     /// @return marketParams Market params whose allow-list state is set
     /// @return allowed Target allow-list state
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (MarketParams[] memory marketParams, bool allowed)
+        returns (
+            address exitBook,
+            MarketParams[] memory marketParams,
+            bool allowed
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -62,8 +66,15 @@ contract LidoLendSetMorphoExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (MarketParams[] memory marketParams, bool allowed)
+        returns (
+            address exitBook,
+            MarketParams[] memory marketParams,
+            bool allowed
+        )
     {
-        (marketParams, allowed) = abi.decode(_evmScriptCallData, (MarketParams[], bool));
+        (exitBook, marketParams, allowed) = abi.decode(
+            _evmScriptCallData,
+            (address, MarketParams[], bool)
+        );
     }
 }

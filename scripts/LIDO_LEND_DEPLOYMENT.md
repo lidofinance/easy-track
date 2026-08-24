@@ -78,6 +78,8 @@ UnbanAccount
 SetCollateralActivationConfig
 SetSettlementConfig
 SetSupplyCap
+SetFee
+SetFeeRecipient
 UnfreezeMarket
 SetIrmCurveParams
 SetMarketIrm
@@ -85,6 +87,7 @@ AddRiskSteward
 RemoveRiskSteward
 SetMorphoExitBookAllowed
 SetErc4626ExitBookAllowed
+SetExitBooksServiceFee
 ```
 
 An empty list, an unknown name, or a duplicate is rejected before deployment.
@@ -172,17 +175,37 @@ selected topology:
 - IRM router, curve, dashboard, and exit book bindings point to the expected core/router;
 - the executor read from the actual EasyTrack contract equals the protocol artifact executor;
 - for `ActivateMarket` and `RegisterPauser`, the shared `CircuitBreaker.ADMIN` equals that executor;
-- for `ActivateMarket`, the executor has the dashboard's `STEWARD_ADMIN_ROLE`;
-- the executor has the owner, IRM, dashboard, and exit-book roles required by the selected factories.
+- for `ActivateMarket`, the executor has the owner's `MARKET_CREATOR_ROLE` and `FEE_MANAGER_ROLE`, plus the
+  dashboard's `STEWARD_ADMIN_ROLE`;
+- the executor has the owner, IRM, dashboard,
+  and exit-book roles required by the selected factories.
 
 Any failure stops the script before factory deployment.
 
+`SetMorphoExitBookAllowed` and `SetErc4626ExitBookAllowed` receive their non-zero ExitBook target in motion
+calldata. Their EasyTrack permission blobs determine which targets can be executed; the production deployment
+permits the corresponding ExitBook address from the protocol artifact.
+
 ## Fee-management scope
 
-This factory set does not expose `LidoLendOwner.setFee` or `setFeeRecipient`. Fee management is intentionally
-outside this EasyTrack rollout: `FEE_MANAGER_ROLE` belongs to the Agent and must not be granted to the
-EVMScriptExecutor. There are no fee factories and no fee permissions in the generated artifact. Registry
-acceptance tests enforce both sides of this policy.
+`ActivateMarket` accepts an initial market fee of at most 25%. A nonzero fee is installed as the final action
+in the same EVMScript; zero leaves the core's default fee unchanged and omits that call. Its permission blob
+includes the facade's `setFee` selector for the nonzero case.
+
+`SetFee` changes one market fee through `LidoLendOwner`; the target accrues that market with the old fee before
+writing the new value. `SetFeeRecipient` takes a non-empty ordered list of market ids, accrues each listed market,
+and changes the global recipient last. The motion creator must include every active market whose pending fees
+must remain attributable to the current recipient.
+
+For `ActivateMarket` and either fee factory, `FEE_MANAGER_ROLE` must belong to the EVMScriptExecutor and must not
+belong to the Agent. `SetFeeRecipient` receives exactly the core `accrueInterest` permission and the facade
+`setFeeRecipient` permission; `SetFee` receives only the facade `setFee` permission.
+
+`SetExitBooksServiceFee` takes a non-empty ordered array of ExitBook addresses and applies the same recipient
+and service-fee rate to each. The rate is capped at 25%; a zero recipient is accepted only with a zero rate.
+The factory accepts any non-zero target, while its EasyTrack permission blob determines which targets can be
+executed. The production deployment permits `setServiceFee` on the protocol artifact's Morpho and ERC-4626
+ExitBooks, and the EVMScriptExecutor must hold `FEE_MANAGER_ROLE` on both.
 
 ## Production deployment
 

@@ -32,6 +32,8 @@ from brownie import (
     LidoLendSetCollateralActivationConfig,
     LidoLendSetSettlementConfig,
     LidoLendSetSupplyCap,
+    LidoLendSetFee,
+    LidoLendSetFeeRecipient,
     LidoLendUnfreezeMarket,
     LidoLendSetIrmConfig,
     LidoLendSetMarketIrm,
@@ -39,6 +41,7 @@ from brownie import (
     LidoLendRemoveRiskSteward,
     LidoLendSetMorphoExitBookAllowed,
     LidoLendSetErc4626ExitBookAllowed,
+    LidoLendSetExitBooksServiceFee,
 )
 
 from utils import log
@@ -62,6 +65,7 @@ def _env_address(name):
 
 MORPHO_EXIT_BOOK_FACTORY = "LidoLendSetMorphoExitBookAllowed"
 ERC4626_EXIT_BOOK_FACTORY = "LidoLendSetErc4626ExitBookAllowed"
+EXIT_BOOKS_SERVICE_FEE_FACTORY = "LidoLendSetExitBooksServiceFee"
 
 ALL_FACTORY_NAMES = (
     "LidoLendActivateMarket",
@@ -76,6 +80,8 @@ ALL_FACTORY_NAMES = (
     "LidoLendSetCollateralActivationConfig",
     "LidoLendSetSettlementConfig",
     "LidoLendSetSupplyCap",
+    "LidoLendSetFee",
+    "LidoLendSetFeeRecipient",
     "LidoLendUnfreezeMarket",
     "LidoLendSetIrmConfig",
     "LidoLendSetMarketIrm",
@@ -83,6 +89,7 @@ ALL_FACTORY_NAMES = (
     "LidoLendRemoveRiskSteward",
     MORPHO_EXIT_BOOK_FACTORY,
     ERC4626_EXIT_BOOK_FACTORY,
+    EXIT_BOOKS_SERVICE_FEE_FACTORY,
 )
 
 MARKET_MANAGER_FACTORIES = {
@@ -100,7 +107,10 @@ GUARDIAN_MANAGER_FACTORIES = {
     "LidoLendSetSuspectWindow",
     "LidoLendUnbanAccount",
 }
-OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
+FEE_MANAGER_FACTORIES = {"LidoLendActivateMarket", "LidoLendSetFee", "LidoLendSetFeeRecipient"}
+OWNER_FACTORIES = (
+    {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES | FEE_MANAGER_FACTORIES
+)
 IRM_ROUTER_FACTORIES = {
     "LidoLendActivateMarket",
     "LidoLendSetIrmConfig",
@@ -120,7 +130,11 @@ RISK_STEWARD_FACTORIES = {
     "LidoLendRemoveRiskSteward",
 }
 CIRCUIT_BREAKER_FACTORIES = {"LidoLendActivateMarket", "LidoLendRegisterPauser"}
-EXIT_BOOK_FACTORIES = {MORPHO_EXIT_BOOK_FACTORY, ERC4626_EXIT_BOOK_FACTORY}
+EXIT_BOOK_FACTORIES = {
+    MORPHO_EXIT_BOOK_FACTORY,
+    ERC4626_EXIT_BOOK_FACTORY,
+    EXIT_BOOKS_SERVICE_FEE_FACTORY,
+}
 
 
 def _parse_factory_selection(value):
@@ -160,9 +174,9 @@ def _required_address_keys(factory_names):
         keys.add("adaptive_curve_irm")
     if selected & RISK_STEWARD_FACTORIES:
         keys.add("risk_steward_dashboard")
-    if MORPHO_EXIT_BOOK_FACTORY in selected:
+    if MORPHO_EXIT_BOOK_FACTORY in selected or EXIT_BOOKS_SERVICE_FEE_FACTORY in selected:
         keys.add("morpho_exit_book")
-    if ERC4626_EXIT_BOOK_FACTORY in selected:
+    if ERC4626_EXIT_BOOK_FACTORY in selected or EXIT_BOOKS_SERVICE_FEE_FACTORY in selected:
         keys.add("erc4626_exit_book")
     return keys
 
@@ -246,6 +260,8 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
             required_owner_roles.add("MARKET_MANAGER_ROLE")
         if selected & GUARDIAN_MANAGER_FACTORIES:
             required_owner_roles.add("GUARDIAN_MANAGER_ROLE")
+        if selected & FEE_MANAGER_FACTORIES:
+            required_owner_roles.add("FEE_MANAGER_ROLE")
         for role_name in required_owner_roles:
             role = web3.keccak(text=role_name)
             if not owner.hasRole(role, executor):
@@ -275,17 +291,22 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
 
     if selected & EXIT_BOOK_FACTORIES:
         allowlist_manager_role = web3.keccak(text="ALLOWLIST_MANAGER_ROLE")
+        fee_manager_role = web3.keccak(text="FEE_MANAGER_ROLE")
 
-    if MORPHO_EXIT_BOOK_FACTORY in selected:
+    if MORPHO_EXIT_BOOK_FACTORY in selected or EXIT_BOOKS_SERVICE_FEE_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
         require_address("morpho_exit_book.MORPHO", morpho_exit_book.MORPHO(), a["core"])
-        if not morpho_exit_book.hasRole(allowlist_manager_role, executor):
+        if MORPHO_EXIT_BOOK_FACTORY in selected and not morpho_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks morpho_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
+        if EXIT_BOOKS_SERVICE_FEE_FACTORY in selected and not morpho_exit_book.hasRole(fee_manager_role, executor):
+            raise ValueError(f"executor lacks morpho_exit_book.FEE_MANAGER_ROLE: {executor}")
 
-    if ERC4626_EXIT_BOOK_FACTORY in selected:
+    if ERC4626_EXIT_BOOK_FACTORY in selected or EXIT_BOOKS_SERVICE_FEE_FACTORY in selected:
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
-        if not erc4626_exit_book.hasRole(allowlist_manager_role, executor):
+        if ERC4626_EXIT_BOOK_FACTORY in selected and not erc4626_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks erc4626_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
+        if EXIT_BOOKS_SERVICE_FEE_FACTORY in selected and not erc4626_exit_book.hasRole(fee_manager_role, executor):
+            raise ValueError(f"executor lacks erc4626_exit_book.FEE_MANAGER_ROLE: {executor}")
 
     return executor
 
@@ -326,6 +347,8 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         LidoLendSetCollateralActivationConfig,
         LidoLendSetSettlementConfig,
         LidoLendSetSupplyCap,
+        LidoLendSetFee,
+        LidoLendSetFeeRecipient,
         LidoLendUnfreezeMarket,
     ):
         add(Factory, lambda: [tc, a["owner"]])
@@ -337,8 +360,9 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
     add(LidoLendSetMarketIrm, lambda: [tc, core, a["irm_router"]])
     add(LidoLendAddRiskSteward, lambda: [tc, a["risk_steward_dashboard"]])
     add(LidoLendRemoveRiskSteward, lambda: [tc, a["risk_steward_dashboard"]])
-    add(LidoLendSetMorphoExitBookAllowed, lambda: [tc, a["morpho_exit_book"]])
-    add(LidoLendSetErc4626ExitBookAllowed, lambda: [tc, a["erc4626_exit_book"]])
+    add(LidoLendSetMorphoExitBookAllowed, lambda: [tc])
+    add(LidoLendSetErc4626ExitBookAllowed, lambda: [tc])
+    add(LidoLendSetExitBooksServiceFee, lambda: [tc])
     return [(Factory, args()) for Factory, args in plan]
 
 
@@ -352,6 +376,8 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
     selected = set(factory_names)
     permissions = {}
 
+    if "LidoLendSetFeeRecipient" in selected:
+        core = interface.LidoLend(a["core"])
     if selected & OWNER_FACTORIES:
         owner = interface.LidoLendOwner(a["owner"])
     if selected & IRM_ROUTER_FACTORIES:
@@ -372,6 +398,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (owner, controlled_market_create_selector),
             (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
             (circuit_breaker, circuit_breaker.registerPauser.signature),
+            (owner, owner.setFee.signature),
         )
     if "LidoLendRegisterPauser" in selected:
         permissions["LidoLendRegisterPauser"] = _permission((circuit_breaker, circuit_breaker.registerPauser.signature))
@@ -403,6 +430,13 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions["LidoLendSetSettlementConfig"] = _permission((owner, owner.setMarketSettlementConfig.signature))
     if "LidoLendSetSupplyCap" in selected:
         permissions["LidoLendSetSupplyCap"] = _permission((owner, owner.setMarketSupplyCap.signature))
+    if "LidoLendSetFee" in selected:
+        permissions["LidoLendSetFee"] = _permission((owner, owner.setFee.signature))
+    if "LidoLendSetFeeRecipient" in selected:
+        permissions["LidoLendSetFeeRecipient"] = _permission(
+            (core, core.accrueInterest.signature),
+            (owner, owner.setFeeRecipient.signature),
+        )
     if "LidoLendUnfreezeMarket" in selected:
         permissions["LidoLendUnfreezeMarket"] = _permission((owner, owner.unfreezeMarket.signature))
     if "LidoLendSetIrmConfig" in selected:
@@ -428,6 +462,13 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
         permissions[ERC4626_EXIT_BOOK_FACTORY] = _permission(
             (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature)
+        )
+    if EXIT_BOOKS_SERVICE_FEE_FACTORY in selected:
+        morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
+        erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
+        permissions[EXIT_BOOKS_SERVICE_FEE_FACTORY] = _permission(
+            (morpho_exit_book, morpho_exit_book.setServiceFee.signature),
+            (erc4626_exit_book, erc4626_exit_book.setServiceFee.signature),
         )
     return permissions
 

@@ -11,18 +11,14 @@ import "../../interfaces/ILidoLend.sol";
 /// @notice Creates EVMScript to set vaults' allow-list state on Erc4626ExitBook
 contract LidoLendSetErc4626ExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
+    string private constant ERROR_ZERO_EXIT_BOOK = "ZERO_EXIT_BOOK";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
 
-    /// @notice Address of the domain's Erc4626ExitBook
-    address public immutable erc4626ExitBook;
-
-    constructor(address _trustedCaller, address _erc4626ExitBook) TrustedCaller(_trustedCaller) {
-        erc4626ExitBook = _erc4626ExitBook;
-    }
+    constructor(address _trustedCaller) TrustedCaller(_trustedCaller) {}
 
     /// @notice Creates EVMScript to set vaults' allow-list state on Erc4626ExitBook
     /// @param _creator Address who creates EVMScript
-    /// @param _evmScriptCallData Encoded tuple: (address[] vaults, bool allowed)
+    /// @param _evmScriptCallData Encoded tuple: (address exitBook, address[] vaults, bool allowed)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
         external
         view
@@ -30,7 +26,10 @@ contract LidoLendSetErc4626ExitBookAllowed is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        (address[] memory vaults, bool allowed) = _decodeEVMScriptCallData(_evmScriptCallData);
+        (address exitBook, address[] memory vaults, bool allowed) = _decodeEVMScriptCallData(
+            _evmScriptCallData
+        );
+        require(exitBook != address(0), ERROR_ZERO_EXIT_BOOK);
         require(vaults.length > 0, ERROR_EMPTY_VAULTS);
 
         bytes[] memory encodedCalldata = new bytes[](vaults.length);
@@ -42,20 +41,25 @@ contract LidoLendSetErc4626ExitBookAllowed is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                erc4626ExitBook,
+                exitBook,
                 IErc4626ExitBook.setVaultAllowed.selector,
                 encodedCalldata
             );
     }
 
     /// @notice Decodes call data used by createEVMScript method
-    /// @param _evmScriptCallData Encoded tuple: (address[] vaults, bool allowed)
+    /// @param _evmScriptCallData Encoded tuple: (address exitBook, address[] vaults, bool allowed)
+    /// @return exitBook Erc4626ExitBook whose allow-list state is set
     /// @return vaults Vault addresses whose allow-list state is set
     /// @return allowed Target allow-list state
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure
-        returns (address[] memory vaults, bool allowed)
+        returns (
+            address exitBook,
+            address[] memory vaults,
+            bool allowed
+        )
     {
         return _decodeEVMScriptCallData(_evmScriptCallData);
     }
@@ -63,8 +67,12 @@ contract LidoLendSetErc4626ExitBookAllowed is TrustedCaller, IEVMScriptFactory {
     function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         private
         pure
-        returns (address[] memory vaults, bool allowed)
+        returns (
+            address exitBook,
+            address[] memory vaults,
+            bool allowed
+        )
     {
-        (vaults, allowed) = abi.decode(_evmScriptCallData, (address[], bool));
+        (exitBook, vaults, allowed) = abi.decode(_evmScriptCallData, (address, address[], bool));
     }
 }

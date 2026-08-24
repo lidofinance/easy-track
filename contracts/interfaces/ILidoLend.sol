@@ -30,6 +30,10 @@ interface ILidoLend {
     function marketController(bytes32 marketId) external view returns (address);
 
     function idToMarketParams(bytes32 marketId) external view returns (MarketParams memory);
+
+    function feeRecipient() external view returns (address);
+
+    function accrueInterest(MarketParams calldata marketParams) external;
 }
 
 interface ILidoLendOwner {
@@ -40,6 +44,10 @@ interface ILidoLendOwner {
         address controller,
         bool enableSettlement
     ) external;
+
+    function setFee(MarketParams calldata marketParams, uint256 newFee) external;
+
+    function setFeeRecipient(address newFeeRecipient) external;
 
     function setMarketSupplyCap(bytes32 marketId, uint256 cap) external;
 
@@ -179,10 +187,14 @@ interface IRiskStewardDashboard {
     function isMarketSteward(bytes32 marketId, address steward) external view returns (bool);
 }
 
-interface IMorphoExitBook {
+interface IExitBook {
+    function setServiceFee(address recipient, uint256 fee) external;
+}
+
+interface IMorphoExitBook is IExitBook {
     function setMarketAllowed(MarketParams calldata marketParams, bool allowed) external;
 }
 
-interface IErc4626ExitBook {
+interface IErc4626ExitBook is IExitBook {
     function setVaultAllowed(address vault, bool allowed) external;
 }

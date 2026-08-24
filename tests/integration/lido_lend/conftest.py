@@ -483,8 +483,8 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
         assert owner.hasRole(_role("MARKET_CREATOR_ROLE"), executor)
         assert owner.hasRole(_role("MARKET_MANAGER_ROLE"), executor)
         assert owner.hasRole(_role("GUARDIAN_MANAGER_ROLE"), executor)
-        assert not owner.hasRole(_role("FEE_MANAGER_ROLE"), executor)
-        assert owner.hasRole(_role("FEE_MANAGER_ROLE"), lido_lend.admin)
+        assert owner.hasRole(_role("FEE_MANAGER_ROLE"), executor)
+        assert not owner.hasRole(_role("FEE_MANAGER_ROLE"), lido_lend.admin)
 
         controller = lido_lend.contract("controller")
         guardian_signals = lido_lend.contract("guardianSignals")
@@ -496,6 +496,10 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
         assert guardian_signals.hasRole(guardian_signals.ACCESS_RESTORER_ROLE(), owner)
         assert not guardian_signals.hasRole(guardian_signals.MANAGER_ROLE(), executor)
         assert not guardian_signals.hasRole(guardian_signals.ACCESS_RESTORER_ROLE(), executor)
+        for name in ("morphoExitBook", "erc4626ExitBook"):
+            if lido_lend.has(name):
+                exit_book = lido_lend.contract(name)
+                assert exit_book.hasRole(exit_book.FEE_MANAGER_ROLE(), executor)
         return et
 
     # Local mock: a fresh EasyTrack + EVMScriptExecutor the deployer fully controls. The executor receives
@@ -523,6 +527,7 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
     owner.grantRole(_role("MARKET_CREATOR_ROLE"), ex, {"from": admin})
     owner.grantRole(_role("MARKET_MANAGER_ROLE"), ex, {"from": admin})
     owner.grantRole(_role("GUARDIAN_MANAGER_ROLE"), ex, {"from": admin})
+    owner.grantRole(_role("FEE_MANAGER_ROLE"), ex, {"from": admin})
 
     dashboard_addr = lido_lend.contracts.get("riskStewardDashboard")
     if dashboard_addr and getattr(dashboard_addr, "address", dashboard_addr) != _ZERO:
@@ -534,6 +539,7 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
         if exit_book_addr and getattr(exit_book_addr, "address", exit_book_addr) != _ZERO:
             exit_book = lido_lend.contract(name)
             exit_book.grantRole(exit_book.ALLOWLIST_MANAGER_ROLE(), ex, {"from": admin})
+            exit_book.grantRole(exit_book.FEE_MANAGER_ROLE(), ex, {"from": admin})
 
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     if adaptive_curve_irm.manager() != ex:
