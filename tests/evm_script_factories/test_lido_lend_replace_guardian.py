@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendReplaceGuardian,
+    LidoLendGuardianActions,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
@@ -15,16 +15,19 @@ from utils.evm_script import encode_call_script
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 OLD_GUARDIAN = f"0x{5:040x}"
+ACTION = 2
+
+
+def create_payload(market_id, old_guardian, new_guardian):
+    return encode(
+        ["bytes32", "address", "address"],
+        [market_id, str(old_guardian), str(new_guardian)],
+    )
 
 
 def create_calldata(market_id, old_guardian, new_guardian):
-    return (
-        "0x"
-        + encode(
-            ["bytes32", "address", "address"],
-            [market_id, str(old_guardian), str(new_guardian)],
-        ).hex()
-    )
+    payload = create_payload(market_id, old_guardian, new_guardian)
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -50,7 +53,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendReplaceGuardian.deploy(owner, owner_facade, {"from": owner})
+    return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_deploy(owner, owner_facade, factory):
@@ -149,7 +152,9 @@ def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, 
 def test_decode_evm_script_call_data(factory, stranger):
     "Must decode EVMScript call data correctly"
     calldata = create_calldata(MARKET_ID, OLD_GUARDIAN, stranger)
-    decoded_market_id, decoded_old, decoded_new = factory.decodeEVMScriptCallData(calldata)
+    action, payload = factory.decodeEVMScriptCallData(calldata)
+    assert action == ACTION
+    decoded_market_id, decoded_old, decoded_new = factory.decodeReplaceGuardianPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_old == OLD_GUARDIAN
     assert decoded_new == stranger

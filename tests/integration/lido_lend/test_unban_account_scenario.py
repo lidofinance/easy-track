@@ -1,9 +1,15 @@
 import pytest
-from brownie import interface, LidoLendUnbanAccount, LidoLendMarketControllerStub, GuardianSignalsStub
+from brownie import interface, LidoLendGuardianActions, LidoLendMarketControllerStub, GuardianSignalsStub
 from eth_abi import encode
 
 BANNED_ACCOUNT = "0x" + "55" * 20
 SECOND_BANNED_ACCOUNT = "0x" + "56" * 20
+ACTION = 5
+
+
+def create_calldata(market_ids, accounts):
+    payload = encode(["bytes32[]", "address[]"], [market_ids, accounts])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_unban_account_scenario(
@@ -18,12 +24,12 @@ def test_unban_account_scenario(
     assert gs.isBanned(market_id, BANNED_ACCOUNT)
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendUnbanAccount, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
     enact_motion(
         easy_track,
         factory,
-        "0x" + encode(["bytes32[]", "address[]"], [[market_id], [BANNED_ACCOUNT]]).hex(),
+        create_calldata([market_id], [BANNED_ACCOUNT]),
         trusted_caller,
     )
 
@@ -64,17 +70,16 @@ def test_unban_account_multi_market_scenario(
     assert gs2.isBanned(market_id_2, SECOND_BANNED_ACCOUNT)
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendUnbanAccount, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
     # One permission for the facade covers every market the batch touches — no per-registry enumeration.
     register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
     enact_motion(
         easy_track,
         factory,
-        "0x"
-        + encode(
-            ["bytes32[]", "address[]"],
-            [[market_id_1, market_id_2], [BANNED_ACCOUNT, SECOND_BANNED_ACCOUNT]],
-        ).hex(),
+        create_calldata(
+            [market_id_1, market_id_2],
+            [BANNED_ACCOUNT, SECOND_BANNED_ACCOUNT],
+        ),
         trusted_caller,
     )
 

@@ -1,15 +1,26 @@
 import pytest
-from brownie import Erc4626ExitBookStub, LidoLendSetErc4626ExitBookAllowed, ZERO_ADDRESS, reverts
+from brownie import Erc4626ExitBookStub, LidoLendExitBookActions, MorphoExitBookStub, ZERO_ADDRESS, reverts
 from eth_abi import encode
 
 from utils.evm_script import encode_call_script
 
 VAULT = f"0x{1:040x}"
 SECOND_VAULT = f"0x{2:040x}"
+SET_ERC4626_EXIT_BOOK_ALLOWED = 1
+
+
+def payload(vaults, allowed):
+    return encode(["address[]", "bool"], [vaults, allowed])
 
 
 def calldata(vaults, allowed):
-    return "0x" + encode(["address[]", "bool"], [vaults, allowed]).hex()
+    return (
+        "0x"
+        + encode(
+            ["uint8", "bytes"],
+            [SET_ERC4626_EXIT_BOOK_ALLOWED, payload(vaults, allowed)],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -18,12 +29,23 @@ def erc4626_exit_book(owner):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, erc4626_exit_book):
-    return LidoLendSetErc4626ExitBookAllowed.deploy(owner, erc4626_exit_book, {"from": owner})
+def morpho_exit_book(owner):
+    return MorphoExitBookStub.deploy({"from": owner})
 
 
-def test_deploy(owner, erc4626_exit_book, factory):
+@pytest.fixture(scope="module")
+def factory(owner, morpho_exit_book, erc4626_exit_book):
+    return LidoLendExitBookActions.deploy(
+        owner,
+        morpho_exit_book,
+        erc4626_exit_book,
+        {"from": owner},
+    )
+
+
+def test_deploy(owner, morpho_exit_book, erc4626_exit_book, factory):
     assert factory.trustedCaller() == owner
+    assert factory.morphoExitBook() == morpho_exit_book
     assert factory.erc4626ExitBook() == erc4626_exit_book
 
 
@@ -53,6 +75,8 @@ def test_create_evm_script(owner, erc4626_exit_book, factory, allowed):
 
 
 def test_decode_evm_script_call_data(factory):
-    vaults, allowed = factory.decodeEVMScriptCallData(calldata([VAULT, SECOND_VAULT], True))
+    action, encoded_payload = factory.decodeEVMScriptCallData(calldata([VAULT, SECOND_VAULT], True))
+    assert action == SET_ERC4626_EXIT_BOOK_ALLOWED
+    vaults, allowed = factory.decodeSetErc4626ExitBookAllowedPayload(encoded_payload)
     assert vaults == [VAULT, SECOND_VAULT]
     assert allowed is True

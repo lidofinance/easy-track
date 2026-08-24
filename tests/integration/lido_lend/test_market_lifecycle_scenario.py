@@ -1,10 +1,4 @@
-
-from brownie import (
-    LidoLendSetSupplyCap,
-    LidoLendSetCollateralActivationConfig,
-    LidoLendSetSettlementConfig,
-    LidoLendUnfreezeMarket,
-)
+from brownie import LidoLendMarketManagerActions
 from eth_abi import encode
 from utils.lido_lend import (
     COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as ACTIVATION_TYPE,
@@ -18,45 +12,66 @@ ACTIVATION_CONFIG = (600, 7200, 1000 * 10**18, 10 * 10**18, 3600, 10**16, 10800,
 SETTLEMENT_CONFIG = (500, 1000 * 10**18, 5 * 10**18, 100)
 
 
+def _calldata(action, payload_types, payload_values):
+    payload = encode(payload_types, payload_values)
+    return "0x" + encode(["uint8", "bytes"], [action, payload]).hex()
+
+
 def test_market_lifecycle_scenario(
     lido_lend, created_market, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
 ):
     "Raise the cap, retune activation + settlement, then freeze (steward) and unfreeze (motion) — all on one live market."
     controller = lido_lend.contract("controller")
-    core = lido_lend.contract("core")
     market_id = lido_lend.market["id"]
 
     controller.grantRole(controller.FREEZER_ROLE(), admin, {"from": admin})
 
     owner = lido_lend.contract("owner")
-    cap_factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, owner)
-    activation_factory = deployer.deploy(LidoLendSetCollateralActivationConfig, trusted_caller, owner)
-    settlement_factory = deployer.deploy(LidoLendSetSettlementConfig, trusted_caller, owner)
-    unfreeze_factory = deployer.deploy(LidoLendUnfreezeMarket, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendMarketManagerActions, trusted_caller, owner)
 
-    register_factory(cap_factory, permission((owner, owner.setMarketSupplyCap)))
-    register_factory(activation_factory, permission((owner, owner.setMarketCollateralActivationConfig)))
-    register_factory(settlement_factory, permission((owner, owner.setMarketSettlementConfig)))
-    register_factory(unfreeze_factory, permission((owner, owner.unfreezeMarket)))
+    register_factory(
+        factory,
+        permission(
+            (owner, owner.setInstantActivation),
+            (owner, owner.setMarketCollateralActivationConfig),
+            (owner, owner.setMarketSettlementConfig),
+            (owner, owner.setMarketSupplyCap),
+            (owner, owner.unfreezeMarket),
+        ),
+    )
 
     assert controller.supplyCap() < NEW_CAP
-    enact_motion(easy_track, cap_factory, "0x" + encode(["bytes32", "uint256"], [market_id, NEW_CAP]).hex(), trusted_caller)
+    enact_motion(
+        easy_track,
+        factory,
+        _calldata(3, ["bytes32", "uint256"], [market_id, NEW_CAP]),
+        trusted_caller,
+    )
     assert controller.supplyCap() == NEW_CAP
 
     enact_motion(
-        easy_track, activation_factory,
-        "0x" + encode(["bytes32", ACTIVATION_TYPE], [market_id, ACTIVATION_CONFIG]).hex(), trusted_caller,
+        easy_track,
+        factory,
+        _calldata(1, ["bytes32", ACTIVATION_TYPE], [market_id, ACTIVATION_CONFIG]),
+        trusted_caller,
     )
     assert controller.collateralActivationConfig() == ACTIVATION_CONFIG
 
     enact_motion(
-        easy_track, settlement_factory,
-        "0x" + encode(["bytes32", SETTLEMENT_TYPE], [market_id, SETTLEMENT_CONFIG]).hex(), trusted_caller,
+        easy_track,
+        factory,
+        _calldata(2, ["bytes32", SETTLEMENT_TYPE], [market_id, SETTLEMENT_CONFIG]),
+        trusted_caller,
     )
     assert controller.settlementConfig() == SETTLEMENT_CONFIG
 
     controller.freeze({"from": admin})
     assert controller.isFrozen()
 
-    enact_motion(easy_track, unfreeze_factory, "0x" + encode(["bytes32[]"], [[market_id]]).hex(), trusted_caller)
+    enact_motion(
+        easy_track,
+        factory,
+        _calldata(4, ["bytes32[]"], [[market_id]]),
+        trusted_caller,
+    )
     assert not controller.isFrozen()

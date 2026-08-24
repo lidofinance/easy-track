@@ -9,7 +9,7 @@ Protocol addresses are read from one immutable Lido Lend deployment directory. S
 Before deployment the script verifies artifact consistency, that the actual EasyTrack EVMScriptExecutor
 matches the protocol artifact, and that it has the roles required by the selected factories. ActivateMarket
 and RegisterPauser additionally verify the shared CircuitBreaker's ADMIN. The output
-artifact includes the exact fixed EasyTrack permission blob for each deployed factory.
+artifact includes the exact fixed EasyTrack permission blob and grouped-factory calldata manifest.
 """
 
 import json
@@ -22,23 +22,11 @@ from brownie import (
     web3,
     LidoLendActivateMarket,
     LidoLendRegisterPauser,
-    LidoLendAddGuardian,
-    LidoLendRemoveGuardian,
-    LidoLendReplaceGuardian,
-    LidoLendSetInstantActivation,
-    LidoLendSetGuardiansQuorum,
-    LidoLendSetSuspectWindow,
-    LidoLendUnbanAccount,
-    LidoLendSetCollateralActivationConfig,
-    LidoLendSetSettlementConfig,
-    LidoLendSetSupplyCap,
-    LidoLendUnfreezeMarket,
-    LidoLendSetIrmConfig,
-    LidoLendSetMarketIrm,
-    LidoLendAddRiskSteward,
-    LidoLendRemoveRiskSteward,
-    LidoLendSetMorphoExitBookAllowed,
-    LidoLendSetErc4626ExitBookAllowed,
+    LidoLendGuardianActions,
+    LidoLendMarketManagerActions,
+    LidoLendRiskStewardActions,
+    LidoLendIrmActions,
+    LidoLendExitBookActions,
 )
 
 from utils import log
@@ -60,67 +48,31 @@ def _env_address(name):
     return value
 
 
-MORPHO_EXIT_BOOK_FACTORY = "LidoLendSetMorphoExitBookAllowed"
-ERC4626_EXIT_BOOK_FACTORY = "LidoLendSetErc4626ExitBookAllowed"
+GUARDIAN_ACTIONS_FACTORY = "LidoLendGuardianActions"
+MARKET_MANAGER_ACTIONS_FACTORY = "LidoLendMarketManagerActions"
+RISK_STEWARD_ACTIONS_FACTORY = "LidoLendRiskStewardActions"
+IRM_ACTIONS_FACTORY = "LidoLendIrmActions"
+EXIT_BOOK_ACTIONS_FACTORY = "LidoLendExitBookActions"
 
 ALL_FACTORY_NAMES = (
     "LidoLendActivateMarket",
     "LidoLendRegisterPauser",
-    "LidoLendAddGuardian",
-    "LidoLendRemoveGuardian",
-    "LidoLendReplaceGuardian",
-    "LidoLendSetInstantActivation",
-    "LidoLendSetGuardiansQuorum",
-    "LidoLendSetSuspectWindow",
-    "LidoLendUnbanAccount",
-    "LidoLendSetCollateralActivationConfig",
-    "LidoLendSetSettlementConfig",
-    "LidoLendSetSupplyCap",
-    "LidoLendUnfreezeMarket",
-    "LidoLendSetIrmConfig",
-    "LidoLendSetMarketIrm",
-    "LidoLendAddRiskSteward",
-    "LidoLendRemoveRiskSteward",
-    MORPHO_EXIT_BOOK_FACTORY,
-    ERC4626_EXIT_BOOK_FACTORY,
+    GUARDIAN_ACTIONS_FACTORY,
+    MARKET_MANAGER_ACTIONS_FACTORY,
+    RISK_STEWARD_ACTIONS_FACTORY,
+    IRM_ACTIONS_FACTORY,
+    EXIT_BOOK_ACTIONS_FACTORY,
 )
 
-MARKET_MANAGER_FACTORIES = {
-    "LidoLendSetInstantActivation",
-    "LidoLendSetCollateralActivationConfig",
-    "LidoLendSetSettlementConfig",
-    "LidoLendSetSupplyCap",
-    "LidoLendUnfreezeMarket",
-}
-GUARDIAN_MANAGER_FACTORIES = {
-    "LidoLendAddGuardian",
-    "LidoLendRemoveGuardian",
-    "LidoLendReplaceGuardian",
-    "LidoLendSetGuardiansQuorum",
-    "LidoLendSetSuspectWindow",
-    "LidoLendUnbanAccount",
-}
+MARKET_MANAGER_FACTORIES = {MARKET_MANAGER_ACTIONS_FACTORY}
+GUARDIAN_MANAGER_FACTORIES = {GUARDIAN_ACTIONS_FACTORY}
 OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
-IRM_ROUTER_FACTORIES = {
-    "LidoLendActivateMarket",
-    "LidoLendSetIrmConfig",
-    "LidoLendSetMarketIrm",
-}
-IRM_ROUTER_TARGET_FACTORIES = {
-    "LidoLendActivateMarket",
-    "LidoLendSetMarketIrm",
-}
-ADAPTIVE_CURVE_IRM_FACTORIES = {
-    "LidoLendActivateMarket",
-    "LidoLendSetIrmConfig",
-}
-RISK_STEWARD_FACTORIES = {
-    "LidoLendActivateMarket",
-    "LidoLendAddRiskSteward",
-    "LidoLendRemoveRiskSteward",
-}
+IRM_ROUTER_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
+IRM_ROUTER_TARGET_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
+ADAPTIVE_CURVE_IRM_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
+RISK_STEWARD_FACTORIES = {"LidoLendActivateMarket", RISK_STEWARD_ACTIONS_FACTORY}
 CIRCUIT_BREAKER_FACTORIES = {"LidoLendActivateMarket", "LidoLendRegisterPauser"}
-EXIT_BOOK_FACTORIES = {MORPHO_EXIT_BOOK_FACTORY, ERC4626_EXIT_BOOK_FACTORY}
+EXIT_BOOK_FACTORIES = {EXIT_BOOK_ACTIONS_FACTORY}
 
 
 def _parse_factory_selection(value):
@@ -160,10 +112,8 @@ def _required_address_keys(factory_names):
         keys.add("adaptive_curve_irm")
     if selected & RISK_STEWARD_FACTORIES:
         keys.add("risk_steward_dashboard")
-    if MORPHO_EXIT_BOOK_FACTORY in selected:
-        keys.add("morpho_exit_book")
-    if ERC4626_EXIT_BOOK_FACTORY in selected:
-        keys.add("erc4626_exit_book")
+    if EXIT_BOOK_ACTIONS_FACTORY in selected:
+        keys.update(("morpho_exit_book", "erc4626_exit_book"))
     return keys
 
 
@@ -195,10 +145,8 @@ def _read_addresses(factory_names, artifacts_dir=None):
     }
     if required_keys & {"morpho_exit_book", "erc4626_exit_book"}:
         exit_books = deployment["exit_books"]["exit_books"]
-        if "morpho_exit_book" in required_keys:
-            available["morpho_exit_book"] = exit_books["morpho"]
-        if "erc4626_exit_book" in required_keys:
-            available["erc4626_exit_book"] = exit_books["erc4626"]
+        available["morpho_exit_book"] = exit_books["morpho"]
+        available["erc4626_exit_book"] = exit_books["erc4626"]
 
     return {key: value for key, value in available.items() if key in required_keys or key == "evm_script_executor"}
 
@@ -282,13 +230,12 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
     if selected & EXIT_BOOK_FACTORIES:
         allowlist_manager_role = web3.keccak(text="ALLOWLIST_MANAGER_ROLE")
 
-    if MORPHO_EXIT_BOOK_FACTORY in selected:
+    if EXIT_BOOK_ACTIONS_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
         require_address("morpho_exit_book.MORPHO", morpho_exit_book.MORPHO(), a["core"])
         if not morpho_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks morpho_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
 
-    if ERC4626_EXIT_BOOK_FACTORY in selected:
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
         if not erc4626_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks erc4626_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
@@ -319,32 +266,21 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         ],
     )
     add(LidoLendRegisterPauser, lambda: [tc, core, a["circuit_breaker"]])
-    # Market/guardian management routes through the LidoLendOwner facade (fixed EVMScript target); the
-    # factories derive the core from `owner.LIDO_LEND()` for validation.
-    for Factory in (
-        LidoLendAddGuardian,
-        LidoLendRemoveGuardian,
-        LidoLendReplaceGuardian,
-        LidoLendSetInstantActivation,
-        LidoLendSetGuardiansQuorum,
-        LidoLendSetSuspectWindow,
-        LidoLendUnbanAccount,
-        LidoLendSetCollateralActivationConfig,
-        LidoLendSetSettlementConfig,
-        LidoLendSetSupplyCap,
-        LidoLendUnfreezeMarket,
-    ):
-        add(Factory, lambda: [tc, a["owner"]])
+    # Market/guardian management routes through the LidoLendOwner facade (fixed EVMScript target); each
+    # aggregator derives the core from `owner.LIDO_LEND()` for validation.
+    add(LidoLendGuardianActions, lambda: [tc, a["owner"]])
+    add(LidoLendMarketManagerActions, lambda: [tc, a["owner"]])
+    # Steward management targets the shared dashboard directly.
+    add(LidoLendRiskStewardActions, lambda: [tc, a["risk_steward_dashboard"]])
     # IRM management targets the configured router / AdaptiveCurveIrm singletons directly.
     add(
-        LidoLendSetIrmConfig,
+        LidoLendIrmActions,
         lambda: [tc, core, a["irm_router"], a["adaptive_curve_irm"]],
     )
-    add(LidoLendSetMarketIrm, lambda: [tc, core, a["irm_router"]])
-    add(LidoLendAddRiskSteward, lambda: [tc, a["risk_steward_dashboard"]])
-    add(LidoLendRemoveRiskSteward, lambda: [tc, a["risk_steward_dashboard"]])
-    add(LidoLendSetMorphoExitBookAllowed, lambda: [tc, a["morpho_exit_book"]])
-    add(LidoLendSetErc4626ExitBookAllowed, lambda: [tc, a["erc4626_exit_book"]])
+    add(
+        LidoLendExitBookActions,
+        lambda: [tc, a["morpho_exit_book"], a["erc4626_exit_book"]],
+    )
     return [(Factory, args()) for Factory, args in plan]
 
 
@@ -381,59 +317,39 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         )
     if "LidoLendRegisterPauser" in selected:
         permissions["LidoLendRegisterPauser"] = _permission((circuit_breaker, circuit_breaker.registerPauser.signature))
-    if "LidoLendAddGuardian" in selected:
-        permissions["LidoLendAddGuardian"] = _permission(
+    if GUARDIAN_ACTIONS_FACTORY in selected:
+        permissions[GUARDIAN_ACTIONS_FACTORY] = _permission(
             (owner, owner.addGuardian.signature),
             (owner, owner.setGuardiansQuorum.signature),
-        )
-    if "LidoLendRemoveGuardian" in selected:
-        permissions["LidoLendRemoveGuardian"] = _permission(
-            (owner, owner.setGuardiansQuorum.signature),
             (owner, owner.removeGuardian.signature),
+            (owner, owner.replaceGuardian.signature),
+            (owner, owner.setGuardiansSuspectWindow.signature),
+            (owner, owner.unbanGuardianSignals.signature),
         )
-    if "LidoLendReplaceGuardian" in selected:
-        permissions["LidoLendReplaceGuardian"] = _permission((owner, owner.replaceGuardian.signature))
-    if "LidoLendSetInstantActivation" in selected:
-        permissions["LidoLendSetInstantActivation"] = _permission((owner, owner.setInstantActivation.signature))
-    if "LidoLendSetGuardiansQuorum" in selected:
-        permissions["LidoLendSetGuardiansQuorum"] = _permission((owner, owner.setGuardiansQuorum.signature))
-    if "LidoLendSetSuspectWindow" in selected:
-        permissions["LidoLendSetSuspectWindow"] = _permission((owner, owner.setGuardiansSuspectWindow.signature))
-    if "LidoLendUnbanAccount" in selected:
-        permissions["LidoLendUnbanAccount"] = _permission((owner, owner.unbanGuardianSignals.signature))
-    if "LidoLendSetCollateralActivationConfig" in selected:
-        permissions["LidoLendSetCollateralActivationConfig"] = _permission(
-            (owner, owner.setMarketCollateralActivationConfig.signature)
+    if MARKET_MANAGER_ACTIONS_FACTORY in selected:
+        permissions[MARKET_MANAGER_ACTIONS_FACTORY] = _permission(
+            (owner, owner.setInstantActivation.signature),
+            (owner, owner.setMarketCollateralActivationConfig.signature),
+            (owner, owner.setMarketSettlementConfig.signature),
+            (owner, owner.setMarketSupplyCap.signature),
+            (owner, owner.unfreezeMarket.signature),
         )
-    if "LidoLendSetSettlementConfig" in selected:
-        permissions["LidoLendSetSettlementConfig"] = _permission((owner, owner.setMarketSettlementConfig.signature))
-    if "LidoLendSetSupplyCap" in selected:
-        permissions["LidoLendSetSupplyCap"] = _permission((owner, owner.setMarketSupplyCap.signature))
-    if "LidoLendUnfreezeMarket" in selected:
-        permissions["LidoLendUnfreezeMarket"] = _permission((owner, owner.unfreezeMarket.signature))
-    if "LidoLendSetIrmConfig" in selected:
-        permissions["LidoLendSetIrmConfig"] = _permission(
-            (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature)
+    if RISK_STEWARD_ACTIONS_FACTORY in selected:
+        permissions[RISK_STEWARD_ACTIONS_FACTORY] = _permission(
+            (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
+            (risk_steward_dashboard, risk_steward_dashboard.removeMarketSteward.signature),
         )
-    if "LidoLendSetMarketIrm" in selected:
-        permissions["LidoLendSetMarketIrm"] = _permission((irm_router, irm_router.setMarketIrm.signature))
-    if "LidoLendAddRiskSteward" in selected:
-        permissions["LidoLendAddRiskSteward"] = _permission(
-            (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature)
+    if IRM_ACTIONS_FACTORY in selected:
+        permissions[IRM_ACTIONS_FACTORY] = _permission(
+            (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature),
+            (irm_router, irm_router.setMarketIrm.signature),
         )
-    if "LidoLendRemoveRiskSteward" in selected:
-        permissions["LidoLendRemoveRiskSteward"] = _permission(
-            (risk_steward_dashboard, risk_steward_dashboard.removeMarketSteward.signature)
-        )
-    if MORPHO_EXIT_BOOK_FACTORY in selected:
+    if EXIT_BOOK_ACTIONS_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
-        permissions[MORPHO_EXIT_BOOK_FACTORY] = _permission(
-            (morpho_exit_book, morpho_exit_book.setMarketAllowed.signature)
-        )
-    if ERC4626_EXIT_BOOK_FACTORY in selected:
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
-        permissions[ERC4626_EXIT_BOOK_FACTORY] = _permission(
-            (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature)
+        permissions[EXIT_BOOK_ACTIONS_FACTORY] = _permission(
+            (morpho_exit_book, morpho_exit_book.setMarketAllowed.signature),
+            (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature),
         )
     return permissions
 
@@ -446,12 +362,13 @@ def deploy_lido_lend_factories(addresses, tx_params, factory_names=ALL_FACTORY_N
     for Factory, args in _deployment_plan(addresses, factory_names):
         instance = Factory.deploy(*args, tx_params)
         name = Factory._name
-        artifacts[name] = {
+        artifact = {
             "contract": name,
             "address": instance.address,
             "constructorArgs": args,
             "permissions": permissions[name],
         }
+        artifacts[name] = artifact
         instances.append((Factory, instance))
         log.ok(f"Deployed {name}", instance.address)
     return artifacts, instances

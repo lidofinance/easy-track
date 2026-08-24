@@ -1,8 +1,17 @@
-from brownie import LidoLendReplaceGuardian
+from brownie import LidoLendGuardianActions
 from eth_abi import encode
 
 OLD_GUARDIAN = "0x" + "33" * 20
 NEW_GUARDIAN = "0x" + "44" * 20
+ACTION = 2
+
+
+def create_calldata(market_id, old_guardian, new_guardian):
+    payload = encode(
+        ["bytes32", "address", "address"],
+        [market_id, old_guardian, new_guardian],
+    )
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_replace_guardian_scenario(
@@ -26,16 +35,12 @@ def test_replace_guardian_scenario(
     assert not guardian_signals.isGuardian(NEW_GUARDIAN)
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendReplaceGuardian, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.replaceGuardian)))
     enact_motion(
         easy_track,
         factory,
-        "0x"
-        + encode(
-            ["bytes32", "address", "address"],
-            [market_id, OLD_GUARDIAN, NEW_GUARDIAN],
-        ).hex(),
+        create_calldata(market_id, OLD_GUARDIAN, NEW_GUARDIAN),
         trusted_caller,
     )
 

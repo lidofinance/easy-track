@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, LidoLendAddGuardian, LidoLendSetSupplyCap
+from brownie import reverts, LidoLendGuardianActions, LidoLendMarketManagerActions
 from eth_abi import encode
 
 GUARDIAN_A = "0x" + "a1" * 20
@@ -7,22 +7,38 @@ GUARDIAN_B = "0x" + "b2" * 20
 LDO_WHALE = "0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c"
 
 
-def _calldata(market_id, addr):
-    return "0x" + encode(["bytes32", "address", "uint256"], [market_id, str(addr), 1]).hex()
+def _envelope(action, payload):
+    return "0x" + encode(["uint8", "bytes"], [action, payload]).hex()
+
+
+def _add_guardian_calldata(market_id, addr):
+    payload = encode(["bytes32", "address", "uint256"], [market_id, str(addr), 1])
+    return _envelope(0, payload)
+
+
+def _set_suspect_window_calldata(market_id, window):
+    return _envelope(4, encode(["bytes32", "uint256"], [market_id, window]))
 
 
 @pytest.fixture
 def registered_add_guardian(
     lido_lend, created_market, easy_track, deployer, trusted_caller, admin, permission, register_factory
 ):
-    "A registered AddGuardian factory routing through the LidoLendOwner facade (resolves the registry by id)."
+    "A registered GuardianActions factory routing through the LidoLendOwner facade."
     gs = lido_lend.contract("guardianSignals")
     owner = lido_lend.contract("owner")
     gs.grantRole(gs.MANAGER_ROLE(), admin, {"from": admin})
-    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
     register_factory(
         factory,
-        permission((owner, owner.addGuardian), (owner, owner.setGuardiansQuorum)),
+        permission(
+            (owner, owner.addGuardian),
+            (owner, owner.setGuardiansQuorum),
+            (owner, owner.removeGuardian),
+            (owner, owner.replaceGuardian),
+            (owner, owner.setGuardiansSuspectWindow),
+            (owner, owner.unbanGuardianSignals),
+        ),
     )
     return factory, gs, lido_lend.market["id"]
 
@@ -31,14 +47,18 @@ def test_stranger_cannot_open_motion(easy_track, registered_add_guardian, strang
     "createMotion by a non-trusted caller must revert (factory onlyTrustedCaller -> CALLER_IS_FORBIDDEN)."
     factory, _, market_id = registered_add_guardian
     with reverts():
-        easy_track.createMotion(factory, _calldata(market_id, GUARDIAN_A), {"from": stranger})
+        easy_track.createMotion(factory, _add_guardian_calldata(market_id, GUARDIAN_A), {"from": stranger})
 
 
 def test_unregistered_factory_cannot_open_motion(lido_lend, created_market, easy_track, deployer, trusted_caller):
     "createMotion for a factory never added to EasyTrack must revert (EVM_SCRIPT_FACTORY_NOT_FOUND)."
-    factory = deployer.deploy(LidoLendAddGuardian, trusted_caller, lido_lend.contract("owner"))
+    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, lido_lend.contract("owner"))
     with reverts():
-        easy_track.createMotion(factory, _calldata(lido_lend.market["id"], GUARDIAN_A), {"from": trusted_caller})
+        easy_track.createMotion(
+            factory,
+            _add_guardian_calldata(lido_lend.market["id"], GUARDIAN_A),
+            {"from": trusted_caller},
+        )
 
 
 def test_cannot_enact_before_objection_window(
@@ -46,7 +66,7 @@ def test_cannot_enact_before_objection_window(
 ):
     "enactMotion before the objection window elapses must revert (MOTION_NOT_PASSED)."
     factory, _, market_id = registered_add_guardian
-    calldata = _calldata(market_id, GUARDIAN_A)
+    calldata = _add_guardian_calldata(market_id, GUARDIAN_A)
     _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
     with reverts():
         easy_track.enactMotion(motion_id, calldata, {"from": stranger})
@@ -57,10 +77,42 @@ def test_cannot_enact_with_tampered_calldata(
 ):
     "enactMotion with calldata different from what was recorded at creation must revert (UNEXPECTED_EVM_SCRIPT)."
     factory, _, market_id = registered_add_guardian
-    _, motion_id = create_motion(easy_track, factory, _calldata(market_id, GUARDIAN_A), trusted_caller)
+    _, motion_id = create_motion(
+        easy_track,
+        factory,
+        _add_guardian_calldata(market_id, GUARDIAN_A),
+        trusted_caller,
+    )
     advance_time(easy_track.motionDuration() + 100)
     with reverts():
-        easy_track.enactMotion(motion_id, _calldata(market_id, GUARDIAN_B), {"from": stranger})
+        easy_track.enactMotion(motion_id, _add_guardian_calldata(market_id, GUARDIAN_B), {"from": stranger})
+
+
+def test_cannot_enact_with_another_valid_action(
+    easy_track,
+    registered_add_guardian,
+    trusted_caller,
+    stranger,
+    create_motion,
+    advance_time,
+):
+    "A different valid action from the same grouped factory must still fail the stored EVMScript hash check."
+    factory, guardian_signals, market_id = registered_add_guardian
+    _, motion_id = create_motion(
+        easy_track,
+        factory,
+        _add_guardian_calldata(market_id, GUARDIAN_A),
+        trusted_caller,
+    )
+    new_window = 1 if guardian_signals.getSuspectWindow() != 1 else 2
+    advance_time(easy_track.motionDuration() + 100)
+
+    with reverts("UNEXPECTED_EVM_SCRIPT"):
+        easy_track.enactMotion(
+            motion_id,
+            _set_suspect_window_calldata(market_id, new_window),
+            {"from": stranger},
+        )
 
 
 def test_stale_precondition_reverts_on_enact(
@@ -72,10 +124,10 @@ def test_stale_precondition_reverts_on_enact(
     create_motion,
     advance_time,
 ):
-    "If the factory's precondition is invalidated between creation and enactment, the stored script must revert at the target."
+    "If a precondition changes after creation, enactment must fail during factory revalidation."
     factory, gs, market_id = registered_add_guardian
 
-    calldata = _calldata(market_id, GUARDIAN_A)
+    calldata = _add_guardian_calldata(market_id, GUARDIAN_A)
     _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
 
     gs.addGuardian(GUARDIAN_A, {"from": admin})
@@ -83,7 +135,7 @@ def test_stale_precondition_reverts_on_enact(
 
     advance_time(easy_track.motionDuration() + 100)
 
-    with reverts():
+    with reverts("GUARDIAN_ALREADY_ADDED"):
         easy_track.enactMotion(motion_id, calldata, {"from": stranger})
 
 
@@ -98,7 +150,7 @@ def test_motion_rejected_by_objection(
 ):
     "A motion objected above the 0.5%-LDO threshold is rejected and removed, so it can never be enacted."
     factory, _, market_id = registered_add_guardian
-    calldata = _calldata(market_id, GUARDIAN_A)
+    calldata = _add_guardian_calldata(market_id, GUARDIAN_A)
     existing_motion_ids = {motion[0] for motion in easy_track.getMotions()}
     _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
     assert {motion[0] for motion in easy_track.getMotions()} == existing_motion_ids | {motion_id}
@@ -117,12 +169,12 @@ def test_factory_with_wrong_permission_rejects_motion(
 ):
     "A factory registered with a permission for a different call must have its motions rejected (HAS_NO_PERMISSIONS)."
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendMarketManagerActions, trusted_caller, owner)
     # Right target (facade), wrong selector: SetSupplyCap emits setMarketSupplyCap, permission lists another call.
     register_factory(factory, permission((owner, owner.setMarketSettlementConfig)))
     with reverts():
         easy_track.createMotion(
             factory,
-            "0x" + encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24]).hex(),
+            _envelope(3, encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24])),
             {"from": trusted_caller},
         )

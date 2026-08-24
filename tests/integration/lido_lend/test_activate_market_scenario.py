@@ -94,7 +94,6 @@ def test_activate_market_scenario(
     deployer,
     trusted_caller,
     stranger,
-    enact_motion,
     create_motion,
     advance_time,
     admin,
@@ -111,7 +110,10 @@ def test_activate_market_scenario(
     factory, irm_router, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
     calldata = _calldata(lido_lend, irm_config.address, True)
-    enact_motion(easy_track, factory, calldata, trusted_caller)
+    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
+    _, stale_motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
+    advance_time(easy_track.motionDuration() + 100)
+    easy_track.enactMotion(motion_id, calldata, {"from": stranger})
 
     assert core.market(market_id)["lastUpdate"] != 0
     assert irm_router.marketIrm(market_id) == m["curve"]
@@ -119,10 +121,8 @@ def test_activate_market_scenario(
     assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
     assert core.isSettlementEnabled(market_id)
 
-    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
-    advance_time(easy_track.motionDuration() + 100)
-    with reverts():
-        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
+    with reverts("MARKET_ALREADY_CREATED"):
+        easy_track.enactMotion(stale_motion_id, calldata, {"from": stranger})
 
 
 def test_activate_market_without_settlement_scenario(

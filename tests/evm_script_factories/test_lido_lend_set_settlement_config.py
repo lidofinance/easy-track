@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendSetSettlementConfig,
+    LidoLendMarketManagerActions,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     LidoLendOwnerStub,
@@ -15,10 +15,12 @@ UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 from utils.lido_lend import SETTLEMENT_CONFIG_ABI_TYPE as CONFIG_TYPE
 
 NEW_CONFIG = (100, 200, 300, 400)
+ACTION = 2
 
 
 def create_calldata(market_id, cfg):
-    return "0x" + encode(["bytes32", CONFIG_TYPE], [market_id, cfg]).hex()
+    payload = encode(["bytes32", CONFIG_TYPE], [market_id, cfg])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -42,7 +44,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendSetSettlementConfig.deploy(owner, owner_facade, {"from": owner})
+    return LidoLendMarketManagerActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_deploy(owner, owner_facade, factory):
@@ -103,6 +105,8 @@ def test_create_evm_script(owner, owner_facade, factory):
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    decoded_market_id, decoded_cfg = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, NEW_CONFIG))
+    decoded_action, payload = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, NEW_CONFIG))
+    assert decoded_action == ACTION
+    decoded_market_id, decoded_cfg = factory.decodeSetSettlementConfigPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_cfg == NEW_CONFIG

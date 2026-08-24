@@ -1,8 +1,14 @@
-from brownie import LidoLendSetSupplyCap
+from brownie import LidoLendMarketManagerActions
 from eth_abi import encode
 
 NEW_CAP = 5_000_000 * 10**18
 INITIAL_CAP = NEW_CAP * 2
+ACTION = 3
+
+
+def create_calldata(market_id, cap):
+    payload = encode(["bytes32", "uint256"], [market_id, cap])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_set_supply_cap_scenario(
@@ -16,8 +22,8 @@ def test_set_supply_cap_scenario(
     controller.setSupplyCap(INITIAL_CAP, {"from": admin})
     assert controller.supplyCap() > NEW_CAP
 
-    factory = deployer.deploy(LidoLendSetSupplyCap, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendMarketManagerActions, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.setMarketSupplyCap)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", "uint256"], [market_id, NEW_CAP]).hex(), trusted_caller)
+    enact_motion(easy_track, factory, create_calldata(market_id, NEW_CAP), trusted_caller)
 
     assert controller.supplyCap() == NEW_CAP

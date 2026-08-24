@@ -1,5 +1,5 @@
 import pytest
-from brownie import LidoLendSetMorphoExitBookAllowed, MorphoExitBookStub, reverts
+from brownie import Erc4626ExitBookStub, LidoLendExitBookActions, MorphoExitBookStub, reverts
 from eth_abi import encode
 
 from utils.evm_script import encode_call_script
@@ -19,10 +19,21 @@ SECOND_MARKET_PARAMS = (
     f"0x{8:040x}",
     900000000000000000,
 )
+SET_MORPHO_EXIT_BOOK_ALLOWED = 0
+
+
+def payload(market_params, allowed):
+    return encode([f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"], [market_params, allowed])
 
 
 def calldata(market_params, allowed):
-    return "0x" + encode([f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"], [market_params, allowed]).hex()
+    return (
+        "0x"
+        + encode(
+            ["uint8", "bytes"],
+            [SET_MORPHO_EXIT_BOOK_ALLOWED, payload(market_params, allowed)],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -31,13 +42,24 @@ def morpho_exit_book(owner):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, morpho_exit_book):
-    return LidoLendSetMorphoExitBookAllowed.deploy(owner, morpho_exit_book, {"from": owner})
+def erc4626_exit_book(owner):
+    return Erc4626ExitBookStub.deploy({"from": owner})
 
 
-def test_deploy(owner, morpho_exit_book, factory):
+@pytest.fixture(scope="module")
+def factory(owner, morpho_exit_book, erc4626_exit_book):
+    return LidoLendExitBookActions.deploy(
+        owner,
+        morpho_exit_book,
+        erc4626_exit_book,
+        {"from": owner},
+    )
+
+
+def test_deploy(owner, morpho_exit_book, erc4626_exit_book, factory):
     assert factory.trustedCaller() == owner
     assert factory.morphoExitBook() == morpho_exit_book
+    assert factory.erc4626ExitBook() == erc4626_exit_book
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
@@ -66,6 +88,14 @@ def test_create_evm_script(owner, morpho_exit_book, factory, allowed):
 
 
 def test_decode_evm_script_call_data(factory):
-    market_params, allowed = factory.decodeEVMScriptCallData(calldata([MARKET_PARAMS, SECOND_MARKET_PARAMS], True))
+    action, encoded_payload = factory.decodeEVMScriptCallData(calldata([MARKET_PARAMS, SECOND_MARKET_PARAMS], True))
+    assert action == SET_MORPHO_EXIT_BOOK_ALLOWED
+    market_params, allowed = factory.decodeSetMorphoExitBookAllowedPayload(encoded_payload)
     assert market_params == [MARKET_PARAMS, SECOND_MARKET_PARAMS]
     assert allowed is True
+
+
+def test_rejects_unknown_action(owner, factory):
+    encoded = "0x" + encode(["uint8", "bytes"], [255, b""]).hex()
+    with reverts():
+        factory.createEVMScript(owner, encoded)

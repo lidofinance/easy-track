@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendRemoveGuardian,
+    LidoLendGuardianActions,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
@@ -13,16 +13,19 @@ from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
+ACTION = 1
+
+
+def create_payload(market_id, guardian, new_quorum):
+    return encode(
+        ["bytes32", "address", "uint256"],
+        [market_id, str(guardian), new_quorum],
+    )
 
 
 def create_calldata(market_id, guardian, new_quorum):
-    return (
-        "0x"
-        + encode(
-            ["bytes32", "address", "uint256"],
-            [market_id, str(guardian), new_quorum],
-        ).hex()
-    )
+    payload = create_payload(market_id, guardian, new_quorum)
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -48,7 +51,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendRemoveGuardian.deploy(owner, owner_facade, {"from": owner})
+    return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_deploy(owner, owner_facade, factory):
@@ -139,7 +142,9 @@ def test_create_evm_script(
 def test_decode_evm_script_call_data(factory, stranger):
     "Must decode EVMScript call data correctly"
     calldata = create_calldata(MARKET_ID, stranger, 1)
-    decoded_market_id, decoded_guardian, decoded_new_quorum = factory.decodeEVMScriptCallData(calldata)
+    action, payload = factory.decodeEVMScriptCallData(calldata)
+    assert action == ACTION
+    decoded_market_id, decoded_guardian, decoded_new_quorum = factory.decodeRemoveGuardianPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_guardian == stranger
     assert decoded_new_quorum == 1
