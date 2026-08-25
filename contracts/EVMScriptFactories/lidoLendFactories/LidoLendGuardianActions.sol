@@ -24,7 +24,6 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
     string private constant ERROR_SAME_SUSPECT_WINDOW = "SAME_SUSPECT_WINDOW";
     string private constant ERROR_SUSPECT_WINDOW_TOO_HIGH = "SUSPECT_WINDOW_TOO_HIGH";
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
-    string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
 
     // -------------
     // TYPES
@@ -82,7 +81,6 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         if (action == Action.UnbanAccount) {
             return _createUnbanAccountEVMScript(payload);
         }
-
         revert(ERROR_INVALID_ACTION);
     }
 
@@ -135,10 +133,7 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
             address newGuardian
         )
     {
-        (marketId, oldGuardian, newGuardian) = abi.decode(
-            _payload,
-            (bytes32, address, address)
-        );
+        (marketId, oldGuardian, newGuardian) = abi.decode(_payload, (bytes32, address, address));
     }
 
     /// @notice Decodes SetGuardiansQuorum payload: (bytes32 marketId, uint256 newQuorum)
@@ -159,13 +154,13 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         (marketId, newSuspectWindow) = abi.decode(_payload, (bytes32, uint256));
     }
 
-    /// @notice Decodes UnbanAccount payload: (bytes32[] marketIds, address[] accounts)
+    /// @notice Decodes UnbanAccount payload: (bytes32[] marketIds, address account)
     function decodeUnbanAccountPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32[] memory marketIds, address[] memory accounts)
+        returns (bytes32[] memory marketIds, address account)
     {
-        (marketIds, accounts) = abi.decode(_payload, (bytes32[], address[]));
+        (marketIds, account) = abi.decode(_payload, (bytes32[], address));
     }
 
     // ------------------
@@ -188,10 +183,9 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         require(guardianCount < guardianSignals.MAX_GUARDIANS_COUNT(), ERROR_MAX_GUARDIANS_REACHED);
         require(newQuorum != 0 && newQuorum <= guardianCount + 1, ERROR_INVALID_QUORUM);
 
-        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         bytes4[] memory methodIds = new bytes4[](2);
-        methodIds[0] = owner.addGuardian.selector;
-        methodIds[1] = owner.setGuardiansQuorum.selector;
+        methodIds[0] = ILidoLendOwner.addGuardian.selector;
+        methodIds[1] = ILidoLendOwner.setGuardiansQuorum.selector;
 
         bytes[] memory encodedCalldata = new bytes[](2);
         encodedCalldata[0] = abi.encode(marketId, guardian);
@@ -216,10 +210,9 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
             ERROR_INVALID_QUORUM
         );
 
-        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         bytes4[] memory methodIds = new bytes4[](2);
-        methodIds[0] = owner.setGuardiansQuorum.selector;
-        methodIds[1] = owner.removeGuardian.selector;
+        methodIds[0] = ILidoLendOwner.setGuardiansQuorum.selector;
+        methodIds[1] = ILidoLendOwner.removeGuardian.selector;
 
         bytes[] memory encodedCalldata = new bytes[](2);
         encodedCalldata[0] = abi.encode(marketId, newQuorum);
@@ -233,22 +226,19 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         view
         returns (bytes memory)
     {
-        (
-            bytes32 marketId,
-            address oldGuardian,
-            address newGuardian
-        ) = decodeReplaceGuardianPayload(_payload);
+        (bytes32 marketId, address oldGuardian, address newGuardian) = decodeReplaceGuardianPayload(
+            _payload
+        );
         require(newGuardian != address(0), ERROR_ZERO_GUARDIAN);
 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(guardianSignals.isGuardian(oldGuardian), ERROR_GUARDIAN_NOT_FOUND);
         require(!guardianSignals.isGuardian(newGuardian), ERROR_GUARDIAN_ALREADY_ADDED);
 
-        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
                 lidoLendOwner,
-                owner.replaceGuardian.selector,
+                ILidoLendOwner.replaceGuardian.selector,
                 abi.encode(marketId, oldGuardian, newGuardian)
             );
     }
@@ -267,11 +257,10 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
             ERROR_INVALID_QUORUM
         );
 
-        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
                 lidoLendOwner,
-                owner.setGuardiansQuorum.selector,
+                ILidoLendOwner.setGuardiansQuorum.selector,
                 abi.encode(marketId, newQuorum)
             );
     }
@@ -290,11 +279,10 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         );
         require(newSuspectWindow != guardianSignals.getSuspectWindow(), ERROR_SAME_SUSPECT_WINDOW);
 
-        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
                 lidoLendOwner,
-                owner.setGuardiansSuspectWindow.selector,
+                ILidoLendOwner.setGuardiansSuspectWindow.selector,
                 abi.encode(marketId, newSuspectWindow)
             );
     }
@@ -304,26 +292,18 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         view
         returns (bytes memory)
     {
-        (bytes32[] memory marketIds, address[] memory accounts) = decodeUnbanAccountPayload(
-            _payload
-        );
+        (bytes32[] memory marketIds, address account) = decodeUnbanAccountPayload(_payload);
         require(marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
-        require(marketIds.length == accounts.length, ERROR_ARRAY_LENGTH_MISMATCH);
 
-        bytes[] memory encodedCalldata = new bytes[](marketIds.length);
-        bytes32[] memory singleMarket = new bytes32[](1);
         for (uint256 i = 0; i < marketIds.length; ++i) {
             _guardianSignalsOf(marketIds[i]);
-            singleMarket[0] = marketIds[i];
-            encodedCalldata[i] = abi.encode(singleMarket, accounts[i]);
         }
 
-        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
         return
             EVMScriptCreator.createEVMScript(
                 lidoLendOwner,
-                owner.unbanGuardianSignals.selector,
-                encodedCalldata
+                ILidoLendOwner.unbanGuardianSignals.selector,
+                abi.encode(marketIds, account)
             );
     }
 }

@@ -1,129 +1,35 @@
 import pytest
-from brownie import AdaptiveCurveConfigStub, LidoLendActivateMarket, reverts, web3
-from eth_abi import encode
+from brownie import LidoLendVaultStub, reverts
 
-from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
-
-ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool", "uint256"]
 INITIAL_FEE = 10**17
-
-
-def _market_params(lido_lend):
-    m = lido_lend.market
-    return (m["loanToken"], m["collateralToken"], m["oracle"], m["irm"], m["lltv"])
-
-
-def _activate_prereqs(lido_lend, easy_track, skip_if_already_activated):
-    "Common handles for the activation scenarios against the fresh local EasyTrack fixture."
-
-    def unavailable(message):
-        if lido_lend.local:
-            pytest.skip(message)
-        raise pytest.UsageError(message)
-
-    core = lido_lend.contract("core")
-    skip_if_already_activated()
-    if not lido_lend.has("circuitBreaker"):
-        unavailable("descriptor lacks circuitBreaker; activation scenario needs it")
-    if lido_lend.market["pauser"] == "0x" + "00" * 20:
-        unavailable("activation scenario requires a nonzero pauser committee")
-    circuit_breaker = lido_lend.contract("circuitBreaker")
-
-    if easy_track.evmScriptExecutor() != circuit_breaker.ADMIN():
-        unavailable("EasyTrack executor is not the CircuitBreaker admin; activation cannot run through it")
-    return core, circuit_breaker, easy_track
-
-
-def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin):
-    "Deploy an ActivateMarket factory and register it on EasyTrack."
-    owner = lido_lend.contract("owner")
-    irm_router = lido_lend.contract("irmRouter")
-    adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
-    circuit_breaker = lido_lend.contract("circuitBreaker")
-    dashboard = lido_lend.contract("riskStewardDashboard")
-    factory = deployer.deploy(
-        LidoLendActivateMarket,
-        trusted_caller,
-        owner,
-        irm_router,
-        adaptive_curve_irm,
-        circuit_breaker,
-        dashboard,
-    )
-    irm_config = deployer.deploy(AdaptiveCurveConfigStub, lido_lend.market["curveParams"])
-    create_sel = web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
-    perm = (
-        "0x"
-        + adaptive_curve_irm.address[2:]
-        + adaptive_curve_irm.applyIrmConfig.signature[2:]
-        + irm_router.address[2:]
-        + irm_router.setMarketIrm.signature[2:]
-        + owner.address[2:]
-        + create_sel
-        + dashboard.address[2:]
-        + dashboard.addMarketSteward.signature[2:]
-        + circuit_breaker.address[2:]
-        + circuit_breaker.registerPauser.signature[2:]
-        + owner.address[2:]
-        + owner.setFee.signature[2:]
-    )
-    easy_track.addEVMScriptFactory(factory, perm, {"from": deployer})
-    executor = easy_track.evmScriptExecutor()
-    owner.grantRole(owner.MARKET_CREATOR_ROLE(), executor, {"from": admin})
-    owner.grantRole(owner.FEE_MANAGER_ROLE(), executor, {"from": admin})
-    return factory, irm_router, irm_config
-
-
-def _calldata(lido_lend, irm_config, enable_settlement, fee=INITIAL_FEE):
-    m = lido_lend.market
-    return (
-        "0x"
-        + encode(
-            ACTIVATE_TYPES,
-            [
-                _market_params(lido_lend),
-                irm_config,
-                m["controller"],
-                m["steward"],
-                m["pauser"],
-                enable_settlement,
-                fee,
-            ],
-        ).hex()
-    )
 
 
 @pytest.mark.parametrize("enable_settlement,fee", [(True, INITIAL_FEE), (False, 0)])
 def test_activate_market_scenario(
     lido_lend,
     easy_track,
-    deployer,
     trusted_caller,
-    enact_motion,
-    admin,
-    skip_if_already_activated,
+    activate_market,
     enable_settlement,
     fee,
 ):
     "Activate an inert market with the requested settlement and fee configuration."
-    core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
+    activation = activate_market(enable_settlement, fee)
+    core = activation["core"]
     m = lido_lend.market
     market_id = m["id"]
-
-    assert core.market(market_id)["lastUpdate"] == 0
     dashboard = lido_lend.contract("riskStewardDashboard")
-    assert not dashboard.isMarketSteward(market_id, m["steward"])
-    factory, irm_router, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
-
-    calldata = _calldata(lido_lend, irm_config.address, enable_settlement, fee)
-    enact_motion(easy_track, factory, calldata, trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0
     assert core.market(market_id)["fee"] == fee
-    assert irm_router.marketIrm(market_id) == m["curve"]
+    assert activation["irm_router"].marketIrm(market_id) == m["curve"]
     assert dashboard.isMarketSteward(market_id, m["steward"])
-    assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
+    assert activation["circuit_breaker"].getPauser(m["controller"]) == m["pauser"]
     assert core.isSettlementEnabled(market_id) == enable_settlement
+    if lido_lend.local:
+        recipient = activation["preseeder"].PRESEED_RECIPIENT()
+        assert core.supplyShares(market_id, recipient) == activation["market_supply_shares"]
+        assert LidoLendVaultStub.at(m["vault"]).balanceOf(recipient) >= activation["min_vault_shares"]
 
     with reverts():
-        easy_track.createMotion(factory, calldata, {"from": trusted_caller})
+        easy_track.createMotion(activation["factory"], activation["calldata"], {"from": trusted_caller})

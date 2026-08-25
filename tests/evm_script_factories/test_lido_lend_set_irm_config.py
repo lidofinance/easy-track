@@ -90,16 +90,20 @@ def test_create_evm_script_irm_not_router(owner, core_stub, factory):
         factory.createEVMScript(owner, create_calldata(foreign_market_id))
 
 
-def test_create_evm_script(owner, adaptive_curve_irm_stub, market_params, factory):
-    "Must create correct EVMScript targeting the configured AdaptiveCurveIrm singleton"
+def test_create_evm_script(owner, core_stub, adaptive_curve_irm_stub, market_params, factory):
+    "Must accrue interest before applying the new IRM config"
     evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID))
 
     expected_evm_script = encode_call_script(
         [
             (
+                core_stub.address,
+                core_stub.accrueInterest.encode_input(market_params),
+            ),
+            (
                 adaptive_curve_irm_stub.address,
                 adaptive_curve_irm_stub.applyIrmConfig.encode_input(market_params, IRM_CONFIG),
-            )
+            ),
         ]
     )
     assert evm_script == expected_evm_script

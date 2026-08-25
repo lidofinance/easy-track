@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, LidoLendGuardianActions, LidoLendMarketManagerActions
+from brownie import reverts, web3, LidoLendGuardianActions, LidoLendMarketManagerActions
 from eth_abi import encode
 
 GUARDIAN_A = "0x" + "a1" * 20
@@ -18,6 +18,22 @@ def _add_guardian_calldata(market_id, addr):
 
 def _set_suspect_window_calldata(market_id, window):
     return _envelope(4, encode(["bytes32", "uint256"], [market_id, window]))
+
+
+def _assert_reverts_with_reason(method, reason, *args):
+    with reverts(reason):
+        method.call(*args)
+
+    method_args, tx_params = args[:-1], args[-1]
+    tx_hash = web3.eth.send_transaction(
+        {
+            "from": str(tx_params["from"]),
+            "to": method._address,
+            "data": method.encode_input(*method_args),
+            "gas": 60_000_000,
+        }
+    )
+    assert web3.eth.wait_for_transaction_receipt(tx_hash)["status"] == 0
 
 
 @pytest.fixture
@@ -46,19 +62,25 @@ def registered_add_guardian(
 def test_stranger_cannot_open_motion(easy_track, registered_add_guardian, stranger):
     "createMotion by a non-trusted caller must revert (factory onlyTrustedCaller -> CALLER_IS_FORBIDDEN)."
     factory, _, market_id = registered_add_guardian
-    with reverts():
-        easy_track.createMotion(factory, _add_guardian_calldata(market_id, GUARDIAN_A), {"from": stranger})
+    _assert_reverts_with_reason(
+        easy_track.createMotion,
+        "CALLER_IS_FORBIDDEN",
+        factory,
+        _add_guardian_calldata(market_id, GUARDIAN_A),
+        {"from": stranger},
+    )
 
 
 def test_unregistered_factory_cannot_open_motion(lido_lend, created_market, easy_track, deployer, trusted_caller):
     "createMotion for a factory never added to EasyTrack must revert (EVM_SCRIPT_FACTORY_NOT_FOUND)."
     factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, lido_lend.contract("owner"))
-    with reverts():
-        easy_track.createMotion(
-            factory,
-            _add_guardian_calldata(lido_lend.market["id"], GUARDIAN_A),
-            {"from": trusted_caller},
-        )
+    _assert_reverts_with_reason(
+        easy_track.createMotion,
+        "EVM_SCRIPT_FACTORY_NOT_FOUND",
+        factory,
+        _add_guardian_calldata(lido_lend.market["id"], GUARDIAN_A),
+        {"from": trusted_caller},
+    )
 
 
 def test_cannot_enact_before_objection_window(
@@ -68,8 +90,13 @@ def test_cannot_enact_before_objection_window(
     factory, _, market_id = registered_add_guardian
     calldata = _add_guardian_calldata(market_id, GUARDIAN_A)
     _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
-    with reverts():
-        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
+    _assert_reverts_with_reason(
+        easy_track.enactMotion,
+        "MOTION_NOT_PASSED",
+        motion_id,
+        calldata,
+        {"from": stranger},
+    )
 
 
 def test_cannot_enact_with_tampered_calldata(
@@ -84,8 +111,13 @@ def test_cannot_enact_with_tampered_calldata(
         trusted_caller,
     )
     advance_time(easy_track.motionDuration() + 100)
-    with reverts():
-        easy_track.enactMotion(motion_id, _add_guardian_calldata(market_id, GUARDIAN_B), {"from": stranger})
+    _assert_reverts_with_reason(
+        easy_track.enactMotion,
+        "UNEXPECTED_EVM_SCRIPT",
+        motion_id,
+        _add_guardian_calldata(market_id, GUARDIAN_B),
+        {"from": stranger},
+    )
 
 
 def test_cannot_enact_with_another_valid_action(
@@ -107,12 +139,13 @@ def test_cannot_enact_with_another_valid_action(
     new_window = 1 if guardian_signals.getSuspectWindow() != 1 else 2
     advance_time(easy_track.motionDuration() + 100)
 
-    with reverts("UNEXPECTED_EVM_SCRIPT"):
-        easy_track.enactMotion(
-            motion_id,
-            _set_suspect_window_calldata(market_id, new_window),
-            {"from": stranger},
-        )
+    _assert_reverts_with_reason(
+        easy_track.enactMotion,
+        "UNEXPECTED_EVM_SCRIPT",
+        motion_id,
+        _set_suspect_window_calldata(market_id, new_window),
+        {"from": stranger},
+    )
 
 
 def test_stale_precondition_reverts_on_enact(
@@ -135,8 +168,13 @@ def test_stale_precondition_reverts_on_enact(
 
     advance_time(easy_track.motionDuration() + 100)
 
-    with reverts("GUARDIAN_ALREADY_ADDED"):
-        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
+    _assert_reverts_with_reason(
+        easy_track.enactMotion,
+        "GUARDIAN_ALREADY_ADDED",
+        motion_id,
+        calldata,
+        {"from": stranger},
+    )
 
 
 def test_motion_rejected_by_objection(
@@ -160,8 +198,13 @@ def test_motion_rejected_by_objection(
 
     assert {motion[0] for motion in easy_track.getMotions()} == existing_motion_ids
     advance_time(easy_track.motionDuration() + 100)
-    with reverts():
-        easy_track.enactMotion(motion_id, calldata, {"from": stranger})
+    _assert_reverts_with_reason(
+        easy_track.enactMotion,
+        "MOTION_NOT_FOUND",
+        motion_id,
+        calldata,
+        {"from": stranger},
+    )
 
 
 def test_factory_with_wrong_permission_rejects_motion(
@@ -172,9 +215,10 @@ def test_factory_with_wrong_permission_rejects_motion(
     factory = deployer.deploy(LidoLendMarketManagerActions, trusted_caller, owner)
     # Right target (facade), wrong selector: SetSupplyCap emits setMarketSupplyCap, permission lists another call.
     register_factory(factory, permission((owner, owner.setMarketSettlementConfig)))
-    with reverts():
-        easy_track.createMotion(
-            factory,
-            _envelope(3, encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24])),
-            {"from": trusted_caller},
-        )
+    _assert_reverts_with_reason(
+        easy_track.createMotion,
+        "HAS_NO_PERMISSIONS",
+        factory,
+        _envelope(3, encode(["bytes32", "uint256"], [lido_lend.market["id"], 10**24])),
+        {"from": trusted_caller},
+    )

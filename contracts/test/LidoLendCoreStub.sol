@@ -3,10 +3,11 @@
 
 pragma solidity 0.8.6;
 
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC20/IERC20.sol";
+
 /// @author (draft)
-/// @notice Test-only stub of the LidoLend core, covering the market-resolution surface the domain-scoped
-/// factories read at motion time: `marketController(id)` and `idToMarketParams(id)`. An unset market
-/// resolves to the zero controller / zero-`irm` params, so factories hit their MARKET_NOT_FOUND guard.
+/// @notice Test-only stub of the LidoLend core, covering market resolution, fee updates, and asset supply.
+///         An unset market resolves to the zero controller / zero-`irm` params.
 contract LidoLendCoreStub {
     string private constant ERROR_MARKET_ALREADY_ACTIVATED = "MARKET_ALREADY_ACTIVATED";
     string private constant ERROR_MARKET_NOT_CREATED = "MARKET_NOT_CREATED";
@@ -35,6 +36,7 @@ contract LidoLendCoreStub {
     mapping(bytes32 => Market) private _market;
     mapping(bytes32 => bool) public isSettlementEnabled;
     address public owner;
+    mapping(bytes32 => mapping(address => uint256)) public supplyShares;
 
     function setOwner(address owner_) external {
         owner = owner_;
@@ -54,6 +56,40 @@ contract LidoLendCoreStub {
 
     function market(bytes32 marketId) external view returns (Market memory) {
         return _market[marketId];
+    }
+
+    function accrueInterest(MarketParams calldata) external {}
+
+    function supply(
+        MarketParams calldata marketParams,
+        uint256 assets,
+        uint256 shares,
+        address onBehalf,
+        bytes calldata
+    ) external returns (uint256, uint256) {
+        bytes32 marketId = keccak256(abi.encode(marketParams));
+        require(_market[marketId].lastUpdate != 0, ERROR_MARKET_NOT_CREATED);
+        require((assets == 0) != (shares == 0), "INCONSISTENT_INPUT");
+
+        Market storage market_ = _market[marketId];
+        if (assets == 0) {
+            uint256 denominator = uint256(market_.totalSupplyShares) + 1e6;
+            assets =
+                (shares * (uint256(market_.totalSupplyAssets) + 1) + denominator - 1) /
+                denominator;
+        } else {
+            shares =
+                (assets * (uint256(market_.totalSupplyShares) + 1e6)) /
+                (uint256(market_.totalSupplyAssets) + 1);
+        }
+        require(
+            IERC20(marketParams.loanToken).transferFrom(msg.sender, address(this), assets),
+            "TRANSFER_FAILED"
+        );
+        market_.totalSupplyAssets += uint128(assets);
+        market_.totalSupplyShares += uint128(shares);
+        supplyShares[marketId][onBehalf] += shares;
+        return (assets, shares);
     }
 
     function setFee(MarketParams calldata marketParams, uint256 newFee) external {

@@ -20,11 +20,11 @@ contract LidoLendRiskStewardActions is TrustedCaller, IEVMScriptFactory {
     // ERRORS
     // -------------
 
+    string private constant ERROR_INVALID_ACTION = "INVALID_ACTION";
     string private constant ERROR_ZERO_STEWARD = "ZERO_STEWARD";
     string private constant ERROR_STEWARD_ALREADY_ADDED = "STEWARD_ALREADY_ADDED";
     string private constant ERROR_STEWARD_NOT_FOUND = "STEWARD_NOT_FOUND";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
-    string private constant ERROR_INVALID_ACTION = "INVALID_ACTION";
 
     // -------------
     // VARIABLES
@@ -66,7 +66,6 @@ contract LidoLendRiskStewardActions is TrustedCaller, IEVMScriptFactory {
         if (action == Action.RemoveRiskSteward) {
             return _createRemoveRiskStewardEVMScript(payload);
         }
-
         revert(ERROR_INVALID_ACTION);
     }
 

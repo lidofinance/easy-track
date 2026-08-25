@@ -14,6 +14,11 @@ deployment is parameterized through the scenarios, and the cross-market scenario
 market IDs. GuardianSignals and CircuitBreaker instances may be shared by multiple markets. Missing acceptance
 artifacts are usage errors in artifact mode, not skips.
 
+The activation scenario deploys and funds a Preseeder automatically. On a mainnet fork it impersonates a
+token funder; override it with `LIDO_LEND_PRESEED_FUNDER` when the default account does not hold a market's loan
+token. `LIDO_LEND_PRESEEDER` may still point to an already funded Preseeder bound to the artifact core and the
+real EasyTrack executor.
+
 ## Local stub scenarios
 
 From the EasyTrack repository:

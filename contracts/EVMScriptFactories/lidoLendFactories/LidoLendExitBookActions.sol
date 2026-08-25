@@ -30,6 +30,7 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_FEE_TOO_HIGH = "FEE_TOO_HIGH";
     string private constant ERROR_FEE_RECIPIENT_REQUIRED = "FEE_RECIPIENT_REQUIRED";
 
+    // Mirrors MAX_SERVICE_FEE in lido-lend-markets/src/periphery/ExitBookBase.sol.
     uint256 private constant MAX_SERVICE_FEE = 0.25e18;
 
     // -------------
@@ -63,7 +64,6 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
         if (action == Action.SetServiceFee) {
             return _createSetServiceFeeEVMScript(payload);
         }
-
         revert(ERROR_INVALID_ACTION);
     }
 
@@ -90,7 +90,10 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
             bool allowed
         )
     {
-        (exitBook, marketParamsList, allowed) = abi.decode(_payload, (address, MarketParams[], bool));
+        (exitBook, marketParamsList, allowed) = abi.decode(
+            _payload,
+            (address, MarketParams[], bool)
+        );
     }
 
     /// @notice Decodes a SetErc4626ExitBookAllowed payload

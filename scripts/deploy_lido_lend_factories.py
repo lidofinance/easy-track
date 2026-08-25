@@ -4,6 +4,7 @@ Protocol addresses are read from one immutable Lido Lend deployment directory. S
 
   LIDO_LEND_ARTIFACTS_DIR - directory containing protocol.toml, markets/, and optional exit-books.toml
   TRUSTED_CALLER          - committee address allowed to create motions
+  LIDO_LEND_PRESEEDER     - funded Preseeder address, required by ActivateMarket
   LIDO_LEND_FACTORIES     - optional comma-separated factory names; defaults to all
 
 Before deployment the script verifies artifact consistency, that the actual EasyTrack EVMScriptExecutor
@@ -21,6 +22,7 @@ from brownie import (
     network,
     web3,
     LidoLendActivateMarket,
+    LidoLendPreseeder,
     LidoLendRegisterPauser,
     LidoLendGuardianActions,
     LidoLendMarketManagerActions,
@@ -69,7 +71,6 @@ GUARDIAN_MANAGER_FACTORIES = {GUARDIAN_ACTIONS_FACTORY}
 FEE_MANAGER_FACTORIES = {"LidoLendActivateMarket", MARKET_MANAGER_ACTIONS_FACTORY}
 OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
 IRM_ROUTER_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
-IRM_ROUTER_TARGET_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
 ADAPTIVE_CURVE_IRM_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
 RISK_STEWARD_FACTORIES = {"LidoLendActivateMarket", RISK_STEWARD_ACTIONS_FACTORY}
 CIRCUIT_BREAKER_FACTORIES = {"LidoLendActivateMarket", "LidoLendRegisterPauser"}
@@ -105,6 +106,8 @@ def _required_address_keys(factory_names):
     keys = {"trusted_caller", "core"}
     if selected & CIRCUIT_BREAKER_FACTORIES:
         keys.add("circuit_breaker")
+    if "LidoLendActivateMarket" in selected:
+        keys.add("lido_lend_preseeder")
     if selected & OWNER_FACTORIES:
         keys.add("owner")
     if selected & IRM_ROUTER_FACTORIES:
@@ -144,6 +147,8 @@ def _read_addresses(factory_names, artifacts_dir=None):
         "circuit_breaker": protocol["circuit_breaker"],
         "evm_script_executor": protocol["evm_script_executor"],
     }
+    if "lido_lend_preseeder" in required_keys:
+        available["lido_lend_preseeder"] = _env_address("LIDO_LEND_PRESEEDER")
     if required_keys & {"morpho_exit_book", "erc4626_exit_book"}:
         exit_books = deployment["exit_books"]["exit_books"]
         available["morpho_exit_book"] = exit_books["morpho"]
@@ -161,6 +166,11 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
     """Fail fast if the selected factories' addresses form one executor-ready deployment."""
     selected = set(factory_names)
     executor = expected_executor
+
+    def require_address(label, actual, expected):
+        if str(actual).lower() != str(expected).lower():
+            raise ValueError(f"{label} mismatch: {actual} != {expected}")
+
     artifact_executor = a.get("evm_script_executor", expected_executor)
     if str(artifact_executor).lower() != str(expected_executor).lower():
         raise ValueError(
@@ -178,9 +188,14 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
                 f"{circuit_breaker_admin} != {executor}"
             )
 
-    def require_address(label, actual, expected):
-        if str(actual).lower() != str(expected).lower():
-            raise ValueError(f"{label} mismatch: {actual} != {expected}")
+    if "LidoLendActivateMarket" in selected and "lido_lend_preseeder" in a:
+        preseeder = LidoLendPreseeder.at(a["lido_lend_preseeder"])
+        require_address("lido_lend_preseeder.lidoLend", preseeder.lidoLend(), a["core"])
+        require_address(
+            "lido_lend_preseeder.evmScriptExecutor",
+            preseeder.evmScriptExecutor(),
+            executor,
+        )
 
     if selected & OWNER_FACTORIES:
         core = interface.LidoLend(a["core"])
@@ -205,7 +220,7 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
     if selected & IRM_ROUTER_FACTORIES:
         irm_router = interface.IrmRouter(a["irm_router"])
         require_address("irm_router.MORPHO", irm_router.MORPHO(), a["core"])
-        if selected & IRM_ROUTER_TARGET_FACTORIES:
+        if selected & IRM_ROUTER_FACTORIES:
             require_address("irm_router.manager", irm_router.manager(), executor)
 
     if selected & ADAPTIVE_CURVE_IRM_FACTORIES:
@@ -265,6 +280,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
             a["adaptive_curve_irm"],
             a["circuit_breaker"],
             a["risk_steward_dashboard"],
+            a["lido_lend_preseeder"],
         ],
     )
     add(LidoLendRegisterPauser, lambda: [tc, core, a["circuit_breaker"]])
@@ -304,6 +320,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
     if selected & CIRCUIT_BREAKER_FACTORIES:
         circuit_breaker = interface.CircuitBreaker(a["circuit_breaker"])
     if "LidoLendActivateMarket" in selected:
+        preseeder = LidoLendPreseeder.at(a["lido_lend_preseeder"])
         controlled_market_create_selector = (
             "0x" + web3.keccak(text="createMarket((address,address,address,address,uint256),address,bool)").hex()[2:10]
         )
@@ -313,6 +330,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (owner, controlled_market_create_selector),
             (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
             (circuit_breaker, circuit_breaker.registerPauser.signature),
+            (preseeder, preseeder.preseedMarket.signature),
             (owner, owner.setFee.signature),
         )
     if "LidoLendRegisterPauser" in selected:
@@ -341,7 +359,9 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (risk_steward_dashboard, risk_steward_dashboard.removeMarketSteward.signature),
         )
     if IRM_ACTIONS_FACTORY in selected:
+        core = interface.LidoLend(a["core"])
         permissions[IRM_ACTIONS_FACTORY] = _permission(
+            (core, core.accrueInterest.signature),
             (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature),
             (irm_router, irm_router.setMarketIrm.signature),
         )

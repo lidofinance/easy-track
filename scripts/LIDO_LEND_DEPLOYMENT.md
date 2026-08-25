@@ -36,6 +36,8 @@ addresses from `protocol.toml`, the CircuitBreaker from `markets/*.toml`, and ex
 cross-checks each market with its linked oracle and GuardianSignals artifacts.
 
 `TRUSTED_CALLER` is the committee address allowed to create motions through the deployed factories.
+`LIDO_LEND_PRESEEDER` is required when `ActivateMarket` is selected. Deploy it with the protocol core and
+EasyTrack EVMScriptExecutor, then fund it with the collateral and loan tokens used by the activation motion.
 
 ## Fixed permission model
 
@@ -79,9 +81,9 @@ ExitBookActions
 An empty list, an unknown name, or a duplicate is rejected before deployment.
 
 The script resolves only the protocol components used by the selected factories. `ActivateMarket` requires
-the protocol RiskStewardDashboard and shared CircuitBreaker; `RegisterPauser` requires the shared
-CircuitBreaker. Activation still performs the initial pauser registration, while `RegisterPauser` supports a
-standalone registration, replacement, or removal motion.
+the protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER`; `RegisterPauser` requires
+the shared CircuitBreaker. Activation still performs the initial pauser registration, while `RegisterPauser`
+supports a standalone registration, replacement, or removal motion.
 
 Grouped factories decode `abi.encode(Action, payload)`. Existing action ordinals are unchanged; the new
 actions are appended as `MarketManagerActions.SetFee = 5` and `ExitBookActions.SetServiceFee = 2`.
@@ -89,7 +91,7 @@ actions are appended as `MarketManagerActions.SetFee = 5` and `ExitBookActions.S
 | Selected factories | Required artifacts |
 | --- | --- |
 | All selections | `protocol.toml` and at least one `markets/*.toml` |
-| ActivateMarket | protocol RiskStewardDashboard and shared CircuitBreaker |
+| ActivateMarket | protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER` |
 | RegisterPauser | shared CircuitBreaker |
 | ExitBookActions | `exit-books.toml` |
 
@@ -165,14 +167,21 @@ selected topology:
 - for `ActivateMarket` and `RegisterPauser`, the shared `CircuitBreaker.ADMIN` equals that executor;
 - for `ActivateMarket`, the executor has the owner's `MARKET_CREATOR_ROLE` and `FEE_MANAGER_ROLE`, plus the
   dashboard's `STEWARD_ADMIN_ROLE`;
+- for `ActivateMarket`, `LIDO_LEND_PRESEEDER` points to the expected core and EasyTrack executor;
 - the executor has the owner, IRM, dashboard, and exit-book roles required by the selected factories.
 
 Any failure stops the script before factory deployment.
 
 ## Fee-management scope
 
-`ActivateMarket` accepts an initial market fee of at most 25%. A nonzero fee is installed as the final action;
-zero leaves the core's default fee unchanged and omits that call.
+`ActivateMarket` accepts an initial market fee of at most 25%. It preseeds the market and its ERC-4626 vault
+with loan-token-funded shares for `0x000000000000000000000000000000000000dEaD`; the configured Preseeder must
+already hold enough loan tokens for both operations. Market supply shares must be at least `1e9`. Vault shares
+must be at least `1e9` and convert to at least `1e6` asset units, following Morpho's
+[market](https://docs.morpho.org/curate/tutorials-market-v1/dead-deposit/) and
+[vault](https://docs.morpho.org/curate/tutorials-v2/dead-deposit/) dead-deposit guidance. Both the market and
+vault must be empty so these are their first deposits.
+A nonzero fee is installed as the final action; zero leaves the core's default fee unchanged and omits that call.
 
 `MarketManagerActions.SetFee` changes one market fee through `LidoLendOwner`. The EVMScriptExecutor must hold
 `FEE_MANAGER_ROLE` on the owner facade.
@@ -191,6 +200,8 @@ export DEPLOYER=<brownie-account-name>
 export LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-market/deployed/<production-run>
 export TRUSTED_CALLER=<committee-address>
 export LIDO_LEND_FACTORIES=<comma-separated-factory-list>
+# Required only when ActivateMarket is selected:
+export LIDO_LEND_PRESEEDER=<deployed-and-funded-preseeder-address>
 ```
 
 Run:

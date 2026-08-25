@@ -24,12 +24,52 @@ struct Market {
     uint128 fee;
 }
 
+// Mirrors MAX_FEE in lido-lend/src/libraries/ConstantsLib.sol.
+uint256 constant MAX_FEE = 0.25e18;
+
 interface ILidoLend {
+    function accrueInterest(MarketParams calldata marketParams) external;
+
     function market(bytes32 marketId) external view returns (Market memory);
 
     function marketController(bytes32 marketId) external view returns (address);
 
     function idToMarketParams(bytes32 marketId) external view returns (MarketParams memory);
+
+    function supply(
+        MarketParams calldata marketParams,
+        uint256 assets,
+        uint256 shares,
+        address onBehalf,
+        bytes calldata data
+    ) external returns (uint256 assetsSupplied, uint256 sharesSupplied);
+}
+
+interface ILidoLendERC4626 {
+    function LIDO_LEND() external view returns (ILidoLend);
+
+    function marketId() external view returns (bytes32);
+
+    function asset() external view returns (address);
+
+    function totalSupply() external view returns (uint256);
+
+    function previewMint(uint256 shares) external view returns (uint256 assets);
+
+    function deposit(uint256 assets, address receiver) external returns (uint256 shares);
+}
+
+interface ILidoLendPreseeder {
+    function previewPreseed(ILidoLendERC4626 vault)
+        external
+        view
+        returns (uint256 marketSupplyAssets, uint256 vaultAssets);
+
+    function validatePreseed(MarketParams calldata marketParams, ILidoLendERC4626 vault)
+        external
+        view;
+
+    function preseedMarket(MarketParams calldata marketParams, ILidoLendERC4626 vault) external;
 }
 
 interface ILidoLendOwner {
@@ -110,31 +150,17 @@ interface ILidoLendMarketController {
 
     function guardianSignals() external view returns (address);
 
-    function setInstantActivation(address caller, bool enabled) external;
-
     function hasInstantActivation(address caller) external view returns (bool);
-
-    function setCollateralActivationConfig(CollateralActivationConfig calldata cfg) external;
 
     function collateralActivationConfig() external view returns (CollateralActivationConfig memory);
 
-    function setSettlementConfig(SettlementConfig calldata config) external;
-
     function settlementConfig() external view returns (SettlementConfig memory);
-
-    function setSupplyCap(uint256 cap) external;
-
-    function supplyCap() external view returns (uint256);
-
-    function unfreeze() external;
 
     function isFrozen() external view returns (bool);
 }
 
 interface IIrmRouter {
     function setMarketIrm(MarketParams calldata marketParams, address irm) external;
-
-    function marketIrm(bytes32 marketId) external view returns (address);
 }
 
 interface IConfigurableIrm {
@@ -167,8 +193,6 @@ interface IGuardianSignals {
     function getSuspectWindow() external view returns (uint256);
 
     function unban(bytes32 marketId, address account) external;
-
-    function isBanned(bytes32 marketId, address account) external view returns (bool);
 }
 
 interface IRiskStewardDashboard {

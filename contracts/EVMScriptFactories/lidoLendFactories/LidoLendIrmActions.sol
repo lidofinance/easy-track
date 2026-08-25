@@ -78,7 +78,6 @@ contract LidoLendIrmActions is TrustedCaller, IEVMScriptFactory {
         if (action == Action.SetMarketIrm) {
             return _createSetMarketIrmEVMScript(payload);
         }
-
         revert(ERROR_INVALID_ACTION);
     }
 
@@ -129,12 +128,19 @@ contract LidoLendIrmActions is TrustedCaller, IEVMScriptFactory {
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
 
-        return
-            EVMScriptCreator.createEVMScript(
-                adaptiveCurveIrm,
-                IConfigurableIrm.applyIrmConfig.selector,
-                abi.encode(marketParams, irmConfig)
-            );
+        address[] memory to = new address[](2);
+        bytes4[] memory methodIds = new bytes4[](2);
+        bytes[] memory callData = new bytes[](2);
+
+        to[0] = lidoLend;
+        methodIds[0] = ILidoLend.accrueInterest.selector;
+        callData[0] = abi.encode(marketParams);
+
+        to[1] = adaptiveCurveIrm;
+        methodIds[1] = IConfigurableIrm.applyIrmConfig.selector;
+        callData[1] = abi.encode(marketParams, irmConfig);
+
+        return EVMScriptCreator.createEVMScript(to, methodIds, callData);
     }
 
     function _createSetMarketIrmEVMScript(bytes memory _payload)

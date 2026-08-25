@@ -55,6 +55,11 @@ _INTERFACE = {
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as _MP_TYPE
 
+_ACTIVATION_PARAMS_TYPE = f"({_MP_TYPE},address,address,bool,address,address,address,uint256)"
+_INITIAL_FEE = 10**17
+_MIN_DEAD_DEPOSIT_SHARES = 10**9
+_DEFAULT_PRESEED_FUNDER = "0xF977814e90dA44bFA03b6295A0616a897441aceC"
+
 
 def _role(name):
     return web3.keccak(text=name)
@@ -412,6 +417,8 @@ def lido_lend(
         {"from": deployer},
     )
     vault.setMarketId(deployment.market["id"], {"from": deployer})
+    vault.setLidoLend(core, {"from": deployer})
+    vault.setAsset(loan_token, {"from": deployer})
     morpho.setMarketVault(deployment.market["id"], vault, {"from": deployer})
     guardian_signals.addGuardian(bootstrap_guardian, {"from": deployer})
 
@@ -555,6 +562,138 @@ def _market_params(market):
     return (m["loanToken"], m["collateralToken"], m["oracle"], m["irm"], m["lltv"])
 
 
+@pytest.fixture
+def activate_market(
+    lido_lend,
+    easy_track,
+    deployer,
+    accounts,
+    trusted_caller,
+    enact_motion,
+    skip_if_already_activated,
+    register_factory,
+    LidoLendActivateMarket,
+    LidoLendPreseeder,
+    MockERC20,
+):
+    "Deploy, register, and enact the shared market-activation motion used by LL scenarios."
+
+    def _activate(enable_settlement=True, fee=_INITIAL_FEE, check_exit_books=False):
+        def unavailable(message):
+            if lido_lend.local:
+                pytest.skip(message)
+            raise pytest.UsageError(message)
+
+        skip_if_already_activated(check_exit_books=check_exit_books)
+        if not lido_lend.has("circuitBreaker"):
+            unavailable("descriptor lacks circuitBreaker; activation scenario needs it")
+
+        m = lido_lend.market
+        if m["pauser"] == _ZERO:
+            unavailable("activation scenario requires a nonzero pauser committee")
+
+        core = lido_lend.contract("core")
+        circuit_breaker = lido_lend.contract("circuitBreaker")
+        executor = easy_track.evmScriptExecutor()
+        if executor != circuit_breaker.ADMIN():
+            unavailable("EasyTrack executor is not the CircuitBreaker admin; activation cannot run through it")
+
+        market_id = m["id"]
+        dashboard = lido_lend.contract("riskStewardDashboard")
+        assert core.market(market_id)["lastUpdate"] == 0
+        assert not dashboard.isMarketSteward(market_id, m["steward"])
+
+        loan_token = interface.ERC20(m["loanToken"])
+
+        if lido_lend.local:
+            preseeder = deployer.deploy(LidoLendPreseeder, core, executor, deployer)
+            market_supply_assets, vault_assets = preseeder.previewPreseed(m["vault"])
+            MockERC20.at(m["loanToken"]).mint(preseeder, market_supply_assets + vault_assets, {"from": deployer})
+        else:
+            address = os.environ.get("LIDO_LEND_PRESEEDER")
+            if address:
+                preseeder = LidoLendPreseeder.at(address)
+                if preseeder.lidoLend() != core or preseeder.evmScriptExecutor() != executor:
+                    raise pytest.UsageError("LIDO_LEND_PRESEEDER has incompatible core or executor")
+            else:
+                preseeder = deployer.deploy(LidoLendPreseeder, core, executor, deployer)
+                market_supply_assets, vault_assets = preseeder.previewPreseed(m["vault"])
+                preseed_loan_assets = market_supply_assets + vault_assets
+                funder = _impersonated_account(
+                    os.environ.get("LIDO_LEND_PRESEED_FUNDER", _DEFAULT_PRESEED_FUNDER), accounts
+                )
+                if loan_token.balanceOf(funder) < preseed_loan_assets:
+                    raise pytest.UsageError(f"LIDO_LEND_PRESEED_FUNDER has insufficient balance of {m['loanToken']}")
+                loan_token.transfer(preseeder, preseed_loan_assets, {"from": funder})
+
+        owner = lido_lend.contract("owner")
+        irm_router = lido_lend.contract("irmRouter")
+        adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
+        factory = deployer.deploy(
+            LidoLendActivateMarket,
+            trusted_caller,
+            owner,
+            irm_router,
+            adaptive_curve_irm,
+            circuit_breaker,
+            dashboard,
+            preseeder,
+        )
+        irm_config = deployer.deploy(AdaptiveCurveConfigStub, m["curveParams"])
+        create_selector = web3.keccak(
+            text="createMarket((address,address,address,address,uint256),address,bool)"
+        ).hex()[2:10]
+        register_factory(
+            factory,
+            "0x"
+            + adaptive_curve_irm.address[2:]
+            + adaptive_curve_irm.applyIrmConfig.signature[2:]
+            + irm_router.address[2:]
+            + irm_router.setMarketIrm.signature[2:]
+            + owner.address[2:]
+            + create_selector
+            + dashboard.address[2:]
+            + dashboard.addMarketSteward.signature[2:]
+            + circuit_breaker.address[2:]
+            + circuit_breaker.registerPauser.signature[2:]
+            + preseeder.address[2:]
+            + preseeder.preseedMarket.signature[2:]
+            + owner.address[2:]
+            + owner.setFee.signature[2:],
+        )
+        calldata = (
+            "0x"
+            + encode(
+                [_ACTIVATION_PARAMS_TYPE],
+                [
+                    (
+                        _market_params(m),
+                        irm_config.address,
+                        m["controller"],
+                        enable_settlement,
+                        m["steward"],
+                        m["pauser"],
+                        m["vault"],
+                        fee,
+                    )
+                ],
+            ).hex()
+        )
+        enact_motion(easy_track, factory, calldata, trusted_caller)
+        return {
+            "core": core,
+            "circuit_breaker": circuit_breaker,
+            "factory": factory,
+            "irm_router": irm_router,
+            "preseeder": preseeder,
+            "calldata": calldata,
+            "market_supply_shares": _MIN_DEAD_DEPOSIT_SHARES,
+            "min_vault_shares": _MIN_DEAD_DEPOSIT_SHARES,
+        }
+
+    return _activate
+
+
 def _route_curve(lido_lend, market, accounts):
     "Route the market's curve on the router as its current manager (createMarket requires the IRM to be set)."
     router = lido_lend.contract("irmRouter")
@@ -611,26 +750,26 @@ def skip_if_already_activated(lido_lend):
         if lido_lend.contract("core").market(market_id)["lastUpdate"] == 0:
             return  # inert market: the scenario runs for real
 
-        assert lido_lend.contract("core").marketController(market_id) == market["controller"], (
-            "market is created on the core but bound to a different controller than the artifact records"
-        )
-        assert lido_lend.contract("irmRouter").marketIrm(market_id) == market["curve"], (
-            "market is activated but its IRM is not routed to the domain curve"
-        )
+        assert (
+            lido_lend.contract("core").marketController(market_id) == market["controller"]
+        ), "market is created on the core but bound to a different controller than the artifact records"
+        assert (
+            lido_lend.contract("irmRouter").marketIrm(market_id) == market["curve"]
+        ), "market is activated but its IRM is not routed to the domain curve"
         if lido_lend.has("circuitBreaker"):
-            assert lido_lend.contract("circuitBreaker").getPauser(market["controller"]) == market["pauser"], (
-                "market is activated but its runtime pauser is not registered on the CircuitBreaker"
-            )
+            assert (
+                lido_lend.contract("circuitBreaker").getPauser(market["controller"]) == market["pauser"]
+            ), "market is activated but its runtime pauser is not registered on the CircuitBreaker"
         assert lido_lend.contract("riskStewardDashboard").isMarketSteward(
             market_id, market["steward"]
         ), "market is activated but its steward is not appointed on the RiskStewardDashboard"
         if check_exit_books:
-            assert lido_lend.contract("morphoExitBook").isMarketAllowed(market_id), (
-                "market is activated but not allow-listed on the MorphoExitBook"
-            )
-            assert lido_lend.contract("erc4626ExitBook").isVaultAllowed(market["vault"]), (
-                "market is activated but its vault is not allow-listed on the Erc4626ExitBook"
-            )
+            assert lido_lend.contract("morphoExitBook").isMarketAllowed(
+                market_id
+            ), "market is activated but not allow-listed on the MorphoExitBook"
+            assert lido_lend.contract("erc4626ExitBook").isVaultAllowed(
+                market["vault"]
+            ), "market is activated but its vault is not allow-listed on the Erc4626ExitBook"
 
         pytest.skip(
             f"market {market['name']!r} is already activated on this deployment (verified: created on the core, "

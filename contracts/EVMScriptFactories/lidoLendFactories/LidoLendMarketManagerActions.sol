@@ -52,8 +52,8 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     // -------------
 
     uint256 private constant BPS = 10_000;
+    // Mirrors MAX_DELAY_DURATION in lido-lend-markets/src/libs/CollateralActivationLib.sol.
     uint256 private constant MAX_DELAY_DURATION = 7 days;
-    uint256 private constant MAX_FEE = 0.25e18;
 
     // -------------
     // CONSTRUCTOR
@@ -97,7 +97,6 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         if (action == Action.SetFee) {
             return _createSetFeeEVMScript(payload);
         }
-
         revert(ERROR_INVALID_ACTION);
     }
 
@@ -131,7 +130,10 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     function decodeSetCollateralActivationConfigPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, ILidoLendMarketController.CollateralActivationConfig memory newCfg)
+        returns (
+            bytes32 marketId,
+            ILidoLendMarketController.CollateralActivationConfig memory newCfg
+        )
     {
         (marketId, newCfg) = abi.decode(
             _payload,
