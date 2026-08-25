@@ -81,6 +81,7 @@ def test_selected_factory_only_requires_its_protocol_dependencies():
         "adaptive_curve_irm",
         "risk_steward_dashboard",
         "circuit_breaker",
+        "lido_lend_preseeder",
     }
     assert _required_address_keys(("LidoLendRegisterPauser",)) == {
         "trusted_caller",
@@ -121,6 +122,7 @@ def test_deploy_script_reads_immutable_artifacts(lido_lend, trusted_caller, monk
         pytest.skip("immutable artifact ingestion is exercised in artifact mode")
 
     monkeypatch.setenv("TRUSTED_CALLER", trusted_caller.address)
+    monkeypatch.setenv("LIDO_LEND_PRESEEDER", trusted_caller.address)
     addresses = _read_addresses(ALL_FACTORY_NAMES)
 
     def address(name):
@@ -134,6 +136,7 @@ def test_deploy_script_reads_immutable_artifacts(lido_lend, trusted_caller, monk
         "adaptive_curve_irm": address("adaptiveCurveIrm"),
         "circuit_breaker": address("circuitBreaker"),
         "risk_steward_dashboard": address("riskStewardDashboard"),
+        "lido_lend_preseeder": trusted_caller.address,
         "morpho_exit_book": address("morphoExitBook"),
         "erc4626_exit_book": address("erc4626ExitBook"),
         "evm_script_executor": str(lido_lend.evm_script_executor),
@@ -175,12 +178,24 @@ def test_deploy_selected_lido_lend_factory(lido_lend, easy_track, deployer, trus
     )
 
 
-def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, trusted_caller):
+def test_deploy_lido_lend_factories_scenario(
+    lido_lend,
+    easy_track,
+    deployer,
+    trusted_caller,
+    LidoLendPreseeder,
+):
     """The deployment helper deploys every factory with the expected immutable protocol bindings."""
 
     def address(name):
         return str(lido_lend.contracts[name])
 
+    preseeder = deployer.deploy(
+        LidoLendPreseeder,
+        lido_lend.contracts["core"],
+        easy_track.evmScriptExecutor(),
+        deployer,
+    )
     addresses = {
         "trusted_caller": trusted_caller.address,
         "core": address("core"),
@@ -189,6 +204,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         "adaptive_curve_irm": address("adaptiveCurveIrm"),
         "circuit_breaker": address("circuitBreaker"),
         "risk_steward_dashboard": address("riskStewardDashboard"),
+        "lido_lend_preseeder": preseeder.address,
         "morpho_exit_book": address("morphoExitBook"),
         "erc4626_exit_book": address("erc4626ExitBook"),
     }
@@ -235,6 +251,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             permission_selector(owner, create_market_selector),
             permission_entry(dashboard, dashboard.addMarketSteward),
             permission_entry(circuit_breaker, circuit_breaker.registerPauser),
+            permission_entry(preseeder, preseeder.preseedMarket),
             permission_entry(owner, owner.setFee),
         ],
         "LidoLendRegisterPauser": [permission_entry(circuit_breaker, circuit_breaker.registerPauser)],
@@ -259,6 +276,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             permission_entry(dashboard, dashboard.removeMarketSteward),
         ],
         "LidoLendIrmActions": [
+            permission_entry(core, core.accrueInterest),
             permission_entry(adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig),
             permission_entry(irm_router, irm_router.setMarketIrm),
         ],
@@ -277,9 +295,10 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
     activation = instances["LidoLendActivateMarket"]
     assert activation.lidoLendOwner() == owner
     assert activation.irmRouter() == addresses["irm_router"]
-    assert activation.adaptiveCurveIrm() == addresses["adaptive_curve_irm"]
+    assert activation.configurableIrm() == addresses["adaptive_curve_irm"]
     assert activation.circuitBreaker() == addresses["circuit_breaker"]
     assert activation.riskStewardDashboard() == addresses["risk_steward_dashboard"]
+    assert activation.lidoLendPreseeder() == preseeder
 
     register_pauser = instances["LidoLendRegisterPauser"]
     assert register_pauser.lidoLend() == core

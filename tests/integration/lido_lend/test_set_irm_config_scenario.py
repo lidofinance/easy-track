@@ -15,6 +15,7 @@ def test_set_irm_config_scenario(
     market_id = lido_lend.market["id"]
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     config_before = adaptive_curve_irm.marketCurveConfig(market_id)
+    core = lido_lend.contract("core")
     params_before = tuple(interface.AdaptiveCurveConfig(config_before).getCurveParams())
     new_curve_params = _different_curve_params(params_before)
     new_config = deployer.deploy(AdaptiveCurveConfigStub, new_curve_params)
@@ -22,11 +23,14 @@ def test_set_irm_config_scenario(
     factory = deployer.deploy(
         LidoLendIrmActions,
         trusted_caller,
-        lido_lend.contract("core"),
+        core,
         lido_lend.contract("irmRouter"),
         adaptive_curve_irm,
     )
-    register_factory(factory, permission((adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig)))
+    register_factory(
+        factory,
+        permission((core, core.accrueInterest), (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig)),
+    )
     payload = encode(["bytes32", "address"], [market_id, new_config.address])
     enact_motion(
         easy_track,

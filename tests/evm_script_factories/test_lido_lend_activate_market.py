@@ -6,11 +6,14 @@ from brownie import (
     ZERO_ADDRESS,
     LidoLendActivateMarket,
     LidoLendCoreStub,
+    LidoLendPreseeder,
+    LidoLendVaultStub,
     LidoLendOwnerStub,
     IrmRouterStub,
     AdaptiveCurveIrmStub,
     CircuitBreakerStub,
     LidoLendMarketControllerStub,
+    MockERC20,
     RiskStewardDashboardStub,
 )
 
@@ -18,7 +21,7 @@ from utils.evm_script import encode_call_script
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE as MP_TYPE
 
-ACTIVATE_TYPES = [MP_TYPE, "address", "address", "address", "address", "bool", "uint256"]
+ACTIVATION_PARAMS_TYPE = f"({MP_TYPE},address,address,bool,address,address,address,uint256)"
 
 LOAN_TOKEN = f"0x{1:040x}"
 COLLATERAL_TOKEN = f"0x{2:040x}"
@@ -30,6 +33,7 @@ IRM_CONFIG = f"0x{5:040x}"
 CONTROLLER = f"0x{6:040x}"
 PAUSER_COMMITTEE = f"0x{7:040x}"
 STEWARD = f"0x{8:040x}"
+VAULT = f"0x{9:040x}"
 INITIAL_FEE = 10**17
 MAX_FEE = 25 * 10**16
 
@@ -45,12 +49,24 @@ def create_calldata(
     pauser_committee,
     enable_settlement,
     fee=INITIAL_FEE,
+    vault=VAULT,
 ):
     return (
         "0x"
         + encode(
-            ACTIVATE_TYPES,
-            [market_params, irm_config, controller, steward, pauser_committee, enable_settlement, fee],
+            [ACTIVATION_PARAMS_TYPE],
+            [
+                (
+                    market_params,
+                    irm_config,
+                    controller,
+                    enable_settlement,
+                    steward,
+                    pauser_committee,
+                    vault,
+                    fee,
+                )
+            ],
         ).hex()
     )
 
@@ -88,9 +104,32 @@ def risk_steward_dashboard_stub(owner):
 
 
 @pytest.fixture(scope="module")
-def market_params(irm_router_stub):
+def preseeder(owner, core_stub, loan_token):
+    "Deployed funded: createEVMScript validates the preseeder balance via validatePreseed."
+    preseeder = LidoLendPreseeder.deploy(core_stub, owner, owner, {"from": owner})
+    loan_token.mint(preseeder, 10**12, {"from": owner})
+    return preseeder
+
+
+@pytest.fixture(scope="module")
+def loan_token(owner):
+    return MockERC20.deploy(18, {"from": owner})
+
+
+@pytest.fixture(scope="module")
+def vault_stub(owner, loan_token, core_stub, market_id):
+    "A vault wired to the descriptor market (so the factory's preseeder-parity checks pass)."
+    vault = LidoLendVaultStub.deploy({"from": owner})
+    vault.setAsset(loan_token, {"from": owner})
+    vault.setLidoLend(core_stub, {"from": owner})
+    vault.setMarketId(market_id, {"from": owner})
+    return vault
+
+
+@pytest.fixture(scope="module")
+def market_params(irm_router_stub, loan_token):
     "Market params whose irm is the domain router — required by the factory's IRM_NOT_ROUTER check."
-    return (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, irm_router_stub.address, LLTV)
+    return (loan_token.address, COLLATERAL_TOKEN, ORACLE, irm_router_stub.address, LLTV)
 
 
 @pytest.fixture(scope="module")
@@ -116,6 +155,7 @@ def factory(
     adaptive_curve_irm_stub,
     circuit_breaker_stub,
     risk_steward_dashboard_stub,
+    preseeder,
 ):
     return LidoLendActivateMarket.deploy(
         owner,
@@ -124,8 +164,13 @@ def factory(
         adaptive_curve_irm_stub,
         circuit_breaker_stub,
         risk_steward_dashboard_stub,
+        preseeder,
         {"from": owner},
     )
+
+
+def test_configurable_irm(factory, adaptive_curve_irm_stub):
+    assert factory.configurableIrm() == adaptive_curve_irm_stub
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
@@ -221,6 +266,66 @@ def test_create_evm_script_max_fee(owner, factory, market_params, controller):
         )
 
 
+def test_create_evm_script_zero_vault(owner, factory, market_params, controller):
+    with reverts("ZERO_VAULT"):
+        factory.createEVMScript(
+            owner,
+            create_calldata(
+                market_params,
+                IRM_CONFIG,
+                controller.address,
+                STEWARD,
+                PAUSER_COMMITTEE,
+                False,
+                vault=ZERO_ADDRESS,
+            ),
+        )
+
+
+@pytest.mark.parametrize(
+    "misconfigure,error",
+    [
+        ("wrong_core", "LIDO_LEND_MISMATCH"),
+        ("wrong_market", "MARKET_ID_MISMATCH"),
+        ("wrong_asset", "VAULT_ASSET_MISMATCH"),
+        ("non_empty", "VAULT_NOT_EMPTY"),
+    ],
+)
+def test_create_evm_script_rejects_vault_failing_preseeder_checks(
+    owner, factory, core_stub, market_id, market_params, controller, loan_token, misconfigure, error
+):
+    "Must mirror the preseeder validation: the vault wraps this market, core, and loan token, and is empty"
+    vault = LidoLendVaultStub.deploy({"from": owner})
+    vault.setAsset(loan_token, {"from": owner})
+    vault.setLidoLend(core_stub, {"from": owner})
+    vault.setMarketId(market_id, {"from": owner})
+
+    if misconfigure == "wrong_core":
+        vault.setLidoLend(LidoLendCoreStub.deploy({"from": owner}), {"from": owner})
+    elif misconfigure == "wrong_market":
+        vault.setMarketId(keccak(b"other"), {"from": owner})
+    elif misconfigure == "wrong_asset":
+        vault.setAsset(MockERC20.deploy(18, {"from": owner}), {"from": owner})
+    else:
+        loan_token.mint(owner, 1, {"from": owner})
+        loan_token.approve(vault, 1, {"from": owner})
+        vault.mint(1, owner, {"from": owner})
+
+    with reverts(error):
+        factory.createEVMScript(
+            owner,
+            create_calldata(
+                market_params,
+                IRM_CONFIG,
+                controller.address,
+                STEWARD,
+                PAUSER_COMMITTEE,
+                False,
+                vault=vault.address,
+            ),
+        )
+
+
 def test_create_evm_script_controller_mismatch(owner, factory, market_params):
     "Must revert with 'CONTROLLER_MISMATCH' if the controller does not belong to the market"
     other = LidoLendMarketControllerStub.deploy({"from": owner})
@@ -254,6 +359,7 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
     adaptive_curve_irm_stub,
     circuit_breaker_stub,
     risk_steward_dashboard_stub,
+    preseeder,
     controller,
     market_params,
 ):
@@ -266,6 +372,7 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
         adaptive_curve_irm_stub,
         wrong_circuit_breaker,
         risk_steward_dashboard_stub,
+        preseeder,
         {"from": owner},
     )
 
@@ -289,10 +396,12 @@ def test_create_evm_script(
     market_id,
     market_params,
     factory,
+    preseeder,
+    vault_stub,
     enable_settlement,
     fee,
 ):
-    "Must append setFee exactly when the requested initial fee is nonzero"
+    "Must append setFee last exactly when the requested initial fee is nonzero"
     calldata = create_calldata(
         market_params,
         IRM_CONFIG,
@@ -301,6 +410,7 @@ def test_create_evm_script(
         PAUSER_COMMITTEE,
         enable_settlement,
         fee,
+        vault=vault_stub.address,
     )
     evm_script = factory.createEVMScript(owner, calldata)
 
@@ -326,6 +436,12 @@ def test_create_evm_script(
             circuit_breaker_stub.registerPauser.encode_input(controller.address, PAUSER_COMMITTEE),
         ),
     ]
+    expected_calls.append(
+        (
+            preseeder.address,
+            preseeder.preseedMarket.encode_input(market_params, vault_stub.address),
+        )
+    )
     if fee != 0:
         expected_calls.append((owner_stub.address, owner_stub.setFee.encode_input(market_params, fee)))
     expected_evm_script = encode_call_script(expected_calls)
@@ -343,7 +459,9 @@ def test_activation_permission_accepts_both_fee_script_shapes(
     controller,
     market_params,
     factory,
+    preseeder,
     EVMScriptPermissionsWrapper,
+    vault_stub,
     fee,
 ):
     permission = (
@@ -357,6 +475,8 @@ def test_activation_permission_accepts_both_fee_script_shapes(
         + risk_steward_dashboard_stub.addMarketSteward.signature[2:]
         + circuit_breaker_stub.address[2:]
         + circuit_breaker_stub.registerPauser.signature[2:]
+        + preseeder.address[2:]
+        + preseeder.preseedMarket.signature[2:]
         + owner_stub.address[2:]
         + owner_stub.setFee.signature[2:]
     )
@@ -370,6 +490,7 @@ def test_activation_permission_accepts_both_fee_script_shapes(
             PAUSER_COMMITTEE,
             False,
             fee,
+            vault=vault_stub.address,
         ),
     )
     permissions = EVMScriptPermissionsWrapper.deploy({"from": owner})
@@ -381,7 +502,16 @@ def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
     calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, PAUSER_COMMITTEE, True)
     decoded = factory.decodeEVMScriptCallData(calldata)
-    market_params, irm_config, controller, steward, pauser, enable_settlement, fee = decoded
+    (
+        market_params,
+        irm_config,
+        controller,
+        enable_settlement,
+        steward,
+        pauser,
+        preseed_vault,
+        fee,
+    ) = decoded
     assert market_params == MARKET_PARAMS
     assert irm_config == IRM_CONFIG
     assert controller == CONTROLLER
@@ -389,3 +519,20 @@ def test_decode_evm_script_call_data(factory):
     assert pauser == PAUSER_COMMITTEE
     assert enable_settlement is True
     assert fee == INITIAL_FEE
+    assert preseed_vault == VAULT
+
+
+def test_decode_evm_script_call_data_abi_names():
+    decode_abi = next(item for item in LidoLendActivateMarket.abi if item.get("name") == "decodeEVMScriptCallData")
+    activation_params = decode_abi["outputs"][0]["components"]
+
+    assert [component["name"] for component in activation_params] == [
+        "marketParams",
+        "irmConfig",
+        "controller",
+        "enableSettlement",
+        "steward",
+        "pauserCommittee",
+        "preseedVault",
+        "fee",
+    ]

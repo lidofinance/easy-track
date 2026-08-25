@@ -21,6 +21,23 @@ interface IIrmProbe {
     function borrowRate(MarketParams calldata marketParams) external view returns (uint256);
 }
 
+/// @dev Controller setters the real LidoLendOwner forwards to; the factories never call them directly,
+///      so they are not part of ILidoLendMarketController anymore and are redeclared here for the stub.
+interface IControllerLikeForOwnerStub {
+    function setSupplyCap(uint256 cap) external;
+
+    function unfreeze() external;
+
+    function setCollateralActivationConfig(
+        ILidoLendMarketController.CollateralActivationConfig calldata cfg
+    ) external;
+
+    function setSettlementConfig(ILidoLendMarketController.SettlementConfig calldata config)
+        external;
+
+    function setInstantActivation(address caller, bool enabled) external;
+}
+
 /// @author (draft)
 /// @notice Test-only stub of `LidoLendOwner` (lido-lend-market/src/periphery/LidoLendOwner.sol). Covers the
 /// two-arg `createMarket` overload `LidoLendActivateMarket` calls into, plus the marketId-parameterized market-
@@ -105,25 +122,25 @@ contract LidoLendOwnerStub {
         external
         onlyRoleWhenEnforced(MARKET_MANAGER_ROLE)
     {
-        ILidoLendMarketController(_controllerOf(marketId)).setSupplyCap(cap);
+        IControllerLikeForOwnerStub(_controllerOf(marketId)).setSupplyCap(cap);
     }
 
     function unfreezeMarket(bytes32 marketId) external onlyRoleWhenEnforced(MARKET_MANAGER_ROLE) {
-        ILidoLendMarketController(_controllerOf(marketId)).unfreeze();
+        IControllerLikeForOwnerStub(_controllerOf(marketId)).unfreeze();
     }
 
     function setMarketCollateralActivationConfig(
         bytes32 marketId,
         ILidoLendMarketController.CollateralActivationConfig calldata config
     ) external onlyRoleWhenEnforced(MARKET_MANAGER_ROLE) {
-        ILidoLendMarketController(_controllerOf(marketId)).setCollateralActivationConfig(config);
+        IControllerLikeForOwnerStub(_controllerOf(marketId)).setCollateralActivationConfig(config);
     }
 
     function setMarketSettlementConfig(
         bytes32 marketId,
         ILidoLendMarketController.SettlementConfig calldata config
     ) external onlyRoleWhenEnforced(MARKET_MANAGER_ROLE) {
-        ILidoLendMarketController(_controllerOf(marketId)).setSettlementConfig(config);
+        IControllerLikeForOwnerStub(_controllerOf(marketId)).setSettlementConfig(config);
     }
 
     function setInstantActivation(
@@ -131,7 +148,7 @@ contract LidoLendOwnerStub {
         address caller,
         bool enabled
     ) external onlyRoleWhenEnforced(MARKET_MANAGER_ROLE) {
-        ILidoLendMarketController(_controllerOf(marketId)).setInstantActivation(caller, enabled);
+        IControllerLikeForOwnerStub(_controllerOf(marketId)).setInstantActivation(caller, enabled);
     }
 
     // ---

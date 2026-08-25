@@ -17,9 +17,11 @@ _INTERFACES_DIR = os.path.join(os.path.dirname(__file__), "..", "..", "interface
 # MarketParams / config structs appear as fully-expanded tuples — matching what the factories abi.encode.
 _EXPECTED_SIGNATURES = {
     "LidoLend": [
+        "accrueInterest((address,address,address,address,uint256))",
         "market(bytes32)",
         "marketController(bytes32)",
         "idToMarketParams(bytes32)",
+        "supply((address,address,address,address,uint256),uint256,uint256,address,bytes)",
     ],
     "LidoLendOwner": [
         "createMarket((address,address,address,address,uint256),address,bool)",
@@ -38,7 +40,6 @@ _EXPECTED_SIGNATURES = {
     ],
     "IrmRouter": [
         "setMarketIrm((address,address,address,address,uint256),address)",
-        "marketIrm(bytes32)",
     ],
     "AdaptiveCurveIrm": [
         "applyIrmConfig((address,address,address,address,uint256),address)",
@@ -50,15 +51,9 @@ _EXPECTED_SIGNATURES = {
         "LIDO_LEND()",
         "marketId()",
         "guardianSignals()",
-        "setInstantActivation(address,bool)",
         "hasInstantActivation(address)",
-        "setCollateralActivationConfig((uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40))",
         "collateralActivationConfig()",
-        "setSettlementConfig((uint16,uint96,uint96,uint16))",
         "settlementConfig()",
-        "setSupplyCap(uint256)",
-        "supplyCap()",
-        "unfreeze()",
         "isFrozen()",
     ],
     "GuardianSignals": [
@@ -71,7 +66,6 @@ _EXPECTED_SIGNATURES = {
         "getSuspectWindow()",
         "isGuardian(address)",
         "unban(bytes32,address)",
-        "isBanned(bytes32,address)",
     ],
     "RiskStewardDashboard": [
         "LIDO_LEND()",
