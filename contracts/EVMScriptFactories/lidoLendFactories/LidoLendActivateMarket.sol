@@ -34,6 +34,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     int256 private constant WAD = 1e18;
+    // Mirrors MAX_FEE in lido-lend/src/libraries/ConstantsLib.sol.
     uint256 private constant MAX_FEE = 0.25e18;
 
     // -------------
