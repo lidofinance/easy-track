@@ -1,8 +1,14 @@
-from brownie import LidoLendSetGuardiansQuorum
+from brownie import LidoLendGuardianActions
 from eth_abi import encode
 
 NEW_QUORUM = 2
 EXTRA_GUARDIAN = "0x" + "c3" * 20
+ACTION = 3
+
+
+def create_calldata(market_id, quorum):
+    payload = encode(["bytes32", "uint256"], [market_id, quorum])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_set_guardians_quorum_scenario(
@@ -19,8 +25,8 @@ def test_set_guardians_quorum_scenario(
     assert gs.getQuorum() != NEW_QUORUM
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendSetGuardiansQuorum, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.setGuardiansQuorum)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", "uint256"], [market_id, NEW_QUORUM]).hex(), trusted_caller)
+    enact_motion(easy_track, factory, create_calldata(market_id, NEW_QUORUM), trusted_caller)
 
     assert gs.getQuorum() == NEW_QUORUM

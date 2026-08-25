@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendSetGuardiansQuorum,
+    LidoLendGuardianActions,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     GuardianSignalsStub,
@@ -14,10 +14,16 @@ from utils.evm_script import encode_call_script
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 NEW_QUORUM = 2
+ACTION = 3
+
+
+def create_payload(market_id, quorum):
+    return encode(["bytes32", "uint256"], [market_id, quorum])
 
 
 def create_calldata(market_id, quorum):
-    return "0x" + encode(["bytes32", "uint256"], [market_id, quorum]).hex()
+    payload = create_payload(market_id, quorum)
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -43,19 +49,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendSetGuardiansQuorum.deploy(owner, owner_facade, {"from": owner})
-
-
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, NEW_QUORUM))
+    return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_create_evm_script_market_not_found(owner, factory):
@@ -111,6 +105,8 @@ def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory):
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
     calldata = create_calldata(MARKET_ID, NEW_QUORUM)
-    decoded_market_id, decoded_quorum = factory.decodeEVMScriptCallData(calldata)
+    action, payload = factory.decodeEVMScriptCallData(calldata)
+    assert action == ACTION
+    decoded_market_id, decoded_quorum = factory.decodeSetGuardiansQuorumPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_quorum == NEW_QUORUM

@@ -30,10 +30,6 @@ interface ILidoLend {
     function marketController(bytes32 marketId) external view returns (address);
 
     function idToMarketParams(bytes32 marketId) external view returns (MarketParams memory);
-
-    function feeRecipient() external view returns (address);
-
-    function accrueInterest(MarketParams calldata marketParams) external;
 }
 
 interface ILidoLendOwner {
@@ -46,8 +42,6 @@ interface ILidoLendOwner {
     ) external;
 
     function setFee(MarketParams calldata marketParams, uint256 newFee) external;
-
-    function setFeeRecipient(address newFeeRecipient) external;
 
     function setMarketSupplyCap(bytes32 marketId, uint256 cap) external;
 

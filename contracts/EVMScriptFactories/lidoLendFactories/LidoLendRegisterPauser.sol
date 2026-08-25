@@ -54,7 +54,6 @@ contract LidoLendRegisterPauser is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (bytes32 marketId, address pauser) = _decodeEVMScriptCallData(_evmScriptCallData);
-
         address controller = ILidoLend(lidoLend).marketController(marketId);
         require(controller != address(0), ERROR_ZERO_CONTROLLER);
         ILidoLendMarketController marketController = ILidoLendMarketController(controller);
@@ -74,7 +73,7 @@ contract LidoLendRegisterPauser is TrustedCaller, IEVMScriptFactory {
     /// @notice Decodes call data used by createEVMScript method
     /// @param _evmScriptCallData Encoded tuple: (bytes32 marketId, address pauser)
     /// @return marketId Id of the market
-    /// @return pauser Pauser address to register
+    /// @return pauser New pauser address; zero unregisters the current pauser
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
         external
         pure

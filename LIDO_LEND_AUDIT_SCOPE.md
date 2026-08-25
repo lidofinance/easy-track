@@ -24,35 +24,23 @@ All factory contracts are under `contracts/EVMScriptFactories/lidoLendFactories/
 
 | Contract | nSLOC | Role |
 | --- | ---: | --- |
-| `LidoLendActivateMarket` | 120 | Builds the ordered five-call market activation: configure and route the IRM, create the market, appoint a steward, and register a pauser. |
-| `LidoLendRegisterPauser` | 57 | Registers or replaces a market pauser after resolving its controller and checking the CircuitBreaker role. |
-| `LidoLendSetMorphoExitBookAllowed` | 48 | Batch-enables or disables markets on the Morpho exit book. |
-| `LidoLendSetErc4626ExitBookAllowed` | 48 | Batch-enables or disables vaults on the ERC-4626 exit book. |
-| `LidoLendAddGuardian` | 64 | Atomically adds a guardian and sets the resulting quorum. |
-| `LidoLendRemoveGuardian` | 62 | Atomically updates quorum and removes a guardian. |
-| `LidoLendReplaceGuardian` | 60 | Replaces an existing guardian without changing quorum. |
-| `LidoLendSetGuardiansQuorum` | 48 | Updates guardian quorum within the current registry bounds. |
-| `LidoLendSetSuspectWindow` | 48 | Updates the GuardianSignals suspect window within its protocol limit. |
-| `LidoLendUnbanAccount` | 53 | Batch-unbans paired accounts across one or more markets. |
-| `LidoLendSetCollateralActivationConfig` | 93 | Updates collateral-activation policy and validates its timing and amount bounds. |
-| `LidoLendSetSettlementConfig` | 59 | Updates settlement policy and validates its basis-point fields. |
-| `LidoLendSetSupplyCap` | 41 | Sets the supply cap of an existing market. |
-| `LidoLendSetInstantActivation` | 58 | Enables or disables instant collateral activation for one caller. |
-| `LidoLendUnfreezeMarket` | 48 | Batch-unfreezes markets that are frozen when the motion is created. |
-| `LidoLendSetIrmConfig` | 55 | Applies a per-market configuration to the shared AdaptiveCurveIrm. |
-| `LidoLendSetMarketIrm` | 56 | Routes a market to a non-zero IRM contract through the shared router. |
-| `LidoLendAddRiskSteward` | 50 | Assigns a steward to an existing market through the RiskStewardDashboard. |
-| `LidoLendRemoveRiskSteward` | 48 | Removes an existing market-steward assignment. |
-| **Factory subtotal (19 contracts)** | **1,116** | |
+| `LidoLendActivateMarket` | 170 | Configures and routes the IRM, creates the market, appoints a steward, registers a pauser, and optionally sets the initial fee. |
+| `LidoLendRegisterPauser` | 55 | Registers or replaces a market pauser after resolving its controller and checking the CircuitBreaker role. |
+| `LidoLendGuardianActions` | 254 | Adds, removes, and replaces guardians; updates quorum and suspect window; batch-unbans accounts. |
+| `LidoLendMarketManagerActions` | 272 | Configures activation and settlement, updates supply caps and fees, and batch-unfreezes markets. |
+| `LidoLendRiskStewardActions` | 87 | Adds and removes market stewards through the RiskStewardDashboard. |
+| `LidoLendIrmActions` | 100 | Applies market IRM configs and routes markets through the shared IrmRouter. |
+| `LidoLendExitBookActions` | 150 | Updates Morpho and ERC-4626 exit-book allow lists and service fees. |
+| **Factory subtotal (7 contracts)** | **1,088** | |
 
 ### Supporting Scope
 
 | Contract | nSLOC | Role |
 | --- | ---: | --- |
 | `LidoLendOwnerFactoryBase` | 22 | Shared trusted-caller, owner-facade, controller, and GuardianSignals resolution. |
-| `ILidoLend.sol` | 123 | Protocol structs and interfaces used for validation, selectors, and calldata encoding. |
-| **Supporting subtotal (2 files)** | **145** | |
-| **Total scope (21 files)** | **1,261** | |
+| `ILidoLend.sol` | 128 | Protocol structs and interfaces used for validation, selectors, and calldata encoding. |
+| **Supporting subtotal (2 files)** | **150** | |
+| **Total scope (9 files)** | **1,238** | |
 
 ## Critical Audit Focus Areas
 

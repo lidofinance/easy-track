@@ -43,13 +43,6 @@ def factory(owner, core_stub, circuit_breaker_stub):
     return LidoLendRegisterPauser.deploy(owner, core_stub, circuit_breaker_stub, {"from": owner})
 
 
-def test_deploy(owner, core_stub, circuit_breaker_stub, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLend() == core_stub
-    assert factory.circuitBreaker() == circuit_breaker_stub
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):

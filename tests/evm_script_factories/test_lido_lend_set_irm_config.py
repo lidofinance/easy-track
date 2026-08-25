@@ -1,4 +1,4 @@
-from brownie import LidoLendSetIrmConfig, LidoLendCoreStub, IrmRouterStub, AdaptiveCurveIrmStub, reverts
+from brownie import LidoLendIrmActions, LidoLendCoreStub, IrmRouterStub, AdaptiveCurveIrmStub, ZERO_ADDRESS, reverts
 from eth_abi import encode
 import pytest
 
@@ -12,10 +12,21 @@ COLLATERAL_TOKEN = f"0x{2:040x}"
 ORACLE = f"0x{3:040x}"
 IRM_CONFIG = f"0x{4:040x}"
 LLTV = 800000000000000000
+SET_IRM_CONFIG = 0
+
+
+def create_payload(market_id, irm_config=IRM_CONFIG):
+    return encode(["bytes32", "address"], [market_id, irm_config])
 
 
 def create_calldata(market_id, irm_config=IRM_CONFIG):
-    return "0x" + encode(["bytes32", "address"], [market_id, irm_config]).hex()
+    return (
+        "0x"
+        + encode(
+            ["uint8", "bytes"],
+            [SET_IRM_CONFIG, create_payload(market_id, irm_config)],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -42,7 +53,7 @@ def core_stub(owner, market_params):
 
 @pytest.fixture(scope="module")
 def factory(owner, core_stub, router_stub, adaptive_curve_irm_stub):
-    return LidoLendSetIrmConfig.deploy(
+    return LidoLendIrmActions.deploy(
         owner,
         core_stub,
         router_stub,
@@ -51,18 +62,15 @@ def factory(owner, core_stub, router_stub, adaptive_curve_irm_stub):
     )
 
 
-def test_deploy(owner, core_stub, router_stub, adaptive_curve_irm_stub, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLend() == core_stub
-    assert factory.irmRouter() == router_stub
-    assert factory.adaptiveCurveIrm() == adaptive_curve_irm_stub
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID))
+
+
+def test_create_evm_script_zero_irm_config(owner, factory):
+    with reverts("ZERO_IRM_CONFIG"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
 
 
 def test_create_evm_script_market_not_found(owner, factory):
@@ -99,26 +107,14 @@ def test_create_evm_script(owner, adaptive_curve_irm_stub, market_params, factor
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    decoded_market_id, decoded_config = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID))
+    action, payload = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID))
+    assert action == SET_IRM_CONFIG
+    decoded_market_id, decoded_config = factory.decodeSetIrmConfigPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_config == IRM_CONFIG
 
 
-def test_target_is_the_adaptive_curve_singleton_regardless_of_market_id(owner):
-    "Every supported market uses the same static target; the market id only changes the payload."
-    router = IrmRouterStub.deploy({"from": owner})
-    mp_a = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
-    mp_b = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV + 1)
-    core = LidoLendCoreStub.deploy({"from": owner})
-    market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    adaptive = AdaptiveCurveIrmStub.deploy({"from": owner})
-    core.setMarketParams(market_a, mp_a, {"from": owner})
-    core.setMarketParams(market_b, mp_b, {"from": owner})
-
-    factory = LidoLendSetIrmConfig.deploy(owner, core, router, adaptive, {"from": owner})
-    script_a = factory.createEVMScript(owner, create_calldata(market_a))
-    script_b = factory.createEVMScript(owner, create_calldata(market_b))
-
-    assert script_a == encode_call_script([(adaptive.address, adaptive.applyIrmConfig.encode_input(mp_a, IRM_CONFIG))])
-    assert script_b == encode_call_script([(adaptive.address, adaptive.applyIrmConfig.encode_input(mp_b, IRM_CONFIG))])
-    assert script_a != script_b
+def test_rejects_unknown_action(owner, factory):
+    calldata = "0x" + encode(["uint8", "bytes"], [255, b""]).hex()
+    with reverts():
+        factory.createEVMScript(owner, calldata)

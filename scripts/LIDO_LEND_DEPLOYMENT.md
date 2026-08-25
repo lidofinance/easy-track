@@ -41,8 +41,9 @@ cross-checks each market with its linked oracle and GuardianSignals artifacts.
 
 The generated permissions do not contain market-controller or GuardianSignals addresses. Market and guardian
 factories call the fixed `LidoLendOwner` facade, which resolves the market-specific contracts from `marketId`.
-IRM factories call the fixed IrmRouter and AdaptiveCurveIrm instances; the remaining factories call the fixed
-dashboard, CircuitBreaker, or exit books supplied at deployment.
+IRM factories call the fixed IrmRouter and AdaptiveCurveIrm instances. Exit-book targets are supplied in
+motion calldata, while the generated EasyTrack permissions restrict execution to the exit books from the
+deployment artifacts.
 
 Adding a market or giving it a fresh GuardianSignals registry therefore does not require changing an existing
 factory's EasyTrack permission. A permission changes only when its fixed protocol target changes or a factory
@@ -54,13 +55,13 @@ is deployed with a different target.
 Both short names and full contract names are accepted:
 
 ```bash
-export LIDO_LEND_FACTORIES=SetSupplyCap,AddGuardian
+export LIDO_LEND_FACTORIES=MarketManagerActions,GuardianActions
 ```
 
 is equivalent to:
 
 ```bash
-export LIDO_LEND_FACTORIES=LidoLendSetSupplyCap,LidoLendAddGuardian
+export LIDO_LEND_FACTORIES=LidoLendMarketManagerActions,LidoLendGuardianActions
 ```
 
 The supported short names are:
@@ -68,26 +69,11 @@ The supported short names are:
 ```text
 ActivateMarket
 RegisterPauser
-AddGuardian
-RemoveGuardian
-ReplaceGuardian
-GrantInstantActivation
-SetGuardiansQuorum
-SetSuspectWindow
-UnbanAccount
-SetCollateralActivationConfig
-SetSettlementConfig
-SetSupplyCap
-SetFee
-SetFeeRecipient
-UnfreezeMarket
-SetIrmCurveParams
-SetMarketIrm
-AddRiskSteward
-RemoveRiskSteward
-SetMorphoExitBookAllowed
-SetErc4626ExitBookAllowed
-SetExitBooksServiceFee
+GuardianActions
+MarketManagerActions
+RiskStewardActions
+IrmActions
+ExitBookActions
 ```
 
 An empty list, an unknown name, or a duplicate is rejected before deployment.
@@ -95,14 +81,17 @@ An empty list, an unknown name, or a duplicate is rejected before deployment.
 The script resolves only the protocol components used by the selected factories. `ActivateMarket` requires
 the protocol RiskStewardDashboard and shared CircuitBreaker; `RegisterPauser` requires the shared
 CircuitBreaker. Activation still performs the initial pauser registration, while `RegisterPauser` supports a
-standalone registration or replacement motion.
+standalone registration, replacement, or removal motion.
+
+Grouped factories decode `abi.encode(Action, payload)`. Existing action ordinals are unchanged; the new
+actions are appended as `MarketManagerActions.SetFee = 5` and `ExitBookActions.SetServiceFee = 2`.
 
 | Selected factories | Required artifacts |
 | --- | --- |
 | All selections | `protocol.toml` and at least one `markets/*.toml` |
 | ActivateMarket | protocol RiskStewardDashboard and shared CircuitBreaker |
 | RegisterPauser | shared CircuitBreaker |
-| Exit book factories | `exit-books.toml` |
+| ExitBookActions | `exit-books.toml` |
 
 ## Anvil rehearsal
 
@@ -147,7 +136,7 @@ cd /path/to/easy-track
 
 export LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-market/deployed/anvil-easy-track
 export TRUSTED_CALLER=<committee-address>
-export LIDO_LEND_FACTORIES=SetSupplyCap
+export LIDO_LEND_FACTORIES=MarketManagerActions
 ```
 
 Run the standard Brownie deployment command:
@@ -168,7 +157,6 @@ answering `yes`.
 Before preparing the development deployer or sending deployment transactions, the script validates the
 selected topology:
 
-- every required address has contract bytecode;
 - all consumed artifacts belong to one deployment, chain ID, and config hash;
 - market IDs and linked oracle/GuardianSignals addresses are internally consistent;
 - the facade points to the expected core and `core.owner()` points back to that facade;
@@ -177,35 +165,22 @@ selected topology:
 - for `ActivateMarket` and `RegisterPauser`, the shared `CircuitBreaker.ADMIN` equals that executor;
 - for `ActivateMarket`, the executor has the owner's `MARKET_CREATOR_ROLE` and `FEE_MANAGER_ROLE`, plus the
   dashboard's `STEWARD_ADMIN_ROLE`;
-- the executor has the owner, IRM, dashboard,
-  and exit-book roles required by the selected factories.
+- the executor has the owner, IRM, dashboard, and exit-book roles required by the selected factories.
 
 Any failure stops the script before factory deployment.
 
-`SetMorphoExitBookAllowed` and `SetErc4626ExitBookAllowed` receive their non-zero ExitBook target in motion
-calldata. Their EasyTrack permission blobs determine which targets can be executed; the production deployment
-permits the corresponding ExitBook address from the protocol artifact.
-
 ## Fee-management scope
 
-`ActivateMarket` accepts an initial market fee of at most 25%. A nonzero fee is installed as the final action
-in the same EVMScript; zero leaves the core's default fee unchanged and omits that call. Its permission blob
-includes the facade's `setFee` selector for the nonzero case.
+`ActivateMarket` accepts an initial market fee of at most 25%. A nonzero fee is installed as the final action;
+zero leaves the core's default fee unchanged and omits that call.
 
-`SetFee` changes one market fee through `LidoLendOwner`; the target accrues that market with the old fee before
-writing the new value. `SetFeeRecipient` takes a non-empty ordered list of market ids, accrues each listed market,
-and changes the global recipient last. The motion creator must include every active market whose pending fees
-must remain attributable to the current recipient.
+`MarketManagerActions.SetFee` changes one market fee through `LidoLendOwner`. The EVMScriptExecutor must hold
+`FEE_MANAGER_ROLE` on the owner facade.
 
-For `ActivateMarket` and either fee factory, `FEE_MANAGER_ROLE` must belong to the EVMScriptExecutor and must not
-belong to the Agent. `SetFeeRecipient` receives exactly the core `accrueInterest` permission and the facade
-`setFeeRecipient` permission; `SetFee` receives only the facade `setFee` permission.
-
-`SetExitBooksServiceFee` takes a non-empty ordered array of ExitBook addresses and applies the same recipient
-and service-fee rate to each. The rate is capped at 25%; a zero recipient is accepted only with a zero rate.
-The factory accepts any non-zero target, while its EasyTrack permission blob determines which targets can be
-executed. The production deployment permits `setServiceFee` on the protocol artifact's Morpho and ERC-4626
-ExitBooks, and the EVMScriptExecutor must hold `FEE_MANAGER_ROLE` on both.
+`ExitBookActions.SetServiceFee` applies one recipient and service-fee rate to a non-empty ordered list of exit
+books. The rate is capped at 25%; a zero recipient is accepted only with a zero rate. The factory accepts any
+non-zero target in calldata, while its EasyTrack permission blob permits `setServiceFee` only on the Morpho
+and ERC-4626 exit books from the protocol artifacts. The executor must hold `FEE_MANAGER_ROLE` on both.
 
 ## Production deployment
 
@@ -240,8 +215,8 @@ There is one entry per deployed factory:
 
 ```json
 {
-  "LidoLendSetSupplyCap": {
-    "contract": "LidoLendSetSupplyCap",
+  "LidoLendMarketManagerActions": {
+    "contract": "LidoLendMarketManagerActions",
     "address": "0x...",
     "constructorArgs": ["0x...", "0x..."],
     "permissions": "0x..."

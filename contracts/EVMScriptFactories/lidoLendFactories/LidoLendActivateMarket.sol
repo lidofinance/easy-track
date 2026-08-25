@@ -9,14 +9,6 @@ import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 
 /// @notice Creates EVMScript to activate a deployed Lido Lend market
-/// @dev The market's IRM curve is the domain's `AdaptiveCurveIrm` SINGLETON (an immutable here, not motion
-///      calldata): one instance serves every market, and the per-market config is applied by the motion
-///      itself. The call order is mandatory, not stylistic: `applyIrmConfig` and `setMarketIrm` must both
-///      precede `createMarket`, whose first `borrowRate` ping reverts while the market is unrouted or its
-///      config is unset. The market steward is appointed and the pauser registered only after the market is
-///      created. A nonzero initial fee is set last; zero keeps the core's default fee and omits that call.
-///      Exit-book allow-listing is deliberately NOT part of this motion — not every market gets exit books;
-///      it runs separately via the dedicated exit-book factories.
 contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // -------------
     // ERRORS
@@ -25,6 +17,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_LOAN_TOKEN = "ZERO_LOAN_TOKEN";
     string private constant ERROR_ZERO_COLLATERAL_TOKEN = "ZERO_COLLATERAL_TOKEN";
     string private constant ERROR_ZERO_ORACLE = "ZERO_ORACLE";
+    string private constant ERROR_ZERO_IRM_CONFIG = "ZERO_IRM_CONFIG";
     string private constant ERROR_ZERO_CONTROLLER = "ZERO_CONTROLLER";
     string private constant ERROR_ZERO_STEWARD = "ZERO_STEWARD";
     string private constant ERROR_ZERO_PAUSER_COMMITTEE = "ZERO_PAUSER_COMMITTEE";
@@ -41,7 +34,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // -------------
 
     int256 private constant WAD = 1e18;
-    // @dev mirrors MAX_FEE in lido-lend/src/libraries/ConstantsLib.sol
+    // Mirrors MAX_FEE in lido-lend/src/libraries/ConstantsLib.sol.
     uint256 private constant MAX_FEE = 0.25e18;
 
     // -------------
@@ -103,7 +96,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
             bool enableSettlement,
             uint256 fee
         ) = _decodeEVMScriptCallData(_evmScriptCallData);
-        _validateActivation(marketParams, controller, steward, pauserCommittee, fee);
+        _validateActivation(marketParams, irmConfig, controller, steward, pauserCommittee, fee);
 
         return
             _createActivationScript(
@@ -159,8 +152,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     ) private view returns (bytes memory) {
         bytes32 marketId = keccak256(abi.encode(marketParams));
         ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
-        bool isZeroFee = fee == 0;
-        uint256 callsCount = isZeroFee ? 5 : 6;
+        uint256 callsCount = fee == 0 ? 5 : 6;
         address[] memory to = new address[](callsCount);
         bytes4[] memory methodIds = new bytes4[](callsCount);
         bytes[] memory callData = new bytes[](callsCount);
@@ -187,7 +179,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         methodIds[4] = ICircuitBreaker.registerPauser.selector;
         callData[4] = abi.encode(controller, pauserCommittee);
 
-        if (!isZeroFee) {
+        if (fee != 0) {
             to[5] = lidoLendOwner;
             methodIds[5] = owner.setFee.selector;
             callData[5] = abi.encode(marketParams, fee);
@@ -218,6 +210,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
 
     function _validateActivation(
         MarketParams memory marketParams,
+        address irmConfig,
         address controller,
         address steward,
         address pauserCommittee,
@@ -226,13 +219,13 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         require(marketParams.loanToken != address(0), ERROR_ZERO_LOAN_TOKEN);
         require(marketParams.collateralToken != address(0), ERROR_ZERO_COLLATERAL_TOKEN);
         require(marketParams.oracle != address(0), ERROR_ZERO_ORACLE);
+        require(irmConfig != address(0), ERROR_ZERO_IRM_CONFIG);
         require(controller != address(0), ERROR_ZERO_CONTROLLER);
         require(steward != address(0), ERROR_ZERO_STEWARD);
         require(pauserCommittee != address(0), ERROR_ZERO_PAUSER_COMMITTEE);
         require(marketParams.lltv < uint256(WAD), ERROR_MAX_LLTV_EXCEEDED);
         require(fee <= MAX_FEE, ERROR_MAX_FEE_EXCEEDED);
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
-
         bytes32 marketId = keccak256(abi.encode(marketParams));
         ILidoLend core = ILidoLendOwner(lidoLendOwner).LIDO_LEND();
         require(core.market(marketId).lastUpdate == 0, ERROR_MARKET_ALREADY_CREATED);

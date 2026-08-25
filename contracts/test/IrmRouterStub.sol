@@ -28,7 +28,7 @@ contract IrmRouterStub {
     address public manager;
     address public MORPHO;
 
-    /// @notice Per-market curve the router routes to (read by LidoLendSetIrmConfig).
+    /// @notice Per-market curve the router routes to (read by LidoLendIrmActions).
     mapping(bytes32 => address) public marketIrm;
 
     constructor() {

@@ -1,4 +1,4 @@
-from brownie import AdaptiveCurveConfigStub, LidoLendSetIrmConfig, interface
+from brownie import AdaptiveCurveConfigStub, LidoLendIrmActions, interface
 from eth_abi import encode
 
 
@@ -20,17 +20,18 @@ def test_set_irm_config_scenario(
     new_config = deployer.deploy(AdaptiveCurveConfigStub, new_curve_params)
 
     factory = deployer.deploy(
-        LidoLendSetIrmConfig,
+        LidoLendIrmActions,
         trusted_caller,
         lido_lend.contract("core"),
         lido_lend.contract("irmRouter"),
         adaptive_curve_irm,
     )
     register_factory(factory, permission((adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig)))
+    payload = encode(["bytes32", "address"], [market_id, new_config.address])
     enact_motion(
         easy_track,
         factory,
-        "0x" + encode(["bytes32", "address"], [market_id, new_config.address]).hex(),
+        "0x" + encode(["uint8", "bytes"], [0, payload]).hex(),
         trusted_caller,
     )
 

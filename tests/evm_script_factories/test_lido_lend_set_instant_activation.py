@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendSetInstantActivation,
+    LidoLendMarketManagerActions,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     LidoLendOwnerStub,
@@ -14,10 +14,12 @@ from utils.evm_script import encode_call_script
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 CALLER = "0x" + "a1" * 20
+ACTION = 0
 
 
 def create_calldata(market_id, caller, enabled):
-    return "0x" + encode(["bytes32", "address", "bool"], [market_id, str(caller), enabled]).hex()
+    payload = encode(["bytes32", "address", "bool"], [market_id, str(caller), enabled])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -41,13 +43,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendSetInstantActivation.deploy(owner, owner_facade, {"from": owner})
-
-
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
+    return LidoLendMarketManagerActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
@@ -91,9 +87,15 @@ def test_create_evm_script(owner, owner_facade, controller_stub, factory, enable
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    decoded_market_id, decoded_caller, decoded_enabled = factory.decodeEVMScriptCallData(
-        create_calldata(MARKET_ID, CALLER, True)
-    )
+    decoded_action, payload = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, CALLER, True))
+    assert decoded_action == ACTION
+    decoded_market_id, decoded_caller, decoded_enabled = factory.decodeSetInstantActivationPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_caller == CALLER
     assert decoded_enabled is True
+
+
+def test_rejects_unknown_action(owner, factory):
+    calldata = "0x" + encode(["uint8", "bytes"], [255, b""]).hex()
+    with reverts():
+        factory.createEVMScript(owner, calldata)

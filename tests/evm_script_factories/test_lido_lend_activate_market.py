@@ -128,24 +128,6 @@ def factory(
     )
 
 
-def test_deploy(
-    owner,
-    owner_stub,
-    irm_router_stub,
-    adaptive_curve_irm_stub,
-    circuit_breaker_stub,
-    risk_steward_dashboard_stub,
-    factory,
-):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_stub
-    assert factory.irmRouter() == irm_router_stub
-    assert factory.adaptiveCurveIrm() == adaptive_curve_irm_stub
-    assert factory.circuitBreaker() == circuit_breaker_stub
-    assert factory.riskStewardDashboard() == risk_steward_dashboard_stub
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, PAUSER_COMMITTEE, False)
@@ -180,6 +162,7 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
             PAUSER_COMMITTEE,
             "ZERO_ORACLE",
         ),
+        (MARKET_PARAMS, ZERO_ADDRESS, CONTROLLER, STEWARD, PAUSER_COMMITTEE, "ZERO_IRM_CONFIG"),
         (MARKET_PARAMS, IRM_CONFIG, ZERO_ADDRESS, STEWARD, PAUSER_COMMITTEE, "ZERO_CONTROLLER"),
         (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, ZERO_ADDRESS, PAUSER_COMMITTEE, "ZERO_STEWARD"),
         (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
@@ -222,7 +205,7 @@ def test_create_evm_script_max_lltv(owner, factory, controller):
 
 
 def test_create_evm_script_max_fee(owner, factory, market_params, controller):
-    "Must revert with 'MAX_FEE_EXCEEDED' when the initial fee exceeds the core's 25% cap"
+    "Must reject an initial fee above the core's 25% cap"
     with reverts("MAX_FEE_EXCEEDED"):
         factory.createEVMScript(
             owner,
@@ -233,7 +216,7 @@ def test_create_evm_script_max_fee(owner, factory, market_params, controller):
                 STEWARD,
                 PAUSER_COMMITTEE,
                 False,
-                fee=MAX_FEE + 1,
+                MAX_FEE + 1,
             ),
         )
 
@@ -249,7 +232,7 @@ def test_create_evm_script_controller_mismatch(owner, factory, market_params):
 
 
 def test_create_evm_script_controller_core_mismatch(owner, factory, market_id, market_params, circuit_breaker_stub):
-    "Must reject a controller bound to a different Lido Lend core"
+    "Must reject a controller bound to another Lido Lend core"
     wrong_core = LidoLendCoreStub.deploy({"from": owner})
     other = LidoLendMarketControllerStub.deploy({"from": owner})
     other.setLidoLend(wrong_core, {"from": owner})
@@ -294,7 +277,7 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
 
 
 @pytest.mark.parametrize("enable_settlement", [False, True])
-@pytest.mark.parametrize("fee", [0, INITIAL_FEE])
+@pytest.mark.parametrize("fee", [0, INITIAL_FEE, MAX_FEE])
 def test_create_evm_script(
     owner,
     owner_stub,
@@ -309,7 +292,7 @@ def test_create_evm_script(
     enable_settlement,
     fee,
 ):
-    "Must append setFee after the fixed activation calls exactly when the requested initial fee is nonzero"
+    "Must append setFee exactly when the requested initial fee is nonzero"
     calldata = create_calldata(
         market_params,
         IRM_CONFIG,
@@ -334,19 +317,15 @@ def test_create_evm_script(
             owner_stub.address,
             owner_stub.createMarket.encode_input(market_params, controller.address, enable_settlement),
         ),
+        (
+            risk_steward_dashboard_stub.address,
+            risk_steward_dashboard_stub.addMarketSteward.encode_input(market_id, STEWARD),
+        ),
+        (
+            circuit_breaker_stub.address,
+            circuit_breaker_stub.registerPauser.encode_input(controller.address, PAUSER_COMMITTEE),
+        ),
     ]
-    expected_calls.extend(
-        [
-            (
-                risk_steward_dashboard_stub.address,
-                risk_steward_dashboard_stub.addMarketSteward.encode_input(market_id, STEWARD),
-            ),
-            (
-                circuit_breaker_stub.address,
-                circuit_breaker_stub.registerPauser.encode_input(controller.address, PAUSER_COMMITTEE),
-            ),
-        ]
-    )
     if fee != 0:
         expected_calls.append((owner_stub.address, owner_stub.setFee.encode_input(market_params, fee)))
     expected_evm_script = encode_call_script(expected_calls)

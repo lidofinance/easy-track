@@ -35,7 +35,7 @@ def _activate_prereqs(lido_lend, easy_track, skip_if_already_activated):
 
 
 def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin):
-    "Deploy an ActivateMarket factory and register it on EasyTrack (6-call activation permission)."
+    "Deploy an ActivateMarket factory and register it on EasyTrack."
     owner = lido_lend.contract("owner")
     irm_router = lido_lend.contract("irmRouter")
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
@@ -93,6 +93,7 @@ def _calldata(lido_lend, irm_config, enable_settlement, fee=INITIAL_FEE):
     )
 
 
+@pytest.mark.parametrize("enable_settlement,fee", [(True, INITIAL_FEE), (False, 0)])
 def test_activate_market_scenario(
     lido_lend,
     easy_track,
@@ -101,8 +102,10 @@ def test_activate_market_scenario(
     enact_motion,
     admin,
     skip_if_already_activated,
+    enable_settlement,
+    fee,
 ):
-    "Activate an inert market, appoint its steward, and register its independent pauser."
+    "Activate an inert market with the requested settlement and fee configuration."
     core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
     m = lido_lend.market
     market_id = m["id"]
@@ -112,31 +115,15 @@ def test_activate_market_scenario(
     assert not dashboard.isMarketSteward(market_id, m["steward"])
     factory, irm_router, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
-    calldata = _calldata(lido_lend, irm_config.address, True)
+    calldata = _calldata(lido_lend, irm_config.address, enable_settlement, fee)
     enact_motion(easy_track, factory, calldata, trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0
-    assert core.market(market_id)["fee"] == INITIAL_FEE
+    assert core.market(market_id)["fee"] == fee
     assert irm_router.marketIrm(market_id) == m["curve"]
     assert dashboard.isMarketSteward(market_id, m["steward"])
     assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
-    assert core.isSettlementEnabled(market_id)
+    assert core.isSettlementEnabled(market_id) == enable_settlement
 
     with reverts():
         easy_track.createMotion(factory, calldata, {"from": trusted_caller})
-
-
-def test_activate_market_without_settlement_scenario(
-    lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin, skip_if_already_activated
-):
-    "Activate with enableSettlement=False: the market is created with its settlement queue disabled."
-    core, _, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
-    market_id = lido_lend.market["id"]
-
-    factory, _, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
-    enact_motion(easy_track, factory, _calldata(lido_lend, irm_config.address, False, fee=0), trusted_caller)
-
-    assert core.market(market_id)["lastUpdate"] != 0
-    assert core.market(market_id)["fee"] == 0
-    assert lido_lend.contract("riskStewardDashboard").isMarketSteward(market_id, lido_lend.market["steward"])
-    assert not core.isSettlementEnabled(market_id)

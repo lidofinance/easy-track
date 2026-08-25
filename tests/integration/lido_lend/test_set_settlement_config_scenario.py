@@ -1,8 +1,15 @@
-from brownie import LidoLendSetSettlementConfig
+from brownie import LidoLendMarketManagerActions
 from eth_abi import encode
 
 from utils.lido_lend import SETTLEMENT_CONFIG_ABI_TYPE as CONFIG_TYPE
+
 NEW_CONFIG = (500, 1000 * 10**18, 5 * 10**18, 100)
+ACTION = 2
+
+
+def create_calldata(market_id, config):
+    payload = encode(["bytes32", CONFIG_TYPE], [market_id, config])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_set_settlement_config_scenario(
@@ -14,8 +21,8 @@ def test_set_settlement_config_scenario(
     assert controller.settlementConfig() != NEW_CONFIG
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendSetSettlementConfig, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendMarketManagerActions, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.setMarketSettlementConfig)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", CONFIG_TYPE], [market_id, NEW_CONFIG]).hex(), trusted_caller)
+    enact_motion(easy_track, factory, create_calldata(market_id, NEW_CONFIG), trusted_caller)
 
     assert controller.settlementConfig() == NEW_CONFIG

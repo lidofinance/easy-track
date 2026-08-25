@@ -1,7 +1,13 @@
-from brownie import LidoLendRemoveRiskSteward
+from brownie import LidoLendRiskStewardActions
 from eth_abi import encode
 
 STEWARD = "0x" + "77" * 20
+ACTION = 1
+
+
+def create_calldata(market_id, steward):
+    payload = encode(["bytes32", "address"], [market_id, steward])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_remove_risk_steward_scenario(
@@ -15,8 +21,8 @@ def test_remove_risk_steward_scenario(
     dashboard.addMarketSteward(market_id, STEWARD, {"from": admin})
     assert dashboard.isMarketSteward(market_id, STEWARD)
 
-    factory = deployer.deploy(LidoLendRemoveRiskSteward, trusted_caller, dashboard)
+    factory = deployer.deploy(LidoLendRiskStewardActions, trusted_caller, dashboard)
     register_factory(factory, permission((dashboard, dashboard.removeMarketSteward)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32", "address"], [market_id, STEWARD]).hex(), trusted_caller)
+    enact_motion(easy_track, factory, create_calldata(market_id, STEWARD), trusted_caller)
 
     assert not dashboard.isMarketSteward(market_id, STEWARD)

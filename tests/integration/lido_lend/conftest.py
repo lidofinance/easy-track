@@ -396,8 +396,8 @@ def lido_lend(
         local=True,
     )
 
-    controller.setLidoLend(core, {"from": deployer})
     controller.setGuardianSignals(guardian_signals, {"from": deployer})
+    controller.setLidoLend(core, {"from": deployer})
     controller.setMarketId(deployment.market["id"], {"from": deployer})
     core.setMarketController(deployment.market["id"], controller, {"from": deployer})
     core.setMarketParams(

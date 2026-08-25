@@ -3,7 +3,7 @@ from eth_abi import encode
 from brownie import (
     AdaptiveCurveIrmStub,
     reverts,
-    LidoLendSetMarketIrm,
+    LidoLendIrmActions,
     LidoLendCoreStub,
     IrmRouterStub,
     ZERO_ADDRESS,
@@ -18,10 +18,21 @@ COLLATERAL_TOKEN = f"0x{2:040x}"
 ORACLE = f"0x{3:040x}"
 LLTV = 800000000000000000
 EOA = "0x" + "ee" * 20
+SET_MARKET_IRM = 1
+
+
+def create_payload(market_id, irm):
+    return encode(["bytes32", "address"], [market_id, str(irm)])
 
 
 def create_calldata(market_id, irm):
-    return "0x" + encode(["bytes32", "address"], [market_id, str(irm)]).hex()
+    return (
+        "0x"
+        + encode(
+            ["uint8", "bytes"],
+            [SET_MARKET_IRM, create_payload(market_id, irm)],
+        ).hex()
+    )
 
 
 @pytest.fixture(scope="module")
@@ -40,6 +51,11 @@ def new_irm(owner):
 
 
 @pytest.fixture(scope="module")
+def adaptive_curve_irm(owner):
+    return AdaptiveCurveIrmStub.deploy({"from": owner})
+
+
+@pytest.fixture(scope="module")
 def core_stub(owner, market_params):
     core = LidoLendCoreStub.deploy({"from": owner})
     core.setMarketParams(MARKET_ID, market_params, {"from": owner})
@@ -47,34 +63,18 @@ def core_stub(owner, market_params):
 
 
 @pytest.fixture(scope="module")
-def factory(owner, core_stub, router_stub):
-    return LidoLendSetMarketIrm.deploy(owner, core_stub, router_stub, {"from": owner})
+def factory(owner, core_stub, router_stub, adaptive_curve_irm):
+    return LidoLendIrmActions.deploy(owner, core_stub, router_stub, adaptive_curve_irm, {"from": owner})
 
 
-def test_deploy(owner, core_stub, router_stub, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLend() == core_stub
-    assert factory.irmRouter() == router_stub
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory, new_irm):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, new_irm))
-
-
-def test_create_evm_script_zero_irm(owner, router_stub, market_params, factory):
-    "Must leave zero-address validation to the router, consistently with IRM config validation"
-    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
-
-    assert evm_script == encode_call_script(
-        [(router_stub.address, router_stub.setMarketIrm.encode_input(market_params, ZERO_ADDRESS))]
-    )
+def test_create_evm_script_zero_irm(owner, factory):
+    "Must reject the zero IRM when the motion is created"
+    with reverts("ZERO_IRM"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
 
 
 def test_create_evm_script_does_not_validate_irm(owner, router_stub, market_params, factory):
-    "Must leave validation of the selected IRM to the committee and router"
+    "Must leave selected-IRM validation to governance and the router"
     evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, EOA))
 
     assert evm_script == encode_call_script(
@@ -100,7 +100,7 @@ def test_create_evm_script_irm_not_router(owner, core_stub, factory, new_irm):
 
 
 def test_create_evm_script(owner, router_stub, market_params, new_irm, factory):
-    "Must create correct EVMScript targeting the market's router"
+    "Must create correct EVMScript targeting the market's router when the new IRM is a non-zero contract"
     evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, new_irm))
     expected_evm_script = encode_call_script(
         [(router_stub.address, router_stub.setMarketIrm.encode_input(market_params, new_irm))]
@@ -110,25 +110,8 @@ def test_create_evm_script(owner, router_stub, market_params, new_irm, factory):
 
 def test_decode_evm_script_call_data(factory, new_irm):
     "Must decode EVMScript call data correctly"
-    decoded_market_id, decoded_irm = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, new_irm))
+    action, payload = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, new_irm))
+    assert action == SET_MARKET_IRM
+    decoded_market_id, decoded_irm = factory.decodeSetMarketIrmPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_irm == new_irm
-
-
-def test_target_is_the_shared_router_regardless_of_market_id(owner, new_irm):
-    "The shared router is fixed, while marketId and target IRM select the setMarketIrm payload."
-    router = IrmRouterStub.deploy({"from": owner})
-    mp_a = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
-    mp_b = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV + 1)
-    core = LidoLendCoreStub.deploy({"from": owner})
-    market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    core.setMarketParams(market_a, mp_a, {"from": owner})
-    core.setMarketParams(market_b, mp_b, {"from": owner})
-
-    factory = LidoLendSetMarketIrm.deploy(owner, core, router, {"from": owner})
-    script_a = factory.createEVMScript(owner, create_calldata(market_a, new_irm))
-    script_b = factory.createEVMScript(owner, create_calldata(market_b, new_irm))
-
-    assert script_a == encode_call_script([(router.address, router.setMarketIrm.encode_input(mp_a, new_irm))])
-    assert script_b == encode_call_script([(router.address, router.setMarketIrm.encode_input(mp_b, new_irm))])
-    assert script_a != script_b

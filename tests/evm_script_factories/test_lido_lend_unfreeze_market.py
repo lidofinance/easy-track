@@ -1,16 +1,24 @@
 import pytest
 from eth_abi import encode
-from brownie import reverts, LidoLendUnfreezeMarket, LidoLendCoreStub, LidoLendMarketControllerStub, LidoLendOwnerStub
+from brownie import (
+    reverts,
+    LidoLendMarketManagerActions,
+    LidoLendCoreStub,
+    LidoLendMarketControllerStub,
+    LidoLendOwnerStub,
+)
 
 from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 SECOND_MARKET_ID = (2).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (3).to_bytes(32, "big")
+ACTION = 4
 
 
 def create_calldata(market_ids):
-    return "0x" + encode(["bytes32[]"], [market_ids]).hex()
+    payload = encode(["bytes32[]"], [market_ids])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -40,19 +48,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendUnfreezeMarket.deploy(owner, owner_facade, {"from": owner})
-
-
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata([MARKET_ID]))
+    return LidoLendMarketManagerActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_create_evm_script_empty_market_ids(owner, factory):
@@ -102,7 +98,9 @@ def test_create_evm_script(owner, owner_facade, controller_stub, second_controll
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    assert factory.decodeEVMScriptCallData(create_calldata([MARKET_ID, SECOND_MARKET_ID])) == [
+    decoded_action, payload = factory.decodeEVMScriptCallData(create_calldata([MARKET_ID, SECOND_MARKET_ID]))
+    assert decoded_action == ACTION
+    assert factory.decodeUnfreezeMarketPayload(payload) == [
         "0x" + MARKET_ID.hex(),
         "0x" + SECOND_MARKET_ID.hex(),
     ]

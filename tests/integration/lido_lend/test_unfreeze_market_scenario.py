@@ -1,5 +1,12 @@
-from brownie import LidoLendUnfreezeMarket
+from brownie import LidoLendMarketManagerActions
 from eth_abi import encode
+
+ACTION = 4
+
+
+def create_calldata(market_ids):
+    payload = encode(["bytes32[]"], [market_ids])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_unfreeze_market_scenario(
@@ -14,8 +21,8 @@ def test_unfreeze_market_scenario(
     assert controller.isFrozen()
 
     owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendUnfreezeMarket, trusted_caller, owner)
+    factory = deployer.deploy(LidoLendMarketManagerActions, trusted_caller, owner)
     register_factory(factory, permission((owner, owner.unfreezeMarket)))
-    enact_motion(easy_track, factory, "0x" + encode(["bytes32[]"], [[market_id]]).hex(), trusted_caller)
+    enact_motion(easy_track, factory, create_calldata([market_id]), trusted_caller)
 
     assert not controller.isFrozen()

@@ -2,7 +2,7 @@ import pytest
 from eth_abi import encode
 from brownie import (
     reverts,
-    LidoLendSetCollateralActivationConfig,
+    LidoLendMarketManagerActions,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
     LidoLendOwnerStub,
@@ -16,10 +16,23 @@ from utils.lido_lend import COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as CONFIG_TYPE
 
 NEW_CONFIG = (10, 20, 30, 40, 50, 60, 30, 80, 90)
 MAX_DELAY_DURATION = 7 * 24 * 60 * 60
+BOUNDARY_CONFIG = (
+    MAX_DELAY_DURATION,
+    MAX_DELAY_DURATION,
+    1,
+    1,
+    MAX_DELAY_DURATION,
+    1,
+    0,
+    MAX_DELAY_DURATION,
+    MAX_DELAY_DURATION,
+)
+ACTION = 1
 
 
 def create_calldata(market_id, cfg):
-    return "0x" + encode(["bytes32", CONFIG_TYPE], [market_id, cfg]).hex()
+    payload = encode(["bytes32", CONFIG_TYPE], [market_id, cfg])
+    return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -43,19 +56,7 @@ def owner_facade(owner, core_stub):
 
 @pytest.fixture(scope="module")
 def factory(owner, owner_facade):
-    return LidoLendSetCollateralActivationConfig.deploy(owner, owner_facade, {"from": owner})
-
-
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, NEW_CONFIG))
+    return LidoLendMarketManagerActions.deploy(owner, owner_facade, {"from": owner})
 
 
 def test_create_evm_script_market_not_found(owner, factory):
@@ -111,16 +112,17 @@ def test_create_evm_script_invalid_config(owner, factory, config, error):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, config))
 
 
-def test_create_evm_script(owner, owner_facade, factory):
+@pytest.mark.parametrize("config", [NEW_CONFIG, BOUNDARY_CONFIG])
+def test_create_evm_script(owner, owner_facade, factory, config):
     "Must create correct EVMScript if all requirements are met"
-    calldata = create_calldata(MARKET_ID, NEW_CONFIG)
+    calldata = create_calldata(MARKET_ID, config)
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
         [
             (
                 owner_facade.address,
-                owner_facade.setMarketCollateralActivationConfig.encode_input(MARKET_ID, NEW_CONFIG),
+                owner_facade.setMarketCollateralActivationConfig.encode_input(MARKET_ID, config),
             )
         ]
     )
@@ -129,6 +131,8 @@ def test_create_evm_script(owner, owner_facade, factory):
 
 def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
-    decoded_market_id, decoded_cfg = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, NEW_CONFIG))
+    decoded_action, payload = factory.decodeEVMScriptCallData(create_calldata(MARKET_ID, NEW_CONFIG))
+    assert decoded_action == ACTION
+    decoded_market_id, decoded_cfg = factory.decodeSetCollateralActivationConfigPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_cfg == NEW_CONFIG
