@@ -66,6 +66,7 @@ ALL_FACTORY_NAMES = (
 
 MARKET_MANAGER_FACTORIES = {MARKET_MANAGER_ACTIONS_FACTORY}
 GUARDIAN_MANAGER_FACTORIES = {GUARDIAN_ACTIONS_FACTORY}
+FEE_MANAGER_FACTORIES = {"LidoLendActivateMarket", MARKET_MANAGER_ACTIONS_FACTORY}
 OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
 IRM_ROUTER_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
 IRM_ROUTER_TARGET_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
@@ -153,18 +154,12 @@ def _read_addresses(factory_names, artifacts_dir=None):
 
 def _easy_track_executor(network_name):
     easy_track = easy_track_addresses(network_name)
-    if not web3.eth.get_code(easy_track.easy_track):
-        raise ValueError(f"EasyTrack has no contract code: {easy_track.easy_track}")
     return interface.IEasyTrack(easy_track.easy_track).evmScriptExecutor()
 
 
 def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_NAMES):
     """Fail fast if the selected factories' addresses form one executor-ready deployment."""
     selected = set(factory_names)
-    for key in _required_address_keys(factory_names) - {"trusted_caller"}:
-        if not web3.eth.get_code(a[key]):
-            raise ValueError(f"{key} has no contract code: {a[key]}")
-
     executor = expected_executor
     artifact_executor = a.get("evm_script_executor", expected_executor)
     if str(artifact_executor).lower() != str(expected_executor).lower():
@@ -200,6 +195,8 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
             required_owner_roles.add("MARKET_MANAGER_ROLE")
         if selected & GUARDIAN_MANAGER_FACTORIES:
             required_owner_roles.add("GUARDIAN_MANAGER_ROLE")
+        if selected & FEE_MANAGER_FACTORIES:
+            required_owner_roles.add("FEE_MANAGER_ROLE")
         for role_name in required_owner_roles:
             role = web3.keccak(text=role_name)
             if not owner.hasRole(role, executor):
@@ -229,16 +226,21 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
 
     if selected & EXIT_BOOK_FACTORIES:
         allowlist_manager_role = web3.keccak(text="ALLOWLIST_MANAGER_ROLE")
+        fee_manager_role = web3.keccak(text="FEE_MANAGER_ROLE")
 
     if EXIT_BOOK_ACTIONS_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
         require_address("morpho_exit_book.MORPHO", morpho_exit_book.MORPHO(), a["core"])
         if not morpho_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks morpho_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
+        if not morpho_exit_book.hasRole(fee_manager_role, executor):
+            raise ValueError(f"executor lacks morpho_exit_book.FEE_MANAGER_ROLE: {executor}")
 
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
         if not erc4626_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks erc4626_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
+        if not erc4626_exit_book.hasRole(fee_manager_role, executor):
+            raise ValueError(f"executor lacks erc4626_exit_book.FEE_MANAGER_ROLE: {executor}")
 
     return executor
 
@@ -277,10 +279,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
         LidoLendIrmActions,
         lambda: [tc, core, a["irm_router"], a["adaptive_curve_irm"]],
     )
-    add(
-        LidoLendExitBookActions,
-        lambda: [tc, a["morpho_exit_book"], a["erc4626_exit_book"]],
-    )
+    add(LidoLendExitBookActions, lambda: [tc])
     return [(Factory, args()) for Factory, args in plan]
 
 
@@ -314,6 +313,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (owner, controlled_market_create_selector),
             (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
             (circuit_breaker, circuit_breaker.registerPauser.signature),
+            (owner, owner.setFee.signature),
         )
     if "LidoLendRegisterPauser" in selected:
         permissions["LidoLendRegisterPauser"] = _permission((circuit_breaker, circuit_breaker.registerPauser.signature))
@@ -333,6 +333,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (owner, owner.setMarketSettlementConfig.signature),
             (owner, owner.setMarketSupplyCap.signature),
             (owner, owner.unfreezeMarket.signature),
+            (owner, owner.setFee.signature),
         )
     if RISK_STEWARD_ACTIONS_FACTORY in selected:
         permissions[RISK_STEWARD_ACTIONS_FACTORY] = _permission(
@@ -350,6 +351,8 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions[EXIT_BOOK_ACTIONS_FACTORY] = _permission(
             (morpho_exit_book, morpho_exit_book.setMarketAllowed.signature),
             (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature),
+            (morpho_exit_book, morpho_exit_book.setServiceFee.signature),
+            (erc4626_exit_book, erc4626_exit_book.setServiceFee.signature),
         )
     return permissions
 

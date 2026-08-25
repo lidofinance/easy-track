@@ -8,6 +8,8 @@ from brownie import (
 from eth_abi import encode
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
 
+INITIAL_FEE = 10**17
+
 
 def _market_params(lido_lend):
     m = lido_lend.market
@@ -48,13 +50,16 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
         + dashboard.addMarketSteward.signature[2:]
         + circuit_breaker.address[2:]
         + circuit_breaker.registerPauser.signature[2:]
+        + owner.address[2:]
+        + owner.setFee.signature[2:]
     )
     _register(easy_track, deployer, factory, perm)
     owner.grantRole(owner.MARKET_CREATOR_ROLE(), easy_track.evmScriptExecutor(), {"from": admin})
+    owner.grantRole(owner.FEE_MANAGER_ROLE(), easy_track.evmScriptExecutor(), {"from": admin})
     calldata = (
         "0x"
         + encode(
-            [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool"],
+            [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool", "uint256"],
             [
                 _market_params(lido_lend),
                 irm_config.address,
@@ -62,6 +67,7 @@ def _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, adm
                 lido_lend.market["steward"],
                 lido_lend.market["pauser"],
                 True,
+                INITIAL_FEE,
             ],
         ).hex()
     )
@@ -97,6 +103,7 @@ def test_set_market_exit_book_allowed_scenario(
 
     _activate(lido_lend, deployer, trusted_caller, easy_track, enact_motion, admin)
     assert core.market(market_id)["lastUpdate"] != 0
+    assert core.market(market_id)["fee"] == INITIAL_FEE
     assert lido_lend.contract("riskStewardDashboard").isMarketSteward(market_id, m["steward"])
     assert not morpho.isMarketAllowed(market_id)
     assert not erc4626.isVaultAllowed(m["vault"])
@@ -105,7 +112,7 @@ def test_set_market_exit_book_allowed_scenario(
     morpho.grantRole(morpho.ALLOWLIST_MANAGER_ROLE(), executor, {"from": admin})
     erc4626.grantRole(erc4626.ALLOWLIST_MANAGER_ROLE(), executor, {"from": admin})
 
-    exit_book_factory = deployer.deploy(LidoLendExitBookActions, trusted_caller, morpho, erc4626)
+    exit_book_factory = deployer.deploy(LidoLendExitBookActions, trusted_caller)
     _register(
         easy_track,
         deployer,
@@ -119,13 +126,13 @@ def test_set_market_exit_book_allowed_scenario(
 
     def morpho_calldata(allowed):
         payload = encode(
-            [f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"],
-            [[_market_params(lido_lend)], allowed],
+            ["address", f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"],
+            [morpho.address, [_market_params(lido_lend)], allowed],
         )
         return "0x" + encode(["uint8", "bytes"], [0, payload]).hex()
 
     def erc4626_calldata(allowed):
-        payload = encode(["address[]", "bool"], [[m["vault"]], allowed])
+        payload = encode(["address", "address[]", "bool"], [erc4626.address, [m["vault"]], allowed])
         return "0x" + encode(["uint8", "bytes"], [1, payload]).hex()
 
     enact_motion(easy_track, exit_book_factory, morpho_calldata(True), trusted_caller)

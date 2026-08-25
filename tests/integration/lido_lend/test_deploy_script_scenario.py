@@ -1,4 +1,5 @@
 import pytest
+from brownie import web3
 
 from scripts.deploy_lido_lend_factories import (
     ALL_FACTORY_NAMES,
@@ -16,6 +17,15 @@ FACADE_FACTORIES = {
     "LidoLendGuardianActions",
     "LidoLendMarketManagerActions",
 }
+EXPECTED_FACTORY_NAMES = (
+    "LidoLendActivateMarket",
+    "LidoLendRegisterPauser",
+    "LidoLendGuardianActions",
+    "LidoLendMarketManagerActions",
+    "LidoLendRiskStewardActions",
+    "LidoLendIrmActions",
+    "LidoLendExitBookActions",
+)
 
 
 def _expected_artifact(name, address, constructor_args, permissions):
@@ -28,16 +38,23 @@ def _expected_artifact(name, address, constructor_args, permissions):
 
 
 def test_factory_selection_defaults_to_every_factory():
-    assert _parse_factory_selection(None) == ALL_FACTORY_NAMES
+    assert _parse_factory_selection(None) == EXPECTED_FACTORY_NAMES
 
 
-def test_factory_selection_accepts_short_and_full_names_in_canonical_order():
+@pytest.mark.parametrize(
+    "short_name,full_name",
+    [(name.removeprefix("LidoLend"), name) for name in EXPECTED_FACTORY_NAMES],
+)
+def test_factory_selection_accepts_short_and_full_names(short_name, full_name):
+    assert _parse_factory_selection(short_name) == (full_name,)
+    assert _parse_factory_selection(full_name) == (full_name,)
+
+
+def test_factory_selection_returns_canonical_order():
     assert _parse_factory_selection("MarketManagerActions, LidoLendGuardianActions") == (
         "LidoLendGuardianActions",
         "LidoLendMarketManagerActions",
     )
-    assert _parse_factory_selection("ExitBookActions") == ("LidoLendExitBookActions",)
-    assert _parse_factory_selection("RegisterPauser") == ("LidoLendRegisterPauser",)
 
 
 @pytest.mark.parametrize(
@@ -193,56 +210,34 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             expected_permissions[name],
         )
 
-    permission_entries = {
-        name: [blob[i : i + 48].lower() for i in range(2, len(blob), 48)] for name, blob in expected_permissions.items()
-    }
-    assert all(entries for entries in permission_entries.values())
-    assert {name: len(entries) for name, entries in permission_entries.items()} == {
-        "LidoLendActivateMarket": 5,
-        "LidoLendRegisterPauser": 1,
-        "LidoLendGuardianActions": 6,
-        "LidoLendMarketManagerActions": 5,
-        "LidoLendRiskStewardActions": 2,
-        "LidoLendIrmActions": 2,
-        "LidoLendExitBookActions": 2,
-    }
-    permission_targets = {
-        name: ["0x" + entry[:40].lower() for entry in entries] for name, entries in permission_entries.items()
-    }
-    assert permission_targets == {
-        "LidoLendActivateMarket": [
-            addresses["adaptive_curve_irm"].lower(),
-            addresses["irm_router"].lower(),
-            addresses["owner"].lower(),
-            addresses["risk_steward_dashboard"].lower(),
-            addresses["circuit_breaker"].lower(),
-        ],
-        "LidoLendRegisterPauser": [addresses["circuit_breaker"].lower()],
-        "LidoLendGuardianActions": [addresses["owner"].lower()] * 6,
-        "LidoLendMarketManagerActions": [addresses["owner"].lower()] * 5,
-        "LidoLendRiskStewardActions": [addresses["risk_steward_dashboard"].lower()] * 2,
-        "LidoLendIrmActions": [
-            addresses["adaptive_curve_irm"].lower(),
-            addresses["irm_router"].lower(),
-        ],
-        "LidoLendExitBookActions": [
-            addresses["morpho_exit_book"].lower(),
-            addresses["erc4626_exit_book"].lower(),
-        ],
-    }
-
     owner = lido_lend.contract("owner")
     core = lido_lend.contract("core")
     dashboard = lido_lend.contract("riskStewardDashboard")
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     irm_router = lido_lend.contract("irmRouter")
+    circuit_breaker = lido_lend.contract("circuitBreaker")
     morpho_exit_book = lido_lend.contract("morphoExitBook")
     erc4626_exit_book = lido_lend.contract("erc4626ExitBook")
 
-    def permission_entry(target, method):
-        return target.address[2:].lower() + method.signature[2:].lower()
+    def permission_selector(target, selector):
+        return target.address[2:].lower() + selector[2:].lower()
 
-    expected_group_permissions = {
+    def permission_entry(target, method):
+        return permission_selector(target, method.signature)
+
+    create_market_selector = web3.keccak(
+        text="createMarket((address,address,address,address,uint256),address,bool)"
+    ).hex()[:10]
+    expected_permission_entries = {
+        "LidoLendActivateMarket": [
+            permission_entry(adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig),
+            permission_entry(irm_router, irm_router.setMarketIrm),
+            permission_selector(owner, create_market_selector),
+            permission_entry(dashboard, dashboard.addMarketSteward),
+            permission_entry(circuit_breaker, circuit_breaker.registerPauser),
+            permission_entry(owner, owner.setFee),
+        ],
+        "LidoLendRegisterPauser": [permission_entry(circuit_breaker, circuit_breaker.registerPauser)],
         "LidoLendGuardianActions": [
             permission_entry(owner, owner.addGuardian),
             permission_entry(owner, owner.setGuardiansQuorum),
@@ -257,6 +252,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
             permission_entry(owner, owner.setMarketSettlementConfig),
             permission_entry(owner, owner.setMarketSupplyCap),
             permission_entry(owner, owner.unfreezeMarket),
+            permission_entry(owner, owner.setFee),
         ],
         "LidoLendRiskStewardActions": [
             permission_entry(dashboard, dashboard.addMarketSteward),
@@ -269,9 +265,14 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
         "LidoLendExitBookActions": [
             permission_entry(morpho_exit_book, morpho_exit_book.setMarketAllowed),
             permission_entry(erc4626_exit_book, erc4626_exit_book.setVaultAllowed),
+            permission_entry(morpho_exit_book, morpho_exit_book.setServiceFee),
+            permission_entry(erc4626_exit_book, erc4626_exit_book.setServiceFee),
         ],
     }
-    assert {name: permission_entries[name] for name in expected_group_permissions} == expected_group_permissions
+    permission_entries = {
+        name: [blob[i : i + 48].lower() for i in range(2, len(blob), 48)] for name, blob in expected_permissions.items()
+    }
+    assert permission_entries == expected_permission_entries
 
     activation = instances["LidoLendActivateMarket"]
     assert activation.lidoLendOwner() == owner
@@ -294,9 +295,7 @@ def test_deploy_lido_lend_factories_scenario(lido_lend, easy_track, deployer, tr
 
     assert instances["LidoLendRiskStewardActions"].riskStewardDashboard() == addresses["risk_steward_dashboard"]
 
-    exit_book_actions = instances["LidoLendExitBookActions"]
-    assert exit_book_actions.morphoExitBook() == addresses["morpho_exit_book"]
-    assert exit_book_actions.erc4626ExitBook() == addresses["erc4626_exit_book"]
+    assert instances["LidoLendExitBookActions"].trustedCaller() == trusted_caller
 
 
 def test_preflight_rejects_executor_other_than_easy_track(lido_lend, easy_track, trusted_caller, stranger):
@@ -348,12 +347,35 @@ def test_preflight_rejects_owner_without_executor_role(
     wrong_owner = LidoLendOwnerStub.deploy({"from": deployer})
     wrong_owner.setCore(core, {"from": deployer})
     core.setOwner(wrong_owner, {"from": deployer})
+    wrong_owner.grantRole(wrong_owner.FEE_MANAGER_ROLE(), easy_track.evmScriptExecutor(), {"from": deployer})
     addresses = {
         "trusted_caller": trusted_caller.address,
         "core": core.address,
         "owner": wrong_owner.address,
     }
     with pytest.raises(ValueError, match="executor lacks owner.MARKET_MANAGER_ROLE"):
+        _validate_protocol_bindings(addresses, easy_track.evmScriptExecutor(), ("LidoLendMarketManagerActions",))
+
+
+def test_preflight_rejects_owner_without_executor_fee_role(
+    easy_track,
+    deployer,
+    trusted_caller,
+    LidoLendCoreStub,
+    LidoLendOwnerStub,
+):
+    core = LidoLendCoreStub.deploy({"from": deployer})
+    owner = LidoLendOwnerStub.deploy({"from": deployer})
+    owner.setCore(core, {"from": deployer})
+    core.setOwner(owner, {"from": deployer})
+    owner.grantRole(owner.MARKET_MANAGER_ROLE(), easy_track.evmScriptExecutor(), {"from": deployer})
+    addresses = {
+        "trusted_caller": trusted_caller.address,
+        "core": core.address,
+        "owner": owner.address,
+    }
+
+    with pytest.raises(ValueError, match="executor lacks owner.FEE_MANAGER_ROLE"):
         _validate_protocol_bindings(addresses, easy_track.evmScriptExecutor(), ("LidoLendMarketManagerActions",))
 
 
@@ -492,7 +514,20 @@ def test_preflight_rejects_exit_books_without_executor_roles(
         easy_track.evmScriptExecutor(),
         {"from": deployer},
     )
+    morpho_exit_book.grantRole(
+        morpho_exit_book.FEE_MANAGER_ROLE(),
+        easy_track.evmScriptExecutor(),
+        {"from": deployer},
+    )
     with pytest.raises(ValueError, match="executor lacks erc4626_exit_book.ALLOWLIST_MANAGER_ROLE"):
+        _validate_protocol_bindings(addresses, easy_track.evmScriptExecutor(), ("LidoLendExitBookActions",))
+
+    erc4626_exit_book.grantRole(
+        erc4626_exit_book.ALLOWLIST_MANAGER_ROLE(),
+        easy_track.evmScriptExecutor(),
+        {"from": deployer},
+    )
+    with pytest.raises(ValueError, match="executor lacks erc4626_exit_book.FEE_MANAGER_ROLE"):
         _validate_protocol_bindings(addresses, easy_track.evmScriptExecutor(), ("LidoLendExitBookActions",))
 
 

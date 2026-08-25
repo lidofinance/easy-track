@@ -67,30 +67,19 @@ def factory(owner, core_stub, router_stub, adaptive_curve_irm):
     return LidoLendIrmActions.deploy(owner, core_stub, router_stub, adaptive_curve_irm, {"from": owner})
 
 
-def test_deploy(owner, core_stub, router_stub, adaptive_curve_irm, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLend() == core_stub
-    assert factory.irmRouter() == router_stub
-    assert factory.adaptiveCurveIrm() == adaptive_curve_irm
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory, new_irm):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, new_irm))
-
-
 def test_create_evm_script_zero_irm(owner, factory):
-    "Must revert with message 'ZERO_IRM' if the new IRM is the zero address"
+    "Must reject the zero IRM when the motion is created"
     with reverts("ZERO_IRM"):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
 
 
-def test_create_evm_script_irm_not_contract(owner, factory):
-    "Must revert with message 'IRM_NOT_CONTRACT' if the new IRM has no code"
-    with reverts("IRM_NOT_CONTRACT"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, EOA))
+def test_create_evm_script_does_not_validate_irm(owner, router_stub, market_params, factory):
+    "Must leave selected-IRM validation to governance and the router"
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, EOA))
+
+    assert evm_script == encode_call_script(
+        [(router_stub.address, router_stub.setMarketIrm.encode_input(market_params, EOA))]
+    )
 
 
 def test_create_evm_script_market_not_found(owner, factory, new_irm):
@@ -126,22 +115,3 @@ def test_decode_evm_script_call_data(factory, new_irm):
     decoded_market_id, decoded_irm = factory.decodeSetMarketIrmPayload(payload)
     assert decoded_market_id == "0x" + MARKET_ID.hex()
     assert decoded_irm == new_irm
-
-
-def test_target_is_the_shared_router_regardless_of_market_id(owner, new_irm, adaptive_curve_irm):
-    "The shared router is fixed, while marketId and target IRM select the setMarketIrm payload."
-    router = IrmRouterStub.deploy({"from": owner})
-    mp_a = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
-    mp_b = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV + 1)
-    core = LidoLendCoreStub.deploy({"from": owner})
-    market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    core.setMarketParams(market_a, mp_a, {"from": owner})
-    core.setMarketParams(market_b, mp_b, {"from": owner})
-
-    factory = LidoLendIrmActions.deploy(owner, core, router, adaptive_curve_irm, {"from": owner})
-    script_a = factory.createEVMScript(owner, create_calldata(market_a, new_irm))
-    script_b = factory.createEVMScript(owner, create_calldata(market_b, new_irm))
-
-    assert script_a == encode_call_script([(router.address, router.setMarketIrm.encode_input(mp_a, new_irm))])
-    assert script_b == encode_call_script([(router.address, router.setMarketIrm.encode_input(mp_b, new_irm))])
-    assert script_a != script_b

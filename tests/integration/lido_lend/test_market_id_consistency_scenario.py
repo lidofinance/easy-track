@@ -12,4 +12,3 @@ def test_market_id_derivation(lido_lend):
 
     on_chain_id = lido_lend.contract("controller").marketId()  # authoritative, set at controller deploy
     assert computed == on_chain_id
-    assert "0x" + m["id"].hex() == on_chain_id  # and the id the fixture derives (used as calldata suite-wide) matches

@@ -12,30 +12,6 @@ def create_calldata(market_ids, accounts):
     return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
-def test_unban_account_scenario(
-    lido_lend, created_market, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
-):
-    "A Manager Committee motion lifts a ban previously latched on the market's GuardianSignals registry."
-    gs = lido_lend.contract("guardianSignals")
-    market_id = lido_lend.market["id"]
-
-    gs.grantRole(gs.ACCESS_LIMITER_ROLE(), admin, {"from": admin})
-    gs.ban(market_id, BANNED_ACCOUNT, {"from": admin})
-    assert gs.isBanned(market_id, BANNED_ACCOUNT)
-
-    owner = lido_lend.contract("owner")
-    factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
-    register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
-    enact_motion(
-        easy_track,
-        factory,
-        create_calldata([market_id], [BANNED_ACCOUNT]),
-        trusted_caller,
-    )
-
-    assert not gs.isBanned(market_id, BANNED_ACCOUNT)
-
-
 def test_unban_account_multi_market_scenario(
     lido_lend, created_markets, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
 ):

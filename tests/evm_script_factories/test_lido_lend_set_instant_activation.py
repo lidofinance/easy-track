@@ -46,12 +46,6 @@ def factory(owner, owner_facade):
     return LidoLendMarketManagerActions.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):

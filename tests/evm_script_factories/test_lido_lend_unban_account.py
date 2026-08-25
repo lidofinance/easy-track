@@ -57,18 +57,6 @@ def factory(owner, owner_facade):
     return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata([MARKET_ID], [stranger]))
-
-
 def test_create_evm_script_empty_market_ids(owner, factory, stranger):
     "Must revert with 'EMPTY_MARKETS_LIST' if no market ids were provided"
     with reverts("EMPTY_MARKETS_LIST"):

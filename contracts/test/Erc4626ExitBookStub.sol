@@ -9,12 +9,15 @@ pragma solidity 0.8.6;
 /// reproduce the exact selector and ABI encoding brownie would produce for the real call.
 contract Erc4626ExitBookStub {
     bytes32 public constant ALLOWLIST_MANAGER_ROLE = keccak256("ALLOWLIST_MANAGER_ROLE");
+    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
 
     address public lastVault;
     bool public lastAllowed;
     mapping(address => bool) public isVaultAllowed;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
     bool public enforceRoles;
+    address public feeRecipient;
+    uint256 public serviceFee;
 
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
@@ -32,5 +35,11 @@ contract Erc4626ExitBookStub {
         lastVault = vault;
         lastAllowed = allowed;
         isVaultAllowed[vault] = allowed;
+    }
+
+    function setServiceFee(address recipient, uint256 fee) external {
+        require(!enforceRoles || hasRole[FEE_MANAGER_ROLE][msg.sender], "MISSING_FEE_MANAGER_ROLE");
+        feeRecipient = recipient;
+        serviceFee = fee;
     }
 }

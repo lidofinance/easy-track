@@ -53,18 +53,6 @@ def factory(owner, owner_facade):
     return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, NEW_WINDOW))
-
-
 def test_create_evm_script_market_not_found(owner, factory):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
     with reverts("MARKET_NOT_FOUND"):
@@ -86,13 +74,14 @@ def test_create_evm_script_suspect_window_too_high(owner, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, MAX_SUSPECT_WINDOW + 1))
 
 
-def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory):
+@pytest.mark.parametrize("new_window", [NEW_WINDOW, MAX_SUSPECT_WINDOW])
+def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, new_window):
     "Must create correct EVMScript when the new window differs from the current one (0 by default)"
     assert guardian_signals_stub.getSuspectWindow() == 0
 
-    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, NEW_WINDOW))
+    evm_script = factory.createEVMScript(owner, create_calldata(MARKET_ID, new_window))
     expected_evm_script = encode_call_script(
-        [(owner_facade.address, owner_facade.setGuardiansSuspectWindow.encode_input(MARKET_ID, NEW_WINDOW))]
+        [(owner_facade.address, owner_facade.setGuardiansSuspectWindow.encode_input(MARKET_ID, new_window))]
     )
     assert evm_script == expected_evm_script
 

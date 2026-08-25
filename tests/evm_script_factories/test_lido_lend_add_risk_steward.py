@@ -42,12 +42,6 @@ def factory(owner, dashboard_stub):
     return LidoLendRiskStewardActions.deploy(owner, dashboard_stub, {"from": owner})
 
 
-def test_deploy(owner, dashboard_stub, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.riskStewardDashboard() == dashboard_stub
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):

@@ -141,22 +141,22 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         );
     }
 
-    /// @notice Decodes SetGuardiansQuorum payload: (bytes32 marketId, uint256 quorum)
+    /// @notice Decodes SetGuardiansQuorum payload: (bytes32 marketId, uint256 newQuorum)
     function decodeSetGuardiansQuorumPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, uint256 quorum)
+        returns (bytes32 marketId, uint256 newQuorum)
     {
-        (marketId, quorum) = abi.decode(_payload, (bytes32, uint256));
+        (marketId, newQuorum) = abi.decode(_payload, (bytes32, uint256));
     }
 
-    /// @notice Decodes SetSuspectWindow payload: (bytes32 marketId, uint256 suspectWindow)
+    /// @notice Decodes SetSuspectWindow payload: (bytes32 marketId, uint256 newSuspectWindow)
     function decodeSetSuspectWindowPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, uint256 suspectWindow)
+        returns (bytes32 marketId, uint256 newSuspectWindow)
     {
-        (marketId, suspectWindow) = abi.decode(_payload, (bytes32, uint256));
+        (marketId, newSuspectWindow) = abi.decode(_payload, (bytes32, uint256));
     }
 
     /// @notice Decodes UnbanAccount payload: (bytes32[] marketIds, address[] accounts)

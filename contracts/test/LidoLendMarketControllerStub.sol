@@ -39,6 +39,7 @@ contract LidoLendMarketControllerStub {
     mapping(address => bool) public hasInstantActivation;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
     bool public enforceRoles;
+    address public LIDO_LEND;
     address public guardianSignals;
     bytes32 public marketId;
 
@@ -57,6 +58,10 @@ contract LidoLendMarketControllerStub {
 
     function setGuardianSignals(address registry) external {
         guardianSignals = registry;
+    }
+
+    function setLidoLend(address lidoLend) external {
+        LIDO_LEND = lidoLend;
     }
 
     function setMarketId(bytes32 marketId_) external {

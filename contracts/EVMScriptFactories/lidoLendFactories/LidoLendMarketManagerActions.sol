@@ -8,7 +8,7 @@ import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
 import "./LidoLendOwnerFactoryBase.sol";
 
-/// @notice Creates EVMScripts for Lido Lend market-manager actions routed through LidoLendOwner
+/// @notice Creates EVMScripts for Lido Lend market-management and fee actions routed through LidoLendOwner
 contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     /// @dev Action ordinals are part of the calldata ABI. Never reorder existing members; append only.
     enum Action {
@@ -16,7 +16,8 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         SetCollateralActivationConfig,
         SetSettlementConfig,
         SetSupplyCap,
-        UnfreezeMarket
+        UnfreezeMarket,
+        SetFee
     }
 
     // -------------
@@ -25,13 +26,11 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
 
     string private constant ERROR_INVALID_ACTION = "INVALID_ACTION";
     string private constant ERROR_ZERO_CALLER = "ZERO_CALLER";
-    string private constant ERROR_SAME_INSTANT_ACTIVATION_STATUS =
-        "SAME_INSTANT_ACTIVATION_STATUS";
+    string private constant ERROR_SAME_INSTANT_ACTIVATION_STATUS = "SAME_INSTANT_ACTIVATION_STATUS";
     string private constant ERROR_SAME_CONFIG = "SAME_CONFIG";
     string private constant ERROR_ZERO_MIN_ACTIVATION_DELAY = "ZERO_MIN_ACTIVATION_DELAY";
     string private constant ERROR_INVALID_ACTIVATION_DELAYS = "INVALID_ACTIVATION_DELAYS";
-    string private constant ERROR_MAX_ACTIVATION_DELAY_EXCEEDED =
-        "MAX_ACTIVATION_DELAY_EXCEEDED";
+    string private constant ERROR_MAX_ACTIVATION_DELAY_EXCEEDED = "MAX_ACTIVATION_DELAY_EXCEEDED";
     string private constant ERROR_MAX_ACTIVATING_LOCK_DURATION_EXCEEDED =
         "MAX_ACTIVATING_LOCK_DURATION_EXCEEDED";
     string private constant ERROR_INVALID_MAX_GUARDIANS_QUORUM_DELAY =
@@ -40,14 +39,13 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         "MAX_GUARDIANS_QUORUM_DELAY_EXCEEDED";
     string private constant ERROR_ZERO_MIN_ACTIVATION_AMOUNT = "ZERO_MIN_ACTIVATION_AMOUNT";
     string private constant ERROR_ZERO_MAX_DELAY_INFLOW = "ZERO_MAX_DELAY_INFLOW";
-    string private constant ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED =
-        "MAX_DELAY_PER_STRIKE_EXCEEDED";
-    string private constant ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED =
-        "MAX_DELAY_PER_SUSPECT_EXCEEDED";
-    string private constant ERROR_SETTLEMENT_CONFIG_OUT_OF_RANGE =
-        "SETTLEMENT_CONFIG_OUT_OF_RANGE";
+    string private constant ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED = "MAX_DELAY_PER_STRIKE_EXCEEDED";
+    string private constant ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED = "MAX_DELAY_PER_SUSPECT_EXCEEDED";
+    string private constant ERROR_SETTLEMENT_CONFIG_OUT_OF_RANGE = "SETTLEMENT_CONFIG_OUT_OF_RANGE";
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
     string private constant ERROR_MARKET_IS_NOT_FROZEN = "MARKET_IS_NOT_FROZEN";
+    string private constant ERROR_FEE_ALREADY_SET = "FEE_ALREADY_SET";
+    string private constant ERROR_MAX_FEE_EXCEEDED = "MAX_FEE_EXCEEDED";
 
     // -------------
     // CONSTANTS
@@ -55,6 +53,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
 
     uint256 private constant BPS = 10_000;
     uint256 private constant MAX_DELAY_DURATION = 7 days;
+    uint256 private constant MAX_FEE = 0.25e18;
 
     // -------------
     // CONSTRUCTOR
@@ -68,7 +67,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     // EXTERNAL METHODS
     // -------------
 
-    /// @notice Creates an EVMScript for one market-manager action
+    /// @notice Creates an EVMScript for one market-management or fee action
     /// @param _creator Address that creates the EVMScript
     /// @param _evmScriptCallData Encoded envelope: abi.encode(Action action, bytes payload)
     function createEVMScript(address _creator, bytes memory _evmScriptCallData)
@@ -94,6 +93,9 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         }
         if (action == Action.UnfreezeMarket) {
             return _createUnfreezeMarketEVMScript(payload);
+        }
+        if (action == Action.SetFee) {
+            return _createSetFeeEVMScript(payload);
         }
 
         revert(ERROR_INVALID_ACTION);
@@ -129,9 +131,9 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     function decodeSetCollateralActivationConfigPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, ILidoLendMarketController.CollateralActivationConfig memory cfg)
+        returns (bytes32 marketId, ILidoLendMarketController.CollateralActivationConfig memory newCfg)
     {
-        (marketId, cfg) = abi.decode(
+        (marketId, newCfg) = abi.decode(
             _payload,
             (bytes32, ILidoLendMarketController.CollateralActivationConfig)
         );
@@ -141,9 +143,9 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     function decodeSetSettlementConfigPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, ILidoLendMarketController.SettlementConfig memory config)
+        returns (bytes32 marketId, ILidoLendMarketController.SettlementConfig memory newConfig)
     {
-        (marketId, config) = abi.decode(
+        (marketId, newConfig) = abi.decode(
             _payload,
             (bytes32, ILidoLendMarketController.SettlementConfig)
         );
@@ -153,9 +155,9 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     function decodeSetSupplyCapPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, uint256 cap)
+        returns (bytes32 marketId, uint256 newCap)
     {
-        (marketId, cap) = abi.decode(_payload, (bytes32, uint256));
+        (marketId, newCap) = abi.decode(_payload, (bytes32, uint256));
     }
 
     /// @notice Decodes an UnfreezeMarket payload
@@ -165,6 +167,15 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         returns (bytes32[] memory marketIds)
     {
         marketIds = abi.decode(_payload, (bytes32[]));
+    }
+
+    /// @notice Decodes a SetFee payload
+    function decodeSetFeePayload(bytes memory _payload)
+        public
+        pure
+        returns (bytes32 marketId, uint256 newFee)
+    {
+        (marketId, newFee) = abi.decode(_payload, (bytes32, uint256));
     }
 
     // ------------------
@@ -286,6 +297,23 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
                 lidoLendOwner,
                 ILidoLendOwner.unfreezeMarket.selector,
                 encodedCalldata
+            );
+    }
+
+    function _createSetFeeEVMScript(bytes memory _payload) private view returns (bytes memory) {
+        (bytes32 marketId, uint256 newFee) = decodeSetFeePayload(_payload);
+        ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
+        ILidoLend core = owner.LIDO_LEND();
+        Market memory currentMarket = core.market(marketId);
+        require(currentMarket.lastUpdate != 0, ERROR_MARKET_NOT_FOUND);
+        require(currentMarket.fee != newFee, ERROR_FEE_ALREADY_SET);
+        require(newFee <= MAX_FEE, ERROR_MAX_FEE_EXCEEDED);
+
+        return
+            EVMScriptCreator.createEVMScript(
+                lidoLendOwner,
+                owner.setFee.selector,
+                abi.encode(core.idToMarketParams(marketId), newFee)
             );
     }
 

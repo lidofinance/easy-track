@@ -47,18 +47,6 @@ def factory(owner, owner_facade):
     return LidoLendMarketManagerActions.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, NEW_CONFIG))
-
-
 def test_create_evm_script_market_not_found(owner, factory):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id (well-formed config)"
     with reverts("MARKET_NOT_FOUND"):
@@ -87,16 +75,17 @@ def test_create_evm_script_config_out_of_range(owner, factory, config):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, config))
 
 
-def test_create_evm_script(owner, owner_facade, factory):
+@pytest.mark.parametrize("config", [NEW_CONFIG, (10_000, 200, 300, 10_000)])
+def test_create_evm_script(owner, owner_facade, factory, config):
     "Must create correct EVMScript if all requirements are met"
-    calldata = create_calldata(MARKET_ID, NEW_CONFIG)
+    calldata = create_calldata(MARKET_ID, config)
     evm_script = factory.createEVMScript(owner, calldata)
 
     expected_evm_script = encode_call_script(
         [
             (
                 owner_facade.address,
-                owner_facade.setMarketSettlementConfig.encode_input(MARKET_ID, NEW_CONFIG),
+                owner_facade.setMarketSettlementConfig.encode_input(MARKET_ID, config),
             )
         ]
     )

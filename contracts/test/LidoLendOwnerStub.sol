@@ -13,6 +13,8 @@ interface ILidoLendCoreLikeForOwnerStub {
     ) external;
 
     function marketController(bytes32 marketId) external view returns (address);
+
+    function setFee(MarketParams calldata marketParams, uint256 newFee) external;
 }
 
 interface IIrmProbe {
@@ -31,6 +33,7 @@ contract LidoLendOwnerStub {
     bytes32 public constant MARKET_CREATOR_ROLE = keccak256("MARKET_CREATOR_ROLE");
     bytes32 public constant MARKET_MANAGER_ROLE = keccak256("MARKET_MANAGER_ROLE");
     bytes32 public constant GUARDIAN_MANAGER_ROLE = keccak256("GUARDIAN_MANAGER_ROLE");
+    bytes32 public constant FEE_MANAGER_ROLE = keccak256("FEE_MANAGER_ROLE");
 
     MarketParams public lastMarketParams;
     address public lastController;
@@ -85,6 +88,13 @@ contract LidoLendOwnerStub {
         if (marketParams.irm != address(0)) {
             IIrmProbe(marketParams.irm).borrowRate(marketParams);
         }
+    }
+
+    function setFee(MarketParams calldata marketParams, uint256 newFee)
+        external
+        onlyRoleWhenEnforced(FEE_MANAGER_ROLE)
+    {
+        ILidoLendCoreLikeForOwnerStub(core).setFee(marketParams, newFee);
     }
 
     // ---

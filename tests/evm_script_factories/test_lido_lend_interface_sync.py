@@ -23,6 +23,7 @@ _EXPECTED_SIGNATURES = {
     ],
     "LidoLendOwner": [
         "createMarket((address,address,address,address,uint256),address,bool)",
+        "setFee((address,address,address,address,uint256),uint256)",
         "setMarketSupplyCap(bytes32,uint256)",
         "unfreezeMarket(bytes32)",
         "setMarketCollateralActivationConfig(bytes32,(uint40,uint40,uint128,uint128,uint40,uint128,uint40,uint40,uint40))",
@@ -46,6 +47,7 @@ _EXPECTED_SIGNATURES = {
         "registerPauser(address,address)",
     ],
     "LidoLendMarketController": [
+        "LIDO_LEND()",
         "marketId()",
         "guardianSignals()",
         "setInstantActivation(address,bool)",
@@ -78,9 +80,11 @@ _EXPECTED_SIGNATURES = {
         "isMarketSteward(bytes32,address)",
     ],
     "MorphoExitBook": [
+        "setServiceFee(address,uint256)",
         "setMarketAllowed((address,address,address,address,uint256),bool)",
     ],
     "Erc4626ExitBook": [
+        "setServiceFee(address,uint256)",
         "setVaultAllowed(address,bool)",
     ],
 }

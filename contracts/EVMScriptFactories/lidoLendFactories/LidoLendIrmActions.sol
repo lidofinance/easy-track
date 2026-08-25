@@ -16,7 +16,7 @@ contract LidoLendIrmActions is TrustedCaller, IEVMScriptFactory {
 
     string private constant ERROR_INVALID_ACTION = "INVALID_ACTION";
     string private constant ERROR_ZERO_IRM = "ZERO_IRM";
-    string private constant ERROR_IRM_NOT_CONTRACT = "IRM_NOT_CONTRACT";
+    string private constant ERROR_ZERO_IRM_CONFIG = "ZERO_IRM_CONFIG";
     string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
 
@@ -104,13 +104,13 @@ contract LidoLendIrmActions is TrustedCaller, IEVMScriptFactory {
         (marketId, irmConfig) = abi.decode(_payload, (bytes32, address));
     }
 
-    /// @notice Decodes SetMarketIrm payload: (bytes32 marketId, address irm)
+    /// @notice Decodes SetMarketIrm payload: (bytes32 marketId, address newIrm)
     function decodeSetMarketIrmPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32 marketId, address irm)
+        returns (bytes32 marketId, address newIrm)
     {
-        (marketId, irm) = abi.decode(_payload, (bytes32, address));
+        (marketId, newIrm) = abi.decode(_payload, (bytes32, address));
     }
 
     // ------------------
@@ -123,6 +123,7 @@ contract LidoLendIrmActions is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (bytes32 marketId, address irmConfig) = decodeSetIrmConfigPayload(_payload);
+        require(irmConfig != address(0), ERROR_ZERO_IRM_CONFIG);
 
         MarketParams memory marketParams = ILidoLend(lidoLend).idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
@@ -143,7 +144,6 @@ contract LidoLendIrmActions is TrustedCaller, IEVMScriptFactory {
     {
         (bytes32 marketId, address newIrm) = decodeSetMarketIrmPayload(_payload);
         require(newIrm != address(0), ERROR_ZERO_IRM);
-        require(newIrm.code.length > 0, ERROR_IRM_NOT_CONTRACT);
 
         MarketParams memory marketParams = ILidoLend(lidoLend).idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);

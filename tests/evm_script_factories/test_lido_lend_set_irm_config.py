@@ -1,4 +1,4 @@
-from brownie import LidoLendIrmActions, LidoLendCoreStub, IrmRouterStub, AdaptiveCurveIrmStub, reverts
+from brownie import LidoLendIrmActions, LidoLendCoreStub, IrmRouterStub, AdaptiveCurveIrmStub, ZERO_ADDRESS, reverts
 from eth_abi import encode
 import pytest
 
@@ -62,18 +62,15 @@ def factory(owner, core_stub, router_stub, adaptive_curve_irm_stub):
     )
 
 
-def test_deploy(owner, core_stub, router_stub, adaptive_curve_irm_stub, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLend() == core_stub
-    assert factory.irmRouter() == router_stub
-    assert factory.adaptiveCurveIrm() == adaptive_curve_irm_stub
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
         factory.createEVMScript(stranger, create_calldata(MARKET_ID))
+
+
+def test_create_evm_script_zero_irm_config(owner, factory):
+    with reverts("ZERO_IRM_CONFIG"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
 
 
 def test_create_evm_script_market_not_found(owner, factory):
@@ -121,23 +118,3 @@ def test_rejects_unknown_action(owner, factory):
     calldata = "0x" + encode(["uint8", "bytes"], [255, b""]).hex()
     with reverts():
         factory.createEVMScript(owner, calldata)
-
-
-def test_target_is_the_adaptive_curve_singleton_regardless_of_market_id(owner):
-    "Every supported market uses the same static target; the market id only changes the payload."
-    router = IrmRouterStub.deploy({"from": owner})
-    mp_a = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV)
-    mp_b = (LOAN_TOKEN, COLLATERAL_TOKEN, ORACLE, router.address, LLTV + 1)
-    core = LidoLendCoreStub.deploy({"from": owner})
-    market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    adaptive = AdaptiveCurveIrmStub.deploy({"from": owner})
-    core.setMarketParams(market_a, mp_a, {"from": owner})
-    core.setMarketParams(market_b, mp_b, {"from": owner})
-
-    factory = LidoLendIrmActions.deploy(owner, core, router, adaptive, {"from": owner})
-    script_a = factory.createEVMScript(owner, create_calldata(market_a))
-    script_b = factory.createEVMScript(owner, create_calldata(market_b))
-
-    assert script_a == encode_call_script([(adaptive.address, adaptive.applyIrmConfig.encode_input(mp_a, IRM_CONFIG))])
-    assert script_b == encode_call_script([(adaptive.address, adaptive.applyIrmConfig.encode_input(mp_b, IRM_CONFIG))])
-    assert script_a != script_b

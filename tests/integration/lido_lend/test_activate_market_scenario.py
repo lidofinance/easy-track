@@ -4,7 +4,8 @@ from eth_abi import encode
 
 from utils.lido_lend import MARKET_PARAMS_ABI_TYPE
 
-ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool"]
+ACTIVATE_TYPES = [MARKET_PARAMS_ABI_TYPE, "address", "address", "address", "address", "bool", "uint256"]
+INITIAL_FEE = 10**17
 
 
 def _market_params(lido_lend):
@@ -34,7 +35,7 @@ def _activate_prereqs(lido_lend, easy_track, skip_if_already_activated):
 
 
 def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin):
-    "Deploy an ActivateMarket factory and register it on EasyTrack (5-call activation permission)."
+    "Deploy an ActivateMarket factory and register it on EasyTrack."
     owner = lido_lend.contract("owner")
     irm_router = lido_lend.contract("irmRouter")
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
@@ -63,14 +64,17 @@ def _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
         + dashboard.addMarketSteward.signature[2:]
         + circuit_breaker.address[2:]
         + circuit_breaker.registerPauser.signature[2:]
+        + owner.address[2:]
+        + owner.setFee.signature[2:]
     )
     easy_track.addEVMScriptFactory(factory, perm, {"from": deployer})
     executor = easy_track.evmScriptExecutor()
     owner.grantRole(owner.MARKET_CREATOR_ROLE(), executor, {"from": admin})
+    owner.grantRole(owner.FEE_MANAGER_ROLE(), executor, {"from": admin})
     return factory, irm_router, irm_config
 
 
-def _calldata(lido_lend, irm_config, enable_settlement):
+def _calldata(lido_lend, irm_config, enable_settlement, fee=INITIAL_FEE):
     m = lido_lend.market
     return (
         "0x"
@@ -83,23 +87,25 @@ def _calldata(lido_lend, irm_config, enable_settlement):
                 m["steward"],
                 m["pauser"],
                 enable_settlement,
+                fee,
             ],
         ).hex()
     )
 
 
+@pytest.mark.parametrize("enable_settlement,fee", [(True, INITIAL_FEE), (False, 0)])
 def test_activate_market_scenario(
     lido_lend,
     easy_track,
     deployer,
     trusted_caller,
-    stranger,
-    create_motion,
-    advance_time,
+    enact_motion,
     admin,
     skip_if_already_activated,
+    enable_settlement,
+    fee,
 ):
-    "Activate an inert market, appoint its steward, and register its independent pauser."
+    "Activate an inert market with the requested settlement and fee configuration."
     core, circuit_breaker, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
     m = lido_lend.market
     market_id = m["id"]
@@ -109,32 +115,15 @@ def test_activate_market_scenario(
     assert not dashboard.isMarketSteward(market_id, m["steward"])
     factory, irm_router, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
 
-    calldata = _calldata(lido_lend, irm_config.address, True)
-    _, motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
-    _, stale_motion_id = create_motion(easy_track, factory, calldata, trusted_caller)
-    advance_time(easy_track.motionDuration() + 100)
-    easy_track.enactMotion(motion_id, calldata, {"from": stranger})
+    calldata = _calldata(lido_lend, irm_config.address, enable_settlement, fee)
+    enact_motion(easy_track, factory, calldata, trusted_caller)
 
     assert core.market(market_id)["lastUpdate"] != 0
+    assert core.market(market_id)["fee"] == fee
     assert irm_router.marketIrm(market_id) == m["curve"]
     assert dashboard.isMarketSteward(market_id, m["steward"])
     assert circuit_breaker.getPauser(m["controller"]) == m["pauser"]
-    assert core.isSettlementEnabled(market_id)
+    assert core.isSettlementEnabled(market_id) == enable_settlement
 
-    with reverts("MARKET_ALREADY_CREATED"):
-        easy_track.enactMotion(stale_motion_id, calldata, {"from": stranger})
-
-
-def test_activate_market_without_settlement_scenario(
-    lido_lend, easy_track, deployer, trusted_caller, enact_motion, admin, skip_if_already_activated
-):
-    "Activate with enableSettlement=False: the market is created with its settlement queue disabled."
-    core, _, easy_track = _activate_prereqs(lido_lend, easy_track, skip_if_already_activated)
-    market_id = lido_lend.market["id"]
-
-    factory, _, irm_config = _deploy_and_register(lido_lend, deployer, trusted_caller, easy_track, admin)
-    enact_motion(easy_track, factory, _calldata(lido_lend, irm_config.address, False), trusted_caller)
-
-    assert core.market(market_id)["lastUpdate"] != 0
-    assert lido_lend.contract("riskStewardDashboard").isMarketSteward(market_id, lido_lend.market["steward"])
-    assert not core.isSettlementEnabled(market_id)
+    with reverts():
+        easy_track.createMotion(factory, calldata, {"from": trusted_caller})

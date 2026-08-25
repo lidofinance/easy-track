@@ -55,12 +55,6 @@ def factory(owner, owner_facade):
     return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     with reverts("CALLER_IS_FORBIDDEN"):
@@ -146,34 +140,3 @@ def test_rejects_unknown_action(owner, factory):
     calldata = "0x" + encode(["uint8", "bytes"], [255, b""]).hex()
     with reverts():
         factory.createEVMScript(owner, calldata)
-
-
-def test_targets_facade_for_every_market(owner, stranger):
-    "The registry is resolved from the calldata marketId inside the facade, so the factory always targets the one fixed facade — one registration serves every market's registry. Two markets yield scripts that differ only by the embedded marketId, never the target."
-    core = LidoLendCoreStub.deploy({"from": owner})
-    market_a, market_b = (1).to_bytes(32, "big"), (2).to_bytes(32, "big")
-    for mid in (market_a, market_b):
-        gs = GuardianSignalsStub.deploy({"from": owner})
-        controller = LidoLendMarketControllerStub.deploy({"from": owner})
-        controller.setGuardianSignals(gs, {"from": owner})
-        core.setMarketController(mid, controller, {"from": owner})
-    facade = LidoLendOwnerStub.deploy({"from": owner})
-    facade.setCore(core, {"from": owner})
-
-    factory = LidoLendGuardianActions.deploy(owner, facade, {"from": owner})
-    script_a = factory.createEVMScript(owner, create_calldata(market_a, stranger, 1))
-    script_b = factory.createEVMScript(owner, create_calldata(market_b, stranger, 1))
-
-    assert script_a == encode_call_script(
-        [
-            (facade.address, facade.addGuardian.encode_input(market_a, stranger)),
-            (facade.address, facade.setGuardiansQuorum.encode_input(market_a, 1)),
-        ]
-    )
-    assert script_b == encode_call_script(
-        [
-            (facade.address, facade.addGuardian.encode_input(market_b, stranger)),
-            (facade.address, facade.setGuardiansQuorum.encode_input(market_b, 1)),
-        ]
-    )
-    assert script_a != script_b

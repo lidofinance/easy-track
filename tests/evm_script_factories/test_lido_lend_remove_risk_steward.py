@@ -41,18 +41,6 @@ def factory(owner, dashboard_stub):
     return LidoLendRiskStewardActions.deploy(owner, dashboard_stub, {"from": owner})
 
 
-def test_deploy(owner, dashboard_stub, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.riskStewardDashboard() == dashboard_stub
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(stranger, create_calldata(MARKET_ID, stranger))
-
-
 def test_create_evm_script_market_not_found(owner, dashboard_stub, factory, stranger):
     "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
     dashboard_stub.setMarketSteward(UNKNOWN_MARKET_ID, stranger, True, {"from": owner})

@@ -56,21 +56,6 @@ def factory(owner, owner_facade):
     return LidoLendGuardianActions.deploy(owner, owner_facade, {"from": owner})
 
 
-def test_deploy(owner, owner_facade, factory):
-    "Must deploy contract with correct data"
-    assert factory.trustedCaller() == owner
-    assert factory.lidoLendOwner() == owner_facade
-
-
-def test_create_evm_script_called_by_stranger(stranger, factory):
-    "Must reject a creator other than the trusted caller"
-    with reverts("CALLER_IS_FORBIDDEN"):
-        factory.createEVMScript(
-            stranger,
-            create_calldata(MARKET_ID, OLD_GUARDIAN, stranger),
-        )
-
-
 def test_create_evm_script_zero_new_guardian(owner, factory):
     "Must reject the zero address as the replacement guardian"
     with reverts("ZERO_GUARDIAN"):
@@ -116,20 +101,11 @@ def test_create_evm_script_new_already_guardian(
         )
 
 
-def test_create_evm_script_at_full_quorum(owner, guardian_signals_stub, factory, stranger):
-    "Full quorum is valid because LidoLendOwner performs the temporary quorum adjustment atomically"
-    guardian_signals_stub.setGuardian(OLD_GUARDIAN, True, {"from": owner})
-    guardian_signals_stub.setQuorum(1, {"from": owner})
-
-    factory.createEVMScript(
-        owner,
-        create_calldata(MARKET_ID, OLD_GUARDIAN, stranger),
-    )
-
-
-def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger):
+@pytest.mark.parametrize("current_quorum", [0, 1])
+def test_create_evm_script(owner, owner_facade, guardian_signals_stub, factory, stranger, current_quorum):
     "Must create one facade call instead of separate remove/add calls"
     guardian_signals_stub.setGuardian(OLD_GUARDIAN, True, {"from": owner})
+    guardian_signals_stub.setQuorum(current_quorum, {"from": owner})
 
     calldata = create_calldata(MARKET_ID, OLD_GUARDIAN, stranger)
     evm_script = factory.createEVMScript(owner, calldata)
