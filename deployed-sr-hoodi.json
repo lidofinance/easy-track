@@ -9,7 +9,7 @@
     },
     "UpdateStakingModuleShareLimits:CSM": {
         "contract": "UpdateStakingModuleShareLimits",
-        "address": "0xD63cf25df1bA6144db27A81A98120Dfc53dE4540",
+        "address": "0xEE8E0d3087f09f56E3fdb80dd1DB3Fb37de0bfFF",
         "constructorArgs": [
             "0x4AF43Ee34a6fcD1fEcA1e1F832124C763561dA53",
             "CSM",
@@ -20,6 +20,6 @@
             600,
             600
         ],
-        "txHash": "0x04b889924b1963ee3ea2d9473dadbf913c98f5753aa9545817ea87b4fee96ebc"
+        "txHash": "0xfd360b00a1857274eb68703633ec10a30fd142ff296d46c0ee114f92a8cec76b"
     }
 }

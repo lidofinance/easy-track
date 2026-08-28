@@ -17,3 +17,10 @@ cache
 tags
 .idea/
 .yarn/
+
+# Foundry
+foundry-out/
+.forge-cache/
+out/
+broadcast/
+localhost.json
