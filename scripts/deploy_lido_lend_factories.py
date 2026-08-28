@@ -9,7 +9,7 @@ Protocol addresses are read from one immutable Lido Lend deployment directory. S
 
 Before deployment the script verifies artifact consistency, that the actual EasyTrack EVMScriptExecutor
 matches the protocol artifact, and that it has the roles required by the selected factories. ActivateMarket
-and RegisterPauser additionally verify the shared CircuitBreaker's ADMIN. The output
+and CircuitBreakerActions additionally verify the shared CircuitBreaker's ADMIN. The output
 artifact includes the exact fixed EasyTrack permission blob and grouped-factory calldata manifest.
 """
 
@@ -23,11 +23,11 @@ from brownie import (
     web3,
     LidoLendActivateMarket,
     LidoLendPreseeder,
-    LidoLendRegisterPauser,
+    LidoLendCircuitBreakerActions,
     LidoLendGuardianActions,
     LidoLendMarketManagerActions,
     LidoLendRiskStewardActions,
-    LidoLendIrmActions,
+    LidoLendApplyIrmConfig,
     LidoLendExitBookActions,
 )
 
@@ -53,16 +53,17 @@ def _env_address(name):
 GUARDIAN_ACTIONS_FACTORY = "LidoLendGuardianActions"
 MARKET_MANAGER_ACTIONS_FACTORY = "LidoLendMarketManagerActions"
 RISK_STEWARD_ACTIONS_FACTORY = "LidoLendRiskStewardActions"
-IRM_ACTIONS_FACTORY = "LidoLendIrmActions"
+APPLY_IRM_CONFIG_FACTORY = "LidoLendApplyIrmConfig"
 EXIT_BOOK_ACTIONS_FACTORY = "LidoLendExitBookActions"
+CIRCUIT_BREAKER_ACTIONS_FACTORY = "LidoLendCircuitBreakerActions"
 
 ALL_FACTORY_NAMES = (
     "LidoLendActivateMarket",
-    "LidoLendRegisterPauser",
+    CIRCUIT_BREAKER_ACTIONS_FACTORY,
     GUARDIAN_ACTIONS_FACTORY,
     MARKET_MANAGER_ACTIONS_FACTORY,
     RISK_STEWARD_ACTIONS_FACTORY,
-    IRM_ACTIONS_FACTORY,
+    APPLY_IRM_CONFIG_FACTORY,
     EXIT_BOOK_ACTIONS_FACTORY,
 )
 
@@ -70,10 +71,10 @@ MARKET_MANAGER_FACTORIES = {MARKET_MANAGER_ACTIONS_FACTORY}
 GUARDIAN_MANAGER_FACTORIES = {GUARDIAN_ACTIONS_FACTORY}
 FEE_MANAGER_FACTORIES = {"LidoLendActivateMarket", MARKET_MANAGER_ACTIONS_FACTORY}
 OWNER_FACTORIES = {"LidoLendActivateMarket"} | MARKET_MANAGER_FACTORIES | GUARDIAN_MANAGER_FACTORIES
-IRM_ROUTER_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
-ADAPTIVE_CURVE_IRM_FACTORIES = {"LidoLendActivateMarket", IRM_ACTIONS_FACTORY}
+IRM_ROUTER_FACTORIES = {"LidoLendActivateMarket", APPLY_IRM_CONFIG_FACTORY}
+ADAPTIVE_CURVE_IRM_FACTORIES = {"LidoLendActivateMarket", APPLY_IRM_CONFIG_FACTORY}
 RISK_STEWARD_FACTORIES = {"LidoLendActivateMarket", RISK_STEWARD_ACTIONS_FACTORY}
-CIRCUIT_BREAKER_FACTORIES = {"LidoLendActivateMarket", "LidoLendRegisterPauser"}
+CIRCUIT_BREAKER_FACTORIES = {"LidoLendActivateMarket", CIRCUIT_BREAKER_ACTIONS_FACTORY}
 EXIT_BOOK_FACTORIES = {EXIT_BOOK_ACTIONS_FACTORY}
 
 
@@ -191,11 +192,8 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
     if "LidoLendActivateMarket" in selected and "lido_lend_preseeder" in a:
         preseeder = LidoLendPreseeder.at(a["lido_lend_preseeder"])
         require_address("lido_lend_preseeder.lidoLend", preseeder.lidoLend(), a["core"])
-        require_address(
-            "lido_lend_preseeder.evmScriptExecutor",
-            preseeder.evmScriptExecutor(),
-            executor,
-        )
+        if not preseeder.hasRole(preseeder.EXECUTOR_ROLE(), executor):
+            raise ValueError("EasyTrack evmScriptExecutor lacks lido_lend_preseeder.EXECUTOR_ROLE")
 
     if selected & OWNER_FACTORIES:
         core = interface.LidoLend(a["core"])
@@ -220,7 +218,7 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
     if selected & IRM_ROUTER_FACTORIES:
         irm_router = interface.IrmRouter(a["irm_router"])
         require_address("irm_router.MORPHO", irm_router.MORPHO(), a["core"])
-        if selected & IRM_ROUTER_FACTORIES:
+        if "LidoLendActivateMarket" in selected:
             require_address("irm_router.manager", irm_router.manager(), executor)
 
     if selected & ADAPTIVE_CURVE_IRM_FACTORIES:
@@ -241,21 +239,16 @@ def _validate_protocol_bindings(a, expected_executor, factory_names=ALL_FACTORY_
 
     if selected & EXIT_BOOK_FACTORIES:
         allowlist_manager_role = web3.keccak(text="ALLOWLIST_MANAGER_ROLE")
-        fee_manager_role = web3.keccak(text="FEE_MANAGER_ROLE")
 
     if EXIT_BOOK_ACTIONS_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
         require_address("morpho_exit_book.MORPHO", morpho_exit_book.MORPHO(), a["core"])
         if not morpho_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks morpho_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
-        if not morpho_exit_book.hasRole(fee_manager_role, executor):
-            raise ValueError(f"executor lacks morpho_exit_book.FEE_MANAGER_ROLE: {executor}")
 
         erc4626_exit_book = interface.Erc4626ExitBook(a["erc4626_exit_book"])
         if not erc4626_exit_book.hasRole(allowlist_manager_role, executor):
             raise ValueError(f"executor lacks erc4626_exit_book.ALLOWLIST_MANAGER_ROLE: {executor}")
-        if not erc4626_exit_book.hasRole(fee_manager_role, executor):
-            raise ValueError(f"executor lacks erc4626_exit_book.FEE_MANAGER_ROLE: {executor}")
 
     return executor
 
@@ -283,19 +276,19 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
             a["lido_lend_preseeder"],
         ],
     )
-    add(LidoLendRegisterPauser, lambda: [tc, core, a["circuit_breaker"]])
+    add(LidoLendCircuitBreakerActions, lambda: [tc, core, a["circuit_breaker"]])
     # Market/guardian management routes through the LidoLendOwner facade (fixed EVMScript target); each
     # aggregator derives the core from `owner.LIDO_LEND()` for validation.
     add(LidoLendGuardianActions, lambda: [tc, a["owner"]])
     add(LidoLendMarketManagerActions, lambda: [tc, a["owner"]])
     # Steward management targets the shared dashboard directly.
     add(LidoLendRiskStewardActions, lambda: [tc, a["risk_steward_dashboard"]])
-    # IRM management targets the configured router / AdaptiveCurveIrm singletons directly.
+    # IRM config application targets the fixed core and AdaptiveCurveIrm; the router is validation-only.
     add(
-        LidoLendIrmActions,
+        LidoLendApplyIrmConfig,
         lambda: [tc, core, a["irm_router"], a["adaptive_curve_irm"]],
     )
-    add(LidoLendExitBookActions, lambda: [tc])
+    add(LidoLendExitBookActions, lambda: [tc, a["morpho_exit_book"], a["erc4626_exit_book"]])
     return [(Factory, args()) for Factory, args in plan]
 
 
@@ -311,7 +304,7 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
 
     if selected & OWNER_FACTORIES:
         owner = interface.LidoLendOwner(a["owner"])
-    if selected & IRM_ROUTER_FACTORIES:
+    if "LidoLendActivateMarket" in selected:
         irm_router = interface.IrmRouter(a["irm_router"])
     if selected & ADAPTIVE_CURVE_IRM_FACTORIES:
         adaptive_curve_irm = interface.AdaptiveCurveIrm(a["adaptive_curve_irm"])
@@ -333,8 +326,12 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (preseeder, preseeder.preseedMarket.signature),
             (owner, owner.setFee.signature),
         )
-    if "LidoLendRegisterPauser" in selected:
-        permissions["LidoLendRegisterPauser"] = _permission((circuit_breaker, circuit_breaker.registerPauser.signature))
+    if CIRCUIT_BREAKER_ACTIONS_FACTORY in selected:
+        permissions[CIRCUIT_BREAKER_ACTIONS_FACTORY] = _permission(
+            (circuit_breaker, circuit_breaker.registerPauser.signature),
+            (circuit_breaker, circuit_breaker.setPauseDuration.signature),
+            (circuit_breaker, circuit_breaker.setHeartbeatInterval.signature),
+        )
     if GUARDIAN_ACTIONS_FACTORY in selected:
         permissions[GUARDIAN_ACTIONS_FACTORY] = _permission(
             (owner, owner.addGuardian.signature),
@@ -358,12 +355,11 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
             (risk_steward_dashboard, risk_steward_dashboard.addMarketSteward.signature),
             (risk_steward_dashboard, risk_steward_dashboard.removeMarketSteward.signature),
         )
-    if IRM_ACTIONS_FACTORY in selected:
+    if APPLY_IRM_CONFIG_FACTORY in selected:
         core = interface.LidoLend(a["core"])
-        permissions[IRM_ACTIONS_FACTORY] = _permission(
+        permissions[APPLY_IRM_CONFIG_FACTORY] = _permission(
             (core, core.accrueInterest.signature),
             (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig.signature),
-            (irm_router, irm_router.setMarketIrm.signature),
         )
     if EXIT_BOOK_ACTIONS_FACTORY in selected:
         morpho_exit_book = interface.MorphoExitBook(a["morpho_exit_book"])
@@ -371,8 +367,6 @@ def _permissions_plan(a, factory_names=ALL_FACTORY_NAMES):
         permissions[EXIT_BOOK_ACTIONS_FACTORY] = _permission(
             (morpho_exit_book, morpho_exit_book.setMarketAllowed.signature),
             (erc4626_exit_book, erc4626_exit_book.setVaultAllowed.signature),
-            (morpho_exit_book, morpho_exit_book.setServiceFee.signature),
-            (erc4626_exit_book, erc4626_exit_book.setServiceFee.signature),
         )
     return permissions
 

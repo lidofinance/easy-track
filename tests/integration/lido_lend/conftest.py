@@ -613,7 +613,7 @@ def activate_market(
             address = os.environ.get("LIDO_LEND_PRESEEDER")
             if address:
                 preseeder = LidoLendPreseeder.at(address)
-                if preseeder.lidoLend() != core or preseeder.evmScriptExecutor() != executor:
+                if preseeder.lidoLend() != core or not preseeder.hasRole(preseeder.EXECUTOR_ROLE(), executor):
                     raise pytest.UsageError("LIDO_LEND_PRESEEDER has incompatible core or executor")
             else:
                 preseeder = deployer.deploy(LidoLendPreseeder, core, executor, deployer)

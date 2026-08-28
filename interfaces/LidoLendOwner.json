@@ -558,7 +558,7 @@
             "internalType": "uint128"
           },
           {
-            "name": "activatingLockAmount",
+            "name": "minDepositAmount",
             "type": "uint128",
             "internalType": "uint128"
           },

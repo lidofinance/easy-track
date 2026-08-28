@@ -37,15 +37,16 @@ cross-checks each market with its linked oracle and GuardianSignals artifacts.
 
 `TRUSTED_CALLER` is the committee address allowed to create motions through the deployed factories.
 `LIDO_LEND_PRESEEDER` is required when `ActivateMarket` is selected. Deploy it with the protocol core and
-EasyTrack EVMScriptExecutor, then fund it with the collateral and loan tokens used by the activation motion.
+EasyTrack EVMScriptExecutor as `EXECUTOR_ROLE`, and the Lido DAO Agent as both `DEFAULT_ADMIN_ROLE` and
+`ERC20_RECOVERER`, then fund it with the loan tokens used by the activation motion.
 
 ## Fixed permission model
 
 The generated permissions do not contain market-controller or GuardianSignals addresses. Market and guardian
 factories call the fixed `LidoLendOwner` facade, which resolves the market-specific contracts from `marketId`.
-IRM factories call the fixed IrmRouter and AdaptiveCurveIrm instances. Exit-book targets are supplied in
-motion calldata, while the generated EasyTrack permissions restrict execution to the exit books from the
-deployment artifacts.
+IRM configuration calls the fixed core and AdaptiveCurveIrm; market activation also calls the fixed IrmRouter.
+Exit-book targets are fixed in the factory constructor from the deployment artifacts and matched by the generated
+EasyTrack permissions.
 
 Adding a market or giving it a fresh GuardianSignals registry therefore does not require changing an existing
 factory's EasyTrack permission. A permission changes only when its fixed protocol target changes or a factory
@@ -70,29 +71,32 @@ The supported short names are:
 
 ```text
 ActivateMarket
-RegisterPauser
+CircuitBreakerActions
 GuardianActions
 MarketManagerActions
 RiskStewardActions
-IrmActions
+ApplyIrmConfig
 ExitBookActions
 ```
 
 An empty list, an unknown name, or a duplicate is rejected before deployment.
 
 The script resolves only the protocol components used by the selected factories. `ActivateMarket` requires
-the protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER`; `RegisterPauser` requires
-the shared CircuitBreaker. Activation still performs the initial pauser registration, while `RegisterPauser`
-supports a standalone registration, replacement, or removal motion.
+the protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER`; `CircuitBreakerActions` requires
+the shared CircuitBreaker. Activation still performs the initial pauser registration, while `CircuitBreakerActions`
+supports standalone registration, replacement, removal, pause-duration, and heartbeat-interval actions.
 
-Grouped factories decode `abi.encode(Action, payload)`. Existing action ordinals are unchanged; the new
-actions are appended as `MarketManagerActions.SetFee = 5` and `ExitBookActions.SetServiceFee = 2`.
+Grouped factories decode `abi.encode(Action, payload)`. Existing action ordinals are unchanged;
+`MarketManagerActions.SetFee = 5` is appended after the existing market-management actions.
+`CircuitBreakerActions` actions are `RegisterPauser = 0`, `SetPauseDuration = 1`, and
+`SetHeartbeatInterval = 2`.
+`ApplyIrmConfig` is a single-action factory and decodes `abi.encode(bytes32 marketId, address irmConfig)` directly.
 
 | Selected factories | Required artifacts |
 | --- | --- |
 | All selections | `protocol.toml` and at least one `markets/*.toml` |
 | ActivateMarket | protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER` |
-| RegisterPauser | shared CircuitBreaker |
+| CircuitBreakerActions | shared CircuitBreaker |
 | ExitBookActions | `exit-books.toml` |
 
 ## Anvil rehearsal
@@ -164,7 +168,7 @@ selected topology:
 - the facade points to the expected core and `core.owner()` points back to that facade;
 - IRM router, curve, dashboard, and exit book bindings point to the expected core/router;
 - the executor read from the actual EasyTrack contract equals the protocol artifact executor;
-- for `ActivateMarket` and `RegisterPauser`, the shared `CircuitBreaker.ADMIN` equals that executor;
+- for `ActivateMarket` and `CircuitBreakerActions`, the shared `CircuitBreaker.ADMIN` equals that executor;
 - for `ActivateMarket`, the executor has the owner's `MARKET_CREATOR_ROLE` and `FEE_MANAGER_ROLE`, plus the
   dashboard's `STEWARD_ADMIN_ROLE`;
 - for `ActivateMarket`, `LIDO_LEND_PRESEEDER` points to the expected core and EasyTrack executor;
@@ -185,11 +189,6 @@ A nonzero fee is installed as the final action; zero leaves the core's default f
 
 `MarketManagerActions.SetFee` changes one market fee through `LidoLendOwner`. The EVMScriptExecutor must hold
 `FEE_MANAGER_ROLE` on the owner facade.
-
-`ExitBookActions.SetServiceFee` applies one recipient and service-fee rate to a non-empty ordered list of exit
-books. The rate is capped at 25%; a zero recipient is accepted only with a zero rate. The factory accepts any
-non-zero target in calldata, while its EasyTrack permission blob permits `setServiceFee` only on the Morpho
-and ERC-4626 exit books from the protocol artifacts. The executor must hold `FEE_MANAGER_ROLE` on both.
 
 ## Production deployment
 

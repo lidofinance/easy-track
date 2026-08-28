@@ -17,7 +17,7 @@ contract LidoLendMarketControllerStub {
         uint40 minActivationDelay;
         uint40 maxActivationDelay;
         uint128 maxDelayInflow;
-        uint128 activatingLockAmount;
+        uint128 minDepositAmount;
         uint40 activatingLockDuration;
         uint128 minActivationAmount;
         uint40 maxGuardiansQuorumDelay;
@@ -36,6 +36,7 @@ contract LidoLendMarketControllerStub {
     SettlementConfig private _settlementConfig;
     uint256 public supplyCap;
     bool public isFrozen;
+    bool public isPaused;
     mapping(address => bool) public hasInstantActivation;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
     bool public enforceRoles;
@@ -50,6 +51,10 @@ contract LidoLendMarketControllerStub {
 
     function grantRole(bytes32 role, address account) external {
         hasRole[role][account] = true;
+    }
+
+    function revokeRole(bytes32 role, address account) external {
+        hasRole[role][account] = false;
     }
 
     function setEnforceRoles(bool value) external {
@@ -77,6 +82,10 @@ contract LidoLendMarketControllerStub {
 
     function setFrozen(bool value) external {
         isFrozen = value;
+    }
+
+    function setPaused(bool value) external {
+        isPaused = value;
     }
 
     function freeze() external onlyRoleWhenEnforced(FREEZER_ROLE) {

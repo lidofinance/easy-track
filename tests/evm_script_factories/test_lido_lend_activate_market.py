@@ -138,11 +138,22 @@ def market_id(market_params):
 
 
 @pytest.fixture(scope="module")
-def controller(owner, core_stub, market_id, circuit_breaker_stub):
+def controller(
+    owner,
+    core_stub,
+    market_id,
+    circuit_breaker_stub,
+    owner_stub,
+    risk_steward_dashboard_stub,
+):
     "A controller whose marketId matches market_params (so the factory's cross-check passes)."
     c = LidoLendMarketControllerStub.deploy({"from": owner})
     c.setLidoLend(core_stub, {"from": owner})
     c.setMarketId(market_id, {"from": owner})
+    c.grantRole(c.MANAGER_ROLE(), owner_stub, {"from": owner})
+    c.grantRole(c.MANAGER_ROLE(), risk_steward_dashboard_stub, {"from": owner})
+    c.grantRole(c.UNFREEZER_ROLE(), owner_stub, {"from": owner})
+    c.grantRole(c.FREEZER_ROLE(), risk_steward_dashboard_stub, {"from": owner})
     c.grantRole(c.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
     return c
 
@@ -381,6 +392,49 @@ def test_create_evm_script_circuit_breaker_without_pauser_role(
             owner,
             create_calldata(market_params, IRM_CONFIG, controller.address, STEWARD, PAUSER_COMMITTEE, False),
         )
+
+
+@pytest.mark.parametrize(
+    "role_name,holder_name,error",
+    [
+        ("MANAGER_ROLE", "owner", "OWNER_NOT_MANAGER"),
+        ("MANAGER_ROLE", "dashboard", "DASHBOARD_NOT_MANAGER"),
+        ("UNFREEZER_ROLE", "owner", "OWNER_NOT_UNFREEZER"),
+        ("FREEZER_ROLE", "dashboard", "DASHBOARD_NOT_FREEZER"),
+    ],
+)
+def test_create_evm_script_missing_controller_role(
+    owner,
+    factory,
+    owner_stub,
+    risk_steward_dashboard_stub,
+    controller,
+    market_params,
+    vault_stub,
+    role_name,
+    holder_name,
+    error,
+):
+    "Must reject a controller that is not wired to the fixed governance and risk-management contracts."
+    holder = owner_stub if holder_name == "owner" else risk_steward_dashboard_stub
+    role = getattr(controller, role_name)()
+    controller.revokeRole(role, holder, {"from": owner})
+
+    with reverts(error):
+        factory.createEVMScript(
+            owner,
+            create_calldata(
+                market_params,
+                IRM_CONFIG,
+                controller.address,
+                STEWARD,
+                PAUSER_COMMITTEE,
+                False,
+                vault=vault_stub.address,
+            ),
+        )
+
+    controller.grantRole(role, holder, {"from": owner})
 
 
 @pytest.mark.parametrize("enable_settlement", [False, True])

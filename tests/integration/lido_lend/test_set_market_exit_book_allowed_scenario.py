@@ -42,7 +42,7 @@ def test_set_market_exit_book_allowed_scenario(
     morpho.grantRole(morpho.ALLOWLIST_MANAGER_ROLE(), executor, {"from": admin})
     erc4626.grantRole(erc4626.ALLOWLIST_MANAGER_ROLE(), executor, {"from": admin})
 
-    exit_book_factory = deployer.deploy(LidoLendExitBookActions, trusted_caller)
+    exit_book_factory = deployer.deploy(LidoLendExitBookActions, trusted_caller, morpho, erc4626)
     register_factory(
         exit_book_factory,
         "0x"
@@ -54,13 +54,13 @@ def test_set_market_exit_book_allowed_scenario(
 
     def morpho_calldata(allowed):
         payload = encode(
-            ["address", f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"],
-            [morpho.address, [_market_params(lido_lend)], allowed],
+            [f"{MARKET_PARAMS_ABI_TYPE}[]", "bool"],
+            [[_market_params(lido_lend)], allowed],
         )
         return "0x" + encode(["uint8", "bytes"], [0, payload]).hex()
 
     def erc4626_calldata(allowed):
-        payload = encode(["address", "address[]", "bool"], [erc4626.address, [m["vault"]], allowed])
+        payload = encode(["address[]", "bool"], [[m["vault"]], allowed])
         return "0x" + encode(["uint8", "bytes"], [1, payload]).hex()
 
     enact_motion(easy_track, exit_book_factory, morpho_calldata(True), trusted_caller)

@@ -10,6 +10,7 @@ from brownie import (
 )
 from eth_abi import encode
 from utils.hardhat_helpers import get_last_tx_revert_reason
+from utils.test_helpers import access_revert_message
 
 
 MIN_DEAD_DEPOSIT_SHARES = 10**9
@@ -66,8 +67,11 @@ def preseeder(owner, core, evm_script_executor_stub, recoverer):
 
 def test_deploy(core, evm_script_executor_stub, recoverer, preseeder):
     assert preseeder.lidoLend() == core
-    assert preseeder.evmScriptExecutor() == evm_script_executor_stub
-    assert preseeder.recoverer() == recoverer
+    assert preseeder.hasRole(preseeder.DEFAULT_ADMIN_ROLE(), recoverer)
+    assert preseeder.hasRole(preseeder.EXECUTOR_ROLE(), evm_script_executor_stub)
+    assert preseeder.hasRole(preseeder.ERC20_RECOVERER(), recoverer)
+    assert not preseeder.hasRole(preseeder.DEFAULT_ADMIN_ROLE(), evm_script_executor_stub)
+    assert not preseeder.hasRole(preseeder.ERC20_RECOVERER(), evm_script_executor_stub)
     assert preseeder.PRESEED_RECIPIENT() == DEAD_ADDRESS
 
 
@@ -86,8 +90,17 @@ def test_constructor_rejects_zero_addresses(owner, core, evm_script_executor_stu
 
 
 def test_only_executor_can_preseed_market(stranger, preseeder, market_params, vault):
-    with reverts("CALLER_IS_FORBIDDEN"):
+    with reverts(access_revert_message(stranger, preseeder.EXECUTOR_ROLE())):
         preseeder.preseedMarket(market_params, vault, {"from": stranger})
+
+
+def test_recoverer_can_rotate_executor_role(recoverer, stranger, preseeder):
+    role = preseeder.EXECUTOR_ROLE()
+    preseeder.grantRole(role, stranger, {"from": recoverer})
+    assert preseeder.hasRole(role, stranger)
+
+    preseeder.revokeRole(role, stranger, {"from": recoverer})
+    assert not preseeder.hasRole(role, stranger)
 
 
 def test_preview_preseed(preseeder, vault):
@@ -102,6 +115,17 @@ def test_validate_preseed_checks_funding(owner, loan_token, preseeder, market_pa
     market_supply_assets, vault_assets = preseeder.previewPreseed(vault)
     loan_token.mint(preseeder, market_supply_assets + vault_assets, {"from": owner})
     preseeder.validatePreseed(market_params, vault)
+
+
+def test_validate_preseed_checks_pause_and_supply_cap(owner, loan_token, preseeder, market_params, vault):
+    market_supply_assets, vault_assets = preseeder.previewPreseed(vault)
+    required_assets = market_supply_assets + vault_assets
+    loan_token.mint(preseeder, required_assets, {"from": owner})
+
+    for max_deposit in (0, required_assets - 1):
+        vault.setMaxDeposit(max_deposit, {"from": owner})
+        with reverts("PRESEED_EXCEEDS_MAX_DEPOSIT"):
+            preseeder.validatePreseed(market_params, vault)
 
 
 def test_rejects_insufficient_balance(owner, evm_script_executor_stub, loan_token, preseeder, market_params, vault):
@@ -133,7 +157,9 @@ def test_rejects_nonempty_market(
 def test_validate_preseed_passes_for_uncreated_market(preseeder, owner, loan_token, market_params, core, vault):
     "A not-yet-created market reads as empty, so factories can validate before createMarket runs."
     uncreated_params = (market_params[0], market_params[1], market_params[2], market_params[3], 7 * 10**17)
-    vault.setMarketId(web3.keccak(encode(["address", "address", "address", "address", "uint256"], uncreated_params)), {"from": owner})
+    vault.setMarketId(
+        web3.keccak(encode(["address", "address", "address", "address", "uint256"], uncreated_params)), {"from": owner}
+    )
     market_supply_assets, vault_assets = preseeder.previewPreseed(vault)
     loan_token.mint(preseeder, market_supply_assets + vault_assets, {"from": owner})
 
@@ -163,6 +189,24 @@ def test_preseed_market(owner, evm_script_executor_stub, loan_token, core, vault
     assert loan_token.balanceOf(vault) == vault_assets
     assert loan_token.allowance(preseeder, core) == 0
     assert loan_token.allowance(preseeder, vault) == 0
+
+
+def test_preseed_market_rejects_fewer_shares_than_minimum_asset_units_require(
+    owner,
+    evm_script_executor_stub,
+    loan_token,
+    vault,
+    preseeder,
+    market_params,
+):
+    vault.setDecimals(24, {"from": owner})
+    market_supply_assets, vault_assets = preseeder.previewPreseed(vault)
+    assert vault.previewDeposit(MIN_VAULT_ASSET_UNITS) > MIN_DEAD_DEPOSIT_SHARES
+    vault.setDepositSharesOverride(MIN_DEAD_DEPOSIT_SHARES, {"from": owner})
+    loan_token.mint(preseeder, market_supply_assets + vault_assets, {"from": owner})
+
+    with reverts("VAULT_SHARES_TOO_LOW"):
+        preseeder.preseedMarket(market_params, vault, {"from": evm_script_executor_stub})
 
 
 def test_preseed_market_keeps_excess_balance(
@@ -299,7 +343,7 @@ def test_recover_erc20(owner, recoverer, stranger, loan_token, preseeder):
 def test_only_recoverer_can_recover_erc20(owner, stranger, evm_script_executor_stub, loan_token, preseeder):
     loan_token.mint(preseeder, 1000, {"from": owner})
     for caller in (stranger, evm_script_executor_stub):
-        with reverts("CALLER_IS_FORBIDDEN"):
+        with reverts(access_revert_message(caller, preseeder.ERC20_RECOVERER())):
             preseeder.recoverERC20(loan_token, stranger, 1000, {"from": caller})
 
 

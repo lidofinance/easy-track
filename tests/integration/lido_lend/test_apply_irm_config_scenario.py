@@ -1,4 +1,4 @@
-from brownie import AdaptiveCurveConfigStub, LidoLendIrmActions, interface
+from brownie import AdaptiveCurveConfigStub, LidoLendApplyIrmConfig, interface
 from eth_abi import encode
 
 
@@ -8,7 +8,7 @@ def _different_curve_params(current):
     return tuple(params)
 
 
-def test_set_irm_config_scenario(
+def test_apply_irm_config_scenario(
     lido_lend, created_market, easy_track, deployer, trusted_caller, permission, register_factory, enact_motion
 ):
     "A Manager Committee motion applies a new external config to the market's AdaptiveCurveIrm."
@@ -21,7 +21,7 @@ def test_set_irm_config_scenario(
     new_config = deployer.deploy(AdaptiveCurveConfigStub, new_curve_params)
 
     factory = deployer.deploy(
-        LidoLendIrmActions,
+        LidoLendApplyIrmConfig,
         trusted_caller,
         core,
         lido_lend.contract("irmRouter"),
@@ -31,11 +31,10 @@ def test_set_irm_config_scenario(
         factory,
         permission((core, core.accrueInterest), (adaptive_curve_irm, adaptive_curve_irm.applyIrmConfig)),
     )
-    payload = encode(["bytes32", "address"], [market_id, new_config.address])
     enact_motion(
         easy_track,
         factory,
-        "0x" + encode(["uint8", "bytes"], [0, payload]).hex(),
+        "0x" + encode(["bytes32", "address"], [market_id, new_config.address]).hex(),
         trusted_caller,
     )
 

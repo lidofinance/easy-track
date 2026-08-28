@@ -39,6 +39,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         "MAX_GUARDIANS_QUORUM_DELAY_EXCEEDED";
     string private constant ERROR_ZERO_MIN_ACTIVATION_AMOUNT = "ZERO_MIN_ACTIVATION_AMOUNT";
     string private constant ERROR_ZERO_MAX_DELAY_INFLOW = "ZERO_MAX_DELAY_INFLOW";
+    string private constant ERROR_INVALID_MIN_DEPOSIT_AMOUNT = "INVALID_MIN_DEPOSIT_AMOUNT";
     string private constant ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED = "MAX_DELAY_PER_STRIKE_EXCEEDED";
     string private constant ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED = "MAX_DELAY_PER_SUSPECT_EXCEEDED";
     string private constant ERROR_SETTLEMENT_CONFIG_OUT_OF_RANGE = "SETTLEMENT_CONFIG_OUT_OF_RANGE";
@@ -92,7 +93,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
             return _createSetSupplyCapEVMScript(payload);
         }
         if (action == Action.UnfreezeMarket) {
-            return _createUnfreezeMarketEVMScript(payload);
+            return _createUnfreezeMarketsEVMScript(payload);
         }
         if (action == Action.SetFee) {
             return _createSetFeeEVMScript(payload);
@@ -280,7 +281,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
             );
     }
 
-    function _createUnfreezeMarketEVMScript(bytes memory _payload)
+    function _createUnfreezeMarketsEVMScript(bytes memory _payload)
         private
         view
         returns (bytes memory)
@@ -305,7 +306,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     function _createSetFeeEVMScript(bytes memory _payload) private view returns (bytes memory) {
         (bytes32 marketId, uint256 newFee) = decodeSetFeePayload(_payload);
         ILidoLendOwner owner = ILidoLendOwner(lidoLendOwner);
-        ILidoLend core = owner.LIDO_LEND();
+        ILidoLend core = ILidoLend(lidoLend);
         Market memory currentMarket = core.market(marketId);
         require(currentMarket.lastUpdate != 0, ERROR_MARKET_NOT_FOUND);
         require(currentMarket.fee != newFee, ERROR_FEE_ALREADY_SET);
@@ -340,6 +341,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         );
         require(cfg.minActivationAmount != 0, ERROR_ZERO_MIN_ACTIVATION_AMOUNT);
         require(cfg.maxDelayInflow != 0, ERROR_ZERO_MAX_DELAY_INFLOW);
+        require(cfg.minDepositAmount <= cfg.minActivationAmount, ERROR_INVALID_MIN_DEPOSIT_AMOUNT);
         require(cfg.delayPerStrike <= MAX_DELAY_DURATION, ERROR_MAX_DELAY_PER_STRIKE_EXCEEDED);
         require(cfg.delayPerSuspect <= MAX_DELAY_DURATION, ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED);
     }

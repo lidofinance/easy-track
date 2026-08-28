@@ -4,7 +4,7 @@ from brownie import (
     CircuitBreakerStub,
     LidoLendCoreStub,
     LidoLendMarketControllerStub,
-    LidoLendRegisterPauser,
+    LidoLendCircuitBreakerActions,
     ZERO_ADDRESS,
     reverts,
 )
@@ -13,10 +13,12 @@ from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
+REGISTER_PAUSER = 0
 
 
 def create_calldata(market_id, pauser):
-    return "0x" + encode(["bytes32", "address"], [market_id, str(pauser)]).hex()
+    payload = encode(["bytes32", "address"], [market_id, str(pauser)])
+    return "0x" + encode(["uint8", "bytes"], [REGISTER_PAUSER, payload]).hex()
 
 
 @pytest.fixture(scope="module")
@@ -25,10 +27,8 @@ def circuit_breaker_stub(owner):
 
 
 @pytest.fixture(scope="module")
-def controller(owner, circuit_breaker_stub):
-    controller = LidoLendMarketControllerStub.deploy({"from": owner})
-    controller.grantRole(controller.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
-    return controller
+def controller(owner):
+    return LidoLendMarketControllerStub.deploy({"from": owner})
 
 
 @pytest.fixture(scope="module")
@@ -40,7 +40,7 @@ def core_stub(owner, controller):
 
 @pytest.fixture(scope="module")
 def factory(owner, core_stub, circuit_breaker_stub):
-    return LidoLendRegisterPauser.deploy(owner, core_stub, circuit_breaker_stub, {"from": owner})
+    return LidoLendCircuitBreakerActions.deploy(owner, core_stub, circuit_breaker_stub, {"from": owner})
 
 
 def test_create_evm_script_called_by_stranger(stranger, factory):
@@ -69,19 +69,6 @@ def test_create_evm_script_zero_controller(owner, factory, stranger):
         factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
 
 
-def test_create_evm_script_circuit_breaker_without_pauser_role(
-    owner,
-    core_stub,
-    stranger,
-):
-    "Must reject a CircuitBreaker that cannot pause the market controller"
-    wrong_circuit_breaker = CircuitBreakerStub.deploy(owner, {"from": owner})
-    factory = LidoLendRegisterPauser.deploy(owner, core_stub, wrong_circuit_breaker, {"from": owner})
-
-    with reverts("CIRCUIT_BREAKER_NOT_PAUSER"):
-        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
-
-
 def test_create_evm_script(owner, circuit_breaker_stub, controller, factory, stranger):
     "Must register the supplied pauser for the controller resolved from the market id"
     calldata = create_calldata(MARKET_ID, stranger)
@@ -101,6 +88,14 @@ def test_create_evm_script(owner, circuit_breaker_stub, controller, factory, str
 def test_decode_evm_script_call_data(factory, stranger):
     "Must decode EVMScript call data correctly"
     calldata = create_calldata(MARKET_ID, stranger)
-    market_id, pauser = factory.decodeEVMScriptCallData(calldata)
+    action, payload = factory.decodeEVMScriptCallData(calldata)
+    assert action == REGISTER_PAUSER
+    market_id, pauser = factory.decodeRegisterPauserPayload(payload)
     assert market_id == "0x" + MARKET_ID.hex()
     assert pauser == stranger
+
+
+def test_rejects_unknown_action(owner, factory):
+    calldata = "0x" + encode(["uint8", "bytes"], [255, b""]).hex()
+    with reverts():
+        factory.createEVMScript(owner, calldata)

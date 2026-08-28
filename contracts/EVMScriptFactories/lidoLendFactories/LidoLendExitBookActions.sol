@@ -13,8 +13,7 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
     /// @dev Action ordinals are part of the calldata ABI. Never reorder existing members; append only.
     enum Action {
         SetMorphoExitBookAllowed,
-        SetErc4626ExitBookAllowed,
-        SetServiceFee
+        SetErc4626ExitBookAllowed
     }
 
     // -------------
@@ -26,18 +25,31 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_EMPTY_VAULTS = "EMPTY_VAULTS";
     string private constant ERROR_ZERO_EXIT_BOOK = "ZERO_EXIT_BOOK";
     string private constant ERROR_ZERO_VAULT = "ZERO_VAULT";
-    string private constant ERROR_EMPTY_EXIT_BOOKS = "EMPTY_EXIT_BOOKS";
-    string private constant ERROR_FEE_TOO_HIGH = "FEE_TOO_HIGH";
-    string private constant ERROR_FEE_RECIPIENT_REQUIRED = "FEE_RECIPIENT_REQUIRED";
+    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
-    // Mirrors MAX_SERVICE_FEE in lido-lend-markets/src/periphery/ExitBookBase.sol.
-    uint256 private constant MAX_SERVICE_FEE = 0.25e18;
+    // -------------
+    // VARIABLES
+    // -------------
+
+    /// @notice Morpho exit book targeted by market allow-list actions
+    address public immutable morphoExitBook;
+    /// @notice ERC-4626 exit book targeted by vault allow-list actions
+    address public immutable erc4626ExitBook;
 
     // -------------
     // CONSTRUCTOR
     // -------------
 
-    constructor(address _trustedCaller) TrustedCaller(_trustedCaller) {}
+    constructor(
+        address _trustedCaller,
+        address _morphoExitBook,
+        address _erc4626ExitBook
+    ) TrustedCaller(_trustedCaller) {
+        require(_morphoExitBook != address(0), ERROR_ZERO_EXIT_BOOK);
+        require(_erc4626ExitBook != address(0), ERROR_ZERO_EXIT_BOOK);
+        morphoExitBook = _morphoExitBook;
+        erc4626ExitBook = _erc4626ExitBook;
+    }
 
     // -------------
     // EXTERNAL METHODS
@@ -61,9 +73,6 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
         if (action == Action.SetErc4626ExitBookAllowed) {
             return _createSetErc4626ExitBookAllowedEVMScript(payload);
         }
-        if (action == Action.SetServiceFee) {
-            return _createSetServiceFeeEVMScript(payload);
-        }
         revert(ERROR_INVALID_ACTION);
     }
 
@@ -84,42 +93,18 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
     function decodeSetMorphoExitBookAllowedPayload(bytes memory _payload)
         public
         pure
-        returns (
-            address exitBook,
-            MarketParams[] memory marketParamsList,
-            bool allowed
-        )
+        returns (MarketParams[] memory marketParamsList, bool allowed)
     {
-        (exitBook, marketParamsList, allowed) = abi.decode(
-            _payload,
-            (address, MarketParams[], bool)
-        );
+        (marketParamsList, allowed) = abi.decode(_payload, (MarketParams[], bool));
     }
 
     /// @notice Decodes a SetErc4626ExitBookAllowed payload
     function decodeSetErc4626ExitBookAllowedPayload(bytes memory _payload)
         public
         pure
-        returns (
-            address exitBook,
-            address[] memory vaults,
-            bool allowed
-        )
+        returns (address[] memory vaults, bool allowed)
     {
-        (exitBook, vaults, allowed) = abi.decode(_payload, (address, address[], bool));
-    }
-
-    /// @notice Decodes a SetServiceFee payload
-    function decodeSetServiceFeePayload(bytes memory _payload)
-        public
-        pure
-        returns (
-            address[] memory exitBooks,
-            address feeRecipient,
-            uint256 serviceFee
-        )
-    {
-        (exitBooks, feeRecipient, serviceFee) = abi.decode(_payload, (address[], address, uint256));
+        (vaults, allowed) = abi.decode(_payload, (address[], bool));
     }
 
     // ------------------
@@ -132,21 +117,24 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
         returns (bytes memory)
     {
         (
-            address exitBook,
             MarketParams[] memory marketParamsList,
             bool allowed
         ) = decodeSetMorphoExitBookAllowedPayload(_payload);
-        require(exitBook != address(0), ERROR_ZERO_EXIT_BOOK);
         require(marketParamsList.length > 0, ERROR_EMPTY_MARKETS_LIST);
 
         bytes[] memory encodedCalldata = new bytes[](marketParamsList.length);
         for (uint256 i = 0; i < marketParamsList.length; ++i) {
+            bytes32 marketId = keccak256(abi.encode(marketParamsList[i]));
+            require(
+                IMorphoExitBook(morphoExitBook).MORPHO().market(marketId).lastUpdate != 0,
+                ERROR_MARKET_NOT_FOUND
+            );
             encodedCalldata[i] = abi.encode(marketParamsList[i], allowed);
         }
 
         return
             EVMScriptCreator.createEVMScript(
-                exitBook,
+                morphoExitBook,
                 IMorphoExitBook.setMarketAllowed.selector,
                 encodedCalldata
             );
@@ -157,12 +145,7 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
         view
         returns (bytes memory)
     {
-        (
-            address exitBook,
-            address[] memory vaults,
-            bool allowed
-        ) = decodeSetErc4626ExitBookAllowedPayload(_payload);
-        require(exitBook != address(0), ERROR_ZERO_EXIT_BOOK);
+        (address[] memory vaults, bool allowed) = decodeSetErc4626ExitBookAllowedPayload(_payload);
         require(vaults.length > 0, ERROR_EMPTY_VAULTS);
 
         bytes[] memory encodedCalldata = new bytes[](vaults.length);
@@ -173,35 +156,9 @@ contract LidoLendExitBookActions is TrustedCaller, IEVMScriptFactory {
 
         return
             EVMScriptCreator.createEVMScript(
-                exitBook,
+                erc4626ExitBook,
                 IErc4626ExitBook.setVaultAllowed.selector,
                 encodedCalldata
             );
-    }
-
-    function _createSetServiceFeeEVMScript(bytes memory _payload)
-        private
-        view
-        returns (bytes memory)
-    {
-        (
-            address[] memory exitBooks,
-            address feeRecipient,
-            uint256 serviceFee
-        ) = decodeSetServiceFeePayload(_payload);
-
-        require(exitBooks.length > 0, ERROR_EMPTY_EXIT_BOOKS);
-        require(serviceFee <= MAX_SERVICE_FEE, ERROR_FEE_TOO_HIGH);
-        require(feeRecipient != address(0) || serviceFee == 0, ERROR_FEE_RECIPIENT_REQUIRED);
-
-        bytes4[] memory methodIds = new bytes4[](exitBooks.length);
-        bytes[] memory callData = new bytes[](exitBooks.length);
-        for (uint256 i = 0; i < exitBooks.length; ++i) {
-            require(exitBooks[i] != address(0), ERROR_ZERO_EXIT_BOOK);
-            methodIds[i] = IExitBook.setServiceFee.selector;
-            callData[i] = abi.encode(feeRecipient, serviceFee);
-        }
-
-        return EVMScriptCreator.createEVMScript(exitBooks, methodIds, callData);
     }
 }
