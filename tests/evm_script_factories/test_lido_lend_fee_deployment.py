@@ -43,17 +43,16 @@ def test_activation_preflight_requires_executor_fee_manager_role(monkeypatch):
         _validate_protocol_bindings(addresses, executor, ("LidoLendActivateMarket",))
 
 
-def test_exit_book_preflight_requires_executor_fee_manager_role(monkeypatch):
+def test_exit_book_preflight_does_not_require_executor_fee_manager_role(monkeypatch):
     executor = "0x" + "aa" * 20
     addresses = {
         "core": "0x" + "10" * 20,
         "morpho_exit_book": "0x" + "20" * 20,
         "erc4626_exit_book": "0x" + "30" * 20,
     }
-    fee_manager_role = web3.keccak(text="FEE_MANAGER_ROLE")
     morpho = SimpleNamespace(
         MORPHO=lambda: addresses["core"],
-        hasRole=lambda role, account: account == executor and role != fee_manager_role,
+        hasRole=lambda _role, account: account == executor,
     )
     erc4626 = SimpleNamespace(hasRole=lambda _role, account: account == executor)
     monkeypatch.setattr(
@@ -65,5 +64,4 @@ def test_exit_book_preflight_requires_executor_fee_manager_role(monkeypatch):
         ),
     )
 
-    with pytest.raises(ValueError, match="executor lacks morpho_exit_book.FEE_MANAGER_ROLE"):
-        _validate_protocol_bindings(addresses, executor, ("LidoLendExitBookActions",))
+    assert _validate_protocol_bindings(addresses, executor, ("LidoLendExitBookActions",)) == executor

@@ -4,8 +4,6 @@ from brownie import (
     reverts,
     LidoLendRiskStewardActions,
     RiskStewardDashboardStub,
-    LidoLendCoreStub,
-    LidoLendMarketControllerStub,
 )
 
 from utils.evm_script import encode_call_script
@@ -21,19 +19,8 @@ def create_calldata(market_id, steward):
 
 
 @pytest.fixture(scope="module")
-def dashboard_stub(owner, core_stub):
-    dashboard = RiskStewardDashboardStub.deploy({"from": owner})
-    dashboard.setLidoLend(core_stub, {"from": owner})
-    return dashboard
-
-
-@pytest.fixture(scope="module")
-def core_stub(owner):
-    "A core with a controller registered for MARKET_ID, so the market-existence check resolves."
-    controller = LidoLendMarketControllerStub.deploy({"from": owner})
-    core = LidoLendCoreStub.deploy({"from": owner})
-    core.setMarketController(MARKET_ID, controller, {"from": owner})
-    return core
+def dashboard_stub(owner):
+    return RiskStewardDashboardStub.deploy({"from": owner})
 
 
 @pytest.fixture(scope="module")
@@ -41,11 +28,17 @@ def factory(owner, dashboard_stub):
     return LidoLendRiskStewardActions.deploy(owner, dashboard_stub, {"from": owner})
 
 
-def test_create_evm_script_market_not_found(owner, dashboard_stub, factory, stranger):
-    "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
+def test_create_evm_script_before_market_activation(owner, dashboard_stub, factory, stranger):
+    "Must allow a preconfigured steward to be removed before the market is activated"
     dashboard_stub.setMarketSteward(UNKNOWN_MARKET_ID, stranger, True, {"from": owner})
-    with reverts("MARKET_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
+    assert factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger)) == encode_call_script(
+        [
+            (
+                dashboard_stub.address,
+                dashboard_stub.removeMarketSteward.encode_input(UNKNOWN_MARKET_ID, stranger),
+            )
+        ]
+    )
 
 
 def test_create_evm_script_not_steward(owner, dashboard_stub, factory, stranger):

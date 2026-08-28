@@ -15,6 +15,8 @@ contract LidoLendVaultStub {
     uint8 public decimals = 18;
     uint256 public totalSupply;
     uint256 public totalAssets;
+    uint256 private _maxDeposit = type(uint256).max;
+    uint256 private _depositSharesOverride;
     mapping(address => uint256) public balanceOf;
 
     function setMarketId(bytes32 marketId_) external {
@@ -33,12 +35,28 @@ contract LidoLendVaultStub {
         decimals = decimals_;
     }
 
+    function setMaxDeposit(uint256 maxDeposit_) external {
+        _maxDeposit = maxDeposit_;
+    }
+
+    function setDepositSharesOverride(uint256 depositSharesOverride_) external {
+        _depositSharesOverride = depositSharesOverride_;
+    }
+
+    function maxDeposit(address) external view returns (uint256) {
+        return _maxDeposit;
+    }
+
     function deposit(uint256 assets, address receiver) external returns (uint256 shares) {
-        shares = (assets * (totalSupply + _virtualShares())) / (totalAssets + 1);
+        shares = _depositSharesOverride == 0 ? previewDeposit(assets) : _depositSharesOverride;
         require(IERC20(asset).transferFrom(msg.sender, address(this), assets), "TRANSFER_FAILED");
         balanceOf[receiver] += shares;
         totalSupply += shares;
         totalAssets += assets;
+    }
+
+    function previewDeposit(uint256 assets) public view returns (uint256) {
+        return (assets * (totalSupply + _virtualShares())) / (totalAssets + 1);
     }
 
     function convertToAssets(uint256 shares) external view returns (uint256) {

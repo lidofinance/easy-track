@@ -4,8 +4,6 @@ from brownie import (
     reverts,
     LidoLendRiskStewardActions,
     RiskStewardDashboardStub,
-    LidoLendCoreStub,
-    LidoLendMarketControllerStub,
     ZERO_ADDRESS,
 )
 
@@ -22,19 +20,8 @@ def create_calldata(market_id, steward):
 
 
 @pytest.fixture(scope="module")
-def dashboard_stub(owner, core_stub):
-    dashboard = RiskStewardDashboardStub.deploy({"from": owner})
-    dashboard.setLidoLend(core_stub, {"from": owner})
-    return dashboard
-
-
-@pytest.fixture(scope="module")
-def core_stub(owner):
-    "A core with a controller registered for MARKET_ID, so the market-existence check resolves."
-    controller = LidoLendMarketControllerStub.deploy({"from": owner})
-    core = LidoLendCoreStub.deploy({"from": owner})
-    core.setMarketController(MARKET_ID, controller, {"from": owner})
-    return core
+def dashboard_stub(owner):
+    return RiskStewardDashboardStub.deploy({"from": owner})
 
 
 @pytest.fixture(scope="module")
@@ -54,10 +41,16 @@ def test_create_evm_script_zero_steward(owner, factory):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, ZERO_ADDRESS))
 
 
-def test_create_evm_script_market_not_found(owner, factory, stranger):
-    "Must revert with 'MARKET_NOT_FOUND' if the core has no controller for the market id"
-    with reverts("MARKET_NOT_FOUND"):
-        factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
+def test_create_evm_script_before_market_activation(owner, dashboard_stub, factory, stranger):
+    "Must allow a steward to be configured before the market is activated"
+    assert factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger)) == encode_call_script(
+        [
+            (
+                dashboard_stub.address,
+                dashboard_stub.addMarketSteward.encode_input(UNKNOWN_MARKET_ID, stranger),
+            )
+        ]
+    )
 
 
 def test_create_evm_script_already_steward(owner, dashboard_stub, factory, stranger):

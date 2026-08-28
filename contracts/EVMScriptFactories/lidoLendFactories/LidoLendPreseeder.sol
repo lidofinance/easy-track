@@ -3,15 +3,19 @@
 
 pragma solidity 0.8.6;
 
+import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC20/IERC20.sol";
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/token/ERC20/utils/SafeERC20.sol";
 import "../../interfaces/ILidoLend.sol";
 
 /// @notice Holds externally funded loan tokens to preseed Lido Lend markets and their vaults
 /// @dev Minted shares are locked at PRESEED_RECIPIENT forever; unspent funds are recoverable
-///      by the recoverer via recoverERC20
-contract LidoLendPreseeder {
+///      by an ERC20_RECOVERER via recoverERC20
+contract LidoLendPreseeder is AccessControl {
     using SafeERC20 for IERC20;
+
+    bytes32 public constant ERC20_RECOVERER = keccak256("ERC20_RECOVERER");
+    bytes32 public constant EXECUTOR_ROLE = keccak256("EXECUTOR_ROLE");
 
     /// @notice Emitted when ERC20 tokens are recovered from this contract
     /// @param token Address of the recovered ERC20 token
@@ -30,6 +34,7 @@ contract LidoLendPreseeder {
     string private constant ERROR_VAULT_ASSET_MISMATCH = "VAULT_ASSET_MISMATCH";
     string private constant ERROR_VAULT_NOT_EMPTY = "VAULT_NOT_EMPTY";
     string private constant ERROR_INSUFFICIENT_ASSET_BALANCE = "INSUFFICIENT_ASSET_BALANCE";
+    string private constant ERROR_PRESEED_EXCEEDS_MAX_DEPOSIT = "PRESEED_EXCEEDS_MAX_DEPOSIT";
 
     uint256 private constant MARKET_VIRTUAL_SHARES = 1e6;
     uint256 private constant MIN_DEAD_DEPOSIT_SHARES = 1e9;
@@ -40,25 +45,11 @@ contract LidoLendPreseeder {
 
     /// @notice Address of the LidoLend core
     ILidoLend public immutable lidoLend;
-    /// @notice Address of the EasyTrack EVMScriptExecutor, the only allowed caller of preseedMarket
-    address public immutable evmScriptExecutor;
-    /// @notice Address allowed to recover ERC20 tokens held by this contract
-    address public immutable recoverer;
 
-    modifier onlyEVMScriptExecutor() {
-        require(msg.sender == evmScriptExecutor, "CALLER_IS_FORBIDDEN");
-        _;
-    }
-
-    modifier onlyRecoverer() {
-        require(msg.sender == recoverer, "CALLER_IS_FORBIDDEN");
-        _;
-    }
-
-    /// @notice Sets the immutable core, caller, and recoverer bindings
+    /// @notice Sets the immutable core and initial access-control roles
     /// @param _lidoLend Address of the LidoLend core
-    /// @param _evmScriptExecutor Address of the EasyTrack EVMScriptExecutor
-    /// @param _recoverer Address allowed to recover ERC20 tokens held by this contract
+    /// @param _evmScriptExecutor Initial holder of EXECUTOR_ROLE
+    /// @param _recoverer Initial holder of DEFAULT_ADMIN_ROLE and ERC20_RECOVERER
     constructor(
         ILidoLend _lidoLend,
         address _evmScriptExecutor,
@@ -68,8 +59,9 @@ contract LidoLendPreseeder {
         require(_evmScriptExecutor != address(0), "ZERO_EVM_SCRIPT_EXECUTOR");
         require(_recoverer != address(0), "ZERO_RECOVERER");
         lidoLend = _lidoLend;
-        evmScriptExecutor = _evmScriptExecutor;
-        recoverer = _recoverer;
+        _setupRole(DEFAULT_ADMIN_ROLE, _recoverer);
+        _setupRole(EXECUTOR_ROLE, _evmScriptExecutor);
+        _setupRole(ERC20_RECOVERER, _recoverer);
     }
 
     /// @notice Returns the loan token amounts preseedMarket will spend on the market and the vault
@@ -112,23 +104,27 @@ contract LidoLendPreseeder {
         require(vault.asset() == marketParams.loanToken, ERROR_VAULT_ASSET_MISMATCH);
 
         (uint256 marketSupplyAssets, uint256 vaultAssets) = previewPreseed(vault);
+        uint256 requiredAssets = marketSupplyAssets + vaultAssets;
         require(
-            IERC20(marketParams.loanToken).balanceOf(address(this)) >=
-                marketSupplyAssets + vaultAssets,
+            vault.maxDeposit(PRESEED_RECIPIENT) >= requiredAssets,
+            ERROR_PRESEED_EXCEEDS_MAX_DEPOSIT
+        );
+        require(
+            IERC20(marketParams.loanToken).balanceOf(address(this)) >= requiredAssets,
             ERROR_INSUFFICIENT_ASSET_BALANCE
         );
     }
 
     /// @notice Preseeds a just-created empty market and its empty vault with dust shares locked
     ///         at PRESEED_RECIPIENT
-    /// @dev Only callable by the EasyTrack EVMScriptExecutor. Pays with loan tokens held by this
+    /// @dev Only callable by an EXECUTOR_ROLE holder. Pays with loan tokens held by this
     ///      contract; guards against share-inflation attacks. Amounts are computed internally:
     ///      see previewPreseed. Market existence is enforced by the core's supply call
     /// @param marketParams Params of the created, still-empty market
     /// @param vault ERC-4626 wrapper of the market, must be empty and share its loan token
     function preseedMarket(MarketParams calldata marketParams, ILidoLendERC4626 vault)
         external
-        onlyEVMScriptExecutor
+        onlyRole(EXECUTOR_ROLE)
     {
         validatePreseed(marketParams, vault);
 
@@ -138,17 +134,25 @@ contract LidoLendPreseeder {
         IERC20(loanToken).safeIncreaseAllowance(address(lidoLend), marketSupplyAssets);
         lidoLend.supply(marketParams, 0, MIN_DEAD_DEPOSIT_SHARES, PRESEED_RECIPIENT, "");
 
+        uint256 requiredVaultShares = vault.previewDeposit(MIN_VAULT_ASSET_UNITS);
+        if (requiredVaultShares < MIN_DEAD_DEPOSIT_SHARES) {
+            requiredVaultShares = MIN_DEAD_DEPOSIT_SHARES;
+        }
         IERC20(loanToken).safeIncreaseAllowance(address(vault), vaultAssets);
         uint256 vaultShares = vault.deposit(vaultAssets, PRESEED_RECIPIENT);
-        require(vaultShares >= MIN_DEAD_DEPOSIT_SHARES, ERROR_VAULT_SHARES_TOO_LOW);
+        require(vaultShares >= requiredVaultShares, ERROR_VAULT_SHARES_TOO_LOW);
     }
 
     /// @notice Transfers ERC20 tokens held by this contract to the recipient
-    /// @dev Only callable by the recoverer
+    /// @dev Only callable by an ERC20_RECOVERER holder
     /// @param token Address of the ERC20 token to recover
     /// @param recipient Address to receive the tokens
     /// @param amount Amount of tokens to transfer
-    function recoverERC20(address token, address recipient, uint256 amount) external onlyRecoverer {
+    function recoverERC20(
+        address token,
+        address recipient,
+        uint256 amount
+    ) external onlyRole(ERC20_RECOVERER) {
         if (recipient == address(0)) revert ZeroRecipient();
         IERC20(token).safeTransfer(recipient, amount);
         emit ERC20Recovered(token, recipient, amount);

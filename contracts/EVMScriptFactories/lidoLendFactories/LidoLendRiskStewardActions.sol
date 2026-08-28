@@ -24,7 +24,6 @@ contract LidoLendRiskStewardActions is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_STEWARD = "ZERO_STEWARD";
     string private constant ERROR_STEWARD_ALREADY_ADDED = "STEWARD_ALREADY_ADDED";
     string private constant ERROR_STEWARD_NOT_FOUND = "STEWARD_NOT_FOUND";
-    string private constant ERROR_MARKET_NOT_FOUND = "MARKET_NOT_FOUND";
 
     // -------------
     // VARIABLES
@@ -100,8 +99,6 @@ contract LidoLendRiskStewardActions is TrustedCaller, IEVMScriptFactory {
         require(steward != address(0), ERROR_ZERO_STEWARD);
 
         IRiskStewardDashboard dashboard = IRiskStewardDashboard(riskStewardDashboard);
-        ILidoLend core = dashboard.LIDO_LEND();
-        require(core.marketController(marketId) != address(0), ERROR_MARKET_NOT_FOUND);
         require(!dashboard.isMarketSteward(marketId, steward), ERROR_STEWARD_ALREADY_ADDED);
 
         return
@@ -120,8 +117,6 @@ contract LidoLendRiskStewardActions is TrustedCaller, IEVMScriptFactory {
         (bytes32 marketId, address steward) = decodeRiskStewardPayload(_payload);
 
         IRiskStewardDashboard dashboard = IRiskStewardDashboard(riskStewardDashboard);
-        ILidoLend core = dashboard.LIDO_LEND();
-        require(core.marketController(marketId) != address(0), ERROR_MARKET_NOT_FOUND);
         require(dashboard.isMarketSteward(marketId, steward), ERROR_STEWARD_NOT_FOUND);
 
         return

@@ -96,6 +96,7 @@ def test_create_evm_script_same_config(owner, controller_stub, factory):
         ),
         ((10, 20, 30, 40, 50, 0, 30, 80, 90), "ZERO_MIN_ACTIVATION_AMOUNT"),
         ((10, 20, 0, 40, 50, 60, 30, 80, 90), "ZERO_MAX_DELAY_INFLOW"),
+        ((10, 20, 30, 61, 50, 60, 30, 80, 90), "INVALID_MIN_DEPOSIT_AMOUNT"),
         (
             (10, 20, 30, 40, 50, 60, 30, MAX_DELAY_DURATION + 1, 90),
             "MAX_DELAY_PER_STRIKE_EXCEEDED",

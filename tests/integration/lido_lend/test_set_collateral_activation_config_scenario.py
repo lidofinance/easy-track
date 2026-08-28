@@ -3,7 +3,7 @@ from eth_abi import encode
 
 from utils.lido_lend import COLLATERAL_ACTIVATION_CONFIG_ABI_TYPE as CONFIG_TYPE
 
-NEW_CONFIG = (600, 7200, 1000 * 10**18, 10 * 10**18, 3600, 10**16, 10800, 300, 150)
+NEW_CONFIG = (600, 7200, 1000 * 10**18, 10**15, 3600, 10**16, 10800, 300, 150)
 ACTION = 1
 
 

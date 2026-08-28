@@ -24,6 +24,7 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
     string private constant ERROR_SAME_SUSPECT_WINDOW = "SAME_SUSPECT_WINDOW";
     string private constant ERROR_SUSPECT_WINDOW_TOO_HIGH = "SUSPECT_WINDOW_TOO_HIGH";
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
+    string private constant ERROR_EMPTY_ACCOUNTS_LIST = "EMPTY_ACCOUNTS_LIST";
 
     // -------------
     // TYPES
@@ -36,7 +37,7 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         ReplaceGuardian,
         SetGuardiansQuorum,
         SetSuspectWindow,
-        UnbanAccount
+        UnbanAccounts
     }
 
     // -------------
@@ -78,8 +79,8 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         if (action == Action.SetSuspectWindow) {
             return _createSetSuspectWindowEVMScript(payload);
         }
-        if (action == Action.UnbanAccount) {
-            return _createUnbanAccountEVMScript(payload);
+        if (action == Action.UnbanAccounts) {
+            return _createUnbanAccountsEVMScript(payload);
         }
         revert(ERROR_INVALID_ACTION);
     }
@@ -154,13 +155,13 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         (marketId, newSuspectWindow) = abi.decode(_payload, (bytes32, uint256));
     }
 
-    /// @notice Decodes UnbanAccount payload: (bytes32[] marketIds, address account)
-    function decodeUnbanAccountPayload(bytes memory _payload)
+    /// @notice Decodes UnbanAccounts payload: (bytes32[] marketIds, address[] accounts)
+    function decodeUnbanAccountsPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32[] memory marketIds, address account)
+        returns (bytes32[] memory marketIds, address[] memory accounts)
     {
-        (marketIds, account) = abi.decode(_payload, (bytes32[], address));
+        (marketIds, accounts) = abi.decode(_payload, (bytes32[], address[]));
     }
 
     // ------------------
@@ -287,23 +288,36 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
             );
     }
 
-    function _createUnbanAccountEVMScript(bytes memory _payload)
+    function _createUnbanAccountsEVMScript(bytes memory _payload)
         private
         view
         returns (bytes memory)
     {
-        (bytes32[] memory marketIds, address account) = decodeUnbanAccountPayload(_payload);
+        (bytes32[] memory marketIds, address[] memory accounts) = decodeUnbanAccountsPayload(
+            _payload
+        );
         require(marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
+        require(accounts.length > 0, ERROR_EMPTY_ACCOUNTS_LIST);
 
+        // Duplicates are accepted: unban is idempotent, at the cost of extra gas and events.
         for (uint256 i = 0; i < marketIds.length; ++i) {
             _guardianSignalsOf(marketIds[i]);
+        }
+
+        bytes[] memory encodedCalldata = new bytes[](accounts.length);
+        for (uint256 i = 0; i < accounts.length; ++i) {
+            encodedCalldata[i] = abi.encode(marketIds, accounts[i]);
         }
 
         return
             EVMScriptCreator.createEVMScript(
                 lidoLendOwner,
                 ILidoLendOwner.unbanGuardianSignals.selector,
-                abi.encode(marketIds, account)
+                encodedCalldata
             );
+    }
+
+    function _guardianSignalsOf(bytes32 _marketId) private view returns (IGuardianSignals) {
+        return IGuardianSignals(_controllerOf(_marketId).guardianSignals());
     }
 }

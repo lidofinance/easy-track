@@ -56,6 +56,10 @@ interface ILidoLendERC4626 {
 
     function previewMint(uint256 shares) external view returns (uint256 assets);
 
+    function previewDeposit(uint256 assets) external view returns (uint256 shares);
+
+    function maxDeposit(address receiver) external view returns (uint256 maxAssets);
+
     function deposit(uint256 assets, address receiver) external returns (uint256 shares);
 }
 
@@ -125,7 +129,7 @@ interface ILidoLendMarketController {
         uint40 minActivationDelay;
         uint40 maxActivationDelay;
         uint128 maxDelayInflow;
-        uint128 activatingLockAmount;
+        uint128 minDepositAmount;
         uint40 activatingLockDuration;
         uint128 minActivationAmount;
         uint40 maxGuardiansQuorumDelay;
@@ -142,6 +146,12 @@ interface ILidoLendMarketController {
 
     function LIDO_LEND() external view returns (ILidoLend);
 
+    function MANAGER_ROLE() external view returns (bytes32);
+
+    function FREEZER_ROLE() external view returns (bytes32);
+
+    function UNFREEZER_ROLE() external view returns (bytes32);
+
     function PAUSER_ROLE() external view returns (bytes32);
 
     function hasRole(bytes32 role, address account) external view returns (bool);
@@ -157,6 +167,8 @@ interface ILidoLendMarketController {
     function settlementConfig() external view returns (SettlementConfig memory);
 
     function isFrozen() external view returns (bool);
+
+    function isPaused() external view returns (bool);
 }
 
 interface IIrmRouter {
@@ -168,7 +180,19 @@ interface IConfigurableIrm {
 }
 
 interface ICircuitBreaker {
+    function MIN_PAUSE_DURATION() external view returns (uint256);
+
+    function MAX_PAUSE_DURATION() external view returns (uint256);
+
+    function MIN_HEARTBEAT_INTERVAL() external view returns (uint256);
+
+    function MAX_HEARTBEAT_INTERVAL() external view returns (uint256);
+
     function registerPauser(address pausable, address newPauser) external;
+
+    function setPauseDuration(uint256 newPauseDuration) external;
+
+    function setHeartbeatInterval(uint256 newHeartbeatInterval) external;
 }
 
 interface IGuardianSignals {
@@ -205,14 +229,12 @@ interface IRiskStewardDashboard {
     function isMarketSteward(bytes32 marketId, address steward) external view returns (bool);
 }
 
-interface IExitBook {
-    function setServiceFee(address recipient, uint256 fee) external;
-}
+interface IMorphoExitBook {
+    function MORPHO() external view returns (ILidoLend);
 
-interface IMorphoExitBook is IExitBook {
     function setMarketAllowed(MarketParams calldata marketParams, bool allowed) external;
 }
 
-interface IErc4626ExitBook is IExitBook {
+interface IErc4626ExitBook {
     function setVaultAllowed(address vault, bool allowed) external;
 }

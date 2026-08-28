@@ -3,13 +3,13 @@
 
 pragma solidity 0.8.6;
 
-import "../../TrustedCaller.sol";
 import "../../libraries/EVMScriptCreator.sol";
 import "../../interfaces/IEVMScriptFactory.sol";
 import "../../interfaces/ILidoLend.sol";
+import "./LidoLendOwnerFactoryBase.sol";
 
 /// @notice Creates EVMScript to activate a deployed Lido Lend market
-contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
+contract LidoLendActivateMarket is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     struct ActivationParams {
         MarketParams marketParams;
         address irmConfig;
@@ -38,6 +38,10 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_MARKET_ALREADY_CREATED = "MARKET_ALREADY_CREATED";
     string private constant ERROR_CONTROLLER_MISMATCH = "CONTROLLER_MISMATCH";
     string private constant ERROR_CONTROLLER_CORE_MISMATCH = "CONTROLLER_CORE_MISMATCH";
+    string private constant ERROR_OWNER_NOT_MANAGER = "OWNER_NOT_MANAGER";
+    string private constant ERROR_DASHBOARD_NOT_MANAGER = "DASHBOARD_NOT_MANAGER";
+    string private constant ERROR_OWNER_NOT_UNFREEZER = "OWNER_NOT_UNFREEZER";
+    string private constant ERROR_DASHBOARD_NOT_FREEZER = "DASHBOARD_NOT_FREEZER";
     string private constant ERROR_CIRCUIT_BREAKER_NOT_PAUSER = "CIRCUIT_BREAKER_NOT_PAUSER";
 
     // -------------
@@ -52,8 +56,6 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     // VARIABLES
     // -------------
 
-    /// @notice Address of the LidoLendOwner facade
-    address public immutable lidoLendOwner;
     /// @notice Address of the IrmRouter
     address public immutable irmRouter;
     /// @notice Address of the configurable IRM used by this factory
@@ -77,8 +79,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         address _circuitBreaker,
         address _riskStewardDashboard,
         address _lidoLendPreseeder
-    ) TrustedCaller(_trustedCaller) {
-        lidoLendOwner = _lidoLendOwner;
+    ) LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner) {
         irmRouter = _irmRouter;
         configurableIrm = _configurableIrm;
         circuitBreaker = _circuitBreaker;
@@ -100,7 +101,7 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         onlyTrustedCaller(_creator)
         returns (bytes memory)
     {
-        ActivationParams memory params = _decodeEVMScriptCallData(_evmScriptCallData);
+        ActivationParams memory params = decodeEVMScriptCallData(_evmScriptCallData);
         _validateActivation(params);
         return _createActivationScript(params);
     }
@@ -109,11 +110,11 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
     /// @param _evmScriptCallData ABI-encoded ActivationParams
     /// @return params Decoded market activation and preseeding parameters
     function decodeEVMScriptCallData(bytes memory _evmScriptCallData)
-        external
+        public
         pure
         returns (ActivationParams memory params)
     {
-        return _decodeEVMScriptCallData(_evmScriptCallData);
+        return abi.decode(_evmScriptCallData, (ActivationParams));
     }
 
     // ------------------
@@ -165,14 +166,6 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         return EVMScriptCreator.createEVMScript(to, methodIds, callData);
     }
 
-    function _decodeEVMScriptCallData(bytes memory _evmScriptCallData)
-        private
-        pure
-        returns (ActivationParams memory params)
-    {
-        return abi.decode(_evmScriptCallData, (ActivationParams));
-    }
-
     function _validateActivation(ActivationParams memory params) private view {
         require(params.marketParams.loanToken != address(0), ERROR_ZERO_LOAN_TOKEN);
         require(params.marketParams.collateralToken != address(0), ERROR_ZERO_COLLATERAL_TOKEN);
@@ -185,11 +178,27 @@ contract LidoLendActivateMarket is TrustedCaller, IEVMScriptFactory {
         require(params.fee <= MAX_FEE, ERROR_MAX_FEE_EXCEEDED);
         require(params.marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
         bytes32 marketId = keccak256(abi.encode(params.marketParams));
-        ILidoLend core = ILidoLendOwner(lidoLendOwner).LIDO_LEND();
+        ILidoLend core = ILidoLend(lidoLend);
         require(core.market(marketId).lastUpdate == 0, ERROR_MARKET_ALREADY_CREATED);
         ILidoLendMarketController marketController = ILidoLendMarketController(params.controller);
         require(marketController.marketId() == marketId, ERROR_CONTROLLER_MISMATCH);
         require(marketController.LIDO_LEND() == core, ERROR_CONTROLLER_CORE_MISMATCH);
+        require(
+            marketController.hasRole(marketController.MANAGER_ROLE(), lidoLendOwner),
+            ERROR_OWNER_NOT_MANAGER
+        );
+        require(
+            marketController.hasRole(marketController.MANAGER_ROLE(), riskStewardDashboard),
+            ERROR_DASHBOARD_NOT_MANAGER
+        );
+        require(
+            marketController.hasRole(marketController.UNFREEZER_ROLE(), lidoLendOwner),
+            ERROR_OWNER_NOT_UNFREEZER
+        );
+        require(
+            marketController.hasRole(marketController.FREEZER_ROLE(), riskStewardDashboard),
+            ERROR_DASHBOARD_NOT_FREEZER
+        );
         require(
             marketController.hasRole(marketController.PAUSER_ROLE(), circuitBreaker),
             ERROR_CIRCUIT_BREAKER_NOT_PAUSER

@@ -45,16 +45,26 @@ _EXPECTED_SIGNATURES = {
         "applyIrmConfig((address,address,address,address,uint256),address)",
     ],
     "CircuitBreaker": [
+        "MIN_PAUSE_DURATION()",
+        "MAX_PAUSE_DURATION()",
+        "MIN_HEARTBEAT_INTERVAL()",
+        "MAX_HEARTBEAT_INTERVAL()",
         "registerPauser(address,address)",
+        "setPauseDuration(uint256)",
+        "setHeartbeatInterval(uint256)",
     ],
     "LidoLendMarketController": [
         "LIDO_LEND()",
+        "MANAGER_ROLE()",
+        "UNFREEZER_ROLE()",
+        "hasRole(bytes32,address)",
         "marketId()",
         "guardianSignals()",
         "hasInstantActivation(address)",
         "collateralActivationConfig()",
         "settlementConfig()",
         "isFrozen()",
+        "isPaused()",
     ],
     "GuardianSignals": [
         "addGuardian(address)",
@@ -74,11 +84,10 @@ _EXPECTED_SIGNATURES = {
         "isMarketSteward(bytes32,address)",
     ],
     "MorphoExitBook": [
-        "setServiceFee(address,uint256)",
+        "MORPHO()",
         "setMarketAllowed((address,address,address,address,uint256),bool)",
     ],
     "Erc4626ExitBook": [
-        "setServiceFee(address,uint256)",
         "setVaultAllowed(address,bool)",
     ],
 }
@@ -99,6 +108,20 @@ _EXPECTED_RETURN_STRUCTS = {
         "uint40",
     ],
     ("LidoLendMarketController", "settlementConfig"): ["uint16", "uint96", "uint96", "uint16"],
+}
+
+_EXPECTED_RETURN_STRUCT_NAMES = {
+    ("LidoLendMarketController", "collateralActivationConfig"): [
+        "minActivationDelay",
+        "maxActivationDelay",
+        "maxDelayInflow",
+        "minDepositAmount",
+        "activatingLockDuration",
+        "minActivationAmount",
+        "maxGuardiansQuorumDelay",
+        "delayPerStrike",
+        "delayPerSuspect",
+    ],
 }
 
 
@@ -143,3 +166,12 @@ def test_factory_read_struct_layout(abi_name, getter, expected_components):
     components = outputs[0]["components"] if len(outputs) == 1 and outputs[0]["type"].startswith("tuple") else outputs
     actual = [_canon_type(c) for c in components]
     assert actual == expected_components, f"{getter} struct layout drifted: {actual} != {expected_components}"
+
+
+@pytest.mark.parametrize(
+    "abi_name,getter,expected_names",
+    [(f, g, names) for (f, g), names in _EXPECTED_RETURN_STRUCT_NAMES.items()],
+)
+def test_factory_read_struct_names(abi_name, getter, expected_names):
+    fn = next(e for e in _load_abi(abi_name) if e.get("type") == "function" and e["name"] == getter)
+    assert [component["name"] for component in fn["outputs"][0]["components"]] == expected_names
