@@ -17,9 +17,10 @@ from brownie import (
         ),
         (LidoLendMarketManagerActions, "decodeSetSettlementConfigPayload", ["marketId", "newConfig"]),
         (LidoLendMarketManagerActions, "decodeSetSupplyCapPayload", ["marketId", "newCap"]),
+        (LidoLendMarketManagerActions, "decodeUnfreezeMarketsPayload", ["marketIds"]),
         (LidoLendGuardianActions, "decodeSetGuardiansQuorumPayload", ["marketId", "newQuorum"]),
         (LidoLendGuardianActions, "decodeSetSuspectWindowPayload", ["marketId", "newSuspectWindow"]),
-        (LidoLendGuardianActions, "decodeUnbanAccountsPayload", ["marketIds", "accounts"]),
+        (LidoLendGuardianActions, "decodeUnbanAccountsPayload", ["requests"]),
         (LidoLendCircuitBreakerActions, "decodeRegisterPauserPayload", ["marketId", "pauser"]),
         (LidoLendCircuitBreakerActions, "decodeConfigValuePayload", ["value"]),
         (
@@ -50,4 +51,12 @@ def test_collateral_activation_decoder_component_names():
         "maxGuardiansQuorumDelay",
         "delayPerStrike",
         "delayPerSuspect",
+    ]
+
+
+def test_unban_request_decoder_component_names():
+    decoder = next(entry for entry in LidoLendGuardianActions.abi if entry.get("name") == "decodeUnbanAccountsPayload")
+    assert [component["name"] for component in decoder["outputs"][0]["components"]] == [
+        "account",
+        "marketIds",
     ]

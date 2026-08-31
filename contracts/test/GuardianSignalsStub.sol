@@ -16,10 +16,12 @@ contract GuardianSignalsStub {
 
     mapping(bytes32 => mapping(address => bool)) public isBanned;
     mapping(address => bool) public isGuardian;
+    mapping(address => address) private _delegates;
     mapping(bytes32 => mapping(address => bool)) public hasRole;
     bool public enforceRoles;
     uint256 private _quorum;
     uint256 private _guardianCount;
+    address[] private _guardians;
     uint256 private _suspectWindow;
     bytes32 public lastUnbannedMarketId;
     address public lastUnbannedAccount;
@@ -56,6 +58,22 @@ contract GuardianSignalsStub {
         _setGuardian(guardian, value);
     }
 
+    function setDelegate(address guardian, address delegate) external {
+        _delegates[guardian] = delegate;
+    }
+
+    function getGuardians()
+        external
+        view
+        returns (address[] memory guardians, address[] memory delegates)
+    {
+        guardians = _guardians;
+        delegates = new address[](guardians.length);
+        for (uint256 i = 0; i < guardians.length; ++i) {
+            delegates[i] = _delegates[guardians[i]];
+        }
+    }
+
     function unban(bytes32 marketId, address account)
         external
         onlyRoleWhenEnforced(ACCESS_RESTORER_ROLE)
@@ -76,7 +94,19 @@ contract GuardianSignalsStub {
     function _setGuardian(address guardian, bool value) internal {
         if (isGuardian[guardian] == value) return;
         isGuardian[guardian] = value;
-        _guardianCount = value ? _guardianCount + 1 : _guardianCount - 1;
+        if (value) {
+            _guardians.push(guardian);
+            _guardianCount += 1;
+            return;
+        }
+        for (uint256 i = 0; i < _guardians.length; ++i) {
+            if (_guardians[i] == guardian) {
+                _guardians[i] = _guardians[_guardians.length - 1];
+                _guardians.pop();
+                break;
+            }
+        }
+        _guardianCount -= 1;
     }
 
     function getGuardianCount() external view returns (uint256) {

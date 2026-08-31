@@ -22,7 +22,7 @@ contract LidoLendCircuitBreakerActions is LidoLendFactoryBase, IEVMScriptFactory
     // -------------
 
     string private constant ERROR_INVALID_ACTION = "INVALID_ACTION";
-    string private constant ERROR_ZERO_CONTROLLER = "ZERO_CONTROLLER";
+    string private constant ERROR_CIRCUIT_BREAKER_NOT_PAUSER = "CIRCUIT_BREAKER_NOT_PAUSER";
     string private constant ERROR_PAUSE_DURATION_OUT_OF_RANGE = "PAUSE_DURATION_OUT_OF_RANGE";
     string private constant ERROR_HEARTBEAT_INTERVAL_OUT_OF_RANGE =
         "HEARTBEAT_INTERVAL_OUT_OF_RANGE";
@@ -104,8 +104,13 @@ contract LidoLendCircuitBreakerActions is LidoLendFactoryBase, IEVMScriptFactory
         returns (bytes memory)
     {
         (bytes32 marketId, address pauser) = decodeRegisterPauserPayload(_payload);
-        ILidoLendMarketController marketController = _marketController(marketId);
-        require(address(marketController) != address(0), ERROR_ZERO_CONTROLLER);
+        ILidoLendMarketController marketController = _getMarketControllerOrRevert(marketId);
+        if (pauser != address(0)) {
+            require(
+                marketController.hasRole(marketController.PAUSER_ROLE(), circuitBreaker),
+                ERROR_CIRCUIT_BREAKER_NOT_PAUSER
+            );
+        }
 
         return
             EVMScriptCreator.createEVMScript(

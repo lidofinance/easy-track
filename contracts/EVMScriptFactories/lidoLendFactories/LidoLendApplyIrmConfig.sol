@@ -16,6 +16,7 @@ contract LidoLendApplyIrmConfig is LidoLendFactoryBase, IEVMScriptFactory {
 
     string private constant ERROR_ZERO_IRM_CONFIG = "ZERO_IRM_CONFIG";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
+    string private constant ERROR_IRM_NOT_ACTIVE = "IRM_NOT_ACTIVE";
     string private constant ERROR_MARKET_PAUSED = "MARKET_PAUSED";
 
     // -------------
@@ -25,7 +26,7 @@ contract LidoLendApplyIrmConfig is LidoLendFactoryBase, IEVMScriptFactory {
     /// @notice Address of the domain's IrmRouter committed to every supported market id
     address public immutable irmRouter;
     /// @notice Address of the domain's AdaptiveCurveIrm singleton
-    address public immutable adaptiveCurveIrm;
+    address public immutable configurableIrm;
 
     // -------------
     // CONSTRUCTOR
@@ -35,10 +36,10 @@ contract LidoLendApplyIrmConfig is LidoLendFactoryBase, IEVMScriptFactory {
         address _trustedCaller,
         address _lidoLend,
         address _irmRouter,
-        address _adaptiveCurveIrm
+        address _configurableIrm
     ) LidoLendFactoryBase(_trustedCaller, _lidoLend) {
         irmRouter = _irmRouter;
-        adaptiveCurveIrm = _adaptiveCurveIrm;
+        configurableIrm = _configurableIrm;
     }
 
     // -------------
@@ -61,11 +62,9 @@ contract LidoLendApplyIrmConfig is LidoLendFactoryBase, IEVMScriptFactory {
         MarketParams memory marketParams = ILidoLend(lidoLend).idToMarketParams(marketId);
         require(marketParams.irm != address(0), ERROR_MARKET_NOT_FOUND);
         require(marketParams.irm == irmRouter, ERROR_IRM_NOT_ROUTER);
-        ILidoLendMarketController marketController = _marketController(marketId);
-        require(
-            address(marketController) == address(0) || !marketController.isPaused(),
-            ERROR_MARKET_PAUSED
-        );
+        require(IIrmRouter(irmRouter).marketIrm(marketId) == configurableIrm, ERROR_IRM_NOT_ACTIVE);
+        ILidoLendMarketController marketController = _getMarketControllerOrRevert(marketId);
+        require(!marketController.isPaused(), ERROR_MARKET_PAUSED);
 
         address[] memory to = new address[](2);
         bytes4[] memory methodIds = new bytes4[](2);
@@ -75,7 +74,7 @@ contract LidoLendApplyIrmConfig is LidoLendFactoryBase, IEVMScriptFactory {
         methodIds[0] = ILidoLend.accrueInterest.selector;
         callData[0] = abi.encode(marketParams);
 
-        to[1] = adaptiveCurveIrm;
+        to[1] = configurableIrm;
         methodIds[1] = IConfigurableIrm.applyIrmConfig.selector;
         callData[1] = abi.encode(marketParams, irmConfig);
 

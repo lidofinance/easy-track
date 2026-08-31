@@ -39,10 +39,17 @@ _EXPECTED_SIGNATURES = {
         "unbanGuardianSignals(bytes32[],address)",
     ],
     "IrmRouter": [
+        "marketIrm(bytes32)",
         "setMarketIrm((address,address,address,address,uint256),address)",
     ],
     "AdaptiveCurveIrm": [
         "applyIrmConfig((address,address,address,address,uint256),address)",
+    ],
+    "AdaptiveCurveConfig": [
+        "getCurveParams()",
+    ],
+    "IrmConfigFactory": [
+        "getAdaptiveCurveConfig((int256,int256,int256,int256,int256,int256,uint256))",
     ],
     "CircuitBreaker": [
         "MIN_PAUSE_DURATION()",
@@ -72,6 +79,7 @@ _EXPECTED_SIGNATURES = {
         "setQuorum(uint256)",
         "getQuorum()",
         "getGuardianCount()",
+        "getGuardians()",
         "setSuspectWindow(uint256)",
         "getSuspectWindow()",
         "isGuardian(address)",
@@ -96,6 +104,15 @@ _EXPECTED_SIGNATURES = {
 # (file, getter) -> expected component types of the returned struct.
 _EXPECTED_RETURN_STRUCTS = {
     ("LidoLend", "market"): ["uint128", "uint128", "uint128", "uint128", "uint128", "uint128"],
+    ("AdaptiveCurveConfig", "getCurveParams"): [
+        "int256",
+        "int256",
+        "int256",
+        "int256",
+        "int256",
+        "int256",
+        "uint256",
+    ],
     ("LidoLendMarketController", "collateralActivationConfig"): [
         "uint40",
         "uint40",

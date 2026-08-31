@@ -324,7 +324,7 @@ def test_deploy_lido_lend_factories_scenario(
     apply_irm_config = instances["LidoLendApplyIrmConfig"]
     assert apply_irm_config.lidoLend() == core
     assert apply_irm_config.irmRouter() == addresses["irm_router"]
-    assert apply_irm_config.adaptiveCurveIrm() == addresses["adaptive_curve_irm"]
+    assert apply_irm_config.configurableIrm() == addresses["adaptive_curve_irm"]
 
     assert instances["LidoLendRiskStewardActions"].riskStewardDashboard() == addresses["risk_steward_dashboard"]
 

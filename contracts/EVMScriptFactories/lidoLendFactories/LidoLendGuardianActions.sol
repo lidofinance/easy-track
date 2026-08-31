@@ -17,6 +17,7 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
     string private constant ERROR_INVALID_ACTION = "INVALID_ACTION";
     string private constant ERROR_ZERO_GUARDIAN = "ZERO_GUARDIAN";
     string private constant ERROR_GUARDIAN_ALREADY_ADDED = "GUARDIAN_ALREADY_ADDED";
+    string private constant ERROR_ACCOUNT_IS_DELEGATE = "ACCOUNT_IS_DELEGATE";
     string private constant ERROR_MAX_GUARDIANS_REACHED = "MAX_GUARDIANS_REACHED";
     string private constant ERROR_INVALID_QUORUM = "INVALID_QUORUM";
     string private constant ERROR_GUARDIAN_NOT_FOUND = "GUARDIAN_NOT_FOUND";
@@ -24,11 +25,16 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
     string private constant ERROR_SAME_SUSPECT_WINDOW = "SAME_SUSPECT_WINDOW";
     string private constant ERROR_SUSPECT_WINDOW_TOO_HIGH = "SUSPECT_WINDOW_TOO_HIGH";
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
-    string private constant ERROR_EMPTY_ACCOUNTS_LIST = "EMPTY_ACCOUNTS_LIST";
+    string private constant ERROR_EMPTY_REQUESTS_LIST = "EMPTY_REQUESTS_LIST";
 
     // -------------
     // TYPES
     // -------------
+
+    struct UnbanRequest {
+        address account;
+        bytes32[] marketIds;
+    }
 
     /// @dev Action ordinals are part of the calldata ABI. Never reorder existing members; append only.
     enum Action {
@@ -155,13 +161,13 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         (marketId, newSuspectWindow) = abi.decode(_payload, (bytes32, uint256));
     }
 
-    /// @notice Decodes UnbanAccounts payload: (bytes32[] marketIds, address[] accounts)
+    /// @notice Decodes UnbanAccounts payload: UnbanRequest[]
     function decodeUnbanAccountsPayload(bytes memory _payload)
         public
         pure
-        returns (bytes32[] memory marketIds, address[] memory accounts)
+        returns (UnbanRequest[] memory requests)
     {
-        (marketIds, accounts) = abi.decode(_payload, (bytes32[], address[]));
+        requests = abi.decode(_payload, (UnbanRequest[]));
     }
 
     // ------------------
@@ -180,6 +186,7 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(!guardianSignals.isGuardian(guardian), ERROR_GUARDIAN_ALREADY_ADDED);
+        _requireNotDelegate(guardianSignals, guardian, address(0));
         uint256 guardianCount = guardianSignals.getGuardianCount();
         require(guardianCount < guardianSignals.MAX_GUARDIANS_COUNT(), ERROR_MAX_GUARDIANS_REACHED);
         require(newQuorum != 0 && newQuorum <= guardianCount + 1, ERROR_INVALID_QUORUM);
@@ -235,6 +242,7 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         IGuardianSignals guardianSignals = _guardianSignalsOf(marketId);
         require(guardianSignals.isGuardian(oldGuardian), ERROR_GUARDIAN_NOT_FOUND);
         require(!guardianSignals.isGuardian(newGuardian), ERROR_GUARDIAN_ALREADY_ADDED);
+        _requireNotDelegate(guardianSignals, newGuardian, oldGuardian);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -293,20 +301,16 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
         view
         returns (bytes memory)
     {
-        (bytes32[] memory marketIds, address[] memory accounts) = decodeUnbanAccountsPayload(
-            _payload
-        );
-        require(marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
-        require(accounts.length > 0, ERROR_EMPTY_ACCOUNTS_LIST);
+        UnbanRequest[] memory requests = decodeUnbanAccountsPayload(_payload);
+        require(requests.length > 0, ERROR_EMPTY_REQUESTS_LIST);
 
-        // Duplicates are accepted: unban is idempotent, at the cost of extra gas and events.
-        for (uint256 i = 0; i < marketIds.length; ++i) {
-            _guardianSignalsOf(marketIds[i]);
-        }
-
-        bytes[] memory encodedCalldata = new bytes[](accounts.length);
-        for (uint256 i = 0; i < accounts.length; ++i) {
-            encodedCalldata[i] = abi.encode(marketIds, accounts[i]);
+        bytes[] memory encodedCalldata = new bytes[](requests.length);
+        for (uint256 i = 0; i < requests.length; ++i) {
+            require(requests[i].marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
+            for (uint256 j = 0; j < requests[i].marketIds.length; ++j) {
+                _guardianSignalsOf(requests[i].marketIds[j]);
+            }
+            encodedCalldata[i] = abi.encode(requests[i].marketIds, requests[i].account);
         }
 
         return
@@ -318,6 +322,20 @@ contract LidoLendGuardianActions is LidoLendOwnerFactoryBase, IEVMScriptFactory 
     }
 
     function _guardianSignalsOf(bytes32 _marketId) private view returns (IGuardianSignals) {
-        return IGuardianSignals(_controllerOf(_marketId).guardianSignals());
+        return IGuardianSignals(_getMarketControllerOrRevert(_marketId).guardianSignals());
+    }
+
+    function _requireNotDelegate(
+        IGuardianSignals _guardianSignals,
+        address _account,
+        address _allowedGuardian
+    ) private view {
+        (address[] memory guardians, address[] memory delegates) = _guardianSignals.getGuardians();
+        for (uint256 i = 0; i < guardians.length; ++i) {
+            require(
+                delegates[i] != _account || guardians[i] == _allowedGuardian,
+                ERROR_ACCOUNT_IS_DELEGATE
+            );
+        }
     }
 }

@@ -39,6 +39,6 @@ def test_apply_irm_config_scenario(
     )
 
     config_after = adaptive_curve_irm.marketCurveConfig(market_id)
-    assert config_after == new_config.address
+    assert config_after == new_config
     assert config_after != config_before
     assert tuple(interface.AdaptiveCurveConfig(config_after).getCurveParams()) == new_curve_params

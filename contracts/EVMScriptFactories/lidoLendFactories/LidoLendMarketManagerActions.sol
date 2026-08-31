@@ -16,7 +16,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         SetCollateralActivationConfig,
         SetSettlementConfig,
         SetSupplyCap,
-        UnfreezeMarket,
+        UnfreezeMarkets,
         SetFee
     }
 
@@ -92,7 +92,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         if (action == Action.SetSupplyCap) {
             return _createSetSupplyCapEVMScript(payload);
         }
-        if (action == Action.UnfreezeMarket) {
+        if (action == Action.UnfreezeMarkets) {
             return _createUnfreezeMarketsEVMScript(payload);
         }
         if (action == Action.SetFee) {
@@ -163,8 +163,8 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         (marketId, newCap) = abi.decode(_payload, (bytes32, uint256));
     }
 
-    /// @notice Decodes an UnfreezeMarket payload
-    function decodeUnfreezeMarketPayload(bytes memory _payload)
+    /// @notice Decodes an UnfreezeMarkets payload
+    function decodeUnfreezeMarketsPayload(bytes memory _payload)
         public
         pure
         returns (bytes32[] memory marketIds)
@@ -195,7 +195,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         );
         require(caller != address(0), ERROR_ZERO_CALLER);
 
-        ILidoLendMarketController marketController = _controllerOf(marketId);
+        ILidoLendMarketController marketController = _getMarketControllerOrRevert(marketId);
         require(
             marketController.hasInstantActivation(caller) != enabled,
             ERROR_SAME_INSTANT_ACTIVATION_STATUS
@@ -218,7 +218,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
             bytes32 marketId,
             ILidoLendMarketController.CollateralActivationConfig memory newCfg
         ) = decodeSetCollateralActivationConfigPayload(_payload);
-        ILidoLendMarketController marketController = _controllerOf(marketId);
+        ILidoLendMarketController marketController = _getMarketControllerOrRevert(marketId);
 
         _validateCollateralActivationConfig(newCfg);
         require(
@@ -244,7 +244,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
             bytes32 marketId,
             ILidoLendMarketController.SettlementConfig memory newConfig
         ) = decodeSetSettlementConfigPayload(_payload);
-        ILidoLendMarketController marketController = _controllerOf(marketId);
+        ILidoLendMarketController marketController = _getMarketControllerOrRevert(marketId);
 
         require(
             newConfig.sliceFloorBps <= BPS && newConfig.ltvStepBps <= BPS,
@@ -271,7 +271,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     {
         (bytes32 marketId, uint256 newCap) = decodeSetSupplyCapPayload(_payload);
 
-        _controllerOf(marketId);
+        _getMarketControllerOrRevert(marketId);
 
         return
             EVMScriptCreator.createEVMScript(
@@ -286,12 +286,15 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
         view
         returns (bytes memory)
     {
-        bytes32[] memory marketIds = decodeUnfreezeMarketPayload(_payload);
+        bytes32[] memory marketIds = decodeUnfreezeMarketsPayload(_payload);
         require(marketIds.length > 0, ERROR_EMPTY_MARKETS_LIST);
 
         bytes[] memory encodedCalldata = new bytes[](marketIds.length);
         for (uint256 i = 0; i < marketIds.length; ++i) {
-            require(_controllerOf(marketIds[i]).isFrozen(), ERROR_MARKET_IS_NOT_FROZEN);
+            require(
+                _getMarketControllerOrRevert(marketIds[i]).isFrozen(),
+                ERROR_MARKET_IS_NOT_FROZEN
+            );
             encodedCalldata[i] = abi.encode(marketIds[i]);
         }
 
