@@ -256,6 +256,7 @@ def _load_artifact_deployment(primary_name):
         "riskStewardDashboard": protocol["risk_steward_dashboard"],
         "irmRouter": protocol["irm_router"],
         "adaptiveCurveIrm": protocol["adaptive_curve_irm"],
+        "marketFactory": protocol["factory"],
     }
     exit_books_artifact = deployment["exit_books"]
     exit_books = exit_books_artifact.get("exit_books", {})
@@ -321,6 +322,7 @@ def lido_lend(
     LidoLendCoreStub,
     LidoLendOwnerStub,
     LidoLendMarketControllerStub,
+    LidoLendMarketFactoryStub,
     GuardianSignalsStub,
     RiskStewardDashboardStub,
     IrmRouterStub,
@@ -355,6 +357,7 @@ def lido_lend(
     dashboard = RiskStewardDashboardStub.deploy({"from": deployer})
     irm_router = IrmRouterStub.deploy({"from": deployer})
     curve = AdaptiveCurveIrmStub.deploy({"from": deployer})
+    market_factory = LidoLendMarketFactoryStub.deploy({"from": deployer})
     morpho = MorphoExitBookStub.deploy({"from": deployer})
     erc4626 = Erc4626ExitBookStub.deploy({"from": deployer})
     circuit_breaker = CircuitBreakerStub.deploy(_ZERO, {"from": deployer})
@@ -392,6 +395,7 @@ def lido_lend(
                 "riskStewardDashboard": dashboard,
                 "irmRouter": irm_router,
                 "adaptiveCurveIrm": curve,
+                "marketFactory": market_factory,
                 "morphoExitBook": morpho,
                 "erc4626ExitBook": erc4626,
                 "circuitBreaker": circuit_breaker,
@@ -419,6 +423,14 @@ def lido_lend(
     vault.setMarketId(deployment.market["id"], {"from": deployer})
     vault.setLidoLend(core, {"from": deployer})
     vault.setAsset(loan_token, {"from": deployer})
+    market_factory.setExpectedValidation(
+        controller,
+        deployment.market["id"],
+        guardian_signals,
+        vault,
+        _market_params(deployment.market),
+        {"from": deployer},
+    )
     morpho.setMarketVault(deployment.market["id"], vault, {"from": deployer})
     guardian_signals.addGuardian(bootstrap_guardian, {"from": deployer})
 
@@ -629,12 +641,14 @@ def activate_market(
         owner = lido_lend.contract("owner")
         irm_router = lido_lend.contract("irmRouter")
         adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
+        market_factory = lido_lend.contracts["marketFactory"]
         factory = deployer.deploy(
             LidoLendActivateMarket,
             trusted_caller,
             owner,
             irm_router,
             adaptive_curve_irm,
+            market_factory,
             circuit_breaker,
             dashboard,
             preseeder,

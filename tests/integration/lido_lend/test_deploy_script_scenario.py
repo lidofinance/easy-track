@@ -79,6 +79,7 @@ def test_selected_factory_only_requires_its_protocol_dependencies():
         "owner",
         "irm_router",
         "adaptive_curve_irm",
+        "market_factory",
         "risk_steward_dashboard",
         "circuit_breaker",
         "lido_lend_preseeder",
@@ -147,6 +148,7 @@ def test_deploy_script_reads_immutable_artifacts(lido_lend, trusted_caller, monk
         "owner": address("owner"),
         "irm_router": address("irmRouter"),
         "adaptive_curve_irm": address("adaptiveCurveIrm"),
+        "market_factory": address("marketFactory"),
         "circuit_breaker": address("circuitBreaker"),
         "risk_steward_dashboard": address("riskStewardDashboard"),
         "lido_lend_preseeder": trusted_caller.address,
@@ -215,6 +217,7 @@ def test_deploy_lido_lend_factories_scenario(
         "owner": address("owner"),
         "irm_router": address("irmRouter"),
         "adaptive_curve_irm": address("adaptiveCurveIrm"),
+        "market_factory": address("marketFactory"),
         "circuit_breaker": address("circuitBreaker"),
         "risk_steward_dashboard": address("riskStewardDashboard"),
         "lido_lend_preseeder": preseeder.address,
@@ -310,6 +313,7 @@ def test_deploy_lido_lend_factories_scenario(
     assert activation.lidoLendOwner() == owner
     assert activation.irmRouter() == addresses["irm_router"]
     assert activation.configurableIrm() == addresses["adaptive_curve_irm"]
+    assert activation.lidoLendMarketFactory() == addresses["market_factory"]
     assert activation.circuitBreaker() == addresses["circuit_breaker"]
     assert activation.riskStewardDashboard() == addresses["risk_steward_dashboard"]
     assert activation.lidoLendPreseeder() == preseeder

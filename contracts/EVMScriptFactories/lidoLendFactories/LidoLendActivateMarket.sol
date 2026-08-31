@@ -36,13 +36,6 @@ contract LidoLendActivateMarket is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     string private constant ERROR_MAX_FEE_EXCEEDED = "MAX_FEE_EXCEEDED";
     string private constant ERROR_IRM_NOT_ROUTER = "IRM_NOT_ROUTER";
     string private constant ERROR_MARKET_ALREADY_CREATED = "MARKET_ALREADY_CREATED";
-    string private constant ERROR_CONTROLLER_MISMATCH = "CONTROLLER_MISMATCH";
-    string private constant ERROR_CONTROLLER_CORE_MISMATCH = "CONTROLLER_CORE_MISMATCH";
-    string private constant ERROR_OWNER_NOT_MANAGER = "OWNER_NOT_MANAGER";
-    string private constant ERROR_DASHBOARD_NOT_MANAGER = "DASHBOARD_NOT_MANAGER";
-    string private constant ERROR_OWNER_NOT_UNFREEZER = "OWNER_NOT_UNFREEZER";
-    string private constant ERROR_DASHBOARD_NOT_FREEZER = "DASHBOARD_NOT_FREEZER";
-    string private constant ERROR_CIRCUIT_BREAKER_NOT_PAUSER = "CIRCUIT_BREAKER_NOT_PAUSER";
 
     // -------------
     // CONSTANTS
@@ -60,6 +53,8 @@ contract LidoLendActivateMarket is LidoLendOwnerFactoryBase, IEVMScriptFactory {
     address public immutable irmRouter;
     /// @notice Address of the configurable IRM used by this factory
     address public immutable configurableIrm;
+    /// @notice Address of the Lido Lend market deployment factory
+    address public immutable lidoLendMarketFactory;
     /// @notice Address of the CircuitBreaker instance
     address public immutable circuitBreaker;
     /// @notice Address of the RiskStewardDashboard instance
@@ -76,12 +71,14 @@ contract LidoLendActivateMarket is LidoLendOwnerFactoryBase, IEVMScriptFactory {
         address _lidoLendOwner,
         address _irmRouter,
         address _configurableIrm,
+        address _lidoLendMarketFactory,
         address _circuitBreaker,
         address _riskStewardDashboard,
         address _lidoLendPreseeder
     ) LidoLendOwnerFactoryBase(_trustedCaller, _lidoLendOwner) {
         irmRouter = _irmRouter;
         configurableIrm = _configurableIrm;
+        lidoLendMarketFactory = _lidoLendMarketFactory;
         circuitBreaker = _circuitBreaker;
         riskStewardDashboard = _riskStewardDashboard;
         lidoLendPreseeder = _lidoLendPreseeder;
@@ -180,32 +177,20 @@ contract LidoLendActivateMarket is LidoLendOwnerFactoryBase, IEVMScriptFactory {
         bytes32 marketId = keccak256(abi.encode(params.marketParams));
         ILidoLend core = ILidoLend(lidoLend);
         require(core.market(marketId).lastUpdate == 0, ERROR_MARKET_ALREADY_CREATED);
-        ILidoLendMarketController marketController = ILidoLendMarketController(params.controller);
-        require(marketController.marketId() == marketId, ERROR_CONTROLLER_MISMATCH);
-        require(marketController.LIDO_LEND() == core, ERROR_CONTROLLER_CORE_MISMATCH);
-        require(
-            marketController.hasRole(marketController.MANAGER_ROLE(), lidoLendOwner),
-            ERROR_OWNER_NOT_MANAGER
-        );
-        require(
-            marketController.hasRole(marketController.MANAGER_ROLE(), riskStewardDashboard),
-            ERROR_DASHBOARD_NOT_MANAGER
-        );
-        require(
-            marketController.hasRole(marketController.UNFREEZER_ROLE(), lidoLendOwner),
-            ERROR_OWNER_NOT_UNFREEZER
-        );
-        require(
-            marketController.hasRole(marketController.FREEZER_ROLE(), riskStewardDashboard),
-            ERROR_DASHBOARD_NOT_FREEZER
-        );
-        require(
-            marketController.hasRole(marketController.PAUSER_ROLE(), circuitBreaker),
-            ERROR_CIRCUIT_BREAKER_NOT_PAUSER
-        );
         ILidoLendPreseeder(lidoLendPreseeder).validatePreseed(
             params.marketParams,
             params.preseedVault
+        );
+        ILidoLendMarketController marketController = ILidoLendMarketController(params.controller);
+        ILidoLendMarketFactory(lidoLendMarketFactory).validateMarketController(
+            params.controller,
+            marketId,
+            marketController.guardianSignals()
+        );
+        ILidoLendMarketFactory(lidoLendMarketFactory).validateERC4626Wrapper(
+            address(params.preseedVault),
+            params.controller,
+            params.marketParams
         );
     }
 }

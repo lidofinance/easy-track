@@ -108,7 +108,7 @@ def _required_address_keys(factory_names):
     if selected & CIRCUIT_BREAKER_FACTORIES:
         keys.add("circuit_breaker")
     if "LidoLendActivateMarket" in selected:
-        keys.add("lido_lend_preseeder")
+        keys.update(("lido_lend_preseeder", "market_factory"))
     if selected & OWNER_FACTORIES:
         keys.add("owner")
     if selected & IRM_ROUTER_FACTORIES:
@@ -144,6 +144,7 @@ def _read_addresses(factory_names, artifacts_dir=None):
         "owner": protocol["owner_facade"],
         "irm_router": protocol["irm_router"],
         "adaptive_curve_irm": protocol["adaptive_curve_irm"],
+        "market_factory": protocol["factory"],
         "risk_steward_dashboard": protocol["risk_steward_dashboard"],
         "circuit_breaker": protocol["circuit_breaker"],
         "evm_script_executor": protocol["evm_script_executor"],
@@ -271,6 +272,7 @@ def _deployment_plan(a, factory_names=ALL_FACTORY_NAMES):
             a["owner"],
             a["irm_router"],
             a["adaptive_curve_irm"],
+            a["market_factory"],
             a["circuit_breaker"],
             a["risk_steward_dashboard"],
             a["lido_lend_preseeder"],

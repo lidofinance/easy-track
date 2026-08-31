@@ -82,7 +82,7 @@ ExitBookActions
 An empty list, an unknown name, or a duplicate is rejected before deployment.
 
 The script resolves only the protocol components used by the selected factories. `ActivateMarket` requires
-the protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER`; `CircuitBreakerActions` requires
+the protocol MarketFactory and RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER`; `CircuitBreakerActions` requires
 the shared CircuitBreaker. Activation still performs the initial pauser registration, while `CircuitBreakerActions`
 supports standalone registration, replacement, removal, pause-duration, and heartbeat-interval actions.
 
@@ -95,7 +95,7 @@ Grouped factories decode `abi.encode(Action, payload)`. Existing action ordinals
 | Selected factories | Required artifacts |
 | --- | --- |
 | All selections | `protocol.toml` and at least one `markets/*.toml` |
-| ActivateMarket | protocol RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER` |
+| ActivateMarket | protocol MarketFactory and RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER` |
 | CircuitBreakerActions | shared CircuitBreaker |
 | ExitBookActions | `exit-books.toml` |
 
