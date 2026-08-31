@@ -76,6 +76,20 @@ interface ILidoLendPreseeder {
     function preseedMarket(MarketParams calldata marketParams, ILidoLendERC4626 vault) external;
 }
 
+interface ILidoLendMarketFactory {
+    function validateMarketController(
+        address controller,
+        bytes32 marketId,
+        address guardianSignals
+    ) external view;
+
+    function validateERC4626Wrapper(
+        address erc4626Wrapper,
+        address controller,
+        MarketParams calldata marketParams
+    ) external view;
+}
+
 interface ILidoLendOwner {
     function LIDO_LEND() external view returns (ILidoLend);
 

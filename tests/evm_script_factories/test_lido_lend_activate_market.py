@@ -12,6 +12,7 @@ from brownie import (
     IrmRouterStub,
     AdaptiveCurveIrmStub,
     CircuitBreakerStub,
+    LidoLendMarketFactoryStub,
     LidoLendMarketControllerStub,
     MockERC20,
     RiskStewardDashboardStub,
@@ -34,6 +35,7 @@ CONTROLLER = f"0x{6:040x}"
 PAUSER_COMMITTEE = f"0x{7:040x}"
 STEWARD = f"0x{8:040x}"
 VAULT = f"0x{9:040x}"
+GUARDIAN_SIGNALS = f"0x{10:040x}"
 INITIAL_FEE = 10**17
 MAX_FEE = 25 * 10**16
 
@@ -150,6 +152,7 @@ def controller(
     c = LidoLendMarketControllerStub.deploy({"from": owner})
     c.setLidoLend(core_stub, {"from": owner})
     c.setMarketId(market_id, {"from": owner})
+    c.setGuardianSignals(GUARDIAN_SIGNALS, {"from": owner})
     c.grantRole(c.MANAGER_ROLE(), owner_stub, {"from": owner})
     c.grantRole(c.MANAGER_ROLE(), risk_steward_dashboard_stub, {"from": owner})
     c.grantRole(c.UNFREEZER_ROLE(), owner_stub, {"from": owner})
@@ -159,11 +162,26 @@ def controller(
 
 
 @pytest.fixture(scope="module")
+def market_factory_stub(owner, controller, market_id, market_params, vault_stub):
+    market_factory = LidoLendMarketFactoryStub.deploy({"from": owner})
+    market_factory.setExpectedValidation(
+        controller,
+        market_id,
+        GUARDIAN_SIGNALS,
+        vault_stub,
+        market_params,
+        {"from": owner},
+    )
+    return market_factory
+
+
+@pytest.fixture(scope="module")
 def factory(
     owner,
     owner_stub,
     irm_router_stub,
     adaptive_curve_irm_stub,
+    market_factory_stub,
     circuit_breaker_stub,
     risk_steward_dashboard_stub,
     preseeder,
@@ -173,6 +191,7 @@ def factory(
         owner_stub,
         irm_router_stub,
         adaptive_curve_irm_stub,
+        market_factory_stub,
         circuit_breaker_stub,
         risk_steward_dashboard_stub,
         preseeder,
@@ -184,6 +203,10 @@ def test_configurable_irm(factory, adaptive_curve_irm_stub):
     assert factory.configurableIrm() == adaptive_curve_irm_stub
 
 
+def test_lido_lend_market_factory(factory, market_factory_stub):
+    assert factory.lidoLendMarketFactory() == market_factory_stub
+
+
 def test_create_evm_script_called_by_stranger(stranger, factory):
     "Must revert with message 'CALLER_IS_FORBIDDEN' if creator isn't trustedCaller"
     calldata = create_calldata(MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, PAUSER_COMMITTEE, False)
@@ -192,7 +215,7 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
 
 
 @pytest.mark.parametrize(
-    "market_params,irm_config,controller,steward,pauser,error",
+    "invalid_market_params,irm_config,controller_address,steward,pauser,error",
     [
         (
             (ZERO_ADDRESS, COLLATERAL_TOKEN, ORACLE, IRM, LLTV),
@@ -224,9 +247,11 @@ def test_create_evm_script_called_by_stranger(stranger, factory):
         (MARKET_PARAMS, IRM_CONFIG, CONTROLLER, STEWARD, ZERO_ADDRESS, "ZERO_PAUSER_COMMITTEE"),
     ],
 )
-def test_create_evm_script_zero_address(owner, factory, market_params, irm_config, controller, steward, pauser, error):
+def test_create_evm_script_zero_address(
+    owner, factory, invalid_market_params, irm_config, controller_address, steward, pauser, error
+):
     "Must revert with the matching ZERO_* message if any required address is the zero address"
-    calldata = create_calldata(market_params, irm_config, controller, steward, pauser, False)
+    calldata = create_calldata(invalid_market_params, irm_config, controller_address, steward, pauser, False)
     with reverts(error):
         factory.createEVMScript(owner, calldata)
 
@@ -337,89 +362,24 @@ def test_create_evm_script_rejects_vault_failing_preseeder_checks(
         )
 
 
-def test_create_evm_script_controller_mismatch(owner, factory, market_params):
-    "Must revert with 'CONTROLLER_MISMATCH' if the controller does not belong to the market"
-    other = LidoLendMarketControllerStub.deploy({"from": owner})
-    other.setMarketId(keccak(b"other"), {"from": owner})
-    with reverts("CONTROLLER_MISMATCH"):
-        factory.createEVMScript(
-            owner, create_calldata(market_params, IRM_CONFIG, other.address, STEWARD, PAUSER_COMMITTEE, False)
-        )
-
-
-def test_create_evm_script_controller_core_mismatch(owner, factory, market_id, market_params, circuit_breaker_stub):
-    "Must reject a controller bound to another Lido Lend core"
-    wrong_core = LidoLendCoreStub.deploy({"from": owner})
-    other = LidoLendMarketControllerStub.deploy({"from": owner})
-    other.setLidoLend(wrong_core, {"from": owner})
-    other.setMarketId(market_id, {"from": owner})
-    other.grantRole(other.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
-
-    with reverts("CONTROLLER_CORE_MISMATCH"):
-        factory.createEVMScript(
-            owner, create_calldata(market_params, IRM_CONFIG, other.address, STEWARD, PAUSER_COMMITTEE, False)
-        )
-
-
-def test_create_evm_script_circuit_breaker_without_pauser_role(
-    owner,
-    LidoLendActivateMarket,
-    CircuitBreakerStub,
-    owner_stub,
-    irm_router_stub,
-    adaptive_curve_irm_stub,
-    circuit_breaker_stub,
-    risk_steward_dashboard_stub,
-    preseeder,
-    controller,
-    market_params,
-):
-    "Must reject a CircuitBreaker with the right ADMIN but no PAUSER_ROLE on the controller."
-    wrong_circuit_breaker = CircuitBreakerStub.deploy(circuit_breaker_stub.ADMIN(), {"from": owner})
-    factory = LidoLendActivateMarket.deploy(
-        owner,
-        owner_stub,
-        irm_router_stub,
-        adaptive_curve_irm_stub,
-        wrong_circuit_breaker,
-        risk_steward_dashboard_stub,
-        preseeder,
-        {"from": owner},
-    )
-
-    with reverts("CIRCUIT_BREAKER_NOT_PAUSER"):
-        factory.createEVMScript(
-            owner,
-            create_calldata(market_params, IRM_CONFIG, controller.address, STEWARD, PAUSER_COMMITTEE, False),
-        )
-
-
 @pytest.mark.parametrize(
-    "role_name,holder_name,error",
+    "setter,error",
     [
-        ("MANAGER_ROLE", "owner", "OWNER_NOT_MANAGER"),
-        ("MANAGER_ROLE", "dashboard", "DASHBOARD_NOT_MANAGER"),
-        ("UNFREEZER_ROLE", "owner", "OWNER_NOT_UNFREEZER"),
-        ("FREEZER_ROLE", "dashboard", "DASHBOARD_NOT_FREEZER"),
+        ("setRejectControllerValidation", "INVALID_CONTROLLER_VALIDATION"),
+        ("setRejectWrapperValidation", "INVALID_WRAPPER_VALIDATION"),
     ],
 )
-def test_create_evm_script_missing_controller_role(
+def test_create_evm_script_uses_market_factory_validation(
     owner,
     factory,
-    owner_stub,
-    risk_steward_dashboard_stub,
+    market_factory_stub,
     controller,
     market_params,
     vault_stub,
-    role_name,
-    holder_name,
+    setter,
     error,
 ):
-    "Must reject a controller that is not wired to the fixed governance and risk-management contracts."
-    holder = owner_stub if holder_name == "owner" else risk_steward_dashboard_stub
-    role = getattr(controller, role_name)()
-    controller.revokeRole(role, holder, {"from": owner})
-
+    getattr(market_factory_stub, setter)(True, {"from": owner})
     with reverts(error):
         factory.createEVMScript(
             owner,
@@ -433,8 +393,7 @@ def test_create_evm_script_missing_controller_role(
                 vault=vault_stub.address,
             ),
         )
-
-    controller.grantRole(role, holder, {"from": owner})
+    getattr(market_factory_stub, setter)(False, {"from": owner})
 
 
 @pytest.mark.parametrize("enable_settlement", [False, True])
