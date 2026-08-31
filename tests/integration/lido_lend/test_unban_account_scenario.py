@@ -6,15 +6,15 @@ BANNED_ACCOUNTS = ["0x" + "55" * 20, "0x" + "56" * 20]
 ACTION = 5
 
 
-def create_calldata(market_ids, accounts):
-    payload = encode(["bytes32[]", "address[]"], [market_ids, accounts])
+def create_calldata(requests):
+    payload = encode(["(address,bytes32[])[]"], [requests])
     return "0x" + encode(["uint8", "bytes"], [ACTION, payload]).hex()
 
 
 def test_unban_account_multi_market_scenario(
     lido_lend, created_markets, easy_track, deployer, trusted_caller, admin, permission, register_factory, enact_motion
 ):
-    "A single motion lifts multiple accounts' bans across two markets with separate GuardianSignals registries."
+    "A motion lifts only the account-market pairs named in each request."
     if lido_lend.easy_track:
         if len(lido_lend.markets) < 2:
             raise pytest.UsageError("artifact mode requires at least two markets for the cross-market scenario")
@@ -51,13 +51,18 @@ def test_unban_account_multi_market_scenario(
     factory = deployer.deploy(LidoLendGuardianActions, trusted_caller, owner)
     # One permission for the facade covers every market the batch touches — no per-registry enumeration.
     register_factory(factory, permission((owner, owner.unbanGuardianSignals)))
+    requests = [
+        (BANNED_ACCOUNTS[0], [market_id_1]),
+        (BANNED_ACCOUNTS[1], [market_id_2]),
+    ]
     enact_motion(
         easy_track,
         factory,
-        create_calldata([market_id_1, market_id_2], BANNED_ACCOUNTS),
+        create_calldata(requests),
         trusted_caller,
     )
 
-    for account in BANNED_ACCOUNTS:
-        assert not gs1.isBanned(market_id_1, account)
-        assert not gs2.isBanned(market_id_2, account)
+    assert not gs1.isBanned(market_id_1, BANNED_ACCOUNTS[0])
+    assert not gs2.isBanned(market_id_2, BANNED_ACCOUNTS[1])
+    assert gs1.isBanned(market_id_1, BANNED_ACCOUNTS[1])
+    assert gs2.isBanned(market_id_2, BANNED_ACCOUNTS[0])

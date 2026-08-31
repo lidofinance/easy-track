@@ -172,6 +172,8 @@ interface ILidoLendMarketController {
 }
 
 interface IIrmRouter {
+    function marketIrm(bytes32 marketId) external view returns (address);
+
     function setMarketIrm(MarketParams calldata marketParams, address irm) external;
 }
 
@@ -207,6 +209,11 @@ interface IGuardianSignals {
     function isGuardian(address account) external view returns (bool);
 
     function getGuardianCount() external view returns (uint256);
+
+    function getGuardians()
+        external
+        view
+        returns (address[] memory guardians, address[] memory delegates);
 
     function getQuorum() external view returns (uint256);
 

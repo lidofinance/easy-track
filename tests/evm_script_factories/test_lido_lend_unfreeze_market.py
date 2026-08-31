@@ -100,7 +100,7 @@ def test_decode_evm_script_call_data(factory):
     "Must decode EVMScript call data correctly"
     decoded_action, payload = factory.decodeEVMScriptCallData(create_calldata([MARKET_ID, SECOND_MARKET_ID]))
     assert decoded_action == ACTION
-    assert factory.decodeUnfreezeMarketPayload(payload) == [
+    assert factory.decodeUnfreezeMarketsPayload(payload) == [
         "0x" + MARKET_ID.hex(),
         "0x" + SECOND_MARKET_ID.hex(),
     ]

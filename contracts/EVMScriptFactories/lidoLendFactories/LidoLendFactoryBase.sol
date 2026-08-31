@@ -17,20 +17,12 @@ abstract contract LidoLendFactoryBase is TrustedCaller {
         lidoLend = _lidoLend;
     }
 
-    function _marketController(bytes32 _marketId)
-        internal
-        view
-        returns (ILidoLendMarketController)
-    {
-        return ILidoLendMarketController(ILidoLend(lidoLend).marketController(_marketId));
-    }
-
-    function _controllerOf(bytes32 _marketId)
+    function _getMarketControllerOrRevert(bytes32 _marketId)
         internal
         view
         returns (ILidoLendMarketController controller)
     {
-        controller = _marketController(_marketId);
+        controller = ILidoLendMarketController(ILidoLend(lidoLend).marketController(_marketId));
         require(address(controller) != address(0), ERROR_MARKET_NOT_FOUND);
     }
 }

@@ -15,6 +15,7 @@ from utils.evm_script import encode_call_script
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
 OLD_GUARDIAN = f"0x{5:040x}"
+OTHER_GUARDIAN = f"0x{6:040x}"
 ACTION = 2
 
 
@@ -99,6 +100,52 @@ def test_create_evm_script_new_already_guardian(
             owner,
             create_calldata(MARKET_ID, OLD_GUARDIAN, stranger),
         )
+
+
+def test_create_evm_script_new_guardian_is_other_guardian_delegate(
+    owner,
+    guardian_signals_stub,
+    factory,
+    stranger,
+):
+    "Must reject another guardian's delegate as the replacement"
+    guardian_signals_stub.setGuardian(OLD_GUARDIAN, True, {"from": owner})
+    guardian_signals_stub.setGuardian(OTHER_GUARDIAN, True, {"from": owner})
+    guardian_signals_stub.setDelegate(OTHER_GUARDIAN, stranger, {"from": owner})
+
+    with reverts("ACCOUNT_IS_DELEGATE"):
+        factory.createEVMScript(
+            owner,
+            create_calldata(MARKET_ID, OLD_GUARDIAN, stranger),
+        )
+
+
+def test_create_evm_script_allows_old_guardian_delegate(
+    owner,
+    owner_facade,
+    guardian_signals_stub,
+    factory,
+    stranger,
+):
+    "The owner clears oldGuardian's delegation before adding the replacement"
+    guardian_signals_stub.setGuardian(OLD_GUARDIAN, True, {"from": owner})
+    guardian_signals_stub.setDelegate(OLD_GUARDIAN, stranger, {"from": owner})
+
+    assert factory.createEVMScript(
+        owner,
+        create_calldata(MARKET_ID, OLD_GUARDIAN, stranger),
+    ) == encode_call_script(
+        [
+            (
+                owner_facade.address,
+                owner_facade.replaceGuardian.encode_input(
+                    MARKET_ID,
+                    OLD_GUARDIAN,
+                    stranger,
+                ),
+            )
+        ]
+    )
 
 
 @pytest.mark.parametrize("current_quorum", [0, 1])

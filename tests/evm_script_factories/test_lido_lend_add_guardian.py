@@ -14,6 +14,7 @@ from utils.evm_script import encode_call_script
 
 MARKET_ID = (1).to_bytes(32, "big")
 UNKNOWN_MARKET_ID = (2).to_bytes(32, "big")
+EXISTING_GUARDIAN = f"0x{7:040x}"
 ACTION = 0
 
 
@@ -79,6 +80,15 @@ def test_create_evm_script_already_guardian(owner, guardian_signals_stub, factor
     assert guardian_signals_stub.isGuardian(stranger)
 
     with reverts("GUARDIAN_ALREADY_ADDED"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 1))
+
+
+def test_create_evm_script_guardian_is_delegate(owner, guardian_signals_stub, factory, stranger):
+    "Must reject an account delegated by an existing guardian"
+    guardian_signals_stub.setGuardian(EXISTING_GUARDIAN, True, {"from": owner})
+    guardian_signals_stub.setDelegate(EXISTING_GUARDIAN, stranger, {"from": owner})
+
+    with reverts("ACCOUNT_IS_DELEGATE"):
         factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger, 1))
 
 

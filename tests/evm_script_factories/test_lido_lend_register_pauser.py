@@ -63,14 +63,21 @@ def test_create_evm_script_zero_pauser_unregisters(owner, circuit_breaker_stub, 
     )
 
 
-def test_create_evm_script_zero_controller(owner, factory, stranger):
+def test_create_evm_script_market_not_found(owner, factory, stranger):
     "Must reject a market id that resolves to the zero controller"
-    with reverts("ZERO_CONTROLLER"):
+    with reverts("MARKET_NOT_FOUND"):
         factory.createEVMScript(owner, create_calldata(UNKNOWN_MARKET_ID, stranger))
+
+
+def test_create_evm_script_circuit_breaker_not_pauser(owner, factory, stranger):
+    "Must reject registration when CircuitBreaker cannot pause the controller"
+    with reverts("CIRCUIT_BREAKER_NOT_PAUSER"):
+        factory.createEVMScript(owner, create_calldata(MARKET_ID, stranger))
 
 
 def test_create_evm_script(owner, circuit_breaker_stub, controller, factory, stranger):
     "Must register the supplied pauser for the controller resolved from the market id"
+    controller.grantRole(controller.PAUSER_ROLE(), circuit_breaker_stub, {"from": owner})
     calldata = create_calldata(MARKET_ID, stranger)
     evm_script = factory.createEVMScript(owner, calldata)
 
