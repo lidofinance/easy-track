@@ -163,9 +163,13 @@ Script requires next ENV variables to be set:
 
 ### Stablecoin top-up factories
 
-`AllowedRecipientsBuilder`, `AllowedRecipientsFactory` and `AllowedTokensRegistry` were audited and deployed to mainnet from the [`feature/top-up-allowed-tokens`](https://github.com/lidofinance/easy-track/tree/feature/top-up-allowed-tokens) branch, which contains the audited commit [`52b1b1d`](https://github.com/lidofinance/easy-track/commit/52b1b1d99531a7aa46d8474bef56b157b83f318a). The branch is read-only and is not merged into `develop`. Deploy these contracts only from the tip of that branch so the bytecode matches the audited deployment. The copies under `contracts/payouts/multi-token` differ only in import paths and exist for tests.
+Multi-token `AllowedRecipientsBuilder`, `AllowedRecipientsFactory` and `AllowedTokensRegistry` were audited and deployed to mainnet from the [`feature/top-up-allowed-tokens`](https://github.com/lidofinance/easy-track/tree/feature/top-up-allowed-tokens) branch, which contains the audited commit [`52b1b1d`](https://github.com/lidofinance/easy-track/commit/52b1b1d99531a7aa46d8474bef56b157b83f318a).
 
-New top-up setups are created through the deployed builder with `scripts/payouts/multi_token/create_full_setup.py` or `create_single_recipient_setup.py` and require no contract compilation.
+The branch is read-only and is not merged into `develop`. To keep the bytecode of these contracts identical to the audited version, deploy them only from the tip of that branch. The copies under `contracts/payouts/multi-token` differ only in import paths and exist for tests.
+
+The single-token `AllowedRecipientsBuilderSingleToken` and `AllowedRecipientsFactorySingleToken` can be deployed from `develop`, provided the optimizer is enabled in the Brownie configuration with 200 runs. This reproduces the bytecode of the existing deployments; the `SingleToken` suffix affects only the metadata hash.
+
+New top-up setups are created through the deployed builders with `create_full_setup.py` or `create_single_recipient_setup.py` under `scripts/payouts/single_token/` and `scripts/payouts/multi_token/`. They require no contract compilation and can be run from `develop`.
 
 ## Tests
 
