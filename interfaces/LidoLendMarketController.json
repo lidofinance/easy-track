@@ -422,6 +422,11 @@
         "internalType": "address"
       },
       {
+        "name": "supplyCap_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
         "name": "guardianSignals",
         "type": "address",
         "internalType": "contract IGuardianSignalsView"
@@ -1281,53 +1286,6 @@
   },
   {
     "type": "event",
-    "name": "CollateralDemoted",
-    "inputs": [
-      {
-        "name": "borrower",
-        "type": "address",
-        "indexed": true,
-        "internalType": "address"
-      },
-      {
-        "name": "amount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
-      },
-      {
-        "name": "position",
-        "type": "tuple",
-        "indexed": false,
-        "internalType": "struct CollateralActivationLib.Position",
-        "components": [
-          {
-            "name": "dust",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "activating",
-            "type": "uint128",
-            "internalType": "uint128"
-          },
-          {
-            "name": "activatingStart",
-            "type": "uint40",
-            "internalType": "uint40"
-          },
-          {
-            "name": "activatingDelay",
-            "type": "uint32",
-            "internalType": "uint32"
-          }
-        ]
-      }
-    ],
-    "anonymous": false
-  },
-  {
-    "type": "event",
     "name": "CollateralDrained",
     "inputs": [
       {
@@ -1674,8 +1632,19 @@
   },
   {
     "type": "error",
-    "name": "ActivationLockActive",
-    "inputs": []
+    "name": "ActivatingCollateralLocked",
+    "inputs": [
+      {
+        "name": "activating",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "lockDeadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -1689,8 +1658,61 @@
   },
   {
     "type": "error",
+    "name": "DepositTooSmall",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minDepositAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DustNotResolved",
+    "inputs": [
+      {
+        "name": "dust",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minActivationAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
     "name": "EmptyHeap",
     "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InactiveCollateralNotCleared",
+    "inputs": [
+      {
+        "name": "requested",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "inactive",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
   },
   {
     "type": "error",
@@ -1720,6 +1742,11 @@
   {
     "type": "error",
     "name": "InvalidMaxGuardiansQuorumDelay",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidMinDepositAmount",
     "inputs": []
   },
   {

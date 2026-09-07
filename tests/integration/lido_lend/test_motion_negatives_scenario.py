@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, web3, LidoLendGuardianActions, LidoLendMarketManagerActions
+from brownie import reverts, LidoLendGuardianActions, LidoLendMarketManagerActions
 from eth_abi import encode
 
 GUARDIAN_A = "0x" + "a1" * 20
@@ -24,16 +24,9 @@ def _assert_reverts_with_reason(method, reason, *args):
     with reverts(reason):
         method.call(*args)
 
-    method_args, tx_params = args[:-1], args[-1]
-    tx_hash = web3.eth.send_transaction(
-        {
-            "from": str(tx_params["from"]),
-            "to": method._address,
-            "data": method.encode_input(*method_args),
-            "gas": 60_000_000,
-        }
-    )
-    assert web3.eth.wait_for_transaction_receipt(tx_hash)["status"] == 0
+    # The reason is checked above: Brownie may not recover it from Anvil transaction traces.
+    with reverts():
+        method(*args)
 
 
 @pytest.fixture

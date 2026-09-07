@@ -564,7 +564,7 @@
     ],
     "outputs": [
       {
-        "name": "",
+        "name": "isAllowed",
         "type": "bool",
         "internalType": "bool"
       }

@@ -546,7 +546,7 @@
     ],
     "outputs": [
       {
-        "name": "",
+        "name": "isAllowed",
         "type": "bool",
         "internalType": "bool"
       }
@@ -862,7 +862,7 @@
     ],
     "outputs": [
       {
-        "name": "",
+        "name": "vault",
         "type": "address",
         "internalType": "contract IERC4626"
       }

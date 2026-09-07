@@ -210,17 +210,12 @@
   },
   {
     "type": "function",
-    "name": "increaseActivatingLock",
+    "name": "increaseActivatingLockDuration",
     "inputs": [
       {
         "name": "marketId",
         "type": "bytes32",
         "internalType": "Id"
-      },
-      {
-        "name": "newAmount",
-        "type": "uint128",
-        "internalType": "uint128"
       },
       {
         "name": "newDuration",
@@ -254,6 +249,24 @@
         "name": "newMaxGuardiansQuorumDelay",
         "type": "uint40",
         "internalType": "uint40"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "increaseMinDepositAmount",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "newMinDepositAmount",
+        "type": "uint128",
+        "internalType": "uint128"
       }
     ],
     "outputs": [],
@@ -395,19 +408,13 @@
   },
   {
     "type": "event",
-    "name": "ActivatingLockIncreased",
+    "name": "ActivatingLockDurationIncreased",
     "inputs": [
       {
         "name": "marketId",
         "type": "bytes32",
         "indexed": true,
         "internalType": "Id"
-      },
-      {
-        "name": "newAmount",
-        "type": "uint256",
-        "indexed": false,
-        "internalType": "uint256"
       },
       {
         "name": "newDuration",
@@ -489,6 +496,25 @@
         "type": "bool",
         "indexed": false,
         "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "MinDepositAmountIncreased",
+    "inputs": [
+      {
+        "name": "marketId",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "Id"
+      },
+      {
+        "name": "newMinDepositAmount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
       }
     ],
     "anonymous": false

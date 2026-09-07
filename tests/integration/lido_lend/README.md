@@ -76,6 +76,36 @@ otherwise Brownie starts the network command configured for `mainnet-fork`, whic
 `ATTACH_EXTERNAL_NODE` accepts `1`, `true`, `yes`, or `on`, case-insensitive. Leave it unset for the local stub
 run, where Brownie owns the node.
 
+### Using an existing provisioned fork
+
+If `make provision-fork` in `lido-lend-markets` has completed and its Anvil is still running on
+`http://127.0.0.1:8545`, use the resulting `deployed/fork` directory:
+
+```bash
+cd /path/to/easy-track
+
+env -u LIDO_LEND_PRESEEDER \
+    ATTACH_EXTERNAL_NODE=true \
+    LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-markets/deployed/fork \
+    poetry run brownie test tests/integration/lido_lend \
+    --network mainnet-fork -s -ra
+```
+
+Replace the paths with your checkout locations. The artifacts must belong to the deployment on the running
+node; files retained from a previous Anvil instance are not sufficient.
+
+- `env -u LIDO_LEND_PRESEEDER` removes an existing Preseeder override for this command only, allowing the
+  activation fixture to deploy and fund one when it runs.
+- `ATTACH_EXTERNAL_NODE=true` enables the suite's Brownie compatibility setup for an external Anvil.
+- `LIDO_LEND_ARTIFACTS_DIR` selects the deployed LL contracts instead of local stubs.
+- `--network mainnet-fork` uses the configured local endpoint; in this mode the node is Anvil.
+- `-s` shows test output; `-ra` includes reasons for skipped tests and other non-passing outcomes.
+
+The provisioning script activates its markets. Scenarios that need to activate an already activated market
+verify its activation state and then skip. Inspect the skip reasons: a skipped scenario is not an executed
+activation test. To exercise activation, use the manual deployment flow above without running
+`make activate-markets` before the tests.
+
 ## Useful focused run
 
 Activation only:
