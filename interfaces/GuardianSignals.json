@@ -519,6 +519,11 @@
             "internalType": "uint40"
           }
         ]
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
       }
     ],
     "outputs": [],
@@ -986,6 +991,12 @@
         "type": "uint256",
         "indexed": false,
         "internalType": "uint256"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "indexed": false,
+        "internalType": "bytes"
       }
     ],
     "anonymous": false
@@ -1301,6 +1312,11 @@
   },
   {
     "type": "error",
+    "name": "AccountIsDelegate",
+    "inputs": []
+  },
+  {
+    "type": "error",
     "name": "AlreadyGuardian",
     "inputs": []
   },
@@ -1312,6 +1328,11 @@
   {
     "type": "error",
     "name": "BlockInTheFuture",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DelegateIsGuardian",
     "inputs": []
   },
   {
