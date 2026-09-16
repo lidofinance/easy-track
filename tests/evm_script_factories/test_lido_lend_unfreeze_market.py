@@ -64,20 +64,13 @@ def test_create_evm_script_market_not_found(owner, controller_stub, factory):
         factory.createEVMScript(owner, create_calldata([MARKET_ID, UNKNOWN_MARKET_ID]))
 
 
-def test_create_evm_script_not_frozen(owner, controller_stub, factory):
-    "Must revert with message 'MARKET_IS_NOT_FROZEN' if the market is not currently frozen"
-    assert not controller_stub.isFrozen()
-
-    with reverts("MARKET_IS_NOT_FROZEN"):
-        factory.createEVMScript(owner, create_calldata([MARKET_ID]))
-
-
-def test_create_evm_script(owner, owner_facade, controller_stub, second_controller_stub, factory):
-    "Must create one unfreeze call per frozen market"
-    controller_stub.setFrozen(True, {"from": owner})
-    second_controller_stub.setFrozen(True, {"from": owner})
-    assert controller_stub.isFrozen()
-    assert second_controller_stub.isFrozen()
+@pytest.mark.parametrize("frozen,second_frozen", [(True, True), (False, False), (True, False), (False, True)])
+def test_create_evm_script(
+    owner, owner_facade, controller_stub, second_controller_stub, factory, frozen, second_frozen
+):
+    "Must create one unfreeze call per market regardless of its frozen status"
+    controller_stub.setFrozen(frozen, {"from": owner})
+    second_controller_stub.setFrozen(second_frozen, {"from": owner})
 
     evm_script = factory.createEVMScript(owner, create_calldata([MARKET_ID, SECOND_MARKET_ID]))
 
