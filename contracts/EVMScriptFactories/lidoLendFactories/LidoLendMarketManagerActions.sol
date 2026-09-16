@@ -44,7 +44,6 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
     string private constant ERROR_MAX_DELAY_PER_SUSPECT_EXCEEDED = "MAX_DELAY_PER_SUSPECT_EXCEEDED";
     string private constant ERROR_SETTLEMENT_CONFIG_OUT_OF_RANGE = "SETTLEMENT_CONFIG_OUT_OF_RANGE";
     string private constant ERROR_EMPTY_MARKETS_LIST = "EMPTY_MARKETS_LIST";
-    string private constant ERROR_MARKET_IS_NOT_FROZEN = "MARKET_IS_NOT_FROZEN";
     string private constant ERROR_FEE_ALREADY_SET = "FEE_ALREADY_SET";
     string private constant ERROR_MAX_FEE_EXCEEDED = "MAX_FEE_EXCEEDED";
 
@@ -291,10 +290,7 @@ contract LidoLendMarketManagerActions is LidoLendOwnerFactoryBase, IEVMScriptFac
 
         bytes[] memory encodedCalldata = new bytes[](marketIds.length);
         for (uint256 i = 0; i < marketIds.length; ++i) {
-            require(
-                _getMarketControllerOrRevert(marketIds[i]).isFrozen(),
-                ERROR_MARKET_IS_NOT_FROZEN
-            );
+            _getMarketControllerOrRevert(marketIds[i]);
             encodedCalldata[i] = abi.encode(marketIds[i]);
         }
 
