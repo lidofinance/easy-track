@@ -84,7 +84,7 @@ export ETHERSCAN_TOKEN=<etherscan_api_key>
 
 ### `deploy.py`
 
-Contains script to deploy main Easy Track contracts with EVM Script factories.
+Contains script to deploy main Easy Track contracts with EVM Script factories. After deployment renounces all roles from the deployer and checks that contracts and roles are set up correctly.
 Script requires next ENV variables to be set:
 
 - `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
@@ -93,10 +93,24 @@ Script requires next ENV variables to be set:
 - `REWARD_PROGRAMS_MULTISIG` - address allowed to create motions to add, remove or top up reward program
 - `PAUSE_ADDRESS` - address to grant PAUSE_ROLE
 
-Next optional variables can be set:
+Roles after deployment:
 
-- `UNPAUSE_ADDRESS` - address to grant UNPAUSE_ROLE
-- `CANCEL_ADDRESS` - address to grant CANCEL_ROLE
+- `DEFAULT_ADMIN_ROLE`, `PAUSE_ROLE`, `UNPAUSE_ROLE`, `CANCEL_ROLE` - Aragon Voting
+- `PAUSE_ROLE` - `PAUSE_ADDRESS`
+
+### `deploy_core_easy_track_contracts.py`
+
+Contains script to deploy `EasyTrack` and `EVMScriptExecutor` contracts without EVM Script factories. Addresses and Easy Track params are set in the script constants. After deployment renounces all roles from the deployer and checks that contracts and roles are set up correctly.
+Script requires next ENV variables to be set:
+
+- `DEPLOYER` - id of brownie's account which will deploy contracts. Might be skipped if run on `development` network.
+
+Roles after deployment:
+
+- `DEFAULT_ADMIN_ROLE` - `ADMIN_ADDRESS`, Aragon Voting by default, and `ADDITIONAL_ADMIN_ADDRESS` if set
+- `PAUSE_ROLE` - `PAUSER_ADDRESS` if set
+- `CANCEL_ROLE` - `CANCELLER_ADDRESS` if set
+- `UNPAUSE_ROLE` - no holder, the admin grants it on demand
 
 ### `deploy_vaults_factories_base.py`
 

@@ -39,6 +39,7 @@ def main():
     admin = ADMIN_ADDRESS or lido_contracts.aragon.voting
     governance_token = GOVERNANCE_TOKEN_ADDRESS or lido_contracts.ldo
     aragon_calls_script = ARAGON_CALLS_SCRIPT_ADDRESS or lido_contracts.aragon.calls_script
+    grants = easy_track_role_grants(admin, PAUSER_ADDRESS, CANCELLER_ADDRESS, ADDITIONAL_ADMIN_ADDRESS)
 
     print("Network Config")
     print(f"  - Current network: {active_network} (chain id: {chain.id})")
@@ -57,10 +58,11 @@ def main():
     print(f"  - Aragon CallsScript instance: {aragon_calls_script}")
     print()
 
-    print("Easy Track Optional Params")
-    print(f"  - Pauser address: {PAUSER_ADDRESS}")
-    print(f"  - Canceller address: {CANCELLER_ADDRESS}")
-    print(f"  - Easy Track Additional Admin: {ADDITIONAL_ADMIN_ADDRESS}")
+    print("Easy Track Roles After Deployment")
+    for role_name, holder in grants:
+        print(f"  - {role_name}: {holder}")
+    print("  - UNPAUSE_ROLE: no holder, the admin grants it on demand")
+    print("  - Deployer: renounces every role")
     print()
 
     print("Proceed? [y/n]: ")
@@ -73,68 +75,83 @@ def main():
 
     print("🚀 Deploying EasyTrack & EVMScriptExecutor contracts\n")
 
-    easy_track = deployment.deploy_easy_track(
-        admin=deployer,  # temporary set admin to deployer and renounce roles later
+    easy_track, evm_script_executor = deploy_core_easy_track_contracts(
+        admin=admin,
         governance_token=governance_token,
+        aragon_calls_script=aragon_calls_script,
         motion_duration=MOTION_DURATION,
         motions_count_limit=MOTIONS_COUNT_LIMIT,
         objections_threshold=OBJECTIONS_THRESHOLD,
+        tx_params=tx_params,
+        pauser=PAUSER_ADDRESS,
+        canceller=CANCELLER_ADDRESS,
+        additional_admin=ADDITIONAL_ADMIN_ADDRESS,
+    )
+
+    print(f"\n  🟢 Deployed EasyTrack instance: {easy_track}")
+    print(f"  🟢 Deployed EVMScriptExecutor instance: {evm_script_executor}\n")
+
+    print("✅ Contracts successfully deployed & validated!\n")
+
+
+def easy_track_role_grants(admin, pauser=None, canceller=None, additional_admin=None):
+    """Ordered (role_name, holder) pairs granted before the deployer renounces its own roles.
+
+    UNPAUSE_ROLE deliberately gets no holder: unpausing is a governance action, so the admin grants it on demand."""
+    grants = [("DEFAULT_ADMIN_ROLE", admin)]
+    if additional_admin is not None:
+        grants.append(("DEFAULT_ADMIN_ROLE", additional_admin))
+    if pauser is not None:
+        grants.append(("PAUSE_ROLE", pauser))
+    if canceller is not None:
+        grants.append(("CANCEL_ROLE", canceller))
+    return grants
+
+
+def deploy_core_easy_track_contracts(
+    admin,
+    governance_token,
+    aragon_calls_script,
+    motion_duration,
+    motions_count_limit,
+    objections_threshold,
+    tx_params,
+    pauser=None,
+    canceller=None,
+    additional_admin=None,
+):
+    deployer = tx_params["from"]
+    # the deployer is admin only while wiring the executor; every role is handed off below
+    easy_track = deployment.deploy_easy_track(
+        admin=deployer,
+        governance_token=governance_token,
+        motion_duration=motion_duration,
+        motions_count_limit=motions_count_limit,
+        objections_threshold=objections_threshold,
         tx_params=tx_params,
     )
     evm_script_executor = deployment.deploy_evm_script_executor(
         owner=admin, easy_track=easy_track, aragon_calls_script=aragon_calls_script, tx_params=tx_params
     )
 
-    print(f"  🟢 Deployed EasyTrack instance: {easy_track}")
-    print(f"  🟢 Deployed EVMScriptExecutor instance: {evm_script_executor}\n")
-
-    # grant permissions
-
-    pause_role = easy_track.PAUSE_ROLE()
-    cancel_role = easy_track.CANCEL_ROLE()
-    default_admin_role = easy_track.DEFAULT_ADMIN_ROLE()
-
-    easy_track.grantRole(default_admin_role, admin, tx_params)
-
-    if ADDITIONAL_ADMIN_ADDRESS is not None:
-        easy_track.grantRole(default_admin_role, ADDITIONAL_ADMIN_ADDRESS, tx_params)
-
-    if PAUSER_ADDRESS is not None:
-        easy_track.grantRole(pause_role, PAUSER_ADDRESS, tx_params)
-
-    if CANCELLER_ADDRESS is not None:
-        easy_track.grantRole(cancel_role, CANCELLER_ADDRESS, tx_params)
-
-    print("🏁 Renouncing permissions from the deployer...\n")
-
-    # renounce permissions from deployer
-
-    easy_track.renounceRole(pause_role, deployer, tx_params)
-    easy_track.renounceRole(cancel_role, deployer, tx_params)
-    easy_track.renounceRole(default_admin_role, deployer, tx_params)
-
-    # validate deployment
-    print("🔬 Validating the deployment & permissions...\n")
-
-    assert easy_track.motionDuration() == MOTION_DURATION
-    assert easy_track.motionsCountLimit() == MOTIONS_COUNT_LIMIT
-    assert easy_track.objectionsThreshold() == OBJECTIONS_THRESHOLD
-
-    # validate permissions layout
-
-    assert easy_track.hasRole(default_admin_role, admin)
-
-    if ADDITIONAL_ADMIN_ADDRESS is not None:
-        assert easy_track.hasRole(default_admin_role, ADDITIONAL_ADMIN_ADDRESS)
-
-    if PAUSER_ADDRESS is not None:
-        easy_track.hasRole(pause_role, PAUSER_ADDRESS)
-
-    if CANCELLER_ADDRESS is not None:
-        easy_track.hasRole(cancel_role, CANCELLER_ADDRESS)
-
-    assert not easy_track.hasRole(pause_role, deployer)
-    assert not easy_track.hasRole(cancel_role, deployer)
-    assert not easy_track.hasRole(default_admin_role, deployer)
-
-    print("✅ Contracts successfully deployed & validated!\n")
+    grants = easy_track_role_grants(admin, pauser, canceller, additional_admin)
+    receipts = deployment.handoff_easy_track_roles(
+        easy_track=easy_track,
+        deployer=deployer,
+        grants=grants,
+        tx_params=tx_params,
+    )
+    deployment.validate_easy_track_deployment(
+        easy_track,
+        evm_script_executor,
+        governance_token=governance_token,
+        aragon_calls_script=aragon_calls_script,
+        executor_owner=admin,
+        motion_duration=motion_duration,
+        motions_count_limit=motions_count_limit,
+        objections_threshold=objections_threshold,
+        expected_role_holders=deployment.expected_role_holders_from_grants(grants),
+        deployer=deployer,
+        receipts=[easy_track.tx, *receipts],
+    )
+    return easy_track, evm_script_executor
