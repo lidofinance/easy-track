@@ -1,10 +1,13 @@
-# Two profiles:
+# Three profiles:
 #   default   — the fork-based scenario suite (modern solc/EVM; only test/foundry is compiled,
 #               with its own modern-pragma interfaces). Run: `forge test` / `forge build`.
 #   contracts — the project contracts under contracts/ (solc 0.8.6, EVM "berlin"), so the
 #               EVMScriptFactories can be built and deployed with Foundry.
 #               Run: `FOUNDRY_PROFILE=contracts forge build`
 #                    `FOUNDRY_PROFILE=contracts forge script/create ...`
+#   unit      — the local unit suite under test/foundry/unit, compiled together with contracts/
+#               at solc 0.8.6 so tests deploy the real contracts and stubs with `new`.
+#               Run: `FOUNDRY_PROFILE=unit forge test`
 [profile.default]
 src = "test/foundry"
 test = "test/foundry"
@@ -16,6 +19,8 @@ evm_version = "prague"
 # Allow vm.readFile() to load the deployed-*.json artifacts from the repo root.
 fs_permissions = [{ access = "read", path = "./" }]
 remappings = ["forge-std/=node_modules/forge-std/src/"]
+# The unit suite pins solc 0.8.6 and belongs to [profile.unit].
+skip = ["test/foundry/unit/**"]
 
 [profile.contracts]
 src = "contracts"
@@ -29,5 +34,20 @@ solc = "0.8.6"
 evm_version = "berlin"
 optimizer = false
 remappings = ["OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"]
+
+[profile.unit]
+src = "contracts"
+test = "test/foundry/unit"
+skip = []
+out = "foundry-out/unit"
+cache_path = ".forge-cache/unit"
+libs = ["node_modules"]
+solc = "0.8.6"
+evm_version = "berlin"
+optimizer = false
+remappings = [
+    "forge-std/=node_modules/forge-std/src/",
+    "OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/",
+]
 
 # See https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

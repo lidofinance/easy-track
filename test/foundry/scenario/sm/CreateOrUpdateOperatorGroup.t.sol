@@ -1,21 +1,20 @@
 // SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
+
 pragma solidity ^0.8.25;
 
-import { EasyTrackScenarioBase } from "../../helpers/EasyTrackScenarioBase.sol";
-import {
-    IMetaRegistry,
-    IBaseModule,
-    IStakingRouter,
-    INodeOperatorsRegistry,
-    NodeOperatorManagementProperties
-} from "../../interfaces/External.sol";
-import { ICreateOrUpdateOperatorGroup } from "../../interfaces/Factories.sol";
+import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
+import {IBaseModule, IMetaRegistry, INodeOperatorsRegistry, IStakingRouter, NodeOperatorManagementProperties} from "test/foundry/interfaces/External.sol";
+import {ICreateOrUpdateOperatorGroup} from "test/foundry/interfaces/Factories.sol";
 
-/// @notice Deployed `CreateOrUpdateOperatorGroup:CM` (deployed-sm-<chain>.json): a motion creates a new
-///         MetaRegistry operator group, updates an existing one, or empties it.
-contract CreateOrUpdateOperatorGroupScenario is EasyTrackScenarioBase {
-    ICreateOrUpdateOperatorGroup internal factory;
+/// @notice The deployed `CreateOrUpdateOperatorGroup:CM` of `deployed-sm-<chain>.json`: a motion
+///         creates a MetaRegistry operator group, updates one or empties one
+contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
+    string internal constant NEW_GROUP_NAME = "scenario-group";
+    string internal constant INITIAL_GROUP_NAME = "initial-group";
+    string internal constant UPDATED_GROUP_NAME = "updated-group";
+    string internal constant CHANGED_GROUP_NAME = "changed-name";
+
     IMetaRegistry internal metaRegistry;
     IBaseModule internal module;
     INodeOperatorsRegistry internal externalModule;
@@ -23,164 +22,249 @@ contract CreateOrUpdateOperatorGroupScenario is EasyTrackScenarioBase {
 
     function setUp() public {
         _forkAndInitialize();
-        if (!forked) return;
-        factory = ICreateOrUpdateOperatorGroup(_factoryAddress(cfg.smArtifact, "CreateOrUpdateOperatorGroup:CM"));
+
+        ICreateOrUpdateOperatorGroup factory = ICreateOrUpdateOperatorGroup(
+            _factoryAddress(config.smArtifact, "CreateOrUpdateOperatorGroup:CM")
+        );
+        IStakingRouter stakingRouter = IStakingRouter(factory.stakingRouter());
         metaRegistry = IMetaRegistry(factory.metaRegistry());
         module = IBaseModule(factory.module());
-        IStakingRouter router = IStakingRouter(factory.stakingRouter());
         externalModuleId = factory.allowedExternalModuleId();
-        externalModule = INodeOperatorsRegistry(router.getStakingModule(externalModuleId).stakingModuleAddress);
-        subject = address(factory);
+        externalModule = INodeOperatorsRegistry(
+            stakingRouter.getStakingModule(externalModuleId).stakingModuleAddress
+        );
+
+        evmScriptFactory = address(factory);
         creator = factory.trustedCaller();
     }
 
-    function test_createsOperatorGroup() external onlyForked {
-        (uint64 subOperator, uint64 externalOperator) = _givenGroupMembers();
+    function testFork_CreatesOperatorGroup() external {
+        (uint64 subOperatorId, uint64 externalOperatorId) = _givenGroupMembers();
         uint256 groupsBefore = metaRegistry.getOperatorGroupsCount();
+        IMetaRegistry.OperatorGroup memory noGroup;
 
-        enact(_encodeNewGroup(subOperator, externalOperator));
+        _enact(
+            abi.encode(
+                metaRegistry.NO_GROUP_ID(),
+                noGroup,
+                _group(
+                    NEW_GROUP_NAME,
+                    subOperatorId,
+                    _externalOperators(externalModuleId, externalOperatorId)
+                )
+            )
+        );
 
-        uint256 newGroupId = metaRegistry.getOperatorGroupsCount();
-        assertEq(newGroupId, groupsBefore + 1, "operator group not created");
-        // both members now resolve to the new group
-        assertEq(metaRegistry.getNodeOperatorGroupId(subOperator), newGroupId, "sub operator not in group");
-        assertEq(_externalOperatorGroupId(externalOperator), newGroupId, "external operator not in group");
+        uint256 groupId = metaRegistry.getOperatorGroupsCount();
+        assertEq(groupId, groupsBefore + 1, "getOperatorGroupsCount");
+        assertEq(
+            metaRegistry.getNodeOperatorGroupId(subOperatorId),
+            groupId,
+            "getNodeOperatorGroupId"
+        );
+        assertEq(
+            _externalOperatorGroupId(externalOperatorId),
+            groupId,
+            "getExternalOperatorGroupId"
+        );
     }
 
-    function test_updatesOperatorGroupToNonEmpty() external onlyForked {
-        // A group with only the sub operator; the motion updates it to also include the external operator.
-        (uint256 groupId, IMetaRegistry.OperatorGroup memory current, uint64 subOperator, uint64 externalOperator) =
-            _givenExistingGroup(false);
-        assertEq(_externalOperatorGroupId(externalOperator), metaRegistry.NO_GROUP_ID(), "setup: external already grouped");
+    function testFork_UpdatesOperatorGroupToNonEmpty() external {
+        (
+            uint256 groupId,
+            uint64 subOperatorId,
+            uint64 externalOperatorId
+        ) = _givenGroupWithSubOperator();
+        IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
+        IMetaRegistry.OperatorGroup memory updated = _group(
+            UPDATED_GROUP_NAME,
+            subOperatorId,
+            _externalOperators(externalModuleId, externalOperatorId)
+        );
 
-        IMetaRegistry.SubNodeOperator[] memory subs = new IMetaRegistry.SubNodeOperator[](1);
-        subs[0] = IMetaRegistry.SubNodeOperator({ nodeOperatorId: subOperator, share: 10000 });
-        IMetaRegistry.ExternalOperator[] memory exts = new IMetaRegistry.ExternalOperator[](1);
-        exts[0] = _ext(externalOperator);
-        IMetaRegistry.OperatorGroup memory updated =
-            IMetaRegistry.OperatorGroup({ name: "updated-group", subNodeOperators: subs, externalOperators: exts });
+        _enact(abi.encode(groupId, current, updated));
 
-        enact(abi.encode(groupId, current, updated));
-
-        IMetaRegistry.OperatorGroup memory onchain = metaRegistry.getOperatorGroup(groupId);
-        assertEq(onchain.externalOperators.length, 1, "external operator not added");
-        assertEq(_externalOperatorGroupId(externalOperator), groupId, "external operator not in group");
-        assertEq(metaRegistry.getNodeOperatorGroupId(subOperator), groupId, "sub operator dropped");
+        assertEq(
+            metaRegistry.getOperatorGroup(groupId).externalOperators.length,
+            1,
+            "externalOperators.length"
+        );
+        assertEq(
+            _externalOperatorGroupId(externalOperatorId),
+            groupId,
+            "getExternalOperatorGroupId"
+        );
+        assertEq(
+            metaRegistry.getNodeOperatorGroupId(subOperatorId),
+            groupId,
+            "getNodeOperatorGroupId"
+        );
     }
 
-    function test_updatesOperatorGroupToEmpty() external onlyForked {
-        // A group with a sub + external operator; the motion empties it (frees both members).
-        (uint256 groupId, IMetaRegistry.OperatorGroup memory current, uint64 subOperator, uint64 externalOperator) =
-            _givenExistingGroup(true);
-        assertEq(metaRegistry.getNodeOperatorGroupId(subOperator), groupId, "setup: sub not grouped");
+    function testFork_UpdatesOperatorGroupToEmpty() external {
+        (
+            uint256 groupId,
+            uint64 subOperatorId,
+            uint64 externalOperatorId
+        ) = _givenGroupWithBothOperators();
+        IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
+        IMetaRegistry.OperatorGroup memory emptyGroup;
 
-        IMetaRegistry.OperatorGroup memory empty; // name "", no sub/external operators
+        _enact(abi.encode(groupId, current, emptyGroup));
 
-        enact(abi.encode(groupId, current, empty));
-
-        assertEq(metaRegistry.getNodeOperatorGroupId(subOperator), metaRegistry.NO_GROUP_ID(), "sub still grouped");
-        assertEq(_externalOperatorGroupId(externalOperator), metaRegistry.NO_GROUP_ID(), "external still grouped");
+        assertEq(
+            metaRegistry.getNodeOperatorGroupId(subOperatorId),
+            metaRegistry.NO_GROUP_ID(),
+            "getNodeOperatorGroupId"
+        );
+        assertEq(
+            _externalOperatorGroupId(externalOperatorId),
+            metaRegistry.NO_GROUP_ID(),
+            "getExternalOperatorGroupId"
+        );
     }
 
-    function test_updatesEmptyGroupToEmpty() external onlyForked {
-        (uint256 groupId, IMetaRegistry.OperatorGroup memory current, uint64 subOperator,) = _givenExistingGroup(true);
-        IMetaRegistry.OperatorGroup memory empty;
+    function testFork_UpdatesEmptyGroupToEmpty() external {
+        (uint256 groupId, uint64 subOperatorId, ) = _givenGroupWithBothOperators();
+        IMetaRegistry.OperatorGroup memory emptyGroup;
+        metaRegistry.createOrUpdateOperatorGroup(groupId, emptyGroup);
+        IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
 
-        // Empty the group, then apply an empty -> empty update (a no-op that must still validate/enact).
-        enact(abi.encode(groupId, current, empty));
-        IMetaRegistry.OperatorGroup memory nowEmpty = metaRegistry.getOperatorGroup(groupId);
-        enact(abi.encode(groupId, nowEmpty, empty));
+        // An empty -> empty update is a no-op the factory must still validate and Easy Track enact
+        _enact(abi.encode(groupId, current, emptyGroup));
 
-        assertEq(metaRegistry.getNodeOperatorGroupId(subOperator), metaRegistry.NO_GROUP_ID(), "sub grouped after empty->empty");
+        assertEq(
+            metaRegistry.getNodeOperatorGroupId(subOperatorId),
+            metaRegistry.NO_GROUP_ID(),
+            "getNodeOperatorGroupId"
+        );
     }
 
-    function test_revertsWhenCurrentGroupChangesBeforeEnact() external onlyForked {
-        (uint256 groupId, IMetaRegistry.OperatorGroup memory current, uint64 subOperator, uint64 externalOperator) =
-            _givenExistingGroup(false);
-
-        IMetaRegistry.SubNodeOperator[] memory subs = new IMetaRegistry.SubNodeOperator[](1);
-        subs[0] = IMetaRegistry.SubNodeOperator({ nodeOperatorId: subOperator, share: 10000 });
-        IMetaRegistry.ExternalOperator[] memory exts = new IMetaRegistry.ExternalOperator[](1);
-        exts[0] = _ext(externalOperator);
-        // an update motion committed to the current (sub-only) group definition
+    function testFork_RevertWhen_CurrentGroupChangesBeforeEnact() external {
+        (
+            uint256 groupId,
+            uint64 subOperatorId,
+            uint64 externalOperatorId
+        ) = _givenGroupWithSubOperator();
+        IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
         bytes memory callData = abi.encode(
             groupId,
             current,
-            IMetaRegistry.OperatorGroup({ name: "updated-group", subNodeOperators: subs, externalOperators: exts })
+            _group(
+                UPDATED_GROUP_NAME,
+                subOperatorId,
+                _externalOperators(externalModuleId, externalOperatorId)
+            )
         );
+        uint256 motionId = _createMotion(callData);
 
-        vm.prank(creator);
-        uint256 motionId = easyTrack.createMotion(subject, callData);
-
-        // rename the group so the committed `currentGroupInfo` no longer matches
+        // Rename the group so the committed current definition no longer matches
         metaRegistry.createOrUpdateOperatorGroup(
             groupId,
-            IMetaRegistry.OperatorGroup({
-                name: "changed-name",
-                subNodeOperators: subs,
-                externalOperators: new IMetaRegistry.ExternalOperator[](0)
-            })
+            _group(CHANGED_GROUP_NAME, subOperatorId, new IMetaRegistry.ExternalOperator[](0))
         );
 
-        vm.warp(block.timestamp + easyTrack.motionDuration() + 1);
-        vm.prank(makeAddr("stranger"));
+        _givenMotionDurationPassed();
+
+        vm.prank(stranger);
         vm.expectRevert("CURRENT_VALUES_MISMATCH");
         easyTrack.enactMotion(motionId, callData);
     }
 
-    // --- scenario helpers ---
+    /// @dev A fresh curated sub operator and a fresh legacy NOR external operator
+    function _givenGroupMembers()
+        private
+        returns (uint64 subOperatorId, uint64 externalOperatorId)
+    {
+        _givenRole(address(module), CREATE_NODE_OPERATOR_ROLE, address(this));
+        address subOperator = makeAddr("subOperator");
+        subOperatorId = uint64(
+            module.createNodeOperator(
+                subOperator,
+                NodeOperatorManagementProperties(subOperator, subOperator, false),
+                address(0)
+            )
+        );
 
-    /// @dev A fresh curated (sub) operator and a fresh legacy-NOR (external) operator.
-    function _givenGroupMembers() private returns (uint64 subOperator, uint64 externalOperator) {
-        _grantRole(address(module), "CREATE_NODE_OPERATOR_ROLE", address(this));
-        address subAddr = makeAddr("cm-sub-operator");
-        subOperator =
-            uint64(module.createNodeOperator(subAddr, NodeOperatorManagementProperties(subAddr, subAddr, false), address(0)));
-
-        vm.prank(cfg.agent);
-        externalOperator = uint64(externalModule.addNodeOperator("scenario-external", makeAddr("nor-external-reward")));
+        vm.prank(config.agent);
+        externalOperatorId = uint64(
+            externalModule.addNodeOperator("scenario-external", makeAddr("externalOperatorReward"))
+        );
     }
 
-    /// @dev Create a group directly via MetaRegistry (data prep) and return its id + current definition
-    ///      (the commit the update motion must match). `withExternal` adds the external operator too.
-    function _givenExistingGroup(bool withExternal)
+    /// @dev A group of fresh members holding only the sub operator
+    function _givenGroupWithSubOperator()
         private
-        returns (uint256 groupId, IMetaRegistry.OperatorGroup memory current, uint64 subOperator, uint64 externalOperator)
+        returns (
+            uint256 groupId,
+            uint64 subOperatorId,
+            uint64 externalOperatorId
+        )
     {
-        (subOperator, externalOperator) = _givenGroupMembers();
-        _grantRole(address(metaRegistry), "MANAGE_OPERATOR_GROUPS_ROLE", address(this));
+        (subOperatorId, externalOperatorId) = _givenGroupMembers();
+        groupId = _givenGroup(subOperatorId, new IMetaRegistry.ExternalOperator[](0));
 
-        IMetaRegistry.SubNodeOperator[] memory subs = new IMetaRegistry.SubNodeOperator[](1);
-        subs[0] = IMetaRegistry.SubNodeOperator({ nodeOperatorId: subOperator, share: 10000 });
-        IMetaRegistry.ExternalOperator[] memory exts = new IMetaRegistry.ExternalOperator[](withExternal ? 1 : 0);
-        if (withExternal) exts[0] = _ext(externalOperator);
+        assertEq(
+            _externalOperatorGroupId(externalOperatorId),
+            metaRegistry.NO_GROUP_ID(),
+            "setup: getExternalOperatorGroupId"
+        );
+    }
 
+    /// @dev A group of fresh members holding the sub operator and the external operator
+    function _givenGroupWithBothOperators()
+        private
+        returns (
+            uint256 groupId,
+            uint64 subOperatorId,
+            uint64 externalOperatorId
+        )
+    {
+        (subOperatorId, externalOperatorId) = _givenGroupMembers();
+        groupId = _givenGroup(
+            subOperatorId,
+            _externalOperators(externalModuleId, externalOperatorId)
+        );
+
+        assertEq(
+            _externalOperatorGroupId(externalOperatorId),
+            groupId,
+            "setup: getExternalOperatorGroupId"
+        );
+    }
+
+    /// @dev Create the group directly on the MetaRegistry, the data a motion then updates
+    function _givenGroup(
+        uint64 subOperatorId,
+        IMetaRegistry.ExternalOperator[] memory externalOperators
+    ) private returns (uint256 groupId) {
+        _givenRole(address(metaRegistry), MANAGE_OPERATOR_GROUPS_ROLE, address(this));
         metaRegistry.createOrUpdateOperatorGroup(
             metaRegistry.NO_GROUP_ID(),
-            IMetaRegistry.OperatorGroup({ name: "initial-group", subNodeOperators: subs, externalOperators: exts })
+            _group(INITIAL_GROUP_NAME, subOperatorId, externalOperators)
         );
-        groupId = metaRegistry.getNodeOperatorGroupId(subOperator);
-        current = metaRegistry.getOperatorGroup(groupId);
+        groupId = metaRegistry.getNodeOperatorGroupId(subOperatorId);
+
+        assertNotEq(groupId, metaRegistry.NO_GROUP_ID(), "setup: getNodeOperatorGroupId");
     }
 
-    function _encodeNewGroup(uint64 subOperator, uint64 externalOperator) private view returns (bytes memory) {
-        IMetaRegistry.SubNodeOperator[] memory subs = new IMetaRegistry.SubNodeOperator[](1);
-        subs[0] = IMetaRegistry.SubNodeOperator({ nodeOperatorId: subOperator, share: 10000 });
-
-        IMetaRegistry.ExternalOperator[] memory exts = new IMetaRegistry.ExternalOperator[](1);
-        exts[0] = _ext(externalOperator);
-
-        IMetaRegistry.OperatorGroup memory newGroup =
-            IMetaRegistry.OperatorGroup({ name: "scenario-group", subNodeOperators: subs, externalOperators: exts });
-        IMetaRegistry.OperatorGroup memory currentEmpty;
-        return abi.encode(metaRegistry.NO_GROUP_ID(), currentEmpty, newGroup);
+    function _group(
+        string memory name,
+        uint64 subOperatorId,
+        IMetaRegistry.ExternalOperator[] memory externalOperators
+    ) private pure returns (IMetaRegistry.OperatorGroup memory) {
+        return
+            IMetaRegistry.OperatorGroup({
+                name: name,
+                subNodeOperators: _subNodeOperators(subOperatorId),
+                externalOperators: externalOperators
+            });
     }
 
-    function _ext(uint64 externalOperator) private view returns (IMetaRegistry.ExternalOperator memory) {
-        return IMetaRegistry.ExternalOperator({ data: abi.encodePacked(bytes1(0), uint8(externalModuleId), externalOperator) });
-    }
-
-    function _externalOperatorGroupId(uint64 externalOperator) private view returns (uint256) {
-        return metaRegistry.getExternalOperatorGroupId(_ext(externalOperator));
+    function _externalOperatorGroupId(uint64 externalOperatorId) private view returns (uint256) {
+        return
+            metaRegistry.getExternalOperatorGroupId(
+                _externalOperator(externalModuleId, externalOperatorId)
+            );
     }
 }
