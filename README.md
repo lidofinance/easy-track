@@ -189,6 +189,24 @@ Run tests only for stVaults factories on mainnet fork:
 
 > Note: Holesky support will be removed in upcoming upgrades.
 
+### Foundry tests
+
+Two Foundry suites live under `test/foundry`, each on its own profile in `foundry.toml`. Both need [Foundry](https://getfoundry.sh) installed. See [test/foundry/README.md](test/foundry/README.md) for details.
+
+The unit suite compiles the contracts at solc 0.8.6 and needs no network:
+
+```bash
+npm run test:unit
+```
+
+The scenario suite forks a live network and drives the deployed factories. It reads `HOODI_RPC_URL` or `MAINNET_RPC_URL`, and `CHAIN` selects the network, default `hoodi`. Without the URL every scenario contract is reported as skipped:
+
+```bash
+CHAIN=hoodi npm run test:scenario
+```
+
+Plain `forge test` runs the default profile, which is the scenario suite only.
+
 ### Integration test addresses
 
 Integration tests that use the `load_deployed_contract` helper get their contract addresses from two sources, merged at runtime:

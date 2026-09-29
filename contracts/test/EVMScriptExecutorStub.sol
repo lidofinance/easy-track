@@ -10,5 +10,6 @@ contract EVMScriptExecutorStub {
 
     function executeEVMScript(bytes memory _evmScript) external returns (bytes memory) {
         evmScript = _evmScript;
+        return new bytes(0);
     }
 }

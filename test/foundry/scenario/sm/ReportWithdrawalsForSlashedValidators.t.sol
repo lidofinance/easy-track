@@ -1,110 +1,127 @@
 // SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
+
 pragma solidity ^0.8.25;
 
-import { Vm } from "forge-std/Vm.sol";
-import { EasyTrackScenarioBase } from "../../helpers/EasyTrackScenarioBase.sol";
-import { IBaseModule, WithdrawnValidatorInfo } from "../../interfaces/External.sol";
-import { IReportWithdrawalsForSlashedValidators } from "../../interfaces/Factories.sol";
+import {Vm} from "forge-std/Vm.sol";
+import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
+import {IBaseModule, WithdrawnValidatorInfo} from "test/foundry/interfaces/External.sol";
+import {IReportWithdrawalsForSlashedValidators} from "test/foundry/interfaces/Factories.sol";
 
-/// @notice Deployed `ReportWithdrawalsForSlashedValidators` (deployed-sm-<chain>.json): a motion
-///         reports a slashed validator as withdrawn.
-abstract contract ReportWithdrawalsForSlashedValidatorsScenario is EasyTrackScenarioBase {
-    IReportWithdrawalsForSlashedValidators internal factory;
+/// @notice The deployed `ReportWithdrawalsForSlashedValidators` factories of
+///         `deployed-sm-<chain>.json`: a motion reports a slashed validator as withdrawn
+abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenarioBase {
+    bytes32 internal constant VERIFIER_ROLE = keccak256("VERIFIER_ROLE");
+
+    /// @dev The single key of an operator built by `_givenDepositedOperator`
+    uint256 internal constant KEY_INDEX = 0;
+    uint256 internal constant EXIT_BALANCE = 32 ether;
+    uint256 internal constant SLASHING_PENALTY = 1 ether;
+
     IBaseModule internal module;
 
     function _factoryKey() internal pure virtual returns (string memory);
 
     function setUp() public {
         _forkAndInitialize();
-        if (!forked) return;
-        factory = IReportWithdrawalsForSlashedValidators(_factoryAddress(cfg.smArtifact, _factoryKey()));
+
+        IReportWithdrawalsForSlashedValidators factory = IReportWithdrawalsForSlashedValidators(
+            _factoryAddress(config.smArtifact, _factoryKey())
+        );
         module = IBaseModule(factory.module());
-        subject = address(factory);
+
+        evmScriptFactory = address(factory);
         creator = factory.trustedCaller();
     }
 
-    function test_reportsSlashedValidatorAsWithdrawn() external onlyForked {
-        (uint256 nodeOperatorId, uint256 keyIndex) = _givenSlashedValidator();
-
-        // preconditions: the key is deposited, slashed, and not yet withdrawn.
-        (,,,,,, uint256 depositedBefore,) = module.getNodeOperatorSummary(nodeOperatorId);
-        assertGe(depositedBefore, 1, "setup: key not deposited");
-        assertTrue(module.isValidatorSlashed(nodeOperatorId, keyIndex), "setup: validator not slashed");
-        assertFalse(module.isValidatorWithdrawn(nodeOperatorId, keyIndex), "setup: already withdrawn");
+    function testFork_ReportsSlashedValidatorAsWithdrawn() external {
+        uint256 nodeOperatorId = _givenSlashedValidator();
+        bytes memory callData = _encodeWithdrawn(nodeOperatorId, EXIT_BALANCE, SLASHING_PENALTY);
 
         vm.recordLogs();
-        enact(_encodeWithdrawn(nodeOperatorId, keyIndex));
 
-        // state: marked withdrawn, still flagged slashed.
-        assertTrue(module.isValidatorWithdrawn(nodeOperatorId, keyIndex), "validator not marked withdrawn");
-        assertTrue(module.isValidatorSlashed(nodeOperatorId, keyIndex), "slashed flag lost");
+        _enact(callData);
 
-        // event: the module reported the withdrawal carrying our exit balance & slashing penalty.
-        _assertValidatorWithdrawn(vm.getRecordedLogs(), nodeOperatorId, keyIndex, 32 ether, 1 ether);
-
-        // re-reporting the same (already-withdrawn) validator is a no-op.
-        enact(_encodeWithdrawn(nodeOperatorId, keyIndex));
-        assertTrue(module.isValidatorWithdrawn(nodeOperatorId, keyIndex), "idempotent re-report changed state");
+        assertTrue(module.isValidatorWithdrawn(nodeOperatorId, KEY_INDEX), "isValidatorWithdrawn");
+        assertTrue(module.isValidatorSlashed(nodeOperatorId, KEY_INDEX), "isValidatorSlashed");
+        _assertValidatorWithdrawnEmitted(vm.getRecordedLogs(), nodeOperatorId);
     }
 
-    function test_revertsOnZeroSlashingPenalty() external onlyForked {
-        // A slashed validator must be reported with a positive penalty; a zero penalty is rejected.
-        (uint256 nodeOperatorId, uint256 keyIndex) = _givenSlashedValidator();
+    function testFork_ReReportingWithdrawnValidatorIsNoOp() external {
+        uint256 nodeOperatorId = _givenSlashedValidator();
+        bytes memory callData = _encodeWithdrawn(nodeOperatorId, EXIT_BALANCE, SLASHING_PENALTY);
+        _enact(callData);
 
-        bytes memory callData = _encodeWithdrawn(nodeOperatorId, keyIndex, 32 ether, 0);
+        _enact(callData);
+
+        assertTrue(module.isValidatorWithdrawn(nodeOperatorId, KEY_INDEX), "isValidatorWithdrawn");
+    }
+
+    function testFork_RevertWhen_SlashingPenaltyIsZero() external {
+        uint256 nodeOperatorId = _givenSlashedValidator();
+        bytes memory callData = _encodeWithdrawn(nodeOperatorId, EXIT_BALANCE, 0);
+
         vm.prank(creator);
         vm.expectRevert("INVALID_SLASHING_PENALTY");
-        easyTrack.createMotion(subject, callData);
+        easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    function test_revertsOnZeroExitBalance() external onlyForked {
-        // A withdrawn validator must be reported with a positive exit balance; zero is rejected.
-        (uint256 nodeOperatorId, uint256 keyIndex) = _givenSlashedValidator();
+    function testFork_RevertWhen_ExitBalanceIsZero() external {
+        uint256 nodeOperatorId = _givenSlashedValidator();
+        bytes memory callData = _encodeWithdrawn(nodeOperatorId, 0, SLASHING_PENALTY);
 
-        bytes memory callData = _encodeWithdrawn(nodeOperatorId, keyIndex, 0, 1 ether);
         vm.prank(creator);
         vm.expectRevert("ZERO_EXIT_BALANCE");
-        easyTrack.createMotion(subject, callData);
+        easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    /// @dev Assert the module emitted `ValidatorWithdrawn` for the operator with the expected exit
-    ///      balance and slashing penalty (the charge).
-    function _assertValidatorWithdrawn(
-        Vm.Log[] memory logs,
-        uint256 nodeOperatorId,
-        uint256 keyIndex,
-        uint256 exitBalance,
-        uint256 slashingPenalty
-    ) private {
-        bytes32 topic0 = keccak256("ValidatorWithdrawn(uint256,uint256,uint256,uint256,bytes)");
+    /// @dev A deposited operator whose only key is reported slashed and not yet withdrawn
+    function _givenSlashedValidator() private returns (uint256 nodeOperatorId) {
+        nodeOperatorId = _givenDepositedOperator(module);
+        _givenRole(address(module), VERIFIER_ROLE, address(this));
+        module.reportValidatorSlashing(nodeOperatorId, KEY_INDEX);
+
+        (,,,,,, uint256 deposited,) = module.getNodeOperatorSummary(nodeOperatorId);
+        assertGe(deposited, KEYS_PER_OPERATOR, "setup: totalDepositedValidators");
+        assertTrue(
+            module.isValidatorSlashed(nodeOperatorId, KEY_INDEX), "setup: isValidatorSlashed"
+        );
+        assertFalse(
+            module.isValidatorWithdrawn(nodeOperatorId, KEY_INDEX), "setup: isValidatorWithdrawn"
+        );
+    }
+
+    /// @dev The module reported the withdrawal with the exit balance & slashing penalty of the
+    ///      motion. The pubkey the event carries is not checked.
+    function _assertValidatorWithdrawnEmitted(Vm.Log[] memory logs, uint256 nodeOperatorId)
+        private
+        view
+    {
+        bool emitted;
         for (uint256 i; i < logs.length; ++i) {
-            if (logs[i].emitter != address(module) || logs[i].topics[0] != topic0) continue;
-            assertEq(uint256(logs[i].topics[1]), nodeOperatorId, "ValidatorWithdrawn: nodeOperatorId");
-            (uint256 loggedKeyIndex, uint256 loggedExitBalance, uint256 loggedSlashingPenalty,) =
+            if (
+                logs[i].emitter != address(module)
+                    || logs[i].topics[0] != IBaseModule.ValidatorWithdrawn.selector
+            ) {
+                continue;
+            }
+
+            emitted = true;
+            assertEq(
+                uint256(logs[i].topics[1]), nodeOperatorId, "ValidatorWithdrawn nodeOperatorId"
+            );
+
+            (uint256 keyIndex, uint256 exitBalance, uint256 slashingPenalty,) =
                 abi.decode(logs[i].data, (uint256, uint256, uint256, bytes));
-            assertEq(loggedKeyIndex, keyIndex, "ValidatorWithdrawn: keyIndex");
-            assertEq(loggedExitBalance, exitBalance, "ValidatorWithdrawn: exitBalance");
-            assertEq(loggedSlashingPenalty, slashingPenalty, "ValidatorWithdrawn: slashingPenalty (charge)");
-            return;
+            assertEq(keyIndex, KEY_INDEX, "ValidatorWithdrawn keyIndex");
+            assertEq(exitBalance, EXIT_BALANCE, "ValidatorWithdrawn exitBalance");
+            assertEq(slashingPenalty, SLASHING_PENALTY, "ValidatorWithdrawn slashingPenalty");
         }
-        revert("ValidatorWithdrawn not emitted by module");
+
+        assertTrue(emitted, "ValidatorWithdrawn emitted");
     }
 
-    // --- scenario helpers ---
-
-    function _givenSlashedValidator() private returns (uint256 nodeOperatorId, uint256 keyIndex) {
-        nodeOperatorId = _createDepositedOperator(module);
-        keyIndex = 0;
-        _grantRole(address(module), "VERIFIER_ROLE", address(this));
-        module.reportValidatorSlashing(nodeOperatorId, keyIndex);
-    }
-
-    function _encodeWithdrawn(uint256 nodeOperatorId, uint256 keyIndex) private pure returns (bytes memory) {
-        return _encodeWithdrawn(nodeOperatorId, keyIndex, 32 ether, 1 ether);
-    }
-
-    function _encodeWithdrawn(uint256 nodeOperatorId, uint256 keyIndex, uint256 exitBalance, uint256 slashingPenalty)
+    function _encodeWithdrawn(uint256 nodeOperatorId, uint256 exitBalance, uint256 slashingPenalty)
         private
         pure
         returns (bytes memory)
@@ -112,27 +129,31 @@ abstract contract ReportWithdrawalsForSlashedValidatorsScenario is EasyTrackScen
         WithdrawnValidatorInfo[] memory infos = new WithdrawnValidatorInfo[](1);
         infos[0] = WithdrawnValidatorInfo({
             nodeOperatorId: nodeOperatorId,
-            keyIndex: keyIndex,
+            keyIndex: KEY_INDEX,
             exitBalance: exitBalance,
             slashingPenalty: slashingPenalty,
             isSlashed: true
         });
+
         return abi.encode(infos);
     }
 }
 
-contract ReportWithdrawalsForSlashedValidatorsCSMScenario is ReportWithdrawalsForSlashedValidatorsScenario {
+contract ReportWithdrawalsForSlashedValidatorsCSMTest is ReportWithdrawalsForSlashedValidatorsTest {
     function _factoryKey() internal pure override returns (string memory) {
         return "ReportWithdrawalsForSlashedValidators:CSM";
     }
 }
 
-contract ReportWithdrawalsForSlashedValidatorsCMScenario is ReportWithdrawalsForSlashedValidatorsScenario {
+contract ReportWithdrawalsForSlashedValidatorsCMTest is ReportWithdrawalsForSlashedValidatorsTest {
     function _factoryKey() internal pure override returns (string memory) {
         return "ReportWithdrawalsForSlashedValidators:CM";
     }
 
-    function _prepareCuratedOperator(IBaseModule module_, uint256 nodeOperatorId) internal override {
-        _setupCuratedGroupAndCurve(module_, nodeOperatorId);
+    function _prepareCuratedOperator(IBaseModule module_, uint256 nodeOperatorId)
+        internal
+        override
+    {
+        _givenCuratedOperatorDepositable(module_, nodeOperatorId);
     }
 }

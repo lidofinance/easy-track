@@ -1,15 +1,16 @@
 // SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
 // SPDX-License-Identifier: GPL-3.0
+
 pragma solidity ^0.8.25;
 
 // -----------------------------------------------------------------------------
 // External contracts the factories interact with (Lido protocol + staking-modules).
 //
-// Re-declared here (not imported from `contracts/interfaces/`) because those are
-// pinned to solc 0.8.6 and this suite compiles with a modern solc/EVM; and because
-// the tests need a state-construction surface (createNodeOperator, addValidatorKeysETH,
-// obtainDepositData, resume, bond-curve setup, ...) the factories don't use. Interface
-// names and struct field order match the corresponding contracts.
+// Declared here because `contracts/interfaces/` is pinned to solc 0.8.6 while this suite
+// compiles with a modern solc/EVM, and because the tests need a state-construction
+// surface the factories don't use, such as createNodeOperator, addValidatorKeysETH,
+// obtainDepositData, resume and the bond-curve setup. Interface names and struct field
+// order match the corresponding contracts.
 // -----------------------------------------------------------------------------
 
 /// @notice OZ AccessControlEnumerable surface (Lido protocol contracts use it).
@@ -27,11 +28,11 @@ interface IAccessControlEnumerable {
     function revokeRole(bytes32 role, address account) external;
 }
 
-/// @notice Lido Staking Router. `StakingModule` is truncated at `priorityExitShareThreshold`
-///         (the last field this suite reads): everything after it differs across StakingRouter
-///         versions — mainnet ends the struct at `minDepositBlockDistance` (13 fields), the
-///         reaudited/hoodi one adds `withdrawalCredentialsType` + `validatorsBalanceGwei` (15).
-///         Decoding only this common prefix works against both (trailing return data is ignored).
+/// @notice Lido Staking Router. `StakingModule` is truncated at `priorityExitShareThreshold`, the
+///         last field this suite reads. Everything after it differs across StakingRouter versions:
+///         mainnet ends the struct at `minDepositBlockDistance` with 13 fields, the reaudited/hoodi
+///         one adds `withdrawalCredentialsType` + `validatorsBalanceGwei` for 15. Decoding only
+///         this common prefix works against both, trailing return data is ignored.
 interface IStakingRouter {
     struct StakingModule {
         uint24 id;
@@ -56,7 +57,7 @@ interface IStakingRouter {
     ) external;
 }
 
-/// @notice Lido locator — resolves the staking router (impersonated when marking keys as deposited).
+/// @notice Lido locator. Resolves the staking router, impersonated when marking keys as deposited.
 interface ILidoLocator {
     function stakingRouter() external view returns (address);
 }
@@ -79,7 +80,19 @@ struct NodeOperatorManagementProperties {
 
 /// @notice Shared surface of the CSM-like modules (CSModule & CuratedModule) used here.
 ///         Includes the state-construction methods the tests need (not just the factory reads).
+///         The events are declared for `expectEmit` and `.selector`. Their layout matches the
+///         module.
 interface IBaseModule {
+    event GeneralDelayedPenaltySettled(uint256 indexed nodeOperatorId, uint256 amount);
+
+    event ValidatorWithdrawn(
+        uint256 indexed nodeOperatorId,
+        uint256 keyIndex,
+        uint256 exitBalance,
+        uint256 slashingPenalty,
+        bytes pubkey
+    );
+
     function ACCOUNTING() external view returns (address);
 
     function LIDO_LOCATOR() external view returns (address);
@@ -132,13 +145,22 @@ interface IBaseModule {
         string calldata description
     ) external;
 
-    function settleGeneralDelayedPenalty(uint256[] calldata nodeOperatorIds, uint256[] calldata bondLockNonces) external;
+    function settleGeneralDelayedPenalty(
+        uint256[] calldata nodeOperatorIds,
+        uint256[] calldata bondLockNonces
+    ) external;
 
     function reportValidatorSlashing(uint256 nodeOperatorId, uint256 keyIndex) external;
 
-    function isValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex) external view returns (bool);
+    function isValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex)
+        external
+        view
+        returns (bool);
 
-    function isValidatorWithdrawn(uint256 nodeOperatorId, uint256 keyIndex) external view returns (bool);
+    function isValidatorWithdrawn(uint256 nodeOperatorId, uint256 keyIndex)
+        external
+        view
+        returns (bool);
 
     function getNodeOperatorSummary(uint256 nodeOperatorId)
         external
@@ -154,7 +176,8 @@ interface IBaseModule {
             uint256 depositableValidatorsCount
         );
 
-    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos) external;
+    function reportSlashedWithdrawnValidators(WithdrawnValidatorInfo[] calldata validatorInfos)
+        external;
 }
 
 /// @notice Lido bond accounting.
@@ -163,7 +186,10 @@ interface IAccounting {
 
     function getBondLockNonce(uint256 nodeOperatorId) external view returns (uint256);
 
-    function getBondAmountByKeysCount(uint256 keysCount, uint256 curveId) external view returns (uint256);
+    function getBondAmountByKeysCount(uint256 keysCount, uint256 curveId)
+        external
+        view
+        returns (uint256);
 
     function getBondCurveId(uint256 nodeOperatorId) external view returns (uint256);
 }
@@ -193,7 +219,10 @@ interface IMetaRegistry {
 
     function getNodeOperatorGroupId(uint256 nodeOperatorId) external view returns (uint256);
 
-    function getExternalOperatorGroupId(ExternalOperator calldata op) external view returns (uint256);
+    function getExternalOperatorGroupId(ExternalOperator calldata op)
+        external
+        view
+        returns (uint256);
 
     function createOrUpdateOperatorGroup(uint256 groupId, OperatorGroup calldata groupInfo) external;
 
@@ -220,16 +249,24 @@ interface IConsolidationMigrator {
 
     function getStakingRouter() external view returns (address);
 
-    function isPairAllowed(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (bool);
+    function isPairAllowed(uint256 sourceOperatorId, uint256 targetOperatorId)
+        external
+        view
+        returns (bool);
 
-    function getSubmitter(uint256 sourceOperatorId, uint256 targetOperatorId) external view returns (address);
+    function getSubmitter(uint256 sourceOperatorId, uint256 targetOperatorId)
+        external
+        view
+        returns (address);
 }
 
 /// @notice Legacy curated NodeOperatorsRegistry (consolidation source / external-operator module).
 interface INodeOperatorsRegistry {
     function getNodeOperatorsCount() external view returns (uint256);
 
-    function addNodeOperator(string calldata name, address rewardAddress) external returns (uint256 id);
+    function addNodeOperator(string calldata name, address rewardAddress)
+        external
+        returns (uint256 id);
 
     function getNodeOperator(uint256 id, bool fullInfo)
         external
