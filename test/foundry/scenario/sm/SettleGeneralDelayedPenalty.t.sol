@@ -31,9 +31,8 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
     function setUp() public {
         _forkAndInitialize();
 
-        ISettleGeneralDelayedPenalty factory = ISettleGeneralDelayedPenalty(
-            _factoryAddress(config.smArtifact, _factoryKey())
-        );
+        ISettleGeneralDelayedPenalty factory =
+            ISettleGeneralDelayedPenalty(_factoryAddress(config.smArtifact, _factoryKey()));
         module = IBaseModule(factory.module());
         accounting = IAccounting(factory.accounting());
 
@@ -85,10 +84,8 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
 
     function testFork_RevertWhen_NothingToSettle() external {
         uint256 nodeOperatorId = _givenDepositedOperator(module);
-        bytes memory callData = _encodeLocks(
-            nodeOperatorId,
-            accounting.getBondLockNonce(nodeOperatorId)
-        );
+        bytes memory callData =
+            _encodeLocks(nodeOperatorId, accounting.getBondLockNonce(nodeOperatorId));
 
         vm.prank(creator);
         vm.expectRevert("NO_LOCK_TO_SETTLE");
@@ -102,10 +99,7 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
 
         // Locking another penalty bumps the operator's bond-lock nonce
         module.reportGeneralDelayedPenalty(
-            nodeOperatorId,
-            SECOND_PENALTY_ID,
-            PENALTY_AMOUNT,
-            "second scenario penalty"
+            nodeOperatorId, SECOND_PENALTY_ID, PENALTY_AMOUNT, "second scenario penalty"
         );
 
         assertNotEq(accounting.getBondLockNonce(nodeOperatorId), nonce, "setup: getBondLockNonce");
@@ -147,10 +141,7 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
         nodeOperatorId = _givenDepositedOperator(module);
         _givenRole(address(module), REPORT_GENERAL_DELAYED_PENALTY_ROLE, address(this));
         module.reportGeneralDelayedPenalty(
-            nodeOperatorId,
-            PENALTY_ID,
-            PENALTY_AMOUNT,
-            "scenario penalty"
+            nodeOperatorId, PENALTY_ID, PENALTY_AMOUNT, "scenario penalty"
         );
 
         assertGt(accounting.getLockedBond(nodeOperatorId), 0, "setup: getLockedBond");

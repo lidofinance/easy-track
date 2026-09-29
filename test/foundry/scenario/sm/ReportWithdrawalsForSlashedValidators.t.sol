@@ -81,15 +81,13 @@ abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenario
         _givenRole(address(module), VERIFIER_ROLE, address(this));
         module.reportValidatorSlashing(nodeOperatorId, KEY_INDEX);
 
-        (, , , , , , uint256 deposited, ) = module.getNodeOperatorSummary(nodeOperatorId);
+        (,,,,,, uint256 deposited,) = module.getNodeOperatorSummary(nodeOperatorId);
         assertGe(deposited, KEYS_PER_OPERATOR, "setup: totalDepositedValidators");
         assertTrue(
-            module.isValidatorSlashed(nodeOperatorId, KEY_INDEX),
-            "setup: isValidatorSlashed"
+            module.isValidatorSlashed(nodeOperatorId, KEY_INDEX), "setup: isValidatorSlashed"
         );
         assertFalse(
-            module.isValidatorWithdrawn(nodeOperatorId, KEY_INDEX),
-            "setup: isValidatorWithdrawn"
+            module.isValidatorWithdrawn(nodeOperatorId, KEY_INDEX), "setup: isValidatorWithdrawn"
         );
     }
 
@@ -102,23 +100,19 @@ abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenario
         bool emitted;
         for (uint256 i; i < logs.length; ++i) {
             if (
-                logs[i].emitter != address(module) ||
-                logs[i].topics[0] != IBaseModule.ValidatorWithdrawn.selector
+                logs[i].emitter != address(module)
+                    || logs[i].topics[0] != IBaseModule.ValidatorWithdrawn.selector
             ) {
                 continue;
             }
 
             emitted = true;
             assertEq(
-                uint256(logs[i].topics[1]),
-                nodeOperatorId,
-                "ValidatorWithdrawn nodeOperatorId"
+                uint256(logs[i].topics[1]), nodeOperatorId, "ValidatorWithdrawn nodeOperatorId"
             );
 
-            (uint256 keyIndex, uint256 exitBalance, uint256 slashingPenalty, ) = abi.decode(
-                logs[i].data,
-                (uint256, uint256, uint256, bytes)
-            );
+            (uint256 keyIndex, uint256 exitBalance, uint256 slashingPenalty,) =
+                abi.decode(logs[i].data, (uint256, uint256, uint256, bytes));
             assertEq(keyIndex, KEY_INDEX, "ValidatorWithdrawn keyIndex");
             assertEq(exitBalance, EXIT_BALANCE, "ValidatorWithdrawn exitBalance");
             assertEq(slashingPenalty, SLASHING_PENALTY, "ValidatorWithdrawn slashingPenalty");
@@ -127,11 +121,11 @@ abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenario
         assertTrue(emitted, "ValidatorWithdrawn emitted");
     }
 
-    function _encodeWithdrawn(
-        uint256 nodeOperatorId,
-        uint256 exitBalance,
-        uint256 slashingPenalty
-    ) private pure returns (bytes memory) {
+    function _encodeWithdrawn(uint256 nodeOperatorId, uint256 exitBalance, uint256 slashingPenalty)
+        private
+        pure
+        returns (bytes memory)
+    {
         WithdrawnValidatorInfo[] memory infos = new WithdrawnValidatorInfo[](1);
         infos[0] = WithdrawnValidatorInfo({
             nodeOperatorId: nodeOperatorId,

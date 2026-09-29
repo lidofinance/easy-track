@@ -92,8 +92,7 @@ contract BytesUtilsTest is Test {
     function test_Uint256AtOne() external pure {
         assertEq(
             BytesUtilsWrapper.uint256At(
-                hex"0000000000000000000000000000000000000000000000000000000000000001",
-                0
+                hex"0000000000000000000000000000000000000000000000000000000000000001", 0
             ),
             1,
             "uint256At"
@@ -104,8 +103,7 @@ contract BytesUtilsTest is Test {
     function test_Uint256AtZero() external pure {
         assertEq(
             BytesUtilsWrapper.uint256At(
-                hex"0000000000000000000000000000000000000000000000000000000000000000",
-                0
+                hex"0000000000000000000000000000000000000000000000000000000000000000", 0
             ),
             0,
             "uint256At"
@@ -121,8 +119,7 @@ contract BytesUtilsTest is Test {
     function test_Uint256AtMaxValue() external pure {
         assertEq(
             BytesUtilsWrapper.uint256At(
-                hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff",
-                0
+                hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff", 0
             ),
             type(uint256).max,
             "uint256At"
@@ -132,8 +129,7 @@ contract BytesUtilsTest is Test {
     // python: test_uint256_at[4]
     function test_Uint256AtLongWordFromNonZeroPosition() external pure {
         bytes memory longWord = abi.encodePacked(
-            hex"aabbccdd",
-            hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
+            hex"aabbccdd", hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
         );
 
         assertEq(BytesUtilsWrapper.uint256At(longWord, 4), type(uint256).max, "uint256At");

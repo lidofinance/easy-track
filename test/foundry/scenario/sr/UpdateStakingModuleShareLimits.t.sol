@@ -35,11 +35,8 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
     }
 
     function testFork_IncreasesModuleShareLimits() external {
-        (
-            uint16 newStakeShareLimit,
-            uint16 newPriorityExitShareThreshold,
-            bytes memory callData
-        ) = _plannedIncrease();
+        (uint16 newStakeShareLimit, uint16 newPriorityExitShareThreshold, bytes memory callData) =
+            _plannedIncrease();
 
         _enact(callData);
 
@@ -47,11 +44,8 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
     }
 
     function testFork_DecreasesModuleShareLimits() external {
-        (
-            uint16 newStakeShareLimit,
-            uint16 newPriorityExitShareThreshold,
-            bytes memory callData
-        ) = _plannedDecrease();
+        (uint16 newStakeShareLimit, uint16 newPriorityExitShareThreshold, bytes memory callData) =
+            _plannedDecrease();
 
         _enact(callData);
 
@@ -61,15 +55,13 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
     function testFork_RevertWhen_CurrentSharesChangeBeforeEnact() external {
         (uint16 stakeShareLimit, uint16 priorityExitShareThreshold) = _currentShares();
         // the planned motion commits the current shares
-        (, , bytes memory callData) = _plannedIncrease();
+        (,, bytes memory callData) = _plannedIncrease();
         uint256 motionId = _createMotion(callData);
 
         // Move the module's shares so the committed current values no longer match
         vm.prank(evmScriptExecutor);
         stakingRouter.updateModuleShares(
-            stakingModuleId,
-            stakeShareLimit + 1,
-            priorityExitShareThreshold + 1
+            stakingModuleId, stakeShareLimit + 1, priorityExitShareThreshold + 1
         );
 
         _givenMotionDurationPassed();
@@ -83,9 +75,8 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         private
         view
     {
-        IStakingRouter.StakingModule memory stakingModule = stakingRouter.getStakingModule(
-            stakingModuleId
-        );
+        IStakingRouter.StakingModule memory stakingModule =
+            stakingRouter.getStakingModule(stakingModuleId);
 
         assertEq(stakingModule.stakeShareLimit, stakeShareLimit, "stakeShareLimit");
         assertEq(
@@ -108,9 +99,8 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
     {
         (uint16 stakeShareLimit, uint16 priorityExitShareThreshold) = _currentShares();
 
-        newPriorityExitShareThreshold =
-            priorityExitShareThreshold +
-            _min(SHARE_STEP, factory.maxPriorityExitShareThresholdIncrease());
+        newPriorityExitShareThreshold = priorityExitShareThreshold
+            + _min(SHARE_STEP, factory.maxPriorityExitShareThresholdIncrease());
         assertLe(newPriorityExitShareThreshold, MAX_BP, "setup: room to raise the threshold");
         assertGt(
             newPriorityExitShareThreshold,
@@ -119,8 +109,7 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         );
 
         newStakeShareLimit =
-            stakeShareLimit +
-            _min(SHARE_STEP, factory.maxStakeShareLimitIncrease());
+            stakeShareLimit + _min(SHARE_STEP, factory.maxStakeShareLimitIncrease());
         assertLe(
             newStakeShareLimit,
             newPriorityExitShareThreshold,
@@ -149,12 +138,10 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
     {
         (uint16 stakeShareLimit, uint16 priorityExitShareThreshold) = _currentShares();
 
-        newStakeShareLimit =
-            stakeShareLimit -
-            _min(_min(SHARE_STEP, factory.maxStakeShareLimitDecrease()), stakeShareLimit);
-        newPriorityExitShareThreshold =
-            priorityExitShareThreshold -
-            _min(
+        newStakeShareLimit = stakeShareLimit
+            - _min(_min(SHARE_STEP, factory.maxStakeShareLimitDecrease()), stakeShareLimit);
+        newPriorityExitShareThreshold = priorityExitShareThreshold
+            - _min(
                 _min(SHARE_STEP, factory.maxPriorityExitShareThresholdDecrease()),
                 priorityExitShareThreshold - newStakeShareLimit
             );
@@ -178,9 +165,8 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         view
         returns (uint16 stakeShareLimit, uint16 priorityExitShareThreshold)
     {
-        IStakingRouter.StakingModule memory stakingModule = stakingRouter.getStakingModule(
-            stakingModuleId
-        );
+        IStakingRouter.StakingModule memory stakingModule =
+            stakingRouter.getStakingModule(stakingModuleId);
 
         return (stakingModule.stakeShareLimit, stakingModule.priorityExitShareThreshold);
     }

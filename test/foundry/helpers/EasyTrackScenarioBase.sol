@@ -5,7 +5,14 @@ pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
 import {IEasyTrack} from "test/foundry/interfaces/EasyTrack.sol";
-import {IAccessControlEnumerable, IAccounting, IBaseModule, ILidoLocator, IMetaRegistry, NodeOperatorManagementProperties} from "test/foundry/interfaces/External.sol";
+import {
+    IAccessControlEnumerable,
+    IAccounting,
+    IBaseModule,
+    ILidoLocator,
+    IMetaRegistry,
+    NodeOperatorManagementProperties
+} from "test/foundry/interfaces/External.sol";
 
 /// @notice Fork harness for the scenario tests of the deployed Easy Track factories. A test
 ///         builds the on-chain data a motion needs, runs the motion and asserts its effect. The
@@ -90,31 +97,29 @@ abstract contract EasyTrackScenarioBase is Test {
 
     function _networkConfig(string memory chain) private pure returns (NetworkConfig memory) {
         if (_equals(chain, "hoodi")) {
-            return
-                NetworkConfig({
-                    chainId: 560048,
-                    rpcEnvVar: "HOODI_RPC_URL",
-                    srArtifact: "deployed-sr-hoodi.json",
-                    smArtifact: "deployed-sm-hoodi.json",
-                    easyTrack: 0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a,
-                    agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD,
-                    csmModule: 0x79CEf36D84743222f37765204Bec41E92a93E59d,
-                    cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9
-                });
+            return NetworkConfig({
+                chainId: 560048,
+                rpcEnvVar: "HOODI_RPC_URL",
+                srArtifact: "deployed-sr-hoodi.json",
+                smArtifact: "deployed-sm-hoodi.json",
+                easyTrack: 0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a,
+                agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD,
+                csmModule: 0x79CEf36D84743222f37765204Bec41E92a93E59d,
+                cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9
+            });
         }
 
         if (_equals(chain, "mainnet")) {
-            return
-                NetworkConfig({
-                    chainId: 1,
-                    rpcEnvVar: "MAINNET_RPC_URL",
-                    srArtifact: "deployed-sr-mainnet.json",
-                    smArtifact: "deployed-sm-mainnet.json",
-                    easyTrack: 0xF0211b7660680B49De1A7E9f25C65660F0a13Fea,
-                    agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c,
-                    csmModule: 0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F,
-                    cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1
-                });
+            return NetworkConfig({
+                chainId: 1,
+                rpcEnvVar: "MAINNET_RPC_URL",
+                srArtifact: "deployed-sr-mainnet.json",
+                smArtifact: "deployed-sm-mainnet.json",
+                easyTrack: 0xF0211b7660680B49De1A7E9f25C65660F0a13Fea,
+                agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c,
+                csmModule: 0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F,
+                cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1
+            });
         }
 
         revert(string.concat("unknown CHAIN: ", chain));
@@ -157,11 +162,7 @@ abstract contract EasyTrackScenarioBase is Test {
     // --- roles, granted only to build data preconditions, never to authorize the motion ---
 
     /// @dev Grant `role` on `target` to `account` through the role's admin, unless already held
-    function _givenRole(
-        address target,
-        bytes32 role,
-        address account
-    ) internal {
+    function _givenRole(address target, bytes32 role, address account) internal {
         IAccessControlEnumerable accessControl = IAccessControlEnumerable(target);
         if (accessControl.hasRole(role, account)) {
             return;
@@ -179,10 +180,9 @@ abstract contract EasyTrackScenarioBase is Test {
     {
         bytes32 adminRole = accessControl.getRoleAdmin(role);
 
-        return
-            accessControl.getRoleMemberCount(adminRole) > 0
-                ? accessControl.getRoleMember(adminRole, 0)
-                : config.agent;
+        return accessControl.getRoleMemberCount(adminRole) > 0
+            ? accessControl.getRoleMember(adminRole, 0)
+            : config.agent;
     }
 
     // --- module state construction ---
@@ -194,21 +194,17 @@ abstract contract EasyTrackScenarioBase is Test {
         _givenRole(address(module), CREATE_NODE_OPERATOR_ROLE, address(this));
 
         ++_operatorsCreated;
-        address operator = makeAddr(
-            string.concat("scenarioOperator", vm.toString(_operatorsCreated))
-        );
+        address operator =
+            makeAddr(string.concat("scenarioOperator", vm.toString(_operatorsCreated)));
         nodeOperatorId = module.createNodeOperator(
-            operator,
-            NodeOperatorManagementProperties(operator, operator, false),
-            address(0)
+            operator, NodeOperatorManagementProperties(operator, operator, false), address(0)
         );
 
         _prepareCuratedOperator(module, nodeOperatorId);
 
         IAccounting accounting = IAccounting(module.ACCOUNTING());
         uint256 bond = accounting.getBondAmountByKeysCount(
-            KEYS_PER_OPERATOR,
-            accounting.getBondCurveId(nodeOperatorId)
+            KEYS_PER_OPERATOR, accounting.getBondCurveId(nodeOperatorId)
         );
         (bytes memory keys, bytes memory signatures) = _keysSignatures(KEYS_PER_OPERATOR);
 
@@ -216,11 +212,7 @@ abstract contract EasyTrackScenarioBase is Test {
 
         vm.prank(operator);
         module.addValidatorKeysETH{value: bond}(
-            operator,
-            nodeOperatorId,
-            KEYS_PER_OPERATOR,
-            keys,
-            signatures
+            operator, nodeOperatorId, KEYS_PER_OPERATOR, keys, signatures
         );
 
         _givenDepositableKeysDeposited(module);
@@ -261,10 +253,8 @@ abstract contract EasyTrackScenarioBase is Test {
         returns (IMetaRegistry.SubNodeOperator[] memory subNodeOperators)
     {
         subNodeOperators = new IMetaRegistry.SubNodeOperator[](1);
-        subNodeOperators[0] = IMetaRegistry.SubNodeOperator({
-            nodeOperatorId: nodeOperatorId,
-            share: FULL_SHARE
-        });
+        subNodeOperators[0] =
+            IMetaRegistry.SubNodeOperator({nodeOperatorId: nodeOperatorId, share: FULL_SHARE});
     }
 
     /// @dev A group's external operator list holding one legacy NOR operator
@@ -284,10 +274,9 @@ abstract contract EasyTrackScenarioBase is Test {
         pure
         returns (IMetaRegistry.ExternalOperator memory)
     {
-        return
-            IMetaRegistry.ExternalOperator({
-                data: abi.encodePacked(EXT_OPERATOR_TYPE_NOR, uint8(moduleId), nodeOperatorId)
-            });
+        return IMetaRegistry.ExternalOperator({
+            data: abi.encodePacked(EXT_OPERATOR_TYPE_NOR, uint8(moduleId), nodeOperatorId)
+        });
     }
 
     function _givenModuleResumed(IBaseModule module) private {
@@ -302,7 +291,7 @@ abstract contract EasyTrackScenarioBase is Test {
     /// @dev Mark every depositable key as deposited, impersonating the staking router, so freshly
     ///      added keys count toward the deposited total
     function _givenDepositableKeysDeposited(IBaseModule module) private {
-        (, , uint256 depositable) = module.getStakingModuleSummary();
+        (,, uint256 depositable) = module.getStakingModuleSummary();
         if (depositable == 0) {
             return;
         }
@@ -321,11 +310,7 @@ abstract contract EasyTrackScenarioBase is Test {
         for (uint256 i; i < keysCount; ++i) {
             bytes memory index = abi.encodePacked(i + 1);
             keys = bytes.concat(keys, new bytes(PUBKEY_LENGTH - index.length), index);
-            signatures = bytes.concat(
-                signatures,
-                new bytes(SIGNATURE_LENGTH - index.length),
-                index
-            );
+            signatures = bytes.concat(signatures, new bytes(SIGNATURE_LENGTH - index.length), index);
         }
     }
 

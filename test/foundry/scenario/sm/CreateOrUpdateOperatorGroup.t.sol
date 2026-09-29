@@ -4,7 +4,13 @@
 pragma solidity ^0.8.25;
 
 import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
-import {IBaseModule, IMetaRegistry, INodeOperatorsRegistry, IStakingRouter, NodeOperatorManagementProperties} from "test/foundry/interfaces/External.sol";
+import {
+    IBaseModule,
+    IMetaRegistry,
+    INodeOperatorsRegistry,
+    IStakingRouter,
+    NodeOperatorManagementProperties
+} from "test/foundry/interfaces/External.sol";
 import {ICreateOrUpdateOperatorGroup} from "test/foundry/interfaces/Factories.sol";
 
 /// @notice The deployed `CreateOrUpdateOperatorGroup:CM` of `deployed-sm-<chain>.json`: a motion
@@ -58,23 +64,16 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         uint256 groupId = metaRegistry.getOperatorGroupsCount();
         assertEq(groupId, groupsBefore + 1, "getOperatorGroupsCount");
         assertEq(
-            metaRegistry.getNodeOperatorGroupId(subOperatorId),
-            groupId,
-            "getNodeOperatorGroupId"
+            metaRegistry.getNodeOperatorGroupId(subOperatorId), groupId, "getNodeOperatorGroupId"
         );
         assertEq(
-            _externalOperatorGroupId(externalOperatorId),
-            groupId,
-            "getExternalOperatorGroupId"
+            _externalOperatorGroupId(externalOperatorId), groupId, "getExternalOperatorGroupId"
         );
     }
 
     function testFork_UpdatesOperatorGroupToNonEmpty() external {
-        (
-            uint256 groupId,
-            uint64 subOperatorId,
-            uint64 externalOperatorId
-        ) = _givenGroupWithSubOperator();
+        (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId) =
+            _givenGroupWithSubOperator();
         IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
         IMetaRegistry.OperatorGroup memory updated = _group(
             UPDATED_GROUP_NAME,
@@ -90,23 +89,16 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
             "externalOperators.length"
         );
         assertEq(
-            _externalOperatorGroupId(externalOperatorId),
-            groupId,
-            "getExternalOperatorGroupId"
+            _externalOperatorGroupId(externalOperatorId), groupId, "getExternalOperatorGroupId"
         );
         assertEq(
-            metaRegistry.getNodeOperatorGroupId(subOperatorId),
-            groupId,
-            "getNodeOperatorGroupId"
+            metaRegistry.getNodeOperatorGroupId(subOperatorId), groupId, "getNodeOperatorGroupId"
         );
     }
 
     function testFork_UpdatesOperatorGroupToEmpty() external {
-        (
-            uint256 groupId,
-            uint64 subOperatorId,
-            uint64 externalOperatorId
-        ) = _givenGroupWithBothOperators();
+        (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId) =
+            _givenGroupWithBothOperators();
         IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
         IMetaRegistry.OperatorGroup memory emptyGroup;
 
@@ -125,7 +117,7 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
     }
 
     function testFork_UpdatesEmptyGroupToEmpty() external {
-        (uint256 groupId, uint64 subOperatorId, ) = _givenGroupWithBothOperators();
+        (uint256 groupId, uint64 subOperatorId,) = _givenGroupWithBothOperators();
         IMetaRegistry.OperatorGroup memory emptyGroup;
         metaRegistry.createOrUpdateOperatorGroup(groupId, emptyGroup);
         IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
@@ -141,11 +133,8 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
     }
 
     function testFork_RevertWhen_CurrentGroupChangesBeforeEnact() external {
-        (
-            uint256 groupId,
-            uint64 subOperatorId,
-            uint64 externalOperatorId
-        ) = _givenGroupWithSubOperator();
+        (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId) =
+            _givenGroupWithSubOperator();
         IMetaRegistry.OperatorGroup memory current = metaRegistry.getOperatorGroup(groupId);
         bytes memory callData = abi.encode(
             groupId,
@@ -195,11 +184,7 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
     /// @dev A group of fresh members holding only the sub operator
     function _givenGroupWithSubOperator()
         private
-        returns (
-            uint256 groupId,
-            uint64 subOperatorId,
-            uint64 externalOperatorId
-        )
+        returns (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId)
     {
         (subOperatorId, externalOperatorId) = _givenGroupMembers();
         groupId = _givenGroup(subOperatorId, new IMetaRegistry.ExternalOperator[](0));
@@ -214,17 +199,11 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
     /// @dev A group of fresh members holding the sub operator and the external operator
     function _givenGroupWithBothOperators()
         private
-        returns (
-            uint256 groupId,
-            uint64 subOperatorId,
-            uint64 externalOperatorId
-        )
+        returns (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId)
     {
         (subOperatorId, externalOperatorId) = _givenGroupMembers();
-        groupId = _givenGroup(
-            subOperatorId,
-            _externalOperators(externalModuleId, externalOperatorId)
-        );
+        groupId =
+            _givenGroup(subOperatorId, _externalOperators(externalModuleId, externalOperatorId));
 
         assertEq(
             _externalOperatorGroupId(externalOperatorId),
@@ -240,8 +219,7 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
     ) private returns (uint256 groupId) {
         _givenRole(address(metaRegistry), MANAGE_OPERATOR_GROUPS_ROLE, address(this));
         metaRegistry.createOrUpdateOperatorGroup(
-            metaRegistry.NO_GROUP_ID(),
-            _group(INITIAL_GROUP_NAME, subOperatorId, externalOperators)
+            metaRegistry.NO_GROUP_ID(), _group(INITIAL_GROUP_NAME, subOperatorId, externalOperators)
         );
         groupId = metaRegistry.getNodeOperatorGroupId(subOperatorId);
 
@@ -253,18 +231,16 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         uint64 subOperatorId,
         IMetaRegistry.ExternalOperator[] memory externalOperators
     ) private pure returns (IMetaRegistry.OperatorGroup memory) {
-        return
-            IMetaRegistry.OperatorGroup({
-                name: name,
-                subNodeOperators: _subNodeOperators(subOperatorId),
-                externalOperators: externalOperators
-            });
+        return IMetaRegistry.OperatorGroup({
+            name: name,
+            subNodeOperators: _subNodeOperators(subOperatorId),
+            externalOperators: externalOperators
+        });
     }
 
     function _externalOperatorGroupId(uint64 externalOperatorId) private view returns (uint256) {
-        return
-            metaRegistry.getExternalOperatorGroupId(
-                _externalOperator(externalModuleId, externalOperatorId)
-            );
+        return metaRegistry.getExternalOperatorGroupId(
+            _externalOperator(externalModuleId, externalOperatorId)
+        );
     }
 }

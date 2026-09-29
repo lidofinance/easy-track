@@ -54,8 +54,7 @@ contract EVMScriptPermissionsTest is Test {
     function test_CannotExecuteTooShortEVMScriptWithTripleZeroPermission() external view {
         assertFalse(
             wrapper.canExecuteEVMScript(
-                bytes.concat(ZERO_PERMISSION, ZERO_PERMISSION, ZERO_PERMISSION),
-                hex""
+                bytes.concat(ZERO_PERMISSION, ZERO_PERMISSION, ZERO_PERMISSION), hex""
             ),
             "canExecuteEVMScript"
         );
@@ -81,8 +80,7 @@ contract EVMScriptPermissionsTest is Test {
     {
         assertFalse(
             wrapper.canExecuteEVMScript(
-                bytes.concat(ZERO_PERMISSION, DEADBEEF_PERMISSION, FEEDFACE_PERMISSION),
-                hex""
+                bytes.concat(ZERO_PERMISSION, DEADBEEF_PERMISSION, FEEDFACE_PERMISSION), hex""
             ),
             "canExecuteEVMScript"
         );
@@ -249,12 +247,11 @@ contract EVMScriptPermissionsTest is Test {
 
     // python: node_operators_registry_stub_permissions of all three methods
     function _allPermissions() private view returns (bytes memory) {
-        return
-            bytes.concat(
-                _permission(NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector),
-                _permission(NodeOperatorsRegistryStub.getNodeOperator.selector),
-                _permission(NodeOperatorsRegistryStub.setRewardAddress.selector)
-            );
+        return bytes.concat(
+            _permission(NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector),
+            _permission(NodeOperatorsRegistryStub.getNodeOperator.selector),
+            _permission(NodeOperatorsRegistryStub.setRewardAddress.selector)
+        );
     }
 
     // python: node_operators_registry_stub_calldata
@@ -268,28 +265,21 @@ contract EVMScriptPermissionsTest is Test {
     }
 
     function _setNodeOperatorStakingLimitCall() private pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector,
-                uint256(1),
-                uint64(200)
-            );
+        return abi.encodeWithSelector(
+            NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector, uint256(1), uint64(200)
+        );
     }
 
     function _getNodeOperatorCall() private pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                NodeOperatorsRegistryStub.getNodeOperator.selector,
-                uint256(1),
-                false
-            );
+        return abi.encodeWithSelector(
+            NodeOperatorsRegistryStub.getNodeOperator.selector, uint256(1), false
+        );
     }
 
     function _setRewardAddressCall() private view returns (bytes memory) {
         return
             abi.encodeWithSelector(
-                NodeOperatorsRegistryStub.setRewardAddress.selector,
-                rewardAddress
+                NodeOperatorsRegistryStub.setRewardAddress.selector, rewardAddress
             );
     }
 
@@ -304,11 +294,11 @@ contract EVMScriptPermissionsTest is Test {
         list[1] = b;
     }
 
-    function _list(
-        bytes memory a,
-        bytes memory b,
-        bytes memory c
-    ) private pure returns (bytes[] memory list) {
+    function _list(bytes memory a, bytes memory b, bytes memory c)
+        private
+        pure
+        returns (bytes[] memory list)
+    {
         list = new bytes[](3);
         list[0] = a;
         list[1] = b;

@@ -42,9 +42,7 @@ contract MotionSettingsTest is Test {
         );
 
         assertEq(
-            newMotionSettings.MAX_MOTIONS_LIMIT(),
-            Constants.MAX_MOTIONS_LIMIT,
-            "MAX_MOTIONS_LIMIT"
+            newMotionSettings.MAX_MOTIONS_LIMIT(), Constants.MAX_MOTIONS_LIMIT, "MAX_MOTIONS_LIMIT"
         );
         assertEq(
             newMotionSettings.MAX_OBJECTIONS_THRESHOLD(),
@@ -130,9 +128,7 @@ contract MotionSettingsTest is Test {
         motionSettings.setObjectionsThreshold(newObjectionsThreshold);
 
         assertEq(
-            motionSettings.objectionsThreshold(),
-            newObjectionsThreshold,
-            "objectionsThreshold"
+            motionSettings.objectionsThreshold(), newObjectionsThreshold, "objectionsThreshold"
         );
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }

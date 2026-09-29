@@ -4,7 +4,14 @@
 pragma solidity ^0.8.25;
 
 import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
-import {IBaseModule, IConsolidationMigrator, IMetaRegistry, INodeOperatorsRegistry, IStakingRouter, NodeOperatorManagementProperties} from "test/foundry/interfaces/External.sol";
+import {
+    IBaseModule,
+    IConsolidationMigrator,
+    IMetaRegistry,
+    INodeOperatorsRegistry,
+    IStakingRouter,
+    NodeOperatorManagementProperties
+} from "test/foundry/interfaces/External.sol";
 import {IAllowConsolidationPair} from "test/foundry/interfaces/Factories.sol";
 
 /// @notice The deployed `AllowConsolidationPair` of `deployed-sr-<chain>.json`: a motion allowlists
@@ -22,9 +29,8 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
     function setUp() public {
         _forkAndInitialize();
 
-        IAllowConsolidationPair factory = IAllowConsolidationPair(
-            _factoryAddress(config.srArtifact, "AllowConsolidationPair")
-        );
+        IAllowConsolidationPair factory =
+            IAllowConsolidationPair(_factoryAddress(config.srArtifact, "AllowConsolidationPair"));
         IStakingRouter stakingRouter = IStakingRouter(factory.stakingRouter());
         consolidationMigrator = IConsolidationMigrator(factory.consolidationMigrator());
         sourceModuleId = factory.sourceModuleId();
@@ -47,8 +53,7 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
         _enact(_encodePair(sourceOperatorId, targetOperatorId, submitter));
 
         assertTrue(
-            consolidationMigrator.isPairAllowed(sourceOperatorId, targetOperatorId),
-            "isPairAllowed"
+            consolidationMigrator.isPairAllowed(sourceOperatorId, targetOperatorId), "isPairAllowed"
         );
         assertEq(
             consolidationMigrator.getSubmitter(sourceOperatorId, targetOperatorId),
@@ -70,8 +75,7 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
             "getSubmitter"
         );
         assertTrue(
-            consolidationMigrator.isPairAllowed(sourceOperatorId, targetOperatorId),
-            "isPairAllowed"
+            consolidationMigrator.isPairAllowed(sourceOperatorId, targetOperatorId), "isPairAllowed"
         );
     }
 
@@ -109,11 +113,11 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
 
     /// @dev `AllowConsolidationPairInput`:
     ///      (address submitter, uint256 sourceOperatorId, uint256[] targetOperatorIds)
-    function _encodePair(
-        uint256 sourceOperatorId,
-        uint256 targetOperatorId,
-        address pairSubmitter
-    ) private pure returns (bytes memory) {
+    function _encodePair(uint256 sourceOperatorId, uint256 targetOperatorId, address pairSubmitter)
+        private
+        pure
+        returns (bytes memory)
+    {
         uint256[] memory targetOperatorIds = new uint256[](1);
         targetOperatorIds[0] = targetOperatorId;
 

@@ -22,6 +22,16 @@ remappings = ["forge-std/=node_modules/forge-std/src/"]
 # The unit suite pins solc 0.8.6 and belongs to [profile.unit].
 skip = ["test/foundry/unit/**"]
 
+# `forge fmt` formats the Foundry test tree, the `src` and `test` of the default profile. The
+# project contracts under contracts/ keep prettier (`npm run lint`), see .prettierignore.
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+
 [profile.contracts]
 src = "contracts"
 # No Solidity tests here (the suite lives under the default profile); point `test` at an empty path so

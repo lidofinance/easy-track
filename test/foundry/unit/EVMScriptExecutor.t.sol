@@ -6,7 +6,9 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {EasyTrack} from "contracts/EasyTrack.sol";
 import {EVMScriptExecutor} from "contracts/EVMScriptExecutor.sol";
-import {IncreaseNodeOperatorStakingLimit} from "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol";
+import {
+    IncreaseNodeOperatorStakingLimit
+} from "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
 import {Constants} from "test/foundry/unit/helpers/Constants.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
@@ -51,9 +53,8 @@ contract EVMScriptExecutorTest is Test {
         evmScriptExecutor = new EVMScriptExecutor(address(callsScript), address(easyTrack));
 
         nodeOperatorsRegistryStub = new NodeOperatorsRegistryStub(nodeOperator);
-        increaseNodeOperatorStakingLimit = new IncreaseNodeOperatorStakingLimit(
-            address(nodeOperatorsRegistryStub)
-        );
+        increaseNodeOperatorStakingLimit =
+            new IncreaseNodeOperatorStakingLimit(address(nodeOperatorsRegistryStub));
         vm.stopPrank();
 
         vm.prank(voting);
@@ -63,10 +64,8 @@ contract EVMScriptExecutorTest is Test {
     // python: test_deploy
     function test_Deploy() external {
         vm.prank(owner);
-        EVMScriptExecutor newEVMScriptExecutor = new EVMScriptExecutor(
-            address(callsScript),
-            address(easyTrack)
-        );
+        EVMScriptExecutor newEVMScriptExecutor =
+            new EVMScriptExecutor(address(callsScript), address(easyTrack));
 
         assertEq(newEVMScriptExecutor.callsScript(), address(callsScript), "callsScript");
         assertEq(newEVMScriptExecutor.easyTrack(), address(easyTrack), "easyTrack");
@@ -165,14 +164,13 @@ contract EVMScriptExecutorTest is Test {
 
     /// @dev python: encode_call_script([(stub, stub.setNodeOperatorStakingLimit.encode_input(0, 500))])
     function _scriptSettingStakingLimit() private view returns (bytes memory) {
-        return
-            EVMScripts.encodeCallScript(
-                address(nodeOperatorsRegistryStub),
-                abi.encodeWithSelector(
-                    NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector,
-                    NODE_OPERATOR_ID,
-                    NEW_STAKING_LIMIT
-                )
-            );
+        return EVMScripts.encodeCallScript(
+            address(nodeOperatorsRegistryStub),
+            abi.encodeWithSelector(
+                NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector,
+                NODE_OPERATOR_ID,
+                NEW_STAKING_LIMIT
+            )
+        );
     }
 }

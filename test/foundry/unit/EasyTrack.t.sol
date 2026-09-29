@@ -36,11 +36,8 @@ contract EasyTrackTest is Test {
     address internal stranger = makeAddr("stranger");
     address internal voting = makeAddr("voting");
     address internal agent = makeAddr("agent");
-    address[3] internal ldoHolders = [
-        makeAddr("ldoHolder1"),
-        makeAddr("ldoHolder2"),
-        makeAddr("ldoHolder3")
-    ];
+    address[3] internal ldoHolders =
+        [makeAddr("ldoHolder1"), makeAddr("ldoHolder2"), makeAddr("ldoHolder3")];
 
     MiniMeTokenStub internal ldo;
     EasyTrack internal easyTrack;
@@ -108,8 +105,7 @@ contract EasyTrackTest is Test {
         assertEq(address(newEasyTrack.governanceToken()), address(ldo), "governanceToken");
         assertEq(address(newEasyTrack.evmScriptExecutor()), address(0), "evmScriptExecutor");
         assertTrue(
-            newEasyTrack.hasRole(newEasyTrack.DEFAULT_ADMIN_ROLE(), voting),
-            "DEFAULT_ADMIN_ROLE"
+            newEasyTrack.hasRole(newEasyTrack.DEFAULT_ADMIN_ROLE(), voting), "DEFAULT_ADMIN_ROLE"
         );
         assertTrue(newEasyTrack.hasRole(newEasyTrack.PAUSE_ROLE(), voting), "PAUSE_ROLE");
         assertTrue(newEasyTrack.hasRole(newEasyTrack.UNPAUSE_ROLE(), voting), "UNPAUSE_ROLE");
@@ -143,9 +139,7 @@ contract EasyTrackTest is Test {
         easyTrack.addEVMScriptFactory(address(evmScriptFactoryStub), wrongPermissions);
 
         assertNotEq(
-            evmScriptFactoryStub.DEFAULT_PERMISSIONS(),
-            wrongPermissions,
-            "DEFAULT_PERMISSIONS"
+            evmScriptFactoryStub.DEFAULT_PERMISSIONS(), wrongPermissions, "DEFAULT_PERMISSIONS"
         );
 
         vm.prank(stranger);
@@ -179,19 +173,14 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         bytes memory defaultEVMScript = evmScriptFactoryStub.DEFAULT_EVM_SCRIPT();
 
         vm.expectEmit(address(easyTrack));
         emit MotionCreated(
-            1,
-            owner,
-            address(evmScriptFactoryStub),
-            EVM_SCRIPT_CALL_DATA,
-            defaultEVMScript
+            1, owner, address(evmScriptFactoryStub), EVM_SCRIPT_CALL_DATA, defaultEVMScript
         );
 
         vm.recordLogs();
@@ -218,9 +207,7 @@ contract EasyTrackTest is Test {
         );
         assertEq(motion.objectionsAmount, 0, "objectionsAmount");
         assertEq(
-            motion.evmScriptHash,
-            evmScriptFactoryStub.DEFAULT_EVM_SCRIPT_HASH(),
-            "evmScriptHash"
+            motion.evmScriptHash, evmScriptFactoryStub.DEFAULT_EVM_SCRIPT_HASH(), "evmScriptHash"
         );
     }
 
@@ -236,8 +223,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -255,8 +241,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(stranger);
@@ -282,8 +267,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         _givenMotionsCreatedBy(owner, 3);
@@ -339,8 +323,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -359,8 +342,7 @@ contract EasyTrackTest is Test {
         _givenFactoryStubAllowedToSetEVMScript();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -384,8 +366,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(voting);
@@ -431,8 +412,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -453,8 +433,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -473,8 +452,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -502,8 +480,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -520,9 +497,8 @@ contract EasyTrackTest is Test {
         assertEq(easyTrack.getMotions().length, 1, "motions.length");
 
         uint256 weight = ldo.balanceOf(ldoHolders[2]);
-        uint256 objectionsAmount = ldo.balanceOf(ldoHolders[0]) +
-            ldo.balanceOf(ldoHolders[1]) +
-            weight;
+        uint256 objectionsAmount =
+            ldo.balanceOf(ldoHolders[0]) + ldo.balanceOf(ldoHolders[1]) + weight;
         uint256 objectionsAmountPct = (HUNDRED_PERCENT * objectionsAmount) / ldo.totalSupply();
 
         // 0.6 % objections cross the 0.5 % threshold
@@ -543,9 +519,8 @@ contract EasyTrackTest is Test {
 
     // python: test_object_to_motion_edge_case
     function test_ObjectionsThresholdEdgeCase() external {
-        uint256 objectionsThresholdAmount = (easyTrack.objectionsThreshold() * ldo.totalSupply()) /
-            HUNDRED_PERCENT -
-            1;
+        uint256 objectionsThresholdAmount =
+            (easyTrack.objectionsThreshold() * ldo.totalSupply()) / HUNDRED_PERCENT - 1;
 
         vm.startPrank(agent);
         ldo.transfer(owner, objectionsThresholdAmount);
@@ -555,8 +530,7 @@ contract EasyTrackTest is Test {
         _givenRegisteredFactoryStub();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -670,9 +644,7 @@ contract EasyTrackTest is Test {
     // python: test_set_evm_script_executor_called_by_owner
     function test_SetsEVMScriptExecutor() external {
         assertEq(
-            address(easyTrack.evmScriptExecutor()),
-            address(evmScriptExecutor),
-            "evmScriptExecutor"
+            address(easyTrack.evmScriptExecutor()), address(evmScriptExecutor), "evmScriptExecutor"
         );
 
         vm.expectEmit(address(easyTrack));
@@ -777,8 +749,7 @@ contract EasyTrackTest is Test {
         _givenFactoryStubAllowedToSetEVMScript();
 
         assertTrue(
-            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)),
-            "isEVMScriptFactory"
+            easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
         vm.prank(owner);
@@ -818,8 +789,7 @@ contract EasyTrackTest is Test {
     /// return a script calling that method, so the stub can rewrite its script mid-motion
     function _givenFactoryStubAllowedToSetEVMScript() private {
         bytes memory permissions = EVMScripts.createPermission(
-            address(evmScriptFactoryStub),
-            EVMScriptFactoryStub.setEVMScript.selector
+            address(evmScriptFactoryStub), EVMScriptFactoryStub.setEVMScript.selector
         );
 
         vm.prank(voting);
@@ -843,10 +813,9 @@ contract EasyTrackTest is Test {
         view
         returns (bytes memory)
     {
-        return
-            EVMScripts.encodeCallScript(
-                address(evmScriptFactoryStub),
-                abi.encodeWithSelector(EVMScriptFactoryStub.setEVMScript.selector, evmScript)
-            );
+        return EVMScripts.encodeCallScript(
+            address(evmScriptFactoryStub),
+            abi.encodeWithSelector(EVMScriptFactoryStub.setEVMScript.selector, evmScript)
+        );
     }
 }

@@ -48,10 +48,7 @@ interface IStakingRouter {
         uint16 priorityExitShareThreshold;
     }
 
-    function getStakingModule(uint256 _stakingModuleId)
-        external
-        view
-        returns (StakingModule memory);
+    function getStakingModule(uint256 _stakingModuleId) external view returns (StakingModule memory);
 
     function updateModuleShares(
         uint256 _stakingModuleId,
@@ -227,8 +224,7 @@ interface IMetaRegistry {
         view
         returns (uint256);
 
-    function createOrUpdateOperatorGroup(uint256 groupId, OperatorGroup calldata groupInfo)
-        external;
+    function createOrUpdateOperatorGroup(uint256 groupId, OperatorGroup calldata groupInfo) external;
 
     // Deterministic setup surface (make a freshly-created curated operator depositable).
     function getBondCurveWeight(uint256 curveId) external view returns (uint256);

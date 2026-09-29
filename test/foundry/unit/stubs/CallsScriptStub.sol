@@ -27,17 +27,14 @@ contract CallsScriptStub {
 
     event LogScriptCall(address indexed sender, address indexed src, address indexed dst);
 
-    function execScript(
-        bytes memory _script,
-        bytes memory,
-        address[] memory
-    ) external returns (bytes memory) {
-        uint256 initializationBlock = StorageSlot
-            .getUint256Slot(INITIALIZATION_BLOCK_POSITION)
-            .value;
+    function execScript(bytes memory _script, bytes memory, address[] memory)
+        external
+        returns (bytes memory)
+    {
+        uint256 initializationBlock =
+            StorageSlot.getUint256Slot(INITIALIZATION_BLOCK_POSITION).value;
         require(
-            initializationBlock != 0 && block.number >= initializationBlock,
-            "INIT_NOT_INITIALIZED"
+            initializationBlock != 0 && block.number >= initializationBlock, "INIT_NOT_INITIALIZED"
         );
 
         uint256 location = SCRIPT_START_LOCATION;
@@ -58,9 +55,8 @@ contract CallsScriptStub {
 
             require(location <= _script.length, "EVMCALLS_INVALID_LENGTH");
 
-            (bool success, bytes memory output) = target.call(
-                _slice(_script, calldataStart, calldataLength)
-            );
+            (bool success, bytes memory output) =
+                target.call(_slice(_script, calldataStart, calldataLength));
 
             if (!success) {
                 _forwardRevert(output);
@@ -70,11 +66,11 @@ contract CallsScriptStub {
         return "";
     }
 
-    function _slice(
-        bytes memory data,
-        uint256 start,
-        uint256 length
-    ) private pure returns (bytes memory result) {
+    function _slice(bytes memory data, uint256 start, uint256 length)
+        private
+        pure
+        returns (bytes memory result)
+    {
         result = new bytes(length);
 
         for (uint256 i; i < length; ++i) {

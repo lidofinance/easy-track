@@ -28,12 +28,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
 
     // python: test_validate_structs_reverts_when_relay_not_found_expected
     function test_RevertWhen_ValidateRelaysExpectedRelayIsNotFound() external {
-        IMEVBoostRelayAllowedList.Relay memory newRelay = _relay(
-            "https://relay4.example.com",
-            "Operator 4",
-            true,
-            "Fourth relay description"
-        );
+        IMEVBoostRelayAllowedList.Relay memory newRelay =
+            _relay("https://relay4.example.com", "Operator 4", true, "Fourth relay description");
 
         vm.expectRevert("RELAY_NOT_FOUND");
         wrapper.validateRelays(_single(newRelay), _allowedRelays(), true);
@@ -41,12 +37,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
 
     // python: test_validate_structs_passes_when_relay_absent_as_expected
     function test_ValidateRelaysPassesWhenRelayAbsentAsExpected() external view {
-        IMEVBoostRelayAllowedList.Relay memory newRelay = _relay(
-            "https://relay4.example.com",
-            "Operator 4",
-            true,
-            "Fourth relay description"
-        );
+        IMEVBoostRelayAllowedList.Relay memory newRelay =
+            _relay("https://relay4.example.com", "Operator 4", true, "Fourth relay description");
 
         wrapper.validateRelays(_single(newRelay), _allowedRelays(), false);
     }
@@ -67,12 +59,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
 
     // python: test_validate_structs_reverts_on_empty_uri
     function test_RevertWhen_ValidateRelaysURIIsEmpty() external {
-        IMEVBoostRelayAllowedList.Relay memory newRelay = _relay(
-            "",
-            "Operator 1",
-            true,
-            "Description 1"
-        );
+        IMEVBoostRelayAllowedList.Relay memory newRelay =
+            _relay("", "Operator 1", true, "Description 1");
 
         vm.expectRevert("EMPTY_RELAY_URI");
         wrapper.validateRelays(_single(newRelay), _allowedRelays(), true);
@@ -80,12 +68,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
 
     // python: test_validate_structs_reverts_on_uri_exceeding_max_length
     function test_RevertWhen_ValidateRelaysURIExceedsMaxLength() external {
-        IMEVBoostRelayAllowedList.Relay memory newRelay = _relay(
-            _repeat("a", MAX_STRING_LENGTH + 1),
-            "Operator 1",
-            true,
-            "Description 1"
-        );
+        IMEVBoostRelayAllowedList.Relay memory newRelay =
+            _relay(_repeat("a", MAX_STRING_LENGTH + 1), "Operator 1", true, "Description 1");
 
         vm.expectRevert("MAX_STRING_LENGTH_EXCEEDED");
         wrapper.validateRelays(_single(newRelay), _allowedRelays(), true);
@@ -94,10 +78,7 @@ contract MEVBoostRelaysInputUtilsTest is Test {
     // python: test_validate_structs_reverts_on_operator_exceeding_max_length
     function test_RevertWhen_ValidateRelaysOperatorExceedsMaxLength() external {
         IMEVBoostRelayAllowedList.Relay memory newRelay = _relay(
-            "https://example.com",
-            _repeat("o", MAX_STRING_LENGTH + 1),
-            true,
-            "Description 1"
+            "https://example.com", _repeat("o", MAX_STRING_LENGTH + 1), true, "Description 1"
         );
 
         vm.expectRevert("MAX_STRING_LENGTH_EXCEEDED");
@@ -106,12 +87,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
 
     // python: test_validate_structs_reverts_on_description_exceeding_max_length
     function test_RevertWhen_ValidateRelaysDescriptionExceedsMaxLength() external {
-        IMEVBoostRelayAllowedList.Relay memory newRelay = _relay(
-            "https://example.com",
-            "Operator 1",
-            true,
-            _repeat("d", MAX_STRING_LENGTH + 1)
-        );
+        IMEVBoostRelayAllowedList.Relay memory newRelay =
+            _relay("https://example.com", "Operator 1", true, _repeat("d", MAX_STRING_LENGTH + 1));
 
         vm.expectRevert("MAX_STRING_LENGTH_EXCEEDED");
         wrapper.validateRelays(_single(newRelay), _allowedRelays(), true);
@@ -119,12 +96,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
 
     // python: test_validate_structs_reverts_on_duplicate_uris
     function test_RevertWhen_ValidateRelaysURIsAreDuplicated() external {
-        IMEVBoostRelayAllowedList.Relay memory duplicateRelay = _relay(
-            "https://example.com",
-            "Operator",
-            true,
-            "Description"
-        );
+        IMEVBoostRelayAllowedList.Relay memory duplicateRelay =
+            _relay("https://example.com", "Operator", true, "Description");
 
         // the duplicate check runs before the existence check
         vm.expectRevert("DUPLICATE_RELAY_URI");
@@ -164,8 +137,7 @@ contract MEVBoostRelaysInputUtilsTest is Test {
     function test_RevertWhen_ValidateRelayURIsEntriesAreDuplicated() external {
         vm.expectRevert("DUPLICATE_RELAY_URI");
         wrapper.validateRelayURIs(
-            _pair("https://example.com", "https://example.com"),
-            _allowedRelays()
+            _pair("https://example.com", "https://example.com"), _allowedRelays()
         );
     }
 
@@ -173,9 +145,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
     function test_DecodesRelayStructs() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays = _allowedRelays();
 
-        IMEVBoostRelayAllowedList.Relay[] memory decoded = wrapper.decodeCallDataWithRelayStructs(
-            abi.encode(relays)
-        );
+        IMEVBoostRelayAllowedList.Relay[] memory decoded =
+            wrapper.decodeCallDataWithRelayStructs(abi.encode(relays));
 
         _assertRelaysEq(decoded, relays);
     }
@@ -210,24 +181,12 @@ contract MEVBoostRelaysInputUtilsTest is Test {
         returns (IMEVBoostRelayAllowedList.Relay[] memory relays)
     {
         relays = new IMEVBoostRelayAllowedList.Relay[](3);
-        relays[0] = _relay(
-            "https://relay1.example.com",
-            "Operator 1",
-            true,
-            "First relay description"
-        );
-        relays[1] = _relay(
-            "https://relay2.example.com",
-            "Operator 2",
-            false,
-            "Second relay description"
-        );
-        relays[2] = _relay(
-            "https://relay3.example.com",
-            "Operator 3",
-            true,
-            "Third relay description"
-        );
+        relays[0] =
+            _relay("https://relay1.example.com", "Operator 1", true, "First relay description");
+        relays[1] =
+            _relay("https://relay2.example.com", "Operator 2", false, "Second relay description");
+        relays[2] =
+            _relay("https://relay3.example.com", "Operator 3", true, "Third relay description");
     }
 
     // python: allowed_uris
@@ -245,12 +204,8 @@ contract MEVBoostRelaysInputUtilsTest is Test {
         bool isMandatory,
         string memory description
     ) private pure returns (IMEVBoostRelayAllowedList.Relay memory) {
-        return
-            IMEVBoostRelayAllowedList.Relay({
-                uri: uri,
-                operator: operator,
-                is_mandatory: isMandatory,
-                description: description
+        return IMEVBoostRelayAllowedList.Relay({
+                uri: uri, operator: operator, is_mandatory: isMandatory, description: description
             });
     }
 

@@ -39,8 +39,7 @@ contract EVMScriptFactoriesRegistryTest is Test {
         EVMScriptFactoriesRegistry newRegistry = new EVMScriptFactoriesRegistry(owner);
 
         assertTrue(
-            newRegistry.hasRole(newRegistry.DEFAULT_ADMIN_ROLE(), owner),
-            "DEFAULT_ADMIN_ROLE"
+            newRegistry.hasRole(newRegistry.DEFAULT_ADMIN_ROLE(), owner), "DEFAULT_ADMIN_ROLE"
         );
     }
 
@@ -113,8 +112,7 @@ contract EVMScriptFactoriesRegistryTest is Test {
             evmScriptFactories = _pop(evmScriptFactories, removingOrder[i]);
 
             assertTrue(
-                evmScriptFactoriesRegistry.isEVMScriptFactory(toRemove),
-                "isEVMScriptFactory"
+                evmScriptFactoriesRegistry.isEVMScriptFactory(toRemove), "isEVMScriptFactory"
             );
 
             vm.expectEmit(address(evmScriptFactoriesRegistry));
@@ -126,8 +124,7 @@ contract EVMScriptFactoriesRegistryTest is Test {
             evmScriptFactoriesRegistry.removeEVMScriptFactory(toRemove);
 
             assertFalse(
-                evmScriptFactoriesRegistry.isEVMScriptFactory(toRemove),
-                "isEVMScriptFactory"
+                evmScriptFactoriesRegistry.isEVMScriptFactory(toRemove), "isEVMScriptFactory"
             );
             assertEq(vm.getRecordedLogs().length, 1, "events");
             assertEq(

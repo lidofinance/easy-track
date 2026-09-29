@@ -23,9 +23,8 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
     function setUp() public {
         _forkAndInitialize();
 
-        ISetMerkleGateTree factory = ISetMerkleGateTree(
-            _factoryAddress(config.smArtifact, _factoryKey())
-        );
+        ISetMerkleGateTree factory =
+            ISetMerkleGateTree(_factoryAddress(config.smArtifact, _factoryKey()));
         gate = IMerkleGate(_managedGate(_stakingModule()));
 
         evmScriptFactory = address(factory);
@@ -33,11 +32,8 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
     }
 
     function testFork_SetsGateTree() external {
-        (
-            bytes32 newTreeRoot,
-            string memory newTreeCid,
-            bytes memory callData
-        ) = _plannedTreeUpdate();
+        (bytes32 newTreeRoot, string memory newTreeCid, bytes memory callData) =
+            _plannedTreeUpdate();
 
         _enact(callData);
 
@@ -47,7 +43,7 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
 
     function testFork_RevertWhen_CurrentTreeChangesBeforeEnact() external {
         // the planned motion commits the current root and CID
-        (, , bytes memory callData) = _plannedTreeUpdate();
+        (,, bytes memory callData) = _plannedTreeUpdate();
         uint256 motionId = _createMotion(callData);
 
         // Change the gate's tree so the committed current root/cid no longer match
@@ -85,11 +81,7 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
     function _plannedTreeUpdate()
         private
         view
-        returns (
-            bytes32 newTreeRoot,
-            string memory newTreeCid,
-            bytes memory callData
-        )
+        returns (bytes32 newTreeRoot, string memory newTreeCid, bytes memory callData)
     {
         bytes32 treeRoot = gate.treeRoot();
         string memory treeCid = gate.treeCid();

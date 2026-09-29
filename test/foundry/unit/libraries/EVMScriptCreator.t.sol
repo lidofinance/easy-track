@@ -47,8 +47,7 @@ contract EVMScriptCreatorTest is Test {
         );
 
         bytes memory expected = EVMScripts.encodeCallScript(
-            address(nodeOperatorsRegistryStub),
-            _setNodeOperatorStakingLimitInput(1, 300)
+            address(nodeOperatorsRegistryStub), _setNodeOperatorStakingLimitInput(1, 300)
         );
 
         assertEq(evmScript, expected, "evmScript");
@@ -63,9 +62,7 @@ contract EVMScriptCreatorTest is Test {
         );
 
         bytes memory evmScript = EVMScriptCreatorWrapper.createEVMScript(
-            address(nodeOperatorsRegistryStub),
-            SET_NODE_OPERATOR_STAKING_LIMIT,
-            callData
+            address(nodeOperatorsRegistryStub), SET_NODE_OPERATOR_STAKING_LIMIT, callData
         );
 
         bytes memory expected = EVMScripts.encodeCallScript(
@@ -94,9 +91,7 @@ contract EVMScriptCreatorTest is Test {
 
         vm.expectRevert("LENGTH_MISMATCH");
         EVMScriptCreatorWrapper.createEVMScript(
-            address(nodeOperatorsRegistryStub),
-            methodIds,
-            callData
+            address(nodeOperatorsRegistryStub), methodIds, callData
         );
     }
 
@@ -109,9 +104,7 @@ contract EVMScriptCreatorTest is Test {
         );
 
         bytes memory evmScript = EVMScriptCreatorWrapper.createEVMScript(
-            address(rewardProgramsRegistry),
-            methodIds,
-            callData
+            address(rewardProgramsRegistry), methodIds, callData
         );
 
         bytes memory expected = EVMScripts.encodeCallScript(
@@ -132,16 +125,12 @@ contract EVMScriptCreatorTest is Test {
 
         vm.expectRevert("LENGTH_MISMATCH");
         EVMScriptCreatorWrapper.createEVMScript(
-            targets,
-            _list(SET_NODE_OPERATOR_STAKING_LIMIT, REMOVE_REWARD_PROGRAM),
-            _list(callData)
+            targets, _list(SET_NODE_OPERATOR_STAKING_LIMIT, REMOVE_REWARD_PROGRAM), _list(callData)
         );
 
         vm.expectRevert("LENGTH_MISMATCH");
         EVMScriptCreatorWrapper.createEVMScript(
-            targets,
-            _list(SET_NODE_OPERATOR_STAKING_LIMIT),
-            _list(callData, callData)
+            targets, _list(SET_NODE_OPERATOR_STAKING_LIMIT), _list(callData, callData)
         );
     }
 
@@ -153,9 +142,7 @@ contract EVMScriptCreatorTest is Test {
             address(nodeOperatorsRegistryStub)
         );
         bytes4[] memory methodIds = _list(
-            SET_NODE_OPERATOR_STAKING_LIMIT,
-            REMOVE_REWARD_PROGRAM,
-            SET_NODE_OPERATOR_STAKING_LIMIT
+            SET_NODE_OPERATOR_STAKING_LIMIT, REMOVE_REWARD_PROGRAM, SET_NODE_OPERATOR_STAKING_LIMIT
         );
         bytes[] memory callData = _list(
             _encodeSetNodeOperatorStakingLimitCallData(1, 300),
@@ -163,11 +150,8 @@ contract EVMScriptCreatorTest is Test {
             _encodeSetNodeOperatorStakingLimitCallData(3, 600)
         );
 
-        bytes memory evmScript = EVMScriptCreatorWrapper.createEVMScript(
-            targets,
-            methodIds,
-            callData
-        );
+        bytes memory evmScript =
+            EVMScriptCreatorWrapper.createEVMScript(targets, methodIds, callData);
 
         bytes memory expected = EVMScripts.encodeCallScript(
             targets,
@@ -182,60 +166,59 @@ contract EVMScriptCreatorTest is Test {
     }
 
     // python: encode_set_node_operator_staking_limit_calldata, encoded as (uint256,uint256)
-    function _encodeSetNodeOperatorStakingLimitCallData(
-        uint256 id,
-        uint256 limit
-    ) private pure returns (bytes memory) {
+    function _encodeSetNodeOperatorStakingLimitCallData(uint256 id, uint256 limit)
+        private
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(id, limit);
     }
 
     // python: encode_add_reward_program_calldata
-    function _encodeAddRewardProgramCallData(
-        address rewardProgram,
-        string memory title
-    ) private pure returns (bytes memory) {
+    function _encodeAddRewardProgramCallData(address rewardProgram, string memory title)
+        private
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(rewardProgram, title);
     }
 
     // python: encode_remove_reward_program_calldata
-    function _encodeRemoveRewardProgramCallData(
-        address rewardProgram
-    ) private pure returns (bytes memory) {
+    function _encodeRemoveRewardProgramCallData(address rewardProgram)
+        private
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(rewardProgram);
     }
 
     // python: node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input
-    function _setNodeOperatorStakingLimitInput(
-        uint256 id,
-        uint64 limit
-    ) private pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector,
-                id,
-                limit
-            );
+    function _setNodeOperatorStakingLimitInput(uint256 id, uint64 limit)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSelector(
+            NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector, id, limit
+        );
     }
 
     // python: reward_programs_registry.addRewardProgram.encode_input
-    function _addRewardProgramInput(
-        address rewardProgram,
-        string memory title
-    ) private pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                RewardProgramsRegistry.addRewardProgram.selector,
-                rewardProgram,
-                title
-            );
+    function _addRewardProgramInput(address rewardProgram, string memory title)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSelector(
+            RewardProgramsRegistry.addRewardProgram.selector, rewardProgram, title
+        );
     }
 
     // python: reward_programs_registry.removeRewardProgram.encode_input
     function _removeRewardProgramInput(address rewardProgram) private pure returns (bytes memory) {
         return
             abi.encodeWithSelector(
-                RewardProgramsRegistry.removeRewardProgram.selector,
-                rewardProgram
+                RewardProgramsRegistry.removeRewardProgram.selector, rewardProgram
             );
     }
 
@@ -286,11 +269,11 @@ contract EVMScriptCreatorTest is Test {
         list[1] = b;
     }
 
-    function _list(
-        bytes memory a,
-        bytes memory b,
-        bytes memory c
-    ) private pure returns (bytes[] memory list) {
+    function _list(bytes memory a, bytes memory b, bytes memory c)
+        private
+        pure
+        returns (bytes[] memory list)
+    {
         list = new bytes[](3);
         list[0] = a;
         list[1] = b;
