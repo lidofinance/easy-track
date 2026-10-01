@@ -5,6 +5,13 @@ from utils.evm_script import encode_calldata
 from utils.test_helpers import set_account_balance
 
 MOTION_BUFFER_TIME = 100
+
+
+@pytest.fixture(scope="module")
+def deployed_contracts():
+    """Override: operator grid tests need a fresh EasyTrack."""
+    return {"EasyTrack": ""}
+
 INITIAL_VAULT_BALANCE = 2 * 10 ** 18
 
 @pytest.fixture(scope="module")
