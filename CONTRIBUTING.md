@@ -100,6 +100,52 @@ All validation in `createEVMScript` therefore runs twice, against the state at c
 
 Start from [`SetDepositsReserveTarget.sol`](contracts/EVMScriptFactories/SetDepositsReserveTarget.sol) for a single call, or [`UpdateStakingModuleShareLimits.sol`](contracts/EVMScriptFactories/UpdateStakingModuleShareLimits.sol) for bounded changes, committed current values and named instances. `SetDepositsReserveTarget` departs from two of the rules above: in new code, use `require` instead of `if (...) revert(...)`, and check constructor addresses for zero.
 
+## Off-chain
+
+### UI
+
+Every new factory is added to the [Governance Portal](https://github.com/lidofinance/governance-portal). The UI for a factory has two parts:
+
+- **Form.** The motion creator enters the motion parameters, and the form encodes them and calls `createMotion`.
+- **View.** The motion card describes the motion, built from its decoded calldata.
+
+By default, the UI uses only the factory contract. The form runs the checks from `createEVMScript` that need only the calldata and the factory's public getters, such as bounds, and the view shows what `decodeEVMScriptCallData` returns. The UI does not read any other contract, including the contract the motion changes, so a check against the current state (such as rejecting a no-op motion) needs form data from that contract. If the form or the view needs more than the factory, tell the maintenance team when you hand over the factory.
+
+This is not a merge requirement, and the discussion about those details may happen outside GitHub. Contact the maintenance team early and bring the following, so the UI for your factory is complete and accurate:
+
+- **Basics.** The display name, the category (`Staking`, `Treasury`, `stVaults`) and subcategory (`CSM0x02`, `Curated v2`, ...), who can create motions, and the Hoodi and mainnet addresses (R2, R7).
+- **Form fields.** For each calldata parameter: a label, the unit and the input format (ETH or wei, basis points, address, list), and a default value, if any.
+- **Extra form validations.** Checks that the factory does not make, for example against a third-party contract. For each: the contract, the method, the rule and the error message.
+- **Form data.** Data the form reads from contracts other than the factory, for example the current value to show next to the input or prefill into it, or a list of node operators to pick from. For each: the contract and its Hoodi and mainnet addresses, the method, and what the value is used for.
+- **View.** A one-line description of the motion and the decoded parameters it shows. List any data that is not in the calldata, such as the current value or an operator's name instead of its ID, with the same details as for form data.
+
+For `SetDepositsReserveTarget`:
+
+```text
+Basics:      "Set deposits reserve target", Staking, no subcategory; trusted caller only;
+             Hoodi 0x..., mainnet 0x...
+Form fields: new deposits reserve target, ETH, converted to wei; no default
+Validations: factory checks only (≤ MAX_DEPOSITS_RESERVE_TARGET, differs from current value)
+Form data:   stETH.getDepositsReserveTarget(), shown as the current value and used for the
+             "same value" check
+View:        "Set deposits reserve target from <current> ETH to <new> ETH";
+             <current> from stETH.getDepositsReserveTarget() while the motion is active
+```
+
+### Notifications
+
+The Lido DAO bot posts Easy Track motions to Telegram chats. It does not send alerts in real time. There are two types of notifications:
+
+- **Daily digest.** Posted once a day (every 8 hours on Hoodi) to every chat the bot is added to. It lists active motions with the time left and the objections.
+- **Alert groups.** A separate message for a specific audience, such as the committee responsible for a factory. It lists the factory's motions that have passed and are waiting for enactment, or were enacted, rejected or canceled. A chat receives it only if a bot admin assigns the chat to the factory's alert group.
+
+Each motion shows a link, a title and a description. By default, the title is the factory name and there is no description. When you hand over a factory, tell the maintenance team:
+
+- **Title.** The name to show for the motion, usually the UI display name.
+- **Description.** One line built from the decoded calldata. List any data that is not in the calldata, such as an operator's name or the current value, with the contract, its Hoodi and mainnet addresses and the method.
+
+Alert groups are optional. To set one up, contact the maintenance team and tell them which group the factory belongs to (an existing one such as `node_operators`, `lego`, `rewards`, `csm`, or a new one) and which Telegram chats should receive it.
+
 ## Conventions
 
 - **Solidity.** See the code style in [EVMScript Factories](#best-practices). Contracts compile with solc 0.8.6 (EVM `berlin`, optimizer off).
