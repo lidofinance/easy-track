@@ -215,11 +215,20 @@ def test_top_up_single_recipient(
 def test_top_up_single_recipient_several_times_in_period(
     recipients,
     allowed_recipients_limit_params,
+    allowed_recipients_registry,
+    lido_contracts,
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
 ):
+    test_limit = min(allowed_recipients_limit_params.limit, 10 * 10**18)
+    allowed_recipients_registry.setLimitParameters(
+        test_limit,
+        allowed_recipients_limit_params.duration,
+        {"from": lido_contracts.aragon.agent},
+    )
+
     allowed_recipient = recipients[0]
 
     add_allowed_recipient_by_motion(
@@ -229,7 +238,7 @@ def test_top_up_single_recipient_several_times_in_period(
     )
 
     top_up_recipient_addresses = [allowed_recipient.address]
-    top_up_amounts = [allowed_recipients_limit_params.limit // 2]
+    top_up_amounts = [test_limit // 2]
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
@@ -255,7 +264,7 @@ def test_top_up_single_recipient_several_times_in_period(
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         top_up_recipient_addresses,
-        [allowed_recipients_limit_params.limit],
+        [test_limit],
     )
 
 
@@ -417,14 +426,22 @@ def test_spendable_balance_is_renewed_in_next_period(
     recipients,
     allowed_recipients_limit_params,
     allowed_recipients_registry,
+    lido_contracts,
     add_allowed_recipient_by_motion,
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
 ):
+    test_limit = min(allowed_recipients_limit_params.limit, 10 * 10**18)
+    allowed_recipients_registry.setLimitParameters(
+        test_limit,
+        allowed_recipients_limit_params.duration,
+        {"from": lido_contracts.aragon.agent},
+    )
+
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
-    assert allowed_recipients_registry.spendableBalance() == allowed_recipients_limit_params.limit
+    assert allowed_recipients_registry.spendableBalance() == test_limit
 
     allowed_recipients = recipients[:2]
 
@@ -440,8 +457,8 @@ def test_spendable_balance_is_renewed_in_next_period(
     )
 
     top_up_amounts = [
-        int(allowed_recipients_limit_params.limit // 10**18 * 0.1) * 10**18,
-        int(allowed_recipients_limit_params.limit // 10**18 * 0.9) * 10**18,
+        int(test_limit // 10**18 * 0.1) * 10**18,
+        int(test_limit // 10**18 * 0.9) * 10**18,
     ]
 
     top_up_allowed_recipient_by_motion(
@@ -452,7 +469,7 @@ def test_spendable_balance_is_renewed_in_next_period(
 
     amount_spent = sum(top_up_amounts)
     assert allowed_recipients_registry.getPeriodState()[0] == amount_spent
-    assert allowed_recipients_registry.spendableBalance() == allowed_recipients_limit_params.limit - amount_spent
+    assert allowed_recipients_registry.spendableBalance() == test_limit - amount_spent
 
     with reverts("SUM_EXCEEDS_SPENDABLE_BALANCE"):
         top_up_allowed_recipient_by_motion(
@@ -469,10 +486,10 @@ def test_spendable_balance_is_renewed_in_next_period(
     top_up_allowed_recipient_by_motion(
         top_up_allowed_recipients_evm_script_factory,
         [allowed_recipients[0].address],
-        [allowed_recipients_limit_params.limit],
+        [test_limit],
     )
 
-    assert allowed_recipients_registry.getPeriodState()[0] == allowed_recipients_limit_params.limit
+    assert allowed_recipients_registry.getPeriodState()[0] == test_limit
     assert allowed_recipients_registry.spendableBalance() == 0
 
 
