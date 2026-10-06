@@ -34,6 +34,19 @@ library ExitRequests {
         return makeTestBytes(i, PUBKEY_SIZE);
     }
 
+    /// @dev python: pubkeys[index] of submit_exit_hashes_factory_config. The key the registry stubs
+    /// hold at `index`
+    function pubkeyAt(uint256 index) internal pure returns (bytes memory) {
+        return makeTestBytes(index + 1);
+    }
+
+    /// @dev python: b"".join(pubkeys). All MAX_REQUESTS keys, the `setSigningKeys` argument
+    function concatenatedPubkeys() internal pure returns (bytes memory keys) {
+        for (uint256 i; i < MAX_REQUESTS; ++i) {
+            keys = abi.encodePacked(keys, pubkeyAt(i));
+        }
+    }
+
     /// @dev python: create_exit_request_data. 64 bytes per request: moduleId as 3 bytes, nodeOpId as
     /// 5, valIndex as 8, then the 48-byte pubkey
     function createExitRequestData(SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests)

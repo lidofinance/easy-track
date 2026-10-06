@@ -32,6 +32,18 @@ library EVMScripts {
         return abi.encodePacked(SPEC_ID, target, uint32(data.length), data);
     }
 
+    /// @dev `encodeCallScript` with every call to one target
+    function encodeCallScript(address target, bytes[] memory datas)
+        internal
+        pure
+        returns (bytes memory script)
+    {
+        script = abi.encodePacked(SPEC_ID);
+        for (uint256 i; i < datas.length; ++i) {
+            script = abi.encodePacked(script, target, uint32(datas[i].length), datas[i]);
+        }
+    }
+
     /// @dev python: create_permission. One `evmScriptFactoryPermissions` entry: `target ‖ selector`
     function createPermission(address target, bytes4 selector)
         internal

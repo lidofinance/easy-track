@@ -19,10 +19,12 @@ CHAIN=hoodi npm run test:scenario  # forge test --match-path 'test/foundry/scena
 
 ## Unit suite
 
-Local tests of the Easy Track core, the libraries, the limits checker and the allowed recipients
-registry, ported from the Brownie suite in `tests/`, one Foundry test per Python test. Every test
-deploys what it needs with `new` and runs without a network. Stubs the tests share live in
-`unit/stubs/`, encoders and constants in `unit/helpers/`.
+Local tests of the Easy Track core, the libraries, the limits checker, the allowed recipients
+registry, the reward programs registry with its factories, the node operator factories, the exit
+request hash factories, the MEV-Boost relay factories and the operator grid factories, ported from
+the Brownie suite in `tests/`, one Foundry test per Python test. Every test deploys what it needs
+with `new` and runs without a network. Stubs the tests share live in `unit/stubs/`, encoders and
+constants in `unit/helpers/`.
 
 ```bash
 npm run test:unit
