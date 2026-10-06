@@ -50,7 +50,6 @@ def recipients(accounts):
     ]
 
 
-
 #####
 # CONTRACTS
 #####
@@ -622,3 +621,27 @@ def allowed_recipients_limit_params(allowed_recipients_registry):
 @pytest.fixture(scope="module")
 def bokky_poo_bahs_date_time_contract():
     return deployed_date_time.date_time_contract(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def ensure_agent_token_balance(interface, lido_contracts, top_up_allowed_recipients_evm_script_factory):
+    """Funds the agent with the top-up token when its balance is below what a test pays out.
+
+    Only stETH can be funded, by staking ETH from the agent.
+    """
+    agent = lido_contracts.aragon.agent
+    token = top_up_allowed_recipients_evm_script_factory.token()
+
+    def _ensure_agent_token_balance(requested_balance):
+        shortfall = requested_balance - interface.ERC20(token).balanceOf(agent)
+        if shortfall <= 0:
+            return
+
+        assert token == lido_contracts.steth, f"Agent is {shortfall} wei short of {token} and only stETH can be funded"
+
+        stake_amount = shortfall + STETH_ERROR_MARGIN_WEI
+        set_account_balance(agent.address, brownie.web3.eth.get_balance(agent.address) + stake_amount)
+        lido_contracts.steth.submit(brownie.ZERO_ADDRESS, {"from": agent, "value": stake_amount})
+        assert interface.ERC20(token).balanceOf(agent) >= requested_balance, "Error when trying to stake ETH for agent"
+
+    return _ensure_agent_token_balance
