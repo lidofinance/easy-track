@@ -161,7 +161,7 @@ Alert groups are optional. To set one up, contact the maintenance team and tell 
 ## Conventions
 
 - **Solidity.** See the code style in [EVMScript Factories](#best-practices). Production contracts compile with solc 0.8.6 (EVM `berlin`, optimizer off). Foundry scenarios use modern Solidity interfaces in a separate profile; see [test/foundry/README.md](test/foundry/README.md#notes).
-- **Formatting.** New and changed Solidity files are formatted with Prettier: `npx prettier --check <files>`. Do not rely on `npm run lint:check`, which skips most files. Python is formatted with Black, line length 120.
+- **Formatting.** Format new Solidity files like the existing factories. The Prettier setup in the repository does not check them: `npm run lint:check` skips `contracts/EVMScriptFactories/`, and the pinned `prettier-plugin-solidity` formats function signatures differently from most existing factories. Python is formatted with Black, line length 120.
 - **Commits.** Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `feat:`, `fix:`, `chore:`, and so on.
 
 ## Branches
@@ -206,7 +206,7 @@ Each new or changed contract is deployed on testnet, and the PR adds its entry t
 | Staking-router factories                | `deployed-sr-hoodi.json` |
 | Other contracts                         | `deployed-hoodi.json`    |
 
-Older vault factory scripts write `et-*-deployed-{network}.json` files with a different format. New scripts, vault factories included, use the files above.
+Older deploy scripts for vault and MEV Boost relay factories write `et-*-deployed-{network}.json` files without `txHash`. New scripts, vault factories included, use the files above.
 
 ```json
 "SetDepositsReserveTarget": {
