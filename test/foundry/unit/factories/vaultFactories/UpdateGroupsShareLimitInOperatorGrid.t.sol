@@ -95,7 +95,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
 
     // python: test_share_limit_too_high
     function test_RevertWhen_ShareLimitIsTooHigh() external {
-        _givenGroupRegistered(nodeOperator, 5000);
+        _registerGroup(nodeOperator, 5000);
 
         uint256 shareLimit = updateGroupsShareLimitInOperatorGrid.maxShareLimit() + 1;
 
@@ -107,8 +107,8 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external {
-        _givenGroupRegistered(nodeOperator, 1000);
-        _givenGroupRegistered(anotherNodeOperator, 1500);
+        _registerGroup(nodeOperator, 1000);
+        _registerGroup(anotherNodeOperator, 1500);
 
         address[] memory nodeOperators = _operators(nodeOperator, anotherNodeOperator);
         uint256[] memory shareLimits = _shareLimits(2000, 3000);
@@ -140,7 +140,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
     }
 
     /// @dev python: operatorGrid.registerGroup(operator, shareLimit, {"from": owner})
-    function _givenGroupRegistered(address operator, uint256 shareLimit) private {
+    function _registerGroup(address operator, uint256 shareLimit) private {
         vm.prank(owner);
         operatorGrid.registerGroup(operator, shareLimit);
     }

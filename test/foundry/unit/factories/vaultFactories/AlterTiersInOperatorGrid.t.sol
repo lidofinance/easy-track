@@ -97,7 +97,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external {
-        _givenGroupWithTiers(
+        _registerGroupWithTiers(
             9000, _tierParams(Vaults.defaultTierParams(), Vaults.defaultTierParams())
         );
 
@@ -128,7 +128,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_zero_reserve_ratio
     function test_RevertWhen_ReserveRatioIsZero() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.reserveRatioBP = 0;
@@ -139,7 +139,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_reserve_ratio_too_high
     function test_RevertWhen_ReserveRatioIsTooHigh() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.reserveRatioBP = 70001;
@@ -150,7 +150,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_zero_forced_rebalance_threshold
     function test_RevertWhen_ForcedRebalanceThresholdIsZero() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.forcedRebalanceThresholdBP = 0;
@@ -161,7 +161,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_too_high
     function test_RevertWhen_ForcedRebalanceThresholdIsTooHigh() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.forcedRebalanceThresholdBP = 300;
@@ -172,7 +172,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_equals_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdEqualsReserveRatio() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.forcedRebalanceThresholdBP = tierParams.reserveRatioBP;
@@ -183,7 +183,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_within_10bp_of_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdIsWithin10BPOfReserveRatio() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.forcedRebalanceThresholdBP = 191;
@@ -194,7 +194,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_exactly_10bp_below_reserve_ratio
     function test_AllowsForcedRebalanceThresholdExactly10BPBelowReserveRatio() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.forcedRebalanceThresholdBP = 189;
@@ -208,7 +208,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_infra_fee_too_high
     function test_RevertWhen_InfraFeeIsTooHigh() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.infraFeeBP = 70001;
@@ -219,7 +219,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_liquidity_fee_too_high
     function test_RevertWhen_LiquidityFeeIsTooHigh() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.liquidityFeeBP = 70001;
@@ -230,7 +230,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_reservation_fee_too_high
     function test_RevertWhen_ReservationFeeIsTooHigh() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.reservationFeeBP = 70001;
@@ -241,7 +241,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_fees_less_than_uint16_max
     function test_RevertWhen_AnyFeeExceedsUint16Max() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         vm.expectRevert("INFRA_FEE_TOO_HIGH");
         alterTiersInOperatorGrid.createEVMScript(
@@ -264,7 +264,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_share_limit_exceeds_group_share_limit
     function test_AllowsTierShareLimitAboveGroupShareLimit() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         // the group share limit is enforced by the operator grid at minting time, not here
         TierParams memory tierParams = Vaults.defaultTierParams();
@@ -279,7 +279,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_tier_share_limit_too_high
     function test_RevertWhen_TierShareLimitIsTooHigh() external {
-        _givenGroupWithDefaultTier();
+        _registerGroupWithDefaultTier();
 
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.shareLimit = Vaults.MAX_TIER_SHARE_LIMIT + 1;
@@ -313,7 +313,7 @@ contract AlterTiersInOperatorGridTest is Test {
 
     /// @dev python: operator_grid_stub.registerGroup(operator_address, shareLimit, {"from": owner})
     /// then registerTiers(operator_address, tiers, {"from": owner})
-    function _givenGroupWithTiers(uint256 shareLimit, TierParams[] memory tiers) private {
+    function _registerGroupWithTiers(uint256 shareLimit, TierParams[] memory tiers) private {
         vm.startPrank(owner);
         operatorGrid.registerGroup(OPERATOR, shareLimit);
         operatorGrid.registerTiers(OPERATOR, tiers);
@@ -322,8 +322,8 @@ contract AlterTiersInOperatorGridTest is Test {
 
     /// @dev The arrangement the bound tests share: a group of share limit 1000 with one default
     /// tier, registered as `FIRST_TIER_ID`
-    function _givenGroupWithDefaultTier() private {
-        _givenGroupWithTiers(GROUP_SHARE_LIMIT, _tierParams(Vaults.defaultTierParams()));
+    function _registerGroupWithDefaultTier() private {
+        _registerGroupWithTiers(GROUP_SHARE_LIMIT, _tierParams(Vaults.defaultTierParams()));
     }
 
     function _tierIds(uint256 first, uint256 second)

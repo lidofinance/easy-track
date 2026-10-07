@@ -154,7 +154,7 @@ contract EasyTrackTest is Test {
 
         assertEq(easyTrack.motionsCountLimit(), 1, "motionsCountLimit");
 
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertEq(easyTrack.getMotions().length, 0, "motions.length");
 
@@ -170,7 +170,7 @@ contract EasyTrackTest is Test {
 
     // python: test_create_motion
     function test_CreatesMotion() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -220,7 +220,7 @@ contract EasyTrackTest is Test {
 
     // python: test_cancel_motion_not_creator
     function test_RevertWhen_CancelingMotionAsNotCreator() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -238,7 +238,7 @@ contract EasyTrackTest is Test {
 
     // python: test_cancel_motion
     function test_CancelsMotion() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -264,13 +264,13 @@ contract EasyTrackTest is Test {
 
     // python: test_cancel_motion_in_random_order
     function test_CancelsMotionsInRandomOrder() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
         );
 
-        _givenMotionsCreatedBy(owner, 3);
+        _createMotions(owner, 3);
 
         EasyTrack.Motion[] memory motions = easyTrack.getMotions();
         assertEq(motions.length, 3, "motions.length");
@@ -320,7 +320,7 @@ contract EasyTrackTest is Test {
 
     // python: test_enact_motion_when_motion_not_passed
     function test_RevertWhen_EnactingMotionBeforeItPasses() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -339,7 +339,7 @@ contract EasyTrackTest is Test {
 
     // python: test_enact_motion_unexpected_evm_script
     function test_RevertWhen_EnactingMotionWithUnexpectedEVMScript() external {
-        _givenFactoryStubAllowedToSetEVMScript();
+        _allowFactoryStubToSetEVMScript();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -363,7 +363,7 @@ contract EasyTrackTest is Test {
 
     // python: test_enact_motion
     function test_EnactsMotion() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -408,8 +408,8 @@ contract EasyTrackTest is Test {
 
     // python: test_object_to_motion_multiple_times
     function test_RevertWhen_ObjectingTwice() external {
-        _givenHolderBalancesDistributed();
-        _givenRegisteredFactoryStub();
+        _distributeHolderBalances();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -430,7 +430,7 @@ contract EasyTrackTest is Test {
 
     // python: test_object_to_motion_not_ldo_holder
     function test_RevertWhen_ObjectorHoldsNoLDO() external {
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -448,8 +448,8 @@ contract EasyTrackTest is Test {
 
     // python: test_object_to_motion_by_tokens_holder
     function test_ObjectsToMotionAsTokenHolder() external {
-        _givenHolderBalancesDistributed();
-        _givenRegisteredFactoryStub();
+        _distributeHolderBalances();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -476,8 +476,8 @@ contract EasyTrackTest is Test {
 
     // python: test_object_to_motion_rejected
     function test_RejectsMotionWhenObjectionsReachThreshold() external {
-        _givenHolderBalancesDistributed();
-        _givenRegisteredFactoryStub();
+        _distributeHolderBalances();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -527,7 +527,7 @@ contract EasyTrackTest is Test {
         ldo.transfer(stranger, 1);
         vm.stopPrank();
 
-        _givenRegisteredFactoryStub();
+        _registerFactoryStub();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -558,8 +558,8 @@ contract EasyTrackTest is Test {
 
     // python: test_cancel_motions
     function test_CancelsMotions() external {
-        _givenRegisteredFactoryStub();
-        _givenMotionsCreatedBy(owner, 5);
+        _registerFactoryStub();
+        _createMotions(owner, 5);
 
         for (uint256 motionId = 1; motionId <= 5; ++motionId) {
             assertEq(easyTrack.getMotion(motionId).id, motionId, "getMotion");
@@ -603,8 +603,8 @@ contract EasyTrackTest is Test {
 
     // python: test_cancel_all_motions
     function test_CancelsAllMotions() external {
-        _givenRegisteredFactoryStub();
-        _givenMotionsCreatedBy(owner, 5);
+        _registerFactoryStub();
+        _createMotions(owner, 5);
 
         for (uint256 motionId = 1; motionId <= 5; ++motionId) {
             assertEq(easyTrack.getMotion(motionId).id, motionId, "getMotion");
@@ -745,8 +745,8 @@ contract EasyTrackTest is Test {
 
     // python: test_can_object_to_motion
     function test_CanObjectToMotion() external {
-        _givenHolderBalancesDistributed();
-        _givenFactoryStubAllowedToSetEVMScript();
+        _distributeHolderBalances();
+        _allowFactoryStubToSetEVMScript();
 
         assertTrue(
             easyTrack.isEVMScriptFactory(address(evmScriptFactoryStub)), "isEVMScriptFactory"
@@ -768,7 +768,7 @@ contract EasyTrackTest is Test {
     }
 
     /// @dev python: distribute_holder_balance. Each holder gets 0.2 % of the supply from the agent
-    function _givenHolderBalancesDistributed() private {
+    function _distributeHolderBalances() private {
         vm.startPrank(agent);
         for (uint256 i; i < ldoHolders.length; ++i) {
             ldo.transfer(ldoHolders[i], HOLDER_BALANCE_AMOUNT);
@@ -778,7 +778,7 @@ contract EasyTrackTest is Test {
     }
 
     /// @dev Registers the factory stub with its default permissions
-    function _givenRegisteredFactoryStub() private {
+    function _registerFactoryStub() private {
         bytes memory permissions = evmScriptFactoryStub.DEFAULT_PERMISSIONS();
 
         vm.prank(voting);
@@ -787,7 +787,7 @@ contract EasyTrackTest is Test {
 
     /// @dev Registers the factory stub with a permission for its own `setEVMScript` and makes it
     /// return a script calling that method, so the stub can rewrite its script mid-motion
-    function _givenFactoryStubAllowedToSetEVMScript() private {
+    function _allowFactoryStubToSetEVMScript() private {
         bytes memory permissions = EVMScripts.createPermission(
             address(evmScriptFactoryStub), EVMScriptFactoryStub.setEVMScript.selector
         );
@@ -798,7 +798,7 @@ contract EasyTrackTest is Test {
         evmScriptFactoryStub.setEVMScript(_scriptCallingSetEVMScript(""));
     }
 
-    function _givenMotionsCreatedBy(address creator, uint256 count) private {
+    function _createMotions(address creator, uint256 count) private {
         vm.startPrank(creator);
         for (uint256 i; i < count; ++i) {
             easyTrack.createMotion(address(evmScriptFactoryStub), "");

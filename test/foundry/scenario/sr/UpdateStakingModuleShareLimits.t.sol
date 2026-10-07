@@ -17,6 +17,15 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
     /// @dev How far a planned motion moves each share, capped by the factory's per-motion deltas
     uint16 internal constant SHARE_STEP = 100;
 
+    /// @dev A second factory, bound to a module id the Staking Router has never registered
+    uint256 internal constant MISSING_MODULE_ID = 999;
+    string internal constant MISSING_MODULE_FACTORY_NAME = "CSM v3-MISSING";
+    uint16 internal constant MAX_STAKE_SHARE_LIMIT_INCREASE = 500;
+    uint16 internal constant MAX_STAKE_SHARE_LIMIT_DECREASE = 400;
+    uint16 internal constant MAX_PRIORITY_EXIT_SHARE_THRESHOLD_INCREASE = 300;
+    uint16 internal constant MAX_PRIORITY_EXIT_SHARE_THRESHOLD_DECREASE = 200;
+    uint16 internal constant MISSING_MODULE_NEW_SHARE = 100;
+
     IUpdateStakingModuleShareLimits internal factory;
     IStakingRouter internal stakingRouter;
     uint256 internal stakingModuleId;
@@ -34,6 +43,7 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
+    // python: test_update_staking_module_share_limits_via_motion_scenario, the raising branch
     function testFork_IncreasesModuleShareLimits() external {
         (uint16 newStakeShareLimit, uint16 newPriorityExitShareThreshold, bytes memory callData) =
             _plannedIncrease();
@@ -43,6 +53,7 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         _assertModuleShares(newStakeShareLimit, newPriorityExitShareThreshold);
     }
 
+    // python: test_update_staking_module_share_limits_via_motion_scenario, the lowering branch
     function testFork_DecreasesModuleShareLimits() external {
         (uint16 newStakeShareLimit, uint16 newPriorityExitShareThreshold, bytes memory callData) =
             _plannedDecrease();
@@ -52,6 +63,40 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         _assertModuleShares(newStakeShareLimit, newPriorityExitShareThreshold);
     }
 
+    // python: test_update_staking_module_share_limits_reverts_for_missing_module
+    function testFork_RevertWhen_ModuleIsNotRegistered() external {
+        address missingModuleFactory = _deployArtifact(
+            "UpdateStakingModuleShareLimits",
+            abi.encode(
+                creator,
+                MISSING_MODULE_FACTORY_NAME,
+                address(stakingRouter),
+                MISSING_MODULE_ID,
+                MAX_STAKE_SHARE_LIMIT_INCREASE,
+                MAX_STAKE_SHARE_LIMIT_DECREASE,
+                MAX_PRIORITY_EXIT_SHARE_THRESHOLD_INCREASE,
+                MAX_PRIORITY_EXIT_SHARE_THRESHOLD_DECREASE
+            )
+        );
+        _registerFactory(
+            missingModuleFactory,
+            abi.encodePacked(
+                missingModuleFactory,
+                IUpdateStakingModuleShareLimits.validateParams.selector,
+                address(stakingRouter),
+                IStakingRouter.updateModuleShares.selector
+            )
+        );
+        bytes memory callData =
+            abi.encode(uint16(0), MISSING_MODULE_NEW_SHARE, uint16(0), MISSING_MODULE_NEW_SHARE);
+
+        // The router's custom error, which the Brownie suite sees rendered as a string
+        vm.prank(creator);
+        vm.expectRevert(IStakingRouter.StakingModuleUnregistered.selector);
+        easyTrack.createMotion(missingModuleFactory, callData);
+    }
+
+    // python: test_update_staking_module_share_limits_reverts_on_enactment_if_current_values_changed
     function testFork_RevertWhen_CurrentSharesChangeBeforeEnact() external {
         (uint16 stakeShareLimit, uint16 priorityExitShareThreshold) = _currentShares();
         // the planned motion commits the current shares
@@ -64,7 +109,7 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
             stakingModuleId, stakeShareLimit + 1, priorityExitShareThreshold + 1
         );
 
-        _givenMotionDurationPassed();
+        _passMotionDuration();
 
         vm.prank(stranger);
         vm.expectRevert("CURRENT_VALUES_MISMATCH");

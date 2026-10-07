@@ -109,7 +109,7 @@ contract RegisterGroupsInOperatorGridTest is Test {
 
     // python: test_group_exists
     function test_RevertWhen_GroupExists() external {
-        _givenGroupRegistered(stranger, GROUP_SHARE_LIMIT);
+        _registerGroup(stranger, GROUP_SHARE_LIMIT);
 
         vm.expectRevert("GROUP_EXISTS");
         registerGroupsInOperatorGrid.createEVMScript(
@@ -326,7 +326,7 @@ contract RegisterGroupsInOperatorGridTest is Test {
     }
 
     /// @dev python: operatorGrid.registerGroup(nodeOperator, shareLimit, {"from": owner})
-    function _givenGroupRegistered(address nodeOperator, uint256 shareLimit) private {
+    function _registerGroup(address nodeOperator, uint256 shareLimit) private {
         vm.prank(owner);
         operatorGrid.registerGroup(nodeOperator, shareLimit);
     }

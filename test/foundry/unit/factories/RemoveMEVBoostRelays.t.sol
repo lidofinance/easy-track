@@ -78,7 +78,7 @@ contract RemoveMEVBoostRelaysTest is Test {
     // python: test_remove_relay
     function test_RemovesRelay() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
-        _givenRelaysAdded(relays);
+        _addRelays(relays);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), 1, "get_relays_amount");
 
@@ -94,8 +94,8 @@ contract RemoveMEVBoostRelaysTest is Test {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MULTIPLE_RELAYS_COUNT);
         // the Python seeds the first relay twice, the stub has no duplicate check
-        _givenRelayAdded(relays[0]);
-        _givenRelaysAdded(relays);
+        _addRelay(relays[0]);
+        _addRelays(relays);
 
         assertEq(
             mevBoostRelayAllowedListStub.get_relays_amount(), relays.length + 1, "get_relays_amount"
@@ -112,7 +112,7 @@ contract RemoveMEVBoostRelaysTest is Test {
     function test_RemovesMaxNumRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
-        _givenRelaysAdded(relays);
+        _addRelays(relays);
 
         assertEq(
             mevBoostRelayAllowedListStub.get_relays_amount(),
@@ -139,7 +139,7 @@ contract RemoveMEVBoostRelaysTest is Test {
             relays[i].uri = uris[i];
         }
 
-        _givenRelaysAdded(relays);
+        _addRelays(relays);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), uris.length, "get_relays_amount");
 
@@ -198,7 +198,7 @@ contract RemoveMEVBoostRelaysTest is Test {
     // python: test_cannot_remove_relays_with_duplicate_uri
     function test_RevertWhen_RelaysHaveDuplicateUri() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _givenRelayAdded(relay);
+        _addRelay(relay);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), 1, "get_relays_amount");
 
@@ -209,16 +209,16 @@ contract RemoveMEVBoostRelaysTest is Test {
     }
 
     /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
-    function _givenRelayAdded(IMEVBoostRelayAllowedList.Relay memory relay) private {
+    function _addRelay(IMEVBoostRelayAllowedList.Relay memory relay) private {
         vm.prank(owner);
         mevBoostRelayAllowedListStub.add_relay(
             relay.uri, relay.operator, relay.is_mandatory, relay.description
         );
     }
 
-    function _givenRelaysAdded(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
+    function _addRelays(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
         for (uint256 i; i < relays.length; ++i) {
-            _givenRelayAdded(relays[i]);
+            _addRelay(relays[i]);
         }
     }
 

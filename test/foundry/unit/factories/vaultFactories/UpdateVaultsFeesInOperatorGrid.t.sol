@@ -148,7 +148,7 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
 
     // python: test_fees_exceed_tier_limits
     function test_RevertWhen_FeesExceedTierLimits() external {
-        _givenVaultConnected(stranger);
+        _connectVault(stranger);
 
         // the default tier allows infra 50, liquidity 40 and reservation 10
         vm.expectRevert("INFRA_FEE_TOO_HIGH");
@@ -163,7 +163,7 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
 
     // python: test_create_evm_script_single_vault
     function test_CreatesEVMScriptForSingleVault() external {
-        _givenVaultConnected(stranger);
+        _connectVault(stranger);
 
         bytes memory evmScript = updateVaultsFeesInOperatorGrid.createEVMScript(
             owner, _encodeCallData(stranger, 20, 30, 5)
@@ -174,8 +174,8 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
 
     // python: test_create_evm_script_multiple_vaults
     function test_CreatesEVMScriptForMultipleVaults() external {
-        _givenVaultConnected(vault);
-        _givenVaultConnected(anotherVault);
+        _connectVault(vault);
+        _connectVault(anotherVault);
 
         address[] memory vaults = _vaults(vault, anotherVault);
         uint256[] memory infraFeesBP = _fees(20, 15);
@@ -217,8 +217,8 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
 
     // python: test_can_create_evm_script_with_fees_up_to_tier_limits
     function test_AllowsFeesUpToTierLimits() external {
-        _givenVaultConnected(stranger);
-        _givenVaultOnTierWithHighFees(stranger);
+        _connectVault(stranger);
+        _moveVaultToTierWithHighFees(stranger);
 
         bytes memory evmScript = updateVaultsFeesInOperatorGrid.createEVMScript(
             owner,
@@ -323,8 +323,8 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
             owner, address(vaultsAdapter), address(lidoLocatorStub), 3000, 2000, 4000
         );
 
-        _givenVaultConnected(stranger);
-        _givenVaultOnTierWithHighFees(stranger);
+        _connectVault(stranger);
+        _moveVaultToTierWithHighFees(stranger);
 
         vm.expectRevert("INFRA_FEE_TOO_HIGH");
         factory.createEVMScript(owner, _encodeCallData(stranger, 4001, 2000, 1000));
@@ -342,14 +342,14 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
     }
 
     /// @dev python: vault_hub_stub.connectVault(vault, {"from": owner})
-    function _givenVaultConnected(address connected) private {
+    function _connectVault(address connected) private {
         vm.prank(owner);
         vaultHub.connectVault(connected);
     }
 
     /// @dev python: a group of share limit 10000 for node_operator, one tier of
     /// (10000, 200, 100, 5000, 4000, 3000) under it, and `moved` set onto that tier
-    function _givenVaultOnTierWithHighFees(address moved) private {
+    function _moveVaultToTierWithHighFees(address moved) private {
         TierParams[] memory tiers = new TierParams[](1);
         tiers[0] = Vaults.tierParams(
             10000, 200, 100, TIER_INFRA_FEE_BP, TIER_LIQUIDITY_FEE_BP, TIER_RESERVATION_FEE_BP

@@ -669,7 +669,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_unsafe_set_spent_amount_when_spent_amount_exceeds_limit
     function test_RevertWhen_UnsafeSetSpentAmountExceedsLimit() external {
-        _givenLimitParametersSet(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
+        _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
         _assertLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
         (uint256 alreadySpentAmount,,,) = limitsChecker.getPeriodState();
@@ -682,7 +682,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_unsafe_set_spent_amount_when_new_spent_amount_the_same
     function test_UnsafeSetSpentAmountWhenNewSpentAmountIsTheSame() external {
-        _givenLimitParametersSet(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
+        _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
         _assertLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
         (uint256 alreadySpentAmount,,,) = limitsChecker.getPeriodState();
@@ -701,7 +701,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_unsafe_set_spent_amount
     function test_UnsafeSetSpentAmount() external {
-        _givenLimitParametersSet(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
+        _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
         _assertLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
         (uint256 alreadySpentAmount,,,) = limitsChecker.getPeriodState();
@@ -873,7 +873,7 @@ contract LimitsCheckerTest is Test {
         uint256 periodLimit = 10 ether;
         uint256 payoutAmount = 3 ether;
         uint256 spendableBalance = 7 ether;
-        _givenLimitParametersSet(periodLimit, PERIOD_DURATION);
+        _setLimitParameters(periodLimit, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -904,7 +904,7 @@ contract LimitsCheckerTest is Test {
         );
         uint256 spending = 2 ether;
         uint256 spendable = 1 ether;
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         vm.expectEmit(address(limitsChecker));
         emit SpendableAmountChanged(spending, spendable, periodStart, periodEnd);
@@ -927,7 +927,7 @@ contract LimitsCheckerTest is Test {
     function test_UpdateSpentAmountPreciselyToTheLimitInMultiplePortions() external {
         uint256 spending = 1 ether;
         uint256 spendable = 2 ether;
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -960,7 +960,7 @@ contract LimitsCheckerTest is Test {
     // python: test_spending_amount_is_restored_in_the_next_period
     function test_SpendingAmountIsRestoredInTheNextPeriod() external {
         uint256 spending = 3 ether;
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -983,7 +983,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_fail_if_update_spent_amount_beyond_the_limit
     function test_RevertWhen_UpdatingSpentAmountBeyondTheLimit() external {
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -1000,7 +1000,7 @@ contract LimitsCheckerTest is Test {
         uint256 spending = 3 ether;
         uint256 newPeriodLimit = 6 ether;
         uint256 newSpendable = 3 ether;
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -1034,7 +1034,7 @@ contract LimitsCheckerTest is Test {
         uint256 spending = 1 ether;
         uint256 spendable = 2 ether;
         uint256 newPeriodLimit = 1 ether - 1;
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -1062,7 +1062,7 @@ contract LimitsCheckerTest is Test {
         uint256 spendable = 2 ether;
         uint256 newPeriodLimit = 2 ether;
         uint256 newSpendable = 1 ether;
-        _givenLimitParametersSet(PERIOD_LIMIT, PERIOD_DURATION);
+        _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -1089,7 +1089,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[3-2]
     function test_SpendableAmountRenewalIfPeriodDurationChangedFrom3To2() external {
-        _givenLimitSpentAndPeriodDurationChanged(3, 2);
+        _spendLimitAndChangePeriodDuration(3, 2);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(2);
 
@@ -1098,7 +1098,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[3-6]
     function test_SpendableAmountRenewalIfPeriodDurationChangedFrom3To6() external {
-        _givenLimitSpentAndPeriodDurationChanged(3, 6);
+        _spendLimitAndChangePeriodDuration(3, 6);
 
         // the end of the old three-month period passes without renewing the spendable amount
         skip(MAX_SECONDS_IN_MONTH * 3);
@@ -1114,7 +1114,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[12-1]
     function test_SpendableAmountRenewalIfPeriodDurationChangedFrom12To1() external {
-        _givenLimitSpentAndPeriodDurationChanged(12, 1);
+        _spendLimitAndChangePeriodDuration(12, 1);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(1);
 
@@ -1123,7 +1123,7 @@ contract LimitsCheckerTest is Test {
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[1-12]
     function test_SpendableAmountRenewalIfPeriodDurationChangedFrom1To12() external {
-        _givenLimitSpentAndPeriodDurationChanged(1, 12);
+        _spendLimitAndChangePeriodDuration(1, 12);
 
         // the end of the old one-month period passes without renewing the spendable amount
         skip(MAX_SECONDS_IN_MONTH * 1);
@@ -1274,19 +1274,19 @@ contract LimitsCheckerTest is Test {
         _assertPeriodEndFromTimestamp(inputs, 12, Calendar.timestampFromDate(2023, 1, 1));
     }
 
-    function _givenLimitParametersSet(uint256 limit, uint256 periodDurationMonths) private {
+    function _setLimitParameters(uint256 limit, uint256 periodDurationMonths) private {
         vm.prank(setParametersRoleHolder);
         limitsChecker.setLimitParameters(limit, periodDurationMonths);
     }
 
     /// @dev The whole limit is spent in a period of `initialPeriodDuration` months, then the
     /// duration changes to `newPeriodDuration`, which on its own renews nothing
-    function _givenLimitSpentAndPeriodDurationChanged(
+    function _spendLimitAndChangePeriodDuration(
         uint256 initialPeriodDuration,
         uint256 newPeriodDuration
     ) private {
         uint256 spending = 3 ether;
-        _givenLimitParametersSet(PERIOD_LIMIT, initialPeriodDuration);
+        _setLimitParameters(PERIOD_LIMIT, initialPeriodDuration);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(
             initialPeriodDuration > newPeriodDuration ? initialPeriodDuration : newPeriodDuration

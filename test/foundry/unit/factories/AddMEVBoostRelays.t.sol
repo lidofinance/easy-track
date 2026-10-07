@@ -129,7 +129,7 @@ contract AddMEVBoostRelaysTest is Test {
 
     // python: test_cannot_add_more_relays_than_allowed
     function test_RevertWhen_AddingMoreRelaysThanAllowed() external {
-        _givenRelaysAdded(MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS));
+        _addRelays(MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS));
 
         vm.expectRevert("MAX_NUM_RELAYS_EXCEEDED");
         addMEVBoostRelays.createEVMScript(owner, abi.encode(MEVBoostRelays.relays(1)));
@@ -147,7 +147,7 @@ contract AddMEVBoostRelaysTest is Test {
     // python: test_cannot_add_relay_uri_already_exists
     function test_RevertWhen_RelayUriAlreadyExists() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _givenRelayAdded(relay);
+        _addRelay(relay);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), 1, "get_relays_amount");
         assertEq(mevBoostRelayAllowedListStub.get_relay_by_uri(relay.uri).uri, relay.uri, "uri");
@@ -226,16 +226,16 @@ contract AddMEVBoostRelaysTest is Test {
     }
 
     /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
-    function _givenRelayAdded(IMEVBoostRelayAllowedList.Relay memory relay) private {
+    function _addRelay(IMEVBoostRelayAllowedList.Relay memory relay) private {
         vm.prank(owner);
         mevBoostRelayAllowedListStub.add_relay(
             relay.uri, relay.operator, relay.is_mandatory, relay.description
         );
     }
 
-    function _givenRelaysAdded(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
+    function _addRelays(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
         for (uint256 i; i < relays.length; ++i) {
-            _givenRelayAdded(relays[i]);
+            _addRelay(relays[i]);
         }
     }
 

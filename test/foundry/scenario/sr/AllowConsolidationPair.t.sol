@@ -42,13 +42,14 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
         );
         metaRegistry = IMetaRegistry(targetModule.META_REGISTRY());
 
-        // The factory has no trusted caller: `_givenLinkedConsolidationPair` sets `creator` to the
+        // The factory has no trusted caller: `_createLinkedConsolidationPair` sets `creator` to the
         // source operator's reward address
         evmScriptFactory = address(factory);
     }
 
+    // python: test_allow_consolidation_pair_via_motion_scenario
     function testFork_AllowsConsolidationPair() external {
-        (uint256 sourceOperatorId, uint256 targetOperatorId) = _givenLinkedConsolidationPair();
+        (uint256 sourceOperatorId, uint256 targetOperatorId) = _createLinkedConsolidationPair();
 
         _enact(_encodePair(sourceOperatorId, targetOperatorId, submitter));
 
@@ -62,8 +63,9 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
         );
     }
 
+    // python: test_allow_consolidation_pair_overwrites_submitter_via_second_motion
     function testFork_UpdatesSubmitterOfAllowedPair() external {
-        (uint256 sourceOperatorId, uint256 targetOperatorId) = _givenLinkedConsolidationPair();
+        (uint256 sourceOperatorId, uint256 targetOperatorId) = _createLinkedConsolidationPair();
         address newSubmitter = makeAddr("newSubmitter");
         _enact(_encodePair(sourceOperatorId, targetOperatorId, submitter));
 
@@ -83,11 +85,11 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
     ///      MetaRegistry group: the target as its sub operator, the source as its external
     ///      operator. Sets `creator` to the source operator's reward address, which the factory
     ///      requires.
-    function _givenLinkedConsolidationPair()
+    function _createLinkedConsolidationPair()
         private
         returns (uint256 sourceOperatorId, uint256 targetOperatorId)
     {
-        _givenRole(address(targetModule), CREATE_NODE_OPERATOR_ROLE, address(this));
+        _grantRole(address(targetModule), CREATE_NODE_OPERATOR_ROLE, address(this));
         address targetOperator = makeAddr("consolidationTarget");
         targetOperatorId = targetModule.createNodeOperator(
             targetOperator,
@@ -100,7 +102,7 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
         vm.prank(config.agent);
         sourceOperatorId = sourceModule.addNodeOperator("scenario-source", creator);
 
-        _givenRole(address(metaRegistry), MANAGE_OPERATOR_GROUPS_ROLE, address(this));
+        _grantRole(address(metaRegistry), MANAGE_OPERATOR_GROUPS_ROLE, address(this));
         metaRegistry.createOrUpdateOperatorGroup(
             metaRegistry.NO_GROUP_ID(),
             IMetaRegistry.OperatorGroup(

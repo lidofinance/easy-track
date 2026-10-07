@@ -87,7 +87,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_empty_tiers_array
     function test_RevertWhen_TiersAreEmpty() external {
-        _givenGroupRegistered(stranger, GROUP_SHARE_LIMIT);
+        _registerGroup(stranger, GROUP_SHARE_LIMIT);
 
         TierParams[][] memory tiers = new TierParams[][](1);
 
@@ -115,8 +115,8 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external {
-        _givenGroupRegistered(nodeOperator, 1000);
-        _givenGroupRegistered(anotherNodeOperator, 1500);
+        _registerGroup(nodeOperator, 1000);
+        _registerGroup(anotherNodeOperator, 1500);
 
         address[] memory nodeOperators = _operators(nodeOperator, anotherNodeOperator);
         TierParams[][] memory tiers = _tiers(
@@ -147,7 +147,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_tier_share_limit_exceeds_group_share_limit
     function test_AllowsTierShareLimitAboveGroupShareLimit() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         // the group share limit is enforced by the operator grid at minting time, not here
         TierParams memory tier = Vaults.defaultTierParams();
@@ -161,7 +161,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_tier_share_limit_too_high
     function test_RevertWhen_TierShareLimitIsTooHigh() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.shareLimit = Vaults.MAX_TIER_SHARE_LIMIT + 1;
@@ -172,7 +172,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_zero_reserve_ratio
     function test_RevertWhen_ReserveRatioIsZero() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.reserveRatioBP = 0;
@@ -183,7 +183,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_reserve_ratio_too_high
     function test_RevertWhen_ReserveRatioIsTooHigh() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.reserveRatioBP = 10000;
@@ -194,7 +194,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_zero_forced_rebalance_threshold
     function test_RevertWhen_ForcedRebalanceThresholdIsZero() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.forcedRebalanceThresholdBP = 0;
@@ -205,7 +205,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_too_high
     function test_RevertWhen_ForcedRebalanceThresholdIsTooHigh() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.forcedRebalanceThresholdBP = 300;
@@ -216,7 +216,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_equals_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdEqualsReserveRatio() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.forcedRebalanceThresholdBP = tier.reserveRatioBP;
@@ -227,7 +227,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_within_10bp_of_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdIsWithin10BPOfReserveRatio() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.forcedRebalanceThresholdBP = 191;
@@ -238,7 +238,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_forced_rebalance_threshold_exactly_10bp_below_reserve_ratio
     function test_AllowsForcedRebalanceThresholdExactly10BPBelowReserveRatio() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.forcedRebalanceThresholdBP = 189;
@@ -251,7 +251,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_infra_fee_too_high
     function test_RevertWhen_InfraFeeIsTooHigh() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.infraFeeBP = 70001;
@@ -262,7 +262,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_liquidity_fee_too_high
     function test_RevertWhen_LiquidityFeeIsTooHigh() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.liquidityFeeBP = 70001;
@@ -273,7 +273,7 @@ contract RegisterTiersInOperatorGridTest is Test {
 
     // python: test_reservation_fee_too_high
     function test_RevertWhen_ReservationFeeIsTooHigh() external {
-        _givenGroupRegistered(OPERATOR, GROUP_SHARE_LIMIT);
+        _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
         TierParams memory tier = Vaults.defaultTierParams();
         tier.reservationFeeBP = 70001;
@@ -283,7 +283,7 @@ contract RegisterTiersInOperatorGridTest is Test {
     }
 
     /// @dev python: operatorGrid.registerGroup(nodeOperator, shareLimit, {"from": owner})
-    function _givenGroupRegistered(address operator, uint256 shareLimit) private {
+    function _registerGroup(address operator, uint256 shareLimit) private {
         vm.prank(owner);
         operatorGrid.registerGroup(operator, shareLimit);
     }

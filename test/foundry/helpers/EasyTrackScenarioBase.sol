@@ -4,11 +4,14 @@
 pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
-import {IEasyTrack} from "test/foundry/interfaces/EasyTrack.sol";
+import {IEasyTrack, IEVMScriptExecutor} from "test/foundry/interfaces/EasyTrack.sol";
 import {
+    IACL,
     IAccessControlEnumerable,
     IAccounting,
+    IAragonApp,
     IBaseModule,
+    IKernel,
     ILidoLocator,
     IMetaRegistry,
     NodeOperatorManagementProperties
@@ -17,20 +20,26 @@ import {
 /// @notice Fork harness for the scenario tests of the deployed Easy Track factories. A test
 ///         builds the on-chain data a motion needs, runs the motion and asserts its effect. The
 ///         harness forks the chain, resolves factories from `deployed-*.json` and drives the
-///         motion lifecycle, create -> warp -> enact. It never authorizes the
-///         motion: Easy Track itself rejects a factory the omnibus has not registered, and the
-///         executor's protocol roles must be real on-chain state. Role grants here only build
-///         data preconditions. The state-construction recipes follow lidofinance/staking-modules
-///         `Fixtures.sol`.
+///         motion lifecycle, create -> warp -> enact. The deployed factories run as the omnibus
+///         registered them, and the executor's protocol roles are real on-chain state. Role
+///         grants here only build data preconditions. Where a scenario needs a factory or stub
+///         that is not deployed, `_deployArtifact` creates it from the `contracts` profile build,
+///         `_registerFactory` registers it as the DAO Voting and `_grantPermission` grants it an
+///         Aragon permission as the permission's manager, what a DAO vote enacts. The
+///         state-construction recipes follow lidofinance/staking-modules `Fixtures.sol`.
 abstract contract EasyTrackScenarioBase is Test {
     struct NetworkConfig {
         uint256 chainId;
         string rpcEnvVar;
+        /// @dev the main Easy Track deployment, `deployed-<chain>.json`
+        string artifact;
         string srArtifact;
         string smArtifact;
         address easyTrack;
         /// @dev admin of most protocol roles
         address agent;
+        /// @dev the Aragon Finance app
+        address finance;
         address csmModule;
         address cmModule;
     }
@@ -100,10 +109,12 @@ abstract contract EasyTrackScenarioBase is Test {
             return NetworkConfig({
                 chainId: 560048,
                 rpcEnvVar: "HOODI_RPC_URL",
+                artifact: "deployed-hoodi.json",
                 srArtifact: "deployed-sr-hoodi.json",
                 smArtifact: "deployed-sm-hoodi.json",
                 easyTrack: 0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a,
                 agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD,
+                finance: 0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b,
                 csmModule: 0x79CEf36D84743222f37765204Bec41E92a93E59d,
                 cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9
             });
@@ -113,10 +124,12 @@ abstract contract EasyTrackScenarioBase is Test {
             return NetworkConfig({
                 chainId: 1,
                 rpcEnvVar: "MAINNET_RPC_URL",
+                artifact: "deployed-mainnet.json",
                 srArtifact: "deployed-sr-mainnet.json",
                 smArtifact: "deployed-sm-mainnet.json",
                 easyTrack: 0xF0211b7660680B49De1A7E9f25C65660F0a13Fea,
                 agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c,
+                finance: 0xB9E5CBB9CA5b0d659238807E84D0176930753d86,
                 csmModule: 0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F,
                 cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1
             });
@@ -138,31 +151,98 @@ abstract contract EasyTrackScenarioBase is Test {
 
     /// @dev Create a motion for the factory under test and enact it once its duration has passed
     function _enact(bytes memory callData) internal {
-        uint256 motionId = _createMotion(callData);
+        _enact(evmScriptFactory, creator, callData);
+    }
+
+    /// @dev Create a motion for `factory` from `motionCreator` and enact it once its duration has
+    ///      passed
+    function _enact(address factory, address motionCreator, bytes memory callData) internal {
+        uint256 motionId = _createMotion(factory, motionCreator, callData);
 
         _enactMotion(motionId, callData);
     }
 
-    function _createMotion(bytes memory callData) internal returns (uint256 motionId) {
-        vm.prank(creator);
-        motionId = easyTrack.createMotion(evmScriptFactory, callData);
+    function _createMotion(bytes memory callData) internal returns (uint256) {
+        return _createMotion(evmScriptFactory, creator, callData);
+    }
+
+    function _createMotion(address factory, address motionCreator, bytes memory callData)
+        internal
+        returns (uint256 motionId)
+    {
+        vm.prank(motionCreator);
+        motionId = easyTrack.createMotion(factory, callData);
     }
 
     function _enactMotion(uint256 motionId, bytes memory callData) internal {
-        _givenMotionDurationPassed();
+        _passMotionDuration();
 
         vm.prank(stranger);
         easyTrack.enactMotion(motionId, callData);
     }
 
-    function _givenMotionDurationPassed() internal {
+    function _passMotionDuration() internal {
         vm.warp(vm.getBlockTimestamp() + easyTrack.motionDuration() + 1);
+    }
+
+    // --- DAO actions: factory registration and deployments a vote would make ---
+
+    /// @dev The DAO Voting: the executor's owner and Easy Track's admin
+    function _voting() internal view returns (address) {
+        return IEVMScriptExecutor(evmScriptExecutor).owner();
+    }
+
+    /// @dev Register `factory` with `permissions`, as a DAO vote does
+    function _registerFactory(address factory, bytes memory permissions) internal {
+        vm.prank(_voting());
+        easyTrack.addEVMScriptFactory(factory, permissions);
+
+        assertTrue(easyTrack.isEVMScriptFactory(factory), "setup: isEVMScriptFactory");
+    }
+
+    /// @dev Re-register the factory under test with `permissions`, as a DAO vote does
+    function _replaceFactoryPermissions(bytes memory permissions) internal {
+        vm.startPrank(_voting());
+        easyTrack.removeEVMScriptFactory(evmScriptFactory);
+        easyTrack.addEVMScriptFactory(evmScriptFactory, permissions);
+        vm.stopPrank();
+    }
+
+    /// @dev The DAO ACL, through the Agent's kernel
+    function _acl() internal view returns (IACL) {
+        return IACL(IKernel(IAragonApp(config.agent).kernel()).acl());
+    }
+
+    /// @dev Grant `entity` the Aragon permission `role` on `app` as the permission's manager, what
+    ///      a DAO vote enacts
+    function _grantPermission(address entity, address app, bytes32 role) internal {
+        IACL acl = _acl();
+        address manager = acl.getPermissionManager(app, role);
+
+        vm.prank(manager);
+        acl.grantPermission(entity, app, role);
+    }
+
+    /// @dev Deploy a contract of `contracts/` from the artifact `FOUNDRY_PROFILE=contracts forge
+    ///      build` writes, with the test as the deployer
+    function _deployArtifact(string memory name, bytes memory constructorArgs)
+        internal
+        returns (address deployed)
+    {
+        string memory artifact = string.concat("out/", name, ".sol/", name, ".json");
+        require(
+            vm.exists(artifact),
+            string.concat(artifact, " is missing, run FOUNDRY_PROFILE=contracts forge build")
+        );
+
+        deployed = deployCode(artifact, constructorArgs);
+        vm.label(deployed, name);
     }
 
     // --- roles, granted only to build data preconditions, never to authorize the motion ---
 
     /// @dev Grant `role` on `target` to `account` through the role's admin, unless already held
-    function _givenRole(address target, bytes32 role, address account) internal {
+    function _grantRole(address target, bytes32 role, address account) internal {
         IAccessControlEnumerable accessControl = IAccessControlEnumerable(target);
         if (accessControl.hasRole(role, account)) {
             return;
@@ -189,9 +269,12 @@ abstract contract EasyTrackScenarioBase is Test {
 
     /// @dev A node operator with one bonded, deposited key. Curated modules first need the
     ///      MetaRegistry setup of `_prepareCuratedOperator`.
-    function _givenDepositedOperator(IBaseModule module) internal returns (uint256 nodeOperatorId) {
-        _givenModuleResumed(module);
-        _givenRole(address(module), CREATE_NODE_OPERATOR_ROLE, address(this));
+    function _createDepositedOperator(IBaseModule module)
+        internal
+        returns (uint256 nodeOperatorId)
+    {
+        _resumeModule(module);
+        _grantRole(address(module), CREATE_NODE_OPERATOR_ROLE, address(this));
 
         ++_operatorsCreated;
         address operator =
@@ -215,18 +298,18 @@ abstract contract EasyTrackScenarioBase is Test {
             operator, nodeOperatorId, KEYS_PER_OPERATOR, keys, signatures
         );
 
-        _givenDepositableKeysDeposited(module);
+        _depositDepositableKeys(module);
     }
 
-    /// @dev No-op for CSM. Curated variants override it with `_givenCuratedOperatorDepositable`.
+    /// @dev No-op for CSM. Curated variants override it with `_makeCuratedOperatorDepositable`.
     function _prepareCuratedOperator(IBaseModule module, uint256 nodeOperatorId) internal virtual {}
 
     /// @dev Put a curated operator in a MetaRegistry group with a non-zero bond-curve weight so it
     ///      is depositable
-    function _givenCuratedOperatorDepositable(IBaseModule module, uint256 nodeOperatorId) internal {
+    function _makeCuratedOperatorDepositable(IBaseModule module, uint256 nodeOperatorId) internal {
         IMetaRegistry metaRegistry = IMetaRegistry(module.META_REGISTRY());
-        _givenRole(address(metaRegistry), MANAGE_OPERATOR_GROUPS_ROLE, address(this));
-        _givenRole(address(metaRegistry), SET_BOND_CURVE_WEIGHT_ROLE, address(this));
+        _grantRole(address(metaRegistry), MANAGE_OPERATOR_GROUPS_ROLE, address(this));
+        _grantRole(address(metaRegistry), SET_BOND_CURVE_WEIGHT_ROLE, address(this));
 
         if (metaRegistry.getNodeOperatorGroupId(nodeOperatorId) == metaRegistry.NO_GROUP_ID()) {
             metaRegistry.createOrUpdateOperatorGroup(
@@ -279,18 +362,18 @@ abstract contract EasyTrackScenarioBase is Test {
         });
     }
 
-    function _givenModuleResumed(IBaseModule module) private {
+    function _resumeModule(IBaseModule module) private {
         if (!module.isPaused()) {
             return;
         }
 
-        _givenRole(address(module), RESUME_ROLE, address(this));
+        _grantRole(address(module), RESUME_ROLE, address(this));
         module.resume();
     }
 
     /// @dev Mark every depositable key as deposited, impersonating the staking router, so freshly
     ///      added keys count toward the deposited total
-    function _givenDepositableKeysDeposited(IBaseModule module) private {
+    function _depositDepositableKeys(IBaseModule module) private {
         (,, uint256 depositable) = module.getStakingModuleSummary();
         if (depositable == 0) {
             return;

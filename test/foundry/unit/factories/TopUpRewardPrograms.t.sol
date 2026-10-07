@@ -79,7 +79,7 @@ contract TopUpRewardProgramsTest is Test {
 
     // python: test_create_evm_script_zero_amount
     function test_RevertWhen_AmountIsZero() external {
-        _givenRewardProgramsAdded();
+        _addRewardPrograms();
 
         vm.expectRevert("ZERO_AMOUNT");
         topUpRewardPrograms.createEVMScript(
@@ -94,7 +94,7 @@ contract TopUpRewardProgramsTest is Test {
             owner, _encodeCallData(_rewardPrograms(), _rewardProgramAmounts())
         );
 
-        _givenRewardProgramsAdded();
+        _addRewardPrograms();
 
         address[] memory rewardPrograms = new address[](3);
         rewardPrograms[0] = FIRST_REWARD_PROGRAM;
@@ -112,7 +112,7 @@ contract TopUpRewardProgramsTest is Test {
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external {
-        _givenRewardProgramsAdded();
+        _addRewardPrograms();
 
         bytes memory evmScript = topUpRewardPrograms.createEVMScript(
             owner, _encodeCallData(_rewardPrograms(), _rewardProgramAmounts())
@@ -140,7 +140,7 @@ contract TopUpRewardProgramsTest is Test {
         assertEq(amounts, _rewardProgramAmounts(), "amounts");
     }
 
-    function _givenRewardProgramsAdded() private {
+    function _addRewardPrograms() private {
         vm.startPrank(address(evmScriptExecutorStub));
         rewardProgramsRegistry.addRewardProgram(FIRST_REWARD_PROGRAM, "");
         rewardProgramsRegistry.addRewardProgram(SECOND_REWARD_PROGRAM, "");

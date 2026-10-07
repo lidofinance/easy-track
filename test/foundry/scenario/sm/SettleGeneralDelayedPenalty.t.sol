@@ -40,8 +40,9 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
+    // python: test_settle_general_delayed_penalty_scenario
     function testFork_SettlesLockedPenalty() external {
-        (uint256 nodeOperatorId, uint256 nonce) = _givenOperatorWithLockedPenalty();
+        (uint256 nodeOperatorId, uint256 nonce) = _createOperatorWithLockedPenalty();
         // the reported penalty + the module's fixed additional fine
         uint256 lockedBond = accounting.getLockedBond(nodeOperatorId);
         bytes memory callData = _encodeLocks(nodeOperatorId, nonce);
@@ -56,8 +57,8 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
     }
 
     function testFork_SettlesMultipleLockedPenalties() external {
-        (uint256 firstOperatorId, uint256 firstNonce) = _givenOperatorWithLockedPenalty();
-        (uint256 secondOperatorId, uint256 secondNonce) = _givenOperatorWithLockedPenalty();
+        (uint256 firstOperatorId, uint256 firstNonce) = _createOperatorWithLockedPenalty();
+        (uint256 secondOperatorId, uint256 secondNonce) = _createOperatorWithLockedPenalty();
         uint256 firstLockedBond = accounting.getLockedBond(firstOperatorId);
         uint256 secondLockedBond = accounting.getLockedBond(secondOperatorId);
 
@@ -83,7 +84,7 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
     }
 
     function testFork_RevertWhen_NothingToSettle() external {
-        uint256 nodeOperatorId = _givenDepositedOperator(module);
+        uint256 nodeOperatorId = _createDepositedOperator(module);
         bytes memory callData =
             _encodeLocks(nodeOperatorId, accounting.getBondLockNonce(nodeOperatorId));
 
@@ -93,7 +94,7 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
     }
 
     function testFork_RevertWhen_LockNonceChangesBeforeEnact() external {
-        (uint256 nodeOperatorId, uint256 nonce) = _givenOperatorWithLockedPenalty();
+        (uint256 nodeOperatorId, uint256 nonce) = _createOperatorWithLockedPenalty();
         bytes memory callData = _encodeLocks(nodeOperatorId, nonce);
         uint256 motionId = _createMotion(callData);
 
@@ -104,7 +105,7 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
 
         assertNotEq(accounting.getBondLockNonce(nodeOperatorId), nonce, "setup: getBondLockNonce");
 
-        _givenMotionDurationPassed();
+        _passMotionDuration();
 
         vm.prank(stranger);
         vm.expectRevert("INVALID_LOCK_NONCE");
@@ -112,7 +113,7 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
     }
 
     function testFork_RevertWhen_AlreadySettledBeforeEnact() external {
-        (uint256 nodeOperatorId, uint256 nonce) = _givenOperatorWithLockedPenalty();
+        (uint256 nodeOperatorId, uint256 nonce) = _createOperatorWithLockedPenalty();
         bytes memory callData = _encodeLocks(nodeOperatorId, nonce);
         uint256 motionId = _createMotion(callData);
 
@@ -127,19 +128,19 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
 
         assertEq(accounting.getLockedBond(nodeOperatorId), 0, "setup: getLockedBond");
 
-        _givenMotionDurationPassed();
+        _passMotionDuration();
 
         vm.prank(stranger);
         vm.expectRevert("NO_LOCK_TO_SETTLE");
         easyTrack.enactMotion(motionId, callData);
     }
 
-    function _givenOperatorWithLockedPenalty()
+    function _createOperatorWithLockedPenalty()
         private
         returns (uint256 nodeOperatorId, uint256 nonce)
     {
-        nodeOperatorId = _givenDepositedOperator(module);
-        _givenRole(address(module), REPORT_GENERAL_DELAYED_PENALTY_ROLE, address(this));
+        nodeOperatorId = _createDepositedOperator(module);
+        _grantRole(address(module), REPORT_GENERAL_DELAYED_PENALTY_ROLE, address(this));
         module.reportGeneralDelayedPenalty(
             nodeOperatorId, PENALTY_ID, PENALTY_AMOUNT, "scenario penalty"
         );
@@ -176,6 +177,6 @@ contract SettleGeneralDelayedPenaltyCMTest is SettleGeneralDelayedPenaltyTest {
         internal
         override
     {
-        _givenCuratedOperatorDepositable(module_, nodeOperatorId);
+        _makeCuratedOperatorDepositable(module_, nodeOperatorId);
     }
 }

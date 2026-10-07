@@ -62,7 +62,7 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_edit_single_relay
     function test_EditsSingleRelay() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
-        _givenRelaysAdded(relays);
+        _addRelays(relays);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -73,7 +73,7 @@ contract EditMEVBoostRelaysTest is Test {
     function test_EditsMultipleRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
-        _givenRelaysAdded(relays);
+        _addRelays(relays);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -84,7 +84,7 @@ contract EditMEVBoostRelaysTest is Test {
     function test_EditsMaxNumRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
-        _givenRelaysAdded(relays);
+        _addRelays(relays);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -94,7 +94,7 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_can_edit_relay_and_set_description_to_empty
     function test_EditsRelayAndSetsDescriptionToEmpty() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _givenRelayAdded(relay);
+        _addRelay(relay);
 
         relay.description = "";
         IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(relay);
@@ -107,7 +107,7 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_can_edit_relay_and_set_operator_to_empty
     function test_EditsRelayAndSetsOperatorToEmpty() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _givenRelayAdded(relay);
+        _addRelay(relay);
 
         relay.operator = "";
         IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(relay);
@@ -153,7 +153,7 @@ contract EditMEVBoostRelaysTest is Test {
             MEVBoostRelays.relay(uri, "operator 1", true, "description 1"),
             MEVBoostRelays.relay(uri, "operator 2", false, "description 2")
         );
-        _givenRelayAdded(relays[0]);
+        _addRelay(relays[0]);
 
         vm.expectRevert("DUPLICATE_RELAY_URI");
         editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
@@ -169,7 +169,7 @@ contract EditMEVBoostRelaysTest is Test {
 
     // python: test_cannot_edit_relay_not_in_allow_list_with_multiple_relays
     function test_RevertWhen_RelayIsNotInAllowListWithMultipleRelays() external {
-        _givenRelaysAdded(MEVBoostRelays.relays(1));
+        _addRelays(MEVBoostRelays.relays(1));
 
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(2);
 
@@ -181,7 +181,7 @@ contract EditMEVBoostRelaysTest is Test {
     function test_RevertWhen_LastRelayIsNotInAllowList() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
-        _givenRelaysAdded(MEVBoostRelays.relays(relays.length - 1));
+        _addRelays(MEVBoostRelays.relays(relays.length - 1));
 
         assertEq(
             mevBoostRelayAllowedListStub.get_relays_amount(), relays.length - 1, "get_relays_amount"
@@ -232,16 +232,16 @@ contract EditMEVBoostRelaysTest is Test {
     }
 
     /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
-    function _givenRelayAdded(IMEVBoostRelayAllowedList.Relay memory relay) private {
+    function _addRelay(IMEVBoostRelayAllowedList.Relay memory relay) private {
         vm.prank(owner);
         mevBoostRelayAllowedListStub.add_relay(
             relay.uri, relay.operator, relay.is_mandatory, relay.description
         );
     }
 
-    function _givenRelaysAdded(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
+    function _addRelays(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
         for (uint256 i; i < relays.length; ++i) {
-            _givenRelayAdded(relays[i]);
+            _addRelay(relays[i]);
         }
     }
 

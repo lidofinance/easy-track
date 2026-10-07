@@ -34,6 +34,9 @@ interface IAccessControlEnumerable {
 ///         one adds `withdrawalCredentialsType` + `validatorsBalanceGwei` for 15. Decoding only
 ///         this common prefix works against both, trailing return data is ignored.
 interface IStakingRouter {
+    /// @dev `getStakingModule` of an id the router has never registered
+    error StakingModuleUnregistered();
+
     struct StakingModule {
         uint24 id;
         address stakingModuleAddress;
@@ -260,7 +263,9 @@ interface IConsolidationMigrator {
         returns (address);
 }
 
-/// @notice Legacy curated NodeOperatorsRegistry (consolidation source / external-operator module).
+/// @notice Legacy NodeOperatorsRegistry (consolidation source, external-operator module, SimpleDVT).
+///         An Aragon app: `canPerform` evaluates the sender's ACL permission against `params`, the
+///         node operator id for `MANAGE_SIGNING_KEYS`.
 interface INodeOperatorsRegistry {
     function getNodeOperatorsCount() external view returns (uint256);
 
@@ -275,9 +280,102 @@ interface INodeOperatorsRegistry {
             bool active,
             string memory name,
             address rewardAddress,
-            uint64 stakingLimit,
-            uint64 stoppedValidators,
-            uint64 totalSigningKeys,
-            uint64 usedSigningKeys
+            uint64 totalVettedValidators,
+            uint64 totalExitedValidators,
+            uint64 totalAddedValidators,
+            uint64 totalDepositedValidators
         );
+
+    function getNodeOperatorSummary(uint256 nodeOperatorId)
+        external
+        view
+        returns (
+            uint256 targetLimitMode,
+            uint256 targetValidatorsCount,
+            uint256 stuckValidatorsCount,
+            uint256 refundedValidatorsCount,
+            uint256 stuckPenaltyEndTimestamp,
+            uint256 totalExitedValidators,
+            uint256 totalDepositedValidators,
+            uint256 depositableValidatorsCount
+        );
+
+    function addSigningKeysOperatorBH(
+        uint256 nodeOperatorId,
+        uint256 keysCount,
+        bytes calldata publicKeys,
+        bytes calldata signatures
+    ) external;
+
+    function canPerform(address sender, bytes32 role, uint256[] calldata params)
+        external
+        view
+        returns (bool);
+}
+
+/// @notice Aragon ACL of the DAO. `MANAGE_SIGNING_KEYS` on a registry is granted per operator with
+///         a parameter, so the three-argument `hasPermission` reads a plain grant only. The
+///         four-argument one evaluates the grant's parameters against `how`.
+interface IACL {
+    function hasPermission(address who, address where, bytes32 what) external view returns (bool);
+
+    function hasPermission(address who, address where, bytes32 what, uint256[] calldata how)
+        external
+        view
+        returns (bool);
+
+    function getPermissionManager(address app, bytes32 role) external view returns (address);
+
+    function getPermissionParamsLength(address entity, address app, bytes32 role)
+        external
+        view
+        returns (uint256);
+
+    function getPermissionParam(address entity, address app, bytes32 role, uint256 index)
+        external
+        view
+        returns (uint8 id, uint8 op, uint240 value);
+
+    function createPermission(address entity, address app, bytes32 role, address manager) external;
+
+    function grantPermission(address entity, address app, bytes32 role) external;
+
+    function grantPermissionP(address entity, address app, bytes32 role, uint256[] calldata params)
+        external;
+
+    function revokePermission(address entity, address app, bytes32 role) external;
+
+    function setPermissionManager(address newManager, address app, bytes32 role) external;
+}
+
+/// @notice Any Aragon app of the DAO, the Agent included. Its kernel resolves the ACL.
+interface IAragonApp {
+    function kernel() external view returns (address);
+}
+
+/// @notice Aragon Kernel of the DAO.
+interface IKernel {
+    function acl() external view returns (address);
+}
+
+/// @notice Aragon Finance app, the payer `TopUpRewardPrograms` targets.
+interface IFinance {
+    function CREATE_PAYMENTS_ROLE() external view returns (bytes32);
+
+    function newImmediatePayment(
+        address _token,
+        address _receiver,
+        uint256 _amount,
+        string calldata _reference
+    ) external;
+}
+
+/// @notice LDO, the governance token.
+interface IMiniMeToken {
+    function balanceOf(address _owner) external view returns (uint256);
+}
+
+/// @notice Lido, the target of `SetDepositsReserveTarget`.
+interface ILido {
+    function getDepositsReserveTarget() external view returns (uint256);
 }

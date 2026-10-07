@@ -83,7 +83,7 @@ contract IncreaseVettedValidatorsLimitTest is Test {
 
     // python: test_create_evm_script_from_reward_address
     function test_CreatesEVMScriptFromRewardAddress() external {
-        uint256 newStakingLimit = _givenSigningKeysAdded();
+        uint256 newStakingLimit = _addSigningKeys();
 
         bytes memory evmScript = increaseVettedValidatorsLimit.createEVMScript(
             nodeOperator, _encodeCallData(NODE_OPERATOR_ID, newStakingLimit)
@@ -97,7 +97,7 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         nodeOperatorsRegistryStub.setCanPerform(
             nodeOperatorManager, MANAGE_SIGNING_KEYS_ROLE, NODE_OPERATOR_ID, true
         );
-        uint256 newStakingLimit = _givenSigningKeysAdded();
+        uint256 newStakingLimit = _addSigningKeys();
 
         bytes memory evmScript = increaseVettedValidatorsLimit.createEVMScript(
             nodeOperatorManager, _encodeCallData(NODE_OPERATOR_ID, newStakingLimit)
@@ -119,7 +119,7 @@ contract IncreaseVettedValidatorsLimitTest is Test {
 
     /// @dev python: addSigningKeysOperatorBH(0, 3, pubkeys, signatures). Returns the staking limit
     /// that vets the added keys
-    function _givenSigningKeysAdded() private returns (uint256) {
+    function _addSigningKeys() private returns (uint256) {
         nodeOperatorsRegistryStub.setTotalSigningKeys(
             NODE_OPERATOR_ID, nodeOperatorsRegistryStub.totalSigningKeys() + SIGNING_KEYS_COUNT
         );

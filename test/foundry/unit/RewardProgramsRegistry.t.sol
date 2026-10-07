@@ -113,7 +113,7 @@ contract RewardProgramsRegistryTest is Test {
 
     // python: test_remove_reward_program
     function test_RemovesRewardProgram() external {
-        address[] memory rewardPrograms = _givenRewardProgramsAdded(REWARD_PROGRAMS_COUNT);
+        address[] memory rewardPrograms = _addRewardPrograms(REWARD_PROGRAMS_COUNT);
         uint256[5] memory removingOrder = [uint256(2), 3, 1, 0, 0];
 
         for (uint256 i; i < removingOrder.length; ++i) {
@@ -142,10 +142,7 @@ contract RewardProgramsRegistryTest is Test {
         }
     }
 
-    function _givenRewardProgramsAdded(uint256 count)
-        private
-        returns (address[] memory rewardPrograms)
-    {
+    function _addRewardPrograms(uint256 count) private returns (address[] memory rewardPrograms) {
         rewardPrograms = new address[](count);
         for (uint256 i; i < count; ++i) {
             rewardPrograms[i] =
