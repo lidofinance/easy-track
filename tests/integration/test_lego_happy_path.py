@@ -5,6 +5,12 @@ import constants
 from utils import evm_script
 
 
+@pytest.fixture(scope="module")
+def deployed_contracts():
+    """Override: LEGO tests need a fresh EasyTrack."""
+    return {"EasyTrack": ""}
+
+
 @pytest.mark.skip_coverage
 def test_lego_easy_track_happy_path(
     EVMScriptExecutor,

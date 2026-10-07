@@ -156,5 +156,25 @@
       "0x418B816A7c3ecA151A31d98e30aa7DAa33aBf83A",
       "0x279d3A456212a1294DaEd0faEE98675a52E8A4Bf"
     ]
+  },
+  "SDVTSubmitExitRequestHashes": {
+    "contract": "SDVTSubmitExitRequestHashes",
+    "address": "0xAa3D6A8B52447F272c1E8FAaA06EA06658bd95E2",
+    "constructorArgs": [
+      "0xbB958292042c604855d23F8db458855d20e16996",
+      "0x0B5236BECA68004DB89434462DfC3BB074d2c830",
+      "0xCc820558B39ee15C7C45B59390B503b83fb499A8",
+      "0x8664d394C2B3278F26A1B44B967aEf99707eeAB2"
+    ]
+  },
+  "SetDepositsReserveTarget": {
+    "contract": "SetDepositsReserveTarget",
+    "address": "0x68009122a394504E8fD7fee58F92Cd73c6A60717",
+    "constructorArgs": [
+      "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
+      9600000000000000000000,
+      "0x3508A952176b3c15387C97BE809eaffB1982176a"
+    ],
+    "txHash": "0x504327b58e53b9a2ce69610b02dba9cfe7a3d47f4e422dc07e55ede699979eb4"
   }
 }

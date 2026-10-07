@@ -330,6 +330,36 @@ def test_validation_reverts_on_wrong_pubkey(
         )
 
 
+def test_validation_reverts_on_unused_pubkey(
+    submit_exit_request_hashes_utils_wrapper,
+    exit_request_input_factory,
+    submit_exit_hashes_factory_config,
+    sdvt_registry_stub,
+    staking_router_stub,
+):
+    """Test that a request with a not-yet-used pubkey reverts."""
+    request = exit_request_input_factory(
+        submit_exit_hashes_factory_config["module_ids"]["sdvt"],
+        submit_exit_hashes_factory_config["node_op_id"],
+        submit_exit_hashes_factory_config["validator_index"],
+        submit_exit_hashes_factory_config["pubkeys"][0],
+        0,
+    )
+
+    # Simulate a key that exists in the registry but has not been marked as used/deposited
+    sdvt_registry_stub.setSigningKeyUsed(
+        submit_exit_hashes_factory_config["node_op_id"],
+        0,
+        False,
+        {"from": accounts[0]},
+    )
+
+    with reverts("UNUSED_PUBKEY"):
+        submit_exit_request_hashes_utils_wrapper.validateExitRequests(
+            [request.to_tuple()], sdvt_registry_stub, staking_router_stub, ZERO_ADDRESS
+        )
+
+
 def test_validation_reverts_on_wrong_node_op_id(
     submit_exit_request_hashes_utils_wrapper,
     exit_request_input_factory,

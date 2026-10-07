@@ -1,5 +1,5 @@
 import pytest
-from brownie import reverts, SocializeBadDebtInVaultHub, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
+from brownie import interface, reverts, SocializeBadDebtInVaultHub, VaultsAdapter, StakingVaultStub, ZERO_ADDRESS # type: ignore
 
 from utils.evm_script import encode_call_script, encode_calldata
 
@@ -102,3 +102,51 @@ def test_decode_evm_script_call_data(accounts, socialize_bad_debt_factory):
         assert decoded_bad_debt_vaults[i] == bad_debt_vaults[i]
         assert decoded_vault_acceptors[i] == vault_acceptors[i]
         assert decoded_max_shares[i] == max_shares_to_socialize[i]
+
+def test_socialize_bad_debt_fails_when_bad_debt_vault_not_connected(owner, accounts, adapter, lido_locator_stub):
+    "Must emit BadDebtSocializationFailed when bad debt vault is not connected to hub"
+    vault_hub = interface.IVaultHub(lido_locator_stub.vaultHub())
+    bad_debt_vault = accounts[5]
+    vault_acceptor = accounts[6]
+    max_shares_to_socialize = 100
+
+    # Connect only vault_acceptor, not bad_debt_vault
+    vault_hub.connectVault(vault_acceptor, {"from": owner})
+
+    # Verify bad_debt_vault is NOT connected
+    assert vault_hub.isVaultConnected(bad_debt_vault) == False
+    # Verify vault_acceptor IS connected
+    assert vault_hub.isVaultConnected(vault_acceptor) == True
+
+    # Try to socialize bad debt - should fail
+    tx = adapter.socializeBadDebt(bad_debt_vault, vault_acceptor, max_shares_to_socialize, {"from": owner})
+
+    # Should emit BadDebtSocializationFailed event
+    assert "BadDebtSocializationFailed" in tx.events
+    assert tx.events["BadDebtSocializationFailed"]["badDebtVault"] == bad_debt_vault
+    assert tx.events["BadDebtSocializationFailed"]["vaultAcceptor"] == vault_acceptor
+    assert tx.events["BadDebtSocializationFailed"]["maxSharesToSocialize"] == max_shares_to_socialize
+
+def test_socialize_bad_debt_fails_when_vault_acceptor_not_connected(owner, accounts, adapter, lido_locator_stub):
+    "Must emit BadDebtSocializationFailed when vault acceptor is not connected to hub"
+    vault_hub = interface.IVaultHub(lido_locator_stub.vaultHub())
+    bad_debt_vault = accounts[5]
+    vault_acceptor = accounts[6]
+    max_shares_to_socialize = 100
+
+    # Connect only bad_debt_vault, not vault_acceptor
+    vault_hub.connectVault(bad_debt_vault, {"from": owner})
+
+    # Verify bad_debt_vault IS connected
+    assert vault_hub.isVaultConnected(bad_debt_vault) == True
+    # Verify vault_acceptor is NOT connected
+    assert vault_hub.isVaultConnected(vault_acceptor) == False
+
+    # Try to socialize bad debt - should fail
+    tx = adapter.socializeBadDebt(bad_debt_vault, vault_acceptor, max_shares_to_socialize, {"from": owner})
+
+    # Should emit BadDebtSocializationFailed event
+    assert "BadDebtSocializationFailed" in tx.events
+    assert tx.events["BadDebtSocializationFailed"]["badDebtVault"] == bad_debt_vault
+    assert tx.events["BadDebtSocializationFailed"]["vaultAcceptor"] == vault_acceptor
+    assert tx.events["BadDebtSocializationFailed"]["maxSharesToSocialize"] == max_shares_to_socialize

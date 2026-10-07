@@ -1,0 +1,91 @@
+{
+    "SetMerkleGateTree:CSM": {
+        "contract": "SetMerkleGateTree",
+        "address": "0xDAf4afD2dD5DcA705900b9e526150C1a00057994",
+        "constructorArgs": [
+            "0x4AF43Ee34a6fcD1fEcA1e1F832124C763561dA53",
+            "CSM"
+        ],
+        "txHash": "0x3cb13a3cae907acca9b123658bd180f5b95362adce21c7f357fb49ec0e2a6dfa"
+    },
+    "ReportWithdrawalsForSlashedValidators:CSM": {
+        "contract": "ReportWithdrawalsForSlashedValidators",
+        "address": "0x5732943077210FD18d9d5d2A9d4D8847A5069713",
+        "constructorArgs": [
+            "0x4AF43Ee34a6fcD1fEcA1e1F832124C763561dA53",
+            "CSM",
+            "0x79CEf36D84743222f37765204Bec41E92a93E59d"
+        ],
+        "txHash": "0x04001779ffd4dfb10fdc4b2637d4fa9a49f634af4258a9ca693c9654fb0fa92f"
+    },
+    "SettleGeneralDelayedPenalty:CSM": {
+        "contract": "SettleGeneralDelayedPenalty",
+        "address": "0x029239CDF35d5669d81D32A83EbF783b87aD1AEE",
+        "constructorArgs": [
+            "0x4AF43Ee34a6fcD1fEcA1e1F832124C763561dA53",
+            "CSM",
+            "0x79CEf36D84743222f37765204Bec41E92a93E59d"
+        ],
+        "txHash": "0x2bb0875c94975787eb4297b5c32d2b12a66a5795a9ff62e4da5b31945d646d85"
+    },
+    "SetMerkleGateTree:CM": {
+        "contract": "SetMerkleGateTree",
+        "address": "0x9F4BB90d6D0bB3B18a7156F3648c1e5256BAD1a7",
+        "constructorArgs": [
+            "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
+            "CM"
+        ],
+        "txHash": "0x0c610802fde288374435ef72404d26c9bbb30c079a69e22bc064550ce452fa3a"
+    },
+    "ReportWithdrawalsForSlashedValidators:CM": {
+        "contract": "ReportWithdrawalsForSlashedValidators",
+        "address": "0xE1EDc1857B47a3188d9cA16E3e6A2DF2Af494FDD",
+        "constructorArgs": [
+            "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
+            "CM",
+            "0x87EB69Ae51317405FD285efD2326a4a11f6173b9"
+        ],
+        "txHash": "0x62a2039bf0af80f75f53b40a8ec93cc8022498e820f8a4f5bfe7a7f8dd8883f6"
+    },
+    "SettleGeneralDelayedPenalty:CM": {
+        "contract": "SettleGeneralDelayedPenalty",
+        "address": "0x6B5b2147E2B7Ae08E4486D41741D805A869d2338",
+        "constructorArgs": [
+            "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
+            "CM",
+            "0x87EB69Ae51317405FD285efD2326a4a11f6173b9"
+        ],
+        "txHash": "0x2b7595c24ee0b2e80089c197a0969fcc3b0f7d47eb01dcdb4ca8765cc7b6af73"
+    },
+    "CreateOrUpdateOperatorGroup:CM": {
+        "contract": "CreateOrUpdateOperatorGroup",
+        "address": "0xF5Dd3789AC14fd4be9C0D24f4d2218B4024047DD",
+        "constructorArgs": [
+            "0x84DffcfB232594975C608DE92544Ff239a24c9E9",
+            "CM",
+            "0x87EB69Ae51317405FD285efD2326a4a11f6173b9",
+            1
+        ],
+        "txHash": "0x10bbb6c325dbdd7e793c7f02e06c98fce77efb40851ca1602ca13ad6e4428bfb"
+    },
+    "ReportWithdrawalsForSlashedValidators:CSM0x02": {
+        "contract": "ReportWithdrawalsForSlashedValidators",
+        "address": "0x0b384D661101Fe7F56caa421547b243e03ED4E65",
+        "constructorArgs": [
+            "0x4af43ee34a6fcd1feca1e1f832124c763561da53",
+            "CSM0x02",
+            "0xbb7dd81FAC80f3Effa10eA8b973c15AE65a4CAf9"
+        ],
+        "txHash": "0xffc0b4ba8f458ad59043f19af6d94b3de3e6d64ead0f8a0c7930224b5e12cee4"
+    },
+    "SettleGeneralDelayedPenalty:CSM0x02": {
+        "contract": "SettleGeneralDelayedPenalty",
+        "address": "0x2eCf179d5e840e56054E214438008F19E46711bC",
+        "constructorArgs": [
+            "0x4af43ee34a6fcd1feca1e1f832124c763561da53",
+            "CSM0x02",
+            "0xbb7dd81FAC80f3Effa10eA8b973c15AE65a4CAf9"
+        ],
+        "txHash": "0x5d987da6c803de0c0c5b7a109b50cd526c56724adba55cf347b69892a5032109"
+    }
+}

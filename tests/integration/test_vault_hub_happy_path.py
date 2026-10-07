@@ -6,6 +6,12 @@ from utils.test_helpers import assert_event_exists, set_account_balance
 
 MOTION_BUFFER_TIME = 100
 
+
+@pytest.fixture(scope="module")
+def deployed_contracts():
+    """Override: vault hub tests need a fresh EasyTrack."""
+    return {"EasyTrack": ""}
+
 INITIAL_VAULT_BALANCE = 2 * 10**18
 
 

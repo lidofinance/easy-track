@@ -6,8 +6,8 @@ pragma solidity ^0.8.4;
 import "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/access/AccessControl.sol";
 
 /// @author vgorkavenko  
-/// @notice Helper contract with stub implementation of VettedGate for testing
-contract VettedGateStub is AccessControl {
+/// @notice Helper contract with stub implementation of MerkleGate for testing
+contract MerkleGateStub is AccessControl {
     bytes32 public constant SET_TREE_ROLE = keccak256("SET_TREE_ROLE");
     
     bytes32 public treeRoot;
