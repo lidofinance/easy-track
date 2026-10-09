@@ -4,11 +4,7 @@
 pragma solidity ^0.8.25;
 
 import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
-import {
-    IEasyTrack,
-    IEVMScriptExecutor,
-    IRewardProgramsRegistry
-} from "test/foundry/interfaces/EasyTrack.sol";
+import {IRewardProgramsRegistry} from "test/foundry/interfaces/EasyTrack.sol";
 import {IFinance, IMiniMeToken} from "test/foundry/interfaces/External.sol";
 
 /// @notice A fresh Easy Track over the live Aragon apps, the way the reward programs went live:
@@ -16,10 +12,6 @@ import {IFinance, IMiniMeToken} from "test/foundry/interfaces/External.sol";
 ///         factories registered, and the DAO vote granting the executor `CREATE_PAYMENTS_ROLE` on
 ///         Finance. The base helpers drive this deployment, not the deployed Easy Track.
 contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
-    uint256 private constant MIN_MOTION_DURATION = 48 hours;
-    uint256 private constant MAX_MOTIONS_LIMIT = 24;
-    uint256 private constant DEFAULT_OBJECTIONS_THRESHOLD = 50;
-
     string private constant REWARD_PROGRAM_TITLE = "Our Reward Program";
     uint256 private constant TOP_UP_AMOUNT = 5e18;
 
@@ -40,13 +32,12 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
         voting = _voting();
         finance = IFinance(config.finance);
         ldo = IMiniMeToken(easyTrack.governanceToken());
-        address callsScript = IEVMScriptExecutor(evmScriptExecutor).callsScript();
         creator = makeAddr("trustedCaller");
 
         vm.label(address(finance), "Finance");
         vm.label(address(ldo), "LDO");
 
-        _deployEasyTrack(callsScript);
+        _deployEasyTrack(address(this));
         _deployFactories();
         _handAdminToVoting();
 
@@ -54,7 +45,8 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
         _grantPermission(evmScriptExecutor, address(finance), finance.CREATE_PAYMENTS_ROLE());
     }
 
-    // python: test_reward_programs_easy_track
+    // python: test_reward_programs_easy_track, of test_reward_programs.py and of
+    // tests/integration/test_reward_programs_happy_path.py, the same flow under another title
     function testFork_AddsTopsUpAndRemovesRewardProgram() external {
         bytes memory addCallData = abi.encode(rewardProgram, REWARD_PROGRAM_TITLE);
         uint256 motionId = _createMotion(addRewardProgram, creator, addCallData);
@@ -92,30 +84,6 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
         );
     }
 
-    /// @dev Easy Track with the test as admin and an executor owned by Voting, which the base
-    ///      helpers drive from here on instead of the deployed pair
-    function _deployEasyTrack(address callsScript) private {
-        easyTrack = IEasyTrack(
-            _deployArtifact(
-                "EasyTrack",
-                abi.encode(
-                    ldo,
-                    address(this),
-                    MIN_MOTION_DURATION,
-                    MAX_MOTIONS_LIMIT,
-                    DEFAULT_OBJECTIONS_THRESHOLD
-                )
-            )
-        );
-        evmScriptExecutor = _deployArtifact("EVMScriptExecutor", abi.encode(callsScript, easyTrack));
-
-        IEVMScriptExecutor(evmScriptExecutor).transferOwnership(voting);
-
-        assertEq(IEVMScriptExecutor(evmScriptExecutor).owner(), voting, "setup: executor owner");
-
-        easyTrack.setEVMScriptExecutor(evmScriptExecutor);
-    }
-
     /// @dev The registry, with Voting and the executor in both of its roles, and the three
     ///      factories registered with the permission each one's script needs
     function _deployFactories() private {
@@ -150,19 +118,6 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
                 rewardProgramsRegistry, IRewardProgramsRegistry.removeRewardProgram.selector
             )
         );
-    }
-
-    /// @dev Voting becomes the admin and the deployer stops being one
-    function _handAdminToVoting() private {
-        bytes32 adminRole = easyTrack.DEFAULT_ADMIN_ROLE();
-
-        easyTrack.grantRole(adminRole, voting);
-
-        assertTrue(easyTrack.hasRole(adminRole, voting), "setup: Voting is admin");
-
-        easyTrack.revokeRole(adminRole, address(this));
-
-        assertFalse(easyTrack.hasRole(adminRole, address(this)), "setup: deployer is not admin");
     }
 
     function _single(address value) private pure returns (address[] memory values) {

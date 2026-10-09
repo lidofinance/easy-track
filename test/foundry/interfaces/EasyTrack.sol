@@ -30,11 +30,20 @@ interface IEasyTrack {
 
     function getMotions() external view returns (Motion[] memory);
 
+    function getMotion(uint256 _motionId) external view returns (Motion memory);
+
     function addEVMScriptFactory(address _evmScriptFactory, bytes memory _permissions) external;
 
     function removeEVMScriptFactory(address _evmScriptFactory) external;
 
     function isEVMScriptFactory(address _maybeEVMScriptFactory) external view returns (bool);
+
+    function getEVMScriptFactories() external view returns (address[] memory);
+
+    function evmScriptFactoryPermissions(address _evmScriptFactory)
+        external
+        view
+        returns (bytes memory);
 
     function setEVMScriptExecutor(address _evmScriptExecutor) external;
 
@@ -44,7 +53,17 @@ interface IEasyTrack {
 
     function motionDuration() external view returns (uint256);
 
+    function motionsCountLimit() external view returns (uint256);
+
+    function objectionsThreshold() external view returns (uint256);
+
     function DEFAULT_ADMIN_ROLE() external view returns (bytes32);
+
+    function PAUSE_ROLE() external view returns (bytes32);
+
+    function UNPAUSE_ROLE() external view returns (bytes32);
+
+    function CANCEL_ROLE() external view returns (bytes32);
 
     function hasRole(bytes32 role, address account) external view returns (bool);
 
@@ -76,4 +95,12 @@ interface IRewardProgramsRegistry {
     function removeRewardProgram(address _rewardProgram) external;
 
     function getRewardPrograms() external view returns (address[] memory);
+
+    function DEFAULT_ADMIN_ROLE() external view returns (bytes32);
+
+    function ADD_REWARD_PROGRAM_ROLE() external view returns (bytes32);
+
+    function REMOVE_REWARD_PROGRAM_ROLE() external view returns (bytes32);
+
+    function hasRole(bytes32 role, address account) external view returns (bool);
 }

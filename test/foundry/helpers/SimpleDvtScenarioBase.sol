@@ -66,15 +66,6 @@ abstract contract SimpleDvtScenarioBase is EasyTrackScenarioBase {
     /// @dev Aragon CallsScript spec id, the prefix of every EVM script
     bytes4 private constant SPEC_ID = 0x00000001;
 
-    /// @dev Three deposit keys with their signatures, added to an operator in one call
-    uint256 internal constant SIGNING_KEYS_COUNT = 3;
-    bytes internal constant SIGNING_KEYS_PUBKEYS = hex"8bb1db218877a42047b953bdc32573445a78d93383ef5fd08f79c066d4781961db4f5ab5a7cc0cf1e4cbcc23fd17f9d7"
-        hex"884b147305bcd9fce3a1cc12e8f893c6356c1780688286277656e1ba724a3fde49262c98503141c0925b344a8ccea9ca"
-        hex"952ff22cf4a5f9708d536acb2170f83c137301515df5829adc28c265373487937cc45e8f91743caba0b9ebd02b3b664f";
-    bytes internal constant SIGNING_KEYS_SIGNATURES = hex"ad17ef7cdf0c4917aaebc067a785b049d417dda5d4dd66395b21bbd50781d51e28ee750183eca3d32e1f57b324049a06135ad07d1aa243368bca9974e25233f050e0d6454894739f87faace698b90ea65ee4baba2758772e09fec4f1d8d35660"
-        hex"9794e7871dc766c2139f9476234bc29784e13b51e859445044d2a5a9df8bc072d9c51c51ee69490ce37bdfc7cf899af2166b0710d620a87398d5ec7da06c9f7eb27f1d729973efd60052dbd4cb7f43ff6b141af4d0a0a980b60f663f39bf7844"
-        hex"90111fb6944ff8b56eb0858c1deb91f41c8c631573f4c821663d7079e5e78903d67fa1c4a4ed358378f16a2b7ec524c5196b1a1eae35b01dca1df74535f45d6bd1960164a41425b2a289d4bb5c837049acf5871a0ed23598df42f6234276f6e2";
-
     INodeOperatorsRegistry internal simpleDvt;
     IACL internal acl;
 

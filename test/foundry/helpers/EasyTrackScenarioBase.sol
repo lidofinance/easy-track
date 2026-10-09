@@ -35,6 +35,9 @@ abstract contract EasyTrackScenarioBase is Test {
         string artifact;
         string srArtifact;
         string smArtifact;
+        /// @dev the payout deployments the Brownie suite parametrizes its payouts fixtures over,
+        ///      `integration-test-addresses-<chain>.yaml`
+        string addresses;
         address easyTrack;
         /// @dev admin of most protocol roles
         address agent;
@@ -42,6 +45,12 @@ abstract contract EasyTrackScenarioBase is Test {
         address finance;
         address csmModule;
         address cmModule;
+        /// @dev the Lido locator, the root of the protocol contracts
+        address locator;
+        /// @dev the BokkyPooBahsDateTimeContract the payouts registries compute periods with
+        address dateTime;
+        address dai;
+        address usdc;
     }
 
     /// @dev OZ AccessControl role ids: keccak256 of the role name
@@ -65,6 +74,21 @@ abstract contract EasyTrackScenarioBase is Test {
     uint256 private constant SIGNATURE_LENGTH = 96;
 
     string private constant CURATED_GROUP_NAME = "scenario-curated-group";
+
+    /// @dev `tests/constants.py`, the settings of every Easy Track a scenario deploys fresh
+    uint256 internal constant MIN_MOTION_DURATION = 48 hours;
+    uint256 internal constant MAX_MOTIONS_LIMIT = 24;
+    uint256 internal constant DEFAULT_OBJECTIONS_THRESHOLD = 50;
+
+    /// @dev Three deposit keys with their signatures, added to a legacy registry's operator in
+    ///      one call
+    uint256 internal constant SIGNING_KEYS_COUNT = 3;
+    bytes internal constant SIGNING_KEYS_PUBKEYS = hex"8bb1db218877a42047b953bdc32573445a78d93383ef5fd08f79c066d4781961db4f5ab5a7cc0cf1e4cbcc23fd17f9d7"
+        hex"884b147305bcd9fce3a1cc12e8f893c6356c1780688286277656e1ba724a3fde49262c98503141c0925b344a8ccea9ca"
+        hex"952ff22cf4a5f9708d536acb2170f83c137301515df5829adc28c265373487937cc45e8f91743caba0b9ebd02b3b664f";
+    bytes internal constant SIGNING_KEYS_SIGNATURES = hex"ad17ef7cdf0c4917aaebc067a785b049d417dda5d4dd66395b21bbd50781d51e28ee750183eca3d32e1f57b324049a06135ad07d1aa243368bca9974e25233f050e0d6454894739f87faace698b90ea65ee4baba2758772e09fec4f1d8d35660"
+        hex"9794e7871dc766c2139f9476234bc29784e13b51e859445044d2a5a9df8bc072d9c51c51ee69490ce37bdfc7cf899af2166b0710d620a87398d5ec7da06c9f7eb27f1d729973efd60052dbd4cb7f43ff6b141af4d0a0a980b60f663f39bf7844"
+        hex"90111fb6944ff8b56eb0858c1deb91f41c8c631573f4c821663d7079e5e78903d67fa1c4a4ed358378f16a2b7ec524c5196b1a1eae35b01dca1df74535f45d6bd1960164a41425b2a289d4bb5c837049acf5871a0ed23598df42f6234276f6e2";
 
     NetworkConfig internal config;
     IEasyTrack internal easyTrack;
@@ -112,11 +136,16 @@ abstract contract EasyTrackScenarioBase is Test {
                 artifact: "deployed-hoodi.json",
                 srArtifact: "deployed-sr-hoodi.json",
                 smArtifact: "deployed-sm-hoodi.json",
+                addresses: "integration-test-addresses-hoodi.yaml",
                 easyTrack: 0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a,
                 agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD,
                 finance: 0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b,
                 csmModule: 0x79CEf36D84743222f37765204Bec41E92a93E59d,
-                cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9
+                cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9,
+                locator: 0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8,
+                dateTime: 0xd1df0cF660D531Fad9EAabD3e7b4E8881E28ae2F,
+                dai: 0x17fc691f6EF57D2CA719d30b8fe040123d4ee319,
+                usdc: 0x97bb030B93faF4684eAC76bA0bf3be5ec7140F36
             });
         }
 
@@ -127,11 +156,16 @@ abstract contract EasyTrackScenarioBase is Test {
                 artifact: "deployed-mainnet.json",
                 srArtifact: "deployed-sr-mainnet.json",
                 smArtifact: "deployed-sm-mainnet.json",
+                addresses: "integration-test-addresses-mainnet.yaml",
                 easyTrack: 0xF0211b7660680B49De1A7E9f25C65660F0a13Fea,
                 agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c,
                 finance: 0xB9E5CBB9CA5b0d659238807E84D0176930753d86,
                 csmModule: 0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F,
-                cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1
+                cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1,
+                locator: 0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb,
+                dateTime: 0x75100bd564415731B5936A4A94D0dC29DdE5dB3C,
+                dai: 0x6B175474E89094C44Da98b954EedeAC495271d0F,
+                usdc: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
             });
         }
 
@@ -145,6 +179,20 @@ abstract contract EasyTrackScenarioBase is Test {
         returns (address)
     {
         return vm.parseJsonAddress(vm.readFile(artifact), string.concat('.["', key, '"].address'));
+    }
+
+    /// @dev `_factoryAddress`, or zero when the artifact has no such key
+    function _optionalFactoryAddress(string memory artifact, string memory key)
+        internal
+        view
+        returns (address)
+    {
+        string memory json = vm.readFile(artifact);
+        string memory path = string.concat('.["', key, '"]');
+
+        return vm.keyExistsJson(json, path)
+            ? vm.parseJsonAddress(json, string.concat(path, ".address"))
+            : address(0);
     }
 
     // --- motion lifecycle ---
@@ -200,12 +248,71 @@ abstract contract EasyTrackScenarioBase is Test {
         assertTrue(easyTrack.isEVMScriptFactory(factory), "setup: isEVMScriptFactory");
     }
 
+    /// @dev Register `factory` with `permissions` unless Easy Track already lists it
+    function _registerFactoryIfMissing(address factory, bytes memory permissions) internal {
+        if (easyTrack.isEVMScriptFactory(factory)) {
+            return;
+        }
+
+        _registerFactory(factory, permissions);
+    }
+
     /// @dev Re-register the factory under test with `permissions`, as a DAO vote does
     function _replaceFactoryPermissions(bytes memory permissions) internal {
         vm.startPrank(_voting());
         easyTrack.removeEVMScriptFactory(evmScriptFactory);
         easyTrack.addEVMScriptFactory(evmScriptFactory, permissions);
         vm.stopPrank();
+    }
+
+    /// @dev A fresh Easy Track with `admin` and an executor owned by Voting, both from the
+    ///      `contracts` profile artifacts. The base helpers drive this pair from here on instead
+    ///      of the deployed one.
+    function _deployEasyTrack(address admin) internal {
+        _deployEasyTrack(
+            admin, MIN_MOTION_DURATION, MAX_MOTIONS_LIMIT, DEFAULT_OBJECTIONS_THRESHOLD
+        );
+    }
+
+    /// @dev The same with the motion settings given
+    function _deployEasyTrack(
+        address admin,
+        uint256 motionDuration,
+        uint256 motionsCountLimit,
+        uint256 objectionsThreshold
+    ) internal {
+        address ldo = easyTrack.governanceToken();
+        address callsScript = IEVMScriptExecutor(evmScriptExecutor).callsScript();
+        address voting = _voting();
+
+        easyTrack = IEasyTrack(
+            _deployArtifact(
+                "EasyTrack",
+                abi.encode(ldo, admin, motionDuration, motionsCountLimit, objectionsThreshold)
+            )
+        );
+        evmScriptExecutor = _deployArtifact("EVMScriptExecutor", abi.encode(callsScript, easyTrack));
+
+        IEVMScriptExecutor(evmScriptExecutor).transferOwnership(voting);
+
+        assertEq(IEVMScriptExecutor(evmScriptExecutor).owner(), voting, "setup: executor owner");
+
+        vm.prank(admin);
+        easyTrack.setEVMScriptExecutor(evmScriptExecutor);
+    }
+
+    /// @dev Voting becomes the admin of the fresh Easy Track and the test stops being one
+    function _handAdminToVoting() internal {
+        bytes32 adminRole = easyTrack.DEFAULT_ADMIN_ROLE();
+        address voting = _voting();
+
+        easyTrack.grantRole(adminRole, voting);
+
+        assertTrue(easyTrack.hasRole(adminRole, voting), "setup: Voting is admin");
+
+        easyTrack.revokeRole(adminRole, address(this));
+
+        assertFalse(easyTrack.hasRole(adminRole, address(this)), "setup: deployer is not admin");
     }
 
     /// @dev The DAO ACL, through the Agent's kernel
