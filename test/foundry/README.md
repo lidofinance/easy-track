@@ -141,7 +141,8 @@ scans for pre-existing state.
   the payouts suites on a chain without the addresses file, the vaults suites with Voting as admin,
   the deploy script suite with the script's settings. The exit request and MEV-Boost
   suites bind the deployed factories and register them as Voting only when the fork lacks the
-  registration.
+  registration. The two SimpleDVT suites driving `IncreaseVettedValidatorsLimit` skip where it is
+  deployed but not registered, as on mainnet.
 - **Interfaces** in `interfaces/{External,Factories,EasyTrack,Payouts,Vaults}.sol` are self-contained with a modern
   pragma, so the suite never compiles `contracts/`. Build the factories with the separate profile:
   `FOUNDRY_PROFILE=contracts forge build`.

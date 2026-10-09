@@ -21,6 +21,16 @@ contract SimpleDvtCollisionsTest is SimpleDvtScenarioBase {
     uint256 internal constant SECOND_VETTED_LIMIT = 2;
     uint256 internal constant THIRD_VETTED_LIMIT = 3;
 
+    function setUp() public override {
+        super.setUp();
+
+        // Mainnet deployed the increase factory but never registered it
+        vm.skip(
+            !easyTrack.isEVMScriptFactory(increaseVettedValidatorsLimit),
+            "IncreaseVettedValidatorsLimit is not registered in Easy Track"
+        );
+    }
+
     // python: test_simple_dvt_scenario
     function testFork_RejectsCollidingMotionsAtEnactment() external {
         // 1. The same add twice: the second one sees a changed operator count

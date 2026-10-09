@@ -29,8 +29,11 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     function testFork_AddRecipientMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory callData = abi.encode(recipients[0], titles[0]);
-        uint256 motionId =
-            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), callData);
+        uint256 motionId = _createMotion(
+            addAllowedRecipient,
+            _trustedCaller(addAllowedRecipient),
+            callData
+        );
 
         _passMotionDuration();
 
@@ -40,9 +43,14 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(stranger);
         easyTrack.enactMotion(motionId, callData);
 
-        assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipients[0]), "recipient allowed");
+        assertTrue(
+            allowedRecipientsRegistry.isRecipientAllowed(recipients[0]),
+            "recipient allowed"
+        );
         assertEq(
-            allowedRecipientsRegistry.getAllowedRecipients().length, countBefore + 1, "recipients"
+            allowedRecipientsRegistry.getAllowedRecipients().length,
+            countBefore + 1,
+            "recipients"
         );
     }
 
@@ -51,10 +59,16 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory firstCallData = abi.encode(recipients[0], titles[0]);
         bytes memory secondCallData = abi.encode(recipients[1], titles[1]);
-        uint256 firstMotionId =
-            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), firstCallData);
-        uint256 secondMotionId =
-            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), secondCallData);
+        uint256 firstMotionId = _createMotion(
+            addAllowedRecipient,
+            _trustedCaller(addAllowedRecipient),
+            firstCallData
+        );
+        uint256 secondMotionId = _createMotion(
+            addAllowedRecipient,
+            _trustedCaller(addAllowedRecipient),
+            secondCallData
+        );
 
         _enactMotion(firstMotionId, firstCallData);
         _enactMotion(secondMotionId, secondCallData);
@@ -62,17 +76,25 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipients[0]), "first allowed");
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipients[1]), "second allowed");
         assertEq(
-            allowedRecipientsRegistry.getAllowedRecipients().length, countBefore + 2, "recipients"
+            allowedRecipientsRegistry.getAllowedRecipients().length,
+            countBefore + 2,
+            "recipients"
         );
     }
 
     // python: test_fail_add_same_recipient_by_second_concurrent_motion
     function testFork_RevertWhen_SameRecipientAddedBySecondConcurrentMotion() external {
         bytes memory callData = abi.encode(recipients[0], titles[0]);
-        uint256 firstMotionId =
-            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), callData);
-        uint256 secondMotionId =
-            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), callData);
+        uint256 firstMotionId = _createMotion(
+            addAllowedRecipient,
+            _trustedCaller(addAllowedRecipient),
+            callData
+        );
+        uint256 secondMotionId = _createMotion(
+            addAllowedRecipient,
+            _trustedCaller(addAllowedRecipient),
+            callData
+        );
 
         _enactMotion(firstMotionId, callData);
 
@@ -96,8 +118,11 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _addRecipientByMotion(recipients[0], titles[0]);
 
         bytes memory callData = abi.encode(recipients[0]);
-        uint256 motionId =
-            _createMotion(removeAllowedRecipient, _trustedCaller(removeAllowedRecipient), callData);
+        uint256 motionId = _createMotion(
+            removeAllowedRecipient,
+            _trustedCaller(removeAllowedRecipient),
+            callData
+        );
 
         _passMotionDuration();
 
@@ -108,9 +133,14 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.enactMotion(motionId, callData);
 
         assertFalse(
-            allowedRecipientsRegistry.isRecipientAllowed(recipients[0]), "recipient removed"
+            allowedRecipientsRegistry.isRecipientAllowed(recipients[0]),
+            "recipient removed"
         );
-        assertEq(allowedRecipientsRegistry.getAllowedRecipients().length, countBefore, "recipients");
+        assertEq(
+            allowedRecipientsRegistry.getAllowedRecipients().length,
+            countBefore,
+            "recipients"
+        );
     }
 
     // python: test_fail_remove_recipient_if_empty_allowed_recipients_list
@@ -148,7 +178,9 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _advanceToNextPeriod(periodDuration);
 
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(2e18)), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(2e18)),
+            SPENT_AMOUNT
         );
     }
 
@@ -168,13 +200,16 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(1))
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(1))
         );
 
         _advanceToNextPeriod(periodDuration);
 
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit)), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(limit)),
+            SPENT_AMOUNT
         );
     }
 
@@ -203,14 +238,18 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _advanceToNextPeriod(periodDuration);
 
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(1e18)), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(1e18)),
+            SPENT_AMOUNT
         );
 
         _allowToken(usdc);
 
         // 1 USDC in 6 decimals counts as 1e18 against the limit
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(usdc, _recipients(1), _amounts(1e6)), 1e18
+            topUpAllowedRecipients,
+            _encodeTopUp(usdc, _recipients(1), _amounts(1e6)),
+            1e18
         );
 
         assertEq(allowedRecipientsRegistry.spendableBalance(), limit - 2e18, "spendableBalance");
@@ -245,13 +284,13 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         bytes memory callData = _encodeTopUp(dai, _recipients(2), _amounts(3e18, 90e18));
         uint256 motionId = _createTopUpMotion(topUpAllowedRecipients, callData);
-        (,, uint256 oldPeriodStart, uint256 oldPeriodEnd) =
-            allowedRecipientsRegistry.getPeriodState();
+        (, , uint256 oldPeriodStart, uint256 oldPeriodEnd) = allowedRecipientsRegistry
+            .getPeriodState();
 
         _enactTopUpMotion(motionId, callData, SPENT_AMOUNT);
 
-        (,, uint256 newPeriodStart, uint256 newPeriodEnd) =
-            allowedRecipientsRegistry.getPeriodState();
+        (, , uint256 newPeriodStart, uint256 newPeriodEnd) = allowedRecipientsRegistry
+            .getPeriodState();
         assertNotEq(newPeriodStart, oldPeriodStart, "period start");
         assertNotEq(newPeriodEnd, oldPeriodEnd, "period end");
     }
@@ -284,29 +323,34 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _ensureAgentDaiBalance(40_000_000e18);
         _allowToken(dai);
 
-        uint256[] memory amounts = _amounts(limit / 10, limit / 10 * 9);
+        uint256[] memory amounts = _amounts(limit / 10, (limit / 10) * 9);
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), amounts), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(2), amounts),
+            SPENT_AMOUNT
         );
 
-        (uint256 alreadySpentAmount,,,) = allowedRecipientsRegistry.getPeriodState();
+        (uint256 alreadySpentAmount, , , ) = allowedRecipientsRegistry.getPeriodState();
         assertEq(alreadySpentAmount, _sum(amounts), "_alreadySpentAmount");
         assertEq(allowedRecipientsRegistry.spendableBalance(), limit - _sum(amounts), "spendable");
 
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(1))
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(1))
         );
 
         // The views are not refreshed by the rollover, so renewal shows as a full-limit payout
         vm.warp(vm.getBlockTimestamp() + periodDuration * MAX_SECONDS_IN_MONTH);
 
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit)), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(limit)),
+            SPENT_AMOUNT
         );
 
-        (alreadySpentAmount,,,) = allowedRecipientsRegistry.getPeriodState();
+        (alreadySpentAmount, , , ) = allowedRecipientsRegistry.getPeriodState();
         assertEq(alreadySpentAmount, limit, "_alreadySpentAmount after renewal");
         assertEq(allowedRecipientsRegistry.spendableBalance(), 0, "spendable after renewal");
     }
@@ -327,7 +371,8 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert("TOKEN_NOT_ALLOWED");
         easyTrack.createMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit))
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(limit))
         );
 
         if (restoreAfterTest) {
@@ -339,6 +384,8 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     // shadowed token removal case pytest never collects
     function testFork_RevertWhen_TokenRemovedWhileMotionIsInFlight() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
+
+        _ensureAgentDaiBalance(limit);
         _addRecipientByMotion(recipients[0], titles[0]);
         _allowToken(dai);
 
@@ -388,7 +435,8 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit + 1))
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(1), _amounts(limit + 1))
         );
     }
 
@@ -402,17 +450,20 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         _advanceToNextPeriod(periodDuration);
 
-        uint256[] memory amounts = _amounts(limit / 10 * 4, limit / 10 * 6);
+        uint256[] memory amounts = _amounts((limit / 10) * 4, (limit / 10) * 6);
         assertEq(_sum(amounts), limit, "setup: amounts sum to the limit");
 
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), amounts), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(2), amounts),
+            SPENT_AMOUNT
         );
 
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), _amounts(1, 1))
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(2), _amounts(1, 1))
         );
     }
 
@@ -426,8 +477,8 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         _advanceToNextPeriod(periodDuration);
 
-        uint256[] memory firstAmounts = _amounts(limit / 10 * 4, limit / 10 * 3);
-        uint256[] memory secondAmounts = _amounts(limit / 10 * 3, limit / 10 * 2);
+        uint256[] memory firstAmounts = _amounts((limit / 10) * 4, (limit / 10) * 3);
+        uint256[] memory secondAmounts = _amounts((limit / 10) * 3, (limit / 10) * 2);
         assertGt(_sum(firstAmounts) + _sum(secondAmounts), limit, "setup: amounts exceed limit");
 
         bytes memory firstCallData = _encodeTopUp(dai, _recipients(2), firstAmounts);
@@ -456,22 +507,27 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         _advanceToNextPeriod(periodDuration);
 
-        uint256[] memory firstAmounts = _amounts(limit / 100 * 3, limit / 10 * 9);
-        uint256[] memory secondAmounts = _amounts(limit / 100 * 5, limit / 100 * 4);
+        uint256[] memory firstAmounts = _amounts((limit / 100) * 3, (limit / 10) * 9);
+        uint256[] memory secondAmounts = _amounts((limit / 100) * 5, (limit / 100) * 4);
         assertGt(_sum(firstAmounts) + _sum(secondAmounts), limit, "setup: amounts exceed limit");
 
         _topUpByMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), firstAmounts), SPENT_AMOUNT
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(2), firstAmounts),
+            SPENT_AMOUNT
         );
 
         assertGt(
-            _sum(secondAmounts), allowedRecipientsRegistry.spendableBalance(), "second exceeds"
+            _sum(secondAmounts),
+            allowedRecipientsRegistry.spendableBalance(),
+            "second exceeds"
         );
 
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), secondAmounts)
+            topUpAllowedRecipients,
+            _encodeTopUp(dai, _recipients(2), secondAmounts)
         );
     }
 
@@ -525,7 +581,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         _advanceToNextPeriod(periodDuration);
 
-        uint256[] memory firstAmounts = _amounts(limit / 10 * 4, limit / 10 * 6);
+        uint256[] memory firstAmounts = _amounts((limit / 10) * 4, (limit / 10) * 6);
         uint256[] memory secondAmounts = _amounts(1, 1);
         assertEq(_sum(firstAmounts), limit, "setup: amounts sum to the limit");
 

@@ -31,6 +31,16 @@ contract SimpleDvtLifecycleTest is SimpleDvtScenarioBase {
     uint256 internal constant TARGET_LIMIT_MODE_6 = 1;
     uint256 internal constant TARGET_LIMIT_6 = 10;
 
+    function setUp() public override {
+        super.setUp();
+
+        // Mainnet deployed the increase factory but never registered it
+        vm.skip(
+            !easyTrack.isEVMScriptFactory(increaseVettedValidatorsLimit),
+            "IncreaseVettedValidatorsLimit is not registered in Easy Track"
+        );
+    }
+
     // python: test_simple_dvt_scenario
     function testFork_SimpleDvtLifecycle() external {
         _enact(addNodeOperators, creator, _encodeAddClusters(CLUSTERS_COUNT));
