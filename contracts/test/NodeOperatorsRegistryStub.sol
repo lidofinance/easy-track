@@ -6,6 +6,9 @@ pragma solidity ^0.8.4;
 /// @author psirex
 /// @notice Helper contract with stub implementation of NodeOperatorsRegistry
 contract NodeOperatorsRegistryStub {
+    uint256 public constant MAX_NODE_OPERATORS_COUNT = 200;
+    uint256 public constant MAX_NODE_OPERATOR_NAME_LENGTH = 255;
+
     uint256 public id = 1;
     bool public active = true;
     address public rewardAddress;
@@ -37,7 +40,7 @@ contract NodeOperatorsRegistryStub {
 
     function getNodeOperator(
         uint256 _id,
-        bool _fullInfo
+        bool
     )
         external
         view
@@ -126,6 +129,10 @@ contract NodeOperatorsRegistryStub {
 
     function getNodeOperatorsCount() external view returns (uint256) {
         return _nodeOperatorsCount;
+    }
+
+    function getNodeOperatorIsActive(uint256 _id) external view returns (bool) {
+        return _nodeOperators[_id].active;
     }
 
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.

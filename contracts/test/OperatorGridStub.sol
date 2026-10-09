@@ -185,16 +185,16 @@ contract OperatorGridStub is AccessControl {
     ) {
         uint256 tierId = vaultTiers[_vault]; // defaults to 0 (DEFAULT_TIER_ID)
         if (tierId < tiers.length) {
-            Tier memory tier = tiers[tierId];
+            Tier memory tier_ = tiers[tierId];
             return (
-                tier.operator,
+                tier_.operator,
                 tierId,
-                tier.shareLimit,
-                tier.reserveRatioBP,
-                tier.forcedRebalanceThresholdBP,
-                tier.infraFeeBP,
-                tier.liquidityFeeBP,
-                tier.reservationFeeBP
+                tier_.shareLimit,
+                tier_.reserveRatioBP,
+                tier_.forcedRebalanceThresholdBP,
+                tier_.infraFeeBP,
+                tier_.liquidityFeeBP,
+                tier_.reservationFeeBP
             );
         }
         // Default tier values for testing

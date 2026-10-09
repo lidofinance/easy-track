@@ -111,7 +111,7 @@ contract VaultHubStub is AccessControl {
     }
 
     /// @return true if vault is pending for disconnect, false if vault is connected or disconnected
-    function isPendingDisconnect(address _vault) external view returns (bool) {
+    function isPendingDisconnect(address) external pure returns (bool) {
         // For stub purposes, always return false
         return false;
     }
