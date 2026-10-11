@@ -252,7 +252,7 @@ CHAIN=hoodi forge test -vv
 
 **Check:** `gh pr checks <PR>` shows no failed or pending checks. A local test run does not replace CI.
 
-PRs from forks do not get the repository secrets, so the Brownie jobs fail and the Foundry tests are skipped. For a fork PR, a maintainer pushes its branch to this repository and opens a PR from it, which runs CI with the secrets.
+PRs from forks do not get the repository secrets, so the Brownie tests cannot fork mainnet and the Foundry tests are skipped while their job still passes. For a fork PR, a maintainer runs CI from a branch in this repository.
 
 ### R4. Deploy scripts are correct
 
