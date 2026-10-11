@@ -110,7 +110,7 @@ All validation in `createEVMScript` therefore runs twice, against the state at c
   - `calldata` for read-only external parameters;
   - `pragma solidity 0.8.6;` in new factories.
 
-Start from [`SetDepositsReserveTarget.sol`](contracts/EVMScriptFactories/SetDepositsReserveTarget.sol) for a single call, or [`UpdateStakingModuleShareLimits.sol`](contracts/EVMScriptFactories/UpdateStakingModuleShareLimits.sol) for bounded changes and named instances. Both files predate parts of the code style: section banners, `calldata` parameters, `require` instead of `if (...) revert(...)`, and zero-address checks in the constructor. Where they differ from the list above, follow the list.
+Existing factories predate parts of this code style. Where they differ from the list above, follow the list.
 
 ## Off-chain
 
@@ -192,7 +192,7 @@ Link a **test plan** in the PR description: a list of the behaviours your tests 
 - state changes between creation and enactment, including stale expected values where applicable;
 - for a staking-router or staking-module factory already registered on testnet with the required executor roles, a Foundry scenario test in `test/foundry/scenario/` that drives the testnet deployment from R2.
 
-Use the share-limits [unit tests](tests/evm_script_factories/test_update_staking_module_share_limits.py) and [Brownie scenarios](tests/scenario/test_update_staking_module_share_limits_scenario.py) as examples, with [encoding helpers](utils/evm_script.py) and the fixtures in [tests/conftest.py](tests/conftest.py) and [tests/scenario/conftest.py](tests/scenario/conftest.py). Foundry scenarios extend [EasyTrackScenarioBase](test/foundry/helpers/EasyTrackScenarioBase.sol). Older examples may not meet every requirement above.
+Use the [encoding helpers](utils/evm_script.py), the fixtures in [tests/conftest.py](tests/conftest.py) and [tests/scenario/conftest.py](tests/scenario/conftest.py), and, for Foundry scenarios, [EasyTrackScenarioBase](test/foundry/helpers/EasyTrackScenarioBase.sol).
 
 **Check:** every item in the test plan has at least one test. Each test asserts on the result (the EVMScript bytes, the on-chain state or the expected revert). A test that only checks that a call did not revert does not count.
 
