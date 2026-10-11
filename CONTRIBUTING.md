@@ -190,7 +190,7 @@ Link a **test plan** in the PR description: a list of the behaviours your tests 
 - `decodeEVMScriptCallData`: a round trip of valid calldata, and a revert on malformed calldata;
 - a scenario test of the motion lifecycle: create the motion, wait for the motion duration, enact it, then check the on-chain effect;
 - state changes between creation and enactment, including stale expected values where applicable;
-- for a staking-router or staking-module factory already registered on testnet with the required executor roles, a Foundry scenario test in `test/foundry/scenario/` that drives the testnet deployment from R2.
+- for a staking-router or staking-module factory whose testnet activation vote (R2) is enacted, a Foundry scenario test in `test/foundry/scenario/` that drives the testnet deployment from R2.
 
 Use the [encoding helpers](utils/evm_script.py), the fixtures in [tests/conftest.py](tests/conftest.py) and [tests/scenario/conftest.py](tests/scenario/conftest.py), and, for Foundry scenarios, [EasyTrackScenarioBase](test/foundry/helpers/EasyTrackScenarioBase.sol).
 
@@ -219,7 +219,7 @@ Older deploy scripts for vault and MEV Boost relay factories write `et-*-deploye
 
 If the same contract is deployed more than once, the key is `<Contract>:<Instance>`, for example `UpdateStakingModuleShareLimits:CSM`.
 
-Factory registration and executor role grants are handled separately and are not required to merge the PR.
+The activation vote registers the factory in Easy Track and grants `EVMScriptExecutor` the roles the motion needs. It is not required to merge the PR. If you need help with it, ask the maintenance team.
 
 **Check:** each new or changed contract has an entry with all four fields, and `contract` matches the contract name.
 
@@ -236,7 +236,7 @@ All GitHub Actions checks on the PR pass. Two workflows run on every PR into `de
 | Integration & Scenario Tests   | `tests/integration/` loads factories from deployment artifacts or deploys them locally. `tests/scenario/` deploys fresh factories and runs full motions against the real mainnet Easy Track, with stubs or live targets.    | mainnet fork |
 | Foundry Scenario Tests (Hoodi) | `test/foundry/scenario/`. Each test drives a factory that is already deployed and registered through a full motion: create, wait, enact, then check the effect on-chain. Addresses come from `deployed-{sr,sm}-hoodi.json`. | testnet fork |
 
-The Foundry scenario tests cover registered staking-router and staking-module factories. Each test reads a fixed artifact key. Add a deployment scenario once registration and executor role grants are complete; until then, use a Brownie scenario for motion lifecycle coverage. Foundry tests skip without an RPC URL or an active fork; a skipped run does not establish coverage.
+The Foundry scenario tests cover registered staking-router and staking-module factories. Each test reads a fixed artifact key. Add a deployment scenario once the activation vote is enacted; until then, use a Brownie scenario for motion lifecycle coverage. Foundry tests skip without an RPC URL or an active fork; a skipped run does not establish coverage.
 
 **`Slither Analysis`** ([slither.yml](.github/workflows/slither.yml)) runs static analysis on `contracts/`. It runs with `--fail-none`, so it passes even when Slither reports findings. Check the PR's code-scanning alerts.
 
