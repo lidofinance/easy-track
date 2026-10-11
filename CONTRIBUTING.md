@@ -166,16 +166,16 @@ Alert groups are optional. To set one up, contact the maintenance team and tell 
 
 ## Branches
 
-| Branch    | Network          | Meaning of a merge                             |
-| --------- | ---------------- | ---------------------------------------------- |
-| `develop` | Testnet (Hoodi)  | The change is tested and deployed on testnet.  |
-| `master`  | Ethereum mainnet | The change is audited and deployed on mainnet. |
+| Branch    | Network          | Meaning of a merge                                        |
+| --------- | ---------------- | --------------------------------------------------------- |
+| `develop` | Testnet (Hoodi)  | The change is tested and deployed on testnet.             |
+| `master`  | Ethereum mainnet | The change is audited, deployed and activated on mainnet. |
 
 Open PRs against `develop`. A change reaches `master` only after it has been merged into `develop`.
 
 ## Pull Request Requirements
 
-A PR into `develop` must meet R1–R6. A PR into `master` must meet R1–R8. A PR that adds or changes neither contracts nor deployment artifacts must meet only R3, R5 and R6.
+A PR into develop must meet R1–R6, and also R7 and R8 if it records a mainnet deployment. A PR into master must meet R1–R8. A PR that adds or changes neither contracts nor deployment artifacts must meet only R3, R5 and R6.
 
 Here, contracts means production contracts. Test-only contracts under `contracts/test/` and `test/foundry/` do not require deployment, deploy scripts or audits.
 
@@ -286,9 +286,9 @@ The PR changes only what its title and description say. Typical out-of-scope cha
 
 ### R7. Mainnet deployment, with addresses in the PR (`master` only)
 
-The same as R2, on mainnet: entries in `deployed-sm-mainnet.json`, `deployed-sr-mainnet.json` or `deployed-mainnet.json`.
+The same as R2, on mainnet: entries in `deployed-sm-mainnet.json`, `deployed-sr-mainnet.json` or `deployed-mainnet.json`. Unlike on testnet, a PR into `master` merges only after the mainnet activation vote is enacted.
 
-**Check:** each new contract has a mainnet entry with all four fields, and its `constructorArgs` match the deploy script (R4) for mainnet.
+**Check:** each new contract has a mainnet entry with all four fields, and its `constructorArgs` match the deploy script (R4) for mainnet. For a PR into `master`, each new factory is in `EasyTrack.getEVMScriptFactories()` on mainnet.
 
 ### R8. Audit (`master` only)
 
@@ -313,5 +313,5 @@ Into `develop`:
 
 Into `master`, also:
 
-- [ ] R7: deployed on mainnet, entries added to the artifact files from the R7 list
+- [ ] R7: deployed on mainnet, entries added to the artifact files from the R7 list, and activated on mainnet before the merge into `master`
 - [ ] R8: audit report in `lidofinance/audits` linked in the PR description, the audited contract code matches the merged code, and the mainnet bytecode matches the audited source
