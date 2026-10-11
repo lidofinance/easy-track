@@ -158,6 +158,10 @@ Each motion shows a link, a title and a description. By default, the title is th
 
 Alert groups are optional. To set one up, contact the maintenance team and tell them which group the factory belongs to (an existing one such as `node_operators`, `lego`, `rewards`, `csm`, or a new one) and which Telegram chats should receive it.
 
+### Motion enactment
+
+The maintenance team runs an offchain service that automatically enacts passed motions with no objections. It enacts only motions created by factories on its whitelist. To have the service enact your factory's motions, ask for the factory's testnet and mainnet addresses (R2, R7) to be added: mention them in the PR description or contact the maintenance team. This is not a merge requirement.
+
 ## Conventions
 
 - **Solidity.** See the code style in [EVMScript Factories](#best-practices). Production contracts compile with solc 0.8.6 (EVM `berlin`, optimizer off). Foundry scenarios use modern Solidity interfaces in a separate profile; see [test/foundry/README.md](test/foundry/README.md#notes).
