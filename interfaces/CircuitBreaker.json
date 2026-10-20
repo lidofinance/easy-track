@@ -1,0 +1,506 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "_admin",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_minPauseDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_maxPauseDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_minHeartbeatInterval",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_maxHeartbeatInterval",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_initialPauseDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "_initialHeartbeatInterval",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ADMIN",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_HEARTBEAT_INTERVAL",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_PAUSE_DURATION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_HEARTBEAT_INTERVAL",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_PAUSE_DURATION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPausableCount",
+    "inputs": [
+      {
+        "name": "_pauser",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPausables",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getPauser",
+    "inputs": [
+      {
+        "name": "_pausable",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "heartbeat",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "heartbeatExpiry",
+    "inputs": [
+      {
+        "name": "pauser",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "timestamp",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "heartbeatInterval",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isPauserLive",
+    "inputs": [
+      {
+        "name": "_pauser",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "pause",
+    "inputs": [
+      {
+        "name": "_pausable",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "pauseDuration",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "registerPauser",
+    "inputs": [
+      {
+        "name": "_pausable",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "_newPauser",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setHeartbeatInterval",
+    "inputs": [
+      {
+        "name": "_newHeartbeatInterval",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPauseDuration",
+    "inputs": [
+      {
+        "name": "_newPauseDuration",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "CircuitBreakerInitialized",
+    "inputs": [
+      {
+        "name": "admin",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "minPauseDuration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxPauseDuration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "minHeartbeatInterval",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxHeartbeatInterval",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "HeartbeatIntervalUpdated",
+    "inputs": [
+      {
+        "name": "previousHeartbeatInterval",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newHeartbeatInterval",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "HeartbeatUpdated",
+    "inputs": [
+      {
+        "name": "pauser",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newHeartbeatExpiry",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PauseDurationUpdated",
+    "inputs": [
+      {
+        "name": "previousPauseDuration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "newPauseDuration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PauseTriggered",
+    "inputs": [
+      {
+        "name": "pausable",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "pauser",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "pauseDuration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "PauserSet",
+    "inputs": [
+      {
+        "name": "pausable",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "previousPauser",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "newPauser",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AdminZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "HeartbeatExpired",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "HeartbeatIntervalAboveMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "HeartbeatIntervalBelowMin",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinHeartbeatIntervalExceedsMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinHeartbeatIntervalZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinPauseDurationExceedsMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MinPauseDurationZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PausableZero",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PauseDurationAboveMax",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PauseDurationBelowMin",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PauseFailed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ReentrantCall",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SenderNotAdmin",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SenderNotPauser",
+    "inputs": []
+  }
+]
