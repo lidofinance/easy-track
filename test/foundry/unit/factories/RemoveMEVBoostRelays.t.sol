@@ -7,6 +7,7 @@ import {Test} from "forge-std/Test.sol";
 import {RemoveMEVBoostRelays} from "contracts/EVMScriptFactories/RemoveMEVBoostRelays.sol";
 import {IMEVBoostRelayAllowedList} from "contracts/interfaces/IMEVBoostRelayAllowedList.sol";
 import {MEVBoostRelayAllowedListStub} from "contracts/test/MEVBoostRelayAllowedListStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {MEVBoostRelays} from "test/foundry/unit/helpers/MEVBoostRelays.sol";
 
@@ -33,7 +34,7 @@ contract RemoveMEVBoostRelaysTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(removeMEVBoostRelays.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(removeMEVBoostRelays.mevBoostRelayAllowedList()),
@@ -78,7 +79,7 @@ contract RemoveMEVBoostRelaysTest is Test {
     // python: test_remove_relay
     function test_RemovesRelay() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
-        _addRelays(relays);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), 1, "get_relays_amount");
 
@@ -94,8 +95,8 @@ contract RemoveMEVBoostRelaysTest is Test {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MULTIPLE_RELAYS_COUNT);
         // the Python seeds the first relay twice, the stub has no duplicate check
-        _addRelay(relays[0]);
-        _addRelays(relays);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relays[0]);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         assertEq(
             mevBoostRelayAllowedListStub.get_relays_amount(), relays.length + 1, "get_relays_amount"
@@ -112,7 +113,7 @@ contract RemoveMEVBoostRelaysTest is Test {
     function test_RemovesMaxNumRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
-        _addRelays(relays);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         assertEq(
             mevBoostRelayAllowedListStub.get_relays_amount(),
@@ -139,7 +140,7 @@ contract RemoveMEVBoostRelaysTest is Test {
             relays[i].uri = uris[i];
         }
 
-        _addRelays(relays);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), uris.length, "get_relays_amount");
 
@@ -164,7 +165,7 @@ contract RemoveMEVBoostRelaysTest is Test {
 
     // python: test_cannot_remove_relay_with_empty_relay_uri
     function test_RevertWhen_RelayUriIsEmpty() external {
-        string[] memory uris = _uris("");
+        string[] memory uris = Arrays.list(string(""));
 
         vm.expectRevert("EMPTY_RELAY_URI");
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
@@ -198,47 +199,16 @@ contract RemoveMEVBoostRelaysTest is Test {
     // python: test_cannot_remove_relays_with_duplicate_uri
     function test_RevertWhen_RelaysHaveDuplicateUri() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _addRelay(relay);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);
 
         assertEq(mevBoostRelayAllowedListStub.get_relays_amount(), 1, "get_relays_amount");
 
-        string[] memory uris = _uris(relay.uri, relay.uri);
+        string[] memory uris = Arrays.list(relay.uri, relay.uri);
 
         vm.expectRevert("DUPLICATE_RELAY_URI");
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
     }
 
-    /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
-    function _addRelay(IMEVBoostRelayAllowedList.Relay memory relay) private {
-        vm.prank(owner);
-        mevBoostRelayAllowedListStub.add_relay(
-            relay.uri, relay.operator, relay.is_mandatory, relay.description
-        );
-    }
-
-    function _addRelays(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
-        for (uint256 i; i < relays.length; ++i) {
-            _addRelay(relays[i]);
-        }
-    }
-
-    function _uris(string memory uri) private pure returns (string[] memory uris) {
-        uris = new string[](1);
-        uris[0] = uri;
-    }
-
-    function _uris(string memory first, string memory second)
-        private
-        pure
-        returns (string[] memory uris)
-    {
-        uris = new string[](2);
-        uris[0] = first;
-        uris[1] = second;
-    }
-
-    /// @dev python: encode_call_script([(stub, stub.remove_relay.encode_input(uri)) for uri in
-    /// uris])
     function _removeRelaysScript(string[] memory uris) private view returns (bytes memory) {
         bytes[] memory calls = new bytes[](uris.length);
 

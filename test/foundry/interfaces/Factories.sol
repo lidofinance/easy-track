@@ -4,9 +4,11 @@
 pragma solidity ^0.8.25;
 
 // -----------------------------------------------------------------------------
-// Public getters of the deployed Easy Track EVM-script factories under test.
-// Each interface name matches its factory contract (contracts/EVMScriptFactories/*), except
-// `INodeOperatorsFactory`, the getters the nine SimpleDVT node operator factories share.
+// Public getters of the deployed Easy Track EVM-script factories under test. An interface named
+// after a factory contract (contracts/EVMScriptFactories/*) exposes its getters. The others hold
+// the getters a family of factories shares: `INodeOperatorsFactory`, `IRewardProgramsFactory`,
+// `ISubmitExitRequestHashes`, `IMEVBoostRelaysFactory`, `IOperatorGridFactory` and
+// `IVaultsAdapterFactory`.
 // -----------------------------------------------------------------------------
 
 interface IUpdateStakingModuleShareLimits {

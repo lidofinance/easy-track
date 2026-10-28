@@ -14,8 +14,6 @@ import {
 import {ExitRequests} from "test/foundry/unit/helpers/ExitRequests.sol";
 
 contract SubmitExitRequestHashesUtilsTest is Test {
-    uint256 internal constant MAX_REQUESTS = 200;
-    uint256 internal constant DATA_FORMAT = 1;
     uint256 internal constant CURATED_MODULE_ID = 1;
     uint256 internal constant SDVT_MODULE_ID = 2;
     bytes32 internal constant SINGLE_REQUEST_HASH =
@@ -34,10 +32,7 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     NodeOperatorsRegistryStub internal curatedRegistryStub;
 
     function setUp() public {
-        bytes memory keysConcat;
-        for (uint256 i; i < MAX_REQUESTS; ++i) {
-            keysConcat = bytes.concat(keysConcat, _pubkey(i));
-        }
+        bytes memory keysConcat = ExitRequests.concatenatedPubkeys();
 
         vm.startPrank(owner);
         wrapper = new SubmitExitRequestHashesUtilsWrapper();
@@ -54,20 +49,23 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     }
 
     // python: test_validation_passes_on_correct_request
-    function test_ValidationPassesOnCorrectRequest() external view {
+    function test_ValidatesCorrectRequest() external view {
         _validate(
-            _requests(_request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0)), sdvtRegistryStub, address(0)
+            _requests(_request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0)),
+            sdvtRegistryStub,
+            address(0)
         );
     }
 
     // python: test_validation_passes_on_correct_request_multiple
-    function test_ValidationPassesOnCorrectRequestMultiple() external {
-        uint256 nodeOpId2 = ExitRequests.addNodeOperator(sdvtRegistryStub, _pubkey(1), owner);
+    function test_ValidatesCorrectRequestMultiple() external {
+        uint256 nodeOpId2 =
+            ExitRequests.addNodeOperator(sdvtRegistryStub, ExitRequests.pubkeyAt(1), owner);
 
         _validate(
             _requests(
-                _request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0),
-                _request(SDVT_MODULE_ID, nodeOpId2, 0 + 1, _pubkey(1), 0)
+                _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0),
+                _request(SDVT_MODULE_ID, nodeOpId2, 0 + 1, ExitRequests.pubkeyAt(1), 0)
             ),
             sdvtRegistryStub,
             address(0)
@@ -75,9 +73,9 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     }
 
     // python: test_validation_passes_on_valid_requests_with_creator
-    function test_ValidationPassesOnValidRequestsWithCreator() external view {
+    function test_ValidatesRequestsWithCreator() external view {
         _validate(
-            _requests(_request(CURATED_MODULE_ID, 0, 0, _pubkey(0), 0)),
+            _requests(_request(CURATED_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0)),
             curatedRegistryStub,
             nodeOperator
         );
@@ -85,13 +83,14 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
     // python: test_validation_reverts_if_creator_not_node_operator_multiple
     function test_RevertWhen_CreatorIsNotNodeOperatorMultiple() external {
-        uint256 nodeOpId = ExitRequests.addNodeOperator(curatedRegistryStub, _pubkey(1), owner);
+        uint256 nodeOpId =
+            ExitRequests.addNodeOperator(curatedRegistryStub, ExitRequests.pubkeyAt(1), owner);
 
         vm.expectRevert("EXECUTOR_NOT_PERMISSIONED_ON_NODE_OPERATOR");
         _validate(
             _requests(
-                _request(CURATED_MODULE_ID, 0, 0, _pubkey(0), 0),
-                _request(CURATED_MODULE_ID, nodeOpId, 0 + 1, _pubkey(1), 0)
+                _request(CURATED_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0),
+                _request(CURATED_MODULE_ID, nodeOpId, 0 + 1, ExitRequests.pubkeyAt(1), 0)
             ),
             curatedRegistryStub,
             owner
@@ -109,20 +108,21 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     // python: test_validation_reverts_on_too_many_requests
     function test_RevertWhen_TooManyRequests() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
-            new SubmitExitRequestHashesUtils.ExitRequestInput[](MAX_REQUESTS);
-        for (uint256 i; i < MAX_REQUESTS; ++i) {
-            requests[i] = _request(SDVT_MODULE_ID, 0, uint64(i), _pubkey(i), i);
+            new SubmitExitRequestHashesUtils.ExitRequestInput[](ExitRequests.MAX_REQUESTS);
+        for (uint256 i; i < ExitRequests.MAX_REQUESTS; ++i) {
+            requests[i] = _request(SDVT_MODULE_ID, 0, uint64(i), ExitRequests.pubkeyAt(i), i);
         }
 
         _validate(requests, sdvtRegistryStub, address(0));
 
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory tooManyRequests =
-            new SubmitExitRequestHashesUtils.ExitRequestInput[](MAX_REQUESTS + 1);
-        for (uint256 i; i < MAX_REQUESTS; ++i) {
+            new SubmitExitRequestHashesUtils.ExitRequestInput[](ExitRequests.MAX_REQUESTS + 1);
+        for (uint256 i; i < ExitRequests.MAX_REQUESTS; ++i) {
             tooManyRequests[i] = requests[i];
         }
 
-        tooManyRequests[MAX_REQUESTS] = _request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 200);
+        tooManyRequests[ExitRequests.MAX_REQUESTS] =
+            _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 200);
 
         vm.expectRevert("MAX_REQUESTS_PER_MOTION_EXCEEDED");
         _validate(tooManyRequests, sdvtRegistryStub, address(0));
@@ -132,7 +132,7 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     function test_RevertWhen_StakingModuleIsWrong() external {
         vm.expectRevert("EXECUTOR_NOT_PERMISSIONED_ON_MODULE");
         _validate(
-            _requests(_request(CURATED_MODULE_ID, 0, 0, _pubkey(0), 0)),
+            _requests(_request(CURATED_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0)),
             sdvtRegistryStub,
             address(0)
         );
@@ -143,8 +143,8 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         vm.expectRevert("EXECUTOR_NOT_PERMISSIONED_ON_MODULE");
         _validate(
             _requests(
-                _request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0),
-                _request(CURATED_MODULE_ID, 0, 0, _pubkey(1), 0)
+                _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0),
+                _request(CURATED_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(1), 0)
             ),
             sdvtRegistryStub,
             address(0)
@@ -181,7 +181,9 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     function test_RevertWhen_PubkeyIsWrong() external {
         vm.expectRevert("INVALID_PUBKEY");
         _validate(
-            _requests(_request(SDVT_MODULE_ID, 0, 0, _pubkey(1), 0)), sdvtRegistryStub, address(0)
+            _requests(_request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(1), 0)),
+            sdvtRegistryStub,
+            address(0)
         );
     }
 
@@ -192,7 +194,9 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
         vm.expectRevert("UNUSED_PUBKEY");
         _validate(
-            _requests(_request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0)), sdvtRegistryStub, address(0)
+            _requests(_request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0)),
+            sdvtRegistryStub,
+            address(0)
         );
     }
 
@@ -202,7 +206,7 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
         vm.expectRevert("NODE_OPERATOR_ID_DOES_NOT_EXIST");
         _validate(
-            _requests(_request(SDVT_MODULE_ID, lastNodeOpId + 1, 0, _pubkey(0), 0)),
+            _requests(_request(SDVT_MODULE_ID, lastNodeOpId + 1, 0, ExitRequests.pubkeyAt(0), 0)),
             sdvtRegistryStub,
             address(0)
         );
@@ -215,8 +219,8 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         vm.expectRevert("NODE_OPERATOR_ID_DOES_NOT_EXIST");
         _validate(
             _requests(
-                _request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0),
-                _request(SDVT_MODULE_ID, lastNodeOpId + 1, 0, _pubkey(1), 0)
+                _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0),
+                _request(SDVT_MODULE_ID, lastNodeOpId + 1, 0, ExitRequests.pubkeyAt(1), 0)
             ),
             sdvtRegistryStub,
             address(0)
@@ -226,7 +230,7 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     // python: test_validation_reverts_on_duplicate_exit_requests
     function test_RevertWhen_ExitRequestsAreDuplicated() external {
         SubmitExitRequestHashesUtils.ExitRequestInput memory request =
-            _request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0);
+            _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0);
 
         vm.expectRevert("INVALID_EXIT_REQUESTS_SORT_ORDER");
         _validate(_requests(request, request), sdvtRegistryStub, address(0));
@@ -234,14 +238,15 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
     // python: test_validation_reverts_on_wrong_requests_index_sort_order
     function test_RevertWhen_RequestsSortOrderIsWrong() external {
-        uint256 nodeOpId1 = ExitRequests.addNodeOperator(sdvtRegistryStub, _pubkey(1), owner);
+        uint256 nodeOpId1 =
+            ExitRequests.addNodeOperator(sdvtRegistryStub, ExitRequests.pubkeyAt(1), owner);
 
         // nodeOpId outranks valIndex in the packed sort key
         vm.expectRevert("INVALID_EXIT_REQUESTS_SORT_ORDER");
         _validate(
             _requests(
-                _request(SDVT_MODULE_ID, nodeOpId1, 5, _pubkey(1), 0),
-                _request(SDVT_MODULE_ID, 0, 10, _pubkey(0), 0)
+                _request(SDVT_MODULE_ID, nodeOpId1, 5, ExitRequests.pubkeyAt(1), 0),
+                _request(SDVT_MODULE_ID, 0, 10, ExitRequests.pubkeyAt(0), 0)
             ),
             sdvtRegistryStub,
             address(0)
@@ -257,7 +262,9 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
         vm.expectRevert("EXECUTOR_NOT_PERMISSIONED_ON_MODULE");
         _validate(
-            _requests(_request(invalidModuleId, 0, 0, _pubkey(0), 0)), sdvtRegistryStub, address(0)
+            _requests(_request(invalidModuleId, 0, 0, ExitRequests.pubkeyAt(0), 0)),
+            sdvtRegistryStub,
+            address(0)
         );
     }
 
@@ -270,7 +277,7 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
         vm.expectRevert("NODE_OPERATOR_ID_DOES_NOT_EXIST");
         _validate(
-            _requests(_request(SDVT_MODULE_ID, invalidNodeOpId, 0, _pubkey(0), 0)),
+            _requests(_request(SDVT_MODULE_ID, invalidNodeOpId, 0, ExitRequests.pubkeyAt(0), 0)),
             sdvtRegistryStub,
             address(0)
         );
@@ -279,13 +286,13 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     // python: test_hash_requests
     function test_HashesRequests() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
-            _requests(_request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0));
+            _requests(_request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0));
 
         bytes32 actualHash = wrapper.hashExitRequests(requests);
 
         assertEq(
             actualHash,
-            ExitRequests.createExitRequestsHashes(requests, DATA_FORMAT),
+            ExitRequests.createExitRequestsHashes(requests, ExitRequests.DATA_FORMAT_LIST),
             "hash vs helper"
         );
         assertEq(actualHash, SINGLE_REQUEST_HASH, "hash");
@@ -294,15 +301,15 @@ contract SubmitExitRequestHashesUtilsTest is Test {
     // python: test_hash_requests_multiple
     function test_HashesRequestsMultiple() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
-            _request(SDVT_MODULE_ID, 0, 0, _pubkey(0), 0),
-            _request(SDVT_MODULE_ID, 0, 0, _pubkey(1), 0)
+            _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0),
+            _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(1), 0)
         );
 
         bytes32 actualHash = wrapper.hashExitRequests(requests);
 
         assertEq(
             actualHash,
-            ExitRequests.createExitRequestsHashes(requests, DATA_FORMAT),
+            ExitRequests.createExitRequestsHashes(requests, ExitRequests.DATA_FORMAT_LIST),
             "hash vs helper"
         );
         assertEq(actualHash, MULTIPLE_REQUESTS_HASH, "hash");
@@ -317,7 +324,7 @@ contract SubmitExitRequestHashesUtilsTest is Test {
 
         assertEq(
             actualHash,
-            ExitRequests.createExitRequestsHashes(requests, DATA_FORMAT),
+            ExitRequests.createExitRequestsHashes(requests, ExitRequests.DATA_FORMAT_LIST),
             "hash vs helper"
         );
         assertEq(actualHash, EMPTY_REQUESTS_HASH, "hash");
@@ -331,11 +338,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         wrapper.validateExitRequests(
             requests, INodeOperatorsRegistry(address(registry)), stakingRouterStub, creator
         );
-    }
-
-    // python: submit_exit_hashes_factory_config["pubkeys"][index]
-    function _pubkey(uint256 index) private pure returns (bytes memory) {
-        return ExitRequests.makeTestBytes(index + 1);
     }
 
     // python: exit_request_input_factory

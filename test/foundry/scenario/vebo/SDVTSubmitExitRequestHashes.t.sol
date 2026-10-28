@@ -26,12 +26,12 @@ contract SDVTSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     }
 
     // python: test_sdvt_single_exit_request_happy_path
-    function testFork_SingleExitRequest() external {
+    function testFork_SubmitsSingleExitRequest() external {
         _requestExits(1);
     }
 
     // python: test_sdvt_batch_exit_requests_happy_path
-    function testFork_BatchExitRequests() external {
+    function testFork_SubmitsExitRequestBatch() external {
         _requestExits(BATCH_SIZE);
     }
 

@@ -17,18 +17,18 @@ import {
 ///         paying the LEGO program LDO, stETH and ETH from the Agent. Unlike the reward programs
 ///         deployment, the test stays Easy Track's admin.
 contract LegoProgramEasyTrackTest is EasyTrackScenarioBase {
-    uint256 private constant LDO_AMOUNT = 1e18;
-    uint256 private constant STETH_AMOUNT = 2e18;
-    uint256 private constant ETH_AMOUNT = 3e18;
+    uint256 internal constant LDO_AMOUNT = 1e18;
+    uint256 internal constant STETH_AMOUNT = 2e18;
+    uint256 internal constant ETH_AMOUNT = 3e18;
 
     /// @dev What the deployer stakes to fund the Agent's stETH
-    uint256 private constant STAKE_AMOUNT = 2.1 ether;
+    uint256 internal constant STAKE_AMOUNT = 2.1 ether;
 
     /// @dev python: brownie.chain.sleep(48 * 60 * 60 + 100), the motion duration hardcoded
-    uint256 private constant MOTION_WAIT = 48 hours + 100;
+    uint256 internal constant MOTION_WAIT = 48 hours + 100;
 
     /// @dev stETH share rounding on the transfer
-    uint256 private constant STETH_TOLERANCE = 10;
+    uint256 internal constant STETH_TOLERANCE = 10;
 
     address internal legoProgram = makeAddr("legoProgram");
     address internal topUpLegoProgram;

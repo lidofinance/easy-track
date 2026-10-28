@@ -7,11 +7,11 @@ import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.
 import {ILido, ILidoLocator} from "test/foundry/interfaces/External.sol";
 import {ISetDepositsReserveTarget} from "test/foundry/interfaces/Factories.sol";
 
-/// @notice A fresh `SetDepositsReserveTarget` from the `contracts` profile artifacts over the
-///         live Lido, registered in the deployed Easy Track with the executor holding
+/// @notice A fresh `SetDepositsReserveTarget` from the `forge build` artifacts over the live
+///         Lido, registered in the deployed Easy Track with the executor holding
 ///         `BUFFER_RESERVE_MANAGER_ROLE`. Skipped on a chain whose Lido has no deposits reserve
 ///         target.
-contract SetDepositsReserveTargetHappyPathTest is EasyTrackScenarioBase {
+contract SetDepositsReserveTargetFreshFactoryTest is EasyTrackScenarioBase {
     string internal constant FACTORY_NAME = "SetDepositsReserveTarget";
 
     /// @dev How far the factory's maximum sits above the current target

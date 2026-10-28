@@ -42,7 +42,7 @@ contract SimpleDvtLifecycleTest is SimpleDvtScenarioBase {
     }
 
     // python: test_simple_dvt_scenario
-    function testFork_SimpleDvtLifecycle() external {
+    function testFork_DrivesSimpleDvtLifecycle() external {
         _enact(addNodeOperators, creator, _encodeAddClusters(CLUSTERS_COUNT));
 
         for (uint256 index; index < CLUSTERS_COUNT; ++index) {

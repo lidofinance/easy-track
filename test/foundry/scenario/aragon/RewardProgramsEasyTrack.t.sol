@@ -12,8 +12,8 @@ import {IFinance, IMiniMeToken} from "test/foundry/interfaces/External.sol";
 ///         factories registered, and the DAO vote granting the executor `CREATE_PAYMENTS_ROLE` on
 ///         Finance. The base helpers drive this deployment, not the deployed Easy Track.
 contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
-    string private constant REWARD_PROGRAM_TITLE = "Our Reward Program";
-    uint256 private constant TOP_UP_AMOUNT = 5e18;
+    string internal constant REWARD_PROGRAM_TITLE = "Our Reward Program";
+    uint256 internal constant TOP_UP_AMOUNT = 5e18;
 
     address internal rewardProgram = makeAddr("rewardProgram");
 
@@ -60,7 +60,7 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
         assertEq(rewardPrograms.length, 1, "reward programs after add");
         assertEq(rewardPrograms[0], rewardProgram, "reward program");
 
-        bytes memory topUpCallData = abi.encode(_single(rewardProgram), _single(TOP_UP_AMOUNT));
+        bytes memory topUpCallData = abi.encode(_single(rewardProgram), _amounts(TOP_UP_AMOUNT));
         motionId = _createMotion(topUpRewardPrograms, creator, topUpCallData);
 
         assertEq(easyTrack.getMotions().length, 1, "motions after top up created");
@@ -118,15 +118,5 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
                 rewardProgramsRegistry, IRewardProgramsRegistry.removeRewardProgram.selector
             )
         );
-    }
-
-    function _single(address value) private pure returns (address[] memory values) {
-        values = new address[](1);
-        values[0] = value;
-    }
-
-    function _single(uint256 value) private pure returns (uint256[] memory values) {
-        values = new uint256[](1);
-        values[0] = value;
     }
 }

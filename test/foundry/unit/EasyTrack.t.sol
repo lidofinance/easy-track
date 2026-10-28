@@ -10,13 +10,13 @@ import {EVMScriptExecutorStub} from "contracts/test/EVMScriptExecutorStub.sol";
 import {EVMScriptFactoryStub} from "contracts/test/EVMScriptFactoryStub.sol";
 import {Constants} from "test/foundry/unit/helpers/Constants.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 import {CallsScriptStub} from "test/foundry/unit/stubs/CallsScriptStub.sol";
 import {MiniMeTokenStub} from "test/foundry/unit/stubs/MiniMeTokenStub.sol";
 
 contract EasyTrackTest is Test {
     // python: utils/test_helpers.py role constants
-    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
     bytes32 internal constant CANCEL_ROLE = keccak256("CANCEL_ROLE");
     bytes32 internal constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
     bytes32 internal constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
@@ -91,7 +91,7 @@ contract EasyTrackTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         EasyTrack newEasyTrack = new EasyTrack(
             address(ldo),
@@ -518,7 +518,7 @@ contract EasyTrackTest is Test {
     }
 
     // python: test_object_to_motion_edge_case
-    function test_ObjectionsThresholdEdgeCase() external {
+    function test_KeepsMotionOneWeiBelowObjectionsThreshold() external {
         uint256 objectionsThresholdAmount =
             (easyTrack.objectionsThreshold() * ldo.totalSupply()) / HUNDRED_PERCENT - 1;
 
@@ -637,7 +637,7 @@ contract EasyTrackTest is Test {
     // python: test_set_evm_script_executor_called_by_stranger
     function test_RevertWhen_SettingEVMScriptExecutorAsStranger() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, DEFAULT_ADMIN_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         easyTrack.setEVMScriptExecutor(address(0));
     }
 
@@ -744,7 +744,7 @@ contract EasyTrackTest is Test {
     }
 
     // python: test_can_object_to_motion
-    function test_CanObjectToMotion() external {
+    function test_ReportsWhoCanObjectToMotion() external {
         _distributeHolderBalances();
         _allowFactoryStubToSetEVMScript();
 
@@ -807,7 +807,6 @@ contract EasyTrackTest is Test {
         vm.stopPrank();
     }
 
-    /// @dev python: encode_call_script([(stub, stub.setEVMScript.encode_input(evmScript))])
     function _scriptCallingSetEVMScript(bytes memory evmScript)
         private
         view

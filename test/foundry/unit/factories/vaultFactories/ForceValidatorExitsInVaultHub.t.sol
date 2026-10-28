@@ -12,6 +12,7 @@ import {IVaultHub} from "contracts/interfaces/IVaultHub.sol";
 import {IVaultHubStub} from "contracts/interfaces/IVaultHubStub.sol";
 import {IVaultsAdapter} from "contracts/interfaces/IVaultsAdapter.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -67,7 +68,7 @@ contract ForceValidatorExitsInVaultHubTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(forceValidatorExitsInVaultHub.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(forceValidatorExitsInVaultHub.vaultsAdapter()),
@@ -103,7 +104,7 @@ contract ForceValidatorExitsInVaultHubTest is Test {
 
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         forceValidatorExitsInVaultHub.createEVMScript(
-            owner, abi.encode(_vaults(stranger), _pubkeys(pubkeys, pubkeys))
+            owner, abi.encode(Arrays.list(stranger), Arrays.list(pubkeys, pubkeys))
         );
     }
 
@@ -113,7 +114,7 @@ contract ForceValidatorExitsInVaultHubTest is Test {
 
         vm.expectRevert("ZERO_VAULT");
         forceValidatorExitsInVaultHub.createEVMScript(
-            owner, abi.encode(_vaults(address(0), stranger), _pubkeys(pubkeys, pubkeys))
+            owner, abi.encode(Arrays.list(address(0), stranger), Arrays.list(pubkeys, pubkeys))
         );
     }
 
@@ -121,7 +122,7 @@ contract ForceValidatorExitsInVaultHubTest is Test {
     function test_RevertWhen_PubkeysAreEmpty() external {
         vm.expectRevert("EMPTY_PUBKEYS");
         forceValidatorExitsInVaultHub.createEVMScript(
-            owner, abi.encode(_vaults(stranger), _pubkeys(""))
+            owner, abi.encode(Arrays.list(stranger), Arrays.list(bytes("")))
         );
     }
 
@@ -130,15 +131,18 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         vm.expectRevert("INVALID_PUBKEYS_LENGTH");
         forceValidatorExitsInVaultHub.createEVMScript(
             owner,
-            abi.encode(_vaults(stranger), _pubkeys(_repeat("0x", PUBKEY_PATTERN_REPEATS - 1)))
+            abi.encode(
+                Arrays.list(stranger), Arrays.list(_repeat("0x", PUBKEY_PATTERN_REPEATS - 1))
+            )
         );
     }
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
-        address[] memory vaults = _vaults(vault, anotherVault);
-        bytes[] memory pubkeys =
-            _pubkeys(_repeat("01", PUBKEY_PATTERN_REPEATS), _repeat("02", PUBKEY_PATTERN_REPEATS));
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        bytes[] memory pubkeys = Arrays.list(
+            _repeat("01", PUBKEY_PATTERN_REPEATS), _repeat("02", PUBKEY_PATTERN_REPEATS)
+        );
 
         bytes memory evmScript =
             forceValidatorExitsInVaultHub.createEVMScript(owner, abi.encode(vaults, pubkeys));
@@ -148,9 +152,10 @@ contract ForceValidatorExitsInVaultHubTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory vaults = _vaults(vault, anotherVault);
-        bytes[] memory pubkeys =
-            _pubkeys(_repeat("01", PUBKEY_PATTERN_REPEATS), _repeat("02", PUBKEY_PATTERN_REPEATS));
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        bytes[] memory pubkeys = Arrays.list(
+            _repeat("01", PUBKEY_PATTERN_REPEATS), _repeat("02", PUBKEY_PATTERN_REPEATS)
+        );
 
         (address[] memory decodedVaults, bytes[] memory decodedPubkeys) =
             forceValidatorExitsInVaultHub.decodeEVMScriptCallData(abi.encode(vaults, pubkeys));
@@ -214,32 +219,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    function _vaults(address single) private pure returns (address[] memory vaults) {
-        vaults = new address[](1);
-        vaults[0] = single;
-    }
-
-    function _vaults(address first, address second) private pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        vaults[0] = first;
-        vaults[1] = second;
-    }
-
-    function _pubkeys(bytes memory single) private pure returns (bytes[] memory pubkeys) {
-        pubkeys = new bytes[](1);
-        pubkeys[0] = single;
-    }
-
-    function _pubkeys(bytes memory first, bytes memory second)
-        private
-        pure
-        returns (bytes[] memory pubkeys)
-    {
-        pubkeys = new bytes[](2);
-        pubkeys[0] = first;
-        pubkeys[1] = second;
-    }
-
     /// @dev python: `pattern * count`, a two-byte literal repeated `count` times
     function _repeat(bytes2 pattern, uint256 count) private pure returns (bytes memory repeated) {
         repeated = new bytes(2 * count);
@@ -249,7 +228,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         }
     }
 
-    /// @dev python: encode_call_script of one adapter.forceValidatorExit per vault
     function _forceValidatorExitsScript(address[] memory vaults, bytes[] memory pubkeys)
         private
         view

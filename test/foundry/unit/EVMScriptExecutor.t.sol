@@ -62,7 +62,7 @@ contract EVMScriptExecutorTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         EVMScriptExecutor newEVMScriptExecutor =
             new EVMScriptExecutor(address(callsScript), address(easyTrack));
@@ -162,7 +162,6 @@ contract EVMScriptExecutorTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    /// @dev python: encode_call_script([(stub, stub.setNodeOperatorStakingLimit.encode_input(0, 500))])
     function _scriptSettingStakingLimit() private view returns (bytes memory) {
         return EVMScripts.encodeCallScript(
             address(nodeOperatorsRegistryStub),

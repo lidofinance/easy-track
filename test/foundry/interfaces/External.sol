@@ -6,7 +6,7 @@ pragma solidity ^0.8.25;
 // -----------------------------------------------------------------------------
 // External contracts the factories interact with (Lido protocol + staking-modules).
 //
-// Declared here because `contracts/interfaces/` is pinned to solc 0.8.6 while this suite
+// Declared here because most of `contracts/interfaces/` pins solc 0.8.6 while this suite
 // compiles with a modern solc/EVM, and because the tests need a state-construction
 // surface the factories don't use, such as createNodeOperator, addValidatorKeysETH,
 // obtainDepositData, resume and the bond-curve setup. Interface names and struct field

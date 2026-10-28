@@ -12,6 +12,7 @@ import {IVaultHub} from "contracts/interfaces/IVaultHub.sol";
 import {IVaultsAdapter} from "contracts/interfaces/IVaultsAdapter.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
 import {StakingVaultStub} from "contracts/test/StakingVaultStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -57,7 +58,7 @@ contract SocializeBadDebtInVaultHubTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(socializeBadDebtInVaultHub.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(socializeBadDebtInVaultHub.vaultsAdapter()),
@@ -94,7 +95,8 @@ contract SocializeBadDebtInVaultHubTest is Test {
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         socializeBadDebtInVaultHub.createEVMScript(
-            owner, abi.encode(_vaults(stranger), _vaults(stranger, stranger), _shares(100))
+            owner,
+            abi.encode(Arrays.list(stranger), Arrays.list(stranger, stranger), Arrays.list(100))
         );
     }
 
@@ -104,7 +106,9 @@ contract SocializeBadDebtInVaultHubTest is Test {
         socializeBadDebtInVaultHub.createEVMScript(
             owner,
             abi.encode(
-                _vaults(address(0), stranger), _vaults(stranger, stranger), _shares(100, 200)
+                Arrays.list(address(0), stranger),
+                Arrays.list(stranger, stranger),
+                Arrays.list(100, 200)
             )
         );
     }
@@ -115,7 +119,9 @@ contract SocializeBadDebtInVaultHubTest is Test {
         socializeBadDebtInVaultHub.createEVMScript(
             owner,
             abi.encode(
-                _vaults(stranger, stranger), _vaults(address(0), stranger), _shares(100, 200)
+                Arrays.list(stranger, stranger),
+                Arrays.list(address(0), stranger),
+                Arrays.list(100, 200)
             )
         );
     }
@@ -128,10 +134,10 @@ contract SocializeBadDebtInVaultHubTest is Test {
         StakingVaultStub secondVaultAcceptor = new StakingVaultStub(anotherNodeOperator);
 
         address[] memory badDebtVaults =
-            _vaults(address(firstBadDebtVault), address(secondBadDebtVault));
+            Arrays.list(address(firstBadDebtVault), address(secondBadDebtVault));
         address[] memory vaultAcceptors =
-            _vaults(address(firstVaultAcceptor), address(secondVaultAcceptor));
-        uint256[] memory maxSharesToSocialize = _shares(100, 200);
+            Arrays.list(address(firstVaultAcceptor), address(secondVaultAcceptor));
+        uint256[] memory maxSharesToSocialize = Arrays.list(100, 200);
 
         bytes memory evmScript = socializeBadDebtInVaultHub.createEVMScript(
             owner, abi.encode(badDebtVaults, vaultAcceptors, maxSharesToSocialize)
@@ -146,9 +152,9 @@ contract SocializeBadDebtInVaultHubTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory badDebtVaults = _vaults(badDebtVault, anotherBadDebtVault);
-        address[] memory vaultAcceptors = _vaults(vaultAcceptor, anotherVaultAcceptor);
-        uint256[] memory maxSharesToSocialize = _shares(100, 200);
+        address[] memory badDebtVaults = Arrays.list(badDebtVault, anotherBadDebtVault);
+        address[] memory vaultAcceptors = Arrays.list(vaultAcceptor, anotherVaultAcceptor);
+        uint256[] memory maxSharesToSocialize = Arrays.list(100, 200);
 
         (
             address[] memory decodedBadDebtVaults,
@@ -201,29 +207,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         vaultHub.connectVault(connected);
     }
 
-    function _vaults(address single) private pure returns (address[] memory vaults) {
-        vaults = new address[](1);
-        vaults[0] = single;
-    }
-
-    function _vaults(address first, address second) private pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        vaults[0] = first;
-        vaults[1] = second;
-    }
-
-    function _shares(uint256 single) private pure returns (uint256[] memory shares) {
-        shares = new uint256[](1);
-        shares[0] = single;
-    }
-
-    function _shares(uint256 first, uint256 second) private pure returns (uint256[] memory shares) {
-        shares = new uint256[](2);
-        shares[0] = first;
-        shares[1] = second;
-    }
-
-    /// @dev python: encode_call_script of one adapter.socializeBadDebt per bad debt vault
     function _socializeBadDebtScript(
         address[] memory badDebtVaults,
         address[] memory vaultAcceptors,

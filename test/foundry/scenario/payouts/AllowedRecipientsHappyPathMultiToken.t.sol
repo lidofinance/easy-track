@@ -17,10 +17,10 @@ import {
 ///         lists outside motions. The builder reports its deployments only through the factory
 ///         events, so each test reads them back from the logs.
 contract AllowedRecipientsHappyPathMultiTokenTest is MultiTokenPayoutsScenarioBase {
-    string private constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
+    string internal constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
     // python: test_single_recipient_top_up_only_setup_happy_path
-    function testFork_SingleRecipientTopUpOnlySetupHappyPath() external {
+    function testFork_DrivesSingleRecipientTopUpOnlySetup() external {
         _advanceToNextPeriod(PERIOD_DURATION_MONTHS);
 
         _deploySingleRecipientTopUpOnlySetup();
@@ -62,7 +62,7 @@ contract AllowedRecipientsHappyPathMultiTokenTest is MultiTokenPayoutsScenarioBa
     }
 
     // python: test_full_setup_happy_path
-    function testFork_FullSetupHappyPath() external {
+    function testFork_DrivesFullSetup() external {
         _advanceToNextPeriod(PERIOD_DURATION_MONTHS);
 
         _deployFullSetup();

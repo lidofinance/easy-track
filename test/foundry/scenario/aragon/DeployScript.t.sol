@@ -18,18 +18,18 @@ import {
     ITopUpRewardPrograms
 } from "test/foundry/interfaces/Factories.sol";
 
-/// @notice The wiring `scripts/deploy.py` leaves behind, replayed from the `contracts` profile
+/// @notice The wiring `scripts/deploy.py` leaves behind, replayed from the `forge build`
 ///         artifacts over the live Aragon apps and the curated registry: Easy Track with the
 ///         initial settings and its roles on Voting, the executor, the five factories registered
 ///         with their permissions and the reward programs registry with its roles. The test reads
 ///         the deployment back.
 contract DeployScriptTest is EasyTrackScenarioBase {
     /// @dev `utils/constants.py`, the settings the deploy script starts Easy Track with
-    uint256 private constant INITIAL_MOTION_DURATION = 72 hours;
-    uint256 private constant INITIAL_MOTIONS_COUNT_LIMIT = 12;
-    uint256 private constant INITIAL_OBJECTIONS_THRESHOLD = 50;
+    uint256 internal constant INITIAL_MOTION_DURATION = 72 hours;
+    uint256 internal constant INITIAL_MOTIONS_COUNT_LIMIT = 12;
+    uint256 internal constant INITIAL_OBJECTIONS_THRESHOLD = 50;
 
-    uint256 private constant CURATED_MODULE_ID = 1;
+    uint256 internal constant CURATED_MODULE_ID = 1;
 
     address internal legoProgramVault = makeAddr("legoProgramVault");
     address internal legoCommitteeMultisig = makeAddr("legoCommitteeMultisig");

@@ -10,6 +10,7 @@ import {
 import {IBaseModule} from "contracts/interfaces/IBaseModule.sol";
 import {AccountingStub} from "contracts/test/AccountingStub.sol";
 import {BaseModuleStub} from "contracts/test/BaseModuleStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract SettleGeneralDelayedPenaltyTest is Test {
@@ -42,7 +43,7 @@ contract SettleGeneralDelayedPenaltyTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(settleGeneralDelayedPenalty.trustedCaller(), owner, "trustedCaller");
         assertEq(address(settleGeneralDelayedPenalty.module()), address(baseModuleStub), "module");
         assertEq(settleGeneralDelayedPenalty.name(), FACTORY_NAME, "name");
@@ -193,22 +194,17 @@ contract SettleGeneralDelayedPenaltyTest is Test {
         lockInfos[2] = third;
     }
 
-    /// @dev python: encode_call_script of one module.settleGeneralDelayedPenalty([no_id], [nonce])
     function _settleGeneralDelayedPenaltyScript(uint256 nodeOperatorId, uint256 nonce)
         private
         view
         returns (bytes memory)
     {
-        uint256[] memory nodeOperatorIds = new uint256[](1);
-        nodeOperatorIds[0] = nodeOperatorId;
-
-        uint256[] memory nonces = new uint256[](1);
-        nonces[0] = nonce;
-
         return EVMScripts.encodeCallScript(
             address(baseModuleStub),
             abi.encodeWithSelector(
-                IBaseModule.settleGeneralDelayedPenalty.selector, nodeOperatorIds, nonces
+                IBaseModule.settleGeneralDelayedPenalty.selector,
+                Arrays.list(nodeOperatorId),
+                Arrays.list(nonce)
             )
         );
     }

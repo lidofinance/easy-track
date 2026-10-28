@@ -15,9 +15,9 @@ import {
 ///         let the executor set staking limits and the Agent add an operator, then the operator
 ///         adds keys and raises its own limit by a motion.
 contract NodeOperatorsEasyTrackTest is EasyTrackScenarioBase {
-    uint256 private constant CURATED_MODULE_ID = 1;
-    string private constant NODE_OPERATOR_NAME = "test_node_operator";
-    uint64 private constant NEW_STAKING_LIMIT = 3;
+    uint256 internal constant CURATED_MODULE_ID = 1;
+    string internal constant NODE_OPERATOR_NAME = "test_node_operator";
+    uint64 internal constant NEW_STAKING_LIMIT = 3;
 
     address internal nodeOperator = makeAddr("nodeOperator");
     address internal increaseNodeOperatorStakingLimit;

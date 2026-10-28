@@ -15,18 +15,13 @@ import {
 import {
     BokkyPooBahsDateTimeContract
 } from "test/foundry/unit/stubs/BokkyPooBahsDateTimeContract.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {Calendar} from "test/foundry/unit/helpers/Calendar.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 
 contract AllowedRecipientsRegistryTest is Test {
     string internal constant RECIPIENT_TITLE = "New Allowed Recipient";
-
-    bytes32 internal constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
-        keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
-    bytes32 internal constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
-        keccak256("REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE");
-    bytes32 internal constant SET_PARAMETERS_ROLE = keccak256("SET_PARAMETERS_ROLE");
-    bytes32 internal constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
 
     address internal owner = makeAddr("owner");
     address internal voting = makeAddr("voting");
@@ -47,10 +42,10 @@ contract AllowedRecipientsRegistryTest is Test {
         vm.prank(owner);
         allowedRecipientsRegistry = new AllowedRecipientsRegistry(
             owner,
-            _addresses(addRecipientRoleHolder),
-            _addresses(removeRecipientRoleHolder),
-            _addresses(setParametersRoleHolder),
-            _addresses(updateSpentAmountRoleHolder),
+            Arrays.list(addRecipientRoleHolder),
+            Arrays.list(removeRecipientRoleHolder),
+            Arrays.list(setParametersRoleHolder),
+            Arrays.list(updateSpentAmountRoleHolder),
             bokkyPooBahsDateTimeContract
         );
 
@@ -59,26 +54,26 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_registry_initial_state
-    function test_RegistryInitialState() external view {
+    function test_SetsInitialState() external view {
         assertTrue(
             allowedRecipientsRegistry.hasRole(
-                ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, addRecipientRoleHolder
+                Roles.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, addRecipientRoleHolder
             ),
             "addRecipientRoleHolder role"
         );
         assertTrue(
             allowedRecipientsRegistry.hasRole(
-                REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, removeRecipientRoleHolder
+                Roles.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, removeRecipientRoleHolder
             ),
             "removeRecipientRoleHolder role"
         );
         assertTrue(
-            allowedRecipientsRegistry.hasRole(SET_PARAMETERS_ROLE, setParametersRoleHolder),
+            allowedRecipientsRegistry.hasRole(Roles.SET_PARAMETERS_ROLE, setParametersRoleHolder),
             "setParametersRoleHolder role"
         );
         assertTrue(
             allowedRecipientsRegistry.hasRole(
-                UPDATE_SPENT_AMOUNT_ROLE, updateSpentAmountRoleHolder
+                Roles.UPDATE_SPENT_AMOUNT_ROLE, updateSpentAmountRoleHolder
             ),
             "updateSpentAmountRoleHolder role"
         );
@@ -119,14 +114,14 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_registry_zero_admin_allowed
-    function test_RegistryZeroAdminAllowed() external {
+    function test_DeploysWithZeroAdmin() external {
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
             address(0),
-            _addresses(owner),
-            _addresses(owner),
-            _addresses(owner),
-            _addresses(owner),
+            Arrays.list(owner),
+            Arrays.list(owner),
+            Arrays.list(owner),
+            Arrays.list(owner),
             bokkyPooBahsDateTimeContract
         );
 
@@ -134,7 +129,7 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_registry_none_role_holders_allowed
-    function test_RegistryNoneRoleHoldersAllowed() external {
+    function test_DeploysWithNoRoleHolders() external {
         address[] memory noHolders = new address[](0);
 
         vm.prank(owner);
@@ -146,14 +141,14 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_registry_zero_booky_poo_bahs_data_time_address_allowed
-    function test_RegistryZeroBokkyPooBahsDateTimeAddressAllowed() external {
+    function test_DeploysWithZeroBokkyPooBahsDateTimeContract() external {
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
             owner,
-            _addresses(owner),
-            _addresses(owner),
-            _addresses(owner),
-            _addresses(owner),
+            Arrays.list(owner),
+            Arrays.list(owner),
+            Arrays.list(owner),
+            Arrays.list(owner),
             IBokkyPooBahsDateTimeContract(address(0))
         );
 
@@ -165,14 +160,14 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_rights_are_not_shared_by_different_roles
-    function test_RightsAreNotSharedByDifferentRoles() external {
+    function test_DoesNotShareRightsBetweenRoles() external {
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
             voting,
-            _addresses(addRecipientRoleHolder),
-            _addresses(removeRecipientRoleHolder),
-            _addresses(setParametersRoleHolder),
-            _addresses(updateSpentAmountRoleHolder),
+            Arrays.list(addRecipientRoleHolder),
+            Arrays.list(removeRecipientRoleHolder),
+            Arrays.list(setParametersRoleHolder),
+            Arrays.list(updateSpentAmountRoleHolder),
             bokkyPooBahsDateTimeContract
         );
 
@@ -188,7 +183,9 @@ contract AllowedRecipientsRegistryTest is Test {
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
             vm.expectRevert(
-                TestHelpers.accessRevertMessage(callers[i], ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)
+                TestHelpers.accessRevertMessage(
+                    callers[i], Roles.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE
+                )
             );
             registry.addRecipient(recipient1, RECIPIENT_TITLE);
         }
@@ -203,7 +200,9 @@ contract AllowedRecipientsRegistryTest is Test {
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
             vm.expectRevert(
-                TestHelpers.accessRevertMessage(callers[i], REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)
+                TestHelpers.accessRevertMessage(
+                    callers[i], Roles.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE
+                )
             );
             registry.removeRecipient(recipient1);
         }
@@ -217,15 +216,15 @@ contract AllowedRecipientsRegistryTest is Test {
         ];
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], SET_PARAMETERS_ROLE));
+            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], Roles.SET_PARAMETERS_ROLE));
             registry.setLimitParameters(0, 1);
 
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], SET_PARAMETERS_ROLE));
+            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], Roles.SET_PARAMETERS_ROLE));
             registry.setBokkyPooBahsDateTimeContract(address(0));
 
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], SET_PARAMETERS_ROLE));
+            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], Roles.SET_PARAMETERS_ROLE));
             registry.unsafeSetSpentAmount(0);
         }
 
@@ -238,18 +237,20 @@ contract AllowedRecipientsRegistryTest is Test {
         ];
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], UPDATE_SPENT_AMOUNT_ROLE));
+            vm.expectRevert(
+                TestHelpers.accessRevertMessage(callers[i], Roles.UPDATE_SPENT_AMOUNT_ROLE)
+            );
             registry.updateSpentAmount(1);
         }
     }
 
     // python: test_multiple_role_holders
-    function test_MultipleRoleHolders() external {
+    function test_GrantsRolesToMultipleHolders() external {
         address[20] memory accounts = _sweepAccounts();
-        address[] memory addRecipientRoleHolders = _addresses(accounts[2], accounts[3]);
-        address[] memory removeRecipientRoleHolders = _addresses(accounts[4], accounts[5]);
-        address[] memory setParametersRoleHolders = _addresses(accounts[6], accounts[7]);
-        address[] memory updateSpentAmountRoleHolders = _addresses(accounts[8], accounts[9]);
+        address[] memory addRecipientRoleHolders = Arrays.list(accounts[2], accounts[3]);
+        address[] memory removeRecipientRoleHolders = Arrays.list(accounts[4], accounts[5]);
+        address[] memory setParametersRoleHolders = Arrays.list(accounts[6], accounts[7]);
+        address[] memory updateSpentAmountRoleHolders = Arrays.list(accounts[8], accounts[9]);
 
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
@@ -265,7 +266,9 @@ contract AllowedRecipientsRegistryTest is Test {
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
             vm.expectRevert(
-                TestHelpers.accessRevertMessage(callers[i], ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE)
+                TestHelpers.accessRevertMessage(
+                    callers[i], Roles.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE
+                )
             );
             registry.addRecipient(callers[i], RECIPIENT_TITLE);
         }
@@ -285,7 +288,9 @@ contract AllowedRecipientsRegistryTest is Test {
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
             vm.expectRevert(
-                TestHelpers.accessRevertMessage(callers[i], REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE)
+                TestHelpers.accessRevertMessage(
+                    callers[i], Roles.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE
+                )
             );
             registry.removeRecipient(callers[i]);
         }
@@ -299,15 +304,15 @@ contract AllowedRecipientsRegistryTest is Test {
         callers = _callersWithout(accounts, setParametersRoleHolders);
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], SET_PARAMETERS_ROLE));
+            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], Roles.SET_PARAMETERS_ROLE));
             registry.setLimitParameters(5, 1);
 
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], SET_PARAMETERS_ROLE));
+            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], Roles.SET_PARAMETERS_ROLE));
             registry.setBokkyPooBahsDateTimeContract(address(0));
 
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], SET_PARAMETERS_ROLE));
+            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], Roles.SET_PARAMETERS_ROLE));
             registry.unsafeSetSpentAmount(0);
         }
 
@@ -320,7 +325,9 @@ contract AllowedRecipientsRegistryTest is Test {
         callers = _callersWithout(accounts, updateSpentAmountRoleHolders);
         for (uint256 i; i < callers.length; ++i) {
             vm.prank(callers[i]);
-            vm.expectRevert(TestHelpers.accessRevertMessage(callers[i], UPDATE_SPENT_AMOUNT_ROLE));
+            vm.expectRevert(
+                TestHelpers.accessRevertMessage(callers[i], Roles.UPDATE_SPENT_AMOUNT_ROLE)
+            );
             registry.updateSpentAmount(1);
         }
 
@@ -332,46 +339,46 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_add_recipient
-    function test_AddRecipient() external {
+    function test_AddsRecipient() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
 
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipient1), "isRecipientAllowed");
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients(),
-            _addresses(recipient1),
+            Arrays.list(recipient1),
             "allowedRecipients"
         );
     }
 
     // python: test_add_recipient_with_empty_title
-    function test_AddRecipientWithEmptyTitle() external {
+    function test_AddsRecipientWithEmptyTitle() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, "");
 
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipient1), "isRecipientAllowed");
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients(),
-            _addresses(recipient1),
+            Arrays.list(recipient1),
             "allowedRecipients"
         );
     }
 
     // python: test_add_recipient_with_zero_address
-    function test_AddRecipientWithZeroAddress() external {
+    function test_AddsRecipientWithZeroAddress() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(address(0), RECIPIENT_TITLE);
 
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(address(0)), "isRecipientAllowed");
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients(),
-            _addresses(address(0)),
+            Arrays.list(address(0)),
             "allowedRecipients"
         );
     }
 
     // python: test_add_multiple_recipients
-    function test_AddMultipleRecipients() external {
+    function test_AddsMultipleRecipients() external {
         vm.startPrank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
         allowedRecipientsRegistry.addRecipient(recipient2, RECIPIENT_TITLE);
@@ -387,7 +394,7 @@ contract AllowedRecipientsRegistryTest is Test {
         );
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients(),
-            _addresses(recipient1, recipient2),
+            Arrays.list(recipient1, recipient2),
             "allowedRecipients"
         );
     }
@@ -409,7 +416,7 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_remove_recipient
-    function test_RemoveRecipient() external {
+    function test_RemovesRecipient() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
 
@@ -428,7 +435,7 @@ contract AllowedRecipientsRegistryTest is Test {
     }
 
     // python: test_remove_not_last_recipient_in_the_list
-    function test_RemoveNotLastRecipientInTheList() external {
+    function test_RemovesNotLastRecipientInTheList() external {
         vm.startPrank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
         allowedRecipientsRegistry.addRecipient(recipient2, RECIPIENT_TITLE);
@@ -448,7 +455,7 @@ contract AllowedRecipientsRegistryTest is Test {
 
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients(),
-            _addresses(recipient2),
+            Arrays.list(recipient2),
             "allowedRecipients"
         );
     }
@@ -487,7 +494,7 @@ contract AllowedRecipientsRegistryTest is Test {
 
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients(),
-            _addresses(recipient1),
+            Arrays.list(recipient1),
             "allowedRecipients"
         );
         assertTrue(
@@ -534,21 +541,6 @@ contract AllowedRecipientsRegistryTest is Test {
             callers[count++] = accounts[i];
         }
     }
-
-    function _addresses(address account) private pure returns (address[] memory addresses) {
-        addresses = new address[](1);
-        addresses[0] = account;
-    }
-
-    function _addresses(address account1, address account2)
-        private
-        pure
-        returns (address[] memory addresses)
-    {
-        addresses = new address[](2);
-        addresses[0] = account1;
-        addresses[1] = account2;
-    }
 }
 
 contract LimitsCheckerTest is Test {
@@ -557,9 +549,6 @@ contract LimitsCheckerTest is Test {
     uint256 internal constant PERIOD_DURATION = 1;
     uint256 internal constant INITIAL_LIMIT = 100 ether;
     uint256 internal constant INITIAL_PERIOD_DURATION = 3;
-
-    bytes32 internal constant SET_PARAMETERS_ROLE = keccak256("SET_PARAMETERS_ROLE");
-    bytes32 internal constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
@@ -587,13 +576,13 @@ contract LimitsCheckerTest is Test {
 
         vm.startPrank(owner);
         limitsChecker = new LimitsChecker(
-            _addresses(setParametersRoleHolder),
-            _addresses(updateSpentAmountRoleHolder),
+            Arrays.list(setParametersRoleHolder),
+            Arrays.list(updateSpentAmountRoleHolder),
             bokkyPooBahsDateTimeContract
         );
         limitsCheckerWithPrivateViewsExposed = new LimitsCheckerWithPrivateViewsExposed(
-            _addresses(setParametersRoleHolder),
-            _addresses(updateSpentAmountRoleHolder),
+            Arrays.list(setParametersRoleHolder),
+            Arrays.list(updateSpentAmountRoleHolder),
             bokkyPooBahsDateTimeContract
         );
         vm.stopPrank();
@@ -608,33 +597,33 @@ contract LimitsCheckerTest is Test {
     // python: test_access_stranger_cannot_set_limit_parameters
     function test_RevertWhen_StrangerSetsLimitParameters() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, SET_PARAMETERS_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.SET_PARAMETERS_ROLE));
         limitsChecker.setLimitParameters(123, 1);
     }
 
     // python: test_access_stranger_cannot_set_date_time_library, the shadowed definition at L259
     function test_RevertWhen_StrangerSetsBokkyPooBahsDateTimeContract() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, SET_PARAMETERS_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.SET_PARAMETERS_ROLE));
         limitsChecker.setBokkyPooBahsDateTimeContract(address(0));
     }
 
     // python: test_access_stranger_cannot_set_date_time_library, the collected definition at L266
     function test_RevertWhen_StrangerUnsafeSetsSpentAmount() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, SET_PARAMETERS_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.SET_PARAMETERS_ROLE));
         limitsChecker.unsafeSetSpentAmount(0);
     }
 
     // python: test_access_stranger_cannot_update_spent_amount
     function test_RevertWhen_StrangerUpdatesSpentAmount() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, UPDATE_SPENT_AMOUNT_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.UPDATE_SPENT_AMOUNT_ROLE));
         limitsChecker.updateSpentAmount(123);
     }
 
     // python: test_set_date_time_contract
-    function test_SetDateTimeContract() external {
+    function test_SetsDateTimeContract() external {
         address newAddress = makeAddr("newBokkyPooBahsDateTimeContract");
         assertNotEq(
             address(limitsChecker.bokkyPooBahsDateTimeContract()),
@@ -681,7 +670,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_unsafe_set_spent_amount_when_new_spent_amount_the_same
-    function test_UnsafeSetSpentAmountWhenNewSpentAmountIsTheSame() external {
+    function test_SetsSpentAmountUnsafelyWhenNewSpentAmountIsTheSame() external {
         _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
         _assertLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
@@ -700,7 +689,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_unsafe_set_spent_amount
-    function test_UnsafeSetSpentAmount() external {
+    function test_SetsSpentAmountUnsafely() external {
         _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
         _assertLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
@@ -727,7 +716,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_set_limit_parameters_happy_path
-    function test_SetLimitParametersHappyPath() external {
+    function test_SetsLimitParameters() external {
         (uint256 periodStart,) = TestHelpers.calcPeriodRange(PERIOD_DURATION, block.timestamp);
 
         vm.expectEmit(address(limitsChecker));
@@ -752,7 +741,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_range_calculation_for_all_allowed_period_durations
-    function test_PeriodRangeCalculationForAllAllowedPeriodDurations() external {
+    function test_ComputesPeriodRangeForAllAllowedPeriodDurations() external {
         (, uint256 periodDurationMonths) = limitsCheckerWithPrivateViewsExposed.getLimitParameters();
         assertEq(periodDurationMonths, 0, "periodDurationMonths");
 
@@ -834,27 +823,27 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_get_first_month_in_period_for_all_allowed_period_durations[1-1-1] to [1-12-12]
-    function test_GetFirstMonthInPeriodForPeriodDuration1() external {
+    function test_ComputesFirstMonthInPeriodForPeriodDuration1() external {
         _assertFirstMonthInPeriodForEveryMonth(1);
     }
 
     // python: test_get_first_month_in_period_for_all_allowed_period_durations[2-1-1] to [2-12-11]
-    function test_GetFirstMonthInPeriodForPeriodDuration2() external {
+    function test_ComputesFirstMonthInPeriodForPeriodDuration2() external {
         _assertFirstMonthInPeriodForEveryMonth(2);
     }
 
     // python: test_get_first_month_in_period_for_all_allowed_period_durations[3-1-1] to [3-12-10]
-    function test_GetFirstMonthInPeriodForPeriodDuration3() external {
+    function test_ComputesFirstMonthInPeriodForPeriodDuration3() external {
         _assertFirstMonthInPeriodForEveryMonth(3);
     }
 
     // python: test_get_first_month_in_period_for_all_allowed_period_durations[6-1-1] to [6-12-7]
-    function test_GetFirstMonthInPeriodForPeriodDuration6() external {
+    function test_ComputesFirstMonthInPeriodForPeriodDuration6() external {
         _assertFirstMonthInPeriodForEveryMonth(6);
     }
 
     // python: test_get_first_month_in_period_for_all_allowed_period_durations[12-1-1] to [12-12-1]
-    function test_GetFirstMonthInPeriodForPeriodDuration12() external {
+    function test_ComputesFirstMonthInPeriodForPeriodDuration12() external {
         _assertFirstMonthInPeriodForEveryMonth(12);
     }
 
@@ -869,10 +858,10 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_limits_checker_views_in_next_period
-    function test_LimitsCheckerViewsInNextPeriod() external {
+    function test_KeepsReportingOldPeriodUntilAdvanced() external {
         uint256 periodLimit = 10 ether;
         uint256 payoutAmount = 3 ether;
-        uint256 spendableBalance = 7 ether;
+        uint256 spendableBalance = periodLimit - payoutAmount;
         _setLimitParameters(periodLimit, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
@@ -895,7 +884,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_update_spent_amount_within_the_limit
-    function test_UpdateSpentAmountWithinTheLimit() external {
+    function test_UpdatesSpentAmountWithinTheLimit() external {
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
         uint256 periodStart = TestHelpers.getMonthStartTimestamp(block.timestamp);
@@ -903,7 +892,7 @@ contract LimitsCheckerTest is Test {
             TestHelpers.getDateInNextPeriod(block.timestamp, PERIOD_DURATION)
         );
         uint256 spending = 2 ether;
-        uint256 spendable = 1 ether;
+        uint256 spendable = PERIOD_LIMIT - spending;
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         vm.expectEmit(address(limitsChecker));
@@ -924,9 +913,9 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_update_spent_amount_precisely_to_the_limit_in_multiple_portions
-    function test_UpdateSpentAmountPreciselyToTheLimitInMultiplePortions() external {
+    function test_UpdatesSpentAmountPreciselyToTheLimitInMultiplePortions() external {
         uint256 spending = 1 ether;
-        uint256 spendable = 2 ether;
+        uint256 spendable = PERIOD_LIMIT - spending;
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
@@ -945,12 +934,12 @@ contract LimitsCheckerTest is Test {
         vm.prank(updateSpentAmountRoleHolder);
         limitsChecker.updateSpentAmount(spending);
 
-        _assertPeriodSpending(2 ether, 1 ether);
+        _assertPeriodSpending(2 * spending, PERIOD_LIMIT - 2 * spending);
 
         vm.prank(updateSpentAmountRoleHolder);
         limitsChecker.updateSpentAmount(spending);
 
-        _assertPeriodSpending(3 ether, 0);
+        _assertPeriodSpending(PERIOD_LIMIT, 0);
 
         vm.prank(updateSpentAmountRoleHolder);
         vm.expectRevert("SUM_EXCEEDS_SPENDABLE_BALANCE");
@@ -958,8 +947,9 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spending_amount_is_restored_in_the_next_period
-    function test_SpendingAmountIsRestoredInTheNextPeriod() external {
-        uint256 spending = 3 ether;
+    function test_RestoresSpendingAmountInTheNextPeriod() external {
+        uint256 spending = PERIOD_LIMIT;
+        uint256 spendable = PERIOD_LIMIT - spending;
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
@@ -967,7 +957,7 @@ contract LimitsCheckerTest is Test {
         vm.prank(updateSpentAmountRoleHolder);
         limitsChecker.updateSpentAmount(spending);
 
-        assertEq(limitsChecker.spendableBalance(), 0, "spendableBalance");
+        assertEq(limitsChecker.spendableBalance(), spendable, "spendableBalance");
 
         vm.prank(updateSpentAmountRoleHolder);
         vm.expectRevert("SUM_EXCEEDS_SPENDABLE_BALANCE");
@@ -978,7 +968,7 @@ contract LimitsCheckerTest is Test {
         vm.prank(updateSpentAmountRoleHolder);
         limitsChecker.updateSpentAmount(spending);
 
-        assertEq(limitsChecker.spendableBalance(), 0, "spendableBalance in the next period");
+        assertEq(limitsChecker.spendableBalance(), spendable, "spendableBalance in the next period");
     }
 
     // python: test_fail_if_update_spent_amount_beyond_the_limit
@@ -996,10 +986,11 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_increased_if_limit_increased
-    function test_SpendableAmountIncreasedIfLimitIncreased() external {
-        uint256 spending = 3 ether;
-        uint256 newPeriodLimit = 6 ether;
-        uint256 newSpendable = 3 ether;
+    function test_IncreasesSpendableAmountWhenLimitIncreases() external {
+        uint256 spending = PERIOD_LIMIT;
+        uint256 spendable = PERIOD_LIMIT - spending;
+        uint256 newPeriodLimit = 2 * PERIOD_LIMIT;
+        uint256 newSpendable = spendable + (newPeriodLimit - PERIOD_LIMIT);
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
@@ -1007,8 +998,8 @@ contract LimitsCheckerTest is Test {
         vm.prank(updateSpentAmountRoleHolder);
         limitsChecker.updateSpentAmount(spending);
 
-        assertEq(limitsChecker.spendableBalance(), 0, "spendableBalance");
-        _assertPeriodSpending(spending, 0);
+        assertEq(limitsChecker.spendableBalance(), spendable, "spendableBalance");
+        _assertPeriodSpending(spending, spendable);
 
         vm.prank(updateSpentAmountRoleHolder);
         vm.expectRevert("SUM_EXCEEDS_SPENDABLE_BALANCE");
@@ -1030,10 +1021,10 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_if_limit_decreased_below_spent_amount
-    function test_SpendableAmountIfLimitDecreasedBelowSpentAmount() external {
+    function test_ZeroesSpendableAmountWhenLimitDecreasesBelowSpentAmount() external {
         uint256 spending = 1 ether;
-        uint256 spendable = 2 ether;
-        uint256 newPeriodLimit = 1 ether - 1;
+        uint256 spendable = PERIOD_LIMIT - spending;
+        uint256 newPeriodLimit = spending - 1;
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
@@ -1057,11 +1048,11 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_if_limit_decreased_not_below_spent_amount
-    function test_SpendableAmountIfLimitDecreasedNotBelowSpentAmount() external {
+    function test_ReducesSpendableAmountWhenLimitDecreasesNotBelowSpentAmount() external {
         uint256 spending = 1 ether;
-        uint256 spendable = 2 ether;
-        uint256 newPeriodLimit = 2 ether;
-        uint256 newSpendable = 1 ether;
+        uint256 spendable = PERIOD_LIMIT - spending;
+        uint256 newPeriodLimit = 2 * spending;
+        uint256 newSpendable = newPeriodLimit - spending;
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
@@ -1088,7 +1079,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[3-2]
-    function test_SpendableAmountRenewalIfPeriodDurationChangedFrom3To2() external {
+    function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom3To2() external {
         _spendLimitAndChangePeriodDuration(3, 2);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(2);
@@ -1097,7 +1088,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[3-6]
-    function test_SpendableAmountRenewalIfPeriodDurationChangedFrom3To6() external {
+    function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom3To6() external {
         _spendLimitAndChangePeriodDuration(3, 6);
 
         // the end of the old three-month period passes without renewing the spendable amount
@@ -1113,7 +1104,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[12-1]
-    function test_SpendableAmountRenewalIfPeriodDurationChangedFrom12To1() external {
+    function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom12To1() external {
         _spendLimitAndChangePeriodDuration(12, 1);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(1);
@@ -1122,7 +1113,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_spendable_amount_renewal_if_period_duration_changed[1-12]
-    function test_SpendableAmountRenewalIfPeriodDurationChangedFrom1To12() external {
+    function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom1To12() external {
         _spendLimitAndChangePeriodDuration(1, 12);
 
         // the end of the old one-month period passes without renewing the spendable amount
@@ -1145,7 +1136,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_start_from_timestamp, period duration 1
-    function test_PeriodStartFromTimestampForPeriodDuration1() external {
+    function test_ComputesPeriodStartFromTimestampForPeriodDuration1() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
             Calendar.timestampFromDate(2022, 1, 1, 1, 0, 0),
@@ -1158,7 +1149,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_start_from_timestamp, period duration 2
-    function test_PeriodStartFromTimestampForPeriodDuration2() external {
+    function test_ComputesPeriodStartFromTimestampForPeriodDuration2() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 3, 1),
             Calendar.timestampFromDate(2022, 3, 1, 1, 0, 0),
@@ -1171,7 +1162,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_start_from_timestamp, period duration 3
-    function test_PeriodStartFromTimestampForPeriodDuration3() external {
+    function test_ComputesPeriodStartFromTimestampForPeriodDuration3() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 4, 1),
             Calendar.timestampFromDate(2022, 4, 1, 1, 0, 0),
@@ -1184,7 +1175,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_start_from_timestamp, period duration 6
-    function test_PeriodStartFromTimestampForPeriodDuration6() external {
+    function test_ComputesPeriodStartFromTimestampForPeriodDuration6() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 7, 1),
             Calendar.timestampFromDate(2022, 7, 1, 1, 0, 0),
@@ -1197,7 +1188,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_start_from_timestamp, period duration 12
-    function test_PeriodStartFromTimestampForPeriodDuration12() external {
+    function test_ComputesPeriodStartFromTimestampForPeriodDuration12() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
             Calendar.timestampFromDate(2022, 1, 1, 1, 0, 0),
@@ -1210,7 +1201,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_end_from_timestamp, period duration 1
-    function test_PeriodEndFromTimestampForPeriodDuration1() external {
+    function test_ComputesPeriodEndFromTimestampForPeriodDuration1() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
             Calendar.timestampFromDate(2022, 1, 1, 1, 0, 0),
@@ -1223,7 +1214,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_end_from_timestamp, period duration 2
-    function test_PeriodEndFromTimestampForPeriodDuration2() external {
+    function test_ComputesPeriodEndFromTimestampForPeriodDuration2() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 3, 1),
             Calendar.timestampFromDate(2022, 3, 1, 1, 0, 0),
@@ -1236,7 +1227,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_end_from_timestamp, period duration 3
-    function test_PeriodEndFromTimestampForPeriodDuration3() external {
+    function test_ComputesPeriodEndFromTimestampForPeriodDuration3() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 4, 1),
             Calendar.timestampFromDate(2022, 4, 1, 1, 0, 0),
@@ -1249,7 +1240,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_end_from_timestamp, period duration 6
-    function test_PeriodEndFromTimestampForPeriodDuration6() external {
+    function test_ComputesPeriodEndFromTimestampForPeriodDuration6() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 7, 1),
             Calendar.timestampFromDate(2022, 7, 1, 1, 0, 0),
@@ -1262,7 +1253,7 @@ contract LimitsCheckerTest is Test {
     }
 
     // python: test_period_end_from_timestamp, period duration 12
-    function test_PeriodEndFromTimestampForPeriodDuration12() external {
+    function test_ComputesPeriodEndFromTimestampForPeriodDuration12() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
             Calendar.timestampFromDate(2022, 1, 1, 1, 0, 0),
@@ -1285,7 +1276,7 @@ contract LimitsCheckerTest is Test {
         uint256 initialPeriodDuration,
         uint256 newPeriodDuration
     ) private {
-        uint256 spending = 3 ether;
+        uint256 spending = PERIOD_LIMIT;
         _setLimitParameters(PERIOD_LIMIT, initialPeriodDuration);
 
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(
@@ -1437,10 +1428,5 @@ contract LimitsCheckerTest is Test {
             expectedResult,
             "periodEnd an hour after"
         );
-    }
-
-    function _addresses(address account) private pure returns (address[] memory addresses) {
-        addresses = new address[](1);
-        addresses[0] = account;
     }
 }

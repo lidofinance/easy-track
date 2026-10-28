@@ -40,7 +40,7 @@ contract SDVTSubmitExitRequestHashesTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(sdvtSubmitExitRequestHashes.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(sdvtSubmitExitRequestHashes.stakingRouter()),

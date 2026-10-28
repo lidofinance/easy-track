@@ -76,7 +76,7 @@ abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenario
         _assertValidatorWithdrawnEmitted(logs, secondOperatorId);
     }
 
-    function testFork_ReReportingWithdrawnValidatorIsNoOp() external {
+    function testFork_TreatsReReportOfWithdrawnValidatorAsNoOp() external {
         uint256 nodeOperatorId = _createSlashedValidator();
         bytes memory callData = _encodeWithdrawn(nodeOperatorId, EXIT_BALANCE, SLASHING_PENALTY);
         _enact(callData);

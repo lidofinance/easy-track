@@ -40,7 +40,7 @@ contract NodeOperatorsRegistryStub {
 
     function getNodeOperator(
         uint256 _id,
-        bool
+        bool _fullInfo
     )
         external
         view

@@ -10,6 +10,7 @@ import {
 import {VaultsAdapter} from "contracts/EVMScriptFactories/vaultFactories/VaultsAdapter.sol";
 import {IVaultsAdapter} from "contracts/interfaces/IVaultsAdapter.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -42,7 +43,7 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setLiabilitySharesTargetInVaultHub.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(setLiabilitySharesTargetInVaultHub.vaultsAdapter()),
@@ -78,7 +79,7 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         setLiabilitySharesTargetInVaultHub.createEVMScript(
-            owner, abi.encode(_vaults(stranger), _targets(100, 200))
+            owner, abi.encode(Arrays.list(stranger), Arrays.list(100, 200))
         );
     }
 
@@ -86,14 +87,14 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
     function test_RevertWhen_VaultIsZero() external {
         vm.expectRevert("ZERO_VAULT");
         setLiabilitySharesTargetInVaultHub.createEVMScript(
-            owner, abi.encode(_vaults(address(0), stranger), _targets(100, 200))
+            owner, abi.encode(Arrays.list(address(0), stranger), Arrays.list(100, 200))
         );
     }
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
-        address[] memory vaults = _vaults(vault, anotherVault);
-        uint256[] memory liabilitySharesTargets = _targets(100, 200);
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        uint256[] memory liabilitySharesTargets = Arrays.list(100, 200);
 
         bytes memory evmScript = setLiabilitySharesTargetInVaultHub.createEVMScript(
             owner, abi.encode(vaults, liabilitySharesTargets)
@@ -106,8 +107,8 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory vaults = _vaults(vault, anotherVault);
-        uint256[] memory liabilitySharesTargets = _targets(100, 200);
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        uint256[] memory liabilitySharesTargets = Arrays.list(100, 200);
 
         (address[] memory decodedVaults, uint256[] memory decodedLiabilitySharesTargets) = setLiabilitySharesTargetInVaultHub.decodeEVMScriptCallData(
             abi.encode(vaults, liabilitySharesTargets)
@@ -117,28 +118,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         assertEq(decodedLiabilitySharesTargets, liabilitySharesTargets, "liabilitySharesTargets");
     }
 
-    function _vaults(address single) private pure returns (address[] memory vaults) {
-        vaults = new address[](1);
-        vaults[0] = single;
-    }
-
-    function _vaults(address first, address second) private pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        vaults[0] = first;
-        vaults[1] = second;
-    }
-
-    function _targets(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory targets)
-    {
-        targets = new uint256[](2);
-        targets[0] = first;
-        targets[1] = second;
-    }
-
-    /// @dev python: encode_call_script of one adapter.setLiabilitySharesTarget per vault
     function _setLiabilitySharesTargetsScript(
         address[] memory vaults,
         uint256[] memory liabilitySharesTargets

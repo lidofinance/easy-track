@@ -7,6 +7,7 @@ import {Test} from "forge-std/Test.sol";
 import {SetNodeOperatorNames} from "contracts/EVMScriptFactories/SetNodeOperatorNames.sol";
 import {INodeOperatorsRegistry} from "contracts/interfaces/INodeOperatorsRegistry.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract SetNodeOperatorNamesTest is Test {
@@ -42,7 +43,7 @@ contract SetNodeOperatorNamesTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setNodeOperatorNames.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(setNodeOperatorNames.nodeOperatorsRegistry()),
@@ -58,7 +59,7 @@ contract SetNodeOperatorNamesTest is Test {
     }
 
     // python: test_empty_calldata
-    function test_RevertWhen_CalldataIsEmpty() external {
+    function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         setNodeOperatorNames.createEVMScript(
             owner, _encodeCallData(new SetNodeOperatorNames.SetNameInput[](0))
@@ -115,13 +116,13 @@ contract SetNodeOperatorNamesTest is Test {
             owner, _encodeCallData(_inputs(0, FIRST_NEW_NAME, 1, SECOND_NEW_NAME))
         );
 
-        address[] memory targets = new address[](2);
-        targets[0] = address(nodeOperatorsRegistry);
-        targets[1] = address(nodeOperatorsRegistry);
+        address[] memory targets =
+            Arrays.list(address(nodeOperatorsRegistry), address(nodeOperatorsRegistry));
 
-        bytes[] memory datas = new bytes[](2);
-        datas[0] = _encodeSetNodeOperatorName(0, FIRST_NEW_NAME);
-        datas[1] = _encodeSetNodeOperatorName(1, SECOND_NEW_NAME);
+        bytes[] memory datas = Arrays.list(
+            _encodeSetNodeOperatorName(0, FIRST_NEW_NAME),
+            _encodeSetNodeOperatorName(1, SECOND_NEW_NAME)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }

@@ -10,6 +10,7 @@ import {
 import {INodeOperatorsRegistry} from "contracts/interfaces/INodeOperatorsRegistry.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 
 contract IncreaseVettedValidatorsLimitTest is Test {
     uint256 internal constant NODE_OPERATOR_ID = 0;
@@ -17,7 +18,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
     uint256 internal constant TOO_HIGH_STAKING_LIMIT = 100000;
     /// @dev python: the three signing keys `addSigningKeysOperatorBH` adds before the limit is raised
     uint64 internal constant SIGNING_KEYS_COUNT = 3;
-    bytes32 internal constant MANAGE_SIGNING_KEYS_ROLE = keccak256("MANAGE_SIGNING_KEYS");
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
@@ -39,7 +39,7 @@ contract IncreaseVettedValidatorsLimitTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(
             address(increaseVettedValidatorsLimit.nodeOperatorsRegistry()),
             address(nodeOperatorsRegistryStub),
@@ -95,7 +95,7 @@ contract IncreaseVettedValidatorsLimitTest is Test {
     // python: test_create_evm_script_from_manager
     function test_CreatesEVMScriptFromManager() external {
         nodeOperatorsRegistryStub.setCanPerform(
-            nodeOperatorManager, MANAGE_SIGNING_KEYS_ROLE, NODE_OPERATOR_ID, true
+            nodeOperatorManager, Roles.MANAGE_SIGNING_KEYS_ROLE, NODE_OPERATOR_ID, true
         );
         uint256 newStakingLimit = _addSigningKeys();
 

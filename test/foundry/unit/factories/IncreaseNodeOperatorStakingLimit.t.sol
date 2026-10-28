@@ -32,7 +32,7 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(
             address(increaseNodeOperatorStakingLimit.nodeOperatorsRegistry()),
             address(nodeOperatorsRegistryStub),

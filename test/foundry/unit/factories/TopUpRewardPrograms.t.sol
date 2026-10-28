@@ -8,6 +8,7 @@ import {TopUpRewardPrograms} from "contracts/EVMScriptFactories/TopUpRewardProgr
 import {RewardProgramsRegistry} from "contracts/RewardProgramsRegistry.sol";
 import {IFinance} from "contracts/interfaces/IFinance.sol";
 import {EVMScriptExecutorStub} from "contracts/test/EVMScriptExecutorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract TopUpRewardProgramsTest is Test {
@@ -32,7 +33,8 @@ contract TopUpRewardProgramsTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         evmScriptExecutorStub = new EVMScriptExecutorStub();
-        rewardProgramsRegistry = new RewardProgramsRegistry(voting, _roleHolders(), _roleHolders());
+        address[] memory roleHolders = Arrays.list(voting, address(evmScriptExecutorStub));
+        rewardProgramsRegistry = new RewardProgramsRegistry(voting, roleHolders, roleHolders);
         topUpRewardPrograms =
             new TopUpRewardPrograms(owner, address(rewardProgramsRegistry), finance, ldo);
         vm.stopPrank();
@@ -43,7 +45,7 @@ contract TopUpRewardProgramsTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(topUpRewardPrograms.trustedCaller(), owner, "trustedCaller");
         assertEq(address(topUpRewardPrograms.finance()), finance, "finance");
         assertEq(topUpRewardPrograms.rewardToken(), ldo, "rewardToken");
@@ -66,7 +68,9 @@ contract TopUpRewardProgramsTest is Test {
     // python: test_create_evm_script_data_length_mismatch
     function test_RevertWhen_DataLengthMismatch() external {
         vm.expectRevert("LENGTH_MISMATCH");
-        topUpRewardPrograms.createEVMScript(owner, _encodeCallData(_rewardPrograms(), _amounts(1)));
+        topUpRewardPrograms.createEVMScript(
+            owner, _encodeCallData(_rewardPrograms(), Arrays.list(1))
+        );
     }
 
     // python: test_create_evm_script_empty_data
@@ -83,7 +87,7 @@ contract TopUpRewardProgramsTest is Test {
 
         vm.expectRevert("ZERO_AMOUNT");
         topUpRewardPrograms.createEVMScript(
-            owner, _encodeCallData(_rewardPrograms(), _amounts(1, 0))
+            owner, _encodeCallData(_rewardPrograms(), Arrays.list(1, 0))
         );
     }
 
@@ -96,15 +100,14 @@ contract TopUpRewardProgramsTest is Test {
 
         _addRewardPrograms();
 
-        address[] memory rewardPrograms = new address[](3);
-        rewardPrograms[0] = FIRST_REWARD_PROGRAM;
-        rewardPrograms[1] = SECOND_REWARD_PROGRAM;
-        rewardPrograms[2] = notAllowedRewardProgram;
+        address[] memory rewardPrograms =
+            Arrays.list(FIRST_REWARD_PROGRAM, SECOND_REWARD_PROGRAM, notAllowedRewardProgram);
 
-        uint256[] memory amounts = new uint256[](3);
-        amounts[0] = FIRST_REWARD_PROGRAM_AMOUNT;
-        amounts[1] = SECOND_REWARD_PROGRAM_AMOUNT;
-        amounts[2] = NOT_ALLOWED_REWARD_PROGRAM_AMOUNT;
+        uint256[] memory amounts = Arrays.list(
+            FIRST_REWARD_PROGRAM_AMOUNT,
+            SECOND_REWARD_PROGRAM_AMOUNT,
+            NOT_ALLOWED_REWARD_PROGRAM_AMOUNT
+        );
 
         vm.expectRevert("REWARD_PROGRAM_NOT_ALLOWED");
         topUpRewardPrograms.createEVMScript(owner, _encodeCallData(rewardPrograms, amounts));
@@ -118,14 +121,12 @@ contract TopUpRewardProgramsTest is Test {
             owner, _encodeCallData(_rewardPrograms(), _rewardProgramAmounts())
         );
 
-        address[] memory targets = new address[](2);
-        targets[0] = finance;
-        targets[1] = finance;
+        address[] memory targets = Arrays.list(finance, finance);
 
-        bytes[] memory payments = new bytes[](2);
-        payments[0] = _encodeNewImmediatePayment(FIRST_REWARD_PROGRAM, FIRST_REWARD_PROGRAM_AMOUNT);
-        payments[1] =
-            _encodeNewImmediatePayment(SECOND_REWARD_PROGRAM, SECOND_REWARD_PROGRAM_AMOUNT);
+        bytes[] memory payments = Arrays.list(
+            _encodeNewImmediatePayment(FIRST_REWARD_PROGRAM, FIRST_REWARD_PROGRAM_AMOUNT),
+            _encodeNewImmediatePayment(SECOND_REWARD_PROGRAM, SECOND_REWARD_PROGRAM_AMOUNT)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, payments), "evmScript");
     }
@@ -147,35 +148,12 @@ contract TopUpRewardProgramsTest is Test {
         vm.stopPrank();
     }
 
-    function _roleHolders() private view returns (address[] memory holders) {
-        holders = new address[](2);
-        holders[0] = voting;
-        holders[1] = address(evmScriptExecutorStub);
-    }
-
-    function _rewardPrograms() private pure returns (address[] memory rewardPrograms) {
-        rewardPrograms = new address[](2);
-        rewardPrograms[0] = FIRST_REWARD_PROGRAM;
-        rewardPrograms[1] = SECOND_REWARD_PROGRAM;
+    function _rewardPrograms() private pure returns (address[] memory) {
+        return Arrays.list(FIRST_REWARD_PROGRAM, SECOND_REWARD_PROGRAM);
     }
 
     function _rewardProgramAmounts() private pure returns (uint256[] memory) {
-        return _amounts(FIRST_REWARD_PROGRAM_AMOUNT, SECOND_REWARD_PROGRAM_AMOUNT);
-    }
-
-    function _amounts(uint256 amount) private pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](1);
-        amounts[0] = amount;
-    }
-
-    function _amounts(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory amounts)
-    {
-        amounts = new uint256[](2);
-        amounts[0] = first;
-        amounts[1] = second;
+        return Arrays.list(FIRST_REWARD_PROGRAM_AMOUNT, SECOND_REWARD_PROGRAM_AMOUNT);
     }
 
     function _encodeCallData(address[] memory rewardPrograms, uint256[] memory amounts)

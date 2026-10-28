@@ -3,12 +3,15 @@
 
 pragma solidity 0.8.6;
 
+import {Vm} from "forge-std/Vm.sol";
 import {Strings} from "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol";
 import {IMEVBoostRelayAllowedList} from "contracts/interfaces/IMEVBoostRelayAllowedList.sol";
 
 /// @notice python: mev_boost_relay_test_config of `tests/conftest.py`, with the relay builders and
 /// encoders the MEV-Boost relay factory tests share
 library MEVBoostRelays {
+    Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
     uint256 internal constant MAX_NUM_RELAYS = 40;
     uint256 internal constant MAX_STRING_LENGTH = 1024;
 
@@ -161,5 +164,41 @@ library MEVBoostRelays {
     /// @dev python: mev_boost_relay_allowed_list_stub.remove_relay.encode_input(uri)
     function removeRelayCallData(string memory uri) internal pure returns (bytes memory) {
         return abi.encodeWithSelector(IMEVBoostRelayAllowedList.remove_relay.selector, uri);
+    }
+
+    /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
+    function addRelay(
+        IMEVBoostRelayAllowedList list,
+        address owner,
+        IMEVBoostRelayAllowedList.Relay memory input
+    ) internal {
+        vm.prank(owner);
+        list.add_relay(input.uri, input.operator, input.is_mandatory, input.description);
+    }
+
+    /// @dev `addRelay` for each of `inputs`
+    function addRelays(
+        IMEVBoostRelayAllowedList list,
+        address owner,
+        IMEVBoostRelayAllowedList.Relay[] memory inputs
+    ) internal {
+        for (uint256 i; i < inputs.length; ++i) {
+            addRelay(list, owner, inputs[i]);
+        }
+    }
+
+    /// @dev Field by field equality of two relay lists
+    function assertRelaysEq(
+        IMEVBoostRelayAllowedList.Relay[] memory actual,
+        IMEVBoostRelayAllowedList.Relay[] memory expected
+    ) internal pure {
+        vm.assertEq(actual.length, expected.length, "relays.length");
+
+        for (uint256 i; i < expected.length; ++i) {
+            vm.assertEq(actual[i].uri, expected[i].uri, "uri");
+            vm.assertEq(actual[i].operator, expected[i].operator, "operator");
+            vm.assertEq(actual[i].is_mandatory, expected[i].is_mandatory, "is_mandatory");
+            vm.assertEq(actual[i].description, expected[i].description, "description");
+        }
     }
 }

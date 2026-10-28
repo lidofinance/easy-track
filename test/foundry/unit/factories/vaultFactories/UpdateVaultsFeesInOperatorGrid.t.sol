@@ -13,6 +13,7 @@ import {IOperatorGridStub} from "contracts/interfaces/IOperatorGridStub.sol";
 import {IVaultHub} from "contracts/interfaces/IVaultHub.sol";
 import {IVaultsAdapter} from "contracts/interfaces/IVaultsAdapter.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -67,7 +68,7 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(updateVaultsFeesInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(updateVaultsFeesInOperatorGrid.vaultsAdapter()),
@@ -119,21 +120,21 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
 
     // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
-        address[] memory vaults = _vaults(stranger);
+        address[] memory vaults = Arrays.list(stranger);
 
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         updateVaultsFeesInOperatorGrid.createEVMScript(
-            owner, abi.encode(vaults, _fees(1000, 2000), _fees(1000), _fees(1000))
+            owner, abi.encode(vaults, Arrays.list(1000, 2000), Arrays.list(1000), Arrays.list(1000))
         );
 
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         updateVaultsFeesInOperatorGrid.createEVMScript(
-            owner, abi.encode(vaults, _fees(1000), _fees(1000, 2000), _fees(1000))
+            owner, abi.encode(vaults, Arrays.list(1000), Arrays.list(1000, 2000), Arrays.list(1000))
         );
 
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         updateVaultsFeesInOperatorGrid.createEVMScript(
-            owner, abi.encode(vaults, _fees(1000), _fees(1000), _fees(1000, 2000))
+            owner, abi.encode(vaults, Arrays.list(1000), Arrays.list(1000), Arrays.list(1000, 2000))
         );
     }
 
@@ -142,7 +143,12 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         vm.expectRevert("ZERO_VAULT");
         updateVaultsFeesInOperatorGrid.createEVMScript(
             owner,
-            abi.encode(_vaults(address(0), stranger), _fees(30, 30), _fees(30, 30), _fees(5, 5))
+            abi.encode(
+                Arrays.list(address(0), stranger),
+                Arrays.list(30, 30),
+                Arrays.list(30, 30),
+                Arrays.list(5, 5)
+            )
         );
     }
 
@@ -177,10 +183,10 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         _connectVault(vault);
         _connectVault(anotherVault);
 
-        address[] memory vaults = _vaults(vault, anotherVault);
-        uint256[] memory infraFeesBP = _fees(20, 15);
-        uint256[] memory liquidityFeesBP = _fees(30, 25);
-        uint256[] memory reservationFeesBP = _fees(5, 8);
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        uint256[] memory infraFeesBP = Arrays.list(20, 15);
+        uint256[] memory liquidityFeesBP = Arrays.list(30, 25);
+        uint256[] memory reservationFeesBP = Arrays.list(5, 8);
 
         bytes memory evmScript = updateVaultsFeesInOperatorGrid.createEVMScript(
             owner, abi.encode(vaults, infraFeesBP, liquidityFeesBP, reservationFeesBP)
@@ -195,10 +201,10 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory vaults = _vaults(vault, anotherVault);
-        uint256[] memory infraFeesBP = _fees(20, 15);
-        uint256[] memory liquidityFeesBP = _fees(30, 25);
-        uint256[] memory reservationFeesBP = _fees(5, 8);
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        uint256[] memory infraFeesBP = Arrays.list(20, 15);
+        uint256[] memory liquidityFeesBP = Arrays.list(30, 25);
+        uint256[] memory reservationFeesBP = Arrays.list(5, 8);
 
         (
             address[] memory decodedVaults,
@@ -245,7 +251,7 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
     }
 
     // python: test_deploy_with_zero_adapter
-    function test_RevertWhen_DeployedWithZeroAdapter() external {
+    function test_RevertWhen_AdapterIsZero() external {
         vm.prank(owner);
         vm.expectRevert("ZERO_ADAPTER");
         new UpdateVaultsFeesInOperatorGrid(
@@ -259,7 +265,7 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
     }
 
     // python: test_deploy_with_zero_lido_locator
-    function test_RevertWhen_DeployedWithZeroLidoLocator() external {
+    function test_RevertWhen_LidoLocatorIsZero() external {
         vm.prank(owner);
         vm.expectRevert("ZERO_LIDO_LOCATOR");
         new UpdateVaultsFeesInOperatorGrid(
@@ -350,9 +356,10 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
     /// @dev python: a group of share limit 10000 for node_operator, one tier of
     /// (10000, 200, 100, 5000, 4000, 3000) under it, and `moved` set onto that tier
     function _moveVaultToTierWithHighFees(address moved) private {
-        TierParams[] memory tiers = new TierParams[](1);
-        tiers[0] = Vaults.tierParams(
-            10000, 200, 100, TIER_INFRA_FEE_BP, TIER_LIQUIDITY_FEE_BP, TIER_RESERVATION_FEE_BP
+        TierParams[] memory tiers = Arrays.list(
+            Vaults.tierParams(
+                10000, 200, 100, TIER_INFRA_FEE_BP, TIER_LIQUIDITY_FEE_BP, TIER_RESERVATION_FEE_BP
+            )
         );
 
         vm.startPrank(owner);
@@ -360,28 +367,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         operatorGrid.registerTiers(OPERATOR, tiers);
         IOperatorGridStub(address(operatorGrid)).setVaultTier(moved, REGISTERED_TIER_ID);
         vm.stopPrank();
-    }
-
-    function _vaults(address single) private pure returns (address[] memory vaults) {
-        vaults = new address[](1);
-        vaults[0] = single;
-    }
-
-    function _vaults(address first, address second) private pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        vaults[0] = first;
-        vaults[1] = second;
-    }
-
-    function _fees(uint256 fee) private pure returns (uint256[] memory fees) {
-        fees = new uint256[](1);
-        fees[0] = fee;
-    }
-
-    function _fees(uint256 first, uint256 second) private pure returns (uint256[] memory fees) {
-        fees = new uint256[](2);
-        fees[0] = first;
-        fees[1] = second;
     }
 
     /// @dev python: create_calldata([vault], [infraFeeBP], [liquidityFeeBP], [reservationFeeBP])
@@ -392,7 +377,10 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         uint256 reservationFeeBP
     ) private pure returns (bytes memory) {
         return abi.encode(
-            _vaults(single), _fees(infraFeeBP), _fees(liquidityFeeBP), _fees(reservationFeeBP)
+            Arrays.list(single),
+            Arrays.list(infraFeeBP),
+            Arrays.list(liquidityFeeBP),
+            Arrays.list(reservationFeeBP)
         );
     }
 
@@ -412,7 +400,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    /// @dev python: encode_call_script([(adapter, updateVaultFees.encode_input(...))])
     function _updateVaultFeesScript(
         address single,
         uint256 infraFeeBP,
@@ -425,7 +412,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    /// @dev python: encode_call_script of one adapter.updateVaultFees per vault
     function _updateVaultFeesScript(
         address[] memory vaults,
         uint256[] memory infraFeesBP,

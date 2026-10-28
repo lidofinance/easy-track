@@ -1,56 +1,21 @@
 # Three profiles:
-#   default   — the fork-based scenario suite (modern solc/EVM; only test/foundry is compiled,
-#               with its own modern-pragma interfaces). Run: `forge test` / `forge build`.
-#   contracts — the project contracts under contracts/ (solc 0.8.6, EVM "berlin"), so the
-#               EVMScriptFactories can be built and deployed with Foundry.
+#   default   : the unit suite under test/foundry/unit, compiled together with contracts/ at
+#               solc 0.8.6 so tests deploy the real contracts and stubs with `new`. Its build also
+#               writes the contracts/ artifacts the scenario suite deploys fresh factories from.
+#               Run: `forge test` / `forge build`
+#   scenario  : the fork-based scenario suite under test/foundry/scenario, compiled with a modern
+#               solc and EVM from test/foundry alone, with its own modern-pragma interfaces.
+#               Run: `FOUNDRY_PROFILE=scenario forge test`
+#   contracts : the project contracts under contracts/ (solc 0.8.6, EVM "berlin") built to out/, so
+#               the EVMScriptFactories can be deployed with Foundry and analyzed by Slither.
 #               Run: `FOUNDRY_PROFILE=contracts forge build`
 #                    `FOUNDRY_PROFILE=contracts forge script/create ...`
-#   unit      — the local unit suite under test/foundry/unit, compiled together with contracts/
-#               at solc 0.8.6 so tests deploy the real contracts and stubs with `new`.
-#               Run: `FOUNDRY_PROFILE=unit forge test`
 [profile.default]
-src = "test/foundry"
-test = "test/foundry"
+src = "contracts"
+test = "test/foundry/unit"
 out = "foundry-out"
 cache_path = ".forge-cache"
 # forge-std is managed via npm (package.json -> node_modules), not a git submodule.
-libs = ["node_modules"]
-evm_version = "prague"
-# Allow vm.readFile() to load the deployed-*.json artifacts from the repo root.
-fs_permissions = [{ access = "read", path = "./" }]
-remappings = ["forge-std/=node_modules/forge-std/src/"]
-# The unit suite pins solc 0.8.6 and belongs to [profile.unit].
-skip = ["test/foundry/unit/**"]
-
-# `forge fmt` formats the Foundry test tree, the `src` and `test` of the default profile. The
-# project contracts under contracts/ keep prettier (`npm run lint`), see .prettierignore.
-[fmt]
-line_length = 100
-tab_width = 4
-bracket_spacing = false
-int_types = "long"
-multiline_func_header = "attributes_first"
-quote_style = "double"
-
-[profile.contracts]
-src = "contracts"
-# No Solidity tests here (the suite lives under the default profile); point `test` at an empty path so
-# tooling that skips the configured test dir (e.g. crytic-compile/Slither) does not skip `contracts`.
-test = "test/none"
-out = "out"
-cache_path = "cache"
-libs = []
-solc = "0.8.6"
-evm_version = "berlin"
-optimizer = false
-remappings = ["OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"]
-
-[profile.unit]
-src = "contracts"
-test = "test/foundry/unit"
-skip = []
-out = "foundry-out/unit"
-cache_path = ".forge-cache/unit"
 libs = ["node_modules"]
 solc = "0.8.6"
 evm_version = "berlin"
@@ -59,5 +24,45 @@ remappings = [
     "forge-std/=node_modules/forge-std/src/",
     "OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/",
 ]
+
+# `forge fmt test/foundry` formats the Foundry test tree. The project contracts under contracts/ keep
+# prettier (`npm run lint`), see .prettierignore, so `ignore` keeps a bare `forge fmt` off them.
+[fmt]
+line_length = 100
+tab_width = 4
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+ignore = ["contracts/**/*.sol"]
+
+[profile.scenario]
+# The scenario tests are the profile's sources as well as its tests, so contracts/ is never
+# compiled here. The harness under test/foundry/helpers and the interfaces compile as their
+# imports, outside `src`, so the build lints neither.
+src = "test/foundry/scenario"
+test = "test/foundry/scenario"
+out = "foundry-out/scenario"
+cache_path = ".forge-cache/scenario"
+libs = ["node_modules"]
+solc = "0.8.38"
+evm_version = "prague"
+# Allow vm.readFile() to load the deployed-*.json artifacts from the repo root.
+fs_permissions = [{ access = "read", path = "./" }]
+remappings = ["forge-std/=node_modules/forge-std/src/"]
+
+[profile.contracts]
+src = "contracts"
+# No Solidity tests here, the suites live under the default and scenario profiles. `test` points at
+# an empty path so tooling that skips the configured test dir (e.g. crytic-compile/Slither) does
+# not skip `contracts`.
+test = "test/none"
+out = "out"
+cache_path = "cache"
+libs = []
+solc = "0.8.6"
+evm_version = "berlin"
+optimizer = false
+remappings = ["OpenZeppelin/openzeppelin-contracts@4.3.2/=dependencies/OpenZeppelin/openzeppelin-contracts@4.3.2/"]
 
 # See https://github.com/foundry-rs/foundry/blob/master/crates/config/README.md#all-options

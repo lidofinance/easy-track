@@ -12,6 +12,7 @@ import {IMetaRegistry} from "contracts/interfaces/IMetaRegistry.sol";
 import {CuratedModuleStub} from "contracts/test/CuratedModuleStub.sol";
 import {MetaRegistryStub} from "contracts/test/MetaRegistryStub.sol";
 import {StakingRouterStub} from "contracts/test/StakingRouterStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract CreateOrUpdateOperatorGroupTest is Test {
@@ -72,7 +73,7 @@ contract CreateOrUpdateOperatorGroupTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(createOrUpdateOperatorGroup.trustedCaller(), owner, "trustedCaller");
         assertEq(createOrUpdateOperatorGroup.name(), FACTORY_NAME, "name");
         assertEq(
@@ -691,19 +692,20 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         uint256 groupId,
         IMetaRegistry.OperatorGroup memory groupInfo
     ) private view returns (bytes memory) {
-        address[] memory targets = new address[](2);
-        targets[0] = address(createOrUpdateOperatorGroup);
-        targets[1] = address(metaRegistryStub);
-
-        bytes[] memory datas = new bytes[](2);
-        datas[0] = abi.encodeWithSelector(
-            ICreateOrUpdateOperatorGroup.validateInputData.selector,
-            groupId,
-            _emptyGroup(),
-            groupInfo
+        address[] memory targets = Arrays.list(
+            address(createOrUpdateOperatorGroup), address(metaRegistryStub)
         );
-        datas[1] = abi.encodeWithSelector(
-            IMetaRegistry.createOrUpdateOperatorGroup.selector, groupId, groupInfo
+
+        bytes[] memory datas = Arrays.list(
+            abi.encodeWithSelector(
+                ICreateOrUpdateOperatorGroup.validateInputData.selector,
+                groupId,
+                _emptyGroup(),
+                groupInfo
+            ),
+            abi.encodeWithSelector(
+                IMetaRegistry.createOrUpdateOperatorGroup.selector, groupId, groupInfo
+            )
         );
 
         return EVMScripts.encodeCallScript(targets, datas);

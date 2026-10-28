@@ -6,6 +6,7 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {TopUpLegoProgram} from "contracts/EVMScriptFactories/TopUpLegoProgram.sol";
 import {IFinance} from "contracts/interfaces/IFinance.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract TopUpLegoProgramTest is Test {
@@ -31,7 +32,7 @@ contract TopUpLegoProgramTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(topUpLegoProgram.trustedCaller(), owner, "trustedCaller");
         assertEq(address(topUpLegoProgram.finance()), finance, "finance");
         assertEq(topUpLegoProgram.legoProgram(), legoProgram, "legoProgram");
@@ -49,7 +50,7 @@ contract TopUpLegoProgramTest is Test {
     // python: test_create_evm_script_data_length_mismatch
     function test_RevertWhen_DataLengthMismatch() external {
         vm.expectRevert("LENGTH_MISMATCH");
-        topUpLegoProgram.createEVMScript(owner, _encodeCallData(_rewardTokens(), _amounts(1)));
+        topUpLegoProgram.createEVMScript(owner, _encodeCallData(_rewardTokens(), Arrays.list(1)));
     }
 
     // python: test_create_evm_script_empty_data
@@ -61,7 +62,7 @@ contract TopUpLegoProgramTest is Test {
     // python: test_create_evm_script_zero_amount
     function test_RevertWhen_AmountIsZero() external {
         vm.expectRevert("ZERO_AMOUNT");
-        topUpLegoProgram.createEVMScript(owner, _encodeCallData(_rewardTokens(), _amounts(1, 0)));
+        topUpLegoProgram.createEVMScript(owner, _encodeCallData(_rewardTokens(), Arrays.list(1, 0)));
     }
 
     // python: test_create_evm_script
@@ -70,13 +71,12 @@ contract TopUpLegoProgramTest is Test {
             owner, _encodeCallData(_rewardTokens(), _rewardAmounts())
         );
 
-        address[] memory targets = new address[](2);
-        targets[0] = finance;
-        targets[1] = finance;
+        address[] memory targets = Arrays.list(finance, finance);
 
-        bytes[] memory payments = new bytes[](2);
-        payments[0] = _encodeNewImmediatePayment(LDO, LDO_REWARD_AMOUNT);
-        payments[1] = _encodeNewImmediatePayment(STETH, STETH_REWARD_AMOUNT);
+        bytes[] memory payments = Arrays.list(
+            _encodeNewImmediatePayment(LDO, LDO_REWARD_AMOUNT),
+            _encodeNewImmediatePayment(STETH, STETH_REWARD_AMOUNT)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, payments), "evmScript");
     }
@@ -91,29 +91,12 @@ contract TopUpLegoProgramTest is Test {
         assertEq(amounts, _rewardAmounts(), "amounts");
     }
 
-    function _rewardTokens() private pure returns (address[] memory rewardTokens) {
-        rewardTokens = new address[](2);
-        rewardTokens[0] = LDO;
-        rewardTokens[1] = STETH;
+    function _rewardTokens() private pure returns (address[] memory) {
+        return Arrays.list(LDO, STETH);
     }
 
     function _rewardAmounts() private pure returns (uint256[] memory) {
-        return _amounts(LDO_REWARD_AMOUNT, STETH_REWARD_AMOUNT);
-    }
-
-    function _amounts(uint256 amount) private pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](1);
-        amounts[0] = amount;
-    }
-
-    function _amounts(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory amounts)
-    {
-        amounts = new uint256[](2);
-        amounts[0] = first;
-        amounts[1] = second;
+        return Arrays.list(LDO_REWARD_AMOUNT, STETH_REWARD_AMOUNT);
     }
 
     function _encodeCallData(address[] memory rewardTokens, uint256[] memory amounts)

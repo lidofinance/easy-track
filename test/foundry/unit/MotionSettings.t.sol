@@ -6,11 +6,10 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {MotionSettings} from "contracts/MotionSettings.sol";
 import {Constants} from "test/foundry/unit/helpers/Constants.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 
 contract MotionSettingsTest is Test {
-    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
-
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
 
@@ -32,7 +31,7 @@ contract MotionSettingsTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         MotionSettings newMotionSettings = new MotionSettings(
             owner,
@@ -96,7 +95,7 @@ contract MotionSettingsTest is Test {
     // python: test_set_motion_duration_called_without_permissions
     function test_RevertWhen_SettingMotionDurationWithoutAdminRole() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, DEFAULT_ADMIN_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         motionSettings.setMotionDuration(0);
     }
 
@@ -136,7 +135,7 @@ contract MotionSettingsTest is Test {
     // python: test_set_objections_threshold_without_permissions
     function test_RevertWhen_SettingObjectionsThresholdWithoutAdminRole() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, DEFAULT_ADMIN_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         motionSettings.setObjectionsThreshold(0);
     }
 
@@ -171,7 +170,7 @@ contract MotionSettingsTest is Test {
     // python: test_set_motions_limit_called_without_permissions
     function test_RevertWhen_SettingMotionsCountLimitWithoutAdminRole() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, DEFAULT_ADMIN_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         motionSettings.setMotionsCountLimit(0);
     }
 

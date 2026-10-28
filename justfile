@@ -12,10 +12,17 @@ make-fork *args:
         else exec anvil -f ${RPC_URL} --host {{anvil_host}} --port {{anvil_port}} --config-out localhost.json {{disable_code_size_limit}} --timeout 90000 {{args}}; \
     fi
 
-# Run the deployed-factory scenario tests.
-test-scenario *args:
-    forge test --match-path 'test/foundry/scenario/**' \
-        -vvv --show-progress --summary --detailed {{args}}
+# Run the unit tests.
+test *args:
+    forge test {{args}}
+
+# Build the contracts, the artifacts the scenario tests deploy fresh factories from.
+build:
+    forge build
+
+# Run the deployed-factory scenario tests on a fork, see test/foundry/README.md.
+test-scenario *args: build
+    FOUNDRY_PROFILE=scenario forge test -vvv --show-progress --summary --detailed {{args}}
 
 _warn message:
     @tput setaf 3 && printf "[WARNING]" && tput sgr0 && echo " {{message}}"

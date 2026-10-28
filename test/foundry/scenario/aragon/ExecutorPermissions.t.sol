@@ -25,7 +25,7 @@ contract ExecutorPermissionsTest is EasyTrackScenarioBase {
         string name;
     }
 
-    uint256 private constant CURATED_MODULE_ID = 1;
+    uint256 internal constant CURATED_MODULE_ID = 1;
 
     IACL internal acl;
     address internal voting;

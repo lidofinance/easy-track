@@ -6,6 +6,7 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {AddAllowedRecipient} from "contracts/EVMScriptFactories/AddAllowedRecipient.sol";
 import {AllowedRecipientsRegistry} from "contracts/AllowedRecipientsRegistry.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {
     BokkyPooBahsDateTimeContract
@@ -31,10 +32,10 @@ contract AddAllowedRecipientTest is Test {
         vm.startPrank(owner);
         allowedRecipientsRegistry = new AllowedRecipientsRegistry(
             owner,
-            _holders(addRecipientRoleHolder),
-            _holders(removeRecipientRoleHolder),
-            _holders(setLimitRoleHolder),
-            _holders(updateSpentRoleHolder),
+            Arrays.list(addRecipientRoleHolder),
+            Arrays.list(removeRecipientRoleHolder),
+            Arrays.list(setLimitRoleHolder),
+            Arrays.list(updateSpentRoleHolder),
             bokkyPooBahsDateTimeContract
         );
         addAllowedRecipient = new AddAllowedRecipient(owner, address(allowedRecipientsRegistry));
@@ -46,7 +47,7 @@ contract AddAllowedRecipientTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(addAllowedRecipient.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(addAllowedRecipient.allowedRecipientsRegistry()),
@@ -56,7 +57,7 @@ contract AddAllowedRecipientTest is Test {
     }
 
     // python: test_deploy_zero_trusted_caller
-    function test_RevertWhen_TrustedCallerIsZeroAddress() external {
+    function test_RevertWhen_TrustedCallerIsZero() external {
         vm.expectRevert("TRUSTED_CALLER_IS_ZERO_ADDRESS");
         new AddAllowedRecipient(address(0), address(allowedRecipientsRegistry));
     }
@@ -72,7 +73,7 @@ contract AddAllowedRecipientTest is Test {
     }
 
     // python: test_create_evm_script_is_permissionless
-    function test_CreateEVMScriptIsPermissionless() external {
+    function test_CreatesEVMScriptFromAnyCaller() external {
         vm.prank(stranger);
         bytes memory evmScript = addAllowedRecipient.createEVMScript(owner, _callData(owner));
 
@@ -80,7 +81,7 @@ contract AddAllowedRecipientTest is Test {
     }
 
     // python: test_decode_evm_script_calldata_is_permissionless
-    function test_DecodeEVMScriptCallDataIsPermissionless() external {
+    function test_DecodesEVMScriptCallDataFromAnyCaller() external {
         vm.prank(stranger);
         (address recipient, string memory title) =
             addAllowedRecipient.decodeEVMScriptCallData(_callData(stranger));
@@ -139,11 +140,6 @@ contract AddAllowedRecipientTest is Test {
         assertEq(title, EVM_SCRIPT_CALLDATA_TITLE, "title");
     }
 
-    function _holders(address holder) private pure returns (address[] memory holders) {
-        holders = new address[](1);
-        holders[0] = holder;
-    }
-
     /// @dev python: registry.addRecipient(stranger, "Stranger") from add_recipient_role_holder
     function _allowStranger() private {
         vm.prank(addRecipientRoleHolder);
@@ -155,7 +151,6 @@ contract AddAllowedRecipientTest is Test {
         return abi.encode(recipient, EVM_SCRIPT_CALLDATA_TITLE);
     }
 
-    /// @dev python: encode_call_script of one registry.addRecipient(recipient, "TITLE")
     function _addRecipientScript(address recipient) private view returns (bytes memory) {
         return EVMScripts.encodeCallScript(
             address(allowedRecipientsRegistry),

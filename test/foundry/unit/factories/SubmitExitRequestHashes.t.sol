@@ -97,7 +97,7 @@ abstract contract SubmitExitRequestHashesTest is Test {
     }
 
     // python: test_decode_calldata_is_permissionless
-    function test_DecodeEVMScriptCallDataIsPermissionless() external {
+    function test_DecodesEVMScriptCallDataFromAnyCaller() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
                 moduleId, _missingNodeOperatorId(), VALIDATOR_INDEX, ExitRequests.pubkeyAt(0), 0
@@ -433,7 +433,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         requests[2] = third;
     }
 
-    /// @dev python: encode_call_script([(vebo, submitExitRequestsHash.encode_input(hash))])
     function _expectedEVMScript(SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests)
         private
         view

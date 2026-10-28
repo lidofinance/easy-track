@@ -5,7 +5,6 @@ pragma solidity ^0.8.25;
 
 import {SingleTokenPayoutsScenarioBase} from "test/foundry/helpers/PayoutsScenarioBase.sol";
 import {
-    IAllowedRecipientsRegistry,
     ITopUpAllowedRecipientsSingleToken,
     ITrustedCaller
 } from "test/foundry/interfaces/Payouts.sol";
@@ -15,10 +14,10 @@ import {
 ///         setup with its add and remove factories. The Agent, not the executor, administers the
 ///         recipient list outside motions.
 contract AllowedRecipientsHappyPathSingleTokenTest is SingleTokenPayoutsScenarioBase {
-    string private constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
+    string internal constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
     // python: test_single_recipient_top_up_only_setup_happy_path
-    function testFork_SingleRecipientTopUpOnlySetupHappyPath() external {
+    function testFork_DrivesSingleRecipientTopUpOnlySetup() external {
         _advanceToNextPeriod(PERIOD_DURATION_MONTHS);
 
         _deploySingleRecipientTopUpOnlySetup();
@@ -56,7 +55,7 @@ contract AllowedRecipientsHappyPathSingleTokenTest is SingleTokenPayoutsScenario
     }
 
     // python: test_full_setup_happy_path
-    function testFork_FullSetupHappyPath() external {
+    function testFork_DrivesFullSetup() external {
         _advanceToNextPeriod(PERIOD_DURATION_MONTHS);
 
         _deployFullSetup();

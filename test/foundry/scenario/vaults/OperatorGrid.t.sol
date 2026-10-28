@@ -9,8 +9,7 @@ import {
     IOperatorGridFactory,
     IRegisterGroupsInOperatorGrid,
     IUpdateGroupsShareLimitInOperatorGrid,
-    IUpdateVaultsFeesInOperatorGrid,
-    IVaultsAdapterFactory
+    IUpdateVaultsFeesInOperatorGrid
 } from "test/foundry/interfaces/Factories.sol";
 import {
     IOperatorGrid,
@@ -19,19 +18,19 @@ import {
     TierParams
 } from "test/foundry/interfaces/Vaults.sol";
 
-/// @notice The six operator grid factories, each deployed fresh from the `contracts` profile
-///         artifacts and registered in the fresh Easy Track, driving the live grid: groups and
-///         tiers directly, the jail and the vault fees through the adapter.
+/// @notice The six operator grid factories, each deployed fresh from the `forge build` artifacts
+///         and registered in the fresh Easy Track, driving the live grid: groups and tiers
+///         directly, the jail and the vault fees through the adapter.
 contract OperatorGridTest is VaultsScenarioBase {
-    uint256 private constant MAX_SHARE_LIMIT = 10000;
-    uint256 private constant DEFAULT_TIER_MAX_SHARE_LIMIT = 1000e18;
-    uint256 private constant MAX_LIQUIDITY_FEE_BP = 1000;
-    uint256 private constant MAX_RESERVATION_FEE_BP = 100;
-    uint256 private constant MAX_INFRA_FEE_BP = 100;
+    uint256 internal constant MAX_SHARE_LIMIT = 10000;
+    uint256 internal constant DEFAULT_TIER_MAX_SHARE_LIMIT = 1000e18;
+    uint256 internal constant MAX_LIQUIDITY_FEE_BP = 1000;
+    uint256 internal constant MAX_RESERVATION_FEE_BP = 100;
+    uint256 internal constant MAX_INFRA_FEE_BP = 100;
 
     /// @dev python: operator_addresses, in the ascending order the group factory requires
-    address private constant OPERATOR_1 = address(1);
-    address private constant OPERATOR_2 = address(2);
+    address internal constant OPERATOR_1 = address(1);
+    address internal constant OPERATOR_2 = address(2);
 
     // python: test_register_group_happy_path
     function testFork_RegistersGroups() external {
@@ -382,21 +381,5 @@ contract OperatorGridTest is VaultsScenarioBase {
         assertEq(
             IOperatorGridFactory(factory).lidoLocator(), address(locator), "setup: lidoLocator"
         );
-    }
-
-    /// @dev The factory trusts the creator and acts through the adapter, which trusts the creator
-    ///      and takes the fresh executor's calls
-    function _assertAdapterFactory(address factory) private view {
-        assertEq(IVaultsAdapterFactory(factory).trustedCaller(), creator, "setup: trustedCaller");
-        assertEq(
-            IVaultsAdapterFactory(factory).vaultsAdapter(), address(adapter), "setup: vaultsAdapter"
-        );
-        assertEq(
-            adapter.validatorExitFeeLimit(),
-            VALIDATOR_EXIT_FEE_LIMIT,
-            "setup: validatorExitFeeLimit"
-        );
-        assertEq(adapter.trustedCaller(), creator, "setup: adapter trustedCaller");
-        assertEq(adapter.evmScriptExecutor(), evmScriptExecutor, "setup: adapter evmScriptExecutor");
     }
 }

@@ -10,6 +10,7 @@ import {INodeOperatorsRegistry} from "contracts/interfaces/INodeOperatorsRegistr
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Op, Param, PermissionParameters} from "test/foundry/unit/helpers/PermissionParameters.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {ACLStub} from "test/foundry/unit/stubs/ACLStub.sol";
 
 contract ActivateNodeOperatorsTest is Test {
@@ -18,7 +19,6 @@ contract ActivateNodeOperatorsTest is Test {
     uint256 internal constant ACTIVE_NODE_OPERATOR_ID = 2;
     address internal constant FIRST_MANAGER = address(1);
     address internal constant SECOND_MANAGER = address(2);
-    bytes32 internal constant MANAGE_SIGNING_KEYS_ROLE = keccak256("MANAGE_SIGNING_KEYS");
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
@@ -43,11 +43,8 @@ contract ActivateNodeOperatorsTest is Test {
         acl = new ACLStub();
 
         vm.prank(owner);
-        activateNodeOperators = new ActivateNodeOperators(
-            owner,
-            address(nodeOperatorsRegistry),
-            address(acl)
-        );
+        activateNodeOperators =
+            new ActivateNodeOperators(owner, address(nodeOperatorsRegistry), address(acl));
 
         nodeOperatorsRegistry.setActive(0, false);
         nodeOperatorsRegistry.setActive(1, false);
@@ -58,7 +55,7 @@ contract ActivateNodeOperatorsTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(activateNodeOperators.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(activateNodeOperators.nodeOperatorsRegistry()),
@@ -75,11 +72,10 @@ contract ActivateNodeOperatorsTest is Test {
     }
 
     // python: test_empty_calldata
-    function test_RevertWhen_CalldataIsEmpty() external {
+    function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(new ActivateNodeOperators.ActivateNodeOperatorInput[](0))
+            owner, _encodeCallData(new ActivateNodeOperators.ActivateNodeOperatorInput[](0))
         );
     }
 
@@ -87,14 +83,12 @@ contract ActivateNodeOperatorsTest is Test {
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(1, SECOND_MANAGER, 0, FIRST_MANAGER))
+            owner, _encodeCallData(_inputs(1, SECOND_MANAGER, 0, FIRST_MANAGER))
         );
 
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(0, FIRST_MANAGER, 0, SECOND_MANAGER))
+            owner, _encodeCallData(_inputs(0, FIRST_MANAGER, 0, SECOND_MANAGER))
         );
     }
 
@@ -102,8 +96,7 @@ contract ActivateNodeOperatorsTest is Test {
     function test_RevertWhen_ManagerAddressesHaveDuplicate() external {
         vm.expectRevert("MANAGER_ADDRESSES_HAS_DUPLICATE");
         activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(0, FIRST_MANAGER, 1, FIRST_MANAGER))
+            owner, _encodeCallData(_inputs(0, FIRST_MANAGER, 1, FIRST_MANAGER))
         );
     }
 
@@ -113,8 +106,7 @@ contract ActivateNodeOperatorsTest is Test {
 
         vm.expectRevert("NODE_OPERATOR_INDEX_OUT_OF_RANGE");
         activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(nodeOperatorsCount, address(0)))
+            owner, _encodeCallData(_inputs(nodeOperatorsCount, address(0)))
         );
     }
 
@@ -122,17 +114,14 @@ contract ActivateNodeOperatorsTest is Test {
     function test_RevertWhen_NodeOperatorIsAlreadyActive() external {
         vm.expectRevert("WRONG_OPERATOR_ACTIVE_STATE");
         activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(ACTIVE_NODE_OPERATOR_ID, FIRST_MANAGER))
+            owner, _encodeCallData(_inputs(ACTIVE_NODE_OPERATOR_ID, FIRST_MANAGER))
         );
     }
 
     // python: test_manager_already_has_permission
     function test_RevertWhen_ManagerAlreadyHasPermission() external {
         acl.grantPermission(
-            FIRST_MANAGER,
-            address(nodeOperatorsRegistry),
-            MANAGE_SIGNING_KEYS_ROLE
+            FIRST_MANAGER, address(nodeOperatorsRegistry), Roles.MANAGE_SIGNING_KEYS_ROLE
         );
 
         vm.expectRevert("MANAGER_ALREADY_HAS_ROLE");
@@ -156,7 +145,7 @@ contract ActivateNodeOperatorsTest is Test {
     }
 
     // python: test_zero_manager
-    function test_RevertWhen_ManagerIsZeroAddress() external {
+    function test_RevertWhen_ManagerIsZero() external {
         vm.expectRevert("ZERO_MANAGER_ADDRESS");
         activateNodeOperators.createEVMScript(owner, _encodeCallData(_inputs(0, address(0))));
     }
@@ -164,8 +153,7 @@ contract ActivateNodeOperatorsTest is Test {
     // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = activateNodeOperators.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(0, FIRST_MANAGER, 1, SECOND_MANAGER))
+            owner, _encodeCallData(_inputs(0, FIRST_MANAGER, 1, SECOND_MANAGER))
         );
 
         address[] memory targets = new address[](4);
@@ -185,8 +173,10 @@ contract ActivateNodeOperatorsTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs = activateNodeOperators
-            .decodeEVMScriptCallData(_encodeCallData(_inputs(0, FIRST_MANAGER, 1, SECOND_MANAGER)));
+        ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs =
+            activateNodeOperators.decodeEVMScriptCallData(
+                _encodeCallData(_inputs(0, FIRST_MANAGER, 1, SECOND_MANAGER))
+            );
 
         assertEq(inputs.length, 2, "inputs length");
         assertEq(inputs[0].nodeOperatorId, 0, "inputs[0].nodeOperatorId");
@@ -201,58 +191,60 @@ contract ActivateNodeOperatorsTest is Test {
         acl.grantPermissionP(
             manager,
             address(nodeOperatorsRegistry),
-            MANAGE_SIGNING_KEYS_ROLE,
+            Roles.MANAGE_SIGNING_KEYS_ROLE,
             PermissionParameters.encodePermissionParams(Param(0, op, value))
         );
     }
 
-    function _inputs(
-        uint256 nodeOperatorId,
-        address manager
-    ) private pure returns (ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs) {
+    function _inputs(uint256 nodeOperatorId, address manager)
+        private
+        pure
+        returns (ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs)
+    {
         inputs = new ActivateNodeOperators.ActivateNodeOperatorInput[](1);
         inputs[0] = ActivateNodeOperators.ActivateNodeOperatorInput(nodeOperatorId, manager);
     }
 
-    function _inputs(
-        uint256 firstId,
-        address firstManager,
-        uint256 secondId,
-        address secondManager
-    ) private pure returns (ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs) {
+    function _inputs(uint256 firstId, address firstManager, uint256 secondId, address secondManager)
+        private
+        pure
+        returns (ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs)
+    {
         inputs = new ActivateNodeOperators.ActivateNodeOperatorInput[](2);
         inputs[0] = ActivateNodeOperators.ActivateNodeOperatorInput(firstId, firstManager);
         inputs[1] = ActivateNodeOperators.ActivateNodeOperatorInput(secondId, secondManager);
     }
 
-    function _encodeCallData(
-        ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs
-    ) private pure returns (bytes memory) {
+    function _encodeCallData(ActivateNodeOperators.ActivateNodeOperatorInput[] memory inputs)
+        private
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(inputs);
     }
 
-    function _encodeActivateNodeOperator(
-        uint256 nodeOperatorId
-    ) private pure returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                INodeOperatorsRegistry.activateNodeOperator.selector,
-                nodeOperatorId
-            );
+    function _encodeActivateNodeOperator(uint256 nodeOperatorId)
+        private
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodeWithSelector(
+            INodeOperatorsRegistry.activateNodeOperator.selector, nodeOperatorId
+        );
     }
 
     /// @dev The manager's role is bound to `nodeOperatorId`, the first argument of every guarded call
-    function _encodeGrantPermissionP(
-        address manager,
-        uint256 nodeOperatorId
-    ) private view returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                IACL.grantPermissionP.selector,
-                manager,
-                address(nodeOperatorsRegistry),
-                MANAGE_SIGNING_KEYS_ROLE,
-                PermissionParameters.encodePermissionParams(Param(0, Op.EQ, nodeOperatorId))
-            );
+    function _encodeGrantPermissionP(address manager, uint256 nodeOperatorId)
+        private
+        view
+        returns (bytes memory)
+    {
+        return abi.encodeWithSelector(
+            IACL.grantPermissionP.selector,
+            manager,
+            address(nodeOperatorsRegistry),
+            Roles.MANAGE_SIGNING_KEYS_ROLE,
+            PermissionParameters.encodePermissionParams(Param(0, Op.EQ, nodeOperatorId))
+        );
     }
 }

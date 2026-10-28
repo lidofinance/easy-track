@@ -9,6 +9,7 @@ import {
 } from "contracts/EVMScriptFactories/SetNodeOperatorRewardAddresses.sol";
 import {INodeOperatorsRegistry} from "contracts/interfaces/INodeOperatorsRegistry.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract SetNodeOperatorRewardAddressesTest is Test {
@@ -45,7 +46,7 @@ contract SetNodeOperatorRewardAddressesTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setNodeOperatorRewardAddresses.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(setNodeOperatorRewardAddresses.nodeOperatorsRegistry()),
@@ -61,7 +62,7 @@ contract SetNodeOperatorRewardAddressesTest is Test {
     }
 
     // python: test_empty_calldata
-    function test_RevertWhen_CalldataIsEmpty() external {
+    function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         setNodeOperatorRewardAddresses.createEVMScript(
             owner, _encodeCallData(new SetNodeOperatorRewardAddresses.SetRewardAddressInput[](0))
@@ -124,13 +125,13 @@ contract SetNodeOperatorRewardAddressesTest is Test {
             _encodeCallData(_inputs(0, FIRST_NEW_REWARD_ADDRESS, 1, SECOND_NEW_REWARD_ADDRESS))
         );
 
-        address[] memory targets = new address[](2);
-        targets[0] = address(nodeOperatorsRegistry);
-        targets[1] = address(nodeOperatorsRegistry);
+        address[] memory targets =
+            Arrays.list(address(nodeOperatorsRegistry), address(nodeOperatorsRegistry));
 
-        bytes[] memory datas = new bytes[](2);
-        datas[0] = _encodeSetNodeOperatorRewardAddress(0, FIRST_NEW_REWARD_ADDRESS);
-        datas[1] = _encodeSetNodeOperatorRewardAddress(1, SECOND_NEW_REWARD_ADDRESS);
+        bytes[] memory datas = Arrays.list(
+            _encodeSetNodeOperatorRewardAddress(0, FIRST_NEW_REWARD_ADDRESS),
+            _encodeSetNodeOperatorRewardAddress(1, SECOND_NEW_REWARD_ADDRESS)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }

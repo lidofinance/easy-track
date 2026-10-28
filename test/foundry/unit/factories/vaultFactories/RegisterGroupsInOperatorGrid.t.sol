@@ -9,6 +9,7 @@ import {
 } from "contracts/EVMScriptFactories/vaultFactories/RegisterGroupsInOperatorGrid.sol";
 import {IOperatorGrid, TierParams} from "contracts/interfaces/IOperatorGrid.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -41,7 +42,7 @@ contract RegisterGroupsInOperatorGridTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(registerGroupsInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(registerGroupsInOperatorGrid.lidoLocator()),
@@ -74,7 +75,7 @@ contract RegisterGroupsInOperatorGridTest is Test {
 
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         registerGroupsInOperatorGrid.createEVMScript(
-            owner, abi.encode(_operators(stranger), _shareLimits(GROUP_SHARE_LIMIT), tiers)
+            owner, abi.encode(Arrays.list(stranger), Arrays.list(GROUP_SHARE_LIMIT), tiers)
         );
     }
 
@@ -103,7 +104,7 @@ contract RegisterGroupsInOperatorGridTest is Test {
 
         vm.expectRevert("EMPTY_TIERS");
         registerGroupsInOperatorGrid.createEVMScript(
-            owner, abi.encode(_operators(FIRST_OPERATOR), _shareLimits(GROUP_SHARE_LIMIT), tiers)
+            owner, abi.encode(Arrays.list(FIRST_OPERATOR), Arrays.list(GROUP_SHARE_LIMIT), tiers)
         );
     }
 
@@ -119,11 +120,11 @@ contract RegisterGroupsInOperatorGridTest is Test {
 
     // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
-        address[] memory nodeOperators = _operators(FIRST_OPERATOR, SECOND_OPERATOR);
-        uint256[] memory shareLimits = _shareLimits(1000, 3000);
-        TierParams[][] memory tiers = _tiers(
-            _tierParams(Vaults.defaultTierParams()),
-            _tierParams(Vaults.tierParams(2000, 300, 150, 75, 60, 20))
+        address[] memory nodeOperators = Arrays.list(FIRST_OPERATOR, SECOND_OPERATOR);
+        uint256[] memory shareLimits = Arrays.list(1000, 3000);
+        TierParams[][] memory tiers = Arrays.list(
+            Arrays.list(Vaults.defaultTierParams()),
+            Arrays.list(Vaults.tierParams(2000, 300, 150, 75, 60, 20))
         );
 
         bytes memory evmScript = registerGroupsInOperatorGrid.createEVMScript(
@@ -135,11 +136,11 @@ contract RegisterGroupsInOperatorGridTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory nodeOperators = _operators(FIRST_OPERATOR, SECOND_OPERATOR);
-        uint256[] memory shareLimits = _shareLimits(1000, 1500);
-        TierParams[][] memory tiers = _tiers(
-            _tierParams(Vaults.defaultTierParams()),
-            _tierParams(Vaults.tierParams(2000, 300, 150, 75, 60, 20))
+        address[] memory nodeOperators = Arrays.list(FIRST_OPERATOR, SECOND_OPERATOR);
+        uint256[] memory shareLimits = Arrays.list(1000, 1500);
+        TierParams[][] memory tiers = Arrays.list(
+            Arrays.list(Vaults.defaultTierParams()),
+            Arrays.list(Vaults.tierParams(2000, 300, 150, 75, 60, 20))
         );
 
         (
@@ -331,70 +332,15 @@ contract RegisterGroupsInOperatorGridTest is Test {
         operatorGrid.registerGroup(nodeOperator, shareLimit);
     }
 
-    function _operators(address nodeOperator)
-        private
-        pure
-        returns (address[] memory nodeOperators)
-    {
-        nodeOperators = new address[](1);
-        nodeOperators[0] = nodeOperator;
-    }
-
-    function _operators(address first, address second)
-        private
-        pure
-        returns (address[] memory nodeOperators)
-    {
-        nodeOperators = new address[](2);
-        nodeOperators[0] = first;
-        nodeOperators[1] = second;
-    }
-
-    function _shareLimits(uint256 shareLimit) private pure returns (uint256[] memory shareLimits) {
-        shareLimits = new uint256[](1);
-        shareLimits[0] = shareLimit;
-    }
-
-    function _shareLimits(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory shareLimits)
-    {
-        shareLimits = new uint256[](2);
-        shareLimits[0] = first;
-        shareLimits[1] = second;
-    }
-
-    function _tierParams(TierParams memory tier) private pure returns (TierParams[] memory list) {
-        list = new TierParams[](1);
-        list[0] = tier;
-    }
-
-    function _tiers(TierParams[] memory list) private pure returns (TierParams[][] memory tiers) {
-        tiers = new TierParams[][](1);
-        tiers[0] = list;
-    }
-
-    function _tiers(TierParams[] memory first, TierParams[] memory second)
-        private
-        pure
-        returns (TierParams[][] memory tiers)
-    {
-        tiers = new TierParams[][](2);
-        tiers[0] = first;
-        tiers[1] = second;
-    }
-
     /// @dev python: create_calldata([nodeOperator], [shareLimit], [[tier]])
     function _encodeCallData(address nodeOperator, uint256 shareLimit, TierParams memory tier)
         private
         pure
         returns (bytes memory)
     {
-        return
-            abi.encode(
-                _operators(nodeOperator), _shareLimits(shareLimit), _tiers(_tierParams(tier))
-            );
+        return abi.encode(
+            Arrays.list(nodeOperator), Arrays.list(shareLimit), Arrays.list(Arrays.list(tier))
+        );
     }
 
     /// @dev python: create_calldata([first, second], [1000, 2000], [[DEFAULT], [DEFAULT]]), the
@@ -405,14 +351,14 @@ contract RegisterGroupsInOperatorGridTest is Test {
         returns (bytes memory)
     {
         return abi.encode(
-            _operators(first, second),
-            _shareLimits(1000, 2000),
-            _tiers(_tierParams(Vaults.defaultTierParams()), _tierParams(Vaults.defaultTierParams()))
+            Arrays.list(first, second),
+            Arrays.list(1000, 2000),
+            Arrays.list(
+                Arrays.list(Vaults.defaultTierParams()), Arrays.list(Vaults.defaultTierParams())
+            )
         );
     }
 
-    /// @dev python: encode_call_script of registerGroup then registerTiers per operator, every call
-    /// to the operator grid
     function _registerGroupsScript(
         address[] memory nodeOperators,
         uint256[] memory shareLimits,
@@ -439,27 +385,7 @@ contract RegisterGroupsInOperatorGridTest is Test {
         assertEq(actual.length, expected.length, "tiers.length");
 
         for (uint256 i; i < actual.length; ++i) {
-            _assertTierParamsEq(actual[i], expected[i]);
-        }
-    }
-
-    function _assertTierParamsEq(TierParams[] memory actual, TierParams[] memory expected)
-        private
-        pure
-    {
-        assertEq(actual.length, expected.length, "tierParams.length");
-
-        for (uint256 i; i < actual.length; ++i) {
-            assertEq(actual[i].shareLimit, expected[i].shareLimit, "shareLimit");
-            assertEq(actual[i].reserveRatioBP, expected[i].reserveRatioBP, "reserveRatioBP");
-            assertEq(
-                actual[i].forcedRebalanceThresholdBP,
-                expected[i].forcedRebalanceThresholdBP,
-                "forcedRebalanceThresholdBP"
-            );
-            assertEq(actual[i].infraFeeBP, expected[i].infraFeeBP, "infraFeeBP");
-            assertEq(actual[i].liquidityFeeBP, expected[i].liquidityFeeBP, "liquidityFeeBP");
-            assertEq(actual[i].reservationFeeBP, expected[i].reservationFeeBP, "reservationFeeBP");
+            Vaults.assertTierParamsEq(actual[i], expected[i]);
         }
     }
 }

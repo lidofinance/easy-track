@@ -9,6 +9,7 @@ import {
 } from "contracts/EVMScriptFactories/SetVettedValidatorsLimits.sol";
 import {INodeOperatorsRegistry} from "contracts/interfaces/INodeOperatorsRegistry.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract SetVettedValidatorsLimitsTest is Test {
@@ -44,7 +45,7 @@ contract SetVettedValidatorsLimitsTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setVettedValidatorsLimits.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(setVettedValidatorsLimits.nodeOperatorsRegistry()),
@@ -60,7 +61,7 @@ contract SetVettedValidatorsLimitsTest is Test {
     }
 
     // python: test_empty_calldata
-    function test_RevertWhen_CalldataIsEmpty() external {
+    function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         setVettedValidatorsLimits.createEVMScript(
             owner, _encodeCallData(new SetVettedValidatorsLimits.VettedValidatorsLimitInput[](0))
@@ -110,13 +111,13 @@ contract SetVettedValidatorsLimitsTest is Test {
             owner, _encodeCallData(_inputs(0, NEW_STAKING_LIMIT, 1, NEW_STAKING_LIMIT))
         );
 
-        address[] memory targets = new address[](2);
-        targets[0] = address(nodeOperatorsRegistry);
-        targets[1] = address(nodeOperatorsRegistry);
+        address[] memory targets =
+            Arrays.list(address(nodeOperatorsRegistry), address(nodeOperatorsRegistry));
 
-        bytes[] memory datas = new bytes[](2);
-        datas[0] = _encodeSetNodeOperatorStakingLimit(0, NEW_STAKING_LIMIT);
-        datas[1] = _encodeSetNodeOperatorStakingLimit(1, NEW_STAKING_LIMIT);
+        bytes[] memory datas = Arrays.list(
+            _encodeSetNodeOperatorStakingLimit(0, NEW_STAKING_LIMIT),
+            _encodeSetNodeOperatorStakingLimit(1, NEW_STAKING_LIMIT)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }

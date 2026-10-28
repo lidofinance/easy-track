@@ -6,11 +6,10 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {EVMScriptFactoriesRegistry} from "contracts/EVMScriptFactoriesRegistry.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 
 contract EVMScriptFactoriesRegistryTest is Test {
-    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
-
     /// @dev python: the "ffccddee" selector appended to the factory address
     bytes4 internal constant PERMISSION_SELECTOR = 0xffccddee;
 
@@ -34,7 +33,7 @@ contract EVMScriptFactoriesRegistryTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         EVMScriptFactoriesRegistry newRegistry = new EVMScriptFactoriesRegistry(owner);
 
@@ -46,7 +45,7 @@ contract EVMScriptFactoriesRegistryTest is Test {
     // python: test_add_evm_script_factory_called_without_permissions
     function test_RevertWhen_AddingFactoryWithoutAdminRole() external {
         vm.prank(stranger);
-        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, DEFAULT_ADMIN_ROLE));
+        vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, permissions);
     }
 

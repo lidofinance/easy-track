@@ -7,7 +7,7 @@ import {ExitRequestsScenarioBase} from "test/foundry/helpers/ExitRequestsScenari
 
 /// @notice `CuratedSubmitExitRequestHashes` over the curated module: an operator's reward
 ///         address requests the exit of the operator's deposited keys. The deployed factory of
-///         `deployed-<chain>.json`, else a fresh one from the `contracts` profile artifacts.
+///         `deployed-<chain>.json`, else a fresh one from the `forge build` artifacts.
 contract CuratedSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     string internal constant FACTORY_KEY = "CuratedSubmitExitRequestHashes";
     uint256 internal constant MODULE_ID = 1;
@@ -25,12 +25,12 @@ contract CuratedSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     }
 
     // python: test_curated_single_exit_request_happy_path
-    function testFork_SingleExitRequest() external {
+    function testFork_SubmitsSingleExitRequest() external {
         _requestExits(1);
     }
 
     // python: test_curated_batch_exit_requests_happy_path
-    function testFork_BatchExitRequests() external {
+    function testFork_SubmitsExitRequestBatch() external {
         _requestExits(MAX_REQUESTS);
     }
 

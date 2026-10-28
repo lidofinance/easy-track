@@ -23,15 +23,12 @@ import {
     ITrustedCaller
 } from "test/foundry/interfaces/Payouts.sol";
 
-/// @notice Harness for the allowed recipients payouts scenarios, the conftest fixtures of the
-///         Brownie suite over `integration-test-addresses-<chain>.yaml`: the suite's Easy Track,
-///         factory and builder, and per instance a registry with its add, remove and top-up
-///         factories, each bound to the listed deployment or, where the file lists none, deployed
-///         fresh through the builder from the `contracts` profile artifacts and registered in Easy
-///         Track as the DAO Voting. Payouts go through the live Aragon Finance from the Agent, the
-///         registries' admin. Period arithmetic goes through the deployed date-time contract the
-///         registries use, so the scenarios warp to calendar periods, never to a duration. Two
-///         flavors below bind the multi-token and the single-token contracts.
+/// @notice Harness for the allowed recipients payouts scenarios, after the Brownie conftest
+///         fixtures: the Easy Track, factory and builder `integration-test-addresses-<chain>.yaml`
+///         lists and, per instance, a registry with its add, remove and top-up factories, bound to
+///         the listed deployment or deployed fresh through the builder and registered as Voting.
+///         Payouts go through the live Finance from the Agent, the registries' admin. Periods come
+///         from the deployed date-time contract, so the scenarios warp to calendar dates.
 abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     /// @dev A top-up motion's payout and the registry state its enactment must leave
     struct TopUp {
@@ -103,10 +100,8 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
             titles.push(title);
         }
 
-        IntegrationTestAddresses.Suite memory suite = IntegrationTestAddresses.load(
-            config.addresses,
-            _suiteKey()
-        );
+        IntegrationTestAddresses.Suite memory suite =
+            IntegrationTestAddresses.load(config.addresses, _suiteKey());
         for (uint256 index; index < suite.instances.length; ++index) {
             instances.push(suite.instances[index]);
         }
@@ -136,16 +131,14 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     function _deployTopUpFactory() internal virtual returns (address);
 
     /// @dev The token, recipients and amounts a top-up motion of `factory` carries
-    function _decodeTopUp(
-        address factory,
-        bytes memory callData
-    ) internal view virtual returns (address token, address[] memory to, uint256[] memory amounts);
+    function _decodeTopUp(address factory, bytes memory callData)
+        internal
+        view
+        virtual
+        returns (address token, address[] memory to, uint256[] memory amounts);
 
     /// @dev `amount` of `token` in the 18 decimals the limits are kept in
-    function _normalizeAmount(
-        address token,
-        uint256 amount
-    ) internal view virtual returns (uint256);
+    function _normalizeAmount(address token, uint256 amount) internal view virtual returns (uint256);
 
     // --- the suite's and the instance's contracts, bound or deployed as the fixtures do ---
 
@@ -203,9 +196,11 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         _registerTopUpFactory(topUpAllowedRecipients);
     }
 
-    function _instance(
-        string memory name
-    ) private view returns (bool found, IntegrationTestAddresses.Instance memory instance) {
+    function _instance(string memory name)
+        private
+        view
+        returns (bool found, IntegrationTestAddresses.Instance memory instance)
+    {
         for (uint256 index; index < instances.length; ++index) {
             if (keccak256(bytes(instances[index].name)) == keccak256(bytes(name))) {
                 return (true, instances[index]);
@@ -229,8 +224,7 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         _registerFactoryIfMissing(
             factory,
             abi.encodePacked(
-                allowedRecipientsRegistry,
-                IAllowedRecipientsRegistry.addRecipient.selector
+                allowedRecipientsRegistry, IAllowedRecipientsRegistry.addRecipient.selector
             )
         );
     }
@@ -239,8 +233,7 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         _registerFactoryIfMissing(
             factory,
             abi.encodePacked(
-                allowedRecipientsRegistry,
-                IAllowedRecipientsRegistry.removeRecipient.selector
+                allowedRecipientsRegistry, IAllowedRecipientsRegistry.removeRecipient.selector
             )
         );
     }
@@ -262,9 +255,7 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     /// @dev python: add_allowed_recipient_by_motion
     function _addRecipientByMotion(address recipient, string memory title) internal {
         _enact(
-            addAllowedRecipient,
-            _trustedCaller(addAllowedRecipient),
-            abi.encode(recipient, title)
+            addAllowedRecipient, _trustedCaller(addAllowedRecipient), abi.encode(recipient, title)
         );
 
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipient), "recipient allowed");
@@ -273,9 +264,7 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     /// @dev python: remove_allowed_recipient_by_motion
     function _removeRecipientByMotion(address recipient) internal {
         _enact(
-            removeAllowedRecipient,
-            _trustedCaller(removeAllowedRecipient),
-            abi.encode(recipient)
+            removeAllowedRecipient, _trustedCaller(removeAllowedRecipient), abi.encode(recipient)
         );
 
         assertFalse(allowedRecipientsRegistry.isRecipientAllowed(recipient), "recipient removed");
@@ -295,11 +284,9 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     ///      check_top_up_motion_enactment. Enacts the motion once it has ended and asserts the
     ///      limits state, the balances and the `SpendableAmountChanged` event of the period the
     ///      enactment falls in. `spentAmount` is what the period already carried.
-    function _enactTopUpMotion(
-        uint256 motionId,
-        bytes memory callData,
-        uint256 spentAmount
-    ) internal {
+    function _enactTopUpMotion(uint256 motionId, bytes memory callData, uint256 spentAmount)
+        internal
+    {
         IEasyTrack.Motion memory motion = easyTrack.getMotion(motionId);
         TopUp memory topUp = _topUp(motion.evmScriptFactory, callData, spentAmount);
 
@@ -307,17 +294,12 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
             _passMotionDuration();
         }
 
-        (uint256 periodStart, uint256 periodEnd) = _periodRange(
-            topUp.periodDuration,
-            vm.getBlockTimestamp()
-        );
+        (uint256 periodStart, uint256 periodEnd) =
+            _periodRange(topUp.periodDuration, vm.getBlockTimestamp());
 
         vm.expectEmit(address(allowedRecipientsRegistry));
         emit IAllowedRecipientsRegistry.SpendableAmountChanged(
-            topUp.alreadySpent,
-            topUp.spendable,
-            periodStart,
-            periodEnd
+            topUp.alreadySpent, topUp.spendable, periodStart, periodEnd
         );
 
         vm.prank(stranger);
@@ -328,11 +310,11 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
 
     /// @dev What a top-up motion of `factory` spends and leaves, over the registry's current
     ///      limit and the balances before enactment
-    function _topUp(
-        address factory,
-        bytes memory callData,
-        uint256 spentAmount
-    ) private view returns (TopUp memory topUp) {
+    function _topUp(address factory, bytes memory callData, uint256 spentAmount)
+        private
+        view
+        returns (TopUp memory topUp)
+    {
         (topUp.token, topUp.to, topUp.amounts) = _decodeTopUp(factory, callData);
         (topUp.limit, topUp.periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         topUp.spendingInTokens = _sum(topUp.amounts);
@@ -357,18 +339,13 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         );
         assertTrue(
             allowedRecipientsRegistry.isUnderSpendableBalance(
-                topUp.limit,
-                topUp.periodDuration * MAX_SECONDS_IN_MONTH
+                topUp.limit, topUp.periodDuration * MAX_SECONDS_IN_MONTH
             ),
             "isUnderSpendableBalance limit"
         );
 
-        (
-            uint256 alreadySpentAmount,
-            uint256 spendableBalanceInPeriod,
-            ,
-
-        ) = allowedRecipientsRegistry.getPeriodState();
+        (uint256 alreadySpentAmount, uint256 spendableBalanceInPeriod,,) =
+            allowedRecipientsRegistry.getPeriodState();
         assertEq(alreadySpentAmount, topUp.alreadySpent, "_alreadySpentAmount");
         assertEq(spendableBalanceInPeriod, topUp.spendable, "_spendableBalanceInPeriod");
 
@@ -416,11 +393,12 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     // --- calendar periods, through the date-time contract the registry computes them with ---
 
     /// @dev python: calc_period_range. The period of `periodDuration` months `timestamp` falls in
-    function _periodRange(
-        uint256 periodDuration,
-        uint256 timestamp
-    ) internal view returns (uint256 periodStart, uint256 periodEnd) {
-        (uint256 year, uint256 month, ) = dateTime.timestampToDate(timestamp);
+    function _periodRange(uint256 periodDuration, uint256 timestamp)
+        internal
+        view
+        returns (uint256 periodStart, uint256 periodEnd)
+    {
+        (uint256 year, uint256 month,) = dateTime.timestampToDate(timestamp);
         uint256 firstMonth = ((month - 1) / periodDuration) * periodDuration + 1;
 
         periodStart = dateTime.timestampFromDate(year, firstMonth, 1);
@@ -438,10 +416,8 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     function _advanceToMiddleOfNextPeriod(uint256 periodDuration) internal {
         _advanceToNextPeriod(periodDuration);
 
-        (uint256 periodStart, uint256 periodEnd) = _periodRange(
-            periodDuration,
-            vm.getBlockTimestamp()
-        );
+        (uint256 periodStart, uint256 periodEnd) =
+            _periodRange(periodDuration, vm.getBlockTimestamp());
 
         vm.warp(periodStart + (periodEnd - periodStart) / 2);
     }
@@ -464,25 +440,6 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         }
     }
 
-    function _single(address recipient) internal pure returns (address[] memory to) {
-        to = new address[](1);
-        to[0] = recipient;
-    }
-
-    function _amounts(uint256 amount) internal pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](1);
-        amounts[0] = amount;
-    }
-
-    function _amounts(
-        uint256 first,
-        uint256 second
-    ) internal pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](2);
-        amounts[0] = first;
-        amounts[1] = second;
-    }
-
     function _sum(uint256[] memory amounts) internal pure returns (uint256 total) {
         for (uint256 index; index < amounts.length; ++index) {
             total += amounts[index];
@@ -490,10 +447,11 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     }
 
     /// @dev python: get_balances
-    function _balances(
-        address token,
-        address[] memory accounts
-    ) internal view returns (uint256[] memory balances) {
+    function _balances(address token, address[] memory accounts)
+        internal
+        view
+        returns (uint256[] memory balances)
+    {
         balances = new uint256[](accounts.length);
         for (uint256 index; index < accounts.length; ++index) {
             balances[index] = IERC20(token).balanceOf(accounts[index]);
@@ -509,17 +467,17 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
 
     /// @dev python: access_revert_message. The OpenZeppelin v4 AccessControl reason, the account
     ///      lowercased as `Strings.toHexString` prints it
-    function _accessRevertMessage(
-        address account,
-        bytes32 role
-    ) internal pure returns (bytes memory) {
-        return
-            abi.encodePacked(
-                "AccessControl: account ",
-                vm.toLowercase(vm.toString(account)),
-                " is missing role ",
-                vm.toString(role)
-            );
+    function _accessRevertMessage(address account, bytes32 role)
+        internal
+        pure
+        returns (bytes memory)
+    {
+        return abi.encodePacked(
+            "AccessControl: account ",
+            vm.toLowercase(vm.toString(account)),
+            " is missing role ",
+            vm.toString(role)
+        );
     }
 }
 
@@ -570,12 +528,7 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
 
     function _deployRegistry() internal override {
         allowedRecipientsRegistry = builder.deployAllowedRecipientsRegistry(
-            LIMIT,
-            PERIOD_DURATION_MONTHS,
-            new address[](0),
-            new string[](0),
-            SPENT_AMOUNT,
-            true
+            LIMIT, PERIOD_DURATION_MONTHS, new address[](0), new string[](0), SPENT_AMOUNT, true
         );
         allowedTokensRegistry = builder.deployAllowedTokensRegistry(new address[](0));
 
@@ -583,37 +536,26 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
     }
 
     function _deployAddFactory() internal override returns (address) {
-        return
-            address(
-                builder.deployAddAllowedRecipient(trustedCaller, address(allowedRecipientsRegistry))
-            );
+        return address(
+            builder.deployAddAllowedRecipient(trustedCaller, address(allowedRecipientsRegistry))
+        );
     }
 
     function _deployRemoveFactory() internal override returns (address) {
-        return
-            address(
-                builder.deployRemoveAllowedRecipient(
-                    trustedCaller,
-                    address(allowedRecipientsRegistry)
-                )
-            );
+        return address(
+            builder.deployRemoveAllowedRecipient(trustedCaller, address(allowedRecipientsRegistry))
+        );
     }
 
     function _deployTopUpFactory() internal override returns (address) {
-        return
-            address(
-                builder.deployTopUpAllowedRecipients(
-                    trustedCaller,
-                    address(allowedRecipientsRegistry),
-                    address(allowedTokensRegistry)
-                )
-            );
+        return address(
+            builder.deployTopUpAllowedRecipients(
+                trustedCaller, address(allowedRecipientsRegistry), address(allowedTokensRegistry)
+            )
+        );
     }
 
-    function _decodeTopUp(
-        address factory,
-        bytes memory callData
-    )
+    function _decodeTopUp(address factory, bytes memory callData)
         internal
         pure
         override
@@ -622,18 +564,20 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
         return ITopUpAllowedRecipients(factory).decodeEVMScriptCallData(callData);
     }
 
-    function _normalizeAmount(
-        address token,
-        uint256 amount
-    ) internal view override returns (uint256) {
+    function _normalizeAmount(address token, uint256 amount)
+        internal
+        view
+        override
+        returns (uint256)
+    {
         return allowedTokensRegistry.normalizeAmount(amount, token);
     }
 
-    function _encodeTopUp(
-        address token,
-        address[] memory to,
-        uint256[] memory amounts
-    ) internal pure returns (bytes memory) {
+    function _encodeTopUp(address token, address[] memory to, uint256[] memory amounts)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(token, to, amounts);
     }
 
@@ -673,8 +617,7 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
         }
 
         address admin = allowedTokensRegistry.hasRole(
-            allowedTokensRegistry.DEFAULT_ADMIN_ROLE(),
-            agent
+            allowedTokensRegistry.DEFAULT_ADMIN_ROLE(), agent
         )
             ? agent
             : voting;
@@ -683,7 +626,7 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
         allowedTokensRegistry.grantRole(role, agent);
     }
 
-    /// @dev python: ensure_agent_dai_balance, which mints from the DAI ward
+    /// @dev python: ensure_agent_dai_balance, with `deal` where the Python mints from the DAI ward
     function _ensureAgentDaiBalance(uint256 amount) internal {
         if (IERC20(dai).balanceOf(agent) >= amount) {
             return;
@@ -731,66 +674,50 @@ abstract contract SingleTokenPayoutsScenarioBase is PayoutsScenarioBase {
 
     function _deployRegistry() internal override {
         allowedRecipientsRegistry = builder.deployAllowedRecipientsRegistry(
-            LIMIT,
-            PERIOD_DURATION_MONTHS,
-            new address[](0),
-            new string[](0),
-            SPENT_AMOUNT,
-            true
+            LIMIT, PERIOD_DURATION_MONTHS, new address[](0), new string[](0), SPENT_AMOUNT, true
         );
     }
 
     function _deployAddFactory() internal override returns (address) {
-        return
-            address(
-                builder.deployAddAllowedRecipient(trustedCaller, address(allowedRecipientsRegistry))
-            );
+        return address(
+            builder.deployAddAllowedRecipient(trustedCaller, address(allowedRecipientsRegistry))
+        );
     }
 
     function _deployRemoveFactory() internal override returns (address) {
-        return
-            address(
-                builder.deployRemoveAllowedRecipient(
-                    trustedCaller,
-                    address(allowedRecipientsRegistry)
-                )
-            );
+        return address(
+            builder.deployRemoveAllowedRecipient(trustedCaller, address(allowedRecipientsRegistry))
+        );
     }
 
     function _deployTopUpFactory() internal override returns (address) {
-        return
-            address(
-                builder.deployTopUpAllowedRecipients(
-                    trustedCaller,
-                    address(allowedRecipientsRegistry),
-                    ldo
-                )
-            );
+        return address(
+            builder.deployTopUpAllowedRecipients(
+                trustedCaller, address(allowedRecipientsRegistry), ldo
+            )
+        );
     }
 
-    function _decodeTopUp(
-        address factory,
-        bytes memory callData
-    )
+    function _decodeTopUp(address factory, bytes memory callData)
         internal
         view
         override
         returns (address token, address[] memory to, uint256[] memory amounts)
     {
         token = ITopUpAllowedRecipientsSingleToken(factory).token();
-        (to, amounts) = ITopUpAllowedRecipientsSingleToken(factory).decodeEVMScriptCallData(
-            callData
-        );
+        (to, amounts) =
+            ITopUpAllowedRecipientsSingleToken(factory).decodeEVMScriptCallData(callData);
     }
 
     function _normalizeAmount(address, uint256 amount) internal pure override returns (uint256) {
         return amount;
     }
 
-    function _encodeTopUp(
-        address[] memory to,
-        uint256[] memory amounts
-    ) internal pure returns (bytes memory) {
+    function _encodeTopUp(address[] memory to, uint256[] memory amounts)
+        internal
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(to, amounts);
     }
 
@@ -823,9 +750,7 @@ abstract contract SingleTokenPayoutsScenarioBase is PayoutsScenarioBase {
         steth.submit{value: stake}(address(0));
 
         assertGe(
-            IERC20(token).balanceOf(agent),
-            requested,
-            "Error when trying to stake ETH for agent"
+            IERC20(token).balanceOf(agent), requested, "Error when trying to stake ETH for agent"
         );
     }
 }

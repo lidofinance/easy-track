@@ -36,7 +36,7 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(reportWithdrawalsForSlashedValidators.trustedCaller(), owner, "trustedCaller");
         assertEq(reportWithdrawalsForSlashedValidators.name(), FACTORY_NAME, "name");
         assertEq(
@@ -97,8 +97,7 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_zero_slashing_penalty, second entry after a valid
-    // one
+    // python: test_create_evm_script_reverts_if_zero_slashing_penalty, second entry
     function test_RevertWhen_SlashingPenaltyIsZeroInSecondEntry() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 0, 100500, 16, true), _info(1, 1, 1, 0, true));
@@ -120,8 +119,7 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_non_existing_operator, second entry after a valid
-    // one
+    // python: test_create_evm_script_reverts_if_non_existing_operator, second entry
     function test_RevertWhen_OperatorDoesNotExistInSecondEntry() external {
         WithdrawnValidatorInfo[] memory infos = _infos(
             _info(0, 0, 100500, 16, true), _info(NODE_OPERATORS_COUNT + 1, 3, 30000, 0, true)
@@ -347,7 +345,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         }
     }
 
-    /// @dev python: encode_call_script of one module.reportSlashedWithdrawnValidators(values)
     function _reportSlashedWithdrawnValidatorsScript(WithdrawnValidatorInfo[] memory infos)
         private
         view

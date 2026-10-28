@@ -6,6 +6,7 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {RewardProgramsRegistry} from "contracts/RewardProgramsRegistry.sol";
 import {EVMScriptExecutorStub} from "contracts/test/EVMScriptExecutorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 
 contract RewardProgramsRegistryTest is Test {
@@ -26,7 +27,8 @@ contract RewardProgramsRegistryTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         evmScriptExecutorStub = new EVMScriptExecutorStub();
-        rewardProgramsRegistry = new RewardProgramsRegistry(voting, _roleHolders(), _roleHolders());
+        address[] memory roleHolders = Arrays.list(voting, address(evmScriptExecutorStub));
+        rewardProgramsRegistry = new RewardProgramsRegistry(voting, roleHolders, roleHolders);
         vm.stopPrank();
 
         vm.label(address(evmScriptExecutorStub), "evmScriptExecutorStub");
@@ -34,7 +36,7 @@ contract RewardProgramsRegistryTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         bytes32 addRole = rewardProgramsRegistry.ADD_REWARD_PROGRAM_ROLE();
         bytes32 removeRole = rewardProgramsRegistry.REMOVE_REWARD_PROGRAM_ROLE();
 
@@ -154,12 +156,6 @@ contract RewardProgramsRegistryTest is Test {
             rewardProgramsRegistry.addRewardProgram(rewardPrograms[i], "");
         }
         vm.stopPrank();
-    }
-
-    function _roleHolders() private view returns (address[] memory holders) {
-        holders = new address[](2);
-        holders[0] = voting;
-        holders[1] = address(evmScriptExecutorStub);
     }
 
     /// @dev `list.pop(index)` of the Python test: `array` without its `index`-th element, order kept

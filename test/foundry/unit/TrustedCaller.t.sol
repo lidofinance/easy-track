@@ -11,13 +11,13 @@ contract TrustedCallerTest is Test {
     address internal trustedCaller = makeAddr("trustedCaller");
 
     // python: test_deploy_zero_address
-    function test_RevertWhen_TrustedCallerIsZeroAddress() external {
+    function test_RevertWhen_TrustedCallerIsZero() external {
         vm.expectRevert("TRUSTED_CALLER_IS_ZERO_ADDRESS");
         new TrustedCaller(address(0));
     }
 
     // python: test_deploy
-    function test_Deploy() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         TrustedCaller trustedCallerContract = new TrustedCaller(trustedCaller);
 

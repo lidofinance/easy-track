@@ -7,6 +7,7 @@ import {Test} from "forge-std/Test.sol";
 import {EditMEVBoostRelays} from "contracts/EVMScriptFactories/EditMEVBoostRelays.sol";
 import {IMEVBoostRelayAllowedList} from "contracts/interfaces/IMEVBoostRelayAllowedList.sol";
 import {MEVBoostRelayAllowedListStub} from "contracts/test/MEVBoostRelayAllowedListStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {MEVBoostRelays} from "test/foundry/unit/helpers/MEVBoostRelays.sol";
 
@@ -29,7 +30,7 @@ contract EditMEVBoostRelaysTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(editMEVBoostRelays.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(editMEVBoostRelays.mevBoostRelayAllowedList()),
@@ -45,7 +46,7 @@ contract EditMEVBoostRelaysTest is Test {
         IMEVBoostRelayAllowedList.Relay[] memory decoded =
             editMEVBoostRelays.decodeEVMScriptCallData(abi.encode(relays));
 
-        _assertRelaysEq(decoded, relays);
+        MEVBoostRelays.assertRelaysEq(decoded, relays);
     }
 
     // python: test_decode_evm_script_call_data_multiple_relays
@@ -56,13 +57,13 @@ contract EditMEVBoostRelaysTest is Test {
         IMEVBoostRelayAllowedList.Relay[] memory decoded =
             editMEVBoostRelays.decodeEVMScriptCallData(abi.encode(relays));
 
-        _assertRelaysEq(decoded, relays);
+        MEVBoostRelays.assertRelaysEq(decoded, relays);
     }
 
     // python: test_edit_single_relay
     function test_EditsSingleRelay() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
-        _addRelays(relays);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -73,7 +74,7 @@ contract EditMEVBoostRelaysTest is Test {
     function test_EditsMultipleRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
-        _addRelays(relays);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -84,7 +85,7 @@ contract EditMEVBoostRelaysTest is Test {
     function test_EditsMaxNumRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
-        _addRelays(relays);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -94,10 +95,10 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_can_edit_relay_and_set_description_to_empty
     function test_EditsRelayAndSetsDescriptionToEmpty() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _addRelay(relay);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);
 
         relay.description = "";
-        IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(relay);
+        IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(relay);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -107,10 +108,10 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_can_edit_relay_and_set_operator_to_empty
     function test_EditsRelayAndSetsOperatorToEmpty() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
-        _addRelay(relay);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);
 
         relay.operator = "";
-        IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(relay);
+        IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(relay);
 
         bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
 
@@ -140,7 +141,7 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_cannot_edit_relay_with_empty_uri
     function test_RevertWhen_RelayUriIsEmpty() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
-            _relays(MEVBoostRelays.relay("", "operator", true, "description"));
+            Arrays.list(MEVBoostRelays.relay("", "operator", true, "description"));
 
         vm.expectRevert("EMPTY_RELAY_URI");
         editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
@@ -149,11 +150,11 @@ contract EditMEVBoostRelaysTest is Test {
     // python: test_cannot_edit_relay_with_duplicate_uri
     function test_RevertWhen_RelaysHaveDuplicateUri() external {
         string memory uri = MEVBoostRelays.relayAt(0).uri;
-        IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(
+        IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(
             MEVBoostRelays.relay(uri, "operator 1", true, "description 1"),
             MEVBoostRelays.relay(uri, "operator 2", false, "description 2")
         );
-        _addRelay(relays[0]);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relays[0]);
 
         vm.expectRevert("DUPLICATE_RELAY_URI");
         editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
@@ -169,7 +170,7 @@ contract EditMEVBoostRelaysTest is Test {
 
     // python: test_cannot_edit_relay_not_in_allow_list_with_multiple_relays
     function test_RevertWhen_RelayIsNotInAllowListWithMultipleRelays() external {
-        _addRelays(MEVBoostRelays.relays(1));
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, MEVBoostRelays.relays(1));
 
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(2);
 
@@ -181,7 +182,9 @@ contract EditMEVBoostRelaysTest is Test {
     function test_RevertWhen_LastRelayIsNotInAllowList() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
-        _addRelays(MEVBoostRelays.relays(relays.length - 1));
+        MEVBoostRelays.addRelays(
+            mevBoostRelayAllowedListStub, owner, MEVBoostRelays.relays(relays.length - 1)
+        );
 
         assertEq(
             mevBoostRelayAllowedListStub.get_relays_amount(), relays.length - 1, "get_relays_amount"
@@ -231,40 +234,6 @@ contract EditMEVBoostRelaysTest is Test {
         editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
-    function _addRelay(IMEVBoostRelayAllowedList.Relay memory relay) private {
-        vm.prank(owner);
-        mevBoostRelayAllowedListStub.add_relay(
-            relay.uri, relay.operator, relay.is_mandatory, relay.description
-        );
-    }
-
-    function _addRelays(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
-        for (uint256 i; i < relays.length; ++i) {
-            _addRelay(relays[i]);
-        }
-    }
-
-    function _relays(IMEVBoostRelayAllowedList.Relay memory relay)
-        private
-        pure
-        returns (IMEVBoostRelayAllowedList.Relay[] memory relays)
-    {
-        relays = new IMEVBoostRelayAllowedList.Relay[](1);
-        relays[0] = relay;
-    }
-
-    function _relays(
-        IMEVBoostRelayAllowedList.Relay memory first,
-        IMEVBoostRelayAllowedList.Relay memory second
-    ) private pure returns (IMEVBoostRelayAllowedList.Relay[] memory relays) {
-        relays = new IMEVBoostRelayAllowedList.Relay[](2);
-        relays[0] = first;
-        relays[1] = second;
-    }
-
-    /// @dev python: encode_call_script of a remove_relay then an add_relay call per relay, in input
-    /// order
     function _editRelaysScript(IMEVBoostRelayAllowedList.Relay[] memory relays)
         private
         view
@@ -278,19 +247,5 @@ contract EditMEVBoostRelaysTest is Test {
         }
 
         return EVMScripts.encodeCallScript(address(mevBoostRelayAllowedListStub), calls);
-    }
-
-    function _assertRelaysEq(
-        IMEVBoostRelayAllowedList.Relay[] memory actual,
-        IMEVBoostRelayAllowedList.Relay[] memory expected
-    ) private pure {
-        assertEq(actual.length, expected.length, "relays.length");
-
-        for (uint256 i; i < expected.length; ++i) {
-            assertEq(actual[i].uri, expected[i].uri, "uri");
-            assertEq(actual[i].operator, expected[i].operator, "operator");
-            assertEq(actual[i].is_mandatory, expected[i].is_mandatory, "is_mandatory");
-            assertEq(actual[i].description, expected[i].description, "description");
-        }
     }
 }

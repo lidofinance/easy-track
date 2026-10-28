@@ -9,6 +9,7 @@ import {
 } from "contracts/EVMScriptFactories/vaultFactories/AlterTiersInOperatorGrid.sol";
 import {IOperatorGrid, TierParams} from "contracts/interfaces/IOperatorGrid.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -45,7 +46,7 @@ contract AlterTiersInOperatorGridTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(alterTiersInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(alterTiersInOperatorGrid.lidoLocator()), address(lidoLocatorStub), "lidoLocator"
@@ -74,8 +75,8 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
-        uint256[] memory tierIds = _tierIds(DEFAULT_TIER_ID, FIRST_TIER_ID);
-        TierParams[] memory tierParams = _tierParams(Vaults.defaultTierParams());
+        uint256[] memory tierIds = Arrays.list(DEFAULT_TIER_ID, FIRST_TIER_ID);
+        TierParams[] memory tierParams = Arrays.list(Vaults.defaultTierParams());
 
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         alterTiersInOperatorGrid.createEVMScript(owner, abi.encode(tierIds, tierParams));
@@ -98,11 +99,11 @@ contract AlterTiersInOperatorGridTest is Test {
     // python: test_create_evm_script
     function test_CreatesEVMScript() external {
         _registerGroupWithTiers(
-            9000, _tierParams(Vaults.defaultTierParams(), Vaults.defaultTierParams())
+            9000, Arrays.list(Vaults.defaultTierParams(), Vaults.defaultTierParams())
         );
 
-        uint256[] memory tierIds = _tierIds(FIRST_TIER_ID, FIRST_TIER_ID + 1);
-        TierParams[] memory tierParams = _tierParams(
+        uint256[] memory tierIds = Arrays.list(FIRST_TIER_ID, FIRST_TIER_ID + 1);
+        TierParams[] memory tierParams = Arrays.list(
             Vaults.tierParams(2000, 300, 150, 75, 60, 20),
             Vaults.tierParams(3000, 400, 200, 100, 80, 30)
         );
@@ -115,15 +116,15 @@ contract AlterTiersInOperatorGridTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        uint256[] memory tierIds = _tierIds(FIRST_TIER_ID, FIRST_TIER_ID + 1);
+        uint256[] memory tierIds = Arrays.list(FIRST_TIER_ID, FIRST_TIER_ID + 1);
         TierParams[] memory tierParams =
-            _tierParams(Vaults.defaultTierParams(), Vaults.tierParams(2000, 300, 150, 75, 60, 20));
+            Arrays.list(Vaults.defaultTierParams(), Vaults.tierParams(2000, 300, 150, 75, 60, 20));
 
         (uint256[] memory decodedTierIds, TierParams[] memory decodedTierParams) =
             alterTiersInOperatorGrid.decodeEVMScriptCallData(abi.encode(tierIds, tierParams));
 
         assertEq(decodedTierIds, tierIds, "tierIds");
-        _assertTierParamsEq(decodedTierParams, tierParams);
+        Vaults.assertTierParamsEq(decodedTierParams, tierParams);
     }
 
     // python: test_zero_reserve_ratio
@@ -323,32 +324,7 @@ contract AlterTiersInOperatorGridTest is Test {
     /// @dev The arrangement the bound tests share: a group of share limit 1000 with one default
     /// tier, registered as `FIRST_TIER_ID`
     function _registerGroupWithDefaultTier() private {
-        _registerGroupWithTiers(GROUP_SHARE_LIMIT, _tierParams(Vaults.defaultTierParams()));
-    }
-
-    function _tierIds(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory tierIds)
-    {
-        tierIds = new uint256[](2);
-        tierIds[0] = first;
-        tierIds[1] = second;
-    }
-
-    function _tierParams(TierParams memory params) private pure returns (TierParams[] memory list) {
-        list = new TierParams[](1);
-        list[0] = params;
-    }
-
-    function _tierParams(TierParams memory first, TierParams memory second)
-        private
-        pure
-        returns (TierParams[] memory list)
-    {
-        list = new TierParams[](2);
-        list[0] = first;
-        list[1] = second;
+        _registerGroupWithTiers(GROUP_SHARE_LIMIT, Arrays.list(Vaults.defaultTierParams()));
     }
 
     /// @dev python: create_calldata([tierId], [params])
@@ -357,14 +333,9 @@ contract AlterTiersInOperatorGridTest is Test {
         pure
         returns (bytes memory)
     {
-        uint256[] memory tierIds = new uint256[](1);
-        tierIds[0] = tierId;
-
-        return abi.encode(tierIds, _tierParams(params));
+        return abi.encode(Arrays.list(tierId), Arrays.list(params));
     }
 
-    /// @dev python: encode_call_script([(operator_grid_stub, alterTiers.encode_input(tier_ids,
-    /// tier_params))])
     function _alterTiersScript(uint256[] memory tierIds, TierParams[] memory tierParams)
         private
         view
@@ -374,25 +345,5 @@ contract AlterTiersInOperatorGridTest is Test {
             address(operatorGrid),
             abi.encodeWithSelector(IOperatorGrid.alterTiers.selector, tierIds, tierParams)
         );
-    }
-
-    function _assertTierParamsEq(TierParams[] memory actual, TierParams[] memory expected)
-        private
-        pure
-    {
-        assertEq(actual.length, expected.length, "tierParams.length");
-
-        for (uint256 i; i < actual.length; ++i) {
-            assertEq(actual[i].shareLimit, expected[i].shareLimit, "shareLimit");
-            assertEq(actual[i].reserveRatioBP, expected[i].reserveRatioBP, "reserveRatioBP");
-            assertEq(
-                actual[i].forcedRebalanceThresholdBP,
-                expected[i].forcedRebalanceThresholdBP,
-                "forcedRebalanceThresholdBP"
-            );
-            assertEq(actual[i].infraFeeBP, expected[i].infraFeeBP, "infraFeeBP");
-            assertEq(actual[i].liquidityFeeBP, expected[i].liquidityFeeBP, "liquidityFeeBP");
-            assertEq(actual[i].reservationFeeBP, expected[i].reservationFeeBP, "reservationFeeBP");
-        }
     }
 }

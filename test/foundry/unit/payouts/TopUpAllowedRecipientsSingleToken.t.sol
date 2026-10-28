@@ -10,6 +10,7 @@ import {
 import {AllowedRecipientsRegistry} from "contracts/AllowedRecipientsRegistry.sol";
 import {EasyTrack} from "contracts/EasyTrack.sol";
 import {IFinance} from "contracts/interfaces/IFinance.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {Constants} from "test/foundry/unit/helpers/Constants.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {
@@ -56,10 +57,10 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
         );
         allowedRecipientsRegistry = new AllowedRecipientsRegistry(
             owner,
-            _addresses(addRecipientRoleHolder),
-            _addresses(removeRecipientRoleHolder),
-            _addresses(setLimitRoleHolder),
-            _addresses(updateSpentRoleHolder),
+            Arrays.list(addRecipientRoleHolder),
+            Arrays.list(removeRecipientRoleHolder),
+            Arrays.list(setLimitRoleHolder),
+            Arrays.list(updateSpentRoleHolder),
             bokkyPooBahsDateTimeContract
         );
         topUpAllowedRecipientsSingleToken = new TopUpAllowedRecipientsSingleToken(
@@ -78,7 +79,7 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
     }
 
     // python: test_top_up_factory_initial_state
-    function test_TopUpFactoryInitialState() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         TopUpAllowedRecipientsSingleToken topUpFactory = new TopUpAllowedRecipientsSingleToken(
             trustedCaller,
@@ -100,7 +101,7 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
     }
 
     // python: test_fail_if_zero_trusted_caller
-    function test_RevertWhen_TrustedCallerIsZeroAddress() external {
+    function test_RevertWhen_TrustedCallerIsZero() external {
         vm.expectRevert("TRUSTED_CALLER_IS_ZERO_ADDRESS");
         new TopUpAllowedRecipientsSingleToken(
             address(0),
@@ -112,7 +113,7 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
     }
 
     // python: test_top_up_factory_constructor_zero_argument_addresses_allowed
-    function test_DeploysWithZeroArgumentAddresses() external {
+    function test_DeploysWithZeroAddresses() external {
         vm.prank(owner);
         TopUpAllowedRecipientsSingleToken topUpFactory = new TopUpAllowedRecipientsSingleToken(
             trustedCaller, address(0), address(0), address(0), address(0)
@@ -138,44 +139,45 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
     }
 
     // python: test_create_evm_script_is_permissionless
-    function test_CreateEVMScriptIsPermissionless() external {
+    function test_CreatesEVMScriptFromAnyCaller() external {
         _allowRecipient(stranger, "Test Recipient");
         _setLimit(LIMIT);
 
         vm.prank(stranger);
         bytes memory evmScript = topUpAllowedRecipientsSingleToken.createEVMScript(
-            trustedCaller, _callData(_addresses(stranger), _amounts(123))
+            trustedCaller, _callData(Arrays.list(stranger), Arrays.list(123))
         );
 
-        address[] memory targets = _addresses(address(allowedRecipientsRegistry), finance);
-        bytes[] memory datas = new bytes[](2);
-        datas[0] = abi.encodeWithSelector(allowedRecipientsRegistry.updateSpentAmount.selector, 123);
-        datas[1] = _newImmediatePaymentCallData(stranger, 123);
+        address[] memory targets = Arrays.list(address(allowedRecipientsRegistry), finance);
+        bytes[] memory datas = Arrays.list(
+            abi.encodeWithSelector(allowedRecipientsRegistry.updateSpentAmount.selector, 123),
+            _newImmediatePaymentCallData(stranger, 123)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
     // python: test_decode_evm_script_calldata_is_permissionless
-    function test_DecodeEVMScriptCallDataIsPermissionless() external {
+    function test_DecodesEVMScriptCallDataFromAnyCaller() external {
         vm.prank(stranger);
         (address[] memory recipients, uint256[] memory amounts) = topUpAllowedRecipientsSingleToken.decodeEVMScriptCallData(
-            _callData(_addresses(stranger), _amounts(123))
+            _callData(Arrays.list(stranger), Arrays.list(123))
         );
 
-        assertEq(recipients, _addresses(stranger), "recipients");
-        assertEq(amounts, _amounts(123), "amounts");
+        assertEq(recipients, Arrays.list(stranger), "recipients");
+        assertEq(amounts, Arrays.list(123), "amounts");
     }
 
     // python: test_fail_create_evm_script_if_length_mismatch
     function test_RevertWhen_LengthMismatch() external {
         vm.expectRevert("LENGTH_MISMATCH");
         topUpAllowedRecipientsSingleToken.createEVMScript(
-            trustedCaller, _callData(_addresses(recipient), new uint256[](0))
+            trustedCaller, _callData(Arrays.list(recipient), new uint256[](0))
         );
 
         vm.expectRevert("LENGTH_MISMATCH");
         topUpAllowedRecipientsSingleToken.createEVMScript(
-            trustedCaller, _callData(new address[](0), _amounts(123))
+            trustedCaller, _callData(new address[](0), Arrays.list(123))
         );
     }
 
@@ -194,11 +196,13 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
         TopUpAllowedRecipientsSingleToken topUpFactory = _deployTopUpFactoryTrustedByOwner();
 
         vm.expectRevert("ZERO_AMOUNT");
-        topUpFactory.createEVMScript(owner, _callData(_addresses(recipient), _amounts(0)));
+        topUpFactory.createEVMScript(
+            owner, _callData(Arrays.list(recipient), Arrays.list(uint256(0)))
+        );
 
         vm.expectRevert("ZERO_AMOUNT");
         topUpFactory.createEVMScript(
-            owner, _callData(_addresses(recipient, recipient), _amounts(123, 0))
+            owner, _callData(Arrays.list(recipient, recipient), Arrays.list(123, 0))
         );
     }
 
@@ -209,17 +213,17 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
         TopUpAllowedRecipientsSingleToken topUpFactory = _deployTopUpFactoryTrustedByOwner();
 
         vm.expectRevert("RECIPIENT_NOT_ALLOWED");
-        topUpFactory.createEVMScript(owner, _callData(_addresses(stranger), _amounts(123)));
+        topUpFactory.createEVMScript(owner, _callData(Arrays.list(stranger), Arrays.list(123)));
     }
 
     // python: test_top_up_factory_evm_script_creation_happy_path
-    function test_TopUpFactoryEVMScriptCreationHappyPath() external {
+    function test_CreatesEVMScriptForSingleRecipient() external {
         _allowRecipient(recipient, "Test Recipient");
         _setLimit(LIMIT);
         TopUpAllowedRecipientsSingleToken topUpFactory = _deployTopUpFactoryTrustedByOwner();
 
-        address[] memory recipients = _addresses(recipient);
-        uint256[] memory amounts = _amounts(1 ether);
+        address[] memory recipients = Arrays.list(recipient);
+        uint256[] memory amounts = Arrays.list(1 ether);
         bytes memory callData = _callData(recipients, amounts);
 
         bytes memory evmScript = topUpFactory.createEVMScript(owner, callData);
@@ -235,14 +239,14 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
     }
 
     // python: test_top_up_factory_evm_script_creation_multiple_recipients_happy_path
-    function test_TopUpFactoryEVMScriptCreationMultipleRecipientsHappyPath() external {
+    function test_CreatesEVMScriptForMultipleRecipients() external {
         _allowRecipient(recipient, "Test Recipient 1");
         _allowRecipient(secondRecipient, "Test Recipient 2");
         _setLimit(LIMIT);
         TopUpAllowedRecipientsSingleToken topUpFactory = _deployTopUpFactoryTrustedByOwner();
 
-        address[] memory recipients = _addresses(recipient, secondRecipient);
-        uint256[] memory amounts = _amounts(1 ether, 2 ether);
+        address[] memory recipients = Arrays.list(recipient, secondRecipient);
+        uint256[] memory amounts = Arrays.list(1 ether, 2 ether);
         bytes memory callData = _callData(recipients, amounts);
 
         bytes memory evmScript = topUpFactory.createEVMScript(owner, callData);
@@ -266,7 +270,8 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
 
         vm.expectRevert("SUM_EXCEEDS_SPENDABLE_BALANCE");
         topUpFactory.createEVMScript(
-            owner, _callData(_addresses(recipient, secondRecipient), _amounts(10 ether, 20 ether))
+            owner,
+            _callData(Arrays.list(recipient, secondRecipient), Arrays.list(10 ether, 20 ether))
         );
     }
 
@@ -278,15 +283,15 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
         TopUpAllowedRecipientsSingleToken topUpFactory = _deployTopUpFactoryTrustedByOwner();
 
         bytes memory evmScript = topUpFactory.createEVMScript(
-            owner, _callData(_addresses(recipient, secondRecipient), _amounts(1 ether, 2 ether))
+            owner, _callData(Arrays.list(recipient, secondRecipient), Arrays.list(1 ether, 2 ether))
         );
 
-        address[] memory targets = _addresses(address(allowedRecipientsRegistry), finance, finance);
-        bytes[] memory datas = new bytes[](3);
-        datas[0] =
-            abi.encodeWithSelector(allowedRecipientsRegistry.updateSpentAmount.selector, 3 ether);
-        datas[1] = _newImmediatePaymentCallData(recipient, 1 ether);
-        datas[2] = _newImmediatePaymentCallData(secondRecipient, 2 ether);
+        address[] memory targets = Arrays.list(address(allowedRecipientsRegistry), finance, finance);
+        bytes[] memory datas = Arrays.list(
+            abi.encodeWithSelector(allowedRecipientsRegistry.updateSpentAmount.selector, 3 ether),
+            _newImmediatePaymentCallData(recipient, 1 ether),
+            _newImmediatePaymentCallData(secondRecipient, 2 ether)
+        );
 
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
@@ -294,11 +299,11 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         (address[] memory recipients, uint256[] memory amounts) = topUpAllowedRecipientsSingleToken.decodeEVMScriptCallData(
-            _callData(_addresses(recipient), _amounts(1 ether))
+            _callData(Arrays.list(recipient), Arrays.list(1 ether))
         );
 
-        assertEq(recipients, _addresses(recipient), "recipients");
-        assertEq(amounts, _amounts(1 ether), "amounts");
+        assertEq(recipients, Arrays.list(recipient), "recipients");
+        assertEq(amounts, Arrays.list(1 ether), "amounts");
     }
 
     /// @dev python: registry.addRecipient(recipient, title) from add_recipient_role_holder
@@ -325,7 +330,7 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
         );
     }
 
-    /// @dev python: C(recipients, amounts) = encode_calldata(["address[]", "uint256[]"], ...)
+    /// @dev python: make_call_data
     function _callData(address[] memory recipients, uint256[] memory amounts)
         private
         pure
@@ -358,38 +363,5 @@ contract TopUpAllowedRecipientsSingleTokenTest is Test {
         }
 
         return false;
-    }
-
-    function _addresses(address a) private pure returns (address[] memory addresses) {
-        addresses = new address[](1);
-        addresses[0] = a;
-    }
-
-    function _addresses(address a, address b) private pure returns (address[] memory addresses) {
-        addresses = new address[](2);
-        addresses[0] = a;
-        addresses[1] = b;
-    }
-
-    function _addresses(address a, address b, address c)
-        private
-        pure
-        returns (address[] memory addresses)
-    {
-        addresses = new address[](3);
-        addresses[0] = a;
-        addresses[1] = b;
-        addresses[2] = c;
-    }
-
-    function _amounts(uint256 a) private pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](1);
-        amounts[0] = a;
-    }
-
-    function _amounts(uint256 a, uint256 b) private pure returns (uint256[] memory amounts) {
-        amounts = new uint256[](2);
-        amounts[0] = a;
-        amounts[1] = b;
     }
 }

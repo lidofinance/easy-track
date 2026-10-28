@@ -9,6 +9,7 @@ import {
 } from "contracts/EVMScriptFactories/vaultFactories/UpdateGroupsShareLimitInOperatorGrid.sol";
 import {IOperatorGrid} from "contracts/interfaces/IOperatorGrid.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -43,7 +44,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(updateGroupsShareLimitInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(updateGroupsShareLimitInOperatorGrid.lidoLocator()),
@@ -73,7 +74,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
-            owner, abi.encode(_operators(stranger), _shareLimits(1000, 2000))
+            owner, abi.encode(Arrays.list(stranger), Arrays.list(1000, 2000))
         );
     }
 
@@ -81,7 +82,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
     function test_RevertWhen_NodeOperatorIsZero() external {
         vm.expectRevert("ZERO_NODE_OPERATOR");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
-            owner, abi.encode(_operators(address(0), stranger), _shareLimits(1000, 2000))
+            owner, abi.encode(Arrays.list(address(0), stranger), Arrays.list(1000, 2000))
         );
     }
 
@@ -89,7 +90,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
     function test_RevertWhen_GroupDoesNotExist() external {
         vm.expectRevert("GROUP_NOT_EXISTS");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
-            owner, abi.encode(_operators(stranger, nodeOperator), _shareLimits(1000, 2000))
+            owner, abi.encode(Arrays.list(stranger, nodeOperator), Arrays.list(1000, 2000))
         );
     }
 
@@ -101,7 +102,7 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
 
         vm.expectRevert("SHARE_LIMIT_TOO_HIGH");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
-            owner, abi.encode(_operators(nodeOperator), _shareLimits(shareLimit))
+            owner, abi.encode(Arrays.list(nodeOperator), Arrays.list(shareLimit))
         );
     }
 
@@ -110,8 +111,8 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         _registerGroup(nodeOperator, 1000);
         _registerGroup(anotherNodeOperator, 1500);
 
-        address[] memory nodeOperators = _operators(nodeOperator, anotherNodeOperator);
-        uint256[] memory shareLimits = _shareLimits(2000, 3000);
+        address[] memory nodeOperators = Arrays.list(nodeOperator, anotherNodeOperator);
+        uint256[] memory shareLimits = Arrays.list(2000, 3000);
 
         bytes memory evmScript = updateGroupsShareLimitInOperatorGrid.createEVMScript(
             owner, abi.encode(nodeOperators, shareLimits)
@@ -122,8 +123,8 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory nodeOperators = _operators(nodeOperator, anotherNodeOperator);
-        uint256[] memory shareLimits = _shareLimits(2000, 3000);
+        address[] memory nodeOperators = Arrays.list(nodeOperator, anotherNodeOperator);
+        uint256[] memory shareLimits = Arrays.list(2000, 3000);
 
         (address[] memory decodedNodeOperators, uint256[] memory decodedShareLimits) = updateGroupsShareLimitInOperatorGrid.decodeEVMScriptCallData(
             abi.encode(nodeOperators, shareLimits)
@@ -145,38 +146,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         operatorGrid.registerGroup(operator, shareLimit);
     }
 
-    function _operators(address operator) private pure returns (address[] memory nodeOperators) {
-        nodeOperators = new address[](1);
-        nodeOperators[0] = operator;
-    }
-
-    function _operators(address first, address second)
-        private
-        pure
-        returns (address[] memory nodeOperators)
-    {
-        nodeOperators = new address[](2);
-        nodeOperators[0] = first;
-        nodeOperators[1] = second;
-    }
-
-    function _shareLimits(uint256 shareLimit) private pure returns (uint256[] memory shareLimits) {
-        shareLimits = new uint256[](1);
-        shareLimits[0] = shareLimit;
-    }
-
-    function _shareLimits(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory shareLimits)
-    {
-        shareLimits = new uint256[](2);
-        shareLimits[0] = first;
-        shareLimits[1] = second;
-    }
-
-    /// @dev python: encode_call_script of one updateGroupShareLimit per operator, every call to
-    /// the operator grid
     function _updateGroupShareLimitsScript(
         address[] memory nodeOperators,
         uint256[] memory shareLimits

@@ -10,13 +10,13 @@ import {IACL} from "test/foundry/interfaces/External.sol";
 ///         build on: a grant with a parameter is invisible to the plain `hasPermission`, and a
 ///         regrant replaces the parameter list. The Agent manages a fresh role on itself.
 contract AragonACLTest is EasyTrackScenarioBase {
-    bytes32 private constant TEST_ROLE = keccak256("STAKING_MODULE_MANAGE_ROLE");
+    bytes32 internal constant TEST_ROLE = keccak256("STAKING_MODULE_MANAGE_ROLE");
 
     /// @dev `Param(0, Op.EQ, value)`: the guarded call's first argument must equal `value`
-    uint8 private constant FIRST_ARGUMENT = 0;
-    uint8 private constant OP_EQ = 1;
-    uint240 private constant PARAM_VALUE = 3;
-    uint240 private constant NEW_PARAM_VALUE = 4;
+    uint8 internal constant FIRST_ARGUMENT = 0;
+    uint8 internal constant OP_EQ = 1;
+    uint240 internal constant PARAM_VALUE = 3;
+    uint240 internal constant NEW_PARAM_VALUE = 4;
 
     IACL internal acl;
     address internal agent;
@@ -75,7 +75,7 @@ contract AragonACLTest is EasyTrackScenarioBase {
     }
 
     // python: test_aragon_acl_two_roles_with_different_params
-    function testFork_RegrantReplacesPermissionParams() external {
+    function testFork_ReplacesPermissionParamsOnRegrant() external {
         assertFalse(acl.hasPermission(stranger, agent, TEST_ROLE), "hasPermission before");
 
         _createPermission();

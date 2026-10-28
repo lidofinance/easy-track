@@ -14,7 +14,7 @@ import {IAllowedRecipientsRegistry} from "test/foundry/interfaces/Payouts.sol";
 ///         contract below: the listed registry and factories, a missing factory deployed fresh
 ///         over the listed registry, or, on a chain without the file, everything fresh paying LDO.
 abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsScenarioBase {
-    string private constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
+    string internal constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
     /// @dev python: the pytest id of the `deployed_contracts` parameter
     function _instanceName() internal pure virtual returns (string memory);
@@ -26,7 +26,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_add_recipient_motion
-    function testFork_AddRecipientMotion() external {
+    function testFork_AddsRecipientByMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory callData = abi.encode(recipients[0], titles[0]);
         uint256 motionId =
@@ -47,7 +47,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_add_multiple_recipients_by_concurrent_motions
-    function testFork_AddMultipleRecipientsByConcurrentMotions() external {
+    function testFork_AddsMultipleRecipientsByConcurrentMotions() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory firstCallData = abi.encode(recipients[0], titles[0]);
         bytes memory secondCallData = abi.encode(recipients[1], titles[1]);
@@ -91,7 +91,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_remove_recipient_motion
-    function testFork_RemoveRecipientMotion() external {
+    function testFork_RemovesRecipientByMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         _addRecipientByMotion(recipients[0], titles[0]);
 
@@ -140,7 +140,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_single_recipient
-    function testFork_TopUpSingleRecipient() external {
+    function testFork_TopsUpSingleRecipient() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
 
@@ -152,7 +152,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_single_recipient_several_times_in_period
-    function testFork_TopUpSingleRecipientSeveralTimesInPeriod() external {
+    function testFork_TopsUpSingleRecipientSeveralTimesInPeriod() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentTokenBalance(2 * limit);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -175,7 +175,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_multiple_recipients
-    function testFork_TopUpMultipleRecipients() external {
+    function testFork_TopsUpMultipleRecipients() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -188,7 +188,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_motion_enacted_in_next_period
-    function testFork_TopUpMotionEnactedInNextPeriod() external {
+    function testFork_EnactsTopUpMotionInNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -204,7 +204,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_motion_ended_and_enacted_in_next_period
-    function testFork_TopUpMotionEndedAndEnactedInNextPeriod() external {
+    function testFork_EnactsEndedTopUpMotionInNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -226,7 +226,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_motion_enacted_in_second_next_period
-    function testFork_TopUpMotionEnactedInSecondNextPeriod() external {
+    function testFork_EnactsTopUpMotionInSecondNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -242,7 +242,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_spendable_balance_is_renewed_in_next_period
-    function testFork_SpendableBalanceIsRenewedInNextPeriod() external {
+    function testFork_RenewsSpendableBalanceInNextPeriod() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentTokenBalance(2 * limit);
 
@@ -328,7 +328,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next
-    function testFork_SecondTopUpMotionFailsDueLimitButEnactsInNextPeriod() external {
+    function testFork_EnactsSecondTopUpMotionInNextPeriodAfterLimitRejection() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentTokenBalance(2 * limit);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -403,7 +403,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_if_limit_increased_while_motion_is_in_flight
-    function testFork_TopUpIfLimitIncreasedWhileMotionIsInFlight() external {
+    function testFork_TopsUpWhenLimitIncreasesWhileMotionIsInFlight() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentTokenBalance(limit);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -420,7 +420,7 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_increased
-    function testFork_SecondMotionEnactsAfterLimitIncreased() external {
+    function testFork_EnactsSecondMotionAfterLimitIncrease() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentTokenBalance(2 * limit);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -454,27 +454,27 @@ abstract contract AllowedRecipientsMotionsSingleTokenTest is SingleTokenPayoutsS
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[3-2]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_3To2() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_3To2() external {
         _spendableRenewalIfPeriodDurationChanged(3, 2);
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[3-6]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_3To6() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_3To6() external {
         _spendableRenewalIfPeriodDurationChanged(3, 6);
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[12-1]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_12To1() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_12To1() external {
         _spendableRenewalIfPeriodDurationChanged(12, 1);
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[1-12]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_1To12() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_1To12() external {
         _spendableRenewalIfPeriodDurationChanged(1, 12);
     }
 
     // python: test_set_limit_parameters_by_aragon_agent_via_voting
-    function testFork_SetLimitParametersByAragonAgentViaVoting() external {
+    function testFork_SetsLimitParametersByAragonAgentViaVoting() external {
         // The vote forwards the call through the Agent, replayed as the Agent's call
         vm.prank(agent);
         allowedRecipientsRegistry.setLimitParameters(100e18, 6);

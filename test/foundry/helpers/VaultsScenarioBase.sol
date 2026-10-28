@@ -6,6 +6,7 @@ pragma solidity ^0.8.25;
 import {Vm} from "forge-std/Vm.sol";
 import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
 import {ILidoLocator} from "test/foundry/interfaces/External.sol";
+import {IVaultsAdapterFactory} from "test/foundry/interfaces/Factories.sol";
 import {
     ILazyOracle,
     IOperatorGrid,
@@ -223,6 +224,22 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
                 return logs[i];
             }
         }
+    }
+
+    /// @dev The factory trusts the creator and acts through the adapter, which trusts the creator,
+    ///      takes the fresh executor's calls and pays validator exits up to the limit
+    function _assertAdapterFactory(address factory) internal view {
+        assertEq(IVaultsAdapterFactory(factory).trustedCaller(), creator, "setup: trustedCaller");
+        assertEq(
+            IVaultsAdapterFactory(factory).vaultsAdapter(), address(adapter), "setup: vaultsAdapter"
+        );
+        assertEq(adapter.trustedCaller(), creator, "setup: adapter trustedCaller");
+        assertEq(adapter.evmScriptExecutor(), evmScriptExecutor, "setup: adapter evmScriptExecutor");
+        assertEq(
+            adapter.validatorExitFeeLimit(),
+            VALIDATOR_EXIT_FEE_LIMIT,
+            "setup: validatorExitFeeLimit"
+        );
     }
 
     // --- chain ---

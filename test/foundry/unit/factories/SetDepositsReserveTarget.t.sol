@@ -35,7 +35,7 @@ contract SetDepositsReserveTargetTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setDepositsReserveTarget.trustedCaller(), owner, "trustedCaller");
         assertEq(
             setDepositsReserveTarget.MAX_DEPOSITS_RESERVE_TARGET(),
@@ -108,7 +108,6 @@ contract SetDepositsReserveTargetTest is Test {
         assertEq(decoded, NEW_DEPOSITS_RESERVE_TARGET, "newDepositsReserveTarget");
     }
 
-    /// @dev python: encode_call_script of one lido_stub.setDepositsReserveTarget call
     function _setDepositsReserveTargetScript(uint256 target) private view returns (bytes memory) {
         return EVMScripts.encodeCallScript(
             address(lidoStub),

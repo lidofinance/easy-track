@@ -11,10 +11,10 @@ import {IMEVBoostRelaysFactory} from "test/foundry/interfaces/Factories.sol";
 ///         over the live relay allowed list, with the executor as its manager, what the DAO vote
 ///         sets. The Agent, the list's owner, seeds and cleans up relays around the motions.
 contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
-    uint256 private constant MAX_NUM_RELAYS = 40;
+    uint256 internal constant MAX_NUM_RELAYS = 40;
 
     /// @dev python: len(mev_boost_relay_test_config["relays"])
-    uint256 private constant RELAYS_COUNT = 3;
+    uint256 internal constant RELAYS_COUNT = 3;
 
     IMEVBoostRelayAllowedList internal allowedList;
 
@@ -60,7 +60,7 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
     }
 
     // python: test_add_mev_boost_relays_allowed_list_happy_path
-    function testFork_AddRelays() external {
+    function testFork_AddsRelays() external {
         _makeRoom(RELAYS_COUNT);
 
         _addByMotion(_relays(1));
@@ -68,7 +68,7 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
     }
 
     // python: test_add_mev_boost_relays_allowed_list_full_list_happy_path
-    function testFork_AddRelaysUpToFullList() external {
+    function testFork_AddsRelaysUpToFullList() external {
         IMEVBoostRelayAllowedList.Relay[] memory current = allowedList.get_relays();
         _removeRelays(current);
 
@@ -76,18 +76,18 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
     }
 
     // python: test_remove_mev_boost_relays_allowed_list_happy_path
-    function testFork_RemoveRelays() external {
+    function testFork_RemovesRelays() external {
         _removeByMotion(_relays(1));
         _removeByMotion(_relays(RELAYS_COUNT));
     }
 
     // python: test_remove_mev_boost_relays_allowed_list_full_list_happy_path
-    function testFork_RemoveFullList() external {
+    function testFork_RemovesFullList() external {
         _removeByMotion(_padded(allowedList.get_relays()));
     }
 
     // python: test_edit_mev_boost_relays_allowed_list_happy_path
-    function testFork_EditRelays() external {
+    function testFork_EditsRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(RELAYS_COUNT);
         IMEVBoostRelayAllowedList.Relay[] memory modified =
             new IMEVBoostRelayAllowedList.Relay[](RELAYS_COUNT);

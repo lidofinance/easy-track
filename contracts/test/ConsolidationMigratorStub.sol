@@ -66,7 +66,7 @@ contract ConsolidationMigratorStub is IConsolidationMigrator {
         return _stakingRouter;
     }
 
-    function getConsolidationBus() external pure override returns (address) {
+    function getConsolidationBus() external view override returns (address) {
         return address(0);
     }
 

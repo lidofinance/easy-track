@@ -19,8 +19,8 @@
     "lint": "pretty-quick --pattern '**/*.*(sol|json)' --verbose",
     "lint:check": "prettier --check **/*.sol **/*.json",
     "lint:fix": "pretty-quick --pattern '**/*.*(sol|json)' --staged --verbose",
-    "test:unit": "FOUNDRY_PROFILE=unit forge test",
-    "test:scenario": "forge test --match-path 'test/foundry/scenario/**'"
+    "test": "forge test",
+    "test:scenario": "forge build && FOUNDRY_PROFILE=scenario forge test"
   },
   "husky": {
     "hooks": {

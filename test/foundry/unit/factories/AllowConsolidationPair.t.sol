@@ -11,7 +11,9 @@ import {CSModuleNodeOperatorsStub} from "contracts/test/CSModuleNodeOperatorsStu
 import {MetaRegistryStub} from "contracts/test/MetaRegistryStub.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
 import {StakingRouterStub} from "contracts/test/StakingRouterStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 
 contract AllowConsolidationPairTest is Test {
     uint256 internal constant SOURCE_MODULE_ID = 1;
@@ -25,9 +27,6 @@ contract AllowConsolidationPairTest is Test {
     uint256 internal constant SOURCE_NODE_OPERATORS_COUNT = SOURCE_OPERATOR_ID + 1;
     /// @dev python: TARGET_OPERATOR_IDS[-1] + 2
     uint256 internal constant TARGET_NODE_OPERATORS_COUNT = SECOND_TARGET_OPERATOR_ID + 2;
-    /// @dev keccak256("MANAGE_SIGNING_KEYS")
-    bytes32 internal constant MANAGE_SIGNING_KEYS_ROLE =
-        0x75abc64490e17b40ea1e66691c3eb493647b24430b358bd87ec3e5127f1621ee;
     /// @dev ExternalOperatorLib.OperatorType.NOR, the first byte of an external operator key
     bytes1 internal constant EXT_OPERATOR_TYPE_NOR = 0x00;
 
@@ -79,7 +78,7 @@ contract AllowConsolidationPairTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(
             address(allowConsolidationPair.consolidationMigrator()),
             address(consolidationMigratorStub),
@@ -145,14 +144,16 @@ contract AllowConsolidationPairTest is Test {
 
     // python: test_caller_with_manage_signing_keys_role_can_create_script
     function test_CreatesEVMScriptForManageSigningKeysRoleHolder() external {
-        sourceModuleStub.setCanPerform(stranger, MANAGE_SIGNING_KEYS_ROLE, SOURCE_OPERATOR_ID, true);
+        sourceModuleStub.setCanPerform(
+            stranger, Roles.MANAGE_SIGNING_KEYS_ROLE, SOURCE_OPERATOR_ID, true
+        );
 
         bytes memory evmScript = allowConsolidationPair.createEVMScript(stranger, _callData(owner));
 
         assertEq(
             evmScript,
             _allowPairsScript(
-                owner, _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
+                owner, Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
             ),
             "evmScript"
         );
@@ -166,7 +167,7 @@ contract AllowConsolidationPairTest is Test {
         assertEq(
             evmScript,
             _allowPairsScript(
-                owner, _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
+                owner, Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
             ),
             "evmScript"
         );
@@ -183,9 +184,7 @@ contract AllowConsolidationPairTest is Test {
         vm.expectRevert("TARGET_OPERATOR_IDS_NOT_SORTED");
         allowConsolidationPair.createEVMScript(
             owner,
-            _callData(
-                owner, _targetOperatorIds(SECOND_TARGET_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID)
-            )
+            _callData(owner, Arrays.list(SECOND_TARGET_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID))
         );
     }
 
@@ -193,8 +192,7 @@ contract AllowConsolidationPairTest is Test {
     function test_RevertWhen_TargetOperatorIdsHaveDuplicates() external {
         vm.expectRevert("TARGET_OPERATOR_IDS_NOT_SORTED");
         allowConsolidationPair.createEVMScript(
-            owner,
-            _callData(owner, _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID))
+            owner, _callData(owner, Arrays.list(FIRST_TARGET_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID))
         );
     }
 
@@ -232,7 +230,7 @@ contract AllowConsolidationPairTest is Test {
 
         vm.expectRevert("OPERATORS_ARE_NOT_LINKED_BY_META_REGISTRY");
         allowConsolidationPair.createEVMScript(
-            owner, _callData(owner, _targetOperatorIds(FIRST_TARGET_OPERATOR_ID))
+            owner, _callData(owner, Arrays.list(FIRST_TARGET_OPERATOR_ID))
         );
     }
 
@@ -245,14 +243,14 @@ contract AllowConsolidationPairTest is Test {
         assertEq(
             evmScript,
             _allowPairsScript(
-                owner, _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
+                owner, Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
             ),
             "evmScript"
         );
     }
 
     // python: test_consolidation_migrator_stub_overwrites_submitter_without_duplicate_target
-    function test_MigratorStubOverwritesSubmitterWithoutDuplicateTarget() external {
+    function test_OverwritesMigratorStubSubmitterWithoutDuplicateTarget() external {
         consolidationMigratorStub.allowPair(SOURCE_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID, owner);
 
         assertEq(
@@ -262,7 +260,7 @@ contract AllowConsolidationPairTest is Test {
         );
         assertEq(
             consolidationMigratorStub.getAllowedTargets(SOURCE_OPERATOR_ID),
-            _targetOperatorIds(FIRST_TARGET_OPERATOR_ID),
+            Arrays.list(FIRST_TARGET_OPERATOR_ID),
             "allowedTargets"
         );
 
@@ -275,7 +273,7 @@ contract AllowConsolidationPairTest is Test {
         );
         assertEq(
             consolidationMigratorStub.getAllowedTargets(SOURCE_OPERATOR_ID),
-            _targetOperatorIds(FIRST_TARGET_OPERATOR_ID),
+            Arrays.list(FIRST_TARGET_OPERATOR_ID),
             "allowedTargets after overwrite"
         );
 
@@ -300,7 +298,7 @@ contract AllowConsolidationPairTest is Test {
         assertEq(
             evmScript,
             _allowPairsScript(
-                owner, _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
+                owner, Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
             ),
             "evmScript"
         );
@@ -308,7 +306,7 @@ contract AllowConsolidationPairTest is Test {
 
     // python: test_create_evm_script_with_single_target
     function test_CreatesEVMScriptWithSingleTarget() external view {
-        uint256[] memory singleTargetIds = _targetOperatorIds(FIRST_TARGET_OPERATOR_ID);
+        uint256[] memory singleTargetIds = Arrays.list(FIRST_TARGET_OPERATOR_ID);
 
         bytes memory evmScript =
             allowConsolidationPair.createEVMScript(owner, _callData(owner, singleTargetIds));
@@ -325,7 +323,7 @@ contract AllowConsolidationPairTest is Test {
         assertEq(decoded.sourceOperatorId, SOURCE_OPERATOR_ID, "sourceOperatorId");
         assertEq(
             decoded.targetOperatorIds,
-            _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID),
+            Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID),
             "targetOperatorIds"
         );
     }
@@ -334,21 +332,6 @@ contract AllowConsolidationPairTest is Test {
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         allowConsolidationPair.decodeEVMScriptCallData("");
-    }
-
-    function _targetOperatorIds(uint256 single) private pure returns (uint256[] memory ids) {
-        ids = new uint256[](1);
-        ids[0] = single;
-    }
-
-    function _targetOperatorIds(uint256 first, uint256 second)
-        private
-        pure
-        returns (uint256[] memory ids)
-    {
-        ids = new uint256[](2);
-        ids[0] = first;
-        ids[1] = second;
     }
 
     /// @dev python: EXT, the ten-byte NOR external operator key
@@ -365,7 +348,7 @@ contract AllowConsolidationPairTest is Test {
         return _callData(
             submitter,
             SOURCE_OPERATOR_ID,
-            _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
+            Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
         );
     }
 
@@ -378,7 +361,7 @@ contract AllowConsolidationPairTest is Test {
         return _callData(
             submitter,
             sourceOperatorId,
-            _targetOperatorIds(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
+            Arrays.list(FIRST_TARGET_OPERATOR_ID, SECOND_TARGET_OPERATOR_ID)
         );
     }
 

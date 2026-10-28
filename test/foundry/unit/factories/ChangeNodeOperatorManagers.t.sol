@@ -11,6 +11,7 @@ import {IACL} from "contracts/interfaces/IACL.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Op, Param, PermissionParameters} from "test/foundry/unit/helpers/PermissionParameters.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {ACLStub} from "test/foundry/unit/stubs/ACLStub.sol";
 
 contract ChangeNodeOperatorManagersTest is Test {
@@ -22,7 +23,6 @@ contract ChangeNodeOperatorManagersTest is Test {
     address internal constant FIRST_NEW_MANAGER = address(3);
     address internal constant SECOND_NEW_MANAGER = address(4);
     address internal constant ANOTHER_NEW_MANAGER = address(5);
-    bytes32 internal constant MANAGE_SIGNING_KEYS_ROLE = keccak256("MANAGE_SIGNING_KEYS");
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
@@ -49,11 +49,8 @@ contract ChangeNodeOperatorManagersTest is Test {
         _grantManagerRole(SECOND_MANAGER, Op.EQ, 1);
 
         vm.prank(owner);
-        changeNodeOperatorManagers = new ChangeNodeOperatorManagers(
-            owner,
-            address(nodeOperatorsRegistry),
-            address(acl)
-        );
+        changeNodeOperatorManagers =
+            new ChangeNodeOperatorManagers(owner, address(nodeOperatorsRegistry), address(acl));
 
         vm.label(address(nodeOperatorsRegistry), "nodeOperatorsRegistry");
         vm.label(address(acl), "acl");
@@ -61,7 +58,7 @@ contract ChangeNodeOperatorManagersTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(changeNodeOperatorManagers.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(changeNodeOperatorManagers.nodeOperatorsRegistry()),
@@ -77,7 +74,7 @@ contract ChangeNodeOperatorManagersTest is Test {
     }
 
     // python: test_empty_calldata
-    function test_RevertWhen_CalldataIsEmpty() external {
+    function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         changeNodeOperatorManagers.createEVMScript(
             owner,
@@ -110,8 +107,7 @@ contract ChangeNodeOperatorManagersTest is Test {
 
         vm.expectRevert("NODE_OPERATOR_INDEX_OUT_OF_RANGE");
         changeNodeOperatorManagers.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(nodeOperatorsCount, FIRST_MANAGER, FIRST_NEW_MANAGER))
+            owner, _encodeCallData(_inputs(nodeOperatorsCount, FIRST_MANAGER, FIRST_NEW_MANAGER))
         );
     }
 
@@ -160,9 +156,7 @@ contract ChangeNodeOperatorManagersTest is Test {
     // python: test_old_manager_has_general_permission
     function test_RevertWhen_OldManagerHasGeneralPermission() external {
         acl.grantPermission(
-            FIRST_MANAGER,
-            address(nodeOperatorsRegistry),
-            MANAGE_SIGNING_KEYS_ROLE
+            FIRST_MANAGER, address(nodeOperatorsRegistry), Roles.MANAGE_SIGNING_KEYS_ROLE
         );
 
         vm.expectRevert("OLD_MANAGER_HAS_NO_ROLE");
@@ -173,11 +167,10 @@ contract ChangeNodeOperatorManagersTest is Test {
     }
 
     // python: test_zero_manager
-    function test_RevertWhen_NewManagerIsZeroAddress() external {
+    function test_RevertWhen_NewManagerIsZero() external {
         vm.expectRevert("ZERO_MANAGER_ADDRESS");
         changeNodeOperatorManagers.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(0, FIRST_MANAGER, address(0)))
+            owner, _encodeCallData(_inputs(0, FIRST_MANAGER, address(0)))
         );
     }
 
@@ -185,23 +178,19 @@ contract ChangeNodeOperatorManagersTest is Test {
     function test_RevertWhen_NewManagerHasPermission() external {
         vm.expectRevert("MANAGER_ALREADY_HAS_ROLE");
         changeNodeOperatorManagers.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(0, FIRST_MANAGER, SECOND_MANAGER))
+            owner, _encodeCallData(_inputs(0, FIRST_MANAGER, SECOND_MANAGER))
         );
     }
 
     // python: test_new_manager_has_general_permission
     function test_RevertWhen_NewManagerHasGeneralPermission() external {
         acl.grantPermission(
-            FIRST_NEW_MANAGER,
-            address(nodeOperatorsRegistry),
-            MANAGE_SIGNING_KEYS_ROLE
+            FIRST_NEW_MANAGER, address(nodeOperatorsRegistry), Roles.MANAGE_SIGNING_KEYS_ROLE
         );
 
         vm.expectRevert("MANAGER_ALREADY_HAS_ROLE");
         changeNodeOperatorManagers.createEVMScript(
-            owner,
-            _encodeCallData(_inputs(0, FIRST_MANAGER, FIRST_NEW_MANAGER))
+            owner, _encodeCallData(_inputs(0, FIRST_MANAGER, FIRST_NEW_MANAGER))
         );
     }
 
@@ -231,16 +220,11 @@ contract ChangeNodeOperatorManagersTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[]
-            memory inputs = changeNodeOperatorManagers.decodeEVMScriptCallData(
+        ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[] memory inputs =
+            changeNodeOperatorManagers.decodeEVMScriptCallData(
                 _encodeCallData(
                     _inputs(
-                        0,
-                        FIRST_MANAGER,
-                        FIRST_NEW_MANAGER,
-                        1,
-                        SECOND_MANAGER,
-                        SECOND_NEW_MANAGER
+                        0, FIRST_MANAGER, FIRST_NEW_MANAGER, 1, SECOND_MANAGER, SECOND_NEW_MANAGER
                     )
                 )
             );
@@ -260,25 +244,19 @@ contract ChangeNodeOperatorManagersTest is Test {
         acl.grantPermissionP(
             manager,
             address(nodeOperatorsRegistry),
-            MANAGE_SIGNING_KEYS_ROLE,
+            Roles.MANAGE_SIGNING_KEYS_ROLE,
             PermissionParameters.encodePermissionParams(Param(0, op, value))
         );
     }
 
-    function _inputs(
-        uint256 nodeOperatorId,
-        address oldManager,
-        address newManager
-    )
+    function _inputs(uint256 nodeOperatorId, address oldManager, address newManager)
         private
         pure
         returns (ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[] memory inputs)
     {
         inputs = new ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[](1);
         inputs[0] = ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput(
-            nodeOperatorId,
-            oldManager,
-            newManager
+            nodeOperatorId, oldManager, newManager
         );
     }
 
@@ -296,45 +274,43 @@ contract ChangeNodeOperatorManagersTest is Test {
     {
         inputs = new ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[](2);
         inputs[0] = ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput(
-            firstId,
-            firstOldManager,
-            firstNewManager
+            firstId, firstOldManager, firstNewManager
         );
         inputs[1] = ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput(
-            secondId,
-            secondOldManager,
-            secondNewManager
+            secondId, secondOldManager, secondNewManager
         );
     }
 
-    function _encodeCallData(
-        ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[] memory inputs
-    ) private pure returns (bytes memory) {
+    function _encodeCallData(ChangeNodeOperatorManagers
+                .ChangeNodeOperatorManagersInput[] memory inputs)
+        private
+        pure
+        returns (bytes memory)
+    {
         return abi.encode(inputs);
     }
 
     function _encodeRevokePermission(address manager) private view returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                IACL.revokePermission.selector,
-                manager,
-                address(nodeOperatorsRegistry),
-                MANAGE_SIGNING_KEYS_ROLE
-            );
+        return abi.encodeWithSelector(
+            IACL.revokePermission.selector,
+            manager,
+            address(nodeOperatorsRegistry),
+            Roles.MANAGE_SIGNING_KEYS_ROLE
+        );
     }
 
     /// @dev The manager's role is bound to `nodeOperatorId`, the first argument of every guarded call
-    function _encodeGrantPermissionP(
-        address manager,
-        uint256 nodeOperatorId
-    ) private view returns (bytes memory) {
-        return
-            abi.encodeWithSelector(
-                IACL.grantPermissionP.selector,
-                manager,
-                address(nodeOperatorsRegistry),
-                MANAGE_SIGNING_KEYS_ROLE,
-                PermissionParameters.encodePermissionParams(Param(0, Op.EQ, nodeOperatorId))
-            );
+    function _encodeGrantPermissionP(address manager, uint256 nodeOperatorId)
+        private
+        view
+        returns (bytes memory)
+    {
+        return abi.encodeWithSelector(
+            IACL.grantPermissionP.selector,
+            manager,
+            address(nodeOperatorsRegistry),
+            Roles.MANAGE_SIGNING_KEYS_ROLE,
+            PermissionParameters.encodePermissionParams(Param(0, Op.EQ, nodeOperatorId))
+        );
     }
 }

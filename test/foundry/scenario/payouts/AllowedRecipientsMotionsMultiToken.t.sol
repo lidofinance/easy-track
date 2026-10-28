@@ -14,7 +14,7 @@ import {IAllowedRecipientsRegistry} from "test/foundry/interfaces/Payouts.sol";
 ///         does each contract below: the listed registry and factories, a missing factory deployed
 ///         fresh over the listed registry, or, on a chain without the file, everything fresh.
 abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsScenarioBase {
-    string private constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
+    string internal constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
     /// @dev python: the pytest id of the `deployed_contracts` parameter
     function _instanceName() internal pure virtual returns (string memory);
@@ -26,14 +26,11 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_add_recipient_motion
-    function testFork_AddRecipientMotion() external {
+    function testFork_AddsRecipientByMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory callData = abi.encode(recipients[0], titles[0]);
-        uint256 motionId = _createMotion(
-            addAllowedRecipient,
-            _trustedCaller(addAllowedRecipient),
-            callData
-        );
+        uint256 motionId =
+            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), callData);
 
         _passMotionDuration();
 
@@ -43,32 +40,21 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(stranger);
         easyTrack.enactMotion(motionId, callData);
 
-        assertTrue(
-            allowedRecipientsRegistry.isRecipientAllowed(recipients[0]),
-            "recipient allowed"
-        );
+        assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipients[0]), "recipient allowed");
         assertEq(
-            allowedRecipientsRegistry.getAllowedRecipients().length,
-            countBefore + 1,
-            "recipients"
+            allowedRecipientsRegistry.getAllowedRecipients().length, countBefore + 1, "recipients"
         );
     }
 
     // python: test_add_multiple_recipients_by_concurrent_motions
-    function testFork_AddMultipleRecipientsByConcurrentMotions() external {
+    function testFork_AddsMultipleRecipientsByConcurrentMotions() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory firstCallData = abi.encode(recipients[0], titles[0]);
         bytes memory secondCallData = abi.encode(recipients[1], titles[1]);
-        uint256 firstMotionId = _createMotion(
-            addAllowedRecipient,
-            _trustedCaller(addAllowedRecipient),
-            firstCallData
-        );
-        uint256 secondMotionId = _createMotion(
-            addAllowedRecipient,
-            _trustedCaller(addAllowedRecipient),
-            secondCallData
-        );
+        uint256 firstMotionId =
+            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), firstCallData);
+        uint256 secondMotionId =
+            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), secondCallData);
 
         _enactMotion(firstMotionId, firstCallData);
         _enactMotion(secondMotionId, secondCallData);
@@ -76,25 +62,17 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipients[0]), "first allowed");
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipients[1]), "second allowed");
         assertEq(
-            allowedRecipientsRegistry.getAllowedRecipients().length,
-            countBefore + 2,
-            "recipients"
+            allowedRecipientsRegistry.getAllowedRecipients().length, countBefore + 2, "recipients"
         );
     }
 
     // python: test_fail_add_same_recipient_by_second_concurrent_motion
     function testFork_RevertWhen_SameRecipientAddedBySecondConcurrentMotion() external {
         bytes memory callData = abi.encode(recipients[0], titles[0]);
-        uint256 firstMotionId = _createMotion(
-            addAllowedRecipient,
-            _trustedCaller(addAllowedRecipient),
-            callData
-        );
-        uint256 secondMotionId = _createMotion(
-            addAllowedRecipient,
-            _trustedCaller(addAllowedRecipient),
-            callData
-        );
+        uint256 firstMotionId =
+            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), callData);
+        uint256 secondMotionId =
+            _createMotion(addAllowedRecipient, _trustedCaller(addAllowedRecipient), callData);
 
         _enactMotion(firstMotionId, callData);
 
@@ -113,16 +91,13 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_remove_recipient_motion
-    function testFork_RemoveRecipientMotion() external {
+    function testFork_RemovesRecipientByMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         _addRecipientByMotion(recipients[0], titles[0]);
 
         bytes memory callData = abi.encode(recipients[0]);
-        uint256 motionId = _createMotion(
-            removeAllowedRecipient,
-            _trustedCaller(removeAllowedRecipient),
-            callData
-        );
+        uint256 motionId =
+            _createMotion(removeAllowedRecipient, _trustedCaller(removeAllowedRecipient), callData);
 
         _passMotionDuration();
 
@@ -133,14 +108,9 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.enactMotion(motionId, callData);
 
         assertFalse(
-            allowedRecipientsRegistry.isRecipientAllowed(recipients[0]),
-            "recipient removed"
+            allowedRecipientsRegistry.isRecipientAllowed(recipients[0]), "recipient removed"
         );
-        assertEq(
-            allowedRecipientsRegistry.getAllowedRecipients().length,
-            countBefore,
-            "recipients"
-        );
+        assertEq(allowedRecipientsRegistry.getAllowedRecipients().length, countBefore, "recipients");
     }
 
     // python: test_fail_remove_recipient_if_empty_allowed_recipients_list
@@ -170,7 +140,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_top_up_single_recipient
-    function testFork_TopUpSingleRecipient() external {
+    function testFork_TopsUpSingleRecipient() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _allowToken(dai);
@@ -178,14 +148,12 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _advanceToNextPeriod(periodDuration);
 
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(2e18)),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(2e18)), SPENT_AMOUNT
         );
     }
 
     // python: test_top_up_single_recipient_several_times_in_period
-    function testFork_TopUpSingleRecipientSeveralTimesInPeriod() external {
+    function testFork_TopsUpSingleRecipientSeveralTimesInPeriod() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(40_000_000e18);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -200,21 +168,18 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(1))
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(1))
         );
 
         _advanceToNextPeriod(periodDuration);
 
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(limit)),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit)), SPENT_AMOUNT
         );
     }
 
     // python: test_top_up_multiple_recipients
-    function testFork_TopUpMultipleRecipients() external {
+    function testFork_TopsUpMultipleRecipients() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -230,7 +195,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_top_up_multiple_tokens
-    function testFork_TopUpMultipleTokens() external {
+    function testFork_TopsUpMultipleTokens() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _allowToken(dai);
@@ -238,25 +203,21 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _advanceToNextPeriod(periodDuration);
 
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(1e18)),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(1e18)), SPENT_AMOUNT
         );
 
         _allowToken(usdc);
 
         // 1 USDC in 6 decimals counts as 1e18 against the limit
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(usdc, _recipients(1), _amounts(1e6)),
-            1e18
+            topUpAllowedRecipients, _encodeTopUp(usdc, _recipients(1), _amounts(1e6)), 1e18
         );
 
         assertEq(allowedRecipientsRegistry.spendableBalance(), limit - 2e18, "spendableBalance");
     }
 
     // python: test_top_up_motion_enacted_in_next_period
-    function testFork_TopUpMotionEnactedInNextPeriod() external {
+    function testFork_EnactsTopUpMotionInNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -273,7 +234,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_top_up_motion_ended_and_enacted_in_next_period
-    function testFork_TopUpMotionEndedAndEnactedInNextPeriod() external {
+    function testFork_EnactsEndedTopUpMotionInNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -284,19 +245,19 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         bytes memory callData = _encodeTopUp(dai, _recipients(2), _amounts(3e18, 90e18));
         uint256 motionId = _createTopUpMotion(topUpAllowedRecipients, callData);
-        (, , uint256 oldPeriodStart, uint256 oldPeriodEnd) = allowedRecipientsRegistry
-            .getPeriodState();
+        (,, uint256 oldPeriodStart, uint256 oldPeriodEnd) =
+            allowedRecipientsRegistry.getPeriodState();
 
         _enactTopUpMotion(motionId, callData, SPENT_AMOUNT);
 
-        (, , uint256 newPeriodStart, uint256 newPeriodEnd) = allowedRecipientsRegistry
-            .getPeriodState();
+        (,, uint256 newPeriodStart, uint256 newPeriodEnd) =
+            allowedRecipientsRegistry.getPeriodState();
         assertNotEq(newPeriodStart, oldPeriodStart, "period start");
         assertNotEq(newPeriodEnd, oldPeriodEnd, "period end");
     }
 
     // python: test_top_up_motion_enacted_in_second_next_period
-    function testFork_TopUpMotionEnactedInSecondNextPeriod() external {
+    function testFork_EnactsTopUpMotionInSecondNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
         _addRecipientByMotion(recipients[1], titles[1]);
@@ -313,7 +274,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_spendable_balance_is_renewed_in_next_period
-    function testFork_SpendableBalanceIsRenewedInNextPeriod() external {
+    function testFork_RenewsSpendableBalanceInNextPeriod() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
 
         _advanceToNextPeriod(periodDuration);
@@ -325,32 +286,27 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
 
         uint256[] memory amounts = _amounts(limit / 10, (limit / 10) * 9);
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(2), amounts),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), amounts), SPENT_AMOUNT
         );
 
-        (uint256 alreadySpentAmount, , , ) = allowedRecipientsRegistry.getPeriodState();
+        (uint256 alreadySpentAmount,,,) = allowedRecipientsRegistry.getPeriodState();
         assertEq(alreadySpentAmount, _sum(amounts), "_alreadySpentAmount");
         assertEq(allowedRecipientsRegistry.spendableBalance(), limit - _sum(amounts), "spendable");
 
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(1))
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(1))
         );
 
         // The views are not refreshed by the rollover, so renewal shows as a full-limit payout
         vm.warp(vm.getBlockTimestamp() + periodDuration * MAX_SECONDS_IN_MONTH);
 
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(limit)),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit)), SPENT_AMOUNT
         );
 
-        (alreadySpentAmount, , , ) = allowedRecipientsRegistry.getPeriodState();
+        (alreadySpentAmount,,,) = allowedRecipientsRegistry.getPeriodState();
         assertEq(alreadySpentAmount, limit, "_alreadySpentAmount after renewal");
         assertEq(allowedRecipientsRegistry.spendableBalance(), 0, "spendable after renewal");
     }
@@ -371,8 +327,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert("TOKEN_NOT_ALLOWED");
         easyTrack.createMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(limit))
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit))
         );
 
         if (restoreAfterTest) {
@@ -435,8 +390,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(1), _amounts(limit + 1))
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(1), _amounts(limit + 1))
         );
     }
 
@@ -454,21 +408,18 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertEq(_sum(amounts), limit, "setup: amounts sum to the limit");
 
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(2), amounts),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), amounts), SPENT_AMOUNT
         );
 
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(2), _amounts(1, 1))
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), _amounts(1, 1))
         );
     }
 
     // python: test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next
-    function testFork_SecondTopUpMotionFailsDueLimitButEnactsInNextPeriod() external {
+    function testFork_EnactsSecondTopUpMotionInNextPeriodAfterLimitRejection() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(40_000_000e18);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -512,22 +463,17 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertGt(_sum(firstAmounts) + _sum(secondAmounts), limit, "setup: amounts exceed limit");
 
         _topUpByMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(2), firstAmounts),
-            SPENT_AMOUNT
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), firstAmounts), SPENT_AMOUNT
         );
 
         assertGt(
-            _sum(secondAmounts),
-            allowedRecipientsRegistry.spendableBalance(),
-            "second exceeds"
+            _sum(secondAmounts), allowedRecipientsRegistry.spendableBalance(), "second exceeds"
         );
 
         vm.prank(_trustedCaller(topUpAllowedRecipients));
         vm.expectRevert(bytes(SUM_EXCEEDS_SPENDABLE_BALANCE));
         easyTrack.createMotion(
-            topUpAllowedRecipients,
-            _encodeTopUp(dai, _recipients(2), secondAmounts)
+            topUpAllowedRecipients, _encodeTopUp(dai, _recipients(2), secondAmounts)
         );
     }
 
@@ -553,7 +499,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_top_up_if_limit_increased_while_motion_is_in_flight
-    function testFork_TopUpIfLimitIncreasedWhileMotionIsInFlight() external {
+    function testFork_TopsUpWhenLimitIncreasesWhileMotionIsInFlight() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(20_000_000e18);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -572,7 +518,7 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_increased
-    function testFork_SecondMotionEnactsAfterLimitIncreased() external {
+    function testFork_EnactsSecondMotionAfterLimitIncrease() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(20_000_000e18);
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -607,27 +553,27 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[3-2]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_3To2() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_3To2() external {
         _spendableRenewalIfPeriodDurationChanged(3, 2);
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[3-6]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_3To6() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_3To6() external {
         _spendableRenewalIfPeriodDurationChanged(3, 6);
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[12-1]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_12To1() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_12To1() external {
         _spendableRenewalIfPeriodDurationChanged(12, 1);
     }
 
     // python: test_top_up_spendable_renewal_if_period_duration_changed[1-12]
-    function testFork_SpendableRenewalIfPeriodDurationChanged_1To12() external {
+    function testFork_RenewsSpendableWhenPeriodDurationChanges_1To12() external {
         _spendableRenewalIfPeriodDurationChanged(1, 12);
     }
 
     // python: test_set_limit_parameters_by_aragon_agent_via_voting
-    function testFork_SetLimitParametersByAragonAgentViaVoting() external {
+    function testFork_SetsLimitParametersByAragonAgentViaVoting() external {
         // The vote forwards the call through the Agent, replayed as the Agent's call
         vm.prank(agent);
         allowedRecipientsRegistry.setLimitParameters(100e18, 6);

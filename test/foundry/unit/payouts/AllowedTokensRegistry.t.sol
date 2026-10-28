@@ -6,16 +6,11 @@ pragma solidity 0.8.6;
 import {Test} from "forge-std/Test.sol";
 import {AllowedTokensRegistry} from "contracts/payouts/multi-token/AllowedTokensRegistry.sol";
 import {MockERC20} from "contracts/test/MockERC20.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 
 contract AllowedTokensRegistryTest is Test {
-    // python: utils/test_helpers.py role constants
-    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 internal constant ADD_TOKEN_TO_ALLOWED_LIST_ROLE =
-        keccak256("ADD_TOKEN_TO_ALLOWED_LIST_ROLE");
-    bytes32 internal constant REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE =
-        keccak256("REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE");
-
     /// @dev python: accounts[0:20], the sweep of test_multiple_role_holders
     uint256 internal constant ACCOUNTS_COUNT = 20;
 
@@ -32,74 +27,76 @@ contract AllowedTokensRegistryTest is Test {
     function setUp() public {
         vm.prank(owner);
         allowedTokensRegistry = new AllowedTokensRegistry(
-            owner, _holders(addTokenRoleHolder), _holders(removeTokenRoleHolder)
+            owner, Arrays.list(addTokenRoleHolder), Arrays.list(removeTokenRoleHolder)
         );
 
         vm.label(address(allowedTokensRegistry), "allowedTokensRegistry");
     }
 
     // python: test_registry_initial_state
-    function test_RegistryInitialState() external {
+    function test_SetsInitialState() external {
         vm.prank(owner);
         AllowedTokensRegistry registry = new AllowedTokensRegistry(
-            owner, _holders(addTokenRoleHolder), _holders(removeTokenRoleHolder)
+            owner, Arrays.list(addTokenRoleHolder), Arrays.list(removeTokenRoleHolder)
         );
 
-        assertTrue(registry.hasRole(DEFAULT_ADMIN_ROLE, owner), "owner DEFAULT_ADMIN_ROLE");
+        assertTrue(registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, owner), "owner DEFAULT_ADMIN_ROLE");
         assertTrue(
-            registry.hasRole(ADD_TOKEN_TO_ALLOWED_LIST_ROLE, addTokenRoleHolder),
+            registry.hasRole(Roles.ADD_TOKEN_TO_ALLOWED_LIST_ROLE, addTokenRoleHolder),
             "addTokenRoleHolder ADD_TOKEN_TO_ALLOWED_LIST_ROLE"
         );
         assertTrue(
-            registry.hasRole(REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, removeTokenRoleHolder),
+            registry.hasRole(Roles.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE, removeTokenRoleHolder),
             "removeTokenRoleHolder REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE"
         );
         assertFalse(
-            registry.hasRole(DEFAULT_ADMIN_ROLE, addTokenRoleHolder),
+            registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, addTokenRoleHolder),
             "addTokenRoleHolder DEFAULT_ADMIN_ROLE"
         );
         assertFalse(
-            registry.hasRole(DEFAULT_ADMIN_ROLE, removeTokenRoleHolder),
+            registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, removeTokenRoleHolder),
             "removeTokenRoleHolder DEFAULT_ADMIN_ROLE"
         );
         assertEq(registry.getAllowedTokens().length, 0, "getAllowedTokens().length");
     }
 
     // python: test_registry_zero_admin_allowed
-    function test_RegistryZeroAdminAllowed() external {
+    function test_DeploysWithZeroAdmin() external {
         vm.prank(owner);
         AllowedTokensRegistry registry =
-            new AllowedTokensRegistry(address(0), _holders(owner), _holders(owner));
+            new AllowedTokensRegistry(address(0), Arrays.list(owner), Arrays.list(owner));
 
         assertTrue(
-            registry.hasRole(DEFAULT_ADMIN_ROLE, address(0)), "zero admin DEFAULT_ADMIN_ROLE"
+            registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, address(0)), "zero admin DEFAULT_ADMIN_ROLE"
         );
     }
 
     // python: test_registry_none_role_holders_allowed
-    function test_RegistryNoneRoleHoldersAllowed() external {
+    function test_DeploysWithNoRoleHolders() external {
         vm.prank(owner);
         AllowedTokensRegistry registry =
             new AllowedTokensRegistry(owner, new address[](0), new address[](0));
 
-        assertTrue(registry.hasRole(DEFAULT_ADMIN_ROLE, owner), "owner DEFAULT_ADMIN_ROLE");
+        assertTrue(registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, owner), "owner DEFAULT_ADMIN_ROLE");
     }
 
     // python: test_rights_are_not_shared_by_different_roles
-    function test_RightsAreNotSharedByDifferentRoles() external {
+    function test_DoesNotShareRightsBetweenRoles() external {
         vm.prank(owner);
         AllowedTokensRegistry registry = new AllowedTokensRegistry(
-            voting, _holders(addTokenRoleHolder), _holders(removeTokenRoleHolder)
+            voting, Arrays.list(addTokenRoleHolder), Arrays.list(removeTokenRoleHolder)
         );
 
-        assertTrue(registry.hasRole(DEFAULT_ADMIN_ROLE, voting), "voting DEFAULT_ADMIN_ROLE");
+        assertTrue(registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, voting), "voting DEFAULT_ADMIN_ROLE");
 
         address[3] memory addForbidden = [owner, removeTokenRoleHolder, stranger];
 
         for (uint256 i; i < addForbidden.length; ++i) {
             vm.prank(addForbidden[i]);
             vm.expectRevert(
-                TestHelpers.accessRevertMessage(addForbidden[i], ADD_TOKEN_TO_ALLOWED_LIST_ROLE)
+                TestHelpers.accessRevertMessage(
+                    addForbidden[i], Roles.ADD_TOKEN_TO_ALLOWED_LIST_ROLE
+                )
             );
             registry.addToken(ldo);
         }
@@ -110,7 +107,7 @@ contract AllowedTokensRegistryTest is Test {
             vm.prank(removeForbidden[i]);
             vm.expectRevert(
                 TestHelpers.accessRevertMessage(
-                    removeForbidden[i], REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE
+                    removeForbidden[i], Roles.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE
                 )
             );
             registry.removeToken(ldo);
@@ -118,10 +115,10 @@ contract AllowedTokensRegistryTest is Test {
     }
 
     // python: test_multiple_role_holders
-    function test_MultipleRoleHolders() external {
+    function test_GrantsRolesToMultipleHolders() external {
         address[] memory accounts = _accounts();
-        address[] memory addTokenRoleHolders = _holders(accounts[2], accounts[3]);
-        address[] memory removeTokenRoleHolders = _holders(accounts[4], accounts[5]);
+        address[] memory addTokenRoleHolders = Arrays.list(accounts[2], accounts[3]);
+        address[] memory removeTokenRoleHolders = Arrays.list(accounts[4], accounts[5]);
 
         vm.prank(owner);
         AllowedTokensRegistry registry =
@@ -132,7 +129,9 @@ contract AllowedTokensRegistryTest is Test {
         for (uint256 i; i < addForbidden.length; ++i) {
             vm.prank(addForbidden[i]);
             vm.expectRevert(
-                TestHelpers.accessRevertMessage(addForbidden[i], ADD_TOKEN_TO_ALLOWED_LIST_ROLE)
+                TestHelpers.accessRevertMessage(
+                    addForbidden[i], Roles.ADD_TOKEN_TO_ALLOWED_LIST_ROLE
+                )
             );
             registry.addToken(ldo);
         }
@@ -152,7 +151,7 @@ contract AllowedTokensRegistryTest is Test {
             vm.prank(removeForbidden[i]);
             vm.expectRevert(
                 TestHelpers.accessRevertMessage(
-                    removeForbidden[i], REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE
+                    removeForbidden[i], Roles.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE
                 )
             );
             registry.removeToken(ldo);
@@ -173,7 +172,7 @@ contract AllowedTokensRegistryTest is Test {
         allowedTokensRegistry.addToken(ldo);
 
         assertTrue(allowedTokensRegistry.isTokenAllowed(ldo), "isTokenAllowed");
-        assertEq(allowedTokensRegistry.getAllowedTokens(), _holders(ldo), "getAllowedTokens");
+        assertEq(allowedTokensRegistry.getAllowedTokens(), Arrays.list(ldo), "getAllowedTokens");
     }
 
     // python: test_add_multiple_tokens
@@ -185,11 +184,13 @@ contract AllowedTokensRegistryTest is Test {
 
         assertTrue(allowedTokensRegistry.isTokenAllowed(ldo), "ldo allowed");
         assertTrue(allowedTokensRegistry.isTokenAllowed(steth), "steth allowed");
-        assertEq(allowedTokensRegistry.getAllowedTokens(), _holders(ldo, steth), "getAllowedTokens");
+        assertEq(
+            allowedTokensRegistry.getAllowedTokens(), Arrays.list(ldo, steth), "getAllowedTokens"
+        );
     }
 
     // python: test_add_zero_token
-    function test_RevertWhen_TokenIsZeroAddress() external {
+    function test_RevertWhen_TokenIsZero() external {
         vm.prank(addTokenRoleHolder);
         vm.expectRevert("TOKEN_ADDRESS_IS_ZERO");
         allowedTokensRegistry.addToken(address(0));
@@ -315,21 +316,6 @@ contract AllowedTokensRegistryTest is Test {
     function _allowToken(address token) private {
         vm.prank(addTokenRoleHolder);
         allowedTokensRegistry.addToken(token);
-    }
-
-    function _holders(address holder) private pure returns (address[] memory holders) {
-        holders = new address[](1);
-        holders[0] = holder;
-    }
-
-    function _holders(address first, address second)
-        private
-        pure
-        returns (address[] memory holders)
-    {
-        holders = new address[](2);
-        holders[0] = first;
-        holders[1] = second;
     }
 
     /// @dev python: accounts[0:20]

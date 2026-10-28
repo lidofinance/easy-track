@@ -196,7 +196,7 @@ Two Foundry suites live under `test/foundry`, each on its own profile in `foundr
 The unit suite compiles the contracts at solc 0.8.6 and needs no network:
 
 ```bash
-npm run test:unit
+npm test
 ```
 
 The scenario suite forks a live network and drives the deployed factories. It reads `HOODI_RPC_URL` or `MAINNET_RPC_URL`, and `CHAIN` selects the network, default `hoodi`. Without the URL every scenario contract is reported as skipped:
@@ -205,7 +205,7 @@ The scenario suite forks a live network and drives the deployed factories. It re
 CHAIN=hoodi npm run test:scenario
 ```
 
-Plain `forge test` runs the default profile, which is the scenario suite only.
+Plain `forge test` runs the default profile, which is the unit suite.
 
 ### Integration test addresses
 

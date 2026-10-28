@@ -7,6 +7,7 @@ import {Test} from "forge-std/Test.sol";
 import {AddRewardProgram} from "contracts/EVMScriptFactories/AddRewardProgram.sol";
 import {RewardProgramsRegistry} from "contracts/RewardProgramsRegistry.sol";
 import {EVMScriptExecutorStub} from "contracts/test/EVMScriptExecutorStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract AddRewardProgramTest is Test {
@@ -24,7 +25,8 @@ contract AddRewardProgramTest is Test {
     function setUp() public {
         vm.startPrank(owner);
         evmScriptExecutorStub = new EVMScriptExecutorStub();
-        rewardProgramsRegistry = new RewardProgramsRegistry(voting, _roleHolders(), _roleHolders());
+        address[] memory roleHolders = Arrays.list(voting, address(evmScriptExecutorStub));
+        rewardProgramsRegistry = new RewardProgramsRegistry(voting, roleHolders, roleHolders);
         addRewardProgram = new AddRewardProgram(owner, address(rewardProgramsRegistry));
         vm.stopPrank();
 
@@ -34,7 +36,7 @@ contract AddRewardProgramTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(addRewardProgram.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(addRewardProgram.rewardProgramsRegistry()),
@@ -85,12 +87,6 @@ contract AddRewardProgramTest is Test {
 
         assertEq(rewardProgram, REWARD_PROGRAM_ADDRESS, "rewardProgram");
         assertEq(title, REWARD_PROGRAM_TITLE, "title");
-    }
-
-    function _roleHolders() private view returns (address[] memory holders) {
-        holders = new address[](2);
-        holders[0] = voting;
-        holders[1] = address(evmScriptExecutorStub);
     }
 
     function _encodeCallData() private pure returns (bytes memory) {

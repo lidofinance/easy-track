@@ -5,27 +5,26 @@ pragma solidity ^0.8.25;
 
 import {Vm} from "forge-std/Vm.sol";
 import {VaultsScenarioBase} from "test/foundry/helpers/VaultsScenarioBase.sol";
-import {IVaultsAdapterFactory} from "test/foundry/interfaces/Factories.sol";
 import {IVaultHub, IVaultsAdapter, TierParams} from "test/foundry/interfaces/Vaults.sol";
 
-/// @notice The three vault hub factories, each deployed fresh from the `contracts` profile
-///         artifacts and registered in the fresh Easy Track, driving the live hub through the
-///         adapter over two vaults of one operator: forced exits of an unhealthy vault, the
-///         redemption shares of minted vaults, and bad debt moved between the two.
+/// @notice The three vault hub factories, each deployed fresh from the `forge build` artifacts
+///         and registered in the fresh Easy Track, driving the live hub through the adapter
+///         over two vaults of one operator: forced exits of an unhealthy vault, the redemption
+///         shares of minted vaults, and bad debt moved between the two.
 contract VaultHubTest is VaultsScenarioBase {
     /// @dev python: the default tier the `vaults` fixture opens for minting
-    uint256 private constant DEFAULT_TIER_ID = 0;
-    uint256 private constant MINTING_SHARE_LIMIT = 100_000e18;
+    uint256 internal constant DEFAULT_TIER_ID = 0;
+    uint256 internal constant MINTING_SHARE_LIMIT = 100_000e18;
 
     /// @dev python: the ASCII string "01" repeated 48 times, two 48-byte keys, not one
-    uint256 private constant PUBKEYS_LENGTH = 96;
+    uint256 internal constant PUBKEYS_LENGTH = 96;
 
     /// @dev python: liability_shares_targets
-    uint256 private constant FIRST_LIABILITY_TARGET = 100;
-    uint256 private constant SECOND_LIABILITY_TARGET = 200;
+    uint256 internal constant FIRST_LIABILITY_TARGET = 100;
+    uint256 internal constant SECOND_LIABILITY_TARGET = 200;
 
     /// @dev python: max_shares_to_socialize
-    uint256 private constant MAX_SHARES_TO_SOCIALIZE = INITIAL_VAULT_BALANCE / 100;
+    uint256 internal constant MAX_SHARES_TO_SOCIALIZE = INITIAL_VAULT_BALANCE / 100;
 
     address[] internal vaults;
 
@@ -55,11 +54,6 @@ contract VaultHubTest is VaultsScenarioBase {
             _deployArtifact("ForceValidatorExitsInVaultHub", abi.encode(creator, adapter));
 
         _assertAdapterFactory(factory);
-        assertEq(
-            adapter.validatorExitFeeLimit(),
-            VALIDATOR_EXIT_FEE_LIMIT,
-            "setup: validatorExitFeeLimit"
-        );
 
         _registerOnlyFactory(
             factory, abi.encodePacked(adapter, IVaultsAdapter.forceValidatorExit.selector)
@@ -113,10 +107,7 @@ contract VaultHubTest is VaultsScenarioBase {
         address factory =
             _deployArtifact("SetLiabilitySharesTargetInVaultHub", abi.encode(creator, adapter));
 
-        assertEq(IVaultsAdapterFactory(factory).trustedCaller(), creator, "setup: trustedCaller");
-        assertEq(
-            IVaultsAdapterFactory(factory).vaultsAdapter(), address(adapter), "setup: vaultsAdapter"
-        );
+        _assertAdapterFactory(factory);
 
         _registerOnlyFactory(
             factory, abi.encodePacked(adapter, IVaultsAdapter.setLiabilitySharesTarget.selector)
@@ -248,16 +239,5 @@ contract VaultHubTest is VaultsScenarioBase {
             pubkeys[i] = "0";
             pubkeys[i + 1] = "1";
         }
-    }
-
-    /// @dev The factory trusts the creator and acts through the adapter, which trusts the creator
-    ///      and takes the fresh executor's calls
-    function _assertAdapterFactory(address factory) private view {
-        assertEq(IVaultsAdapterFactory(factory).trustedCaller(), creator, "setup: trustedCaller");
-        assertEq(
-            IVaultsAdapterFactory(factory).vaultsAdapter(), address(adapter), "setup: vaultsAdapter"
-        );
-        assertEq(adapter.trustedCaller(), creator, "setup: adapter trustedCaller");
-        assertEq(adapter.evmScriptExecutor(), evmScriptExecutor, "setup: adapter evmScriptExecutor");
     }
 }

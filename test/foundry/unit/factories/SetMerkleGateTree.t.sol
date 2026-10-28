@@ -10,6 +10,7 @@ import {
 } from "contracts/EVMScriptFactories/SetMerkleGateTree.sol";
 import {IMerkleGate} from "contracts/interfaces/IMerkleGate.sol";
 import {MerkleGateStub} from "contracts/test/MerkleGateStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract SetMerkleGateTreeTest is Test {
@@ -48,7 +49,7 @@ contract SetMerkleGateTreeTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setMerkleGateTree.trustedCaller(), owner, "trustedCaller");
         assertEq(setMerkleGateTree.name(), FACTORY_NAME, "name");
     }
@@ -185,21 +186,19 @@ contract SetMerkleGateTreeTest is Test {
         bytes32 newTreeRoot,
         string memory newTreeCid
     ) private view returns (bytes memory) {
-        address[] memory targets = new address[](2);
-        targets[0] = address(setMerkleGateTree);
-        targets[1] = address(merkleGateStub);
+        address[] memory targets = Arrays.list(address(setMerkleGateTree), address(merkleGateStub));
 
-        bytes[] memory datas = new bytes[](2);
-        datas[0] = abi.encodeWithSelector(
-            ISetMerkleGateTree.validateInputData.selector,
-            address(merkleGateStub),
-            currentTreeRoot,
-            currentTreeCid,
-            newTreeRoot,
-            newTreeCid
+        bytes[] memory datas = Arrays.list(
+            abi.encodeWithSelector(
+                ISetMerkleGateTree.validateInputData.selector,
+                address(merkleGateStub),
+                currentTreeRoot,
+                currentTreeCid,
+                newTreeRoot,
+                newTreeCid
+            ),
+            abi.encodeWithSelector(IMerkleGate.setTreeParams.selector, newTreeRoot, newTreeCid)
         );
-        datas[1] =
-            abi.encodeWithSelector(IMerkleGate.setTreeParams.selector, newTreeRoot, newTreeCid);
 
         return EVMScripts.encodeCallScript(targets, datas);
     }

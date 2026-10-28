@@ -6,12 +6,10 @@ pragma solidity ^0.8.25;
 import {Vm} from "forge-std/Vm.sol";
 
 /// @notice Reader of `integration-test-addresses-<chain>.yaml`, the payout deployments the Brownie
-///         suite parametrizes its payouts fixtures over, in the block style the file is written
-///         in: the top-level `easytrack`, then a key per suite holding its shared contracts and its
-///         `instances`, each a `- name:` line followed by its contracts. As `get_single_token_config`
-///         and `get_multi_token_config` of `utils/deployed_addresses.py` do, a missing file or an
-///         empty instance list yields the one synthetic `default` instance, which deploys
-///         everything fresh.
+///         suite parametrizes its payouts fixtures over: the top-level `easytrack`, then a key per
+///         suite holding its shared contracts and its `instances`. As `utils/deployed_addresses.py`
+///         does, a missing file or an empty instance list yields one synthetic `default` instance,
+///         which deploys everything fresh.
 library IntegrationTestAddresses {
     /// @dev A payout setup of a suite. A zero contract is deployed fresh.
     struct Instance {
@@ -177,23 +175,23 @@ library IntegrationTestAddresses {
         }
 
         key = _slice(line, 0, colon);
-        value = vm.trim(_slice(line, colon + 1, bytes(line).length));
+        value = vm.trim(_slice(line, colon + 1, bytes(line).length - colon - 1));
 
         bytes memory raw = bytes(value);
         if (raw.length >= 2 && raw[0] == '"' && raw[raw.length - 1] == '"') {
-            value = _slice(value, 1, raw.length - 1);
+            value = _slice(value, 1, raw.length - 2);
         }
     }
 
-    function _slice(string memory text, uint256 start, uint256 end)
+    function _slice(string memory text, uint256 start, uint256 length)
         private
         pure
         returns (string memory)
     {
         bytes memory raw = bytes(text);
-        bytes memory out = new bytes(end - start);
-        for (uint256 index = start; index < end; ++index) {
-            out[index - start] = raw[index];
+        bytes memory out = new bytes(length);
+        for (uint256 index; index < length; ++index) {
+            out[index] = raw[start + index];
         }
 
         return string(out);

@@ -17,16 +17,12 @@ import {
     NodeOperatorManagementProperties
 } from "test/foundry/interfaces/External.sol";
 
-/// @notice Fork harness for the scenario tests of the deployed Easy Track factories. A test
-///         builds the on-chain data a motion needs, runs the motion and asserts its effect. The
-///         harness forks the chain, resolves factories from `deployed-*.json` and drives the
-///         motion lifecycle, create -> warp -> enact. The deployed factories run as the omnibus
-///         registered them, and the executor's protocol roles are real on-chain state. Role
-///         grants here only build data preconditions. Where a scenario needs a factory or stub
-///         that is not deployed, `_deployArtifact` creates it from the `contracts` profile build,
-///         `_registerFactory` registers it as the DAO Voting and `_grantPermission` grants it an
-///         Aragon permission as the permission's manager, what a DAO vote enacts. The
-///         state-construction recipes follow lidofinance/staking-modules `Fixtures.sol`.
+/// @notice Fork harness for the scenario tests of the deployed Easy Track factories: forks the
+///         chain, resolves factories from `deployed-*.json` and drives a motion from creation to
+///         enactment. Tests build their data preconditions through role grants, after the
+///         recipes of lidofinance/staking-modules `Fixtures.sol`. Where a scenario needs a factory
+///         or stub that is not deployed, `_deployArtifact` builds it from the `forge build`
+///         artifacts and `_registerFactory` or `_grantPermission` wires it as a DAO vote would.
 abstract contract EasyTrackScenarioBase is Test {
     struct NetworkConfig {
         uint256 chainId;
@@ -266,7 +262,7 @@ abstract contract EasyTrackScenarioBase is Test {
     }
 
     /// @dev A fresh Easy Track with `admin` and an executor owned by Voting, both from the
-    ///      `contracts` profile artifacts. The base helpers drive this pair from here on instead
+    ///      `forge build` artifacts. The base helpers drive this pair from here on instead
     ///      of the deployed one.
     function _deployEasyTrack(address admin) internal {
         _deployEasyTrack(
@@ -330,17 +326,14 @@ abstract contract EasyTrackScenarioBase is Test {
         acl.grantPermission(entity, app, role);
     }
 
-    /// @dev Deploy a contract of `contracts/` from the artifact `FOUNDRY_PROFILE=contracts forge
-    ///      build` writes, with the test as the deployer
+    /// @dev Deploy a contract of `contracts/` from the artifact `forge build` writes to
+    ///      `foundry-out/`, with the test as the deployer
     function _deployArtifact(string memory name, bytes memory constructorArgs)
         internal
         returns (address deployed)
     {
-        string memory artifact = string.concat("out/", name, ".sol/", name, ".json");
-        require(
-            vm.exists(artifact),
-            string.concat(artifact, " is missing, run FOUNDRY_PROFILE=contracts forge build")
-        );
+        string memory artifact = string.concat("foundry-out/", name, ".sol/", name, ".json");
+        require(vm.exists(artifact), string.concat(artifact, " is missing, run forge build"));
 
         deployed = deployCode(artifact, constructorArgs);
         vm.label(deployed, name);
@@ -502,6 +495,28 @@ abstract contract EasyTrackScenarioBase is Test {
             keys = bytes.concat(keys, new bytes(PUBKEY_LENGTH - index.length), index);
             signatures = bytes.concat(signatures, new bytes(SIGNATURE_LENGTH - index.length), index);
         }
+    }
+
+    // --- arrays ---
+
+    function _single(address value) internal pure returns (address[] memory values) {
+        values = new address[](1);
+        values[0] = value;
+    }
+
+    function _amounts(uint256 amount) internal pure returns (uint256[] memory amounts) {
+        amounts = new uint256[](1);
+        amounts[0] = amount;
+    }
+
+    function _amounts(uint256 first, uint256 second)
+        internal
+        pure
+        returns (uint256[] memory amounts)
+    {
+        amounts = new uint256[](2);
+        amounts[0] = first;
+        amounts[1] = second;
     }
 
     function _equals(string memory a, string memory b) private pure returns (bool) {

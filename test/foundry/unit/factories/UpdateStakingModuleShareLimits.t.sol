@@ -10,6 +10,7 @@ import {
 } from "contracts/EVMScriptFactories/UpdateStakingModuleShareLimits.sol";
 import {IStakingRouter} from "contracts/interfaces/IStakingRouter.sol";
 import {StakingRouterStub} from "contracts/test/StakingRouterStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract UpdateStakingModuleShareLimitsTest is Test {
@@ -256,18 +257,18 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         uint16 newStakeShareLimit,
         uint16 newPriorityExitShareThreshold
     ) private view returns (bytes memory) {
-        address[] memory targets = new address[](2);
-        targets[0] = address(updateStakingModuleShareLimits);
-        targets[1] = address(stakingRouterStub);
+        address[] memory targets = Arrays.list(
+            address(updateStakingModuleShareLimits), address(stakingRouterStub)
+        );
 
-        bytes[] memory datas = new bytes[](2);
-        datas[0] =
-            abi.encodePacked(IUpdateStakingModuleShareLimits.validateParams.selector, callData);
-        datas[1] = abi.encodeWithSelector(
-            IStakingRouter.updateModuleShares.selector,
-            MODULE_ID,
-            newStakeShareLimit,
-            newPriorityExitShareThreshold
+        bytes[] memory datas = Arrays.list(
+            abi.encodePacked(IUpdateStakingModuleShareLimits.validateParams.selector, callData),
+            abi.encodeWithSelector(
+                IStakingRouter.updateModuleShares.selector,
+                MODULE_ID,
+                newStakeShareLimit,
+                newPriorityExitShareThreshold
+            )
         );
 
         return EVMScripts.encodeCallScript(targets, datas);

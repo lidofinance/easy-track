@@ -13,6 +13,7 @@ import {IVaultHub} from "contracts/interfaces/IVaultHub.sol";
 import {IVaultsAdapter} from "contracts/interfaces/IVaultsAdapter.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
 import {StakingVaultStub} from "contracts/test/StakingVaultStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
@@ -57,7 +58,7 @@ contract SetJailStatusInOperatorGridTest is Test {
     }
 
     // python: test_deploy
-    function test_Deploy() external view {
+    function test_SetsInitialState() external view {
         assertEq(setJailStatusInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
             address(setJailStatusInOperatorGrid.vaultsAdapter()),
@@ -91,7 +92,7 @@ contract SetJailStatusInOperatorGridTest is Test {
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         setJailStatusInOperatorGrid.createEVMScript(
-            owner, abi.encode(_vaults(stranger), _jailStatuses(true, false))
+            owner, abi.encode(Arrays.list(stranger), Arrays.list(true, false))
         );
     }
 
@@ -99,7 +100,7 @@ contract SetJailStatusInOperatorGridTest is Test {
     function test_RevertWhen_VaultIsZero() external {
         vm.expectRevert("ZERO_VAULT");
         setJailStatusInOperatorGrid.createEVMScript(
-            owner, abi.encode(_vaults(address(0), stranger), _jailStatuses(true, false))
+            owner, abi.encode(Arrays.list(address(0), stranger), Arrays.list(true, false))
         );
     }
 
@@ -112,7 +113,7 @@ contract SetJailStatusInOperatorGridTest is Test {
         setJailStatusInOperatorGrid.createEVMScript(
             owner,
             abi.encode(
-                _vaults(address(firstVault), address(secondVault)), _jailStatuses(true, false)
+                Arrays.list(address(firstVault), address(secondVault)), Arrays.list(true, false)
             )
         );
     }
@@ -122,8 +123,8 @@ contract SetJailStatusInOperatorGridTest is Test {
         StakingVaultStub firstVault = new StakingVaultStub(nodeOperator);
         StakingVaultStub secondVault = new StakingVaultStub(nodeOperator);
 
-        address[] memory vaults = _vaults(address(firstVault), address(secondVault));
-        bool[] memory jailStatuses = _jailStatuses(true, false);
+        address[] memory vaults = Arrays.list(address(firstVault), address(secondVault));
+        bool[] memory jailStatuses = Arrays.list(true, false);
 
         bytes memory evmScript =
             setJailStatusInOperatorGrid.createEVMScript(owner, abi.encode(vaults, jailStatuses));
@@ -144,8 +145,8 @@ contract SetJailStatusInOperatorGridTest is Test {
 
     // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
-        address[] memory vaults = _vaults(vault, anotherVault);
-        bool[] memory jailStatuses = _jailStatuses(true, false);
+        address[] memory vaults = Arrays.list(vault, anotherVault);
+        bool[] memory jailStatuses = Arrays.list(true, false);
 
         (address[] memory decodedVaults, bool[] memory decodedJailStatuses) =
             setJailStatusInOperatorGrid.decodeEVMScriptCallData(abi.encode(vaults, jailStatuses));
@@ -167,28 +168,6 @@ contract SetJailStatusInOperatorGridTest is Test {
         assertTrue(operatorGrid.isVaultInJail(vault), "isVaultInJail");
     }
 
-    function _vaults(address single) private pure returns (address[] memory vaults) {
-        vaults = new address[](1);
-        vaults[0] = single;
-    }
-
-    function _vaults(address first, address second) private pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        vaults[0] = first;
-        vaults[1] = second;
-    }
-
-    function _jailStatuses(bool first, bool second)
-        private
-        pure
-        returns (bool[] memory jailStatuses)
-    {
-        jailStatuses = new bool[](2);
-        jailStatuses[0] = first;
-        jailStatuses[1] = second;
-    }
-
-    /// @dev python: encode_call_script of one adapter.setVaultJailStatus per vault
     function _setJailStatusesScript(address[] memory vaults, bool[] memory jailStatuses)
         private
         view

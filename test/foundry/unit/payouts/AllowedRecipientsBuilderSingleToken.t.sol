@@ -18,7 +18,9 @@ import {
 } from "contracts/payouts/single-token/AllowedRecipientsFactorySingleToken.sol";
 import {EasyTrack} from "contracts/EasyTrack.sol";
 import {EVMScriptExecutor} from "contracts/EVMScriptExecutor.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {Constants} from "test/foundry/unit/helpers/Constants.sol";
+import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {
     BokkyPooBahsDateTimeContract
 } from "test/foundry/unit/stubs/BokkyPooBahsDateTimeContract.sol";
@@ -26,15 +28,6 @@ import {CallsScriptStub} from "test/foundry/unit/stubs/CallsScriptStub.sol";
 import {MiniMeTokenStub} from "test/foundry/unit/stubs/MiniMeTokenStub.sol";
 
 contract AllowedRecipientsBuilderSingleTokenTest is Test {
-    // python: module role constants
-    bytes32 internal constant DEFAULT_ADMIN_ROLE = 0x00;
-    bytes32 internal constant ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE =
-        keccak256("ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE");
-    bytes32 internal constant REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE =
-        keccak256("REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE");
-    bytes32 internal constant SET_PARAMETERS_ROLE = keccak256("SET_PARAMETERS_ROLE");
-    bytes32 internal constant UPDATE_SPENT_AMOUNT_ROLE = keccak256("UPDATE_SPENT_AMOUNT_ROLE");
-
     uint256 internal constant LIMIT = 1 ether;
     uint256 internal constant PERIOD_DURATION_MONTHS = 1;
     uint256 internal constant SPENT_AMOUNT = 1e10;
@@ -125,7 +118,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
     }
 
     // python: test_builder_constructor_params
-    function test_BuilderConstructorParams() external view {
+    function test_SetsInitialState() external view {
         assertEq(
             address(allowedRecipientsBuilder.factory()),
             address(allowedRecipientsFactory),
@@ -231,7 +224,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
 
     // python: test_deploy_allowed_recipients_registry
     function test_DeploysAllowedRecipientsRegistry() external {
-        address[] memory recipients = _addresses(recipient, secondRecipient);
+        address[] memory recipients = Arrays.list(recipient, secondRecipient);
 
         vm.prank(stranger);
         IAllowedRecipientsRegistry registry =
@@ -245,16 +238,13 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
 
     // python: test_deploy_recipients_registry_reverts_recipients_length
     function test_RevertWhen_RecipientsRegistryRecipientsLengthMismatch() external {
-        string[] memory titles = new string[](1);
-        titles[0] = "account 3";
-
         vm.prank(stranger);
         vm.expectRevert("Recipients data length mismatch");
         allowedRecipientsBuilder.deployAllowedRecipientsRegistry(
             LIMIT,
             PERIOD_DURATION_MONTHS,
-            _addresses(recipient, secondRecipient),
-            titles,
+            Arrays.list(recipient, secondRecipient),
+            Arrays.list(string("account 3")),
             SPENT_AMOUNT,
             false
         );
@@ -269,7 +259,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         allowedRecipientsBuilder.deployAllowedRecipientsRegistry(
             limitBelowSpentAmount,
             PERIOD_DURATION_MONTHS,
-            _addresses(recipient, secondRecipient),
+            Arrays.list(recipient, secondRecipient),
             _titles(),
             SPENT_AMOUNT,
             false
@@ -346,7 +336,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         );
         assertEq(topUpAllowedRecipients.token(), address(ldo), "token");
 
-        _assertAllowedRecipients(registry, _addresses(recipient), LIMIT, SPENT_AMOUNT);
+        _assertAllowedRecipients(registry, Arrays.list(recipient), LIMIT, SPENT_AMOUNT);
         _assertRecipientsRegistryRoles(registry, false);
     }
 
@@ -357,22 +347,9 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         );
     }
 
-    function _addresses(address a) private pure returns (address[] memory addresses) {
-        addresses = new address[](1);
-        addresses[0] = a;
-    }
-
-    function _addresses(address a, address b) private pure returns (address[] memory addresses) {
-        addresses = new address[](2);
-        addresses[0] = a;
-        addresses[1] = b;
-    }
-
     /// @dev python: ["account 3", "account 4"]
-    function _titles() private pure returns (string[] memory titles) {
-        titles = new string[](2);
-        titles[0] = "account 3";
-        titles[1] = "account 4";
+    function _titles() private pure returns (string[] memory) {
+        return Arrays.list(string("account 3"), string("account 4"));
     }
 
     /// @dev python: the five recipients of test_deploy_full_setup
@@ -425,54 +402,60 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         bool grantedToEVMScriptExecutor
     ) private view {
         assertTrue(
-            registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent),
+            registry.hasRole(Roles.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, agent),
             "agent ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE"
         );
         assertTrue(
-            registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent),
+            registry.hasRole(Roles.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, agent),
             "agent REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE"
         );
-        assertTrue(registry.hasRole(SET_PARAMETERS_ROLE, agent), "agent SET_PARAMETERS_ROLE");
+        assertTrue(registry.hasRole(Roles.SET_PARAMETERS_ROLE, agent), "agent SET_PARAMETERS_ROLE");
         assertTrue(
-            registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, agent), "agent UPDATE_SPENT_AMOUNT_ROLE"
+            registry.hasRole(Roles.UPDATE_SPENT_AMOUNT_ROLE, agent),
+            "agent UPDATE_SPENT_AMOUNT_ROLE"
         );
-        assertTrue(registry.hasRole(DEFAULT_ADMIN_ROLE, agent), "agent DEFAULT_ADMIN_ROLE");
+        assertTrue(registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, agent), "agent DEFAULT_ADMIN_ROLE");
 
         address executor = address(evmScriptExecutor);
         assertEq(
-            registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, executor),
+            registry.hasRole(Roles.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, executor),
             grantedToEVMScriptExecutor,
             "evmScriptExecutor ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE"
         );
         assertEq(
-            registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, executor),
+            registry.hasRole(Roles.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, executor),
             grantedToEVMScriptExecutor,
             "evmScriptExecutor REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE"
         );
         assertTrue(
-            registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, executor),
+            registry.hasRole(Roles.UPDATE_SPENT_AMOUNT_ROLE, executor),
             "evmScriptExecutor UPDATE_SPENT_AMOUNT_ROLE"
         );
         assertFalse(
-            registry.hasRole(SET_PARAMETERS_ROLE, executor), "evmScriptExecutor SET_PARAMETERS_ROLE"
+            registry.hasRole(Roles.SET_PARAMETERS_ROLE, executor),
+            "evmScriptExecutor SET_PARAMETERS_ROLE"
         );
         assertFalse(
-            registry.hasRole(DEFAULT_ADMIN_ROLE, executor), "evmScriptExecutor DEFAULT_ADMIN_ROLE"
+            registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, executor),
+            "evmScriptExecutor DEFAULT_ADMIN_ROLE"
         );
 
         address self = address(registry);
         assertFalse(
-            registry.hasRole(ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, self),
+            registry.hasRole(Roles.ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE, self),
             "registry ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE"
         );
         assertFalse(
-            registry.hasRole(REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, self),
+            registry.hasRole(Roles.REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE, self),
             "registry REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE"
         );
-        assertFalse(registry.hasRole(SET_PARAMETERS_ROLE, self), "registry SET_PARAMETERS_ROLE");
         assertFalse(
-            registry.hasRole(UPDATE_SPENT_AMOUNT_ROLE, self), "registry UPDATE_SPENT_AMOUNT_ROLE"
+            registry.hasRole(Roles.SET_PARAMETERS_ROLE, self), "registry SET_PARAMETERS_ROLE"
         );
-        assertFalse(registry.hasRole(DEFAULT_ADMIN_ROLE, self), "registry DEFAULT_ADMIN_ROLE");
+        assertFalse(
+            registry.hasRole(Roles.UPDATE_SPENT_AMOUNT_ROLE, self),
+            "registry UPDATE_SPENT_AMOUNT_ROLE"
+        );
+        assertFalse(registry.hasRole(Roles.DEFAULT_ADMIN_ROLE, self), "registry DEFAULT_ADMIN_ROLE");
     }
 }

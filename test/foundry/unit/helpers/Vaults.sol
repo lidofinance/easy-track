@@ -3,6 +3,7 @@
 
 pragma solidity 0.8.6;
 
+import {Vm} from "forge-std/Vm.sol";
 import {TierParams} from "contracts/interfaces/IOperatorGrid.sol";
 import {LidoLocatorStub} from "contracts/test/LidoLocatorStub.sol";
 import {OperatorGridStub, TierParams as StubTierParams} from "contracts/test/OperatorGridStub.sol";
@@ -11,6 +12,8 @@ import {VaultHubStub} from "contracts/test/VaultHubStub.sol";
 /// @notice python: lido_locator_stub of `tests/conftest.py`, with the tier params and the limits
 /// the vault factory tests share
 library Vaults {
+    Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
+
     /// @dev MAX_SHARE_LIMIT of the factories that validate tier params
     uint256 internal constant MAX_TIER_SHARE_LIMIT = 10_000_000 * 1e18;
 
@@ -63,5 +66,28 @@ library Vaults {
             liquidityFeeBP: liquidityFeeBP,
             reservationFeeBP: reservationFeeBP
         });
+    }
+
+    /// @dev Field by field equality of two tier params lists
+    function assertTierParamsEq(TierParams[] memory actual, TierParams[] memory expected)
+        internal
+        pure
+    {
+        vm.assertEq(actual.length, expected.length, "tierParams.length");
+
+        for (uint256 i; i < expected.length; ++i) {
+            vm.assertEq(actual[i].shareLimit, expected[i].shareLimit, "shareLimit");
+            vm.assertEq(actual[i].reserveRatioBP, expected[i].reserveRatioBP, "reserveRatioBP");
+            vm.assertEq(
+                actual[i].forcedRebalanceThresholdBP,
+                expected[i].forcedRebalanceThresholdBP,
+                "forcedRebalanceThresholdBP"
+            );
+            vm.assertEq(actual[i].infraFeeBP, expected[i].infraFeeBP, "infraFeeBP");
+            vm.assertEq(actual[i].liquidityFeeBP, expected[i].liquidityFeeBP, "liquidityFeeBP");
+            vm.assertEq(
+                actual[i].reservationFeeBP, expected[i].reservationFeeBP, "reservationFeeBP"
+            );
+        }
     }
 }

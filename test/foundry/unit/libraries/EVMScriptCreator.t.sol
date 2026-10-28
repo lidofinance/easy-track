@@ -8,12 +8,15 @@ import {RewardProgramsRegistry} from "contracts/RewardProgramsRegistry.sol";
 import {EVMScriptCreatorWrapper} from "contracts/test/EVMScriptCreatorWrapper.sol";
 import {EVMScriptExecutorStub} from "contracts/test/EVMScriptExecutorStub.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract EVMScriptCreatorTest is Test {
-    bytes4 internal constant SET_NODE_OPERATOR_STAKING_LIMIT = 0xae962acf;
-    bytes4 internal constant ADD_REWARD_PROGRAM = 0xfa508cef;
-    bytes4 internal constant REMOVE_REWARD_PROGRAM = 0x945233e2;
+    bytes4 internal constant SET_NODE_OPERATOR_STAKING_LIMIT =
+        NodeOperatorsRegistryStub.setNodeOperatorStakingLimit.selector;
+    bytes4 internal constant ADD_REWARD_PROGRAM = RewardProgramsRegistry.addRewardProgram.selector;
+    bytes4 internal constant REMOVE_REWARD_PROGRAM =
+        RewardProgramsRegistry.removeRewardProgram.selector;
     string internal constant NEW_REWARD_PROGRAM_TITLE = "new reward program";
 
     address internal owner = makeAddr("owner");
@@ -30,9 +33,7 @@ contract EVMScriptCreatorTest is Test {
         nodeOperatorsRegistryStub = new NodeOperatorsRegistryStub(nodeOperator);
         EVMScriptExecutorStub evmScriptExecutorStub = new EVMScriptExecutorStub();
 
-        address[] memory roleHolders = new address[](2);
-        roleHolders[0] = voting;
-        roleHolders[1] = address(evmScriptExecutorStub);
+        address[] memory roleHolders = Arrays.list(voting, address(evmScriptExecutorStub));
 
         rewardProgramsRegistry = new RewardProgramsRegistry(voting, roleHolders, roleHolders);
         vm.stopPrank();
@@ -55,7 +56,7 @@ contract EVMScriptCreatorTest is Test {
 
     // python: test_create_evm_script_one_address_multiple_calls_same_method
     function test_CreatesEVMScriptForOneAddressMultipleCallsSameMethod() external view {
-        bytes[] memory callData = _list(
+        bytes[] memory callData = Arrays.list(
             _encodeSetNodeOperatorStakingLimitCallData(1, 300),
             _encodeSetNodeOperatorStakingLimitCallData(2, 500),
             _encodeSetNodeOperatorStakingLimitCallData(3, 600)
@@ -66,12 +67,12 @@ contract EVMScriptCreatorTest is Test {
         );
 
         bytes memory expected = EVMScripts.encodeCallScript(
-            _list(
+            Arrays.list(
                 address(nodeOperatorsRegistryStub),
                 address(nodeOperatorsRegistryStub),
                 address(nodeOperatorsRegistryStub)
             ),
-            _list(
+            Arrays.list(
                 _setNodeOperatorStakingLimitInput(1, 300),
                 _setNodeOperatorStakingLimitInput(2, 500),
                 _setNodeOperatorStakingLimitInput(3, 600)
@@ -83,8 +84,8 @@ contract EVMScriptCreatorTest is Test {
 
     // python: test_create_evm_script_one_address_different_methods_different_lengths
     function test_RevertWhen_OneAddressMethodIdsAndCallDataLengthsDiffer() external {
-        bytes4[] memory methodIds = _list(SET_NODE_OPERATOR_STAKING_LIMIT);
-        bytes[] memory callData = _list(
+        bytes4[] memory methodIds = Arrays.list(SET_NODE_OPERATOR_STAKING_LIMIT);
+        bytes[] memory callData = Arrays.list(
             _encodeSetNodeOperatorStakingLimitCallData(1, 300),
             _encodeSetNodeOperatorStakingLimitCallData(1, 300)
         );
@@ -97,8 +98,8 @@ contract EVMScriptCreatorTest is Test {
 
     // python: test_create_evm_script_one_address_different_methods
     function test_CreatesEVMScriptForOneAddressDifferentMethods() external view {
-        bytes4[] memory methodIds = _list(ADD_REWARD_PROGRAM, REMOVE_REWARD_PROGRAM);
-        bytes[] memory callData = _list(
+        bytes4[] memory methodIds = Arrays.list(ADD_REWARD_PROGRAM, REMOVE_REWARD_PROGRAM);
+        bytes[] memory callData = Arrays.list(
             _encodeAddRewardProgramCallData(rewardProgramToAdd, NEW_REWARD_PROGRAM_TITLE),
             _encodeRemoveRewardProgramCallData(rewardProgramToRemove)
         );
@@ -108,8 +109,8 @@ contract EVMScriptCreatorTest is Test {
         );
 
         bytes memory expected = EVMScripts.encodeCallScript(
-            _list(address(rewardProgramsRegistry), address(rewardProgramsRegistry)),
-            _list(
+            Arrays.list(address(rewardProgramsRegistry), address(rewardProgramsRegistry)),
+            Arrays.list(
                 _addRewardProgramInput(rewardProgramToAdd, NEW_REWARD_PROGRAM_TITLE),
                 _removeRewardProgramInput(rewardProgramToRemove)
             )
@@ -120,31 +121,33 @@ contract EVMScriptCreatorTest is Test {
 
     // python: test_create_evm_script_many_addresses_different_lengths
     function test_RevertWhen_ManyAddressesLengthsDiffer() external {
-        address[] memory targets = _list(address(nodeOperatorsRegistryStub));
+        address[] memory targets = Arrays.list(address(nodeOperatorsRegistryStub));
         bytes memory callData = _encodeSetNodeOperatorStakingLimitCallData(1, 300);
 
         vm.expectRevert("LENGTH_MISMATCH");
         EVMScriptCreatorWrapper.createEVMScript(
-            targets, _list(SET_NODE_OPERATOR_STAKING_LIMIT, REMOVE_REWARD_PROGRAM), _list(callData)
+            targets,
+            Arrays.list(SET_NODE_OPERATOR_STAKING_LIMIT, REMOVE_REWARD_PROGRAM),
+            Arrays.list(callData)
         );
 
         vm.expectRevert("LENGTH_MISMATCH");
         EVMScriptCreatorWrapper.createEVMScript(
-            targets, _list(SET_NODE_OPERATOR_STAKING_LIMIT), _list(callData, callData)
+            targets, Arrays.list(SET_NODE_OPERATOR_STAKING_LIMIT), Arrays.list(callData, callData)
         );
     }
 
     // python: test_create_evm_script_many_addresses
     function test_CreatesEVMScriptForManyAddresses() external view {
-        address[] memory targets = _list(
+        address[] memory targets = Arrays.list(
             address(nodeOperatorsRegistryStub),
             address(rewardProgramsRegistry),
             address(nodeOperatorsRegistryStub)
         );
-        bytes4[] memory methodIds = _list(
+        bytes4[] memory methodIds = Arrays.list(
             SET_NODE_OPERATOR_STAKING_LIMIT, REMOVE_REWARD_PROGRAM, SET_NODE_OPERATOR_STAKING_LIMIT
         );
-        bytes[] memory callData = _list(
+        bytes[] memory callData = Arrays.list(
             _encodeSetNodeOperatorStakingLimitCallData(1, 300),
             _encodeRemoveRewardProgramCallData(rewardProgramToRemove),
             _encodeSetNodeOperatorStakingLimitCallData(3, 600)
@@ -155,7 +158,7 @@ contract EVMScriptCreatorTest is Test {
 
         bytes memory expected = EVMScripts.encodeCallScript(
             targets,
-            _list(
+            Arrays.list(
                 _setNodeOperatorStakingLimitInput(1, 300),
                 _removeRewardProgramInput(rewardProgramToRemove),
                 _setNodeOperatorStakingLimitInput(3, 600)
@@ -220,63 +223,5 @@ contract EVMScriptCreatorTest is Test {
             abi.encodeWithSelector(
                 RewardProgramsRegistry.removeRewardProgram.selector, rewardProgram
             );
-    }
-
-    function _list(address a) private pure returns (address[] memory list) {
-        list = new address[](1);
-        list[0] = a;
-    }
-
-    function _list(address a, address b) private pure returns (address[] memory list) {
-        list = new address[](2);
-        list[0] = a;
-        list[1] = b;
-    }
-
-    function _list(address a, address b, address c) private pure returns (address[] memory list) {
-        list = new address[](3);
-        list[0] = a;
-        list[1] = b;
-        list[2] = c;
-    }
-
-    function _list(bytes4 a) private pure returns (bytes4[] memory list) {
-        list = new bytes4[](1);
-        list[0] = a;
-    }
-
-    function _list(bytes4 a, bytes4 b) private pure returns (bytes4[] memory list) {
-        list = new bytes4[](2);
-        list[0] = a;
-        list[1] = b;
-    }
-
-    function _list(bytes4 a, bytes4 b, bytes4 c) private pure returns (bytes4[] memory list) {
-        list = new bytes4[](3);
-        list[0] = a;
-        list[1] = b;
-        list[2] = c;
-    }
-
-    function _list(bytes memory a) private pure returns (bytes[] memory list) {
-        list = new bytes[](1);
-        list[0] = a;
-    }
-
-    function _list(bytes memory a, bytes memory b) private pure returns (bytes[] memory list) {
-        list = new bytes[](2);
-        list[0] = a;
-        list[1] = b;
-    }
-
-    function _list(bytes memory a, bytes memory b, bytes memory c)
-        private
-        pure
-        returns (bytes[] memory list)
-    {
-        list = new bytes[](3);
-        list[0] = a;
-        list[1] = b;
-        list[2] = c;
     }
 }
