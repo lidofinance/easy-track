@@ -1,0 +1,1904 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "lidoLend",
+        "type": "address",
+        "internalType": "contract IMorpho"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "DEFAULT_ADMIN_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "FREEZER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "LIDO_LEND",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "contract IMorpho"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MANAGER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_BORROW_SHARE_RATE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PAUSER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "PAUSE_INFINITELY",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "RESUMER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "UNFREEZER_ROLE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "collateralActivationConfig",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct CollateralActivationConfig",
+        "components": [
+          {
+            "name": "minActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxDelayInflow",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "minDepositAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingLockDuration",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "minActivationAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxGuardiansQuorumDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerStrike",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerSuspect",
+            "type": "uint40",
+            "internalType": "uint40"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "currentActivationDelay",
+    "inputs": [
+      {
+        "name": "inflowIncrement",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "currentInflow",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "freeze",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getResumeSinceTimestamp",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleAdmin",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMember",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "index",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMemberCount",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getRoleMembers",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address[]",
+        "internalType": "address[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "grantRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "guardianSignals",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasBadDebt",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasInstantActivation",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "hasRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "initialize",
+    "inputs": [
+      {
+        "name": "marketId_",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "admin",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "supplyCap_",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "guardianSignals",
+        "type": "address",
+        "internalType": "contract IGuardianSignalsView"
+      },
+      {
+        "name": "activationConfig",
+        "type": "tuple",
+        "internalType": "struct CollateralActivationConfig",
+        "components": [
+          {
+            "name": "minActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxDelayInflow",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "minDepositAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingLockDuration",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "minActivationAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxGuardiansQuorumDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerStrike",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerSuspect",
+            "type": "uint40",
+            "internalType": "uint40"
+          }
+        ]
+      },
+      {
+        "name": "settlementConfig",
+        "type": "tuple",
+        "internalType": "struct SettlementConfig",
+        "components": [
+          {
+            "name": "sliceFloorBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "sliceFloorAssets",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "fullCutBelowCollateral",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "ltvStepBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "isFrozen",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "isPaused",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "marketId",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bytes32",
+        "internalType": "Id"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxDeposit",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "maxWithdrawableAssets",
+    "inputs": [
+      {
+        "name": "supplier",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "nextSettlementBorrower",
+    "inputs": [
+      {
+        "name": "budgetSupplyShares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "slice",
+        "type": "tuple",
+        "internalType": "struct SettlementSlice",
+        "components": [
+          {
+            "name": "supplyShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "borrowShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "remainingBorrowShares",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "on",
+    "inputs": [
+      {
+        "name": "id",
+        "type": "bytes32",
+        "internalType": "Id"
+      },
+      {
+        "name": "hookEvent",
+        "type": "uint8",
+        "internalType": "enum ILidoLendMarketController.HookEvent"
+      },
+      {
+        "name": "data",
+        "type": "bytes",
+        "internalType": "bytes"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "pauseFor",
+    "inputs": [
+      {
+        "name": "duration",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "positionOf",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "dashboard",
+        "type": "tuple",
+        "internalType": "struct ILidoLendMarketController.BorrowerPosition",
+        "components": [
+          {
+            "name": "active",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "activating",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "dust",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "unlockTime",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "flagCount",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "banned",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "debtAssets",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "settlementLtv",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "isNextToSettle",
+            "type": "bool",
+            "internalType": "bool"
+          },
+          {
+            "name": "personalSliceAssets",
+            "type": "uint256",
+            "internalType": "uint256"
+          },
+          {
+            "name": "queueRootSliceAssets",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "renounceRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "callerConfirmation",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "resume",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "revokeRole",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setCollateralActivationConfig",
+    "inputs": [
+      {
+        "name": "cfg",
+        "type": "tuple",
+        "internalType": "struct CollateralActivationConfig",
+        "components": [
+          {
+            "name": "minActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxDelayInflow",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "minDepositAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingLockDuration",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "minActivationAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxGuardiansQuorumDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerStrike",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerSuspect",
+            "type": "uint40",
+            "internalType": "uint40"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setInstantActivation",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "enabled",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSettlementConfig",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "internalType": "struct SettlementConfig",
+        "components": [
+          {
+            "name": "sliceFloorBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "sliceFloorAssets",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "fullCutBelowCollateral",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "ltvStepBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSettlementLtv",
+    "inputs": [
+      {
+        "name": "ltv",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setSupplyCap",
+    "inputs": [
+      {
+        "name": "cap",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "settlementBorrowers",
+    "inputs": [
+      {
+        "name": "offset",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "maxCount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "borrowers",
+        "type": "address[]",
+        "internalType": "address[]"
+      },
+      {
+        "name": "keys",
+        "type": "uint256[]",
+        "internalType": "uint256[]"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "settlementBorrowersCount",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "settlementConfig",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct SettlementConfig",
+        "components": [
+          {
+            "name": "sliceFloorBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "sliceFloorAssets",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "fullCutBelowCollateral",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "ltvStepBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "settlementFor",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "budgetSupplyShares",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "quote",
+        "type": "tuple",
+        "internalType": "struct SettlementQuote",
+        "components": [
+          {
+            "name": "personal",
+            "type": "tuple",
+            "internalType": "struct SettlementSlice",
+            "components": [
+              {
+                "name": "supplyShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "borrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "remainingBorrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          },
+          {
+            "name": "queueRoot",
+            "type": "tuple",
+            "internalType": "struct SettlementSlice",
+            "components": [
+              {
+                "name": "supplyShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "borrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              },
+              {
+                "name": "remainingBorrowShares",
+                "type": "uint256",
+                "internalType": "uint256"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "settlementLtv",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "ltv",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "sliceAssets",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "supplyCap",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "supportsInterface",
+    "inputs": [
+      {
+        "name": "interfaceId",
+        "type": "bytes4",
+        "internalType": "bytes4"
+      }
+    ],
+    "outputs": [
+      {
+        "name": "",
+        "type": "bool",
+        "internalType": "bool"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "unfreeze",
+    "inputs": [],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "CollateralActivated",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "position",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct CollateralActivationLib.Position",
+        "components": [
+          {
+            "name": "dust",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activating",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingStart",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "activatingDelay",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralActivating",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "position",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct CollateralActivationLib.Position",
+        "components": [
+          {
+            "name": "dust",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activating",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingStart",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "activatingDelay",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralActivationConfigSet",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct CollateralActivationConfig",
+        "components": [
+          {
+            "name": "minActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxActivationDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "maxDelayInflow",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "minDepositAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingLockDuration",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "minActivationAmount",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "maxGuardiansQuorumDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerStrike",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "delayPerSuspect",
+            "type": "uint40",
+            "internalType": "uint40"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralDrained",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "position",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct CollateralActivationLib.Position",
+        "components": [
+          {
+            "name": "dust",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activating",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingStart",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "activatingDelay",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "CollateralDusted",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "amount",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "position",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct CollateralActivationLib.Position",
+        "components": [
+          {
+            "name": "dust",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activating",
+            "type": "uint128",
+            "internalType": "uint128"
+          },
+          {
+            "name": "activatingStart",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "activatingDelay",
+            "type": "uint32",
+            "internalType": "uint32"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "FrozenSet",
+    "inputs": [
+      {
+        "name": "frozen",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "GuardianSignalsSet",
+    "inputs": [
+      {
+        "name": "guardianSignals",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Initialized",
+    "inputs": [
+      {
+        "name": "version",
+        "type": "uint64",
+        "indexed": false,
+        "internalType": "uint64"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "InstantActivationSet",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "enabled",
+        "type": "bool",
+        "indexed": false,
+        "internalType": "bool"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Paused",
+    "inputs": [
+      {
+        "name": "duration",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "Resumed",
+    "inputs": [],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleAdminChanged",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "previousAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "newAdminRole",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleGranted",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "RoleRevoked",
+    "inputs": [
+      {
+        "name": "role",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "sender",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SettlementConfigSet",
+    "inputs": [
+      {
+        "name": "config",
+        "type": "tuple",
+        "indexed": false,
+        "internalType": "struct SettlementConfig",
+        "components": [
+          {
+            "name": "sliceFloorBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          },
+          {
+            "name": "sliceFloorAssets",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "fullCutBelowCollateral",
+            "type": "uint96",
+            "internalType": "uint96"
+          },
+          {
+            "name": "ltvStepBps",
+            "type": "uint16",
+            "internalType": "uint16"
+          }
+        ]
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SettlementLtvSet",
+    "inputs": [
+      {
+        "name": "borrower",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      },
+      {
+        "name": "ltv",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "SupplyCapSet",
+    "inputs": [
+      {
+        "name": "cap",
+        "type": "uint256",
+        "indexed": false,
+        "internalType": "uint256"
+      },
+      {
+        "name": "account",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "error",
+    "name": "AccessControlBadConfirmation",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "AccessControlUnauthorizedAccount",
+    "inputs": [
+      {
+        "name": "account",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "neededRole",
+        "type": "bytes32",
+        "internalType": "bytes32"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ActivatingCollateralLocked",
+    "inputs": [
+      {
+        "name": "activating",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "lockDeadline",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "AddressBanned",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "BorrowShareRateExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "DepositTooSmall",
+    "inputs": [
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minDepositAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "DustNotResolved",
+    "inputs": [
+      {
+        "name": "dust",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "assets",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "minActivationAmount",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "EmptyHeap",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InactiveCollateralNotCleared",
+    "inputs": [
+      {
+        "name": "requested",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "inactive",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "IndexOutOfBounds",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InsufficientActiveCollateral",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidActivationDelays",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidInitialization",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidMarketId",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidMaxGuardiansQuorumDelay",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "InvalidMinDepositAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MarketIsFrozen",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MaxActivatingLockDurationExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MaxActivationDelayExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MaxDelayPerStrikeExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MaxDelayPerSuspectExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "MaxGuardiansQuorumDelayExceeded",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "NotInitializing",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PauseUntilMustBeInFuture",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PausedExpected",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "PositionAccountingMismatch",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ResumedExpected",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SafeCastOverflowedUintDowncast",
+    "inputs": [
+      {
+        "name": "bits",
+        "type": "uint8",
+        "internalType": "uint8"
+      },
+      {
+        "name": "value",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "SettlementBadDebt",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SettlementConfigOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SettlementExceedsAllowed",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SettlementExceedsSettleableSupply",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SettlementLtvOutOfRange",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "SupplyCapExceeded",
+    "inputs": [
+      {
+        "name": "cap",
+        "type": "uint256",
+        "internalType": "uint256"
+      },
+      {
+        "name": "attempted",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "Unauthorized",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "UnknownHookEvent",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroBorrowAssets",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroMaxDelayInflow",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroMinActivationAmount",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroMinActivationDelay",
+    "inputs": []
+  },
+  {
+    "type": "error",
+    "name": "ZeroPauseDuration",
+    "inputs": []
+  }
+]
