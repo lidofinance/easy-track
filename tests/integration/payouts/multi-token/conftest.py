@@ -4,6 +4,7 @@ import brownie
 import constants
 import math
 from utils import lido, deployment, deployed_date_time, evm_script, log
+from utils.deployed_addresses import get_multi_token_config, try_load_deployed_contract
 from dataclasses import dataclass
 
 from utils.test_helpers import set_account_balance
@@ -40,7 +41,7 @@ def stranger(accounts):
 @pytest.fixture(scope="module")
 def dai_ward():
     network = brownie.network.show_active()
-    
+
     if network in ["mainnet", "mainnet-fork"]:
         return brownie.accounts.at("0x9759A6Ac90977b93B58547b4A71c78317f391A28", force=True)
     if network in ["holesky", "holesky-fork"]:
@@ -79,21 +80,38 @@ def top_up_balances(lido_contracts, dai_ward):
 #####
 
 
-@pytest.fixture(scope="module")
-def deployed_contracts():
+_multi_token_config = get_multi_token_config()
+
+
+@pytest.fixture(
+    scope="module",
+    params=_multi_token_config["instances"],
+    ids=lambda x: x.get("name", "default"),
+)
+def deployed_contracts(request):
     """
-    To run tests on deployed contracts, set their address below
+    Parametrized over all multi-token AllowedRecipients instances from integration-test-addresses-{network}.yaml.
+    Factory, builder, and tokens_registry are shared across all instances; add/remove are optional per instance.
     """
+    instance = request.param
     return {
-        "EasyTrack": "",
-        "AllowedRecipientsFactory": "",
-        "AllowedRecipientsBuilder": "",
-        "AllowedRecipientsRegistry": "",
-        "AllowedTokensRegistry": "",
-        "AddAllowedRecipient": "",
-        "RemoveAllowedRecipient": "",
-        "TopUpAllowedRecipients": "",
+        "EasyTrack": _multi_token_config["easytrack"],
+        "AllowedRecipientsFactory": _multi_token_config["factory"],
+        "AllowedRecipientsBuilder": _multi_token_config["builder"],
+        "AllowedRecipientsRegistry": instance.get("registry", ""),
+        "AllowedTokensRegistry": _multi_token_config["tokens_registry"],
+        "AddAllowedRecipient": instance.get("add_allowed_recipient", ""),
+        "RemoveAllowedRecipient": instance.get("remove_allowed_recipient", ""),
+        "TopUpAllowedRecipients": instance.get("top_up_allowed_recipients", ""),
     }
+
+
+@pytest.fixture(scope="module")
+def load_deployed_contract(deployed_contracts):
+    def _load_deployed_contract(contract_name):
+        return try_load_deployed_contract(contract_name, deployed_contracts)
+
+    return _load_deployed_contract
 
 
 @pytest.fixture(scope="module")
@@ -218,6 +236,7 @@ def add_allowed_recipient_evm_script_factory(
             f"EVM Script Factory AddAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -256,6 +275,7 @@ def remove_allowed_recipient_evm_script_factory(
             f"EVM Script Factory RemoveAllowedRecipient({evm_script_factory}) was added to EasyTrack"
         )
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -361,6 +381,7 @@ def top_up_allowed_recipients_evm_script_factory(
             f"EVM Script Factory TopUpAllowedRecipients({evm_script_factory}) was added to EasyTrack"
         )
 
+    set_account_balance(evm_script_factory.trustedCaller())
     return evm_script_factory
 
 
@@ -712,6 +733,11 @@ def registries(
             {"from": lido_contracts.aragon.agent},
         )
 
+    # Reset spending for deployed registries so tests start with a clean slate
+    allowed_recipients_registry.unsafeSetSpentAmount(
+        0, {"from": lido_contracts.aragon.agent}
+    )
+
     return (allowed_recipients_registry, allowed_tokens_registry)
 
 @pytest.fixture(scope="module")
@@ -729,7 +755,7 @@ def add_allowed_token(registries, lido_contracts):
             allowed_tokens_registry.DEFAULT_ADMIN_ROLE(),
             agent,
         ) else voting
-        
+
         allowed_tokens_registry.grantRole(
             allowed_tokens_registry.ADD_TOKEN_TO_ALLOWED_LIST_ROLE(),
             agent,
@@ -758,7 +784,7 @@ def remove_allowed_token(registries, lido_contracts):
             allowed_tokens_registry.DEFAULT_ADMIN_ROLE(),
             agent,
         ) else voting
-        
+
         allowed_tokens_registry.grantRole(
             allowed_tokens_registry.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE(),
             agent,

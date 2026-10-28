@@ -174,7 +174,7 @@ def run_motion_and_check_events(factory, create_motion_fn, submit_fn, easy_track
     """
     calldata = create_exit_request_hash_calldata([r.to_tuple() for r in exit_requests])
     motion_tx = create_motion_fn(factory, calldata)
-    motion_id = easy_track.getMotions()[0][0]
+    motion_id = motion_tx.events["MotionCreated"]["_motionId"]
     evm_data = motion_tx.events["MotionCreated"]["_evmScriptCallData"]
 
     packed = create_exit_request_data(exit_requests)
