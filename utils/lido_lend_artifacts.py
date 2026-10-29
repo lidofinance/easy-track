@@ -116,8 +116,8 @@ def _market_id(market):
     return Web3.keccak(encode([MARKET_PARAMS_ABI_TYPE], [params])).hex()
 
 
-def load_lido_lend_artifacts(directory, require_exit_books=False):
-    """Load and cross-check one immutable Lido Lend deployment directory."""
+def load_lido_lend_artifacts(directory, require_exit_books=False, *, require_markets=True):
+    """Load and cross-check artifacts; require_markets=False allows a protocol-only deployment."""
     root = Path(directory).expanduser().resolve()
     if not root.is_dir():
         raise ValueError(f"Lido Lend artifacts directory does not exist: {root}")
@@ -140,7 +140,7 @@ def load_lido_lend_artifacts(directory, require_exit_books=False):
 
     markets_dir = root / "markets"
     market_paths = sorted(markets_dir.glob("*.toml")) if markets_dir.is_dir() else []
-    if not market_paths:
+    if require_markets and not market_paths:
         raise ValueError(f"deployment has no market artifacts: {markets_dir}")
 
     markets = {}
