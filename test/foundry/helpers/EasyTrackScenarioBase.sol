@@ -4,6 +4,7 @@
 pragma solidity ^0.8.25;
 
 import {Test} from "forge-std/Test.sol";
+import {Lido} from "script/helpers/Lido.sol";
 import {IEasyTrack, IEVMScriptExecutor} from "test/foundry/interfaces/EasyTrack.sol";
 import {
     IACL,
@@ -14,6 +15,8 @@ import {
     IKernel,
     ILidoLocator,
     IMetaRegistry,
+    IMiniMeToken,
+    IVoting,
     NodeOperatorManagementProperties
 } from "test/foundry/interfaces/External.sol";
 
@@ -100,12 +103,20 @@ abstract contract EasyTrackScenarioBase is Test {
 
     // --- fork + config ---
 
-    /// @dev Fork `CHAIN` (default hoodi) from `<CHAIN>_RPC_URL`, or reuse an already-active fork
-    ///      (`forge test --fork-url …`). Skips the suite when neither is available.
+    /// @dev Reuse an already-active fork (`forge test --fork-url ...`), whose chain selects the
+    ///      network unless `CHAIN` names it, or fork `CHAIN` (default hoodi) from
+    ///      `<CHAIN>_RPC_URL`. Skips the suite when neither is available.
     function _forkAndInitialize() internal {
-        config = _networkConfig(vm.envOr("CHAIN", string("hoodi")));
+        string memory active = _networkOf(block.chainid);
+        string memory chain = vm.envOr("CHAIN", bytes(active).length == 0 ? "hoodi" : active);
+        config = _networkConfig(chain);
 
-        if (config.easyTrack.code.length == 0) {
+        if (bytes(active).length != 0) {
+            require(
+                block.chainid == config.chainId,
+                string.concat("CHAIN=", chain, " on a fork of ", active)
+            );
+        } else {
             string memory rpcUrl = vm.envOr(config.rpcEnvVar, string(""));
             vm.skip(
                 bytes(rpcUrl).length == 0,
@@ -124,21 +135,31 @@ abstract contract EasyTrackScenarioBase is Test {
         vm.label(config.agent, "Agent");
     }
 
+    /// @dev The network of a chain id the suite knows, or empty
+    function _networkOf(uint256 chainId) private pure returns (string memory) {
+        if (chainId == 560048) return "hoodi";
+        if (chainId == 1) return "mainnet";
+
+        return "";
+    }
+
     function _networkConfig(string memory chain) private pure returns (NetworkConfig memory) {
         if (_equals(chain, "hoodi")) {
+            Lido.DAO memory dao = Lido.dao(560048);
+
             return NetworkConfig({
-                chainId: 560048,
+                chainId: dao.chainId,
                 rpcEnvVar: "HOODI_RPC_URL",
-                artifact: "deployed-hoodi.json",
+                artifact: dao.deployedArtifact,
                 srArtifact: "deployed-sr-hoodi.json",
                 smArtifact: "deployed-sm-hoodi.json",
                 addresses: "integration-test-addresses-hoodi.yaml",
                 easyTrack: 0x284D91a7D47850d21A6DEaaC6E538AC7E5E6fc2a,
-                agent: 0x0534aA41907c9631fae990960bCC72d75fA7cfeD,
-                finance: 0x254Ae22bEEba64127F0e59fe8593082F3cd13f6b,
+                agent: dao.agent,
+                finance: dao.finance,
                 csmModule: 0x79CEf36D84743222f37765204Bec41E92a93E59d,
                 cmModule: 0x87EB69Ae51317405FD285efD2326a4a11f6173b9,
-                locator: 0xe2EF9536DAAAEBFf5b1c130957AB3E80056b06D8,
+                locator: dao.locator,
                 dateTime: 0xd1df0cF660D531Fad9EAabD3e7b4E8881E28ae2F,
                 dai: 0x17fc691f6EF57D2CA719d30b8fe040123d4ee319,
                 usdc: 0x97bb030B93faF4684eAC76bA0bf3be5ec7140F36
@@ -146,19 +167,21 @@ abstract contract EasyTrackScenarioBase is Test {
         }
 
         if (_equals(chain, "mainnet")) {
+            Lido.DAO memory dao = Lido.dao(1);
+
             return NetworkConfig({
-                chainId: 1,
+                chainId: dao.chainId,
                 rpcEnvVar: "MAINNET_RPC_URL",
-                artifact: "deployed-mainnet.json",
+                artifact: dao.deployedArtifact,
                 srArtifact: "deployed-sr-mainnet.json",
                 smArtifact: "deployed-sm-mainnet.json",
                 addresses: "integration-test-addresses-mainnet.yaml",
                 easyTrack: 0xF0211b7660680B49De1A7E9f25C65660F0a13Fea,
-                agent: 0x3e40D73EB977Dc6a537aF587D48316feE66E9C8c,
-                finance: 0xB9E5CBB9CA5b0d659238807E84D0176930753d86,
+                agent: dao.agent,
+                finance: dao.finance,
                 csmModule: 0xdA7dE2ECdDfccC6c3AF10108Db212ACBBf9EA83F,
                 cmModule: 0xDa5F930cE326EB5205085D66c72A4E79d60cB8C1,
-                locator: 0xC1d0b3DE6792Bf6b4b37EccdcC24e45978Cfd2Eb,
+                locator: dao.locator,
                 dateTime: 0x75100bd564415731B5936A4A94D0dC29DdE5dB3C,
                 dai: 0x6B175474E89094C44Da98b954EedeAC495271d0F,
                 usdc: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48
@@ -324,6 +347,30 @@ abstract contract EasyTrackScenarioBase is Test {
 
         vm.prank(manager);
         acl.grantPermission(entity, app, role);
+    }
+
+    /// @dev Mint `holder` LDO as the token's controller, and move on a block so that a vote
+    ///      opened next counts the balance at its snapshot
+    function _mintLDO(address holder, uint256 amount) internal {
+        IMiniMeToken ldo = IMiniMeToken(easyTrack.governanceToken());
+
+        vm.prank(ldo.controller());
+        bool minted = ldo.generateTokens(holder, amount);
+
+        assertTrue(minted, "setup: LDO minted");
+
+        vm.roll(block.number + 1);
+    }
+
+    /// @dev Pass `voteId` with the test's LDO and execute it once its time is over
+    function _voteAndExecute(uint256 voteId) internal {
+        IVoting voting = IVoting(_voting());
+
+        voting.vote(voteId, true, false);
+
+        vm.warp(block.timestamp + voting.voteTime());
+
+        voting.executeVote(voteId);
     }
 
     /// @dev Deploy a contract of `contracts/` from the artifact `forge build` writes to

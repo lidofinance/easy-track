@@ -413,9 +413,34 @@ interface IFinance {
 interface IMiniMeToken {
     function balanceOf(address _owner) external view returns (uint256);
 
+    function totalSupply() external view returns (uint256);
+
     function approve(address _spender, uint256 _amount) external returns (bool);
 
     function controller() external view returns (address);
+
+    function generateTokens(address _owner, uint256 _amount) external returns (bool);
+}
+
+/// @notice Aragon TokenManager, LDO's controller. It forwards a script to Voting for any LDO
+///         holder, which is how a vote is opened.
+interface ITokenManager {
+    function forward(bytes calldata _evmScript) external;
+}
+
+/// @notice Aragon Voting. A vote runs its script once it passed and its time is over.
+interface IVoting {
+    function newVote(bytes calldata _executionScript, string calldata _metadata)
+        external
+        returns (uint256 voteId);
+
+    function vote(uint256 _voteId, bool _supports, bool _executesIfDecided_deprecated) external;
+
+    function executeVote(uint256 _voteId) external;
+
+    function voteTime() external view returns (uint64);
+
+    function votesLength() external view returns (uint256);
 }
 
 /// @notice The Aragon Agent as the DAO vault Finance pays from: it takes deposits of ETH and

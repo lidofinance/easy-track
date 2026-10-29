@@ -161,6 +161,38 @@ Script requires next ENV variables to be set:
 
 - `DEPLOYER` - address of the account that renounces roles
 
+The Foundry scripts live in `script/` and compile with the `scenario` profile. A script runs on the anvil fork `just make-fork` started, else on `<CHAIN>_RPC_URL` of the chain `CHAIN` selects, default `hoodi`, as a dry run unless `--broadcast` is passed. The deployer is the account `forge script` signs with, `--account`, `--ledger` or `--private-key`:
+
+```bash
+just script DeployEasyTrack --account <keystore> --broadcast
+```
+
+A new factory gets a script next to `DeployEasyTrack.s.sol` on the same base, and a scenario test under `test/foundry/scenario` that runs it on a fork.
+
+### `DeployEasyTrack.s.sol`
+
+The Foundry counterpart of `deploy.py`: deploys main Easy Track contracts with EVM Script factories and appends them to `deployed-<chain>.json`.
+Script requires next ENV variables to be set:
+
+- `LEGO_PROGRAM_VAULT` - address of Lido's LEGO program
+- `LEGO_COMMITTEE_MULTISIG` - address allowed to create motions to top up LEGO program
+- `REWARD_PROGRAMS_MULTISIG` - address allowed to create motions to add, remove or top up reward program
+- `PAUSE_ADDRESS` - address to grant PAUSE_ROLE
+
+### `GrantExecutorPermissions.s.sol`
+
+The Foundry counterpart of `grant_executor_permissions.py`: creates Aragon's Voting to grant EVMScriptExecutor the permissions it lacks of `CREATE_PAYMENTS_ROLE` on Finance and `SET_NODE_OPERATOR_LIMIT_ROLE` on the curated registry. The signing account must hold LDO.
+Script requires next ENV variables to be set:
+
+- `EVM_SCRIPT_EXECUTOR` - address to grant permissions.
+
+### `RevokeAllPermissions.s.sol`
+
+The Foundry counterpart of `revoke_all_permissions.py`: creates Aragon's Voting to revoke all granted permissions from EVMScriptExecutor. The signing account must hold LDO.
+Script requires next ENV variables to be set:
+
+- `EVM_SCRIPT_EXECUTOR` - address to revoke permissions from.
+
 ## Tests
 
 Set rpc url:

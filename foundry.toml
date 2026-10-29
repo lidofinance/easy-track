@@ -5,6 +5,9 @@ libs = ["node_modules"]
 solc = "0.8.6"
 evm_version = "berlin"
 auto_detect_remappings = false
+# The Foundry scripts under script/ target the modern-pragma interfaces, the scenario profile
+# compiles them
+skip = ["script/**"]
 
 [profile.scenario]
 src = "test/foundry/scenario"
@@ -13,7 +16,13 @@ out = "out/scenario"
 cache_path = "cache/scenario"
 solc = "0.8.38"
 evm_version = "prague"
-fs_permissions = [{ access = "read", path = "./" }]
+skip = []
+# The scripts append their deployments to the records, nothing else is written
+fs_permissions = [
+    { access = "read", path = "./" },
+    { access = "read-write", path = "./deployed-hoodi.json" },
+    { access = "read-write", path = "./deployed-mainnet.json" },
+]
 
 # contracts/ holds the deployed sources and stays byte for byte as audited, so neither the
 # formatter nor the linter runs on it. The excluded lints flag patterns the factories use by design.

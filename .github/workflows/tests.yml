@@ -160,5 +160,5 @@ jobs:
         with:
           version: ${{ env.FOUNDRY_VERSION }}
 
-      - name: Check the formatting of the Foundry tests
-        run: forge fmt --check test/foundry
+      - name: Check the formatting of the Foundry tests and scripts
+        run: forge fmt --check test/foundry script

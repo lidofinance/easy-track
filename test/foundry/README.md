@@ -5,7 +5,7 @@ Two suites, each on its own profile in `foundry.toml`:
 | Suite | Profile | Compiles | Network |
 |---|---|---|---|
 | `unit/` | `default` | `contracts/` and the tests at solc 0.8.6, so tests deploy the real contracts and stubs with `new` | none |
-| `scenario/` | `scenario` | only `test/foundry`, with its own modern-pragma interfaces | a fork of hoodi or mainnet |
+| `scenario/` | `scenario` | only `test/foundry` and `script/`, with their own modern-pragma interfaces | a fork of hoodi or mainnet |
 
 Plain `forge test` runs the default profile, the unit suite. The scenario suite needs its profile and the contracts built, and reports every forking scenario contract as skipped when no RPC URL is set:
 
@@ -14,7 +14,7 @@ npm test                           # forge test
 CHAIN=hoodi npm run test:scenario  # forge build && FOUNDRY_PROFILE=scenario forge test
 ```
 
-`npm install` brings forge-std as a normal npm dependency, there is no submodule.
+`npm install` brings forge-std as a normal npm dependency, there is no submodule. The Foundry scripts under `script/` compile with the scenario profile too, see the root README.
 
 ## Unit suite
 
@@ -36,11 +36,11 @@ createMotion (trustedCaller) → warp motionDuration → enactMotion → assert 
 
 The suite prepares only **data**: operators, penalties, slashings, groups. A deployed factory runs as the DAO registered it. Its registration, the executor's protocol roles and the versions of the contracts it targets are real on-chain state, and a test fails where that state is missing. The exceptions act as a DAO vote would, through Voting or a permission's manager, and the Notes list each one. A test that deploys a fresh factory or a fresh Easy Track registers and permissions what it deploys. The exit request and MEV-Boost suites register the deployed factory where the fork lacks the registration. The gate permission tests re-register `SetMerkleGateTree` with a stub gate. The payouts suites regrant the executor `CREATE_PAYMENTS_ROLE` on Finance.
 
-Six files under `aragon/` drive the DAO apps instead of a deployed factory: the ACL's parameterized permissions, the reward programs, LEGO program and staking limit factories over a fresh Easy Track, the deploy script's wiring and the executor permission votes. Four files under `payouts/` drive the allowed recipients registries and factories, the motions files once per instance of `integration-test-addresses-<chain>.yaml`, whatever the file does not list deployed fresh through the builders and registered in Easy Track, and a fifth checks the reader of that file over inline text, without a fork. `vebo/` and `mevboost/` drive the deployed exit request hash and MEV-Boost relay factories, `vaults/` the operator grid and vault hub factories deployed fresh with their own Easy Track and `VaultsAdapter`, `lido/` the deployed `SetDepositsReserveTarget` and a fresh one. The suite is independent of the Brownie suite and has no Python.
+Six files under `aragon/` drive the DAO apps instead of a deployed factory: the ACL's parameterized permissions, the reward programs, LEGO program and staking limit factories over a fresh Easy Track, and the Foundry scripts of `script/`, the deployment and the executor permission votes. Four files under `payouts/` drive the allowed recipients registries and factories, the motions files once per instance of `integration-test-addresses-<chain>.yaml`, whatever the file does not list deployed fresh through the builders and registered in Easy Track, and a fifth checks the reader of that file over inline text, without a fork. `vebo/` and `mevboost/` drive the deployed exit request hash and MEV-Boost relay factories, `vaults/` the operator grid and vault hub factories deployed fresh with their own Easy Track and `VaultsAdapter`, `lido/` the deployed `SetDepositsReserveTarget` and a fresh one. The suite is independent of the Brownie suite and has no Python.
 
 ### Running
 
-`forge` and `just` auto-load `.env`, which holds `HOODI_RPC_URL` and `MAINNET_RPC_URL`. `CHAIN`, default `hoodi`, selects the network and the `deployed-*.json` files. `RPC_URL` is not consulted. Some tests deploy a stub gate, a second factory, a whole Easy Track, the payouts builders or the vaults adapter and factories from the artifacts `forge build` writes to `out/`, which the npm script and the just recipe build first. Without them the tests fail naming the command.
+`forge` and `just` auto-load `.env`, which holds `HOODI_RPC_URL` and `MAINNET_RPC_URL`. `CHAIN`, default `hoodi`, selects the network and the `deployed-*.json` files. On an already-active fork its chain id selects the network and `CHAIN` only has to agree with it. `RPC_URL` is not consulted. Some tests deploy a stub gate, a second factory, a whole Easy Track, the payouts builders or the vaults adapter and factories from the artifacts `forge build` writes to `out/`, which the npm script and the just recipe build first. Without them the tests fail naming the command.
 
 ```bash
 CHAIN=hoodi   npm run test:scenario
@@ -48,15 +48,15 @@ CHAIN=mainnet npm run test:scenario
 CHAIN=hoodi   FOUNDRY_PROFILE=scenario forge test --mc SettleGeneralDelayedPenalty -vvv   # one factory
 ```
 
-A root [`justfile`](../../justfile) runs the unit suite with `just test`, the scenario suite after a build, and formats the tests with `just fmt`:
+A root [`justfile`](../../justfile) runs the unit suite with `just test`, the scenario suite after a build, and formats the tests and scripts with `just fmt`. The forking recipes use the Anvil fork on the port when one is up, else `<CHAIN>_RPC_URL`:
 
 ```bash
-RPC_URL=$MAINNET_RPC_URL just make-fork                             # start a local Anvil fork (reused if up)
-CHAIN=mainnet just test-scenario --fork-url http://127.0.0.1:8545  # run against it (fast, cached)
-just test-scenario                                                 # or self-fork <CHAIN>_RPC_URL
+CHAIN=mainnet just make-fork         # start a local Anvil fork of MAINNET_RPC_URL (reused if up)
+just test-scenario                   # run against it (fast, cached), its chain selects the network
+just test-scenario --mc VaultHub     # one suite
 ```
 
-If the Easy Track contract is already present in the running EVM, as with `--fork-url`, the suite reuses that fork instead of re-forking. With no RPC and no active fork every scenario contract is reported as `[SKIP] setUp()` with the name of the variable it looked for. Forge keeps every state change in memory, so a reused Anvil fork is left untouched.
+On the Anvil fork, or any `--fork-url`, the suite reuses that fork instead of re-forking. With no RPC and no active fork every scenario contract is reported as `[SKIP] setUp()` with the name of the variable it looked for. Forge keeps every state change in memory, so a reused Anvil fork is left untouched.
 
 ### Coverage
 
@@ -87,8 +87,8 @@ Every factory of the `sr` and `sm` artifacts is covered, plus the SimpleDVT, MEV
 | `AddMEVBoostRelays`, `RemoveMEVBoostRelays`, `EditMEVBoostRelays` (main) | `mevboost/MEVBoostRelaysAllowedList.t.sol` | add one relay then three, fill the list to 40 in one motion, remove one then three, empty the full list in one motion, edit relays in place |
 | `TopUpLegoProgram`, deployed fresh with its own Easy Track | `aragon/LegoProgramEasyTrack.t.sol` | one motion pays the LEGO program LDO, stETH and ETH from the Agent through Finance |
 | `IncreaseNodeOperatorStakingLimit`, deployed fresh with its own Easy Track | `aragon/NodeOperatorsEasyTrack.t.sol` | two DAO votes let the executor set limits and the Agent add a curated operator, which adds three keys and raises its limit to three by a motion |
-| the five factories of `scripts/deploy.py`, deployed fresh with their own Easy Track | `aragon/DeployScript.t.sol` | the deploy script's wiring read back: settings, roles on Voting, executor, factory getters, registry roles, factory permissions |
-| none, the executor permission scripts | `aragon/ExecutorPermissions.t.sol` | a vote grants a fresh executor `CREATE_PAYMENTS_ROLE` and `SET_NODE_OPERATOR_LIMIT_ROLE`, a second revokes them and leaves it none of the DAO apps' permissions |
+| the five factories `script/DeployEasyTrack.s.sol` deploys with their own Easy Track | `aragon/DeployScript.t.sol` | the script run with its contract as the deployer, the deployment read back: settings, roles on Voting, executor, factory getters, registry roles, factory permissions |
+| none, `script/GrantExecutorPermissions.s.sol` and `script/RevokeAllPermissions.s.sol` | `aragon/ExecutorPermissions.t.sol` | the grant script's vote, passed and executed, gives a fresh executor `CREATE_PAYMENTS_ROLE` and `SET_NODE_OPERATOR_LIMIT_ROLE`, the revoke script's leaves it none of the DAO apps' permissions |
 | `RegisterGroupsInOperatorGrid`, `UpdateGroupsShareLimitInOperatorGrid`, `RegisterTiersInOperatorGrid`, `AlterTiersInOperatorGrid`, `SetJailStatusInOperatorGrid`, `UpdateVaultsFeesInOperatorGrid`, deployed fresh with their own Easy Track and `VaultsAdapter` (chains with vaults) | `vaults/OperatorGrid.t.sol` | register two groups with their tiers, halve their share limits, append tiers, overwrite tiers, jail a vault, set a vault's fees after a fresh report |
 | `ForceValidatorExitsInVaultHub`, `SetLiabilitySharesTargetInVaultHub`, `SocializeBadDebtInVaultHub`, the same | `vaults/VaultHub.t.sol` | force the exit of an unhealthy vault's validators, set the redemption shares of two minted vaults, move bad debt between two vaults of one operator |
 
@@ -96,11 +96,11 @@ Every factory of the `sr` and `sm` artifacts is covered, plus the SimpleDVT, MEV
 
 - **Deployed factories run as registered.** The suite upgrades nothing and leaves the executor's protocol roles as they are on-chain, else the test fails. Role grants build the data preconditions above.
 - **Registration and permissions a vote would grant.** The gate permission tests re-register `SetMerkleGateTree` with a stub gate and the missing module test registers a second `UpdateStakingModuleShareLimits`, both deployed from the `forge build` artifacts. The exit request and MEV-Boost suites bind the deployed factories and register them as Voting only when the fork lacks the registration, the SimpleDVT exit request suite also a fresh factory for the undeposited key. The fresh `SetDepositsReserveTarget` grants the executor `BUFFER_RESERVE_MANAGER_ROLE` on Lido when it lacks it.
-- **Fresh Easy Tracks.** The reward programs, LEGO program, staking limit, vaults and script suites deploy their own Easy Track, the vaults suites with Voting as admin and the deploy script suite with the script's settings, so do the payouts suites on a chain without the addresses file. The reward programs and LEGO program suites grant their fresh executor `CREATE_PAYMENTS_ROLE` on Finance as the permission manager. The staking limit suite grants it `SET_NODE_OPERATOR_LIMIT_ROLE` on the curated registry and grants the Agent `MANAGE_NODE_OPERATOR_ROLE` to add the operator.
+- **Fresh Easy Tracks.** The reward programs, LEGO program, staking limit, vaults and script suites deploy their own Easy Track, the vaults suites with Voting as admin and the deploy script suite through the script itself, so do the payouts suites on a chain without the addresses file. The reward programs and LEGO program suites grant their fresh executor `CREATE_PAYMENTS_ROLE` on Finance as the permission manager. The staking limit suite grants it `SET_NODE_OPERATOR_LIMIT_ROLE` on the curated registry and grants the Agent `MANAGE_NODE_OPERATOR_ROLE` to add the operator.
 - **Payouts suites.** They bind the Easy Track, builder, registries and factories `integration-test-addresses-<chain>.yaml` lists, deploy what it does not, register fresh factories as Voting and regrant the executor `CREATE_PAYMENTS_ROLE` on Finance without parameters, as the Brownie fixtures do. The Agent is their registries' admin and pays through Finance, so it must hold the DAI, USDC or LDO the top-ups move, and the LDO the LEGO program motion pays. A single-token suite paying stETH stakes the Agent's ETH when it runs short.
 - **Skips.** The two SimpleDVT suites driving `IncreaseVettedValidatorsLimit` skip where it is deployed but not registered, as on mainnet. The vaults suites skip a chain without the vaults contracts, the deployed `SetDepositsReserveTarget` a chain whose artifact lacks it and the fresh one a Lido without a deposits reserve target.
 - **Interfaces** in `interfaces/{External,Factories,EasyTrack,Payouts,Vaults}.sol` are self-contained with a modern pragma, so the suite never compiles `contracts/`. Build the factories first with `forge build`.
 - **Gate discovery.** The gate of `SetMerkleGateTree` is the module's `CREATE_NODE_OPERATOR_ROLE` holder the executor may set the tree on. The staking-module addresses live in `NetworkConfig`. Every other target comes from the factory getters at runtime.
 - **Commit re-validation.** Factories that commit a current value at creation, the share limits, the gate tree, the operator group and the lock nonce, re-check it at enactment. Each has a test that mutates that value after `createMotion` and asserts `enactMotion` then reverts.
-- **DAO votes** in the SimpleDVT scenarios are replayed through the executor: Voting points it at the Agent with `setEasyTrack`, the Agent runs the script, Voting points it back. A vote that only grants an Aragon permission is replayed as that grant from the permission's manager. The payouts vote is replayed as the Agent's call, the vote adding a curated operator as the Agent's call after its grant, and the MEV-Boost vote as the list owner's `set_manager`. The permission scripts' votes are replayed as Voting's ACL calls once the setup vote made it the registry role's manager. Aragon Voting and the dual governance timelock are not driven.
+- **DAO votes** in the SimpleDVT scenarios are replayed through the executor: Voting points it at the Agent with `setEasyTrack`, the Agent runs the script, Voting points it back. A vote that only grants an Aragon permission is replayed as that grant from the permission's manager. The payouts vote is replayed as the Agent's call, the vote adding a curated operator as the Agent's call after its grant, and the MEV-Boost vote as the list owner's `set_manager`. The permission scripts open their votes through the TokenManager, and the suite passes them with LDO minted as the token's controller and executes them through Voting, once the setup vote made it the manager of the required roles. The dual governance timelock is not driven.
 - **Calendar periods** of the payouts registries are computed through the deployed date-time contract they use, so the suites warp to period boundaries, never by a duration.

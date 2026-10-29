@@ -3,14 +3,11 @@
 
 pragma solidity ^0.8.25;
 
+import {DeployEasyTrack} from "script/DeployEasyTrack.s.sol";
+import {Lido} from "script/helpers/Lido.sol";
 import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
 import {IEVMScriptExecutor, IRewardProgramsRegistry} from "test/foundry/interfaces/EasyTrack.sol";
-import {
-    IFinance,
-    ILidoLocator,
-    INodeOperatorsRegistry,
-    IStakingRouter
-} from "test/foundry/interfaces/External.sol";
+import {IFinance, INodeOperatorsRegistry} from "test/foundry/interfaces/External.sol";
 import {
     IIncreaseNodeOperatorStakingLimit,
     IRewardProgramsFactory,
@@ -18,56 +15,41 @@ import {
     ITopUpRewardPrograms
 } from "test/foundry/interfaces/Factories.sol";
 
-/// @notice The wiring `scripts/deploy.py` leaves behind, replayed from the `forge build`
-///         artifacts over the live Aragon apps and the curated registry: Easy Track with the
+/// @notice `script/DeployEasyTrack.s.sol` run on the fork over the live Aragon apps and the
+///         curated registry, with the script contract as the deployer: Easy Track with the
 ///         initial settings and its roles on Voting, the executor, the five factories registered
 ///         with their permissions and the reward programs registry with its roles. The test reads
 ///         the deployment back.
 contract DeployScriptTest is EasyTrackScenarioBase {
-    /// @dev `utils/constants.py`, the settings the deploy script starts Easy Track with
-    uint256 internal constant INITIAL_MOTION_DURATION = 72 hours;
-    uint256 internal constant INITIAL_MOTIONS_COUNT_LIMIT = 12;
-    uint256 internal constant INITIAL_OBJECTIONS_THRESHOLD = 50;
+    DeployEasyTrack.Params internal params = DeployEasyTrack.Params({
+        legoProgramVault: makeAddr("legoProgramVault"),
+        legoCommitteeMultisig: makeAddr("legoCommitteeMultisig"),
+        rewardProgramsMultisig: makeAddr("rewardProgramsMultisig"),
+        pauseAddress: makeAddr("pauseAddress")
+    });
 
-    uint256 internal constant CURATED_MODULE_ID = 1;
-
-    address internal legoProgramVault = makeAddr("legoProgramVault");
-    address internal legoCommitteeMultisig = makeAddr("legoCommitteeMultisig");
-    address internal rewardProgramsMultisig = makeAddr("rewardProgramsMultisig");
-    address internal pauseAddress = makeAddr("pauseAddress");
-
-    address internal voting;
-    address internal ldo;
-    address internal callsScript;
-    IFinance internal finance;
+    Lido.DAO internal dao;
     INodeOperatorsRegistry internal registry;
-
-    address internal increaseNodeOperatorStakingLimit;
-    address internal topUpLegoProgram;
-    IRewardProgramsRegistry internal rewardProgramsRegistry;
-    address internal addRewardProgram;
-    address internal removeRewardProgram;
-    address internal topUpRewardPrograms;
+    DeployEasyTrack internal script;
+    DeployEasyTrack.Deployment internal deployment;
 
     function setUp() public {
         _forkAndInitialize();
 
-        voting = _voting();
-        ldo = easyTrack.governanceToken();
-        callsScript = IEVMScriptExecutor(evmScriptExecutor).callsScript();
-        finance = IFinance(config.finance);
-        IStakingRouter stakingRouter = IStakingRouter(ILidoLocator(config.locator).stakingRouter());
-        registry = INodeOperatorsRegistry(
-            stakingRouter.getStakingModule(CURATED_MODULE_ID).stakingModuleAddress
-        );
+        dao = Lido.dao();
+        registry = INodeOperatorsRegistry(Lido.curatedRegistry(dao));
+        script = new DeployEasyTrack();
 
-        vm.label(voting, "Voting");
-        vm.label(ldo, "LDO");
-        vm.label(callsScript, "CallsScript");
-        vm.label(address(finance), "Finance");
+        vm.label(dao.voting, "Voting");
+        vm.label(dao.ldo, "LDO");
+        vm.label(dao.callsScript, "CallsScript");
+        vm.label(dao.finance, "Finance");
         vm.label(address(registry), "NodeOperatorsRegistry");
+        vm.label(address(script), "DeployEasyTrack");
 
-        _deployEasyTracks();
+        deployment = script.deploy(address(script), params);
+        easyTrack = deployment.easyTrack;
+        evmScriptExecutor = deployment.evmScriptExecutor;
     }
 
     // python: test_deploy_script
@@ -80,128 +62,80 @@ contract DeployScriptTest is EasyTrackScenarioBase {
         _assertFactoryPermissions();
     }
 
-    /// @dev `deploy_easy_tracks`, with the test as the deployer
-    function _deployEasyTracks() private {
-        _deployEasyTrack(
-            address(this),
-            INITIAL_MOTION_DURATION,
-            INITIAL_MOTIONS_COUNT_LIMIT,
-            INITIAL_OBJECTIONS_THRESHOLD
-        );
-
-        increaseNodeOperatorStakingLimit =
-            _deployArtifact("IncreaseNodeOperatorStakingLimit", abi.encode(registry));
-        topUpLegoProgram = _deployArtifact(
-            "TopUpLegoProgram", abi.encode(legoCommitteeMultisig, finance, legoProgramVault)
-        );
-
-        address[] memory roleHolders = new address[](2);
-        roleHolders[0] = voting;
-        roleHolders[1] = evmScriptExecutor;
-        rewardProgramsRegistry = IRewardProgramsRegistry(
-            _deployArtifact("RewardProgramsRegistry", abi.encode(voting, roleHolders, roleHolders))
-        );
-
-        addRewardProgram = _deployArtifact(
-            "AddRewardProgram", abi.encode(rewardProgramsMultisig, rewardProgramsRegistry)
-        );
-        removeRewardProgram = _deployArtifact(
-            "RemoveRewardProgram", abi.encode(rewardProgramsMultisig, rewardProgramsRegistry)
-        );
-        topUpRewardPrograms = _deployArtifact(
-            "TopUpRewardPrograms",
-            abi.encode(rewardProgramsMultisig, rewardProgramsRegistry, finance, ldo)
-        );
-
-        _addEVMScriptFactories();
-        _grantRoles();
-        _handAdminToVoting();
-    }
-
-    /// @dev `add_evm_script_factories`, in its order
-    function _addEVMScriptFactories() private {
-        easyTrack.addEVMScriptFactory(
-            increaseNodeOperatorStakingLimit, _setNodeOperatorStakingLimitPermission()
-        );
-        easyTrack.addEVMScriptFactory(topUpLegoProgram, _newImmediatePaymentPermission());
-        easyTrack.addEVMScriptFactory(topUpRewardPrograms, _newImmediatePaymentPermission());
-        easyTrack.addEVMScriptFactory(addRewardProgram, _addRewardProgramPermission());
-        easyTrack.addEVMScriptFactory(removeRewardProgram, _removeRewardProgramPermission());
-    }
-
-    /// @dev `grant_roles`: Voting may pause, unpause and cancel, the pause address may pause
-    function _grantRoles() private {
-        easyTrack.grantRole(easyTrack.PAUSE_ROLE(), voting);
-        easyTrack.grantRole(easyTrack.UNPAUSE_ROLE(), voting);
-        easyTrack.grantRole(easyTrack.CANCEL_ROLE(), voting);
-        easyTrack.grantRole(easyTrack.PAUSE_ROLE(), pauseAddress);
-    }
-
     function _assertEasyTrackSettings() private view {
-        assertEq(easyTrack.governanceToken(), ldo, "governanceToken");
+        assertEq(easyTrack.governanceToken(), dao.ldo, "governanceToken");
         assertEq(easyTrack.evmScriptExecutor(), evmScriptExecutor, "evmScriptExecutor");
-        assertEq(easyTrack.motionDuration(), INITIAL_MOTION_DURATION, "motionDuration");
-        assertEq(easyTrack.motionsCountLimit(), INITIAL_MOTIONS_COUNT_LIMIT, "motionsCountLimit");
+        assertEq(easyTrack.motionDuration(), script.INITIAL_MOTION_DURATION(), "motionDuration");
         assertEq(
-            easyTrack.objectionsThreshold(), INITIAL_OBJECTIONS_THRESHOLD, "objectionsThreshold"
+            easyTrack.motionsCountLimit(), script.INITIAL_MOTIONS_COUNT_LIMIT(), "motionsCountLimit"
+        );
+        assertEq(
+            easyTrack.objectionsThreshold(),
+            script.INITIAL_OBJECTIONS_THRESHOLD(),
+            "objectionsThreshold"
         );
     }
 
     function _assertEasyTrackRoles() private view {
         bytes32 adminRole = easyTrack.DEFAULT_ADMIN_ROLE();
 
-        assertTrue(easyTrack.hasRole(easyTrack.PAUSE_ROLE(), voting), "Voting PAUSE_ROLE");
-        assertTrue(easyTrack.hasRole(easyTrack.CANCEL_ROLE(), voting), "Voting CANCEL_ROLE");
-        assertTrue(easyTrack.hasRole(easyTrack.UNPAUSE_ROLE(), voting), "Voting UNPAUSE_ROLE");
-        assertTrue(easyTrack.hasRole(adminRole, voting), "Voting DEFAULT_ADMIN_ROLE");
-        assertFalse(easyTrack.hasRole(adminRole, address(this)), "deployer DEFAULT_ADMIN_ROLE");
+        assertTrue(easyTrack.hasRole(easyTrack.PAUSE_ROLE(), dao.voting), "Voting PAUSE_ROLE");
+        assertTrue(easyTrack.hasRole(easyTrack.CANCEL_ROLE(), dao.voting), "Voting CANCEL_ROLE");
+        assertTrue(easyTrack.hasRole(easyTrack.UNPAUSE_ROLE(), dao.voting), "Voting UNPAUSE_ROLE");
+        assertTrue(
+            easyTrack.hasRole(easyTrack.PAUSE_ROLE(), params.pauseAddress),
+            "pauseAddress PAUSE_ROLE"
+        );
+        assertTrue(easyTrack.hasRole(adminRole, dao.voting), "Voting DEFAULT_ADMIN_ROLE");
+        assertFalse(easyTrack.hasRole(adminRole, address(script)), "deployer DEFAULT_ADMIN_ROLE");
     }
 
     function _assertExecutor() private view {
         IEVMScriptExecutor executor = IEVMScriptExecutor(evmScriptExecutor);
 
-        assertEq(executor.callsScript(), callsScript, "callsScript");
+        assertEq(executor.callsScript(), dao.callsScript, "callsScript");
         assertEq(executor.easyTrack(), address(easyTrack), "easyTrack");
-        assertEq(executor.owner(), voting, "executor owner");
+        assertEq(executor.owner(), dao.voting, "executor owner");
     }
 
     function _assertFactories() private view {
         assertEq(
-            IIncreaseNodeOperatorStakingLimit(increaseNodeOperatorStakingLimit)
+            IIncreaseNodeOperatorStakingLimit(deployment.increaseNodeOperatorStakingLimit)
                 .nodeOperatorsRegistry(),
             address(registry),
             "nodeOperatorsRegistry"
         );
 
-        ITopUpLegoProgram lego = ITopUpLegoProgram(topUpLegoProgram);
-        assertEq(lego.finance(), address(finance), "LEGO finance");
-        assertEq(lego.legoProgram(), legoProgramVault, "legoProgram");
-        assertEq(lego.trustedCaller(), legoCommitteeMultisig, "LEGO trustedCaller");
+        ITopUpLegoProgram lego = ITopUpLegoProgram(deployment.topUpLegoProgram);
+        assertEq(lego.finance(), dao.finance, "LEGO finance");
+        assertEq(lego.legoProgram(), params.legoProgramVault, "legoProgram");
+        assertEq(lego.trustedCaller(), params.legoCommitteeMultisig, "LEGO trustedCaller");
 
-        IRewardProgramsFactory add = IRewardProgramsFactory(addRewardProgram);
-        assertEq(add.trustedCaller(), rewardProgramsMultisig, "add trustedCaller");
-        assertEq(add.rewardProgramsRegistry(), address(rewardProgramsRegistry), "add registry");
+        address rewardProgramsRegistry = address(deployment.rewardProgramsRegistry);
 
-        IRewardProgramsFactory remove = IRewardProgramsFactory(removeRewardProgram);
-        assertEq(remove.trustedCaller(), rewardProgramsMultisig, "remove trustedCaller");
-        assertEq(
-            remove.rewardProgramsRegistry(), address(rewardProgramsRegistry), "remove registry"
-        );
+        IRewardProgramsFactory add = IRewardProgramsFactory(deployment.addRewardProgram);
+        assertEq(add.trustedCaller(), params.rewardProgramsMultisig, "add trustedCaller");
+        assertEq(add.rewardProgramsRegistry(), rewardProgramsRegistry, "add registry");
 
-        ITopUpRewardPrograms topUp = ITopUpRewardPrograms(topUpRewardPrograms);
-        assertEq(topUp.trustedCaller(), rewardProgramsMultisig, "top up trustedCaller");
-        assertEq(topUp.finance(), address(finance), "top up finance");
-        assertEq(topUp.rewardToken(), ldo, "rewardToken");
-        assertEq(topUp.rewardProgramsRegistry(), address(rewardProgramsRegistry), "top up registry");
+        IRewardProgramsFactory remove = IRewardProgramsFactory(deployment.removeRewardProgram);
+        assertEq(remove.trustedCaller(), params.rewardProgramsMultisig, "remove trustedCaller");
+        assertEq(remove.rewardProgramsRegistry(), rewardProgramsRegistry, "remove registry");
+
+        ITopUpRewardPrograms topUp = ITopUpRewardPrograms(deployment.topUpRewardPrograms);
+        assertEq(topUp.trustedCaller(), params.rewardProgramsMultisig, "top up trustedCaller");
+        assertEq(topUp.finance(), dao.finance, "top up finance");
+        assertEq(topUp.rewardToken(), dao.ldo, "rewardToken");
+        assertEq(topUp.rewardProgramsRegistry(), rewardProgramsRegistry, "top up registry");
     }
 
     /// @dev Voting administers the registry, Voting and the executor add and remove
     function _assertRegistryRoles() private view {
+        IRewardProgramsRegistry rewardProgramsRegistry = deployment.rewardProgramsRegistry;
         bytes32 addRole = rewardProgramsRegistry.ADD_REWARD_PROGRAM_ROLE();
         bytes32 removeRole = rewardProgramsRegistry.REMOVE_REWARD_PROGRAM_ROLE();
 
         assertTrue(
-            rewardProgramsRegistry.hasRole(rewardProgramsRegistry.DEFAULT_ADMIN_ROLE(), voting),
+            rewardProgramsRegistry.hasRole(rewardProgramsRegistry.DEFAULT_ADMIN_ROLE(), dao.voting),
             "Voting DEFAULT_ADMIN_ROLE on registry"
         );
         assertTrue(
@@ -209,40 +143,41 @@ contract DeployScriptTest is EasyTrackScenarioBase {
             "executor ADD_REWARD_PROGRAM_ROLE"
         );
         assertTrue(
-            rewardProgramsRegistry.hasRole(addRole, voting), "Voting ADD_REWARD_PROGRAM_ROLE"
+            rewardProgramsRegistry.hasRole(addRole, dao.voting), "Voting ADD_REWARD_PROGRAM_ROLE"
         );
         assertTrue(
             rewardProgramsRegistry.hasRole(removeRole, evmScriptExecutor),
             "executor REMOVE_REWARD_PROGRAM_ROLE"
         );
         assertTrue(
-            rewardProgramsRegistry.hasRole(removeRole, voting), "Voting REMOVE_REWARD_PROGRAM_ROLE"
+            rewardProgramsRegistry.hasRole(removeRole, dao.voting),
+            "Voting REMOVE_REWARD_PROGRAM_ROLE"
         );
     }
 
     function _assertFactoryPermissions() private view {
         assertEq(
-            easyTrack.evmScriptFactoryPermissions(increaseNodeOperatorStakingLimit),
+            easyTrack.evmScriptFactoryPermissions(deployment.increaseNodeOperatorStakingLimit),
             _setNodeOperatorStakingLimitPermission(),
             "staking limit permissions"
         );
         assertEq(
-            easyTrack.evmScriptFactoryPermissions(topUpLegoProgram),
+            easyTrack.evmScriptFactoryPermissions(deployment.topUpLegoProgram),
             _newImmediatePaymentPermission(),
             "LEGO permissions"
         );
         assertEq(
-            easyTrack.evmScriptFactoryPermissions(addRewardProgram),
+            easyTrack.evmScriptFactoryPermissions(deployment.addRewardProgram),
             _addRewardProgramPermission(),
             "add permissions"
         );
         assertEq(
-            easyTrack.evmScriptFactoryPermissions(removeRewardProgram),
+            easyTrack.evmScriptFactoryPermissions(deployment.removeRewardProgram),
             _removeRewardProgramPermission(),
             "remove permissions"
         );
         assertEq(
-            easyTrack.evmScriptFactoryPermissions(topUpRewardPrograms),
+            easyTrack.evmScriptFactoryPermissions(deployment.topUpRewardPrograms),
             _newImmediatePaymentPermission(),
             "top up permissions"
         );
@@ -256,19 +191,18 @@ contract DeployScriptTest is EasyTrackScenarioBase {
     }
 
     function _newImmediatePaymentPermission() private view returns (bytes memory) {
-        return abi.encodePacked(finance, IFinance.newImmediatePayment.selector);
+        return abi.encodePacked(dao.finance, IFinance.newImmediatePayment.selector);
     }
 
     function _addRewardProgramPermission() private view returns (bytes memory) {
-        return
-            abi.encodePacked(
-                rewardProgramsRegistry, IRewardProgramsRegistry.addRewardProgram.selector
-            );
+        return abi.encodePacked(
+            deployment.rewardProgramsRegistry, IRewardProgramsRegistry.addRewardProgram.selector
+        );
     }
 
     function _removeRewardProgramPermission() private view returns (bytes memory) {
         return abi.encodePacked(
-            rewardProgramsRegistry, IRewardProgramsRegistry.removeRewardProgram.selector
+            deployment.rewardProgramsRegistry, IRewardProgramsRegistry.removeRewardProgram.selector
         );
     }
 }
