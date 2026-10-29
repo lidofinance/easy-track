@@ -107,8 +107,8 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
             metaRegistry.NO_GROUP_ID(),
             IMetaRegistry.OperatorGroup(
                 "consolidation-group",
-                _subNodeOperators(uint64(targetOperatorId)),
-                _externalOperators(sourceModuleId, uint64(sourceOperatorId))
+                _subNodeOperators(_toUint64(targetOperatorId)),
+                _externalOperators(sourceModuleId, _toUint64(sourceOperatorId))
             )
         );
     }

@@ -33,9 +33,6 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
     uint256 internal constant PUBKEY_SIZE = 48;
     uint256 internal constant SIG_SIZE = 96;
 
-    /// @dev Keys are added to an operator this many at a time
-    uint256 private constant BATCH = 10;
-
     IValidatorsExitBusOracle internal oracle;
     IStakingRouter internal stakingRouter;
     INodeOperatorsRegistry internal registry;
@@ -84,43 +81,42 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
 
     // --- operators and keys ---
 
-    /// @dev python: ensure_single_operator_with_keys. The first operator holding keys, topped up
-    ///      to `minKeys` from its reward address
-    function _ensureOperatorWithKeys(uint256 minKeys)
+    /// @dev python: ensure_single_operator_with_keys, by deposited keys: the factories accept
+    ///      only those, and the keys the Python tops an operator up with are never deposited.
+    ///      The first operator holding at least `minDeposited`
+    function _operatorWithDepositedKeys(uint256 minDeposited)
         internal
+        view
         returns (uint256 nodeOperatorId, address rewardAddress)
     {
         uint256 count = registry.getNodeOperatorsCount();
-        uint64 totalSigningKeys;
+        uint64 totalDepositedValidators;
         for (; nodeOperatorId < count; ++nodeOperatorId) {
-            (,, rewardAddress,,, totalSigningKeys,) =
+            (,, rewardAddress,,,, totalDepositedValidators) =
                 registry.getNodeOperator(nodeOperatorId, false);
-            if (totalSigningKeys != 0) {
-                break;
-            }
+            if (totalDepositedValidators >= minDeposited) break;
         }
 
-        assertLt(nodeOperatorId, count, "setup: an operator with keys");
-
-        for (uint256 keysCount = totalSigningKeys; keysCount < minKeys; keysCount += BATCH) {
-            uint256 batch = _min(BATCH, minKeys - keysCount);
-            (bytes memory keys, bytes memory signatures) = _testKeys(keysCount, batch);
-
-            vm.prank(rewardAddress);
-            registry.addSigningKeys(nodeOperatorId, batch, keys, signatures);
-        }
+        assertLt(
+            nodeOperatorId,
+            count,
+            string.concat("setup: an operator with ", vm.toString(minDeposited), " deposited keys")
+        );
     }
 
-    /// @dev python: get_operator_keys. The operator's first `count` keys, each at its index
+    /// @dev python: get_operator_keys. The operator's first `count` keys, each at its index and
+    ///      each deposited
     function _operatorKeys(uint256 nodeOperatorId, uint256 count)
         internal
         view
         returns (bytes[] memory keys)
     {
-        (bytes memory pubkeys,,) = registry.getSigningKeys(nodeOperatorId, 0, count);
+        (bytes memory pubkeys,, bool[] memory used) =
+            registry.getSigningKeys(nodeOperatorId, 0, count);
 
         keys = new bytes[](count);
         for (uint256 i; i < count; ++i) {
+            assertTrue(used[i], string.concat("setup: key ", vm.toString(i), " is deposited"));
             keys[i] = _slice(pubkeys, i * PUBKEY_SIZE, PUBKEY_SIZE);
         }
     }
@@ -155,7 +151,7 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         returns (ExitRequestInput[] memory requests)
     {
         requests = new ExitRequestInput[](keys.length);
-        for (uint256 i; i < keys.length; ++i) {
+        for (uint64 i; i < keys.length; ++i) {
             requests[i] = _request(nodeOperatorId, i, keys[i], i);
         }
     }
@@ -163,11 +159,11 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
     /// @dev python: exit_request_input_factory, for the module under test
     function _request(
         uint256 nodeOpId,
-        uint256 valIndex,
+        uint64 valIndex,
         bytes memory valPubkey,
         uint256 valPubKeyIndex
     ) internal view returns (ExitRequestInput memory) {
-        return ExitRequestInput(moduleId, nodeOpId, uint64(valIndex), valPubkey, valPubKeyIndex);
+        return ExitRequestInput(moduleId, nodeOpId, valIndex, valPubkey, valPubKeyIndex);
     }
 
     /// @dev python: create_exit_request_data. 64 bytes per request: the module id as 3 bytes,
@@ -179,10 +175,10 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
     {
         for (uint256 i; i < requests.length; ++i) {
             ExitRequestInput memory request = requests[i];
-            data = abi.encodePacked(
+            data = bytes.concat(
                 data,
-                bytes3(uint24(request.moduleId)),
-                bytes5(uint40(request.nodeOpId)),
+                _toBytes(request.moduleId, 3),
+                _toBytes(request.nodeOpId, 5),
                 bytes8(request.valIndex),
                 request.valPubkey
             );
@@ -270,28 +266,12 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
     function _makeTestBytes(uint256 i, uint256 length) internal pure returns (bytes memory result) {
         require(length >= 3, "Length must be at least 3 bytes");
 
+        bytes memory prefix = _toBytes(i, 3);
+        bytes1 filler = bytes32(i)[31];
+
         result = new bytes(length);
-
-        bytes3 prefix = bytes3(uint24(i));
-        result[0] = prefix[0];
-        result[1] = prefix[1];
-        result[2] = prefix[2];
-
-        bytes1 filler = bytes1(uint8(i % 256));
-        for (uint256 j = 3; j < length; ++j) {
-            result[j] = filler;
-        }
-    }
-
-    /// @dev `count` keys with their signatures, the test bytes of the indices from `first`
-    function _testKeys(uint256 first, uint256 count)
-        private
-        pure
-        returns (bytes memory keys, bytes memory signatures)
-    {
-        for (uint256 i; i < count; ++i) {
-            keys = bytes.concat(keys, _makeTestBytes(first + i, PUBKEY_SIZE));
-            signatures = bytes.concat(signatures, _makeTestBytes(first + i, SIG_SIZE));
+        for (uint256 j; j < length; ++j) {
+            result[j] = j < 3 ? prefix[j] : filler;
         }
     }
 
@@ -304,9 +284,5 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         for (uint256 i; i < length; ++i) {
             result[i] = data[start + i];
         }
-    }
-
-    function _min(uint256 a, uint256 b) private pure returns (uint256) {
-        return a < b ? a : b;
     }
 }

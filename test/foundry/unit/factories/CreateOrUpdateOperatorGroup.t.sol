@@ -13,6 +13,7 @@ import {CuratedModuleStub} from "contracts/test/CuratedModuleStub.sol";
 import {MetaRegistryStub} from "contracts/test/MetaRegistryStub.sol";
 import {StakingRouterStub} from "contracts/test/StakingRouterStub.sol";
 import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
+import {Bytes} from "test/foundry/unit/helpers/Bytes.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 
 contract CreateOrUpdateOperatorGroupTest is Test {
@@ -609,7 +610,9 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(EXT_OPERATOR_TYPE_NOR, uint8(moduleId), uint64(nodeOperatorId));
+        return bytes.concat(
+            EXT_OPERATOR_TYPE_NOR, Bytes.toBytes(moduleId, 1), Bytes.toBytes(nodeOperatorId, 8)
+        );
     }
 
     function _group(

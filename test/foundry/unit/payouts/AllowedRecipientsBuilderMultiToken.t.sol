@@ -32,7 +32,7 @@ import {CallsScriptStub} from "test/foundry/unit/stubs/CallsScriptStub.sol";
 import {MiniMeTokenStub} from "test/foundry/unit/stubs/MiniMeTokenStub.sol";
 
 contract AllowedRecipientsBuilderMultiTokenTest is Test {
-    /// @dev Topics of the factory events the full setups are read back through, solc 0.8.6 has
+    /// @dev Topics of the factory events the deployments are read back through, solc 0.8.6 has
     /// no `Event.selector`
     bytes32 internal constant ALLOWED_RECIPIENTS_REGISTRY_DEPLOYED = keccak256(
         "AllowedRecipientsRegistryDeployed(address,address,address,address[],address[],address[],address[],address)"
@@ -251,12 +251,19 @@ contract AllowedRecipientsBuilderMultiTokenTest is Test {
     function test_DeploysAllowedRecipientsRegistry() external {
         address[] memory recipients = Arrays.list(recipient, secondRecipient);
 
+        vm.recordLogs();
+
         vm.prank(stranger);
         IAllowedRecipientsRegistry registry =
             allowedRecipientsBuilder.deployAllowedRecipientsRegistry(
                 LIMIT, PERIOD_DURATION_MONTHS, recipients, _titles(), SPENT_AMOUNT, true
             );
 
+        assertEq(
+            _deployedAddress(vm.getRecordedLogs(), ALLOWED_RECIPIENTS_REGISTRY_DEPLOYED),
+            address(registry),
+            "AllowedRecipientsRegistryDeployed.allowedRecipientsRegistry"
+        );
         _assertAllowedRecipients(registry, recipients, LIMIT, SPENT_AMOUNT);
         _assertRecipientsRegistryRoles(registry, true);
     }
@@ -265,10 +272,17 @@ contract AllowedRecipientsBuilderMultiTokenTest is Test {
     function test_DeploysAllowedTokensRegistry() external {
         address[] memory tokens = Arrays.list(address(ldo), usdc);
 
+        vm.recordLogs();
+
         vm.prank(stranger);
         IAllowedTokensRegistry registry =
             allowedRecipientsBuilder.deployAllowedTokensRegistry(tokens);
 
+        assertEq(
+            _deployedAddress(vm.getRecordedLogs(), ALLOWED_TOKENS_REGISTRY_DEPLOYED),
+            address(registry),
+            "AllowedTokensRegistryDeployed.allowedTokensRegistry"
+        );
         _assertAllowedTokens(registry, tokens);
         _assertTokensRegistryRoles(registry);
     }

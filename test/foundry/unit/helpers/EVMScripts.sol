@@ -3,6 +3,8 @@
 
 pragma solidity 0.8.6;
 
+import {Bytes} from "test/foundry/unit/helpers/Bytes.sol";
+
 /// @notice Byte encoders the Python suite takes from `utils/evm_script.py` and `utils/deployment.py`
 library EVMScripts {
     /// @dev Id of the Aragon CallsScript executor
@@ -19,7 +21,9 @@ library EVMScripts {
 
         script = abi.encodePacked(SPEC_ID);
         for (uint256 i; i < targets.length; ++i) {
-            script = abi.encodePacked(script, targets[i], uint32(datas[i].length), datas[i]);
+            script = bytes.concat(
+                script, bytes20(targets[i]), Bytes.toBytes(datas[i].length, 4), datas[i]
+            );
         }
     }
 
@@ -29,7 +33,7 @@ library EVMScripts {
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(SPEC_ID, target, uint32(data.length), data);
+        return bytes.concat(SPEC_ID, bytes20(target), Bytes.toBytes(data.length, 4), data);
     }
 
     /// @dev `encodeCallScript` with every call to one target
@@ -40,7 +44,8 @@ library EVMScripts {
     {
         script = abi.encodePacked(SPEC_ID);
         for (uint256 i; i < datas.length; ++i) {
-            script = abi.encodePacked(script, target, uint32(datas[i].length), datas[i]);
+            script =
+                bytes.concat(script, bytes20(target), Bytes.toBytes(datas[i].length, 4), datas[i]);
         }
     }
 

@@ -324,7 +324,7 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         subOperatorId = _createSubOperator("subOperator");
 
         vm.prank(config.agent);
-        externalOperatorId = uint64(
+        externalOperatorId = _toUint64(
             externalModule.addNodeOperator("scenario-external", makeAddr("externalOperatorReward"))
         );
     }
@@ -344,7 +344,7 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         _grantRole(address(module), CREATE_NODE_OPERATOR_ROLE, address(this));
         address subOperator = makeAddr(label);
 
-        return uint64(
+        return _toUint64(
             module.createNodeOperator(
                 subOperator,
                 NodeOperatorManagementProperties(subOperator, subOperator, false),

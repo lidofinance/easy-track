@@ -8,6 +8,8 @@ import {ISDVTSubmitExitRequestHashes} from "test/foundry/interfaces/Factories.so
 
 /// @notice The deployed `SDVTSubmitExitRequestHashes` over the SimpleDVT module: the committee
 ///         it trusts requests the exit of an operator's deposited keys and delivers the batch.
+///         A key the operator has not deposited is rejected by a fresh factory from the
+///         `forge build` artifacts, the Hoodi deployment predates that check.
 contract SDVTSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     string internal constant FACTORY_KEY = "SDVTSubmitExitRequestHashes";
     uint256 internal constant MODULE_ID = 2;
@@ -37,8 +39,12 @@ contract SDVTSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
 
     // python: test_sdvt_reverts_on_unused_key
     function testFork_RevertWhen_KeyIsUnused() external {
+        _bindFactory(
+            _deployArtifact(FACTORY_KEY, abi.encode(creator, registry, stakingRouter, oracle)),
+            string.concat(FACTORY_KEY, " (fresh)")
+        );
         _grantSubmitReportHashRole();
-        (uint256 nodeOperatorId, address rewardAddress) = _ensureOperatorWithKeys(1);
+        (uint256 nodeOperatorId, address rewardAddress) = _operatorWithDepositedKeys(1);
 
         ExitRequestInput[] memory requests = new ExitRequestInput[](1);
         requests[0] = _addUnusedKey(nodeOperatorId, rewardAddress);
@@ -51,7 +57,7 @@ contract SDVTSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     /// @dev The trusted committee both creates the motion and delivers the batch
     function _requestExits(uint256 count) private {
         _grantSubmitReportHashRole();
-        (uint256 nodeOperatorId,) = _ensureOperatorWithKeys(count);
+        (uint256 nodeOperatorId,) = _operatorWithDepositedKeys(count);
 
         ExitRequestInput[] memory requests =
             _buildExitRequests(nodeOperatorId, _operatorKeys(nodeOperatorId, count));

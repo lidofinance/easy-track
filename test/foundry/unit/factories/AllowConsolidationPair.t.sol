@@ -12,6 +12,7 @@ import {MetaRegistryStub} from "contracts/test/MetaRegistryStub.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
 import {StakingRouterStub} from "contracts/test/StakingRouterStub.sol";
 import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
+import {Bytes} from "test/foundry/unit/helpers/Bytes.sol";
 import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 
@@ -340,7 +341,9 @@ contract AllowConsolidationPairTest is Test {
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(EXT_OPERATOR_TYPE_NOR, uint8(moduleId), uint64(nodeOperatorId));
+        return bytes.concat(
+            EXT_OPERATOR_TYPE_NOR, Bytes.toBytes(moduleId, 1), Bytes.toBytes(nodeOperatorId, 8)
+        );
     }
 
     /// @dev python: C with the default source operator and target ids

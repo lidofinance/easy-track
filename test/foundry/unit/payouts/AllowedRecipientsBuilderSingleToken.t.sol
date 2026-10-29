@@ -4,6 +4,7 @@
 pragma solidity 0.8.6;
 
 import {Test} from "forge-std/Test.sol";
+import {Vm} from "forge-std/Vm.sol";
 import {
     AllowedRecipientsBuilderSingleToken,
     IAllowedRecipientsFactory,
@@ -28,6 +29,12 @@ import {CallsScriptStub} from "test/foundry/unit/stubs/CallsScriptStub.sol";
 import {MiniMeTokenStub} from "test/foundry/unit/stubs/MiniMeTokenStub.sol";
 
 contract AllowedRecipientsBuilderSingleTokenTest is Test {
+    /// @dev Topic of the factory event the registry deployments are read back through, solc 0.8.6
+    /// has no `Event.selector`
+    bytes32 internal constant ALLOWED_RECIPIENTS_REGISTRY_DEPLOYED = keccak256(
+        "AllowedRecipientsRegistryDeployed(address,address,address,address[],address[],address[],address[],address)"
+    );
+
     uint256 internal constant LIMIT = 1 ether;
     uint256 internal constant PERIOD_DURATION_MONTHS = 1;
     uint256 internal constant SPENT_AMOUNT = 1e10;
@@ -226,12 +233,15 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
     function test_DeploysAllowedRecipientsRegistry() external {
         address[] memory recipients = Arrays.list(recipient, secondRecipient);
 
+        vm.recordLogs();
+
         vm.prank(stranger);
         IAllowedRecipientsRegistry registry =
             allowedRecipientsBuilder.deployAllowedRecipientsRegistry(
                 LIMIT, PERIOD_DURATION_MONTHS, recipients, _titles(), SPENT_AMOUNT, true
             );
 
+        _assertRegistryDeployed(registry);
         _assertAllowedRecipients(registry, recipients, LIMIT, SPENT_AMOUNT);
         _assertRecipientsRegistryRoles(registry, true);
     }
@@ -270,6 +280,8 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
     function test_DeploysFullSetup() external {
         address[] memory recipients = _fullSetupRecipients();
 
+        vm.recordLogs();
+
         vm.prank(stranger);
         (
             IAllowedRecipientsRegistry registry,
@@ -286,6 +298,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
             FULL_SETUP_SPENT_AMOUNT
         );
 
+        _assertRegistryDeployed(registry);
         assertEq(topUpAllowedRecipients.token(), address(ldo), "topUpAllowedRecipients.token");
         assertEq(
             topUpAllowedRecipients.allowedRecipientsRegistry(),
@@ -324,11 +337,14 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
 
     // python: test_deploy_deploy_single_recipient_top_up_only_setup
     function test_DeploysSingleRecipientTopUpOnlySetup() external {
+        vm.recordLogs();
+
         vm.prank(stranger);
         (IAllowedRecipientsRegistry registry, ITopUpAllowedRecipients topUpAllowedRecipients) = allowedRecipientsBuilder.deploySingleRecipientTopUpOnlySetup(
             recipient, "recipient", address(ldo), LIMIT, PERIOD_DURATION_MONTHS, SPENT_AMOUNT
         );
 
+        _assertRegistryDeployed(registry);
         assertEq(
             topUpAllowedRecipients.allowedRecipientsRegistry(),
             address(registry),
@@ -345,6 +361,34 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         return vm.computeCreateAddress(
             address(allowedRecipientsFactory), vm.getNonce(address(allowedRecipientsFactory))
         );
+    }
+
+    /// @dev python: tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"].
+    /// The factory announced the `registry` the builder returned
+    function _assertRegistryDeployed(IAllowedRecipientsRegistry registry) private {
+        assertEq(
+            _deployedAddress(vm.getRecordedLogs(), ALLOWED_RECIPIENTS_REGISTRY_DEPLOYED),
+            address(registry),
+            "AllowedRecipientsRegistryDeployed.allowedRecipientsRegistry"
+        );
+    }
+
+    /// @dev The deployed address the factory emitted under `eventTopic`
+    function _deployedAddress(Vm.Log[] memory logs, bytes32 eventTopic)
+        private
+        view
+        returns (address)
+    {
+        for (uint256 i; i < logs.length; ++i) {
+            if (
+                logs[i].emitter == address(allowedRecipientsFactory)
+                    && logs[i].topics[0] == eventTopic
+            ) {
+                return address(uint160(uint256(logs[i].topics[2])));
+            }
+        }
+
+        revert("DEPLOYMENT_EVENT_NOT_FOUND");
     }
 
     /// @dev python: ["account 3", "account 4"]

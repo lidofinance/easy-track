@@ -211,7 +211,7 @@ abstract contract SimpleDvtScenarioBase is EasyTrackScenarioBase {
         pure
         returns (bytes memory)
     {
-        return abi.encodePacked(SPEC_ID, target, uint32(callData.length), callData);
+        return bytes.concat(SPEC_ID, bytes20(target), _toBytes(callData.length, 4), callData);
     }
 
     // --- calldata ---

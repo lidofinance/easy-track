@@ -9,7 +9,7 @@ import {Vm} from "forge-std/Vm.sol";
 ///         suite parametrizes its payouts fixtures over: the top-level `easytrack`, then a key per
 ///         suite holding its shared contracts and its `instances`. As `utils/deployed_addresses.py`
 ///         does, a missing file or an empty instance list yields one synthetic `default` instance,
-///         which deploys everything fresh.
+///         which deploys everything fresh, and a contract set to `"local"` reads as omitted.
 library IntegrationTestAddresses {
     /// @dev A payout setup of a suite. A zero contract is deployed fresh.
     struct Instance {
@@ -35,17 +35,23 @@ library IntegrationTestAddresses {
     /// @dev The key of the line that opens an instance
     string private constant INSTANCE_KEY = "- name";
 
+    /// @dev python: the value `try_load_deployed_contract` treats as unset, a fresh deployment
+    string private constant LOCAL = "local";
+
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     /// @dev The suite under `key` of `file`, `single_token` or `multi_token`
-    function load(string memory file, string memory key)
+    function load(string memory file, string memory key) internal view returns (Suite memory) {
+        return parse(vm.exists(file) ? vm.readFile(file) : "", key);
+    }
+
+    /// @dev The suite under `key` of the file's `text`
+    function parse(string memory text, string memory key)
         internal
-        view
+        pure
         returns (Suite memory suite)
     {
-        if (vm.exists(file)) {
-            _read(suite, vm.split(vm.readFile(file), "\n"), key);
-        }
+        _read(suite, vm.split(text, "\n"), key);
 
         if (suite.instances.length == 0) {
             suite.instances = new Instance[](1);
@@ -70,7 +76,7 @@ library IntegrationTestAddresses {
                 inSuite = _equals(lineKey, key);
                 instancesSeen = 0;
                 if (_equals(lineKey, "easytrack")) {
-                    suite.easyTrack = vm.parseAddress(value);
+                    suite.easyTrack = _address(value);
                 }
                 continue;
             }
@@ -90,11 +96,9 @@ library IntegrationTestAddresses {
             }
 
             if (instancesSeen == 0) {
-                _setSuiteContract(suite, lineKey, vm.parseAddress(value));
+                _setSuiteContract(suite, lineKey, _address(value));
             } else {
-                _setInstanceContract(
-                    suite.instances[instancesSeen - 1], lineKey, vm.parseAddress(value)
-                );
+                _setInstanceContract(suite.instances[instancesSeen - 1], lineKey, _address(value));
             }
         }
     }
@@ -151,6 +155,11 @@ library IntegrationTestAddresses {
         } else {
             revert(string.concat("unknown instance key: ", key));
         }
+    }
+
+    /// @dev The address a value names, zero for `"local"`
+    function _address(string memory value) private pure returns (address) {
+        return _equals(value, LOCAL) ? address(0) : vm.parseAddress(value);
     }
 
     /// @dev A blank line or a comment

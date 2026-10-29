@@ -24,5 +24,9 @@ build:
 test-scenario *args: build
     FOUNDRY_PROFILE=scenario forge test -vvv --show-progress --summary --detailed {{args}}
 
+# Format the Foundry tests. contracts/ is frozen, see [fmt] in foundry.toml.
+fmt *args:
+    forge fmt test/foundry {{args}}
+
 _warn message:
     @tput setaf 3 && printf "[WARNING]" && tput sgr0 && echo " {{message}}"

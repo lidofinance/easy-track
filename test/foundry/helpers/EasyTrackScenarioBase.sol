@@ -327,12 +327,12 @@ abstract contract EasyTrackScenarioBase is Test {
     }
 
     /// @dev Deploy a contract of `contracts/` from the artifact `forge build` writes to
-    ///      `foundry-out/`, with the test as the deployer
+    ///      `out/`, with the test as the deployer
     function _deployArtifact(string memory name, bytes memory constructorArgs)
         internal
         returns (address deployed)
     {
-        string memory artifact = string.concat("foundry-out/", name, ".sol/", name, ".json");
+        string memory artifact = string.concat("out/", name, ".sol/", name, ".json");
         require(vm.exists(artifact), string.concat(artifact, " is missing, run forge build"));
 
         deployed = deployCode(artifact, constructorArgs);
@@ -416,7 +416,7 @@ abstract contract EasyTrackScenarioBase is Test {
                 metaRegistry.NO_GROUP_ID(),
                 IMetaRegistry.OperatorGroup(
                     CURATED_GROUP_NAME,
-                    _subNodeOperators(uint64(nodeOperatorId)),
+                    _subNodeOperators(_toUint64(nodeOperatorId)),
                     new IMetaRegistry.ExternalOperator[](0)
                 )
             );
@@ -458,7 +458,7 @@ abstract contract EasyTrackScenarioBase is Test {
         returns (IMetaRegistry.ExternalOperator memory)
     {
         return IMetaRegistry.ExternalOperator({
-            data: abi.encodePacked(EXT_OPERATOR_TYPE_NOR, uint8(moduleId), nodeOperatorId)
+            data: bytes.concat(EXT_OPERATOR_TYPE_NOR, _toBytes(moduleId, 1), bytes8(nodeOperatorId))
         });
     }
 
@@ -495,6 +495,26 @@ abstract contract EasyTrackScenarioBase is Test {
             keys = bytes.concat(keys, new bytes(PUBKEY_LENGTH - index.length), index);
             signatures = bytes.concat(signatures, new bytes(SIGNATURE_LENGTH - index.length), index);
         }
+    }
+
+    // --- bytes ---
+
+    /// @dev python: `value.to_bytes(size, "big")`, which raises when the value does not fit
+    function _toBytes(uint256 value, uint256 size) internal pure returns (bytes memory result) {
+        require(size <= 32 && value >> (8 * size) == 0, "value does not fit the size");
+
+        result = new bytes(size);
+        bytes32 word = bytes32(value);
+        for (uint256 i; i < size; ++i) {
+            result[i] = word[32 - size + i];
+        }
+    }
+
+    /// @dev `value` as a uint64, reverting when it does not fit. The mask is the narrowing form
+    ///      `forge lint` accepts
+    function _toUint64(uint256 value) internal pure returns (uint64) {
+        require(value <= type(uint64).max, "value does not fit uint64");
+        return uint64(value & 0xffffffffffffffff);
     }
 
     // --- arrays ---

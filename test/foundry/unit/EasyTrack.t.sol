@@ -523,8 +523,8 @@ contract EasyTrackTest is Test {
             (easyTrack.objectionsThreshold() * ldo.totalSupply()) / HUNDRED_PERCENT - 1;
 
         vm.startPrank(agent);
-        ldo.transfer(owner, objectionsThresholdAmount);
-        ldo.transfer(stranger, 1);
+        assertTrue(ldo.transfer(owner, objectionsThresholdAmount), "ldo.transfer owner");
+        assertTrue(ldo.transfer(stranger, 1), "ldo.transfer stranger");
         vm.stopPrank();
 
         _registerFactoryStub();
@@ -771,7 +771,7 @@ contract EasyTrackTest is Test {
     function _distributeHolderBalances() private {
         vm.startPrank(agent);
         for (uint256 i; i < ldoHolders.length; ++i) {
-            ldo.transfer(ldoHolders[i], HOLDER_BALANCE_AMOUNT);
+            assertTrue(ldo.transfer(ldoHolders[i], HOLDER_BALANCE_AMOUNT), "ldo.transfer holder");
         }
 
         vm.stopPrank();

@@ -5,6 +5,7 @@ pragma solidity 0.8.6;
 
 import {SubmitExitRequestHashesUtils} from "contracts/libraries/SubmitExitRequestHashesUtils.sol";
 import {NodeOperatorsRegistryStub} from "contracts/test/NodeOperatorsRegistryStub.sol";
+import {Bytes} from "test/foundry/unit/helpers/Bytes.sol";
 
 /// @notice Ports of `utils/submit_exit_requests_test_helpers.py`
 library ExitRequests {
@@ -16,16 +17,12 @@ library ExitRequests {
     function makeTestBytes(uint256 i, uint256 length) internal pure returns (bytes memory result) {
         require(length >= 3, "Length must be at least 3 bytes");
 
+        bytes memory prefix = Bytes.toBytes(i, 3);
+        bytes1 filler = bytes32(i)[31];
+
         result = new bytes(length);
-
-        bytes3 prefix = bytes3(uint24(i));
-        result[0] = prefix[0];
-        result[1] = prefix[1];
-        result[2] = prefix[2];
-
-        bytes1 filler = bytes1(uint8(i % 256));
-        for (uint256 j = 3; j < length; ++j) {
-            result[j] = filler;
+        for (uint256 j; j < length; ++j) {
+            result[j] = j < 3 ? prefix[j] : filler;
         }
     }
 
@@ -56,10 +53,10 @@ library ExitRequests {
     {
         for (uint256 i; i < requests.length; ++i) {
             SubmitExitRequestHashesUtils.ExitRequestInput memory request = requests[i];
-            data = abi.encodePacked(
+            data = bytes.concat(
                 data,
-                bytes3(uint24(request.moduleId)),
-                bytes5(uint40(request.nodeOpId)),
+                Bytes.toBytes(request.moduleId, 3),
+                Bytes.toBytes(request.nodeOpId, 5),
                 bytes8(request.valIndex),
                 request.valPubkey
             );

@@ -170,17 +170,24 @@ contract RewardProgramsRegistryTest is Test {
         }
     }
 
-    /// @dev The registry lists exactly `expected`, in any order
+    /// @dev The registry lists exactly `expected`, in any order, and knows each as a reward program
     function _assertRewardProgramsAre(address[] memory expected) private view {
-        assertEq(
-            rewardProgramsRegistry.getRewardPrograms().length,
-            expected.length,
-            "rewardPrograms length"
-        );
+        address[] memory rewardPrograms = rewardProgramsRegistry.getRewardPrograms();
+        assertEq(rewardPrograms.length, expected.length, "rewardPrograms length");
+
         for (uint256 i; i < expected.length; ++i) {
+            assertTrue(_contains(rewardPrograms, expected[i]), "rewardPrograms has remaining");
             assertTrue(
                 rewardProgramsRegistry.isRewardProgram(expected[i]), "isRewardProgram of remaining"
             );
         }
+    }
+
+    function _contains(address[] memory list, address item) private pure returns (bool) {
+        for (uint256 i; i < list.length; ++i) {
+            if (list[i] == item) return true;
+        }
+
+        return false;
     }
 }

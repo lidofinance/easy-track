@@ -37,7 +37,7 @@ contract CuratedSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     // python: test_curated_reverts_on_unused_key
     function testFork_RevertWhen_KeyIsUnused() external {
         _grantSubmitReportHashRole();
-        (uint256 nodeOperatorId, address rewardAddress) = _ensureOperatorWithKeys(1);
+        (uint256 nodeOperatorId, address rewardAddress) = _operatorWithDepositedKeys(1);
 
         ExitRequestInput[] memory requests = new ExitRequestInput[](1);
         requests[0] = _addUnusedKey(nodeOperatorId, rewardAddress);
@@ -50,7 +50,7 @@ contract CuratedSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     /// @dev The operator's reward address both creates the motion and delivers the batch
     function _requestExits(uint256 count) private {
         _grantSubmitReportHashRole();
-        (uint256 nodeOperatorId, address rewardAddress) = _ensureOperatorWithKeys(count);
+        (uint256 nodeOperatorId, address rewardAddress) = _operatorWithDepositedKeys(count);
 
         ExitRequestInput[] memory requests =
             _buildExitRequests(nodeOperatorId, _operatorKeys(nodeOperatorId, count));

@@ -9,6 +9,7 @@ on:
 env:
   PYTHON_VERSION: "3.10.6"
   POETRY_VERSION: "1.8.5"
+  FOUNDRY_VERSION: "v1.8.3"
 
 jobs:
   unit-tests-datetime:
@@ -106,6 +107,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
 
       - name: Install dependencies
         run: npm ci
@@ -129,6 +132,8 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
 
       - name: Install dependencies
         run: npm ci
@@ -140,3 +145,20 @@ jobs:
         run: CHAIN=hoodi FOUNDRY_PROFILE=scenario forge test -vv
         env:
           HOODI_RPC_URL: ${{ secrets.HOODI_RPC_URL }}
+
+  foundry-fmt:
+    name: Foundry Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Check the formatting of the Foundry tests
+        run: forge fmt --check test/foundry
