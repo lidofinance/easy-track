@@ -23,7 +23,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
     uint256 internal constant UNREGISTERED_EXTERNAL_MODULE_ID = 99;
     uint256 internal constant MODULE_NODE_OPERATORS_COUNT = 100;
     uint256 internal constant EXTERNAL_MODULE_NODE_OPERATORS_COUNT = 10_000;
-    /// @dev python: group_id = 0, the stub's default NO_GROUP_ID, selects the create path
     uint256 internal constant NO_GROUP_ID = 0;
     uint256 internal constant NON_ZERO_NO_GROUP_ID = 10;
     uint16 internal constant MAX_BP = 10_000;
@@ -73,7 +72,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         vm.label(address(createOrUpdateOperatorGroup), "createOrUpdateOperatorGroup");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(createOrUpdateOperatorGroup.trustedCaller(), owner, "trustedCaller");
         assertEq(createOrUpdateOperatorGroup.name(), FACTORY_NAME, "name");
@@ -97,32 +95,27 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_deploy_reverts_with_zero_module
     function test_RevertWhen_ModuleIsZero() external {
         vm.expectRevert("ZERO_MODULE_ADDRESS");
         new CreateOrUpdateOperatorGroup(owner, FACTORY_NAME, address(0), 0);
     }
 
-    // python: test_deploy_reverts_with_zero_trusted_caller
     function test_RevertWhen_TrustedCallerIsZero() external {
         vm.expectRevert("TRUSTED_CALLER_IS_ZERO_ADDRESS");
         new CreateOrUpdateOperatorGroup(address(0), FACTORY_NAME, address(curatedModuleStub), 0);
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         createOrUpdateOperatorGroup.createEVMScript(stranger, "");
     }
 
-    // python: test_encode_nor_external_operator_data
     function test_EncodesNORExtOperatorData() external view {
         bytes memory encoded = createOrUpdateOperatorGroup.encodeNORExtOperatorData(7, 255);
 
         assertEq(encoded, hex"000700000000000000ff", "encoded");
     }
 
-    // python: test_decode_nor_external_operator_data
     function test_DecodesNORExtOperatorData() external view {
         (uint8 moduleId, uint64 nodeOperatorId) =
             createOrUpdateOperatorGroup.decodeNORExtOperatorData(hex"000700000000000000ff");
@@ -131,7 +124,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         assertEq(nodeOperatorId, 255, "nodeOperatorId");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         IMetaRegistry.OperatorGroup memory groupInfo = _group(
             "some_name",
@@ -152,25 +144,21 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         _assertOperatorGroupEq(decodedGroupInfo, groupInfo, "groupInfo");
     }
 
-    // python: test_decode_reverts_with_invalid_calldata[empty]
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         createOrUpdateOperatorGroup.decodeEVMScriptCallData("");
     }
 
-    // python: test_decode_reverts_with_invalid_calldata[malformed]
     function test_RevertWhen_DecodingMalformedCallData() external {
         vm.expectRevert(bytes(""));
         createOrUpdateOperatorGroup.decodeEVMScriptCallData(hex"01");
     }
 
-    // python: test_create_evm_script_reverts_with_malformed_calldata
     function test_RevertWhen_CreateEVMScriptCallDataIsMalformed() external {
         vm.expectRevert(bytes(""));
         createOrUpdateOperatorGroup.createEVMScript(owner, hex"01");
     }
 
-    // python: test_create_group_success
     function test_CreatesGroup() external view {
         IMetaRegistry.OperatorGroup memory groupInfo = _group(
             "Test Group",
@@ -187,7 +175,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         assertEq(evmScript, _createOrUpdateGroupScript(NO_GROUP_ID, groupInfo), "evmScript");
     }
 
-    // python: test_create_group_reverts_with_empty_sub_node_operators
     function test_RevertWhen_CreatingGroupWithEmptySubNodeOperators() external {
         vm.expectRevert("EMPTY_GROUP");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -195,7 +182,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_empty_sub_node_operators_and_non_empty_external
     function test_RevertWhen_CreatingGroupWithEmptySubNodeOperatorsAndExternalOperators() external {
         vm.expectRevert("EMPTY_GROUP");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -211,7 +197,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_unsorted_sub_node_operators
     function test_RevertWhen_CreatingGroupWithUnsortedSubNodeOperators() external {
         vm.expectRevert("SUB_NODE_OPERATORS_NOT_SORTED");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -222,7 +207,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_duplicate_sub_node_operators
     function test_RevertWhen_CreatingGroupWithDuplicateSubNodeOperators() external {
         vm.expectRevert("SUB_NODE_OPERATORS_NOT_SORTED");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -233,7 +217,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_shares_sum_mismatch
     function test_RevertWhen_CreatingGroupWithSharesSumMismatch() external {
         vm.expectRevert("SUB_NODE_OPERATOR_SHARES_SUM_MISMATCH");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -244,7 +227,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_unsorted_external_operators
     function test_RevertWhen_CreatingGroupWithUnsortedExternalOperators() external {
         vm.expectRevert("EXTERNAL_OPERATORS_NOT_SORTED");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -263,7 +245,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_duplicate_external_operators
     function test_RevertWhen_CreatingGroupWithDuplicateExternalOperators() external {
         vm.expectRevert("EXTERNAL_OPERATORS_NOT_SORTED");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -282,7 +263,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_missing_sub_node_operator
     function test_RevertWhen_CreatingGroupWithMissingSubNodeOperator() external {
         vm.expectRevert("SUB_NODE_OPERATOR_DOES_NOT_EXIST");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -298,7 +278,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_invalid_external_operator_data_length
     function test_RevertWhen_CreatingGroupWithInvalidExternalOperatorDataLength() external {
         vm.expectRevert("INVALID_EXTERNAL_OPERATOR_DATA_LENGTH");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -309,7 +288,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_unsupported_external_operator_type
     function test_RevertWhen_CreatingGroupWithUnsupportedExternalOperatorType() external {
         bytes memory unsupportedData =
             abi.encodePacked(UNSUPPORTED_EXT_OPERATOR_TYPE, uint8(1), uint64(1));
@@ -324,7 +302,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_not_allowed_external_module
     function test_RevertWhen_CreatingGroupWithNotAllowedExternalModule() external {
         vm.expectRevert("EXTERNAL_MODULE_NOT_ALLOWED");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -340,7 +317,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_missing_external_module
     function test_RevertWhen_CreatingGroupWithMissingExternalModule() external {
         vm.expectRevert("EXTERNAL_MODULE_NOT_ALLOWED");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -356,7 +332,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_missing_external_operator
     function test_RevertWhen_CreatingGroupWithMissingExternalOperator() external {
         vm.expectRevert("EXTERNAL_OPERATOR_DOES_NOT_EXIST");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -374,7 +349,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_reverts_with_name_too_long
     function test_RevertWhen_CreatingGroupWithNameTooLong() external {
         vm.expectRevert("GROUP_NAME_TOO_LONG");
         createOrUpdateOperatorGroup.createEVMScript(
@@ -388,7 +362,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_create_group_succeeds_with_max_length_name
     function test_CreatesGroupWithMaxLengthName() external view {
         IMetaRegistry.OperatorGroup memory groupInfo =
             _group(_name(MAX_NAME_LENGTH), _subNodeOperators(1, MAX_BP), _externalOperators());
@@ -399,7 +372,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         assertEq(evmScript, _createOrUpdateGroupScript(NO_GROUP_ID, groupInfo), "evmScript");
     }
 
-    // python: test_validate_input_data_reverts_if_current_group_changed
     function test_RevertWhen_ValidatingInputDataAfterCurrentGroupChanged() external {
         metaRegistryStub.createOrUpdateOperatorGroup(
             metaRegistryStub.NO_GROUP_ID(),
@@ -422,7 +394,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         createOrUpdateOperatorGroup.validateInputData(groupId, currentGroupInfo, newGroupInfo);
     }
 
-    // python: test_update_group_success
     function test_UpdatesGroup() external {
         metaRegistryStub.setGroupsCount(3);
 
@@ -438,7 +409,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         assertEq(evmScript, _createOrUpdateGroupScript(1, groupInfo), "evmScript");
     }
 
-    // python: test_update_group_reverts_with_name_too_long
     function test_RevertWhen_UpdatingGroupWithNameTooLong() external {
         metaRegistryStub.setGroupsCount(3);
 
@@ -454,7 +424,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_update_group_clear_success
     function test_ClearsGroup() external {
         metaRegistryStub.setGroupsCount(3);
 
@@ -464,7 +433,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         assertEq(evmScript, _createOrUpdateGroupScript(1, _emptyGroup()), "evmScript");
     }
 
-    // python: test_update_group_reverts_with_invalid_empty_shape
     function test_RevertWhen_UpdatingGroupWithInvalidEmptyShape() external {
         metaRegistryStub.setGroupsCount(3);
 
@@ -482,7 +450,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_update_group_reverts_with_invalid_group_id[equal_to_groups_count_plus_one]
     function test_RevertWhen_UpdatingGroupWithIdEqualToGroupsCountPlusOne() external {
         metaRegistryStub.setGroupsCount(2);
 
@@ -492,7 +459,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_update_group_reverts_with_invalid_group_id[greater_than_groups_count]
     function test_RevertWhen_UpdatingGroupWithIdGreaterThanGroupsCount() external {
         metaRegistryStub.setGroupsCount(2);
 
@@ -502,7 +468,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         );
     }
 
-    // python: test_update_group_reverts_with_invalid_group_id[clear_update]
     function test_RevertWhen_ClearingGroupWithInvalidId() external {
         metaRegistryStub.setGroupsCount(2);
 
@@ -510,7 +475,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         createOrUpdateOperatorGroup.createEVMScript(owner, _callData(3, _emptyGroup()));
     }
 
-    // python: test_update_group_clear_reverts_with_invalid_group_id_when_no_group_id_is_non_zero
     function test_RevertWhen_ClearingGroupWithInvalidIdAndNonZeroNoGroupId() external {
         metaRegistryStub.setNoGroupId(NON_ZERO_NO_GROUP_ID);
         metaRegistryStub.setGroupsCount(2);
@@ -519,7 +483,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         createOrUpdateOperatorGroup.createEVMScript(owner, _callData(3, _emptyGroup()));
     }
 
-    // python: test_create_and_update_with_non_zero_no_group_id
     function test_CreatesAndUpdatesGroupWithNonZeroNoGroupId() external {
         metaRegistryStub.setNoGroupId(NON_ZERO_NO_GROUP_ID);
         metaRegistryStub.setGroupsCount(12);
@@ -543,7 +506,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         assertEq(updateScript, _createOrUpdateGroupScript(1, existingGroupInfo), "update");
     }
 
-    // python: test_update_reverts_with_group_id_beyond_count
     function test_RevertWhen_UpdatingGroupWithIdBeyondCount() external {
         metaRegistryStub.setGroupsCount(2);
 
@@ -604,7 +566,7 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         externalOperators[1] = IMetaRegistry.ExternalOperator({data: second});
     }
 
-    /// @dev python: EXT, the ten-byte NOR external operator key
+    /// @dev The ten-byte NOR external operator key
     function _norData(uint256 moduleId, uint256 nodeOperatorId)
         private
         pure
@@ -625,12 +587,10 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         });
     }
 
-    /// @dev python: empty_group_info
     function _emptyGroup() private pure returns (IMetaRegistry.OperatorGroup memory) {
         return _group("", _subNodeOperators(), _externalOperators());
     }
 
-    /// @dev python: "x" * length
     function _name(uint256 length) private pure returns (string memory) {
         bytes memory name = new bytes(length);
 
@@ -641,7 +601,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         return string(name);
     }
 
-    /// @dev python: C with the default empty currentGroupInfo
     function _callData(uint256 groupId, IMetaRegistry.OperatorGroup memory groupInfo)
         private
         pure
@@ -689,8 +648,6 @@ contract CreateOrUpdateOperatorGroupTest is Test {
         }
     }
 
-    /// @dev python: S, encode_call_script of validateInputData with the empty current group,
-    /// then meta_registry_stub.createOrUpdateOperatorGroup
     function _createOrUpdateGroupScript(
         uint256 groupId,
         IMetaRegistry.OperatorGroup memory groupInfo

@@ -66,7 +66,6 @@ contract IntegrationTestAddressesTest is Test {
         assertEq(suite.instances[0].registry, MULTI_TOKEN_REGISTRY, "registry");
     }
 
-    // python: try_load_deployed_contract
     function test_ReadsLocalAsOmitted() external pure {
         IntegrationTestAddresses.Suite memory suite =
             IntegrationTestAddresses.parse(_localFile(), SINGLE_TOKEN);
@@ -132,7 +131,6 @@ contract IntegrationTestAddressesTest is Test {
         );
     }
 
-    /// @dev python: the `"local"` entries, every contract to be deployed fresh
     function _localFile() private pure returns (string memory) {
         return string.concat(
             "easytrack: \"local\"\n",

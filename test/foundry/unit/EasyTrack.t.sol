@@ -16,7 +16,6 @@ import {CallsScriptStub} from "test/foundry/unit/stubs/CallsScriptStub.sol";
 import {MiniMeTokenStub} from "test/foundry/unit/stubs/MiniMeTokenStub.sol";
 
 contract EasyTrackTest is Test {
-    // python: utils/test_helpers.py role constants
     bytes32 internal constant CANCEL_ROLE = keccak256("CANCEL_ROLE");
     bytes32 internal constant PAUSE_ROLE = keccak256("PAUSE_ROLE");
     bytes32 internal constant UNPAUSE_ROLE = keccak256("UNPAUSE_ROLE");
@@ -27,7 +26,7 @@ contract EasyTrackTest is Test {
     /// @dev The Python reads the live LDO supply from the fork, 1e9 LDO
     uint256 internal constant LDO_TOTAL_SUPPLY = 1_000_000_000 ether;
 
-    /// @dev python: holder_balance_amount, 0.2 % of the supply
+    /// @dev 0.2 % of the supply
     uint256 internal constant HOLDER_BALANCE_AMOUNT = LDO_TOTAL_SUPPLY / 500;
 
     bytes internal constant EVM_SCRIPT_CALL_DATA = hex"aabbccddeeff";
@@ -90,7 +89,6 @@ contract EasyTrackTest is Test {
         easyTrack.setEVMScriptExecutor(address(evmScriptExecutor));
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external {
         vm.prank(owner);
         EasyTrack newEasyTrack = new EasyTrack(
@@ -112,7 +110,6 @@ contract EasyTrackTest is Test {
         assertTrue(newEasyTrack.hasRole(newEasyTrack.CANCEL_ROLE(), voting), "CANCEL_ROLE");
     }
 
-    // python: test_create_motion_when_paused
     function test_RevertWhen_CreatingMotionWhilePaused() external {
         vm.prank(voting);
         easyTrack.pause();
@@ -124,14 +121,12 @@ contract EasyTrackTest is Test {
         easyTrack.createMotion(address(0), "");
     }
 
-    // python: test_create_motion_evm_script_factory_not_found
     function test_RevertWhen_CreatingMotionWithUnknownFactory() external {
         vm.prank(owner);
         vm.expectRevert("EVM_SCRIPT_FACTORY_NOT_FOUND");
         easyTrack.createMotion(stranger, "");
     }
 
-    // python: test_create_motion_has_no_permissions
     function test_RevertWhen_CreatingMotionWithoutPermissions() external {
         bytes memory wrongPermissions = EVMScripts.createPermission(address(0), 0x11111111);
 
@@ -147,7 +142,6 @@ contract EasyTrackTest is Test {
         easyTrack.createMotion(address(evmScriptFactoryStub), "");
     }
 
-    // python: test_create_motion_motions_limit_reached
     function test_RevertWhen_MotionsLimitIsReached() external {
         vm.prank(voting);
         easyTrack.setMotionsCountLimit(1);
@@ -168,7 +162,6 @@ contract EasyTrackTest is Test {
         easyTrack.createMotion(address(evmScriptFactoryStub), "");
     }
 
-    // python: test_create_motion
     function test_CreatesMotion() external {
         _registerFactoryStub();
 
@@ -211,14 +204,12 @@ contract EasyTrackTest is Test {
         );
     }
 
-    // python: test_cancel_motion_not_found
     function test_RevertWhen_CancelingMissingMotion() external {
         vm.prank(owner);
         vm.expectRevert("MOTION_NOT_FOUND");
         easyTrack.cancelMotion(1);
     }
 
-    // python: test_cancel_motion_not_creator
     function test_RevertWhen_CancelingMotionAsNotCreator() external {
         _registerFactoryStub();
 
@@ -236,7 +227,6 @@ contract EasyTrackTest is Test {
         easyTrack.cancelMotion(1);
     }
 
-    // python: test_cancel_motion
     function test_CancelsMotion() external {
         _registerFactoryStub();
 
@@ -262,7 +252,6 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_cancel_motion_in_random_order
     function test_CancelsMotionsInRandomOrder() external {
         _registerFactoryStub();
 
@@ -299,14 +288,12 @@ contract EasyTrackTest is Test {
         assertEq(easyTrack.getMotions().length, 0, "motions.length");
     }
 
-    // python: test_enact_motion_motion_not_found
     function test_RevertWhen_EnactingMissingMotion() external {
         vm.prank(owner);
         vm.expectRevert("MOTION_NOT_FOUND");
         easyTrack.enactMotion(1, "");
     }
 
-    // python: test_enact_motion_when_paused
     function test_RevertWhen_EnactingMotionWhilePaused() external {
         vm.prank(voting);
         easyTrack.pause();
@@ -318,7 +305,6 @@ contract EasyTrackTest is Test {
         easyTrack.enactMotion(1, "");
     }
 
-    // python: test_enact_motion_when_motion_not_passed
     function test_RevertWhen_EnactingMotionBeforeItPasses() external {
         _registerFactoryStub();
 
@@ -337,7 +323,6 @@ contract EasyTrackTest is Test {
         easyTrack.enactMotion(motions[0].id, "");
     }
 
-    // python: test_enact_motion_unexpected_evm_script
     function test_RevertWhen_EnactingMotionWithUnexpectedEVMScript() external {
         _allowFactoryStubToSetEVMScript();
 
@@ -361,7 +346,6 @@ contract EasyTrackTest is Test {
         easyTrack.enactMotion(motions[0].id, "");
     }
 
-    // python: test_enact_motion
     function test_EnactsMotion() external {
         _registerFactoryStub();
 
@@ -399,14 +383,12 @@ contract EasyTrackTest is Test {
         );
     }
 
-    // python: test_object_to_motion_motion_not_found
     function test_RevertWhen_ObjectingToMissingMotion() external {
         vm.prank(owner);
         vm.expectRevert("MOTION_NOT_FOUND");
         easyTrack.objectToMotion(1);
     }
 
-    // python: test_object_to_motion_multiple_times
     function test_RevertWhen_ObjectingTwice() external {
         _distributeHolderBalances();
         _registerFactoryStub();
@@ -428,7 +410,6 @@ contract EasyTrackTest is Test {
         easyTrack.objectToMotion(1);
     }
 
-    // python: test_object_to_motion_not_ldo_holder
     function test_RevertWhen_ObjectorHoldsNoLDO() external {
         _registerFactoryStub();
 
@@ -446,7 +427,6 @@ contract EasyTrackTest is Test {
         easyTrack.objectToMotion(1);
     }
 
-    // python: test_object_to_motion_by_tokens_holder
     function test_ObjectsToMotionAsTokenHolder() external {
         _distributeHolderBalances();
         _registerFactoryStub();
@@ -474,7 +454,6 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_object_to_motion_rejected
     function test_RejectsMotionWhenObjectionsReachThreshold() external {
         _distributeHolderBalances();
         _registerFactoryStub();
@@ -517,7 +496,6 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 2, "events");
     }
 
-    // python: test_object_to_motion_edge_case
     function test_KeepsMotionOneWeiBelowObjectionsThreshold() external {
         uint256 objectionsThresholdAmount =
             (easyTrack.objectionsThreshold() * ldo.totalSupply()) / HUNDRED_PERCENT - 1;
@@ -549,14 +527,12 @@ contract EasyTrackTest is Test {
         assertEq(easyTrack.getMotions().length, 0, "motions.length");
     }
 
-    // python: test_cancel_motions_called_without_permissions
     function test_RevertWhen_CancelingMotionsWithoutCancelRole() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, CANCEL_ROLE));
         easyTrack.cancelMotions(new uint256[](0));
     }
 
-    // python: test_cancel_motions
     function test_CancelsMotions() external {
         _registerFactoryStub();
         _createMotions(owner, 5);
@@ -594,14 +570,12 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 3, "events");
     }
 
-    // python: test_cancel_all_motions_called_by_stranger
     function test_RevertWhen_CancelingAllMotionsAsStranger() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, CANCEL_ROLE));
         easyTrack.cancelAllMotions();
     }
 
-    // python: test_cancel_all_motions
     function test_CancelsAllMotions() external {
         _registerFactoryStub();
         _createMotions(owner, 5);
@@ -634,14 +608,12 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 5, "events");
     }
 
-    // python: test_set_evm_script_executor_called_by_stranger
     function test_RevertWhen_SettingEVMScriptExecutorAsStranger() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         easyTrack.setEVMScriptExecutor(address(0));
     }
 
-    // python: test_set_evm_script_executor_called_by_owner
     function test_SetsEVMScriptExecutor() external {
         assertEq(
             address(easyTrack.evmScriptExecutor()), address(evmScriptExecutor), "evmScriptExecutor"
@@ -660,7 +632,6 @@ contract EasyTrackTest is Test {
         );
     }
 
-    // python: test_pause_called_without_permissions
     function test_RevertWhen_PausingWithoutPauseRole() external {
         assertFalse(easyTrack.paused(), "paused");
 
@@ -671,7 +642,6 @@ contract EasyTrackTest is Test {
         assertFalse(easyTrack.paused(), "paused");
     }
 
-    // python: test_pause_called_with_permissions
     function test_Pauses() external {
         assertFalse(easyTrack.paused(), "paused");
 
@@ -687,7 +657,6 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_pause_called_when_paused
     function test_RevertWhen_PausingWhilePaused() external {
         assertFalse(easyTrack.paused(), "paused");
 
@@ -701,7 +670,6 @@ contract EasyTrackTest is Test {
         easyTrack.pause();
     }
 
-    // python: test_unpause_called_without_permissions
     function test_RevertWhen_UnpausingWithoutUnpauseRole() external {
         vm.prank(voting);
         easyTrack.pause();
@@ -715,7 +683,6 @@ contract EasyTrackTest is Test {
         assertTrue(easyTrack.paused(), "paused");
     }
 
-    // python: test_unpause_called_when_not_paused
     function test_RevertWhen_UnpausingWhileNotPaused() external {
         assertFalse(easyTrack.paused(), "paused");
 
@@ -724,7 +691,6 @@ contract EasyTrackTest is Test {
         easyTrack.unpause();
     }
 
-    // python: test_unpause_called_with_permissions
     function test_Unpauses() external {
         vm.prank(voting);
         easyTrack.pause();
@@ -743,7 +709,6 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_can_object_to_motion
     function test_ReportsWhoCanObjectToMotion() external {
         _distributeHolderBalances();
         _allowFactoryStubToSetEVMScript();
@@ -767,7 +732,7 @@ contract EasyTrackTest is Test {
         );
     }
 
-    /// @dev python: distribute_holder_balance. Each holder gets 0.2 % of the supply from the agent
+    /// @dev Each holder gets 0.2 % of the supply from the agent
     function _distributeHolderBalances() private {
         vm.startPrank(agent);
         for (uint256 i; i < ldoHolders.length; ++i) {

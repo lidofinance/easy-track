@@ -49,7 +49,6 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
-    // python: test_create_operator_group_via_motion_scenario
     function testFork_CreatesOperatorGroup() external {
         (uint64 subOperatorId, uint64 externalOperatorId) = _createGroupMembers();
         uint256 groupsBefore = metaRegistry.getOperatorGroupsCount();
@@ -77,7 +76,6 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_update_operator_group_via_motion_scenario
     function testFork_UpdatesOperatorGroupToNonEmpty() external {
         (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId) =
             _createGroupWithSubOperator();
@@ -103,7 +101,6 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_clear_operator_group_via_motion_scenario
     function testFork_UpdatesOperatorGroupToEmpty() external {
         (uint256 groupId, uint64 subOperatorId, uint64 externalOperatorId) =
             _createGroupWithBothOperators();
@@ -140,7 +137,6 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_migrate_sub_operator_between_groups_scenario
     function testFork_MigratesSubOperatorToNewGroup() external {
         (uint64 stayingOperatorId, uint64 migratingOperatorId) = _createSubOperatorPair();
         uint256 groupsBefore = metaRegistry.getOperatorGroupsCount();
@@ -189,7 +185,6 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_migrate_sub_operator_between_existing_groups_scenario
     function testFork_MigratesSubOperatorBetweenExistingGroups() external {
         (uint64 stayingOperatorId, uint64 migratingOperatorId) = _createSubOperatorPair();
         uint64 receivingOperatorId = _createSubOperator("receivingSubOperator");
@@ -247,7 +242,6 @@ contract CreateOrUpdateOperatorGroupTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_migrate_sub_operator_conflict_scenario
     function testFork_RevertWhen_NewGroupClaimsOperatorOfAnotherGroup() external {
         (uint64 stayingOperatorId, uint64 migratingOperatorId) = _createSubOperatorPair();
         uint256 groupsBefore = metaRegistry.getOperatorGroupsCount();

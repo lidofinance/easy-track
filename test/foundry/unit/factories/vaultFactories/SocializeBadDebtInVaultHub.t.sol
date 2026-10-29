@@ -21,11 +21,8 @@ contract SocializeBadDebtInVaultHubTest is Test {
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
-    /// @dev python: accounts[5] and accounts[6] as node operators
     address internal nodeOperator = makeAddr("nodeOperator");
     address internal anotherNodeOperator = makeAddr("anotherNodeOperator");
-    /// @dev python: accounts[5] and accounts[6] as bad debt vaults, accounts[7] and accounts[8]
-    /// as vault acceptors
     address internal badDebtVault = makeAddr("badDebtVault");
     address internal anotherBadDebtVault = makeAddr("anotherBadDebtVault");
     address internal vaultAcceptor = makeAddr("vaultAcceptor");
@@ -57,7 +54,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         vm.label(address(socializeBadDebtInVaultHub), "socializeBadDebtInVaultHub");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(socializeBadDebtInVaultHub.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -73,13 +69,11 @@ contract SocializeBadDebtInVaultHubTest is Test {
         assertEq(address(vaultsAdapter.lidoLocator()), address(lidoLocatorStub), "lidoLocator");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         socializeBadDebtInVaultHub.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_bad_debt_vaults_array
     function test_RevertWhen_BadDebtVaultsAreEmpty() external {
         address[] memory badDebtVaults = new address[](0);
         address[] memory vaultAcceptors = new address[](0);
@@ -91,7 +85,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         );
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         socializeBadDebtInVaultHub.createEVMScript(
@@ -100,7 +93,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         );
     }
 
-    // python: test_zero_bad_debt_vault_address
     function test_RevertWhen_BadDebtVaultIsZero() external {
         vm.expectRevert("ZERO_BAD_DEBT_VAULT");
         socializeBadDebtInVaultHub.createEVMScript(
@@ -113,7 +105,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         );
     }
 
-    // python: test_zero_vault_acceptor_address
     function test_RevertWhen_VaultAcceptorIsZero() external {
         vm.expectRevert("ZERO_VAULT_ACCEPTOR");
         socializeBadDebtInVaultHub.createEVMScript(
@@ -126,7 +117,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external {
         StakingVaultStub firstBadDebtVault = new StakingVaultStub(nodeOperator);
         StakingVaultStub secondBadDebtVault = new StakingVaultStub(anotherNodeOperator);
@@ -150,7 +140,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         address[] memory badDebtVaults = Arrays.list(badDebtVault, anotherBadDebtVault);
         address[] memory vaultAcceptors = Arrays.list(vaultAcceptor, anotherVaultAcceptor);
@@ -169,7 +158,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         assertEq(decodedMaxSharesToSocialize, maxSharesToSocialize, "maxSharesToSocialize");
     }
 
-    // python: test_socialize_bad_debt_fails_when_bad_debt_vault_not_connected
     function test_EmitsBadDebtSocializationFailedWhenBadDebtVaultIsNotConnected() external {
         uint256 maxSharesToSocialize = 100;
 
@@ -185,7 +173,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         vaultsAdapter.socializeBadDebt(badDebtVault, vaultAcceptor, maxSharesToSocialize);
     }
 
-    // python: test_socialize_bad_debt_fails_when_vault_acceptor_not_connected
     function test_EmitsBadDebtSocializationFailedWhenVaultAcceptorIsNotConnected() external {
         uint256 maxSharesToSocialize = 100;
 
@@ -201,7 +188,6 @@ contract SocializeBadDebtInVaultHubTest is Test {
         vaultsAdapter.socializeBadDebt(badDebtVault, vaultAcceptor, maxSharesToSocialize);
     }
 
-    /// @dev python: vault_hub.connectVault(vault, {"from": owner})
     function _connectVault(address connected) private {
         vm.prank(owner);
         vaultHub.connectVault(connected);

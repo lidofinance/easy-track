@@ -39,7 +39,6 @@ contract SDVTSubmitExitRequestHashesTest is Test {
         vm.label(address(sdvtSubmitExitRequestHashes), "sdvtSubmitExitRequestHashes");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(sdvtSubmitExitRequestHashes.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -59,7 +58,6 @@ contract SDVTSubmitExitRequestHashesTest is Test {
         );
     }
 
-    // python: test_deploy_zero_staking_router
     function test_DeploysWithZeroStakingRouter() external {
         vm.prank(owner);
         SDVTSubmitExitRequestHashes sdvt = new SDVTSubmitExitRequestHashes(
@@ -69,7 +67,6 @@ contract SDVTSubmitExitRequestHashesTest is Test {
         assertEq(address(sdvt.stakingRouter()), address(0), "stakingRouter");
     }
 
-    // python: test_deploy_zero_validators_exit_bus_oracle_stub
     function test_DeploysWithZeroValidatorsExitBusOracle() external {
         vm.prank(owner);
         SDVTSubmitExitRequestHashes sdvt = new SDVTSubmitExitRequestHashes(
@@ -79,7 +76,6 @@ contract SDVTSubmitExitRequestHashesTest is Test {
         assertEq(address(sdvt.validatorsExitBusOracle()), address(0), "validatorsExitBusOracle");
     }
 
-    // python: test_deploy_zero_node_operators_registry
     function test_DeploysWithZeroNodeOperatorsRegistry() external {
         vm.prank(owner);
         SDVTSubmitExitRequestHashes sdvt = new SDVTSubmitExitRequestHashes(

@@ -53,7 +53,6 @@ contract AllowedRecipientsRegistryTest is Test {
         vm.label(address(allowedRecipientsRegistry), "AllowedRecipientsRegistry");
     }
 
-    // python: test_registry_initial_state
     function test_SetsInitialState() external view {
         assertTrue(
             allowedRecipientsRegistry.hasRole(
@@ -113,7 +112,6 @@ contract AllowedRecipientsRegistryTest is Test {
         assertEq(allowedRecipientsRegistry.getAllowedRecipients().length, 0, "allowedRecipients");
     }
 
-    // python: test_registry_zero_admin_allowed
     function test_DeploysWithZeroAdmin() external {
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
@@ -128,7 +126,6 @@ contract AllowedRecipientsRegistryTest is Test {
         assertTrue(registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), address(0)), "zero admin role");
     }
 
-    // python: test_registry_none_role_holders_allowed
     function test_DeploysWithNoRoleHolders() external {
         address[] memory noHolders = new address[](0);
 
@@ -140,7 +137,6 @@ contract AllowedRecipientsRegistryTest is Test {
         assertTrue(registry.hasRole(registry.DEFAULT_ADMIN_ROLE(), owner), "owner admin role");
     }
 
-    // python: test_registry_zero_booky_poo_bahs_data_time_address_allowed
     function test_DeploysWithZeroBokkyPooBahsDateTimeContract() external {
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
@@ -159,7 +155,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_rights_are_not_shared_by_different_roles
     function test_DoesNotShareRightsBetweenRoles() external {
         vm.prank(owner);
         AllowedRecipientsRegistry registry = new AllowedRecipientsRegistry(
@@ -244,7 +239,6 @@ contract AllowedRecipientsRegistryTest is Test {
         }
     }
 
-    // python: test_multiple_role_holders
     function test_GrantsRolesToMultipleHolders() external {
         address[20] memory accounts = _sweepAccounts();
         address[] memory addRecipientRoleHolders = Arrays.list(accounts[2], accounts[3]);
@@ -273,7 +267,6 @@ contract AllowedRecipientsRegistryTest is Test {
             registry.addRecipient(callers[i], RECIPIENT_TITLE);
         }
 
-        // python: accounts[0:5] added by the first holder, accounts[5:10] by the second
         for (uint256 i; i < 5; ++i) {
             vm.prank(addRecipientRoleHolders[0]);
             registry.addRecipient(accounts[i], RECIPIENT_TITLE);
@@ -338,7 +331,6 @@ contract AllowedRecipientsRegistryTest is Test {
         registry.updateSpentAmount(1);
     }
 
-    // python: test_add_recipient
     function test_AddsRecipient() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
@@ -351,7 +343,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_add_recipient_with_empty_title
     function test_AddsRecipientWithEmptyTitle() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, "");
@@ -364,7 +355,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_add_recipient_with_zero_address
     function test_AddsRecipientWithZeroAddress() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(address(0), RECIPIENT_TITLE);
@@ -377,7 +367,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_add_multiple_recipients
     function test_AddsMultipleRecipients() external {
         vm.startPrank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
@@ -399,7 +388,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_fail_if_add_the_same_recipient
     function test_RevertWhen_AddingTheSameRecipient() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
@@ -415,7 +403,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_remove_recipient
     function test_RemovesRecipient() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
@@ -434,7 +421,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_remove_not_last_recipient_in_the_list
     function test_RemovesNotLastRecipientInTheList() external {
         vm.startPrank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
@@ -460,7 +446,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_fail_if_remove_recipient_from_empty_allowed_list
     function test_RevertWhen_RemovingRecipientFromEmptyAllowedList() external {
         assertEq(
             allowedRecipientsRegistry.getAllowedRecipients().length, 0, "allowedRecipients length"
@@ -478,7 +463,6 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    // python: test_fail_if_remove_not_allowed_recipient
     function test_RevertWhen_RemovingNotAllowedRecipient() external {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(recipient1, RECIPIENT_TITLE);
@@ -507,7 +491,7 @@ contract AllowedRecipientsRegistryTest is Test {
         );
     }
 
-    /// @dev python: accounts[0:20]. The eight role holders of the sweep sit at their Python indices
+    /// @dev The twenty accounts of the role sweep, the eight role holders at fixed indices
     function _sweepAccounts() private returns (address[20] memory accounts) {
         accounts[0] = owner;
         accounts[1] = makeAddr("account1");
@@ -594,35 +578,30 @@ contract LimitsCheckerTest is Test {
         );
     }
 
-    // python: test_access_stranger_cannot_set_limit_parameters
     function test_RevertWhen_StrangerSetsLimitParameters() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.SET_PARAMETERS_ROLE));
         limitsChecker.setLimitParameters(123, 1);
     }
 
-    // python: test_access_stranger_cannot_set_date_time_library, the shadowed definition at L259
     function test_RevertWhen_StrangerSetsBokkyPooBahsDateTimeContract() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.SET_PARAMETERS_ROLE));
         limitsChecker.setBokkyPooBahsDateTimeContract(address(0));
     }
 
-    // python: test_access_stranger_cannot_set_date_time_library, the collected definition at L266
     function test_RevertWhen_StrangerUnsafeSetsSpentAmount() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.SET_PARAMETERS_ROLE));
         limitsChecker.unsafeSetSpentAmount(0);
     }
 
-    // python: test_access_stranger_cannot_update_spent_amount
     function test_RevertWhen_StrangerUpdatesSpentAmount() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.UPDATE_SPENT_AMOUNT_ROLE));
         limitsChecker.updateSpentAmount(123);
     }
 
-    // python: test_set_date_time_contract
     function test_SetsDateTimeContract() external {
         address newAddress = makeAddr("newBokkyPooBahsDateTimeContract");
         assertNotEq(
@@ -647,7 +626,6 @@ contract LimitsCheckerTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_fail_if_set_same_time_contract
     function test_RevertWhen_SettingTheSameDateTimeContract() external {
         address currentAddress = address(limitsChecker.bokkyPooBahsDateTimeContract());
 
@@ -656,7 +634,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.setBokkyPooBahsDateTimeContract(currentAddress);
     }
 
-    // python: test_unsafe_set_spent_amount_when_spent_amount_exceeds_limit
     function test_RevertWhen_UnsafeSetSpentAmountExceedsLimit() external {
         _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
@@ -669,7 +646,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.unsafeSetSpentAmount(INITIAL_LIMIT + 1);
     }
 
-    // python: test_unsafe_set_spent_amount_when_new_spent_amount_the_same
     function test_SetsSpentAmountUnsafelyWhenNewSpentAmountIsTheSame() external {
         _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
@@ -688,7 +664,6 @@ contract LimitsCheckerTest is Test {
         assertEq(vm.getRecordedLogs().length, 0, "events");
     }
 
-    // python: test_unsafe_set_spent_amount
     function test_SetsSpentAmountUnsafely() external {
         _setLimitParameters(INITIAL_LIMIT, INITIAL_PERIOD_DURATION);
 
@@ -715,7 +690,6 @@ contract LimitsCheckerTest is Test {
         assertEq(alreadySpentAmount, INITIAL_LIMIT, "_alreadySpentAmount at the limit");
     }
 
-    // python: test_set_limit_parameters_happy_path
     function test_SetsLimitParameters() external {
         (uint256 periodStart,) = TestHelpers.calcPeriodRange(PERIOD_DURATION, block.timestamp);
 
@@ -740,7 +714,6 @@ contract LimitsCheckerTest is Test {
         );
     }
 
-    // python: test_period_range_calculation_for_all_allowed_period_durations
     function test_ComputesPeriodRangeForAllAllowedPeriodDurations() external {
         (, uint256 periodDurationMonths) = limitsCheckerWithPrivateViewsExposed.getLimitParameters();
         assertEq(periodDurationMonths, 0, "periodDurationMonths");
@@ -767,87 +740,70 @@ contract LimitsCheckerTest is Test {
         }
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[0]
     function test_RevertWhen_PeriodDurationIs0() external {
         _assertRevertOnPeriodDuration(0);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[4]
     function test_RevertWhen_PeriodDurationIs4() external {
         _assertRevertOnPeriodDuration(4);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[5]
     function test_RevertWhen_PeriodDurationIs5() external {
         _assertRevertOnPeriodDuration(5);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[7]
     function test_RevertWhen_PeriodDurationIs7() external {
         _assertRevertOnPeriodDuration(7);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[8]
     function test_RevertWhen_PeriodDurationIs8() external {
         _assertRevertOnPeriodDuration(8);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[9]
     function test_RevertWhen_PeriodDurationIs9() external {
         _assertRevertOnPeriodDuration(9);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[10]
     function test_RevertWhen_PeriodDurationIs10() external {
         _assertRevertOnPeriodDuration(10);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[11]
     function test_RevertWhen_PeriodDurationIs11() external {
         _assertRevertOnPeriodDuration(11);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[13]
     function test_RevertWhen_PeriodDurationIs13() external {
         _assertRevertOnPeriodDuration(13);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[14]
     function test_RevertWhen_PeriodDurationIs14() external {
         _assertRevertOnPeriodDuration(14);
     }
 
-    // python: test_fail_if_set_incorrect_period_durations[100500]
     function test_RevertWhen_PeriodDurationIs100500() external {
         _assertRevertOnPeriodDuration(100500);
     }
 
-    // python: test_get_first_month_in_period_for_all_allowed_period_durations[1-1-1] to [1-12-12]
     function test_ComputesFirstMonthInPeriodForPeriodDuration1() external {
         _assertFirstMonthInPeriodForEveryMonth(1);
     }
 
-    // python: test_get_first_month_in_period_for_all_allowed_period_durations[2-1-1] to [2-12-11]
     function test_ComputesFirstMonthInPeriodForPeriodDuration2() external {
         _assertFirstMonthInPeriodForEveryMonth(2);
     }
 
-    // python: test_get_first_month_in_period_for_all_allowed_period_durations[3-1-1] to [3-12-10]
     function test_ComputesFirstMonthInPeriodForPeriodDuration3() external {
         _assertFirstMonthInPeriodForEveryMonth(3);
     }
 
-    // python: test_get_first_month_in_period_for_all_allowed_period_durations[6-1-1] to [6-12-7]
     function test_ComputesFirstMonthInPeriodForPeriodDuration6() external {
         _assertFirstMonthInPeriodForEveryMonth(6);
     }
 
-    // python: test_get_first_month_in_period_for_all_allowed_period_durations[12-1-1] to [12-12-1]
     function test_ComputesFirstMonthInPeriodForPeriodDuration12() external {
         _assertFirstMonthInPeriodForEveryMonth(12);
     }
 
-    // python: test_fail_if_set_limit_greater_than_max_limit
     function test_RevertWhen_LimitIsGreaterThanMaxLimit() external {
         vm.prank(setParametersRoleHolder);
         limitsChecker.setLimitParameters(2 ** 128 - 1, PERIOD_DURATION);
@@ -857,7 +813,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.setLimitParameters(2 ** 128, PERIOD_DURATION);
     }
 
-    // python: test_limits_checker_views_in_next_period
     function test_KeepsReportingOldPeriodUntilAdvanced() external {
         uint256 periodLimit = 10 ether;
         uint256 payoutAmount = 3 ether;
@@ -883,7 +838,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodSpending(payoutAmount, spendableBalance);
     }
 
-    // python: test_update_spent_amount_within_the_limit
     function test_UpdatesSpentAmountWithinTheLimit() external {
         TestHelpers.advanceChainTimeToBeginningOfTheNextPeriod(PERIOD_DURATION);
 
@@ -912,7 +866,6 @@ contract LimitsCheckerTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_update_spent_amount_precisely_to_the_limit_in_multiple_portions
     function test_UpdatesSpentAmountPreciselyToTheLimitInMultiplePortions() external {
         uint256 spending = 1 ether;
         uint256 spendable = PERIOD_LIMIT - spending;
@@ -946,7 +899,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.updateSpentAmount(1);
     }
 
-    // python: test_spending_amount_is_restored_in_the_next_period
     function test_RestoresSpendingAmountInTheNextPeriod() external {
         uint256 spending = PERIOD_LIMIT;
         uint256 spendable = PERIOD_LIMIT - spending;
@@ -971,7 +923,6 @@ contract LimitsCheckerTest is Test {
         assertEq(limitsChecker.spendableBalance(), spendable, "spendableBalance in the next period");
     }
 
-    // python: test_fail_if_update_spent_amount_beyond_the_limit
     function test_RevertWhen_UpdatingSpentAmountBeyondTheLimit() external {
         _setLimitParameters(PERIOD_LIMIT, PERIOD_DURATION);
 
@@ -985,7 +936,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.updateSpentAmount(PERIOD_LIMIT + 1);
     }
 
-    // python: test_spendable_amount_increased_if_limit_increased
     function test_IncreasesSpendableAmountWhenLimitIncreases() external {
         uint256 spending = PERIOD_LIMIT;
         uint256 spendable = PERIOD_LIMIT - spending;
@@ -1020,7 +970,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.updateSpentAmount(1);
     }
 
-    // python: test_spendable_amount_if_limit_decreased_below_spent_amount
     function test_ZeroesSpendableAmountWhenLimitDecreasesBelowSpentAmount() external {
         uint256 spending = 1 ether;
         uint256 spendable = PERIOD_LIMIT - spending;
@@ -1047,7 +996,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.updateSpentAmount(1);
     }
 
-    // python: test_spendable_amount_if_limit_decreased_not_below_spent_amount
     function test_ReducesSpendableAmountWhenLimitDecreasesNotBelowSpentAmount() external {
         uint256 spending = 1 ether;
         uint256 spendable = PERIOD_LIMIT - spending;
@@ -1078,7 +1026,6 @@ contract LimitsCheckerTest is Test {
         limitsChecker.updateSpentAmount(1);
     }
 
-    // python: test_spendable_amount_renewal_if_period_duration_changed[3-2]
     function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom3To2() external {
         _spendLimitAndChangePeriodDuration(3, 2);
 
@@ -1087,7 +1034,6 @@ contract LimitsCheckerTest is Test {
         _assertSpendableRenewed();
     }
 
-    // python: test_spendable_amount_renewal_if_period_duration_changed[3-6]
     function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom3To6() external {
         _spendLimitAndChangePeriodDuration(3, 6);
 
@@ -1103,7 +1049,6 @@ contract LimitsCheckerTest is Test {
         _assertSpendableRenewed();
     }
 
-    // python: test_spendable_amount_renewal_if_period_duration_changed[12-1]
     function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom12To1() external {
         _spendLimitAndChangePeriodDuration(12, 1);
 
@@ -1112,7 +1057,6 @@ contract LimitsCheckerTest is Test {
         _assertSpendableRenewed();
     }
 
-    // python: test_spendable_amount_renewal_if_period_duration_changed[1-12]
     function test_RenewsSpendableAmountWhenPeriodDurationChangesFrom1To12() external {
         _spendLimitAndChangePeriodDuration(1, 12);
 
@@ -1128,14 +1072,12 @@ contract LimitsCheckerTest is Test {
         _assertSpendableRenewed();
     }
 
-    // python: test_fail_if_update_spent_amount_when_no_period_duration_set
     function test_RevertWhen_UpdatingSpentAmountWithNoPeriodDurationSet() external {
         vm.prank(updateSpentAmountRoleHolder);
         vm.expectRevert("INVALID_PERIOD_DURATION");
         limitsChecker.updateSpentAmount(123);
     }
 
-    // python: test_period_start_from_timestamp, period duration 1
     function test_ComputesPeriodStartFromTimestampForPeriodDuration1() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
@@ -1148,7 +1090,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodStartFromTimestamp(inputs, 1, Calendar.timestampFromDate(2022, 1, 1));
     }
 
-    // python: test_period_start_from_timestamp, period duration 2
     function test_ComputesPeriodStartFromTimestampForPeriodDuration2() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 3, 1),
@@ -1161,7 +1102,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodStartFromTimestamp(inputs, 2, Calendar.timestampFromDate(2022, 3, 1));
     }
 
-    // python: test_period_start_from_timestamp, period duration 3
     function test_ComputesPeriodStartFromTimestampForPeriodDuration3() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 4, 1),
@@ -1174,7 +1114,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodStartFromTimestamp(inputs, 3, Calendar.timestampFromDate(2022, 4, 1));
     }
 
-    // python: test_period_start_from_timestamp, period duration 6
     function test_ComputesPeriodStartFromTimestampForPeriodDuration6() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 7, 1),
@@ -1187,7 +1126,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodStartFromTimestamp(inputs, 6, Calendar.timestampFromDate(2022, 7, 1));
     }
 
-    // python: test_period_start_from_timestamp, period duration 12
     function test_ComputesPeriodStartFromTimestampForPeriodDuration12() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
@@ -1200,7 +1138,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodStartFromTimestamp(inputs, 12, Calendar.timestampFromDate(2022, 1, 1));
     }
 
-    // python: test_period_end_from_timestamp, period duration 1
     function test_ComputesPeriodEndFromTimestampForPeriodDuration1() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),
@@ -1213,7 +1150,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodEndFromTimestamp(inputs, 1, Calendar.timestampFromDate(2022, 2, 1));
     }
 
-    // python: test_period_end_from_timestamp, period duration 2
     function test_ComputesPeriodEndFromTimestampForPeriodDuration2() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 3, 1),
@@ -1226,7 +1162,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodEndFromTimestamp(inputs, 2, Calendar.timestampFromDate(2022, 5, 1));
     }
 
-    // python: test_period_end_from_timestamp, period duration 3
     function test_ComputesPeriodEndFromTimestampForPeriodDuration3() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 4, 1),
@@ -1239,7 +1174,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodEndFromTimestamp(inputs, 3, Calendar.timestampFromDate(2022, 7, 1));
     }
 
-    // python: test_period_end_from_timestamp, period duration 6
     function test_ComputesPeriodEndFromTimestampForPeriodDuration6() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 7, 1),
@@ -1252,7 +1186,6 @@ contract LimitsCheckerTest is Test {
         _assertPeriodEndFromTimestamp(inputs, 6, Calendar.timestampFromDate(2023, 1, 1));
     }
 
-    // python: test_period_end_from_timestamp, period duration 12
     function test_ComputesPeriodEndFromTimestampForPeriodDuration12() external {
         uint256[5] memory inputs = [
             Calendar.timestampFromDate(2022, 1, 1),

@@ -19,7 +19,6 @@ import {
 contract AllowedRecipientsHappyPathMultiTokenTest is MultiTokenPayoutsScenarioBase {
     string internal constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
-    // python: test_single_recipient_top_up_only_setup_happy_path
     function testFork_DrivesSingleRecipientTopUpOnlySetup() external {
         _advanceToNextPeriod(PERIOD_DURATION_MONTHS);
 
@@ -61,7 +60,6 @@ contract AllowedRecipientsHappyPathMultiTokenTest is MultiTokenPayoutsScenarioBa
         );
     }
 
-    // python: test_full_setup_happy_path
     function testFork_DrivesFullSetup() external {
         _advanceToNextPeriod(PERIOD_DURATION_MONTHS);
 
@@ -113,8 +111,7 @@ contract AllowedRecipientsHappyPathMultiTokenTest is MultiTokenPayoutsScenarioBa
         );
     }
 
-    /// @dev python: single_recipient_top_up_only_setup. The recipient is the top-up factory's
-    ///      trusted caller
+    /// @dev Deploys the top-up-only setup of one recipient, the top-up factory's trusted caller
     function _deploySingleRecipientTopUpOnlySetup() private {
         vm.recordLogs();
 
@@ -139,7 +136,6 @@ contract AllowedRecipientsHappyPathMultiTokenTest is MultiTokenPayoutsScenarioBa
         _registerTopUpFactory(topUpAllowedRecipients);
     }
 
-    /// @dev python: full_setup
     function _deployFullSetup() private {
         vm.recordLogs();
 

@@ -35,7 +35,6 @@ contract SetDepositsReserveTargetTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
-    // python: test_set_deposits_reserve_target_via_motion
     function testFork_SetsDepositsReserveTarget() external {
         uint256 newTarget = lido.getDepositsReserveTarget() + TARGET_INCREASE;
 
@@ -50,7 +49,6 @@ contract SetDepositsReserveTargetTest is EasyTrackScenarioBase {
         assertEq(lido.getDepositsReserveTarget(), newTarget, "getDepositsReserveTarget");
     }
 
-    // python: test_reverts_on_motion_creation_if_target_is_unchanged
     function testFork_RevertWhen_TargetIsUnchanged() external {
         bytes memory callData = abi.encode(lido.getDepositsReserveTarget());
 
@@ -59,7 +57,6 @@ contract SetDepositsReserveTargetTest is EasyTrackScenarioBase {
         easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    // python: test_reverts_on_motion_creation_if_target_is_too_high
     function testFork_RevertWhen_TargetIsTooHigh() external {
         bytes memory callData = abi.encode(factory.MAX_DEPOSITS_RESERVE_TARGET() + 1);
 
@@ -68,7 +65,6 @@ contract SetDepositsReserveTargetTest is EasyTrackScenarioBase {
         easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    // python: test_reverts_on_motion_creation_if_creator_is_not_trusted
     function testFork_RevertWhen_CreatorIsNotTrusted() external {
         // the target is valid, the caller is the only failing check
         bytes memory callData = abi.encode(factory.MAX_DEPOSITS_RESERVE_TARGET());

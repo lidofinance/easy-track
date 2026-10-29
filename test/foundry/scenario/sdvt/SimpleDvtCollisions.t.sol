@@ -31,7 +31,6 @@ contract SimpleDvtCollisionsTest is SimpleDvtScenarioBase {
         );
     }
 
-    // python: test_simple_dvt_scenario
     function testFork_RejectsCollidingMotionsAtEnactment() external {
         // 1. The same add twice: the second one sees a changed operator count
         _expectCollision(

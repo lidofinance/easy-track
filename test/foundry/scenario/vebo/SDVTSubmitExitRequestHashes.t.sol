@@ -14,7 +14,6 @@ contract SDVTSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
     string internal constant FACTORY_KEY = "SDVTSubmitExitRequestHashes";
     uint256 internal constant MODULE_ID = 2;
 
-    /// @dev python: batch_size, not MAX_REQUESTS
     uint256 internal constant BATCH_SIZE = 60;
 
     function setUp() public {
@@ -27,17 +26,14 @@ contract SDVTSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
         _bindFactory(factory, FACTORY_KEY);
     }
 
-    // python: test_sdvt_single_exit_request_happy_path
     function testFork_SubmitsSingleExitRequest() external {
         _requestExits(1);
     }
 
-    // python: test_sdvt_batch_exit_requests_happy_path
     function testFork_SubmitsExitRequestBatch() external {
         _requestExits(BATCH_SIZE);
     }
 
-    // python: test_sdvt_reverts_on_unused_key
     function testFork_RevertWhen_KeyIsUnused() external {
         _bindFactory(
             _deployArtifact(FACTORY_KEY, abi.encode(creator, registry, stakingRouter, oracle)),

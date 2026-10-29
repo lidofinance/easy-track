@@ -12,18 +12,14 @@ import {IVaultHub, IVaultsAdapter, TierParams} from "test/foundry/interfaces/Vau
 ///         over two vaults of one operator: forced exits of an unhealthy vault, the redemption
 ///         shares of minted vaults, and bad debt moved between the two.
 contract VaultHubTest is VaultsScenarioBase {
-    /// @dev python: the default tier the `vaults` fixture opens for minting
     uint256 internal constant DEFAULT_TIER_ID = 0;
     uint256 internal constant MINTING_SHARE_LIMIT = 100_000e18;
 
-    /// @dev python: the ASCII string "01" repeated 48 times, two 48-byte keys, not one
     uint256 internal constant PUBKEYS_LENGTH = 96;
 
-    /// @dev python: liability_shares_targets
     uint256 internal constant FIRST_LIABILITY_TARGET = 100;
     uint256 internal constant SECOND_LIABILITY_TARGET = 200;
 
-    /// @dev python: max_shares_to_socialize
     uint256 internal constant MAX_SHARES_TO_SOCIALIZE = INITIAL_VAULT_BALANCE / 100;
 
     address[] internal vaults;
@@ -35,7 +31,7 @@ contract VaultHubTest is VaultsScenarioBase {
         _grantRole(address(vaultHub), vaultHub.VALIDATOR_EXIT_ROLE(), address(adapter));
         _grantRole(address(vaultHub), vaultHub.REDEMPTION_MASTER_ROLE(), address(adapter));
 
-        // python: the `vaults` fixture. The adapter opens the default tier for minting
+        // The adapter opens the default tier for minting
         uint256[] memory tierIds = new uint256[](1);
         tierIds[0] = DEFAULT_TIER_ID;
         TierParams[] memory tiers = new TierParams[](1);
@@ -48,7 +44,6 @@ contract VaultHubTest is VaultsScenarioBase {
         vaults.push(_createVault());
     }
 
-    // python: test_force_validator_exits_happy_path
     function testFork_ForcesValidatorExits() external {
         address factory =
             _deployArtifact("ForceValidatorExitsInVaultHub", abi.encode(creator, adapter));
@@ -102,7 +97,6 @@ contract VaultHubTest is VaultsScenarioBase {
         );
     }
 
-    // python: test_set_liability_shares_target_happy_path
     function testFork_SetsLiabilitySharesTargets() external {
         address factory =
             _deployArtifact("SetLiabilitySharesTargetInVaultHub", abi.encode(creator, adapter));
@@ -159,7 +153,6 @@ contract VaultHubTest is VaultsScenarioBase {
         );
     }
 
-    // python: test_socialize_bad_debt_happy_path
     function testFork_SocializesBadDebt() external {
         address factory =
             _deployArtifact("SocializeBadDebtInVaultHub", abi.encode(creator, adapter));
@@ -232,7 +225,7 @@ contract VaultHubTest is VaultsScenarioBase {
         );
     }
 
-    /// @dev python: b"01" * 48. The 96 ASCII bytes "0101…", two keys of 48 bytes
+    /// @dev The 96 ASCII bytes "0101…", two keys of 48 bytes
     function _asciiPubkeys() private pure returns (bytes memory pubkeys) {
         pubkeys = new bytes(PUBKEYS_LENGTH);
         for (uint256 i; i < PUBKEYS_LENGTH; i += 2) {

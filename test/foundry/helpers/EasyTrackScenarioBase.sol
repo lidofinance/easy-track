@@ -546,7 +546,7 @@ abstract contract EasyTrackScenarioBase is Test {
 
     // --- bytes ---
 
-    /// @dev python: `value.to_bytes(size, "big")`, which raises when the value does not fit
+    /// @dev Big-endian encoding of `value` in `size` bytes, reverting when it does not fit
     function _toBytes(uint256 value, uint256 size) internal pure returns (bytes memory result) {
         require(size <= 32 && value >> (8 * size) == 0, "value does not fit the size");
 

@@ -30,7 +30,6 @@ contract MotionSettingsTest is Test {
         );
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external {
         vm.prank(owner);
         MotionSettings newMotionSettings = new MotionSettings(
@@ -74,7 +73,6 @@ contract MotionSettingsTest is Test {
         );
     }
 
-    // python: test_set_motion_duration_called_with_permissions
     function test_SetsMotionDuration() external {
         uint256 newMotionDuration = 2 * motionSettings.MIN_MOTION_DURATION();
 
@@ -92,14 +90,12 @@ contract MotionSettingsTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_set_motion_duration_called_without_permissions
     function test_RevertWhen_SettingMotionDurationWithoutAdminRole() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         motionSettings.setMotionDuration(0);
     }
 
-    // python: test_set_motion_duration_called_with_too_small_value
     function test_RevertWhen_MotionDurationIsTooSmall() external {
         uint256 motionDuration = motionSettings.MIN_MOTION_DURATION() - 1;
 
@@ -108,7 +104,6 @@ contract MotionSettingsTest is Test {
         motionSettings.setMotionDuration(motionDuration);
     }
 
-    // python: test_set_objections_threshold_called_with_permissions
     function test_SetsObjectionsThreshold() external {
         uint256 newObjectionsThreshold = 2 * Constants.DEFAULT_OBJECTIONS_THRESHOLD;
 
@@ -132,14 +127,12 @@ contract MotionSettingsTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_set_objections_threshold_without_permissions
     function test_RevertWhen_SettingObjectionsThresholdWithoutAdminRole() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         motionSettings.setObjectionsThreshold(0);
     }
 
-    // python: test_set_objections_threshold_called_with_too_large_value
     function test_RevertWhen_ObjectionsThresholdIsTooLarge() external {
         uint256 newObjectionsThreshold = 2 * motionSettings.MAX_OBJECTIONS_THRESHOLD();
 
@@ -148,7 +141,6 @@ contract MotionSettingsTest is Test {
         motionSettings.setObjectionsThreshold(newObjectionsThreshold);
     }
 
-    // python: test_set_motions_limit_called_with_permissions
     function test_SetsMotionsCountLimit() external {
         uint256 maxMotionsLimit = motionSettings.MAX_MOTIONS_LIMIT();
         uint256 newMotionsLimit = Constants.MAX_MOTIONS_LIMIT / 2;
@@ -167,14 +159,12 @@ contract MotionSettingsTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    // python: test_set_motions_limit_called_without_permissions
     function test_RevertWhen_SettingMotionsCountLimitWithoutAdminRole() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         motionSettings.setMotionsCountLimit(0);
     }
 
-    // python: test_set_motions_limit_too_large
     function test_RevertWhen_MotionsCountLimitIsTooLarge() external {
         uint256 newMotionsLimit = 2 * motionSettings.MAX_MOTIONS_LIMIT();
 

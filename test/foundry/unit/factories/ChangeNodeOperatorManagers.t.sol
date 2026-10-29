@@ -57,7 +57,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         vm.label(address(changeNodeOperatorManagers), "changeNodeOperatorManagers");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(changeNodeOperatorManagers.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -67,13 +66,11 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         changeNodeOperatorManagers.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         changeNodeOperatorManagers.createEVMScript(
@@ -82,7 +79,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_non_sorted_calldata
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         changeNodeOperatorManagers.createEVMScript(
@@ -101,7 +97,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_operator_id_out_of_range
     function test_RevertWhen_NodeOperatorIdIsOutOfRange() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -111,7 +106,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_duplicate_manager
     function test_RevertWhen_NewManagerAddressesHaveDuplicate() external {
         vm.expectRevert("MANAGER_ADDRESSES_HAS_DUPLICATE");
         changeNodeOperatorManagers.createEVMScript(
@@ -122,7 +116,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_manager_has_no_role
     function test_RevertWhen_OldManagerHasNoRole() external {
         vm.expectRevert("OLD_MANAGER_HAS_NO_ROLE");
         changeNodeOperatorManagers.createEVMScript(
@@ -131,7 +124,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_manager_has_another_role_operator
     function test_RevertWhen_OldManagerRoleExcludesNodeOperator() external {
         _grantManagerRole(FIRST_MANAGER, Op.NEQ, UNMANAGED_NODE_OPERATOR_ID);
 
@@ -142,7 +134,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_manager_has_role_for_another_operator
     function test_RevertWhen_OldManagerHasRoleForAnotherNodeOperator() external {
         _grantManagerRole(FIRST_MANAGER, Op.EQ, UNMANAGED_NODE_OPERATOR_ID + 1);
 
@@ -153,7 +144,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_old_manager_has_general_permission
     function test_RevertWhen_OldManagerHasGeneralPermission() external {
         acl.grantPermission(
             FIRST_MANAGER, address(nodeOperatorsRegistry), Roles.MANAGE_SIGNING_KEYS_ROLE
@@ -166,7 +156,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_zero_manager
     function test_RevertWhen_NewManagerIsZero() external {
         vm.expectRevert("ZERO_MANAGER_ADDRESS");
         changeNodeOperatorManagers.createEVMScript(
@@ -174,7 +163,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_new_manager_has_permission
     function test_RevertWhen_NewManagerHasPermission() external {
         vm.expectRevert("MANAGER_ALREADY_HAS_ROLE");
         changeNodeOperatorManagers.createEVMScript(
@@ -182,7 +170,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_new_manager_has_general_permission
     function test_RevertWhen_NewManagerHasGeneralPermission() external {
         acl.grantPermission(
             FIRST_NEW_MANAGER, address(nodeOperatorsRegistry), Roles.MANAGE_SIGNING_KEYS_ROLE
@@ -194,7 +181,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = changeNodeOperatorManagers.createEVMScript(
             owner,
@@ -218,7 +204,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         ChangeNodeOperatorManagers.ChangeNodeOperatorManagersInput[] memory inputs =
             changeNodeOperatorManagers.decodeEVMScriptCallData(
@@ -238,8 +223,6 @@ contract ChangeNodeOperatorManagersTest is Test {
         assertEq(inputs[1].newManagerAddress, SECOND_NEW_MANAGER, "inputs[1].newManagerAddress");
     }
 
-    /// @dev python: acl.grantPermissionP(manager, registry, MANAGE_SIGNING_KEYS_ROLE,
-    /// encode_permission_params([Param(0, op, value)]))
     function _grantManagerRole(address manager, Op op, uint256 value) private {
         acl.grantPermissionP(
             manager,

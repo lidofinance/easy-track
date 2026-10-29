@@ -24,17 +24,14 @@ contract CuratedSubmitExitRequestHashesTest is ExitRequestsScenarioBase {
         _bindFactory(factory, FACTORY_KEY);
     }
 
-    // python: test_curated_single_exit_request_happy_path
     function testFork_SubmitsSingleExitRequest() external {
         _requestExits(1);
     }
 
-    // python: test_curated_batch_exit_requests_happy_path
     function testFork_SubmitsExitRequestBatch() external {
         _requestExits(MAX_REQUESTS);
     }
 
-    // python: test_curated_reverts_on_unused_key
     function testFork_RevertWhen_KeyIsUnused() external {
         _grantSubmitReportHashRole();
         (uint256 nodeOperatorId, address rewardAddress) = _operatorWithDepositedKeys(1);

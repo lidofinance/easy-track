@@ -20,13 +20,10 @@ contract AllowConsolidationPairTest is Test {
     uint256 internal constant SOURCE_MODULE_ID = 1;
     uint256 internal constant TARGET_MODULE_ID = 2;
     uint256 internal constant SOURCE_OPERATOR_ID = 0;
-    /// @dev python: TARGET_OPERATOR_IDS = [3, 4]
     uint256 internal constant FIRST_TARGET_OPERATOR_ID = 3;
     uint256 internal constant SECOND_TARGET_OPERATOR_ID = 4;
     uint256 internal constant LINKED_GROUP_ID = 1;
-    /// @dev python: SOURCE_OPERATOR_ID + 1
     uint256 internal constant SOURCE_NODE_OPERATORS_COUNT = SOURCE_OPERATOR_ID + 1;
-    /// @dev python: TARGET_OPERATOR_IDS[-1] + 2
     uint256 internal constant TARGET_NODE_OPERATORS_COUNT = SECOND_TARGET_OPERATOR_ID + 2;
     /// @dev ExternalOperatorLib.OperatorType.NOR, the first byte of an external operator key
     bytes1 internal constant EXT_OPERATOR_TYPE_NOR = 0x00;
@@ -78,7 +75,6 @@ contract AllowConsolidationPairTest is Test {
         vm.label(address(allowConsolidationPair), "allowConsolidationPair");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(
             address(allowConsolidationPair.consolidationMigrator()),
@@ -94,32 +90,27 @@ contract AllowConsolidationPairTest is Test {
         assertEq(allowConsolidationPair.targetModuleId(), TARGET_MODULE_ID, "targetModuleId");
     }
 
-    // python: test_deploy_reverts_with_zero_migrator
     function test_RevertWhen_MigratorIsZero() external {
         vm.expectRevert("ZERO_MIGRATOR");
         new AllowConsolidationPair(address(0));
     }
 
-    // python: test_submitter_must_not_be_zero
     function test_RevertWhen_SubmitterIsZero() external {
         vm.expectRevert("ZERO_SUBMITTER");
         allowConsolidationPair.createEVMScript(owner, _callData(address(0)));
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.prank(stranger);
         vm.expectRevert("CALLER_IS_NOT_SOURCE_OPERATOR_OWNER_OR_MANAGER");
         allowConsolidationPair.createEVMScript(stranger, _callData(stranger));
     }
 
-    // python: test_source_operator_must_exist
     function test_RevertWhen_SourceOperatorDoesNotExist() external {
         vm.expectRevert("SOURCE_OPERATOR_ID_DOES_NOT_EXIST");
         allowConsolidationPair.createEVMScript(owner, _callData(owner, SOURCE_OPERATOR_ID + 1));
     }
 
-    // python: test_source_operator_out_of_range
     function test_RevertWhen_SourceOperatorIsOutOfRange() external {
         sourceModuleStub.setDesiredNodeOperatorCount(SOURCE_OPERATOR_ID);
 
@@ -127,7 +118,6 @@ contract AllowConsolidationPairTest is Test {
         allowConsolidationPair.createEVMScript(owner, _callData(owner));
     }
 
-    // python: test_source_operator_must_be_active
     function test_RevertWhen_SourceOperatorIsNotActive() external {
         sourceModuleStub.setActive(SOURCE_OPERATOR_ID, false);
 
@@ -135,7 +125,6 @@ contract AllowConsolidationPairTest is Test {
         allowConsolidationPair.createEVMScript(owner, _callData(owner));
     }
 
-    // python: test_caller_must_match_owner
     function test_RevertWhen_CreatorIsNotSourceOperatorOwner() external {
         sourceModuleStub.setNodeOperatorRewardAddress(SOURCE_OPERATOR_ID, stranger);
 
@@ -143,7 +132,6 @@ contract AllowConsolidationPairTest is Test {
         allowConsolidationPair.createEVMScript(owner, _callData(owner));
     }
 
-    // python: test_caller_with_manage_signing_keys_role_can_create_script
     function test_CreatesEVMScriptForManageSigningKeysRoleHolder() external {
         sourceModuleStub.setCanPerform(
             stranger, Roles.MANAGE_SIGNING_KEYS_ROLE, SOURCE_OPERATOR_ID, true
@@ -160,7 +148,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_validation_uses_creator_not_tx_sender
     function test_ValidatesCreatorNotSender() external {
         vm.prank(stranger);
         bytes memory evmScript = allowConsolidationPair.createEVMScript(owner, _callData(owner));
@@ -174,13 +161,11 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_target_operator_ids_must_not_be_empty
     function test_RevertWhen_TargetOperatorIdsAreEmpty() external {
         vm.expectRevert("EMPTY_TARGET_OPERATOR_IDS");
         allowConsolidationPair.createEVMScript(owner, _callData(owner, new uint256[](0)));
     }
 
-    // python: test_target_operator_ids_must_be_sorted_ascending
     function test_RevertWhen_TargetOperatorIdsAreNotSorted() external {
         vm.expectRevert("TARGET_OPERATOR_IDS_NOT_SORTED");
         allowConsolidationPair.createEVMScript(
@@ -189,7 +174,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_target_operator_ids_must_not_have_duplicates
     function test_RevertWhen_TargetOperatorIdsHaveDuplicates() external {
         vm.expectRevert("TARGET_OPERATOR_IDS_NOT_SORTED");
         allowConsolidationPair.createEVMScript(
@@ -197,7 +181,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_target_operator_must_be_active
     function test_RevertWhen_TargetOperatorIsNotActive() external {
         targetModuleStub.setNodeOperatorIsActive(FIRST_TARGET_OPERATOR_ID, false);
 
@@ -205,7 +188,6 @@ contract AllowConsolidationPairTest is Test {
         allowConsolidationPair.createEVMScript(owner, _callData(owner));
     }
 
-    // python: test_source_must_have_group_id_in_meta_registry
     function test_RevertWhen_SourceOperatorHasNoGroup() external {
         metaRegistryStub.setExternalOperatorGroupId(
             _norData(SOURCE_MODULE_ID, SOURCE_OPERATOR_ID), 0
@@ -215,7 +197,6 @@ contract AllowConsolidationPairTest is Test {
         allowConsolidationPair.createEVMScript(owner, _callData(owner));
     }
 
-    // python: test_source_and_targets_must_be_linked_via_meta_registry
     function test_RevertWhen_SourceAndTargetsAreNotLinked() external {
         metaRegistryStub.setExternalOperatorGroupId(
             _norData(SOURCE_MODULE_ID, SOURCE_OPERATOR_ID), LINKED_GROUP_ID + 1
@@ -225,7 +206,6 @@ contract AllowConsolidationPairTest is Test {
         allowConsolidationPair.createEVMScript(owner, _callData(owner));
     }
 
-    // python: test_target_operator_must_be_linked_via_meta_registry
     function test_RevertWhen_TargetOperatorIsNotLinked() external {
         metaRegistryStub.setNodeOperatorGroupId(FIRST_TARGET_OPERATOR_ID, LINKED_GROUP_ID + 1);
 
@@ -235,7 +215,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_create_evm_script_when_pair_is_already_allowed
     function test_CreatesEVMScriptWhenPairIsAlreadyAllowed() external {
         consolidationMigratorStub.setPairStatus(SOURCE_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID, true);
 
@@ -250,7 +229,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_consolidation_migrator_stub_overwrites_submitter_without_duplicate_target
     function test_OverwritesMigratorStubSubmitterWithoutDuplicateTarget() external {
         consolidationMigratorStub.allowPair(SOURCE_OPERATOR_ID, FIRST_TARGET_OPERATOR_ID, owner);
 
@@ -292,7 +270,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = allowConsolidationPair.createEVMScript(owner, _callData(owner));
 
@@ -305,7 +282,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_create_evm_script_with_single_target
     function test_CreatesEVMScriptWithSingleTarget() external view {
         uint256[] memory singleTargetIds = Arrays.list(FIRST_TARGET_OPERATOR_ID);
 
@@ -315,7 +291,6 @@ contract AllowConsolidationPairTest is Test {
         assertEq(evmScript, _allowPairsScript(owner, singleTargetIds), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         AllowConsolidationPair.AllowConsolidationPairInput memory decoded =
             allowConsolidationPair.decodeEVMScriptCallData(_callData(owner));
@@ -329,13 +304,12 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data_reverts_on_invalid_calldata
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         allowConsolidationPair.decodeEVMScriptCallData("");
     }
 
-    /// @dev python: EXT, the ten-byte NOR external operator key
+    /// @dev The ten-byte NOR external operator key
     function _norData(uint256 moduleId, uint256 nodeOperatorId)
         private
         pure
@@ -346,7 +320,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    /// @dev python: C with the default source operator and target ids
     function _callData(address submitter) private pure returns (bytes memory) {
         return _callData(
             submitter,
@@ -355,7 +328,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    /// @dev python: C with the default target ids
     function _callData(address submitter, uint256 sourceOperatorId)
         private
         pure
@@ -368,7 +340,6 @@ contract AllowConsolidationPairTest is Test {
         );
     }
 
-    /// @dev python: C with the default source operator
     function _callData(address submitter, uint256[] memory targetOperatorIds)
         private
         pure
@@ -377,7 +348,6 @@ contract AllowConsolidationPairTest is Test {
         return _callData(submitter, SOURCE_OPERATOR_ID, targetOperatorIds);
     }
 
-    /// @dev python: C
     function _callData(
         address submitter,
         uint256 sourceOperatorId,
@@ -386,7 +356,6 @@ contract AllowConsolidationPairTest is Test {
         return abi.encode(submitter, sourceOperatorId, targetOperatorIds);
     }
 
-    /// @dev python: S, encode_call_script of one migrator.allowPair per target id
     function _allowPairsScript(address submitter, uint256[] memory targetOperatorIds)
         private
         view

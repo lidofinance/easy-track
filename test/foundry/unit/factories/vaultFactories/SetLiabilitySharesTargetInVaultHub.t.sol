@@ -19,7 +19,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
-    /// @dev python: accounts[5] and accounts[6] as vault addresses
     address internal vault = makeAddr("vault");
     address internal anotherVault = makeAddr("anotherVault");
 
@@ -42,7 +41,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         vm.label(address(setLiabilitySharesTargetInVaultHub), "setLiabilitySharesTargetInVaultHub");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(setLiabilitySharesTargetInVaultHub.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -58,13 +56,11 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         assertEq(address(vaultsAdapter.lidoLocator()), address(lidoLocatorStub), "lidoLocator");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         setLiabilitySharesTargetInVaultHub.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_vaults_array
     function test_RevertWhen_VaultsAreEmpty() external {
         address[] memory vaults = new address[](0);
         uint256[] memory liabilitySharesTargets = new uint256[](0);
@@ -75,7 +71,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         );
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         setLiabilitySharesTargetInVaultHub.createEVMScript(
@@ -83,7 +78,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         );
     }
 
-    // python: test_zero_vault_address
     function test_RevertWhen_VaultIsZero() external {
         vm.expectRevert("ZERO_VAULT");
         setLiabilitySharesTargetInVaultHub.createEVMScript(
@@ -91,7 +85,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         address[] memory vaults = Arrays.list(vault, anotherVault);
         uint256[] memory liabilitySharesTargets = Arrays.list(100, 200);
@@ -105,7 +98,6 @@ contract SetLiabilitySharesTargetInVaultHubTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         address[] memory vaults = Arrays.list(vault, anotherVault);
         uint256[] memory liabilitySharesTargets = Arrays.list(100, 200);

@@ -13,7 +13,6 @@ import {IMEVBoostRelaysFactory} from "test/foundry/interfaces/Factories.sol";
 contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
     uint256 internal constant MAX_NUM_RELAYS = 40;
 
-    /// @dev python: len(mev_boost_relay_test_config["relays"])
     uint256 internal constant RELAYS_COUNT = 3;
 
     IMEVBoostRelayAllowedList internal allowedList;
@@ -54,12 +53,11 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
             )
         );
 
-        // python: setup_script_executor. The vote "Set manager for MEV Boost Relay Allowed List
-        // to EVMScriptExecutor", replayed as the owner's call
+        // The vote "Set manager for MEV Boost Relay Allowed List to EVMScriptExecutor", replayed as
+        // the owner's call
         _setExecutorAsManager();
     }
 
-    // python: test_add_mev_boost_relays_allowed_list_happy_path
     function testFork_AddsRelays() external {
         _makeRoom(RELAYS_COUNT);
 
@@ -67,7 +65,6 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
         _addByMotion(_relays(RELAYS_COUNT));
     }
 
-    // python: test_add_mev_boost_relays_allowed_list_full_list_happy_path
     function testFork_AddsRelaysUpToFullList() external {
         IMEVBoostRelayAllowedList.Relay[] memory current = allowedList.get_relays();
         _removeRelays(current);
@@ -75,18 +72,15 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
         _addByMotion(_padded(current));
     }
 
-    // python: test_remove_mev_boost_relays_allowed_list_happy_path
     function testFork_RemovesRelays() external {
         _removeByMotion(_relays(1));
         _removeByMotion(_relays(RELAYS_COUNT));
     }
 
-    // python: test_remove_mev_boost_relays_allowed_list_full_list_happy_path
     function testFork_RemovesFullList() external {
         _removeByMotion(_padded(allowedList.get_relays()));
     }
 
-    // python: test_edit_mev_boost_relays_allowed_list_happy_path
     function testFork_EditsRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = _relays(RELAYS_COUNT);
         IMEVBoostRelayAllowedList.Relay[] memory modified =
@@ -106,8 +100,8 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
 
     // --- motion drivers ---
 
-    /// @dev python: create_enact_and_check_add_motion. The relays are absent, a motion adds
-    ///      them all, each reads back by its uri, then the Agent removes them again
+    /// @dev The relays are absent, a motion adds them all, each reads back by its uri, then the
+    ///      Agent removes them again
     function _addByMotion(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
         IMEVBoostRelayAllowedList.Relay[] memory before = allowedList.get_relays();
         for (uint256 i; i < relays.length; ++i) {
@@ -129,8 +123,7 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
         _removeRelays(relays);
     }
 
-    /// @dev python: create_enact_and_check_remove_motion. The Agent seeds the relays that are
-    ///      absent, a motion removes them all
+    /// @dev The Agent seeds the relays that are absent, a motion removes them all
     function _removeByMotion(IMEVBoostRelayAllowedList.Relay[] memory relays) private {
         _seedRelays(relays);
 
@@ -151,9 +144,8 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
         }
     }
 
-    /// @dev python: create_enact_and_check_edit_motion. The Agent seeds the relays that are
-    ///      absent, a motion replaces each by its edited twin of the same uri, the list keeps its
-    ///      length, then the Agent removes the uris
+    /// @dev The Agent seeds the relays that are absent, a motion replaces each by its edited twin
+    ///      of the same uri, the list keeps its length, then the Agent removes the uris
     function _editByMotion(
         IMEVBoostRelayAllowedList.Relay[] memory relays,
         IMEVBoostRelayAllowedList.Relay[] memory modified
@@ -195,7 +187,7 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
         assertEq(easyTrack.getMotions().length, motionsBefore + 1, "motions after creation");
     }
 
-    /// @dev python: execute_motion. One motion fewer pending after the enactment
+    /// @dev Enacts the motion and asserts one motion fewer is pending
     function _executeMotion(uint256 motionId, bytes memory callData) private {
         uint256 motionsBefore = easyTrack.getMotions().length;
 
@@ -206,7 +198,7 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
 
     // --- list state, as the Agent ---
 
-    /// @dev python: setup_script_executor, a no-op when the executor already manages the list
+    /// @dev Makes the executor the list's manager, a no-op when it already is
     function _setExecutorAsManager() private {
         if (allowedList.get_manager() == evmScriptExecutor) {
             return;
@@ -251,7 +243,6 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
 
     // --- relays ---
 
-    /// @dev python: mev_boost_relay_test_config["relays"][:count]
     function _relays(uint256 count)
         private
         pure
@@ -281,8 +272,6 @@ contract MEVBoostRelaysAllowedListTest is EasyTrackScenarioBase {
         return _first(all, count);
     }
 
-    /// @dev python: the relays_input of the full list tests, `current` padded to the maximum
-    ///      with `(f"uri{i}", f"op{i}", True, f"desc{i}")`
     function _padded(IMEVBoostRelayAllowedList.Relay[] memory current)
         private
         pure

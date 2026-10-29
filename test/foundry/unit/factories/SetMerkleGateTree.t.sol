@@ -19,13 +19,10 @@ contract SetMerkleGateTreeTest is Test {
         0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef;
     bytes32 internal constant ANOTHER_TREE_ROOT =
         0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890;
-    /// @dev python: bytes.fromhex("ff" * 32)
     bytes32 internal constant WRONG_TREE_ROOT =
         0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff;
-    /// @dev python: bytes.fromhex("ab" * 32)
     bytes32 internal constant CHANGED_TREE_ROOT =
         0xabababababababababababababababababababababababababababababababab;
-    /// @dev python: bytes.fromhex("aabbccdd" * 8)
     bytes32 internal constant CURRENT_TREE_ROOT =
         0xaabbccddaabbccddaabbccddaabbccddaabbccddaabbccddaabbccddaabbccdd;
     string internal constant TREE_CID = "QmTest123456789";
@@ -48,31 +45,26 @@ contract SetMerkleGateTreeTest is Test {
         vm.label(address(setMerkleGateTree), "setMerkleGateTree");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(setMerkleGateTree.trustedCaller(), owner, "trustedCaller");
         assertEq(setMerkleGateTree.name(), FACTORY_NAME, "name");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         setMerkleGateTree.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_tree_root
     function test_RevertWhen_TreeRootIsEmpty() external {
         vm.expectRevert("EMPTY_TREE_ROOT");
         setMerkleGateTree.createEVMScript(owner, _callData(bytes32(0), "", bytes32(0), "test_cid"));
     }
 
-    // python: test_empty_tree_cid
     function test_RevertWhen_TreeCidIsEmpty() external {
         vm.expectRevert("EMPTY_TREE_CID");
         setMerkleGateTree.createEVMScript(owner, _callData(bytes32(0), "", TREE_ROOT, ""));
     }
 
-    // python: test_same_tree_root
     function test_RevertWhen_TreeRootIsSame() external {
         _setTreeParams(TREE_ROOT, TREE_CID);
 
@@ -82,7 +74,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    // python: test_same_tree_cid
     function test_RevertWhen_TreeCidIsSame() external {
         _setTreeParams(TREE_ROOT, TREE_CID);
 
@@ -92,7 +83,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    // python: test_current_tree_root_mismatch
     function test_RevertWhen_CurrentTreeRootMismatches() external {
         _setTreeParams(TREE_ROOT, TREE_CID);
 
@@ -102,7 +92,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    // python: test_current_tree_cid_mismatch
     function test_RevertWhen_CurrentTreeCidMismatches() external {
         _setTreeParams(TREE_ROOT, TREE_CID);
 
@@ -112,7 +101,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes32 currentTreeRoot = merkleGateStub.treeRoot();
         string memory currentTreeCid = merkleGateStub.treeCid();
@@ -128,7 +116,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    // python: test_validate_input_data_reverts_if_tree_state_changed
     function test_RevertWhen_ValidatingInputDataAfterTreeStateChanged() external {
         bytes32 oldTreeRoot = merkleGateStub.treeRoot();
         string memory oldTreeCid = merkleGateStub.treeCid();
@@ -141,7 +128,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         (
             address gate,
@@ -160,13 +146,11 @@ contract SetMerkleGateTreeTest is Test {
         assertEq(newTreeCid, TREE_CID, "newTreeCid");
     }
 
-    /// @dev python: merkle_gate_stub.setTreeParams(tree_root, tree_cid, {"from": owner})
     function _setTreeParams(bytes32 treeRoot, string memory treeCid) private {
         vm.prank(owner);
         merkleGateStub.setTreeParams(treeRoot, treeCid);
     }
 
-    /// @dev python: C, always over merkle_gate_stub
     function _callData(
         bytes32 currentTreeRoot,
         string memory currentTreeCid,
@@ -178,8 +162,6 @@ contract SetMerkleGateTreeTest is Test {
         );
     }
 
-    /// @dev python: encode_call_script of validateInputData with the original inputs, then
-    /// merkle_gate_stub.setTreeParams
     function _setTreeParamsScript(
         bytes32 currentTreeRoot,
         string memory currentTreeCid,

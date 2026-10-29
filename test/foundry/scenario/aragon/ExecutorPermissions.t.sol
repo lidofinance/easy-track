@@ -48,7 +48,6 @@ contract ExecutorPermissionsTest is EasyTrackScenarioBase {
         _mintLDO(address(this), IMiniMeToken(dao.ldo).totalSupply());
     }
 
-    // python: test_grant_executor_permissions
     function testFork_GrantsExecutorPermissions() external {
         Lido.Permission[] memory required = Lido.executorPermissions(dao);
 
@@ -64,7 +63,6 @@ contract ExecutorPermissionsTest is EasyTrackScenarioBase {
         assertEq(grant.missingPermissions(evmScriptExecutor).length, 0, "missing after");
     }
 
-    // python: test_revoke_permissions
     function testFork_RevokesAllPermissions() external {
         Lido.Permission[] memory required = Lido.executorPermissions(dao);
 

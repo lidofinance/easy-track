@@ -61,7 +61,6 @@ contract EVMScriptExecutorTest is Test {
         easyTrack.setEVMScriptExecutor(address(evmScriptExecutor));
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external {
         vm.prank(owner);
         EVMScriptExecutor newEVMScriptExecutor =
@@ -71,19 +70,16 @@ contract EVMScriptExecutorTest is Test {
         assertEq(newEVMScriptExecutor.easyTrack(), address(easyTrack), "easyTrack");
     }
 
-    // python: test_deploy_calls_script_not_contract
     function test_RevertWhen_CallsScriptIsNotContract() external {
         vm.expectRevert("CALLS_SCRIPT_IS_NOT_CONTRACT");
         new EVMScriptExecutor(notContract, address(easyTrack));
     }
 
-    // python: test_deploy_easy_track_not_contract
     function test_RevertWhen_EasyTrackIsNotContract() external {
         vm.expectRevert("EASY_TRACK_IS_NOT_CONTRACT");
         new EVMScriptExecutor(address(callsScript), notContract);
     }
 
-    // python: test_execute_evm_script_revert_msg
     function test_RevertWhen_EVMScriptCallReverts() external {
         // the stub holds 400 signing keys, fewer than the requested limit
         bytes memory evmScript = EVMScripts.encodeCallScript(
@@ -100,7 +96,6 @@ contract EVMScriptExecutorTest is Test {
         evmScriptExecutor.executeEVMScript(evmScript);
     }
 
-    // python: test_execute_evm_script_output
     function test_ExecutesEVMScript() external {
         assertEq(nodeOperatorsRegistryStub.stakingLimit(), INITIAL_STAKING_LIMIT, "stakingLimit");
 
@@ -116,7 +111,6 @@ contract EVMScriptExecutorTest is Test {
         assertEq(nodeOperatorsRegistryStub.stakingLimit(), NEW_STAKING_LIMIT, "stakingLimit");
     }
 
-    // python: test_execute_evm_script_caller_validation
     function test_ValidatesEVMScriptCaller() external {
         vm.prank(stranger);
         vm.expectRevert("CALLER_IS_FORBIDDEN");
@@ -128,7 +122,6 @@ contract EVMScriptExecutorTest is Test {
         evmScriptExecutor.executeEVMScript(evmScript);
     }
 
-    // python: test_set_easy_track_called_by_stranger
     function test_RevertWhen_SettingEasyTrackAsStranger() external {
         address newEasyTrack = makeAddr("newEasyTrack");
 
@@ -137,7 +130,6 @@ contract EVMScriptExecutorTest is Test {
         evmScriptExecutor.setEasyTrack(newEasyTrack);
     }
 
-    // python: test_set_easy_track_called_by_owner
     function test_SetsEasyTrack() external {
         assertEq(evmScriptExecutor.easyTrack(), address(easyTrack), "easyTrack");
 

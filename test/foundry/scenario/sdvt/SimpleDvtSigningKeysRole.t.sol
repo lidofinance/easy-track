@@ -16,7 +16,6 @@ contract SimpleDvtSigningKeysRoleTest is SimpleDvtScenarioBase {
     /// @dev Index of the cluster handed to a new manager
     uint256 internal constant OPERATOR_5 = 5;
 
-    // python: test_simple_make_action
     function testFork_ChangesManagerAfterAgentIsGrantedSigningKeysRole() external {
         _enact(addNodeOperators, creator, _encodeAddClusters(CLUSTERS_COUNT));
 

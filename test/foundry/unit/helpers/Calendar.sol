@@ -11,7 +11,6 @@ library Calendar {
     uint256 internal constant EPOCH_YEAR = 1970;
     uint256 internal constant MONTHS_PER_YEAR = 12;
 
-    /// @dev python: datetime(year, month, day, tzinfo=timezone.utc).timestamp()
     function timestampFromDate(uint256 year, uint256 month, uint256 day)
         internal
         pure
@@ -20,7 +19,6 @@ library Calendar {
         return timestampFromDate(year, month, day, 0, 0, 0);
     }
 
-    /// @dev python: datetime(year, month, day, hour, minute, second, tzinfo=timezone.utc).timestamp()
     function timestampFromDate(
         uint256 year,
         uint256 month,
@@ -42,7 +40,6 @@ library Calendar {
         return daysSinceEpoch * 1 days + hour * 1 hours + minute * 1 minutes + second;
     }
 
-    /// @dev python: datetime.fromtimestamp(timestamp, tz=timezone.utc), as its year, month and day
     function dateFromTimestamp(uint256 timestamp)
         internal
         pure
@@ -65,8 +62,8 @@ library Calendar {
         day = daysLeft + 1;
     }
 
-    /// @dev python: datetime + relativedelta(months=+months). The day of the month is clamped to
-    /// the length of the target month and the time of day is kept
+    /// @dev Adds `months` to `timestamp`. The day of the month is clamped to the length of the
+    /// target month and the time of day is kept
     function addMonths(uint256 timestamp, uint256 months) internal pure returns (uint256) {
         (uint256 year, uint256 month, uint256 day) = dateFromTimestamp(timestamp);
         uint256 monthsFromZero = month - 1 + months;

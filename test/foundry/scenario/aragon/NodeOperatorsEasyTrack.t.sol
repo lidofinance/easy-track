@@ -50,7 +50,6 @@ contract NodeOperatorsEasyTrackTest is EasyTrackScenarioBase {
         _handAdminToVoting();
     }
 
-    // python: test_node_operators_easy_track_happy_path
     function testFork_IncreasesNodeOperatorStakingLimit() external {
         // The vote "Grant SET_NODE_OPERATOR_LIMIT_ROLE permission to EVMScriptExecutor"
         _grantPermission(

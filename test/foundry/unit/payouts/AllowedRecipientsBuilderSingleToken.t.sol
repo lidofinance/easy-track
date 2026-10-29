@@ -39,7 +39,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
     uint256 internal constant PERIOD_DURATION_MONTHS = 1;
     uint256 internal constant SPENT_AMOUNT = 1e10;
 
-    // python: the literals of test_deploy_full_setup
     address internal constant FULL_SETUP_TRUSTED_CALLER =
         0x3eaE0B337413407FB3C65324735D797ddc7E071D;
     uint256 internal constant FULL_SETUP_LIMIT = 10_000 ether;
@@ -54,7 +53,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
     address internal recipient = makeAddr("recipient");
     address internal secondRecipient = makeAddr("secondRecipient");
 
-    /// @dev python: accounts[4], an EOA the single factory deployments are wired to as a registry
+    /// @dev An EOA the single factory deployments are wired to as a registry
     address internal recipientsRegistryStandIn = makeAddr("recipientsRegistryStandIn");
 
     MiniMeTokenStub internal ldo;
@@ -124,7 +123,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         vm.label(address(allowedRecipientsBuilder), "allowedRecipientsBuilder");
     }
 
-    // python: test_builder_constructor_params
     function test_SetsInitialState() external view {
         assertEq(
             address(allowedRecipientsBuilder.factory()),
@@ -146,7 +144,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         );
     }
 
-    // python: test_deploy_top_up_allowed_recipients
     function test_DeploysTopUpAllowedRecipients() external {
         address expectedTopUpAllowedRecipients = _nextFactoryDeployment();
 
@@ -178,7 +175,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         assertEq(address(topUpAllowedRecipients.easyTrack()), address(easyTrack), "easyTrack");
     }
 
-    // python: test_deploy_add_allowed_recipient
     function test_DeploysAddAllowedRecipient() external {
         address expectedAddAllowedRecipient = _nextFactoryDeployment();
 
@@ -203,7 +199,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         assertEq(addAllowedRecipient.trustedCaller(), trustedCaller, "trustedCaller");
     }
 
-    // python: test_deploy_remove_allowed_recipient
     function test_DeploysRemoveAllowedRecipient() external {
         address expectedRemoveAllowedRecipient = _nextFactoryDeployment();
 
@@ -229,7 +224,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         assertEq(removeAllowedRecipient.trustedCaller(), trustedCaller, "trustedCaller");
     }
 
-    // python: test_deploy_allowed_recipients_registry
     function test_DeploysAllowedRecipientsRegistry() external {
         address[] memory recipients = Arrays.list(recipient, secondRecipient);
 
@@ -246,7 +240,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         _assertRecipientsRegistryRoles(registry, true);
     }
 
-    // python: test_deploy_recipients_registry_reverts_recipients_length
     function test_RevertWhen_RecipientsRegistryRecipientsLengthMismatch() external {
         vm.prank(stranger);
         vm.expectRevert("Recipients data length mismatch");
@@ -260,7 +253,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         );
     }
 
-    // python: test_deploy_recipients_registry_reverts_spentAmount_gt_limit
     function test_RevertWhen_RecipientsRegistrySpentAmountExceedsLimit() external {
         uint256 limitBelowSpentAmount = 1e5;
 
@@ -276,7 +268,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         );
     }
 
-    // python: test_deploy_full_setup
     function test_DeploysFullSetup() external {
         address[] memory recipients = _fullSetupRecipients();
 
@@ -335,7 +326,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         _assertRecipientsRegistryRoles(registry, true);
     }
 
-    // python: test_deploy_deploy_single_recipient_top_up_only_setup
     function test_DeploysSingleRecipientTopUpOnlySetup() external {
         vm.recordLogs();
 
@@ -363,8 +353,7 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         );
     }
 
-    /// @dev python: tx.events["AllowedRecipientsRegistryDeployed"]["allowedRecipientsRegistry"].
-    /// The factory announced the `registry` the builder returned
+    /// @dev Asserts the factory announced the `registry` the builder returned
     function _assertRegistryDeployed(IAllowedRecipientsRegistry registry) private {
         assertEq(
             _deployedAddress(vm.getRecordedLogs(), ALLOWED_RECIPIENTS_REGISTRY_DEPLOYED),
@@ -391,12 +380,10 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         revert("DEPLOYMENT_EVENT_NOT_FOUND");
     }
 
-    /// @dev python: ["account 3", "account 4"]
     function _titles() private pure returns (string[] memory) {
         return Arrays.list(string("account 3"), string("account 4"));
     }
 
-    /// @dev python: the five recipients of test_deploy_full_setup
     function _fullSetupRecipients() private pure returns (address[] memory recipients) {
         recipients = new address[](5);
         recipients[0] = 0xbbe8dDEf5BF31b71Ff5DbE89635f9dB4DeFC667E;
@@ -406,7 +393,6 @@ contract AllowedRecipientsBuilderSingleTokenTest is Test {
         recipients[4] = 0xc6e2459991BfE27cca6d86722F35da23A1E4Cb97;
     }
 
-    /// @dev python: the five titles of test_deploy_full_setup
     function _fullSetupTitles() private pure returns (string[] memory titles) {
         titles = new string[](5);
         titles[0] = "Default Reward Program";

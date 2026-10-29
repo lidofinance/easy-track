@@ -55,7 +55,6 @@ contract SetDepositsReserveTargetFreshFactoryTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_set_deposits_reserve_target_motion_happy_path
     function testFork_SetsTargetToMaxThenToZero() external {
         uint256 initialTarget = lido.getDepositsReserveTarget();
         uint256 maxTarget = factory.MAX_DEPOSITS_RESERVE_TARGET();
@@ -66,7 +65,6 @@ contract SetDepositsReserveTargetFreshFactoryTest is EasyTrackScenarioBase {
         assertNotEq(initialTarget, maxTarget, "the first target is a change");
     }
 
-    // python: test_factory_permissions_restrict_lido_target
     function testFork_RevertWhen_PermissionsNameAnotherTarget() external {
         address second = _deployArtifact(
             FACTORY_NAME, abi.encode(creator, factory.MAX_DEPOSITS_RESERVE_TARGET(), lido)

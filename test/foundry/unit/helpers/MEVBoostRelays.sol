@@ -7,18 +7,15 @@ import {Vm} from "forge-std/Vm.sol";
 import {Strings} from "OpenZeppelin/openzeppelin-contracts@4.3.2/contracts/utils/Strings.sol";
 import {IMEVBoostRelayAllowedList} from "contracts/interfaces/IMEVBoostRelayAllowedList.sol";
 
-/// @notice python: mev_boost_relay_test_config of `tests/conftest.py`, with the relay builders and
-/// encoders the MEV-Boost relay factory tests share
+/// @notice The relay builders and encoders the MEV-Boost relay factory tests share
 library MEVBoostRelays {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
     uint256 internal constant MAX_NUM_RELAYS = 40;
     uint256 internal constant MAX_STRING_LENGTH = 1024;
 
-    /// @dev python: len(mev_boost_relay_test_config["relays"])
     uint256 internal constant RELAYS_COUNT = 3;
 
-    /// @dev python: mev_boost_relay_test_config["relays"][index]
     function relayAt(uint256 index) internal pure returns (IMEVBoostRelayAllowedList.Relay memory) {
         IMEVBoostRelayAllowedList.Relay[] memory all =
             new IMEVBoostRelayAllowedList.Relay[](RELAYS_COUNT);
@@ -47,7 +44,6 @@ library MEVBoostRelays {
         return all[index];
     }
 
-    /// @dev python: mev_boost_relay_test_config["relays"][:count]
     function relays(uint256 count)
         internal
         pure
@@ -60,7 +56,6 @@ library MEVBoostRelays {
         }
     }
 
-    /// @dev python: get_relay_fixture_uri(i) for the first `count` fixture relays
     function relayURIs(uint256 count) internal pure returns (string[] memory uris) {
         uris = new string[](count);
 
@@ -69,8 +64,7 @@ library MEVBoostRelays {
         }
     }
 
-    /// @dev python: ("uri{i}", "operator{i}", True, "description{i}"), the relay the tests generate
-    /// at index `i`
+    /// @dev The relay the tests generate at index `i`
     function generatedRelay(uint256 i)
         internal
         pure
@@ -99,7 +93,6 @@ library MEVBoostRelays {
         }
     }
 
-    /// @dev python: "https://relay{i}.example.com" for i in 0 .. count - 1
     function exampleURIs(uint256 count) internal pure returns (string[] memory uris) {
         uris = new string[](count);
 
@@ -123,7 +116,7 @@ library MEVBoostRelays {
         }
     }
 
-    /// @dev python: "a" * length and the like. `length` copies of `char`
+    /// @dev A string of `length` copies of `char`
     function stringOf(bytes1 char, uint256 length) internal pure returns (string memory) {
         bytes memory result = new bytes(length);
 
@@ -146,7 +139,6 @@ library MEVBoostRelays {
             });
     }
 
-    /// @dev python: mev_boost_relay_allowed_list_stub.add_relay.encode_input(*relay)
     function addRelayCallData(IMEVBoostRelayAllowedList.Relay memory input)
         internal
         pure
@@ -161,12 +153,10 @@ library MEVBoostRelays {
         );
     }
 
-    /// @dev python: mev_boost_relay_allowed_list_stub.remove_relay.encode_input(uri)
     function removeRelayCallData(string memory uri) internal pure returns (bytes memory) {
         return abi.encodeWithSelector(IMEVBoostRelayAllowedList.remove_relay.selector, uri);
     }
 
-    /// @dev python: mev_boost_relay_allowed_list_stub.add_relay(*relay, {"from": owner})
     function addRelay(
         IMEVBoostRelayAllowedList list,
         address owner,

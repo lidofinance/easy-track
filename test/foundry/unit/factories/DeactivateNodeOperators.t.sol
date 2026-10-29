@@ -53,7 +53,6 @@ contract DeactivateNodeOperatorsTest is Test {
         vm.label(address(deactivateNodeOperators), "deactivateNodeOperators");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(deactivateNodeOperators.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -64,13 +63,11 @@ contract DeactivateNodeOperatorsTest is Test {
         assertEq(address(deactivateNodeOperators.acl()), address(acl), "acl");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         deactivateNodeOperators.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         deactivateNodeOperators.createEVMScript(
@@ -78,7 +75,6 @@ contract DeactivateNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_non_sorted_calldata
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         deactivateNodeOperators.createEVMScript(
@@ -91,7 +87,6 @@ contract DeactivateNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_operator_id_out_of_range
     function test_RevertWhen_NodeOperatorIdIsOutOfRange() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -101,7 +96,6 @@ contract DeactivateNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_node_operator_invalid_state
     function test_RevertWhen_NodeOperatorIsAlreadyInactive() external {
         nodeOperatorsRegistry.setActive(0, false);
 
@@ -109,7 +103,6 @@ contract DeactivateNodeOperatorsTest is Test {
         deactivateNodeOperators.createEVMScript(owner, _encodeCallData(_inputs(0, FIRST_MANAGER)));
     }
 
-    // python: test_manager_has_no_role
     function test_RevertWhen_ManagerHasNoRole() external {
         vm.expectRevert("MANAGER_HAS_NO_ROLE");
         deactivateNodeOperators.createEVMScript(
@@ -117,7 +110,6 @@ contract DeactivateNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_manager_has_another_role_operator
     function test_RevertWhen_ManagerRoleExcludesNodeOperator() external {
         _grantManagerRole(FIRST_MANAGER, Op.NEQ, UNMANAGED_NODE_OPERATOR_ID);
 
@@ -127,7 +119,6 @@ contract DeactivateNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_manager_has_role_for_another_operator
     function test_RevertWhen_ManagerHasRoleForAnotherNodeOperator() external {
         _grantManagerRole(FIRST_MANAGER, Op.EQ, UNMANAGED_NODE_OPERATOR_ID + 1);
 
@@ -137,7 +128,6 @@ contract DeactivateNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = deactivateNodeOperators.createEVMScript(
             owner, _encodeCallData(_inputs(0, FIRST_MANAGER, 1, SECOND_MANAGER))
@@ -158,7 +148,6 @@ contract DeactivateNodeOperatorsTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         DeactivateNodeOperators.DeactivateNodeOperatorInput[] memory inputs =
             deactivateNodeOperators.decodeEVMScriptCallData(
@@ -172,8 +161,6 @@ contract DeactivateNodeOperatorsTest is Test {
         assertEq(inputs[1].managerAddress, SECOND_MANAGER, "inputs[1].managerAddress");
     }
 
-    /// @dev python: acl.grantPermissionP(manager, registry, MANAGE_SIGNING_KEYS_ROLE,
-    /// encode_permission_params([Param(0, op, value)]))
     function _grantManagerRole(address manager, Op op, uint256 value) private {
         acl.grantPermissionP(
             manager,

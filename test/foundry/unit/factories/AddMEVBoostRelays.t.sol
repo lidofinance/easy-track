@@ -29,7 +29,6 @@ contract AddMEVBoostRelaysTest is Test {
         vm.label(address(addMEVBoostRelays), "addMEVBoostRelays");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(addMEVBoostRelays.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -39,7 +38,6 @@ contract AddMEVBoostRelaysTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data_with_single_relay
     function test_DecodesEVMScriptCallDataWithSingleRelay() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
 
@@ -49,7 +47,6 @@ contract AddMEVBoostRelaysTest is Test {
         MEVBoostRelays.assertRelaysEq(decoded, relays);
     }
 
-    // python: test_decode_evm_script_call_data_multiple_relays
     function test_DecodesEVMScriptCallDataWithMultipleRelays() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(2);
 
@@ -59,7 +56,6 @@ contract AddMEVBoostRelaysTest is Test {
         MEVBoostRelays.assertRelaysEq(decoded, relays);
     }
 
-    // python: test_decode_evm_script_call_data_with_max_relays
     function test_DecodesEVMScriptCallDataWithMaxRelays() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
@@ -70,13 +66,11 @@ contract AddMEVBoostRelaysTest is Test {
         MEVBoostRelays.assertRelaysEq(decoded, relays);
     }
 
-    // python: test_decode_evm_script_call_data_reverts_with_empty_calldata
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         addMEVBoostRelays.decodeEVMScriptCallData("");
     }
 
-    // python: test_create_evm_script_with_one_relay
     function test_CreatesEVMScriptWithOneRelay() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
 
@@ -85,7 +79,6 @@ contract AddMEVBoostRelaysTest is Test {
         assertEq(evmScript, _addRelaysScript(relays), "evmScript");
     }
 
-    // python: test_create_evm_script_with_multiple_relays
     function test_CreatesEVMScriptWithMultipleRelays() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
@@ -95,7 +88,6 @@ contract AddMEVBoostRelaysTest is Test {
         assertEq(evmScript, _addRelaysScript(relays), "evmScript");
     }
 
-    // python: test_add_max_num_relays
     function test_AddsMaxNumRelays() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
@@ -105,13 +97,11 @@ contract AddMEVBoostRelaysTest is Test {
         assertEq(evmScript, _addRelaysScript(relays), "evmScript");
     }
 
-    // python: test_cannot_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         addMEVBoostRelays.createEVMScript(stranger, "");
     }
 
-    // python: test_cannot_add_relay_with_empty_calldata
     function test_RevertWhen_RelaysAreEmpty() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = new IMEVBoostRelayAllowedList.Relay[](0);
 
@@ -119,7 +109,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    // python: test_cannot_add_relay_with_empty_relay_uri
     function test_RevertWhen_RelayUriIsEmpty() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             Arrays.list(MEVBoostRelays.relay("", "operator", true, "description"));
@@ -128,7 +117,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    // python: test_cannot_add_more_relays_than_allowed
     function test_RevertWhen_AddingMoreRelaysThanAllowed() external {
         MEVBoostRelays.addRelays(
             mevBoostRelayAllowedListStub,
@@ -140,7 +128,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(MEVBoostRelays.relays(1)));
     }
 
-    // python: test_cannot_batch_add_more_relays_than_allowed
     function test_RevertWhen_BatchAddingMoreRelaysThanAllowed() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS + 1);
@@ -149,7 +136,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    // python: test_cannot_add_relay_uri_already_exists
     function test_RevertWhen_RelayUriAlreadyExists() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
         MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);
@@ -161,7 +147,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(Arrays.list(relay)));
     }
 
-    // python: test_cannot_add_relays_with_duplicate_uri
     function test_RevertWhen_RelaysHaveDuplicateUri() external {
         IMEVBoostRelayAllowedList.Relay memory duplicate = MEVBoostRelays.relayAt(1);
         duplicate.uri = MEVBoostRelays.relayAt(0).uri;
@@ -173,7 +158,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    // python: test_can_add_relay_with_max_uri_length
     function test_AddsRelayWithMaxUriLength() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(
             MEVBoostRelays.relay(_stringOfMaxLength(), "operator", true, "description")
@@ -184,7 +168,6 @@ contract AddMEVBoostRelaysTest is Test {
         assertEq(evmScript, _addRelaysScript(relays), "evmScript");
     }
 
-    // python: test_can_add_relay_with_max_string_length_description
     function test_AddsRelayWithMaxStringLengthDescription() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             Arrays.list(MEVBoostRelays.relay("uri", "operator", true, _stringOfMaxLength()));
@@ -194,7 +177,6 @@ contract AddMEVBoostRelaysTest is Test {
         assertEq(evmScript, _addRelaysScript(relays), "evmScript");
     }
 
-    // python: test_can_add_relay_with_max_string_length_operator
     function test_AddsRelayWithMaxStringLengthOperator() external view {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             Arrays.list(MEVBoostRelays.relay("uri", _stringOfMaxLength(), true, "description"));
@@ -204,7 +186,6 @@ contract AddMEVBoostRelaysTest is Test {
         assertEq(evmScript, _addRelaysScript(relays), "evmScript");
     }
 
-    // python: test_cannot_add_relay_with_over_max_string_length_description
     function test_RevertWhen_DescriptionExceedsMaxStringLength() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             Arrays.list(MEVBoostRelays.relay("uri", "operator", true, _stringOverMaxLength()));
@@ -213,7 +194,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    // python: test_cannot_add_relay_with_over_max_string_length_operator
     function test_RevertWhen_OperatorExceedsMaxStringLength() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             Arrays.list(MEVBoostRelays.relay("uri", _stringOverMaxLength(), true, "description"));
@@ -222,7 +202,6 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    // python: test_cannot_add_relay_with_over_max_uri_length
     function test_RevertWhen_UriExceedsMaxStringLength() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(
             MEVBoostRelays.relay(_stringOverMaxLength(), "operator", true, "description")
@@ -232,12 +211,10 @@ contract AddMEVBoostRelaysTest is Test {
         addMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
     }
 
-    /// @dev python: "a" * max_string_length
     function _stringOfMaxLength() private pure returns (string memory) {
         return MEVBoostRelays.stringOf("a", MEVBoostRelays.MAX_STRING_LENGTH);
     }
 
-    /// @dev python: "a" * (max_string_length + 1)
     function _stringOverMaxLength() private pure returns (string memory) {
         return MEVBoostRelays.stringOf("a", MEVBoostRelays.MAX_STRING_LENGTH + 1);
     }

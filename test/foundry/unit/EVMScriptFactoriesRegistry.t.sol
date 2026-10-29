@@ -10,7 +10,6 @@ import {Roles} from "test/foundry/unit/helpers/Roles.sol";
 import {TestHelpers} from "test/foundry/unit/helpers/TestHelpers.sol";
 
 contract EVMScriptFactoriesRegistryTest is Test {
-    /// @dev python: the "ffccddee" selector appended to the factory address
     bytes4 internal constant PERMISSION_SELECTOR = 0xffccddee;
 
     address internal owner = makeAddr("owner");
@@ -18,7 +17,6 @@ contract EVMScriptFactoriesRegistryTest is Test {
 
     EVMScriptFactoriesRegistry internal evmScriptFactoriesRegistry;
 
-    /// @dev python: permissions = stranger.address + "ffccddee"
     bytes internal permissions;
 
     // Re-declared: solc 0.8.6 cannot emit another contract's events
@@ -32,7 +30,6 @@ contract EVMScriptFactoriesRegistryTest is Test {
         permissions = EVMScripts.createPermission(stranger, PERMISSION_SELECTOR);
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external {
         vm.prank(owner);
         EVMScriptFactoriesRegistry newRegistry = new EVMScriptFactoriesRegistry(owner);
@@ -42,21 +39,18 @@ contract EVMScriptFactoriesRegistryTest is Test {
         );
     }
 
-    // python: test_add_evm_script_factory_called_without_permissions
     function test_RevertWhen_AddingFactoryWithoutAdminRole() external {
         vm.prank(stranger);
         vm.expectRevert(TestHelpers.accessRevertMessage(stranger, Roles.DEFAULT_ADMIN_ROLE));
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, permissions);
     }
 
-    // python: test_add_evm_script_factory_empty_permissions
     function test_RevertWhen_AddingFactoryWithEmptyPermissions() external {
         vm.prank(owner);
         vm.expectRevert("INVALID_PERMISSIONS");
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, "");
     }
 
-    // python: test_add_evm_script_factory_invalid_length
     function test_RevertWhen_AddingFactoryWithInvalidPermissionsLength() external {
         // 5 bytes, not a multiple of the 24-byte address and selector pair
         vm.prank(owner);
@@ -64,7 +58,6 @@ contract EVMScriptFactoriesRegistryTest is Test {
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, hex"0011223344");
     }
 
-    // python: test_add_evm_script
     function test_AddsEVMScriptFactory() external {
         vm.expectEmit(address(evmScriptFactoriesRegistry));
         emit EVMScriptFactoryAdded(stranger, permissions);
@@ -73,7 +66,6 @@ contract EVMScriptFactoriesRegistryTest is Test {
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, permissions);
     }
 
-    // python: test_add_evm_script_twice
     function test_RevertWhen_AddingFactoryTwice() external {
         vm.prank(owner);
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, permissions);
@@ -83,14 +75,12 @@ contract EVMScriptFactoriesRegistryTest is Test {
         evmScriptFactoriesRegistry.addEVMScriptFactory(stranger, permissions);
     }
 
-    // python: test_remove_evm_script_factory_not_found
     function test_RevertWhen_RemovingUnknownFactory() external {
         vm.prank(owner);
         vm.expectRevert("EVM_SCRIPT_FACTORY_NOT_FOUND");
         evmScriptFactoriesRegistry.removeEVMScriptFactory(stranger);
     }
 
-    // python: test_remove_evm_script_factory
     function test_RemovesEVMScriptFactory() external {
         address[] memory evmScriptFactories = _extraEVMScriptFactories();
 
@@ -101,9 +91,8 @@ contract EVMScriptFactoriesRegistryTest is Test {
 
         vm.stopPrank();
 
-        // python: removing_order, indices into the shrinking local list. Swap-and-pop order:
-        // [0,1,2,(3),4] -> [0,1,2,4], [0,(1),2,4] -> [0,4,2], [(0),4,2] -> [2,4],
-        // [2,(4)] -> [2], [(2)] -> []
+        // Indices into the shrinking local list, in swap-and-pop order: [0,1,2,(3),4] -> [0,1,2,4],
+        // [0,(1),2,4] -> [0,4,2], [(0),4,2] -> [2,4], [2,(4)] -> [2], [(2)] -> []
         uint256[5] memory removingOrder = [uint256(3), 1, 0, 1, 0];
 
         for (uint256 i; i < removingOrder.length; ++i) {
@@ -134,7 +123,6 @@ contract EVMScriptFactoriesRegistryTest is Test {
         }
     }
 
-    /// @dev python: extra_evm_script_factories = accounts[3:8], plain accounts registered as factories
     function _extraEVMScriptFactories() private returns (address[] memory evmScriptFactories) {
         evmScriptFactories = new address[](5);
         evmScriptFactories[0] = makeAddr("evmScriptFactory1");
@@ -144,7 +132,7 @@ contract EVMScriptFactoriesRegistryTest is Test {
         evmScriptFactories[4] = makeAddr("evmScriptFactory5");
     }
 
-    /// @dev python: list.pop(index). Drops the element at `index` and keeps the order of the rest
+    /// @dev Drops the element at `index` and keeps the order of the rest
     function _pop(address[] memory list, uint256 index)
         private
         pure

@@ -42,7 +42,6 @@ contract SetNodeOperatorNamesTest is Test {
         vm.label(address(setNodeOperatorNames), "setNodeOperatorNames");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(setNodeOperatorNames.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -52,13 +51,11 @@ contract SetNodeOperatorNamesTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         setNodeOperatorNames.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         setNodeOperatorNames.createEVMScript(
@@ -66,7 +63,6 @@ contract SetNodeOperatorNamesTest is Test {
         );
     }
 
-    // python: test_non_sorted_calldata
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         setNodeOperatorNames.createEVMScript(
@@ -79,7 +75,6 @@ contract SetNodeOperatorNamesTest is Test {
         );
     }
 
-    // python: test_operator_id_out_of_range
     function test_RevertWhen_NodeOperatorIdIsOutOfRange() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -89,7 +84,6 @@ contract SetNodeOperatorNamesTest is Test {
         );
     }
 
-    // python: test_name_invalid_length
     function test_RevertWhen_NameLengthIsWrong() external {
         vm.expectRevert("WRONG_NAME_LENGTH");
         setNodeOperatorNames.createEVMScript(owner, _encodeCallData(_inputs(0, "")));
@@ -102,7 +96,6 @@ contract SetNodeOperatorNamesTest is Test {
         );
     }
 
-    // python: test_same_name
     function test_RevertWhen_NameIsSame() external {
         (, string memory name,,,,,) = nodeOperatorsRegistry.getNodeOperator(0, true);
 
@@ -110,7 +103,6 @@ contract SetNodeOperatorNamesTest is Test {
         setNodeOperatorNames.createEVMScript(owner, _encodeCallData(_inputs(0, name)));
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = setNodeOperatorNames.createEVMScript(
             owner, _encodeCallData(_inputs(0, FIRST_NEW_NAME, 1, SECOND_NEW_NAME))
@@ -127,7 +119,6 @@ contract SetNodeOperatorNamesTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         SetNodeOperatorNames.SetNameInput[] memory inputs =
             setNodeOperatorNames.decodeEVMScriptCallData(
@@ -161,7 +152,6 @@ contract SetNodeOperatorNamesTest is Test {
         inputs[1] = SetNodeOperatorNames.SetNameInput(secondId, secondName);
     }
 
-    /// @dev python: "x" * length
     function _nameOfLength(uint256 length) private pure returns (string memory) {
         bytes memory name = new bytes(length);
         for (uint256 i; i < length; ++i) {

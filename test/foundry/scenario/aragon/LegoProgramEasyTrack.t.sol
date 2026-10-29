@@ -24,7 +24,6 @@ contract LegoProgramEasyTrackTest is EasyTrackScenarioBase {
     /// @dev What the deployer stakes to fund the Agent's stETH
     uint256 internal constant STAKE_AMOUNT = 2.1 ether;
 
-    /// @dev python: brownie.chain.sleep(48 * 60 * 60 + 100), the motion duration hardcoded
     uint256 internal constant MOTION_WAIT = 48 hours + 100;
 
     /// @dev stETH share rounding on the transfer
@@ -67,7 +66,6 @@ contract LegoProgramEasyTrackTest is EasyTrackScenarioBase {
         _grantPermission(evmScriptExecutor, address(finance), finance.CREATE_PAYMENTS_ROLE());
     }
 
-    // python: test_lego_easy_track_happy_path
     function testFork_TopsUpLegoProgram() external {
         address[] memory tokens = new address[](3);
         tokens[0] = address(ldo);
@@ -105,8 +103,6 @@ contract LegoProgramEasyTrackTest is EasyTrackScenarioBase {
         assertEq(legoProgram.balance - ethBefore, ETH_AMOUNT, "ETH after enactment");
     }
 
-    /// @dev python: the Agent deposits LDO it already holds into itself, the deployer stakes for
-    ///      stETH and deposits it, then deposits ETH
     function _fundAgent() private {
         vm.startPrank(address(agent));
         ldo.approve(address(agent), LDO_AMOUNT);

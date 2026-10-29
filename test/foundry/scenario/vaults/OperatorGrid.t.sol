@@ -28,11 +28,10 @@ contract OperatorGridTest is VaultsScenarioBase {
     uint256 internal constant MAX_RESERVATION_FEE_BP = 100;
     uint256 internal constant MAX_INFRA_FEE_BP = 100;
 
-    /// @dev python: operator_addresses, in the ascending order the group factory requires
+    /// @dev Operators in the ascending order the group factory requires
     address internal constant OPERATOR_1 = address(1);
     address internal constant OPERATOR_2 = address(2);
 
-    // python: test_register_group_happy_path
     function testFork_RegistersGroups() external {
         _grantRegistryRoles();
 
@@ -89,7 +88,6 @@ contract OperatorGridTest is VaultsScenarioBase {
         }
     }
 
-    // python: test_update_groups_share_limit_happy_path
     function testFork_UpdatesGroupShareLimits() external {
         _grantRegistryRoles();
 
@@ -133,7 +131,6 @@ contract OperatorGridTest is VaultsScenarioBase {
         }
     }
 
-    // python: test_register_tiers_happy_path
     function testFork_RegistersTiers() external {
         _grantRegistryRoles();
 
@@ -171,7 +168,6 @@ contract OperatorGridTest is VaultsScenarioBase {
         }
     }
 
-    // python: test_alter_tiers_happy_path
     function testFork_AltersTiers() external {
         _grantRegistryRoles();
 
@@ -219,7 +215,6 @@ contract OperatorGridTest is VaultsScenarioBase {
         }
     }
 
-    // python: test_set_jail_status_happy_path
     function testFork_SetsJailStatus() external {
         address factory =
             _deployArtifact("SetJailStatusInOperatorGrid", abi.encode(creator, adapter));
@@ -265,7 +260,6 @@ contract OperatorGridTest is VaultsScenarioBase {
         );
     }
 
-    // python: test_update_vaults_fees_happy_path
     function testFork_UpdatesVaultFees() external {
         address factory = _deployArtifact(
             "UpdateVaultsFeesInOperatorGrid",
@@ -349,7 +343,7 @@ contract OperatorGridTest is VaultsScenarioBase {
         );
     }
 
-    /// @dev python: setup_operator_grid. The executor and the test may edit the grid
+    /// @dev Grants the executor and the test the grid's `REGISTRY_ROLE`
     function _grantRegistryRoles() private {
         bytes32 registryRole = operatorGrid.REGISTRY_ROLE();
 

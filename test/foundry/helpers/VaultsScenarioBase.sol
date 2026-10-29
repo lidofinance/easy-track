@@ -27,11 +27,9 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
     /// @dev What the adapter holds to pay validator exit fees
     uint256 internal constant ADAPTER_BALANCE = 10 ether;
 
-    /// @dev python: the `createVaultWithDashboard` arguments of the `vaults` fixture
     uint256 internal constant NODE_OPERATOR_FEE_BP = 10000;
     uint256 internal constant CONFIRM_EXPIRY = 10000;
 
-    /// @dev python: the `updateReportData` arguments of a fresh report
     uint256 internal constant REPORT_REF_SLOT = 1000;
     string internal constant REPORT_CID = "0x00";
 
@@ -69,7 +67,6 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
 
         _deployEasyTrack(_voting());
 
-        // python: the `adapter` fixture
         adapter = IVaultsAdapter(
             _deployArtifact(
                 "VaultsAdapter",
@@ -84,7 +81,7 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
 
     // --- factory under test ---
 
-    /// @dev python: setup_evm_script_factory. The only factory of the fresh Easy Track
+    /// @dev Registers `factory` as the only factory of the fresh Easy Track
     function _registerOnlyFactory(address factory, bytes memory permissions) internal {
         _registerFactory(factory, permissions);
 
@@ -93,7 +90,7 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
         assertEq(factories[0], factory, "setup: factory");
     }
 
-    /// @dev python: execute_motion. The one pending motion is enacted
+    /// @dev Enacts the one pending motion and asserts none is left
     function _executeMotion(uint256 motionId, bytes memory callData) internal {
         assertEq(easyTrack.getMotions().length, 1, "motions before enactment");
 
@@ -104,8 +101,8 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
 
     // --- vaults and reports ---
 
-    /// @dev python: the `vaults` fixture. A vault with its dashboard, the test as admin, funded
-    ///      with the initial balance and connected to the hub as its last vault
+    /// @dev Creates a vault with its dashboard, the test as admin, funded with the initial balance
+    ///      and connected to the hub as its last vault
     function _createVault() internal returns (address vault) {
         vm.deal(address(this), INITIAL_VAULT_BALANCE);
 
@@ -123,14 +120,11 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
         assertEq(vault, vaultHub.vaultByIndex(vaultHub.vaultsCount()), "setup: vault connected");
     }
 
-    /// @dev python: lazy_oracle.updateReportData at the current time, from the accounting oracle
     function _submitReport() internal {
         vm.prank(accountingOracle);
         lazyOracle.updateReportData(vm.getBlockTimestamp(), REPORT_REF_SLOT, bytes32(0), REPORT_CID);
     }
 
-    /// @dev python: vault_hub.applyVaultReport at the current time, from the lazy oracle, with
-    ///      no max liability shares and no slashing reserve
     function _applyVaultReport(
         address vault,
         uint256 totalValue,
@@ -151,7 +145,6 @@ abstract contract VaultsScenarioBase is EasyTrackScenarioBase {
         );
     }
 
-    /// @dev python: vault_hub.mintShares from the vault's dashboard, its owner in the hub
     function _mintShares(address vault, uint256 shares) internal {
         vm.prank(vaultHub.vaultConnection(vault).owner);
         vaultHub.mintShares(vault, address(this), shares);

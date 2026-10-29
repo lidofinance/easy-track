@@ -45,8 +45,6 @@ contract RewardProgramsEasyTrackTest is EasyTrackScenarioBase {
         _grantPermission(evmScriptExecutor, address(finance), finance.CREATE_PAYMENTS_ROLE());
     }
 
-    // python: test_reward_programs_easy_track, of test_reward_programs.py and of
-    // tests/integration/test_reward_programs_happy_path.py, the same flow under another title
     function testFork_AddsTopsUpAndRemovesRewardProgram() external {
         bytes memory addCallData = abi.encode(rewardProgram, REWARD_PROGRAM_TITLE);
         uint256 motionId = _createMotion(addRewardProgram, creator, addCallData);

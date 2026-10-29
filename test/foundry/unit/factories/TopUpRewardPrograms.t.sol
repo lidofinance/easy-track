@@ -44,7 +44,6 @@ contract TopUpRewardProgramsTest is Test {
         vm.label(address(topUpRewardPrograms), "topUpRewardPrograms");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(topUpRewardPrograms.trustedCaller(), owner, "trustedCaller");
         assertEq(address(topUpRewardPrograms.finance()), finance, "finance");
@@ -56,7 +55,6 @@ contract TopUpRewardProgramsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.prank(stranger);
         vm.expectRevert("CALLER_IS_FORBIDDEN");
@@ -65,7 +63,6 @@ contract TopUpRewardProgramsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_data_length_mismatch
     function test_RevertWhen_DataLengthMismatch() external {
         vm.expectRevert("LENGTH_MISMATCH");
         topUpRewardPrograms.createEVMScript(
@@ -73,7 +70,6 @@ contract TopUpRewardProgramsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_empty_data
     function test_RevertWhen_DataIsEmpty() external {
         vm.expectRevert("EMPTY_DATA");
         topUpRewardPrograms.createEVMScript(
@@ -81,7 +77,6 @@ contract TopUpRewardProgramsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_zero_amount
     function test_RevertWhen_AmountIsZero() external {
         _addRewardPrograms();
 
@@ -91,7 +86,6 @@ contract TopUpRewardProgramsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_reward_program_not_allowed
     function test_RevertWhen_RewardProgramNotAllowed() external {
         vm.expectRevert("REWARD_PROGRAM_NOT_ALLOWED");
         topUpRewardPrograms.createEVMScript(
@@ -113,7 +107,6 @@ contract TopUpRewardProgramsTest is Test {
         topUpRewardPrograms.createEVMScript(owner, _encodeCallData(rewardPrograms, amounts));
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external {
         _addRewardPrograms();
 
@@ -131,7 +124,6 @@ contract TopUpRewardProgramsTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, payments), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         (address[] memory rewardPrograms, uint256[] memory amounts) = topUpRewardPrograms.decodeEVMScriptCallData(
             _encodeCallData(_rewardPrograms(), _rewardProgramAmounts())

@@ -30,8 +30,7 @@ interface ISubmitExitRequestHashes {
         returns (SubmitExitRequestHashesUtils.ExitRequestInput[] memory);
 }
 
-/// @dev python: test_submit_exit_request_hashes.py, parametrized by `module_type`. Each concrete
-/// contract binds one variant in `_setUpVariant`
+/// @dev Parametrized by module, each concrete contract binds one variant in `_setUpVariant`
 abstract contract SubmitExitRequestHashesTest is Test {
     uint256 internal constant CURATED_MODULE_ID = 1;
     uint256 internal constant SDVT_MODULE_ID = 2;
@@ -71,11 +70,10 @@ abstract contract SubmitExitRequestHashesTest is Test {
         vm.label(address(submitExitRequestHashes), "submitExitRequestHashes");
     }
 
-    /// @dev python: module_type. Binds `registry`, `moduleId`, `wrongModuleId`, `creator` and
-    /// deploys `submitExitRequestHashes`
+    /// @dev Binds `registry`, `moduleId`, `wrongModuleId`, `creator` and deploys
+    /// `submitExitRequestHashes`
     function _setUpVariant() internal virtual;
 
-    // python: test_decode_calldata
     function test_DecodesEVMScriptCallData() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, ExitRequests.pubkeyAt(0), 0),
@@ -90,13 +88,11 @@ abstract contract SubmitExitRequestHashesTest is Test {
         _assertRequestsEq(decoded, requests);
     }
 
-    // python: test_decode_calldata_empty
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         submitExitRequestHashes.decodeEVMScriptCallData("");
     }
 
-    // python: test_decode_calldata_is_permissionless
     function test_DecodesEVMScriptCallDataFromAnyCaller() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
@@ -111,7 +107,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         _assertRequestsEq(decoded, requests);
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, ExitRequests.pubkeyAt(0), 0)
@@ -123,7 +118,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         assertEq(evmScript, _expectedEVMScript(requests), "evmScript");
     }
 
-    // python: test_create_evm_script_max_requests
     function test_CreatesEVMScriptWithMaxRequests() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             new SubmitExitRequestHashesUtils.ExitRequestInput[](ExitRequests.MAX_REQUESTS);
@@ -139,7 +133,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         assertEq(evmScript, _expectedEVMScript(requests), "evmScript");
     }
 
-    // python: test_create_evm_script_with_latest_node_operator
     function test_CreatesEVMScriptWithLatestNodeOperator() external view {
         uint256 latestNodeOperatorId = registry.getNodeOperatorsCount() - 1;
 
@@ -153,7 +146,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         assertEq(evmScript, _expectedEVMScript(requests), "evmScript");
     }
 
-    // python: test_cannot_create_evm_script_exceeds_max_requests
     function test_RevertWhen_RequestsExceedMax() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             new SubmitExitRequestHashesUtils.ExitRequestInput[](ExitRequests.MAX_REQUESTS + 1);
@@ -167,7 +159,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_no_exit_requests
     function test_RevertWhen_RequestsAreEmpty() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             new SubmitExitRequestHashesUtils.ExitRequestInput[](0);
@@ -176,7 +167,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_wrong_staking_module
     function test_RevertWhen_StakingModuleIsWrong() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(wrongModuleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, ExitRequests.pubkeyAt(0), 0)
@@ -186,7 +176,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_wrong_staking_module_multiple
     function test_RevertWhen_StakingModuleIsWrongInMultipleRequests() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(moduleId, NODE_OPERATOR_ID, 4, ExitRequests.pubkeyAt(0), 0),
@@ -198,7 +187,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_empty_pubkey
     function test_RevertWhen_PubkeyIsEmpty() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             _requests(_request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, "", 0));
@@ -207,7 +195,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_pubkey_too_short
     function test_RevertWhen_PubkeyIsTooShort() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
@@ -223,7 +210,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_pubkey_too_long
     function test_RevertWhen_PubkeyIsTooLong() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
@@ -239,7 +225,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_with_wrong_pubkey
     function test_RevertWhen_PubkeyIsWrong() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, _unregisteredPubkey(), 0)
@@ -249,7 +234,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_with_wrong_pubkey_multiple
     function test_RevertWhen_PubkeyIsWrongInMultipleRequests() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, _unregisteredPubkey(), 0),
@@ -262,7 +246,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_wrong_node_operator
     function test_RevertWhen_NodeOperatorDoesNotExist() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
@@ -274,7 +257,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_wrong_node_operator_multiple
     function test_RevertWhen_NodeOperatorDoesNotExistInMultipleRequests() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
@@ -287,7 +269,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_with_wrong_pubkey_index
     function test_RevertWhen_PubkeyIndexIsWrong() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(
@@ -303,7 +284,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_with_module_id_overflow
     function test_RevertWhen_ModuleIdOverflows() external {
         // the router stub keeps uint24(id), so the module registers as id 0 and the request's id
         // never matches it
@@ -319,7 +299,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_with_node_operator_id_overflow
     function test_RevertWhen_NodeOperatorIdOverflows() external {
         // the registry stub keeps uint40(count), so the count stays 1
         registry.setDesiredNodeOperatorCount(OVERFLOWED_NODE_OPERATOR_ID + 1);
@@ -334,7 +313,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_with_duplicate_requests
     function test_RevertWhen_RequestsAreDuplicated() external {
         SubmitExitRequestHashesUtils.ExitRequestInput memory request =
             _request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX, ExitRequests.pubkeyAt(0), 0);
@@ -346,7 +324,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    // python: test_cannot_create_evm_script_wrong_requests_index_sort_order
     function test_RevertWhen_RequestsAreNotSorted() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(moduleId, NODE_OPERATOR_ID, VALIDATOR_INDEX + 1, ExitRequests.pubkeyAt(0), 0),
@@ -357,8 +334,8 @@ abstract contract SubmitExitRequestHashesTest is Test {
         submitExitRequestHashes.createEVMScript(creator, abi.encode(requests));
     }
 
-    /// @dev python: curated_registry_stub and sdvt_registry_stub. One operator holding the 200 keys,
-    /// registered in the router as `stakingModuleId`
+    /// @dev Deploys a registry stub with one operator holding the 200 keys, registered in the
+    /// router as `stakingModuleId`
     function _deployRegistryStub(uint256 stakingModuleId)
         private
         returns (NodeOperatorsRegistryStub registryStub)
@@ -368,17 +345,15 @@ abstract contract SubmitExitRequestHashesTest is Test {
         registryStub.setSigningKeys(NODE_OPERATOR_ID, ExitRequests.concatenatedPubkeys());
     }
 
-    /// @dev python: registry.getNodeOperatorsCount() + 1, an id the registry does not hold
     function _missingNodeOperatorId() private view returns (uint256) {
         return registry.getNodeOperatorsCount() + 1;
     }
 
-    /// @dev python: invalid_pubkey. The key after the last one the registry holds
+    /// @dev The key after the last one the registry holds
     function _unregisteredPubkey() private pure returns (bytes memory) {
         return ExitRequests.pubkeyAt(ExitRequests.MAX_REQUESTS);
     }
 
-    /// @dev python: bytes.fromhex("aa" * length)
     function _pubkeyOfLength(uint256 length) private pure returns (bytes memory pubkey) {
         pubkey = new bytes(length);
 
@@ -387,7 +362,6 @@ abstract contract SubmitExitRequestHashesTest is Test {
         }
     }
 
-    /// @dev python: exit_request_input_factory
     function _request(
         uint256 moduleId_,
         uint256 nodeOpId,

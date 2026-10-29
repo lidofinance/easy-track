@@ -10,8 +10,7 @@ library EVMScripts {
     /// @dev Id of the Aragon CallsScript executor
     bytes4 internal constant SPEC_ID = hex"00000001";
 
-    /// @dev python: encode_call_script. Aragon CallsScript: SPEC_ID, then per call
-    /// `target ‖ uint32(data.length) ‖ data`
+    /// @dev An Aragon CallsScript: SPEC_ID, then per call `target ‖ uint32(data.length) ‖ data`
     function encodeCallScript(address[] memory targets, bytes[] memory datas)
         internal
         pure
@@ -49,7 +48,7 @@ library EVMScripts {
         }
     }
 
-    /// @dev python: create_permission. One `evmScriptFactoryPermissions` entry: `target ‖ selector`
+    /// @dev One `evmScriptFactoryPermissions` entry: `target ‖ selector`
     function createPermission(address target, bytes4 selector)
         internal
         pure

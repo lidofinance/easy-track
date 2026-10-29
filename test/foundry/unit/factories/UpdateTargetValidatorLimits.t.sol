@@ -44,7 +44,6 @@ contract UpdateTargetValidatorLimitsTest is Test {
         vm.label(address(updateTargetValidatorLimits), "updateTargetValidatorLimits");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(updateTargetValidatorLimits.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -54,13 +53,11 @@ contract UpdateTargetValidatorLimitsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         updateTargetValidatorLimits.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         updateTargetValidatorLimits.createEVMScript(
@@ -68,7 +65,6 @@ contract UpdateTargetValidatorLimitsTest is Test {
         );
     }
 
-    // python: test_non_sorted_calldata
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         updateTargetValidatorLimits.createEVMScript(
@@ -81,7 +77,6 @@ contract UpdateTargetValidatorLimitsTest is Test {
         );
     }
 
-    // python: test_operator_id_out_of_range
     function test_RevertWhen_NodeOperatorIdIsOutOfRange() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -91,7 +86,6 @@ contract UpdateTargetValidatorLimitsTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = updateTargetValidatorLimits.createEVMScript(
             owner,
@@ -110,7 +104,6 @@ contract UpdateTargetValidatorLimitsTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         UpdateTargetValidatorLimits.TargetValidatorsLimit[] memory inputs =
             updateTargetValidatorLimits.decodeEVMScriptCallData(

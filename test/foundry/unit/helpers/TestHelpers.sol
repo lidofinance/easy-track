@@ -10,11 +10,10 @@ import {Calendar} from "test/foundry/unit/helpers/Calendar.sol";
 library TestHelpers {
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));
 
-    /// @dev python: get_date_in_next_period caps the day of the month here
     uint256 private constant MAX_DAY_IN_NEXT_PERIOD = 28;
 
-    /// @dev python: access_revert_message. The OpenZeppelin v4 AccessControl reason. The account
-    /// is lowercased because `vm.toString` checksums it and `Strings.toHexString` does not
+    /// @dev The OpenZeppelin v4 AccessControl reason. The account is lowercased because
+    /// `vm.toString` checksums it and `Strings.toHexString` does not
     function accessRevertMessage(address sender, bytes32 role)
         internal
         pure
@@ -28,14 +27,14 @@ library TestHelpers {
         );
     }
 
-    /// @dev python: get_month_start_timestamp. The first second of the month `timestamp` falls in
+    /// @dev The first second of the month `timestamp` falls in
     function getMonthStartTimestamp(uint256 timestamp) internal pure returns (uint256) {
         (uint256 year, uint256 month,) = Calendar.dateFromTimestamp(timestamp);
         return Calendar.timestampFromDate(year, month, 1);
     }
 
-    /// @dev python: get_date_in_next_period. The same time of day `periodDurationMonths` months
-    /// after `timestamp`, on the same day of the month capped at the 28th
+    /// @dev The same time of day `periodDurationMonths` months after `timestamp`, on the same day
+    /// of the month capped at the 28th
     function getDateInNextPeriod(uint256 timestamp, uint256 periodDurationMonths)
         internal
         pure
@@ -50,8 +49,8 @@ library TestHelpers {
         return Calendar.timestampFromDate(nextYear, nextMonth, nextDay) + (timestamp % 1 days);
     }
 
-    /// @dev python: calc_period_first_month. The hard-coded table, on purpose not the formula of
-    /// `LimitsChecker._getFirstMonthInPeriodFromMonth` it mirrors
+    /// @dev The first month of the period `currentMonth` falls in, from a hard-coded table, on
+    /// purpose not the formula of `LimitsChecker._getFirstMonthInPeriodFromMonth` it mirrors
     function calcPeriodFirstMonth(uint256 periodDuration, uint256 currentMonth)
         internal
         pure
@@ -74,7 +73,7 @@ library TestHelpers {
         return firstMonths[currentMonth - 1];
     }
 
-    /// @dev python: calc_period_range, in pure UTC where the Python reads the local calendar first
+    /// @dev The period of `periodDuration` months `nowTimestamp` falls in, in pure UTC
     function calcPeriodRange(uint256 periodDuration, uint256 nowTimestamp)
         internal
         pure
@@ -86,8 +85,7 @@ library TestHelpers {
         periodEnd = getMonthStartTimestamp(getDateInNextPeriod(periodStart, periodDuration));
     }
 
-    /// @dev python: advance_chain_time_to_beginning_of_the_next_period. Warps to the first second
-    /// of the period after the one `block.timestamp` falls in
+    /// @dev Warps to the first second of the period after the one `block.timestamp` falls in
     function advanceChainTimeToBeginningOfTheNextPeriod(uint256 periodDuration) internal {
         (, uint256 firstSecondOfNextPeriod) =
             calcPeriodRange(periodDuration, vm.getBlockTimestamp());

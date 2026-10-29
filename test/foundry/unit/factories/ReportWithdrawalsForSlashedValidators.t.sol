@@ -35,7 +35,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         );
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(reportWithdrawalsForSlashedValidators.trustedCaller(), owner, "trustedCaller");
         assertEq(reportWithdrawalsForSlashedValidators.name(), FACTORY_NAME, "name");
@@ -46,19 +45,16 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         );
     }
 
-    // python: test_deploy_reverts_on_zero_module_address
     function test_RevertWhen_ModuleIsZero() external {
         vm.expectRevert("ZERO_MODULE_ADDRESS");
         new ReportWithdrawalsForSlashedValidators(owner, FACTORY_NAME, address(0));
     }
 
-    // python: test_create_evm_script_reverts_if_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         reportWithdrawalsForSlashedValidators.createEVMScript(stranger, "");
     }
 
-    // python: test_create_evm_script_reverts_if_empty_withdrawal_list
     function test_RevertWhen_ValidatorInfoListIsEmpty() external {
         WithdrawnValidatorInfo[] memory infos = new WithdrawnValidatorInfo[](0);
 
@@ -66,7 +62,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_zero_exit_balance, single entry
     function test_RevertWhen_ExitBalanceIsZero() external {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(1, 1, 0, 1, true));
 
@@ -76,7 +71,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_zero_exit_balance, second entry after a valid one
     function test_RevertWhen_ExitBalanceIsZeroInSecondEntry() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 0, 100500, 16, true), _info(1, 1, 0, 1, true));
@@ -87,7 +81,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_zero_slashing_penalty, single entry
     function test_RevertWhen_SlashingPenaltyIsZero() external {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(1, 1, 1, 0, true));
 
@@ -97,7 +90,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_zero_slashing_penalty, second entry
     function test_RevertWhen_SlashingPenaltyIsZeroInSecondEntry() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 0, 100500, 16, true), _info(1, 1, 1, 0, true));
@@ -108,7 +100,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_non_existing_operator, single entry
     function test_RevertWhen_OperatorDoesNotExist() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(NODE_OPERATORS_COUNT + 1, 1, 1, 1, true));
@@ -119,7 +110,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_non_existing_operator, second entry
     function test_RevertWhen_OperatorDoesNotExistInSecondEntry() external {
         WithdrawnValidatorInfo[] memory infos = _infos(
             _info(0, 0, 100500, 16, true), _info(NODE_OPERATORS_COUNT + 1, 3, 30000, 0, true)
@@ -131,7 +121,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_is_slashed_is_not_set, single entry
     function test_RevertWhen_IsSlashedIsNotSet() external {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(0, 1, 1, 1, false));
 
@@ -139,7 +128,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_is_slashed_is_not_set, two entries
     function test_RevertWhen_IsSlashedIsNotSetWithTwoEntries() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 0, 100500, 16, false), _info(1, 3, 30000, 0, false));
@@ -148,7 +136,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_validator_not_slashed
     function test_RevertWhen_ValidatorIsNotSlashed() external {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(0, 0, 100500, 16, true));
 
@@ -156,7 +143,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_not_sorted[descending_operator_ids]
     function test_RevertWhen_OperatorIdsAreDescending() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(1, 0, 100500, 16, true), _info(0, 1, 30000, 1, true));
@@ -167,7 +153,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_not_sorted[same_operator_id_descending_key_indices]
     function test_RevertWhen_KeyIndicesAreDescendingForSameOperator() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 5, 100500, 16, true), _info(0, 1, 30000, 1, true));
@@ -178,7 +163,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script_reverts_if_not_sorted[same_operator_id_duplicate_key_indices]
     function test_RevertWhen_KeyIndicesAreDuplicatedForSameOperator() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 1, 100500, 16, true), _info(0, 1, 30000, 1, true));
@@ -189,7 +173,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         reportWithdrawalsForSlashedValidators.createEVMScript(owner, abi.encode(infos));
     }
 
-    // python: test_create_evm_script, single entry
     function test_CreatesEVMScript() external {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(0, 0, 100500, 16, true));
 
@@ -201,7 +184,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         assertEq(evmScript, _reportSlashedWithdrawnValidatorsScript(infos), "evmScript");
     }
 
-    // python: test_create_evm_script, two operators
     function test_CreatesEVMScriptForTwoOperators() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 0, 100500, 16, true), _info(1, 3, 30000, 1, true));
@@ -214,7 +196,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         assertEq(evmScript, _reportSlashedWithdrawnValidatorsScript(infos), "evmScript");
     }
 
-    // python: test_create_evm_script[same_operator_id_increasing_key_indices]
     function test_CreatesEVMScriptForSameOperatorWithIncreasingKeyIndices() external {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 1, 100500, 16, true), _info(0, 5, 30000, 1, true));
@@ -227,7 +208,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         assertEq(evmScript, _reportSlashedWithdrawnValidatorsScript(infos), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data, empty list
     function test_DecodesEmptyEVMScriptCallData() external view {
         WithdrawnValidatorInfo[] memory infos = new WithdrawnValidatorInfo[](0);
 
@@ -237,7 +217,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         _assertInfosEq(decoded, infos);
     }
 
-    // python: test_decode_evm_script_call_data, single entry with zero values
     function test_DecodesEVMScriptCallDataWithZeroValues() external view {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(0, 0, 0, 0, true));
 
@@ -247,7 +226,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         _assertInfosEq(decoded, infos);
     }
 
-    // python: test_decode_evm_script_call_data, single entry
     function test_DecodesEVMScriptCallData() external view {
         WithdrawnValidatorInfo[] memory infos = _infos(_info(1, 2, 100500, 16, true));
 
@@ -257,7 +235,6 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         _assertInfosEq(decoded, infos);
     }
 
-    // python: test_decode_evm_script_call_data, two operators
     function test_DecodesEVMScriptCallDataForTwoOperators() external view {
         WithdrawnValidatorInfo[] memory infos =
             _infos(_info(0, 0, 100500, 16, true), _info(1, 3, 30000, 0, true));
@@ -268,19 +245,17 @@ contract ReportWithdrawalsForSlashedValidatorsTest is Test {
         _assertInfosEq(decoded, infos);
     }
 
-    // python: test_decode_evm_script_call_data_reverts_on_invalid_calldata[empty]
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         reportWithdrawalsForSlashedValidators.decodeEVMScriptCallData("");
     }
 
-    // python: test_decode_evm_script_call_data_reverts_on_invalid_calldata[malformed]
     function test_RevertWhen_DecodingMalformedCallData() external {
         vm.expectRevert(bytes(""));
         reportWithdrawalsForSlashedValidators.decodeEVMScriptCallData(hex"01");
     }
 
-    /// @dev python: mark_validators_slashed. Marks every entry the factory would otherwise accept
+    /// @dev Marks every entry the factory would otherwise accept
     function _markValidatorsSlashed(WithdrawnValidatorInfo[] memory infos) private {
         uint256 nodeOperatorsCount = baseModuleStub.getNodeOperatorsCount();
 

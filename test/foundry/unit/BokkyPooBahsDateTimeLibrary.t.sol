@@ -28,27 +28,22 @@ contract BokkyPooBahsDateTimeContractTest is Test {
         vm.label(address(bokkyPooBahsDateTimeContract), "BokkyPooBahsDateTimeContract");
     }
 
-    // python: test_timestamp_to_date[date0]
     function test_ConvertsTimestampToDate_1970_01_01() external view {
         _assertTimestampToDate(Calendar.timestampFromDate(1970, 1, 1), 1970, 1, 1);
     }
 
-    // python: test_timestamp_to_date[date1]
     function test_ConvertsTimestampToDate_2024_02_29() external view {
         _assertTimestampToDate(Calendar.timestampFromDate(2024, 2, 29), 2024, 2, 29);
     }
 
-    // python: test_timestamp_to_date[date2], which date3 repeats verbatim
     function test_ConvertsTimestampToDate_2023_01_01() external view {
         _assertTimestampToDate(Calendar.timestampFromDate(2023, 1, 1), 2023, 1, 1);
     }
 
-    // python: test_timestamp_to_date[date4]
     function test_ConvertsTimestampToDate_2022_12_31() external view {
         _assertTimestampToDate(Calendar.timestampFromDate(2022, 12, 31), 2022, 12, 31);
     }
 
-    // python: test_timestamp_to_date_automated[start_date0-end_date0]
     function test_ConvertsTimestampToDateForEveryDayFrom2020To2025() external view {
         uint256 endTimestamp = Calendar.timestampFromDate(2025, 1, 1);
 
@@ -63,7 +58,6 @@ contract BokkyPooBahsDateTimeContractTest is Test {
         }
     }
 
-    // python: test_property_based_timestamp_to_date
     /// forge-config: default.fuzz.runs = 5000
     function testFuzz_ConvertsTimestampToDate(uint256 timestamp) external view {
         timestamp = bound(timestamp, TEST_START_DATE, TEST_END_DATE);
@@ -73,27 +67,22 @@ contract BokkyPooBahsDateTimeContractTest is Test {
         _assertTimestampToDate(timestamp, year, month, day);
     }
 
-    // python: test_timestamp_from_date[date0]
     function test_ConvertsDateToTimestamp_1970_01_01() external view {
         _assertTimestampFromDate(1970, 1, 1);
     }
 
-    // python: test_timestamp_from_date[date1]
     function test_ConvertsDateToTimestamp_2024_02_29() external view {
         _assertTimestampFromDate(2024, 2, 29);
     }
 
-    // python: test_timestamp_from_date[date2]
     function test_ConvertsDateToTimestamp_2023_01_01() external view {
         _assertTimestampFromDate(2023, 1, 1);
     }
 
-    // python: test_timestamp_from_date[date3]
     function test_ConvertsDateToTimestamp_2022_12_31() external view {
         _assertTimestampFromDate(2022, 12, 31);
     }
 
-    // python: test_timestamp_from_date_automated[start_date0-end_date0]
     function test_ConvertsDateToTimestampForEveryDayFrom2020To2025() external view {
         uint256 endTimestamp = Calendar.timestampFromDate(2025, 1, 1);
 
@@ -112,7 +101,6 @@ contract BokkyPooBahsDateTimeContractTest is Test {
         }
     }
 
-    // python: test_property_based_timestamp_from_date
     /// forge-config: default.fuzz.runs = 5000
     function testFuzz_ConvertsDateToTimestamp(uint256 daysShift) external view {
         daysShift = bound(daysShift, 0, (TEST_END_DATE - TEST_START_DATE) / 1 days);
@@ -127,72 +115,58 @@ contract BokkyPooBahsDateTimeContractTest is Test {
         );
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 1
     function test_AddsMonthsFromFirstDayOfMonth_1() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 1);
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 2
     function test_AddsMonthsFromFirstDayOfMonth_2() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 2);
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 3
     function test_AddsMonthsFromFirstDayOfMonth_3() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 3);
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 6
     function test_AddsMonthsFromFirstDayOfMonth_6() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 6);
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 8
     function test_AddsMonthsFromFirstDayOfMonth_8() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 8);
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 12
     function test_AddsMonthsFromFirstDayOfMonth_12() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 12);
     }
 
-    // python: test_add_month, start_date (2020, 1, 1), months_to_add 24
     function test_AddsMonthsFromFirstDayOfMonth_24() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 1), 24);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 1
     function test_AddsMonthsFromLastDayOfMonth_1() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 1);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 2
     function test_AddsMonthsFromLastDayOfMonth_2() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 2);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 3
     function test_AddsMonthsFromLastDayOfMonth_3() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 3);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 6
     function test_AddsMonthsFromLastDayOfMonth_6() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 6);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 8
     function test_AddsMonthsFromLastDayOfMonth_8() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 8);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 12
     function test_AddsMonthsFromLastDayOfMonth_12() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 12);
     }
 
-    // python: test_add_month, start_date (2020, 1, 31), months_to_add 24
     function test_AddsMonthsFromLastDayOfMonth_24() external view {
         _assertAddMonthsAlongMonthlyWalk(Calendar.timestampFromDate(2020, 1, 31), 24);
     }

@@ -35,7 +35,6 @@ contract RewardProgramsRegistryTest is Test {
         vm.label(address(rewardProgramsRegistry), "rewardProgramsRegistry");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         bytes32 addRole = rewardProgramsRegistry.ADD_REWARD_PROGRAM_ROLE();
         bytes32 removeRole = rewardProgramsRegistry.REMOVE_REWARD_PROGRAM_ROLE();
@@ -60,7 +59,6 @@ contract RewardProgramsRegistryTest is Test {
         );
     }
 
-    // python: test_add_reward_program_called_by_stranger
     function test_RevertWhen_AddRewardProgramCalledByStranger() external {
         bytes32 addRole = rewardProgramsRegistry.ADD_REWARD_PROGRAM_ROLE();
         assertFalse(
@@ -72,7 +70,6 @@ contract RewardProgramsRegistryTest is Test {
         rewardProgramsRegistry.addRewardProgram(stranger, "");
     }
 
-    // python: test_add_reward_program
     function test_AddsRewardProgram() external {
         vm.expectEmit(address(rewardProgramsRegistry));
         emit RewardProgramAdded(rewardProgram, REWARD_PROGRAM_TITLE);
@@ -93,7 +90,6 @@ contract RewardProgramsRegistryTest is Test {
         rewardProgramsRegistry.addRewardProgram(rewardProgram, REWARD_PROGRAM_TITLE);
     }
 
-    // python: test_remove_reward_program_called_by_stranger
     function test_RevertWhen_RemoveRewardProgramCalledByStranger() external {
         bytes32 removeRole = rewardProgramsRegistry.REMOVE_REWARD_PROGRAM_ROLE();
         assertFalse(
@@ -106,14 +102,12 @@ contract RewardProgramsRegistryTest is Test {
         rewardProgramsRegistry.removeRewardProgram(stranger);
     }
 
-    // python: test_remove_reward_program_with_not_existed_reward_program
     function test_RevertWhen_RewardProgramToRemoveDoesNotExist() external {
         vm.prank(address(evmScriptExecutorStub));
         vm.expectRevert("REWARD_PROGRAM_NOT_FOUND");
         rewardProgramsRegistry.removeRewardProgram(rewardProgram);
     }
 
-    // python: test_remove_reward_program
     function test_RemovesRewardProgram() external {
         address[] memory rewardPrograms = _addRewardPrograms(REWARD_PROGRAMS_COUNT);
         uint256[5] memory removingOrder = [uint256(2), 3, 1, 0, 0];

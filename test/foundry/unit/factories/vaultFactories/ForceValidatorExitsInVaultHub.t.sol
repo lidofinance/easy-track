@@ -18,19 +18,15 @@ import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
 contract ForceValidatorExitsInVaultHubTest is Test {
     uint256 internal constant VALIDATOR_EXIT_FEE_LIMIT = 1 ether;
-    /// @dev python: owner.transfer(adapter, 10 * 10 ** 18)
     uint256 internal constant ADAPTER_BALANCE = 10 ether;
-    /// @dev python: owner.transfer(adapter, "1 ether")
     uint256 internal constant TOP_UP = 1 ether;
     /// @dev The fee the EIP-7002 predeploy mock returns, the minimum of an empty request queue
     uint256 internal constant WITHDRAWAL_REQUEST_FEE = 1 wei;
-    /// @dev python: the repeat count of the two-byte pubkey patterns. 48 repeats make 96 bytes,
-    /// which the factory and the adapter read as two public keys
+    /// @dev 48 repeats make 96 bytes, which the factory and the adapter read as two public keys
     uint256 internal constant PUBKEY_PATTERN_REPEATS = 48;
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
-    /// @dev python: accounts[5] and accounts[6] as vault addresses
     address internal vault = makeAddr("vault");
     address internal anotherVault = makeAddr("anotherVault");
 
@@ -67,7 +63,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         vm.label(withdrawalRequestPredeploy, "withdrawalRequestPredeploy");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(forceValidatorExitsInVaultHub.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -83,13 +78,11 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         assertEq(address(vaultsAdapter.lidoLocator()), address(lidoLocatorStub), "lidoLocator");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         forceValidatorExitsInVaultHub.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_vaults_array
     function test_RevertWhen_VaultsAreEmpty() external {
         address[] memory vaults = new address[](0);
         bytes[] memory pubkeys = new bytes[](0);
@@ -98,7 +91,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         forceValidatorExitsInVaultHub.createEVMScript(owner, abi.encode(vaults, pubkeys));
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         bytes memory pubkeys = _repeat("0x", PUBKEY_PATTERN_REPEATS);
 
@@ -108,7 +100,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         );
     }
 
-    // python: test_zero_vault_address
     function test_RevertWhen_VaultIsZero() external {
         bytes memory pubkeys = _repeat("0x", PUBKEY_PATTERN_REPEATS);
 
@@ -118,7 +109,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         );
     }
 
-    // python: test_empty_pubkeys
     function test_RevertWhen_PubkeysAreEmpty() external {
         vm.expectRevert("EMPTY_PUBKEYS");
         forceValidatorExitsInVaultHub.createEVMScript(
@@ -126,7 +116,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         );
     }
 
-    // python: test_invalid_pubkeys_length
     function test_RevertWhen_PubkeysLengthIsInvalid() external {
         vm.expectRevert("INVALID_PUBKEYS_LENGTH");
         forceValidatorExitsInVaultHub.createEVMScript(
@@ -137,7 +126,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         address[] memory vaults = Arrays.list(vault, anotherVault);
         bytes[] memory pubkeys = Arrays.list(
@@ -150,7 +138,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         assertEq(evmScript, _forceValidatorExitsScript(vaults, pubkeys), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         address[] memory vaults = Arrays.list(vault, anotherVault);
         bytes[] memory pubkeys = Arrays.list(
@@ -164,14 +151,12 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         assertEq(decodedPubkeys, pubkeys, "pubkeys");
     }
 
-    // python: test_withdraw_eth_called_by_stranger
     function test_RevertWhen_WithdrawETHCalledByStranger() external {
         vm.prank(stranger);
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         vaultsAdapter.withdrawETH(stranger);
     }
 
-    // python: test_withdraw_eth_no_balance
     function test_RevertWhen_NoETHToWithdraw() external {
         vm.prank(owner);
         vaultsAdapter.withdrawETH(owner);
@@ -181,7 +166,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         vaultsAdapter.withdrawETH(owner);
     }
 
-    // python: test_withdraw_eth_success
     function test_WithdrawsAllETH() external {
         vm.deal(address(vaultsAdapter), ADAPTER_BALANCE + TOP_UP);
 
@@ -199,7 +183,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         assertEq(vm.getRecordedLogs().length, 0, "events");
     }
 
-    // python: test_force_validator_exit_fails_when_no_obligations_shortfall
     function test_EmitsForceValidatorExitFailedWhenNoObligationsShortfall() external {
         bytes memory pubkeys = _repeat("01", PUBKEY_PATTERN_REPEATS);
 
@@ -219,7 +202,6 @@ contract ForceValidatorExitsInVaultHubTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
-    /// @dev python: `pattern * count`, a two-byte literal repeated `count` times
     function _repeat(bytes2 pattern, uint256 count) private pure returns (bytes memory repeated) {
         repeated = new bytes(2 * count);
 

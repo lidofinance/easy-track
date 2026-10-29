@@ -48,7 +48,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         vm.stopPrank();
     }
 
-    // python: test_validation_passes_on_correct_request
     function test_ValidatesCorrectRequest() external view {
         _validate(
             _requests(_request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0)),
@@ -57,7 +56,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_passes_on_correct_request_multiple
     function test_ValidatesCorrectRequestMultiple() external {
         uint256 nodeOpId2 =
             ExitRequests.addNodeOperator(sdvtRegistryStub, ExitRequests.pubkeyAt(1), owner);
@@ -72,7 +70,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_passes_on_valid_requests_with_creator
     function test_ValidatesRequestsWithCreator() external view {
         _validate(
             _requests(_request(CURATED_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0)),
@@ -81,7 +78,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_if_creator_not_node_operator_multiple
     function test_RevertWhen_CreatorIsNotNodeOperatorMultiple() external {
         uint256 nodeOpId =
             ExitRequests.addNodeOperator(curatedRegistryStub, ExitRequests.pubkeyAt(1), owner);
@@ -97,7 +93,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_empty_requests
     function test_RevertWhen_RequestsAreEmpty() external {
         vm.expectRevert("EMPTY_REQUESTS_LIST");
         _validate(
@@ -105,7 +100,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_too_many_requests
     function test_RevertWhen_TooManyRequests() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             new SubmitExitRequestHashesUtils.ExitRequestInput[](ExitRequests.MAX_REQUESTS);
@@ -128,7 +122,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         _validate(tooManyRequests, sdvtRegistryStub, address(0));
     }
 
-    // python: test_validation_reverts_on_wrong_staking_module
     function test_RevertWhen_StakingModuleIsWrong() external {
         vm.expectRevert("EXECUTOR_NOT_PERMISSIONED_ON_MODULE");
         _validate(
@@ -138,7 +131,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_wrong_staking_module_multiple
     function test_RevertWhen_StakingModuleIsWrongMultiple() external {
         vm.expectRevert("EXECUTOR_NOT_PERMISSIONED_ON_MODULE");
         _validate(
@@ -151,13 +143,11 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_empty_pubkey
     function test_RevertWhen_PubkeyIsEmpty() external {
         vm.expectRevert("INVALID_PUBKEY_LENGTH");
         _validate(_requests(_request(SDVT_MODULE_ID, 0, 0, hex"", 0)), sdvtRegistryStub, address(0));
     }
 
-    // python: test_validation_reverts_on_pubkey_too_short
     function test_RevertWhen_PubkeyIsTooShort() external {
         bytes memory shortPubkey = _repeat(0xaa, ExitRequests.PUBKEY_SIZE - 1);
 
@@ -167,7 +157,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_pubkey_too_long
     function test_RevertWhen_PubkeyIsTooLong() external {
         bytes memory longPubkey = _repeat(0xaa, ExitRequests.PUBKEY_SIZE + 1);
 
@@ -177,7 +166,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_wrong_pubkey
     function test_RevertWhen_PubkeyIsWrong() external {
         vm.expectRevert("INVALID_PUBKEY");
         _validate(
@@ -187,7 +175,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_unused_pubkey
     function test_RevertWhen_PubkeyIsUnused() external {
         vm.prank(owner);
         sdvtRegistryStub.setSigningKeyUsed(0, 0, false);
@@ -200,7 +187,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_wrong_node_op_id
     function test_RevertWhen_NodeOpIdIsWrong() external {
         uint256 lastNodeOpId = sdvtRegistryStub.getNodeOperatorsCount();
 
@@ -212,7 +198,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_wrong_node_op_id_multiple
     function test_RevertWhen_NodeOpIdIsWrongMultiple() external {
         uint256 lastNodeOpId = sdvtRegistryStub.getNodeOperatorsCount();
 
@@ -227,7 +212,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_duplicate_exit_requests
     function test_RevertWhen_ExitRequestsAreDuplicated() external {
         SubmitExitRequestHashesUtils.ExitRequestInput memory request =
             _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0);
@@ -236,7 +220,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         _validate(_requests(request, request), sdvtRegistryStub, address(0));
     }
 
-    // python: test_validation_reverts_on_wrong_requests_index_sort_order
     function test_RevertWhen_RequestsSortOrderIsWrong() external {
         uint256 nodeOpId1 =
             ExitRequests.addNodeOperator(sdvtRegistryStub, ExitRequests.pubkeyAt(1), owner);
@@ -253,7 +236,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_module_id_overflow
     function test_RevertWhen_ModuleIdOverflows() external {
         uint256 invalidModuleId = 2 ** 24;
 
@@ -268,7 +250,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_validation_reverts_on_node_op_id_overflow
     function test_RevertWhen_NodeOpIdOverflows() external {
         uint256 invalidNodeOpId = 2 ** 40;
 
@@ -283,7 +264,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: test_hash_requests
     function test_HashesRequests() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             _requests(_request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0));
@@ -298,7 +278,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         assertEq(actualHash, SINGLE_REQUEST_HASH, "hash");
     }
 
-    // python: test_hash_requests_multiple
     function test_HashesRequestsMultiple() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests = _requests(
             _request(SDVT_MODULE_ID, 0, 0, ExitRequests.pubkeyAt(0), 0),
@@ -315,7 +294,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         assertEq(actualHash, MULTIPLE_REQUESTS_HASH, "hash");
     }
 
-    // python: test_hash_requests_empty
     function test_HashesEmptyRequests() external view {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             new SubmitExitRequestHashesUtils.ExitRequestInput[](0);
@@ -340,7 +318,6 @@ contract SubmitExitRequestHashesUtilsTest is Test {
         );
     }
 
-    // python: exit_request_input_factory
     function _request(
         uint256 moduleId,
         uint256 nodeOpId,

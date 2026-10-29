@@ -43,7 +43,6 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
-    // python: test_update_staking_module_share_limits_via_motion_scenario, the raising branch
     function testFork_IncreasesModuleShareLimits() external {
         (uint16 newStakeShareLimit, uint16 newPriorityExitShareThreshold, bytes memory callData) =
             _plannedIncrease();
@@ -53,7 +52,6 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         _assertModuleShares(newStakeShareLimit, newPriorityExitShareThreshold);
     }
 
-    // python: test_update_staking_module_share_limits_via_motion_scenario, the lowering branch
     function testFork_DecreasesModuleShareLimits() external {
         (uint16 newStakeShareLimit, uint16 newPriorityExitShareThreshold, bytes memory callData) =
             _plannedDecrease();
@@ -63,7 +61,6 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         _assertModuleShares(newStakeShareLimit, newPriorityExitShareThreshold);
     }
 
-    // python: test_update_staking_module_share_limits_reverts_for_missing_module
     function testFork_RevertWhen_ModuleIsNotRegistered() external {
         address missingModuleFactory = _deployArtifact(
             "UpdateStakingModuleShareLimits",
@@ -96,7 +93,6 @@ contract UpdateStakingModuleShareLimitsTest is EasyTrackScenarioBase {
         easyTrack.createMotion(missingModuleFactory, callData);
     }
 
-    // python: test_update_staking_module_share_limits_reverts_on_enactment_if_current_values_changed
     function testFork_RevertWhen_CurrentSharesChangeBeforeEnact() external {
         (uint16 stakeShareLimit, uint16 priorityExitShareThreshold) = _currentShares();
         // the planned motion commits the current shares

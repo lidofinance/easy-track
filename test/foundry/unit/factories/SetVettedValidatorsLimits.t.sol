@@ -44,7 +44,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         vm.label(address(setVettedValidatorsLimits), "setVettedValidatorsLimits");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(setVettedValidatorsLimits.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -54,13 +53,11 @@ contract SetVettedValidatorsLimitsTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         setVettedValidatorsLimits.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         setVettedValidatorsLimits.createEVMScript(
@@ -68,7 +65,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         );
     }
 
-    // python: test_non_sorted_calldata
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         setVettedValidatorsLimits.createEVMScript(owner, _encodeCallData(_inputs(1, 1, 0, 2)));
@@ -77,7 +73,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         setVettedValidatorsLimits.createEVMScript(owner, _encodeCallData(_inputs(0, 1, 0, 2)));
     }
 
-    // python: test_non_active_operator_calldata
     function test_RevertWhen_NodeOperatorIsNotActive() external {
         nodeOperatorsRegistry.setActive(0, false);
 
@@ -87,7 +82,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         );
     }
 
-    // python: test_operator_id_out_of_range
     function test_RevertWhen_NodeOperatorIdIsOutOfRange() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -97,7 +91,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         );
     }
 
-    // python: test_revert_on_not_enough_signing_keys
     function test_RevertWhen_NotEnoughSigningKeys() external {
         vm.expectRevert("NOT_ENOUGH_SIGNING_KEYS");
         setVettedValidatorsLimits.createEVMScript(
@@ -105,7 +98,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = setVettedValidatorsLimits.createEVMScript(
             owner, _encodeCallData(_inputs(0, NEW_STAKING_LIMIT, 1, NEW_STAKING_LIMIT))
@@ -122,7 +114,6 @@ contract SetVettedValidatorsLimitsTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         SetVettedValidatorsLimits.VettedValidatorsLimitInput[] memory inputs =
             setVettedValidatorsLimits.decodeEVMScriptCallData(

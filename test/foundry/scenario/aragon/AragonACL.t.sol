@@ -30,7 +30,6 @@ contract AragonACLTest is EasyTrackScenarioBase {
         vm.label(address(acl), "ACL");
     }
 
-    // python: test_aragon_acl_grant_role
     function testFork_CreatesPlainPermission() external {
         assertFalse(acl.hasPermission(stranger, agent, TEST_ROLE), "hasPermission before");
 
@@ -41,7 +40,6 @@ contract AragonACLTest is EasyTrackScenarioBase {
         assertEq(acl.getPermissionParamsLength(stranger, agent, TEST_ROLE), 0, "params length");
     }
 
-    // python: test_aragon_acl_role_with_permission
     function testFork_GrantsRevokesAndRegrantsParameterizedPermission() external {
         assertFalse(acl.hasPermission(stranger, agent, TEST_ROLE), "hasPermission before");
 
@@ -74,7 +72,6 @@ contract AragonACLTest is EasyTrackScenarioBase {
         _assertPermissionParam(NEW_PARAM_VALUE);
     }
 
-    // python: test_aragon_acl_two_roles_with_different_params
     function testFork_ReplacesPermissionParamsOnRegrant() external {
         assertFalse(acl.hasPermission(stranger, agent, TEST_ROLE), "hasPermission before");
 

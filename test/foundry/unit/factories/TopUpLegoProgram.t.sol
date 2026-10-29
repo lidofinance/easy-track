@@ -31,14 +31,12 @@ contract TopUpLegoProgramTest is Test {
         vm.label(address(topUpLegoProgram), "topUpLegoProgram");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(topUpLegoProgram.trustedCaller(), owner, "trustedCaller");
         assertEq(address(topUpLegoProgram.finance()), finance, "finance");
         assertEq(topUpLegoProgram.legoProgram(), legoProgram, "legoProgram");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.prank(stranger);
         vm.expectRevert("CALLER_IS_FORBIDDEN");
@@ -47,25 +45,21 @@ contract TopUpLegoProgramTest is Test {
         );
     }
 
-    // python: test_create_evm_script_data_length_mismatch
     function test_RevertWhen_DataLengthMismatch() external {
         vm.expectRevert("LENGTH_MISMATCH");
         topUpLegoProgram.createEVMScript(owner, _encodeCallData(_rewardTokens(), Arrays.list(1)));
     }
 
-    // python: test_create_evm_script_empty_data
     function test_RevertWhen_DataIsEmpty() external {
         vm.expectRevert("EMPTY_DATA");
         topUpLegoProgram.createEVMScript(owner, _encodeCallData(new address[](0), new uint256[](0)));
     }
 
-    // python: test_create_evm_script_zero_amount
     function test_RevertWhen_AmountIsZero() external {
         vm.expectRevert("ZERO_AMOUNT");
         topUpLegoProgram.createEVMScript(owner, _encodeCallData(_rewardTokens(), Arrays.list(1, 0)));
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = topUpLegoProgram.createEVMScript(
             owner, _encodeCallData(_rewardTokens(), _rewardAmounts())
@@ -81,7 +75,6 @@ contract TopUpLegoProgramTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, payments), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         (address[] memory rewardTokens, uint256[] memory amounts) = topUpLegoProgram.decodeEVMScriptCallData(
             _encodeCallData(_rewardTokens(), _rewardAmounts())

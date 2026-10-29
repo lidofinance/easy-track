@@ -15,7 +15,6 @@ contract BytesUtilsTest is Test {
 
     address internal owner = makeAddr("owner");
 
-    // python: test_bytes24_at[0]
     function test_ReadsBytes24AtShortWordFromZeroPosition() external pure {
         assertEq(
             BytesUtilsWrapper.bytes24At(SHORT_WORD, 0),
@@ -24,7 +23,6 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_bytes24_at[1]
     function test_ReadsBytes24AtShortWordFromNonZeroPosition() external pure {
         assertEq(
             BytesUtilsWrapper.bytes24At(SHORT_WORD, 4),
@@ -33,7 +31,6 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_bytes24_at[2]
     function test_ReadsBytes24AtLongWordFromZeroPosition() external pure {
         assertEq(
             BytesUtilsWrapper.bytes24At(WORD, 0),
@@ -42,7 +39,6 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_bytes24_at[3]
     function test_ReadsBytes24AtLongWordFromNonZeroPosition() external pure {
         assertEq(
             BytesUtilsWrapper.bytes24At(WORD, 6),
@@ -51,44 +47,36 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_address_at[0]
     function test_ReadsAddressAtBareAddress() external view {
         assertEq(BytesUtilsWrapper.addressAt(abi.encodePacked(owner), 0), owner, "addressAt");
     }
 
-    // python: test_address_at[1]
     function test_ReadsAddressAtWrappedAddress() external view {
         bytes memory wordWithBytes = abi.encodePacked(hex"00112233", owner, hex"ddeeff");
 
         assertEq(BytesUtilsWrapper.addressAt(wordWithBytes, 4), owner, "addressAt");
     }
 
-    // python: test_uint32_at[0]
     function test_ReadsUint32AtOne() external pure {
         assertEq(BytesUtilsWrapper.uint32At(hex"00000001", 0), 1, "uint32At");
     }
 
-    // python: test_uint32_at[1]
     function test_ReadsUint32AtZero() external pure {
         assertEq(BytesUtilsWrapper.uint32At(hex"00000000", 0), 0, "uint32At");
     }
 
-    // python: test_uint32_at[2]
     function test_ReadsUint32AtEmptyBytes() external pure {
         assertEq(BytesUtilsWrapper.uint32At(hex"", 0), 0, "uint32At");
     }
 
-    // python: test_uint32_at[3]
     function test_ReadsUint32AtMaxValue() external pure {
         assertEq(BytesUtilsWrapper.uint32At(hex"ffffffff", 0), type(uint32).max, "uint32At");
     }
 
-    // python: test_uint32_at[4]
     function test_ReadsUint32AtNonZeroPosition() external pure {
         assertEq(BytesUtilsWrapper.uint32At(hex"ffffff00000010eeee", 3), 16, "uint32At");
     }
 
-    // python: test_uint256_at[0]
     function test_ReadsUint256AtOne() external pure {
         assertEq(
             BytesUtilsWrapper.uint256At(
@@ -99,7 +87,6 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_uint256_at[1]
     function test_ReadsUint256AtZero() external pure {
         assertEq(
             BytesUtilsWrapper.uint256At(
@@ -110,12 +97,10 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_uint256_at[2]
     function test_ReadsUint256AtEmptyBytes() external pure {
         assertEq(BytesUtilsWrapper.uint256At(hex"", 0), 0, "uint256At");
     }
 
-    // python: test_uint256_at[3]
     function test_ReadsUint256AtMaxValue() external pure {
         assertEq(
             BytesUtilsWrapper.uint256At(
@@ -126,7 +111,6 @@ contract BytesUtilsTest is Test {
         );
     }
 
-    // python: test_uint256_at[4]
     function test_ReadsUint256AtLongWordFromNonZeroPosition() external pure {
         bytes memory longWord = abi.encodePacked(
             hex"aabbccdd", hex"ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"

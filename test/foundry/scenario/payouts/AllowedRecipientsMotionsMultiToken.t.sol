@@ -16,7 +16,6 @@ import {IAllowedRecipientsRegistry} from "test/foundry/interfaces/Payouts.sol";
 abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsScenarioBase {
     string internal constant SUM_EXCEEDS_SPENDABLE_BALANCE = "SUM_EXCEEDS_SPENDABLE_BALANCE";
 
-    /// @dev python: the pytest id of the `deployed_contracts` parameter
     function _instanceName() internal pure virtual returns (string memory);
 
     function setUp() public override {
@@ -25,7 +24,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _bindInstance(_instanceName());
     }
 
-    // python: test_add_recipient_motion
     function testFork_AddsRecipientByMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory callData = abi.encode(recipients[0], titles[0]);
@@ -46,7 +44,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_add_multiple_recipients_by_concurrent_motions
     function testFork_AddsMultipleRecipientsByConcurrentMotions() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         bytes memory firstCallData = abi.encode(recipients[0], titles[0]);
@@ -66,7 +63,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_fail_add_same_recipient_by_second_concurrent_motion
     function testFork_RevertWhen_SameRecipientAddedBySecondConcurrentMotion() external {
         bytes memory callData = abi.encode(recipients[0], titles[0]);
         uint256 firstMotionId =
@@ -81,7 +77,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.enactMotion(secondMotionId, callData);
     }
 
-    // python: test_fail_if_add_same_recipient_twice
     function testFork_RevertWhen_SameRecipientAddedTwice() external {
         _addRecipientByMotion(recipients[0], titles[0]);
 
@@ -90,7 +85,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.createMotion(addAllowedRecipient, abi.encode(recipients[0], titles[0]));
     }
 
-    // python: test_remove_recipient_motion
     function testFork_RemovesRecipientByMotion() external {
         uint256 countBefore = allowedRecipientsRegistry.getAllowedRecipients().length;
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -113,7 +107,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertEq(allowedRecipientsRegistry.getAllowedRecipients().length, countBefore, "recipients");
     }
 
-    // python: test_fail_remove_recipient_if_empty_allowed_recipients_list
     function testFork_RevertWhen_RemovingFromEmptyAllowedRecipientsList() external {
         address[] memory allowed = allowedRecipientsRegistry.getAllowedRecipients();
         for (uint256 index; index < allowed.length; ++index) {
@@ -127,7 +120,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.createMotion(removeAllowedRecipient, abi.encode(recipients[0]));
     }
 
-    // python: test_fail_remove_recipient_if_it_is_not_allowed
     function testFork_RevertWhen_RemovingNotAllowedRecipient() external {
         _addRecipientByMotion(recipients[0], titles[0]);
 
@@ -139,7 +131,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.createMotion(removeAllowedRecipient, abi.encode(recipients[1]));
     }
 
-    // python: test_top_up_single_recipient
     function testFork_TopsUpSingleRecipient() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -152,7 +143,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_top_up_single_recipient_several_times_in_period
     function testFork_TopsUpSingleRecipientSeveralTimesInPeriod() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(40_000_000e18);
@@ -178,7 +168,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_top_up_multiple_recipients
     function testFork_TopsUpMultipleRecipients() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -194,7 +183,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_top_up_multiple_tokens
     function testFork_TopsUpMultipleTokens() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -216,7 +204,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertEq(allowedRecipientsRegistry.spendableBalance(), limit - 2e18, "spendableBalance");
     }
 
-    // python: test_top_up_motion_enacted_in_next_period
     function testFork_EnactsTopUpMotionInNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -233,7 +220,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _enactTopUpMotion(motionId, callData, SPENT_AMOUNT);
     }
 
-    // python: test_top_up_motion_ended_and_enacted_in_next_period
     function testFork_EnactsEndedTopUpMotionInNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -256,7 +242,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertNotEq(newPeriodEnd, oldPeriodEnd, "period end");
     }
 
-    // python: test_top_up_motion_enacted_in_second_next_period
     function testFork_EnactsTopUpMotionInSecondNextPeriod() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -273,7 +258,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _enactTopUpMotion(motionId, callData, SPENT_AMOUNT);
     }
 
-    // python: test_spendable_balance_is_renewed_in_next_period
     function testFork_RenewsSpendableBalanceInNextPeriod() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
 
@@ -311,7 +295,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         assertEq(allowedRecipientsRegistry.spendableBalance(), 0, "spendable after renewal");
     }
 
-    // python: test_fail_if_token_not_allowed
     function testFork_RevertWhen_TokenNotAllowed() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -335,8 +318,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         }
     }
 
-    // python: test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion at L677, the
-    // shadowed token removal case pytest never collects
     function testFork_RevertWhen_TokenRemovedWhileMotionIsInFlight() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
 
@@ -360,7 +341,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _enactTopUpMotion(motionId, callData, SPENT_AMOUNT);
     }
 
-    // python: test_fail_enact_top_up_motion_if_recipient_removed_by_other_motion
     function testFork_RevertWhen_RecipientRemovedByOtherMotion() external {
         (, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
 
@@ -379,7 +359,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.enactMotion(motionId, callData);
     }
 
-    // python: test_fail_create_top_up_motion_if_exceeds_limit
     function testFork_RevertWhen_TopUpMotionExceedsLimit() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -394,7 +373,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_fail_to_create_top_up_motion_which_exceeds_spendable
     function testFork_RevertWhen_TopUpMotionExceedsSpendable() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(20_000_000e18);
@@ -418,7 +396,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next
     function testFork_EnactsSecondTopUpMotionInNextPeriodAfterLimitRejection() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(40_000_000e18);
@@ -448,7 +425,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _enactTopUpMotion(secondMotionId, secondCallData, SPENT_AMOUNT);
     }
 
-    // python: test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable
     function testFork_RevertWhen_SecondTopUpMotionCreationExceedsSpendable() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(20_000_000e18);
@@ -477,7 +453,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         );
     }
 
-    // python: test_fail_top_up_if_limit_decreased_while_motion_is_in_flight
     function testFork_RevertWhen_LimitDecreasedWhileMotionIsInFlight() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _addRecipientByMotion(recipients[0], titles[0]);
@@ -498,7 +473,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.enactMotion(motionId, callData);
     }
 
-    // python: test_top_up_if_limit_increased_while_motion_is_in_flight
     function testFork_TopsUpWhenLimitIncreasesWhileMotionIsInFlight() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(20_000_000e18);
@@ -517,7 +491,6 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         _enactTopUpMotion(motionId, callData, spent);
     }
 
-    // python: test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_increased
     function testFork_EnactsSecondMotionAfterLimitIncrease() external {
         (uint256 limit, uint256 periodDuration) = allowedRecipientsRegistry.getLimitParameters();
         _ensureAgentDaiBalance(20_000_000e18);
@@ -552,27 +525,22 @@ abstract contract AllowedRecipientsMotionsMultiTokenTest is MultiTokenPayoutsSce
         easyTrack.enactMotion(secondMotionId, secondCallData);
     }
 
-    // python: test_top_up_spendable_renewal_if_period_duration_changed[3-2]
     function testFork_RenewsSpendableWhenPeriodDurationChanges_3To2() external {
         _spendableRenewalIfPeriodDurationChanged(3, 2);
     }
 
-    // python: test_top_up_spendable_renewal_if_period_duration_changed[3-6]
     function testFork_RenewsSpendableWhenPeriodDurationChanges_3To6() external {
         _spendableRenewalIfPeriodDurationChanged(3, 6);
     }
 
-    // python: test_top_up_spendable_renewal_if_period_duration_changed[12-1]
     function testFork_RenewsSpendableWhenPeriodDurationChanges_12To1() external {
         _spendableRenewalIfPeriodDurationChanged(12, 1);
     }
 
-    // python: test_top_up_spendable_renewal_if_period_duration_changed[1-12]
     function testFork_RenewsSpendableWhenPeriodDurationChanges_1To12() external {
         _spendableRenewalIfPeriodDurationChanged(1, 12);
     }
 
-    // python: test_set_limit_parameters_by_aragon_agent_via_voting
     function testFork_SetsLimitParametersByAragonAgentViaVoting() external {
         // The vote forwards the call through the Agent, replayed as the Agent's call
         vm.prank(agent);

@@ -14,13 +14,11 @@ import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
 contract AlterTiersInOperatorGridTest is Test {
-    /// @dev python: max_share_limit of the fixture, the defaultTierMaxShareLimit constructor argument
     uint256 internal constant DEFAULT_TIER_MAX_SHARE_LIMIT = 1000 * 1e18;
     uint256 internal constant DEFAULT_TIER_ID = 0;
     /// @dev The id of the first tier registered after the default one
     uint256 internal constant FIRST_TIER_ID = 1;
     uint256 internal constant MISSING_TIER_ID = 99;
-    /// @dev python: operator_address
     address internal constant OPERATOR = address(1);
     uint256 internal constant GROUP_SHARE_LIMIT = 1000;
 
@@ -45,7 +43,6 @@ contract AlterTiersInOperatorGridTest is Test {
         vm.label(address(alterTiersInOperatorGrid), "alterTiersInOperatorGrid");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(alterTiersInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -58,13 +55,11 @@ contract AlterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         alterTiersInOperatorGrid.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_tier_ids_array
     function test_RevertWhen_TierIdsAreEmpty() external {
         uint256[] memory tierIds = new uint256[](0);
         TierParams[] memory tierParams = new TierParams[](0);
@@ -73,7 +68,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, abi.encode(tierIds, tierParams));
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         uint256[] memory tierIds = Arrays.list(DEFAULT_TIER_ID, FIRST_TIER_ID);
         TierParams[] memory tierParams = Arrays.list(Vaults.defaultTierParams());
@@ -82,7 +76,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, abi.encode(tierIds, tierParams));
     }
 
-    // python: test_tier_not_exists
     function test_RevertWhen_TierDoesNotExist() external {
         vm.expectRevert("TIER_NOT_EXISTS");
         alterTiersInOperatorGrid.createEVMScript(
@@ -90,13 +83,11 @@ contract AlterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_wrong_calldata_length
     function test_RevertWhen_CallDataLengthIsWrong() external {
         vm.expectRevert(bytes(""));
         alterTiersInOperatorGrid.createEVMScript(owner, hex"00");
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external {
         _registerGroupWithTiers(
             9000, Arrays.list(Vaults.defaultTierParams(), Vaults.defaultTierParams())
@@ -114,7 +105,6 @@ contract AlterTiersInOperatorGridTest is Test {
         assertEq(evmScript, _alterTiersScript(tierIds, tierParams), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         uint256[] memory tierIds = Arrays.list(FIRST_TIER_ID, FIRST_TIER_ID + 1);
         TierParams[] memory tierParams =
@@ -127,7 +117,6 @@ contract AlterTiersInOperatorGridTest is Test {
         Vaults.assertTierParamsEq(decodedTierParams, tierParams);
     }
 
-    // python: test_zero_reserve_ratio
     function test_RevertWhen_ReserveRatioIsZero() external {
         _registerGroupWithDefaultTier();
 
@@ -138,7 +127,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_reserve_ratio_too_high
     function test_RevertWhen_ReserveRatioIsTooHigh() external {
         _registerGroupWithDefaultTier();
 
@@ -149,7 +137,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_zero_forced_rebalance_threshold
     function test_RevertWhen_ForcedRebalanceThresholdIsZero() external {
         _registerGroupWithDefaultTier();
 
@@ -160,7 +147,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_forced_rebalance_threshold_too_high
     function test_RevertWhen_ForcedRebalanceThresholdIsTooHigh() external {
         _registerGroupWithDefaultTier();
 
@@ -171,7 +157,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_forced_rebalance_threshold_equals_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdEqualsReserveRatio() external {
         _registerGroupWithDefaultTier();
 
@@ -182,7 +167,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_forced_rebalance_threshold_within_10bp_of_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdIsWithin10BPOfReserveRatio() external {
         _registerGroupWithDefaultTier();
 
@@ -193,7 +177,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_forced_rebalance_threshold_exactly_10bp_below_reserve_ratio
     function test_AllowsForcedRebalanceThresholdExactly10BPBelowReserveRatio() external {
         _registerGroupWithDefaultTier();
 
@@ -207,7 +190,6 @@ contract AlterTiersInOperatorGridTest is Test {
         assertGt(evmScript.length, 0, "evmScript.length");
     }
 
-    // python: test_infra_fee_too_high
     function test_RevertWhen_InfraFeeIsTooHigh() external {
         _registerGroupWithDefaultTier();
 
@@ -218,7 +200,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_liquidity_fee_too_high
     function test_RevertWhen_LiquidityFeeIsTooHigh() external {
         _registerGroupWithDefaultTier();
 
@@ -229,7 +210,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_reservation_fee_too_high
     function test_RevertWhen_ReservationFeeIsTooHigh() external {
         _registerGroupWithDefaultTier();
 
@@ -240,7 +220,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_fees_less_than_uint16_max
     function test_RevertWhen_AnyFeeExceedsUint16Max() external {
         _registerGroupWithDefaultTier();
 
@@ -263,7 +242,6 @@ contract AlterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_share_limit_exceeds_group_share_limit
     function test_AllowsTierShareLimitAboveGroupShareLimit() external {
         _registerGroupWithDefaultTier();
 
@@ -278,7 +256,6 @@ contract AlterTiersInOperatorGridTest is Test {
         assertGt(evmScript.length, 0, "evmScript.length");
     }
 
-    // python: test_tier_share_limit_too_high
     function test_RevertWhen_TierShareLimitIsTooHigh() external {
         _registerGroupWithDefaultTier();
 
@@ -289,7 +266,6 @@ contract AlterTiersInOperatorGridTest is Test {
         alterTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(FIRST_TIER_ID, tierParams));
     }
 
-    // python: test_default_tier_share_limit_exceeds_max_limit
     function test_RevertWhen_DefaultTierShareLimitExceedsMaxLimit() external {
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.shareLimit = DEFAULT_TIER_MAX_SHARE_LIMIT + 1;
@@ -300,7 +276,6 @@ contract AlterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_default_tier_share_limit_at_max_limit
     function test_AllowsDefaultTierShareLimitAtMaxLimit() external view {
         TierParams memory tierParams = Vaults.defaultTierParams();
         tierParams.shareLimit = DEFAULT_TIER_MAX_SHARE_LIMIT;
@@ -312,8 +287,6 @@ contract AlterTiersInOperatorGridTest is Test {
         assertGt(evmScript.length, 0, "evmScript.length");
     }
 
-    /// @dev python: operator_grid_stub.registerGroup(operator_address, shareLimit, {"from": owner})
-    /// then registerTiers(operator_address, tiers, {"from": owner})
     function _registerGroupWithTiers(uint256 shareLimit, TierParams[] memory tiers) private {
         vm.startPrank(owner);
         operatorGrid.registerGroup(OPERATOR, shareLimit);
@@ -327,7 +300,6 @@ contract AlterTiersInOperatorGridTest is Test {
         _registerGroupWithTiers(GROUP_SHARE_LIMIT, Arrays.list(Vaults.defaultTierParams()));
     }
 
-    /// @dev python: create_calldata([tierId], [params])
     function _encodeCallData(uint256 tierId, TierParams memory params)
         private
         pure

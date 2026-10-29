@@ -35,7 +35,6 @@ contract AddRewardProgramTest is Test {
         vm.label(address(addRewardProgram), "addRewardProgram");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(addRewardProgram.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -45,13 +44,11 @@ contract AddRewardProgramTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         addRewardProgram.createEVMScript(stranger, _encodeCallData());
     }
 
-    // python: test_create_evm_script_reward_program_already_added
     function test_RevertWhen_RewardProgramAlreadyAdded() external {
         vm.prank(address(evmScriptExecutorStub));
         rewardProgramsRegistry.addRewardProgram(REWARD_PROGRAM_ADDRESS, REWARD_PROGRAM_TITLE);
@@ -64,7 +61,6 @@ contract AddRewardProgramTest is Test {
         addRewardProgram.createEVMScript(owner, _encodeCallData());
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = addRewardProgram.createEVMScript(owner, _encodeCallData());
 
@@ -80,7 +76,6 @@ contract AddRewardProgramTest is Test {
         assertEq(evmScript, expected, "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         (address rewardProgram, string memory title) =
             addRewardProgram.decodeEVMScriptCallData(_encodeCallData());

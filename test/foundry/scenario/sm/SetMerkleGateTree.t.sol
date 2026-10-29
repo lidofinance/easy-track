@@ -48,7 +48,6 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
-    // python: test_merkle_gate_scenario
     function testFork_SetsGateTree() external {
         (bytes32 newTreeRoot, string memory newTreeCid, bytes memory callData) =
             _plannedTreeUpdate(gate);
@@ -59,7 +58,6 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
         assertEq(gate.treeCid(), newTreeCid, "treeCid");
     }
 
-    // python: test_merkle_gate_reverts_with_same_tree_root_on_motion_creation
     function testFork_RevertWhen_NewTreeRootIsCurrent() external {
         (, string memory newTreeCid,) = _plannedTreeUpdate(gate);
         bytes32 treeRoot = gate.treeRoot();
@@ -71,7 +69,6 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
         easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    // python: test_merkle_gate_reverts_with_same_tree_cid_on_motion_creation
     function testFork_RevertWhen_NewTreeCidIsCurrent() external {
         (bytes32 newTreeRoot,,) = _plannedTreeUpdate(gate);
         string memory treeCid = gate.treeCid();
@@ -83,7 +80,6 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
         easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    // python: test_merkle_gate_reverts_for_gate_not_in_permissions
     function testFork_RevertWhen_GateIsNotInPermissions() external {
         // A real gate the executor may set, outside this factory's permissions
         IMerkleGate otherGate = IMerkleGate(_managedGate(_otherStakingModule()));
@@ -94,7 +90,6 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
         easyTrack.createMotion(evmScriptFactory, callData);
     }
 
-    // python: test_merkle_gate_permissions_update_adds_new_gate
     function testFork_SetsTreeOfGateAddedToPermissions() external {
         IMerkleGate newGate = _deployGate(NEW_GATE_INITIAL_ROOT, NEW_GATE_INITIAL_CID);
         IAccessControlEnumerable(address(newGate)).grantRole(SET_TREE_ROLE, evmScriptExecutor);
@@ -113,7 +108,6 @@ abstract contract SetMerkleGateTreeTest is EasyTrackScenarioBase {
         assertEq(newGate.treeCid(), NEW_GATE_UPDATED_CID, "treeCid");
     }
 
-    // python: test_merkle_gate_permissions_update_removes_gate
     function testFork_RevertWhen_GateIsRemovedFromPermissions() external {
         IMerkleGate removableGate =
             _deployGate(REMOVABLE_GATE_INITIAL_ROOT, REMOVABLE_GATE_INITIAL_CID);

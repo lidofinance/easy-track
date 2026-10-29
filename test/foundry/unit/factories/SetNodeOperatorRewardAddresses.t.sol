@@ -45,7 +45,6 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         vm.label(address(setNodeOperatorRewardAddresses), "setNodeOperatorRewardAddresses");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(setNodeOperatorRewardAddresses.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -55,13 +54,11 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         setNodeOperatorRewardAddresses.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         setNodeOperatorRewardAddresses.createEVMScript(
@@ -69,7 +66,6 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         );
     }
 
-    // python: test_non_sorted_calldata
     function test_RevertWhen_NodeOperatorsAreNotSorted() external {
         vm.expectRevert("NODE_OPERATORS_IS_NOT_SORTED");
         setNodeOperatorRewardAddresses.createEVMScript(
@@ -84,7 +80,6 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         );
     }
 
-    // python: test_operator_id_out_of_range
     function test_RevertWhen_NodeOperatorIdIsOutOfRange() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -94,7 +89,6 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         );
     }
 
-    // python: test_same_reward_address
     function test_RevertWhen_RewardAddressIsSame() external {
         (,, address rewardAddress,,,,) = nodeOperatorsRegistry.getNodeOperator(0, true);
 
@@ -104,7 +98,6 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         );
     }
 
-    // python: test_zero_reward_address
     function test_RevertWhen_RewardAddressIsZero() external {
         vm.expectRevert("ZERO_REWARD_ADDRESS");
         setNodeOperatorRewardAddresses.createEVMScript(
@@ -112,13 +105,11 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         );
     }
 
-    // python: test_lido_as_reward_address
     function test_RevertWhen_RewardAddressIsLido() external {
         vm.expectRevert("LIDO_REWARD_ADDRESS");
         setNodeOperatorRewardAddresses.createEVMScript(owner, _encodeCallData(_inputs(0, steth)));
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript = setNodeOperatorRewardAddresses.createEVMScript(
             owner,
@@ -136,7 +127,6 @@ contract SetNodeOperatorRewardAddressesTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         SetNodeOperatorRewardAddresses.SetRewardAddressInput[] memory inputs =
             setNodeOperatorRewardAddresses.decodeEVMScriptCallData(

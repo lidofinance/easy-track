@@ -39,7 +39,6 @@ contract EVMScriptCreatorTest is Test {
         vm.stopPrank();
     }
 
-    // python: test_create_evm_script_one_address_single_call
     function test_CreatesEVMScriptForOneAddressSingleCall() external view {
         bytes memory evmScript = EVMScriptCreatorWrapper.createEVMScript(
             address(nodeOperatorsRegistryStub),
@@ -54,7 +53,6 @@ contract EVMScriptCreatorTest is Test {
         assertEq(evmScript, expected, "evmScript");
     }
 
-    // python: test_create_evm_script_one_address_multiple_calls_same_method
     function test_CreatesEVMScriptForOneAddressMultipleCallsSameMethod() external view {
         bytes[] memory callData = Arrays.list(
             _encodeSetNodeOperatorStakingLimitCallData(1, 300),
@@ -82,7 +80,6 @@ contract EVMScriptCreatorTest is Test {
         assertEq(evmScript, expected, "evmScript");
     }
 
-    // python: test_create_evm_script_one_address_different_methods_different_lengths
     function test_RevertWhen_OneAddressMethodIdsAndCallDataLengthsDiffer() external {
         bytes4[] memory methodIds = Arrays.list(SET_NODE_OPERATOR_STAKING_LIMIT);
         bytes[] memory callData = Arrays.list(
@@ -96,7 +93,6 @@ contract EVMScriptCreatorTest is Test {
         );
     }
 
-    // python: test_create_evm_script_one_address_different_methods
     function test_CreatesEVMScriptForOneAddressDifferentMethods() external view {
         bytes4[] memory methodIds = Arrays.list(ADD_REWARD_PROGRAM, REMOVE_REWARD_PROGRAM);
         bytes[] memory callData = Arrays.list(
@@ -119,7 +115,6 @@ contract EVMScriptCreatorTest is Test {
         assertEq(evmScript, expected, "evmScript");
     }
 
-    // python: test_create_evm_script_many_addresses_different_lengths
     function test_RevertWhen_ManyAddressesLengthsDiffer() external {
         address[] memory targets = Arrays.list(address(nodeOperatorsRegistryStub));
         bytes memory callData = _encodeSetNodeOperatorStakingLimitCallData(1, 300);
@@ -137,7 +132,6 @@ contract EVMScriptCreatorTest is Test {
         );
     }
 
-    // python: test_create_evm_script_many_addresses
     function test_CreatesEVMScriptForManyAddresses() external view {
         address[] memory targets = Arrays.list(
             address(nodeOperatorsRegistryStub),
@@ -168,7 +162,6 @@ contract EVMScriptCreatorTest is Test {
         assertEq(evmScript, expected, "evmScript");
     }
 
-    // python: encode_set_node_operator_staking_limit_calldata, encoded as (uint256,uint256)
     function _encodeSetNodeOperatorStakingLimitCallData(uint256 id, uint256 limit)
         private
         pure
@@ -177,7 +170,6 @@ contract EVMScriptCreatorTest is Test {
         return abi.encode(id, limit);
     }
 
-    // python: encode_add_reward_program_calldata
     function _encodeAddRewardProgramCallData(address rewardProgram, string memory title)
         private
         pure
@@ -186,7 +178,6 @@ contract EVMScriptCreatorTest is Test {
         return abi.encode(rewardProgram, title);
     }
 
-    // python: encode_remove_reward_program_calldata
     function _encodeRemoveRewardProgramCallData(address rewardProgram)
         private
         pure
@@ -195,7 +186,6 @@ contract EVMScriptCreatorTest is Test {
         return abi.encode(rewardProgram);
     }
 
-    // python: node_operators_registry_stub.setNodeOperatorStakingLimit.encode_input
     function _setNodeOperatorStakingLimitInput(uint256 id, uint64 limit)
         private
         pure
@@ -206,7 +196,6 @@ contract EVMScriptCreatorTest is Test {
         );
     }
 
-    // python: reward_programs_registry.addRewardProgram.encode_input
     function _addRewardProgramInput(address rewardProgram, string memory title)
         private
         pure
@@ -217,7 +206,6 @@ contract EVMScriptCreatorTest is Test {
         );
     }
 
-    // python: reward_programs_registry.removeRewardProgram.encode_input
     function _removeRewardProgramInput(address rewardProgram) private pure returns (bytes memory) {
         return
             abi.encodeWithSelector(

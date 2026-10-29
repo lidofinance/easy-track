@@ -13,7 +13,8 @@ library ExitRequests {
     uint256 internal constant MAX_REQUESTS = 200;
     uint256 internal constant DATA_FORMAT_LIST = 1;
 
-    /// @dev python: make_test_bytes. `i` as 3 big-endian bytes, then `length - 3` copies of `i % 256`
+    /// @dev Deterministic test bytes: `i` as 3 big-endian bytes, then `length - 3` copies of
+    /// `i % 256`
     function makeTestBytes(uint256 i, uint256 length) internal pure returns (bytes memory result) {
         require(length >= 3, "Length must be at least 3 bytes");
 
@@ -31,21 +32,20 @@ library ExitRequests {
         return makeTestBytes(i, PUBKEY_SIZE);
     }
 
-    /// @dev python: pubkeys[index] of submit_exit_hashes_factory_config. The key the registry stubs
-    /// hold at `index`
+    /// @dev The key the registry stubs hold at `index`
     function pubkeyAt(uint256 index) internal pure returns (bytes memory) {
         return makeTestBytes(index + 1);
     }
 
-    /// @dev python: b"".join(pubkeys). All MAX_REQUESTS keys, the `setSigningKeys` argument
+    /// @dev All MAX_REQUESTS keys, the `setSigningKeys` argument
     function concatenatedPubkeys() internal pure returns (bytes memory keys) {
         for (uint256 i; i < MAX_REQUESTS; ++i) {
             keys = abi.encodePacked(keys, pubkeyAt(i));
         }
     }
 
-    /// @dev python: create_exit_request_data. 64 bytes per request: moduleId as 3 bytes, nodeOpId as
-    /// 5, valIndex as 8, then the 48-byte pubkey
+    /// @dev Packs the requests, 64 bytes each: moduleId as 3 bytes, nodeOpId as 5, valIndex as 8,
+    /// then the 48-byte pubkey
     function createExitRequestData(SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests)
         internal
         pure
@@ -63,7 +63,7 @@ library ExitRequests {
         }
     }
 
-    /// @dev python: create_exit_requests_hashes. `keccak256(abi.encode(packed, dataFormat))`, with
+    /// @dev The hash of the packed requests, `keccak256(abi.encode(packed, dataFormat))`, with
     /// `abi.encode` and not `encodePacked`
     function createExitRequestsHashes(
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests,
@@ -72,8 +72,7 @@ library ExitRequests {
         return keccak256(abi.encode(createExitRequestData(requests), dataFormat));
     }
 
-    /// @dev python: add_node_operator. Registers one more operator on the stub, seeds its signing
-    /// keys and returns its id. The Python hardcodes `accounts[0]` as the reward address.
+    /// @dev Registers one more operator on the stub, seeds its signing keys and returns its id
     function addNodeOperator(
         NodeOperatorsRegistryStub registry,
         bytes memory pubkey,

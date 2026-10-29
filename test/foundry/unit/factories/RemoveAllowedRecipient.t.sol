@@ -45,7 +45,6 @@ contract RemoveAllowedRecipientTest is Test {
         vm.label(address(removeAllowedRecipient), "removeAllowedRecipient");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(removeAllowedRecipient.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -55,13 +54,11 @@ contract RemoveAllowedRecipientTest is Test {
         );
     }
 
-    // python: test_deploy_zero_trusted_caller
     function test_RevertWhen_TrustedCallerIsZero() external {
         vm.expectRevert("TRUSTED_CALLER_IS_ZERO_ADDRESS");
         new RemoveAllowedRecipient(address(0), address(allowedRecipientsRegistry));
     }
 
-    // python: test_deploy_zero_allowed_recipient_registry
     function test_DeploysWithZeroAllowedRecipientsRegistry() external {
         vm.prank(owner);
         RemoveAllowedRecipient factory = new RemoveAllowedRecipient(owner, address(0));
@@ -71,7 +68,6 @@ contract RemoveAllowedRecipientTest is Test {
         );
     }
 
-    // python: test_create_evm_script_is_permissionless
     function test_CreatesEVMScriptFromAnyCaller() external {
         _allowStranger();
 
@@ -81,7 +77,6 @@ contract RemoveAllowedRecipientTest is Test {
         assertEq(evmScript, _removeRecipientScript(stranger), "evmScript");
     }
 
-    // python: test_decode_evm_script_calldata_is_permissionless
     function test_DecodesEVMScriptCallDataFromAnyCaller() external {
         vm.prank(stranger);
         address recipient = removeAllowedRecipient.decodeEVMScriptCallData(abi.encode(stranger));
@@ -89,7 +84,6 @@ contract RemoveAllowedRecipientTest is Test {
         assertEq(recipient, stranger, "recipient");
     }
 
-    // python: test_only_trusted_caller_can_be_creator
     function test_RevertWhen_CreatorIsNotTrustedCaller() external {
         _allowStranger();
 
@@ -105,19 +99,16 @@ contract RemoveAllowedRecipientTest is Test {
         assertEq(evmScript, _removeRecipientScript(stranger), "evmScript");
     }
 
-    // python: test_revert_create_evm_script_with_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert(bytes(""));
         removeAllowedRecipient.createEVMScript(owner, "");
     }
 
-    // python: test_revert_recipient_not_found
     function test_RevertWhen_RecipientIsNotFound() external {
         vm.expectRevert("ALLOWED_RECIPIENT_NOT_FOUND");
         removeAllowedRecipient.createEVMScript(owner, abi.encode(stranger));
     }
 
-    // python: test_create_evm_script_correctly
     function test_CreatesEVMScript() external {
         _allowStranger();
 
@@ -126,14 +117,12 @@ contract RemoveAllowedRecipientTest is Test {
         assertEq(evmScript, _removeRecipientScript(stranger), "evmScript");
     }
 
-    // python: test_decode_evm_script_calldata_correctly
     function test_DecodesEVMScriptCallData() external view {
         address recipient = removeAllowedRecipient.decodeEVMScriptCallData(abi.encode(owner));
 
         assertEq(recipient, owner, "recipient");
     }
 
-    /// @dev python: registry.addRecipient(stranger, "Stranger") from add_recipient_role_holder
     function _allowStranger() private {
         vm.prank(addRecipientRoleHolder);
         allowedRecipientsRegistry.addRecipient(stranger, "Stranger");

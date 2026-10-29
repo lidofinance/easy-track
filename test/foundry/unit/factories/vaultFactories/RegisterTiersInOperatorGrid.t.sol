@@ -14,13 +14,11 @@ import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {Vaults} from "test/foundry/unit/helpers/Vaults.sol";
 
 contract RegisterTiersInOperatorGridTest is Test {
-    /// @dev python: operator_address
     address internal constant OPERATOR = address(1);
     uint256 internal constant GROUP_SHARE_LIMIT = 1000;
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
-    /// @dev python: operator1 and operator2, accounts[5] and accounts[6]
     address internal nodeOperator = makeAddr("nodeOperator");
     address internal anotherNodeOperator = makeAddr("anotherNodeOperator");
 
@@ -41,7 +39,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         vm.label(address(registerTiersInOperatorGrid), "registerTiersInOperatorGrid");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(registerTiersInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -51,13 +48,11 @@ contract RegisterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         registerTiersInOperatorGrid.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_node_operators_array
     function test_RevertWhen_NodeOperatorsAreEmpty() external {
         address[] memory nodeOperators = new address[](0);
         TierParams[][] memory tiers = new TierParams[][](1);
@@ -66,7 +61,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, abi.encode(nodeOperators, tiers));
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         TierParams[][] memory tiers = new TierParams[][](2);
 
@@ -74,7 +68,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, abi.encode(Arrays.list(stranger), tiers));
     }
 
-    // python: test_zero_node_operator
     function test_RevertWhen_NodeOperatorIsZero() external {
         TierParams[][] memory tiers = Arrays.list(
             Arrays.list(Vaults.defaultTierParams()), Arrays.list(Vaults.defaultTierParams())
@@ -86,7 +79,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_empty_tiers_array
     function test_RevertWhen_TiersAreEmpty() external {
         _registerGroup(stranger, GROUP_SHARE_LIMIT);
 
@@ -96,7 +88,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, abi.encode(Arrays.list(stranger), tiers));
     }
 
-    // python: test_group_not_exists
     function test_RevertWhen_GroupDoesNotExist() external {
         vm.expectRevert("GROUP_NOT_EXISTS");
         registerTiersInOperatorGrid.createEVMScript(
@@ -104,7 +95,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_default_tier_operator
     function test_RevertWhen_NodeOperatorIsDefaultTierOperator() external {
         address defaultTierOperator = registerTiersInOperatorGrid.DEFAULT_TIER_OPERATOR();
 
@@ -114,7 +104,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external {
         _registerGroup(nodeOperator, 1000);
         _registerGroup(anotherNodeOperator, 1500);
@@ -131,7 +120,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         assertEq(evmScript, _registerTiersScript(nodeOperators, tiers), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         address[] memory nodeOperators = Arrays.list(nodeOperator, anotherNodeOperator);
         TierParams[][] memory tiers = Arrays.list(
@@ -146,7 +134,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         _assertTiersEq(decodedTiers, tiers);
     }
 
-    // python: test_tier_share_limit_exceeds_group_share_limit
     function test_AllowsTierShareLimitAboveGroupShareLimit() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -160,7 +147,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         assertGt(evmScript.length, 0, "evmScript.length");
     }
 
-    // python: test_tier_share_limit_too_high
     function test_RevertWhen_TierShareLimitIsTooHigh() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -171,7 +157,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_zero_reserve_ratio
     function test_RevertWhen_ReserveRatioIsZero() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -182,7 +167,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_reserve_ratio_too_high
     function test_RevertWhen_ReserveRatioIsTooHigh() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -193,7 +177,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_zero_forced_rebalance_threshold
     function test_RevertWhen_ForcedRebalanceThresholdIsZero() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -204,7 +187,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_forced_rebalance_threshold_too_high
     function test_RevertWhen_ForcedRebalanceThresholdIsTooHigh() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -215,7 +197,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_forced_rebalance_threshold_equals_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdEqualsReserveRatio() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -226,7 +207,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_forced_rebalance_threshold_within_10bp_of_reserve_ratio
     function test_RevertWhen_ForcedRebalanceThresholdIsWithin10BPOfReserveRatio() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -237,7 +217,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_forced_rebalance_threshold_exactly_10bp_below_reserve_ratio
     function test_AllowsForcedRebalanceThresholdExactly10BPBelowReserveRatio() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -250,7 +229,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         assertGt(evmScript.length, 0, "evmScript.length");
     }
 
-    // python: test_infra_fee_too_high
     function test_RevertWhen_InfraFeeIsTooHigh() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -261,7 +239,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_liquidity_fee_too_high
     function test_RevertWhen_LiquidityFeeIsTooHigh() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -272,7 +249,6 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    // python: test_reservation_fee_too_high
     function test_RevertWhen_ReservationFeeIsTooHigh() external {
         _registerGroup(OPERATOR, GROUP_SHARE_LIMIT);
 
@@ -283,13 +259,11 @@ contract RegisterTiersInOperatorGridTest is Test {
         registerTiersInOperatorGrid.createEVMScript(owner, _encodeCallData(OPERATOR, tier));
     }
 
-    /// @dev python: operatorGrid.registerGroup(nodeOperator, shareLimit, {"from": owner})
     function _registerGroup(address operator, uint256 shareLimit) private {
         vm.prank(owner);
         operatorGrid.registerGroup(operator, shareLimit);
     }
 
-    /// @dev python: create_calldata([operator], [[tier]])
     function _encodeCallData(address operator, TierParams memory tier)
         private
         pure

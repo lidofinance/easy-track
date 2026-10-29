@@ -21,18 +21,16 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
     uint256 internal constant VALIDATOR_EXIT_FEE_LIMIT = 1 ether;
     /// @dev The maxLiquidityFeeBP, maxReservationFeeBP and maxInfraFeeBP constructor arguments
     uint256 internal constant FACTORY_MAX_FEE_BP = 10000;
-    /// @dev python: node_operator, the operator of the tier with fees above the default tier's
+    /// @dev The operator of the tier with fees above the default tier's
     address internal constant OPERATOR = address(1);
     /// @dev The id of the first tier registered after the default one
     uint256 internal constant REGISTERED_TIER_ID = 1;
-    /// @dev python: tier_infra_fee, tier_liquidity_fee and tier_reservation_fee
     uint256 internal constant TIER_INFRA_FEE_BP = 5000;
     uint256 internal constant TIER_LIQUIDITY_FEE_BP = 4000;
     uint256 internal constant TIER_RESERVATION_FEE_BP = 3000;
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
-    /// @dev python: accounts[1] and accounts[2] as vault addresses
     address internal vault = makeAddr("vault");
     address internal anotherVault = makeAddr("anotherVault");
 
@@ -67,7 +65,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         vm.label(address(updateVaultsFeesInOperatorGrid), "updateVaultsFeesInOperatorGrid");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(updateVaultsFeesInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -103,13 +100,11 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         updateVaultsFeesInOperatorGrid.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_vaults_array
     function test_RevertWhen_VaultsAreEmpty() external {
         address[] memory vaults = new address[](0);
         uint256[] memory fees = new uint256[](0);
@@ -118,7 +113,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         updateVaultsFeesInOperatorGrid.createEVMScript(owner, abi.encode(vaults, fees, fees, fees));
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         address[] memory vaults = Arrays.list(stranger);
 
@@ -138,7 +132,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_zero_vault_address
     function test_RevertWhen_VaultIsZero() external {
         vm.expectRevert("ZERO_VAULT");
         updateVaultsFeesInOperatorGrid.createEVMScript(
@@ -152,7 +145,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_fees_exceed_tier_limits
     function test_RevertWhen_FeesExceedTierLimits() external {
         _connectVault(stranger);
 
@@ -167,7 +159,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         updateVaultsFeesInOperatorGrid.createEVMScript(owner, _encodeCallData(stranger, 30, 30, 11));
     }
 
-    // python: test_create_evm_script_single_vault
     function test_CreatesEVMScriptForSingleVault() external {
         _connectVault(stranger);
 
@@ -178,7 +169,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         assertEq(evmScript, _updateVaultFeesScript(stranger, 20, 30, 5), "evmScript");
     }
 
-    // python: test_create_evm_script_multiple_vaults
     function test_CreatesEVMScriptForMultipleVaults() external {
         _connectVault(vault);
         _connectVault(anotherVault);
@@ -199,7 +189,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         address[] memory vaults = Arrays.list(vault, anotherVault);
         uint256[] memory infraFeesBP = Arrays.list(20, 15);
@@ -221,7 +210,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         assertEq(decodedReservationFeesBP, reservationFeesBP, "reservationFeesBP");
     }
 
-    // python: test_can_create_evm_script_with_fees_up_to_tier_limits
     function test_AllowsFeesUpToTierLimits() external {
         _connectVault(stranger);
         _moveVaultToTierWithHighFees(stranger);
@@ -250,7 +238,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_deploy_with_zero_adapter
     function test_RevertWhen_AdapterIsZero() external {
         vm.prank(owner);
         vm.expectRevert("ZERO_ADAPTER");
@@ -264,7 +251,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_deploy_with_zero_lido_locator
     function test_RevertWhen_LidoLocatorIsZero() external {
         vm.prank(owner);
         vm.expectRevert("ZERO_LIDO_LOCATOR");
@@ -278,7 +264,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_deploy_with_max_liquidity_fee_too_high
     function test_RevertWhen_DeployedWithMaxLiquidityFeeTooHigh() external {
         vm.prank(owner);
         vm.expectRevert("LIQUIDITY_FEE_TOO_HIGH");
@@ -292,7 +277,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_deploy_with_max_reservation_fee_too_high
     function test_RevertWhen_DeployedWithMaxReservationFeeTooHigh() external {
         vm.prank(owner);
         vm.expectRevert("RESERVATION_FEE_TOO_HIGH");
@@ -306,7 +290,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_deploy_with_max_infra_fee_too_high
     function test_RevertWhen_DeployedWithMaxInfraFeeTooHigh() external {
         vm.prank(owner);
         vm.expectRevert("INFRA_FEE_TOO_HIGH");
@@ -320,7 +303,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    // python: test_fees_exceed_max_limits
     function test_RevertWhen_FeesExceedMaxLimits() external {
         // maxLiquidityFeeBP 3000, maxReservationFeeBP 2000 and maxInfraFeeBP 4000, all below the
         // tier the vault is moved onto
@@ -347,14 +329,11 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         assertEq(evmScript, _updateVaultFeesScript(stranger, 4000, 3000, 2000), "evmScript");
     }
 
-    /// @dev python: vault_hub_stub.connectVault(vault, {"from": owner})
     function _connectVault(address connected) private {
         vm.prank(owner);
         vaultHub.connectVault(connected);
     }
 
-    /// @dev python: a group of share limit 10000 for node_operator, one tier of
-    /// (10000, 200, 100, 5000, 4000, 3000) under it, and `moved` set onto that tier
     function _moveVaultToTierWithHighFees(address moved) private {
         TierParams[] memory tiers = Arrays.list(
             Vaults.tierParams(
@@ -369,7 +348,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         vm.stopPrank();
     }
 
-    /// @dev python: create_calldata([vault], [infraFeeBP], [liquidityFeeBP], [reservationFeeBP])
     function _encodeCallData(
         address single,
         uint256 infraFeeBP,
@@ -384,7 +362,6 @@ contract UpdateVaultsFeesInOperatorGridTest is Test {
         );
     }
 
-    /// @dev python: adapter.updateVaultFees.encode_input(vault, infra, liquidity, reservation)
     function _updateVaultFeesCallData(
         address single,
         uint256 infraFeeBP,

@@ -30,7 +30,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
     StakingRouterStub internal stakingRouterStub;
     UpdateStakingModuleShareLimits internal updateStakingModuleShareLimits;
 
-    /// @dev python: _deploy_router and _deploy_factory, rebuilt before every test
     function setUp() public {
         stakingRouterStub = new StakingRouterStub();
         stakingRouterStub.setStakingModule(MODULE_ID, owner);
@@ -44,13 +43,11 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         vm.label(address(updateStakingModuleShareLimits), "updateStakingModuleShareLimits");
     }
 
-    // python: test_deploy_reverts_on_zero_staking_router
     function test_RevertWhen_StakingRouterIsZero() external {
         vm.expectRevert("ZERO_STAKING_ROUTER");
         _deployFactory(address(0), MODULE_ID);
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         uint16 newStakeShareLimit = CURRENT_STAKE_SHARE_LIMIT + 200;
         uint16 newPriorityExitShareThreshold = CURRENT_PRIORITY_EXIT_SHARE_THRESHOLD - 150;
@@ -73,7 +70,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    // python: test_reverts_if_stake_share_limit_changed
     function test_RevertWhen_StakeShareLimitChanged() external {
         bytes memory callData = _callData(
             CURRENT_STAKE_SHARE_LIMIT,
@@ -92,7 +88,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         updateStakingModuleShareLimits.createEVMScript(owner, callData);
     }
 
-    // python: test_reverts_if_priority_exit_threshold_changed
     function test_RevertWhen_PriorityExitShareThresholdChanged() external {
         bytes memory callData = _callData(
             CURRENT_STAKE_SHARE_LIMIT,
@@ -111,7 +106,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         updateStakingModuleShareLimits.createEVMScript(owner, callData);
     }
 
-    // python: test_reverts_when_stake_share_limit_delta_exceeds_cap
     function test_RevertWhen_StakeShareLimitDeltaExceedsCap() external {
         vm.expectRevert("STAKE_SHARE_LIMIT_DELTA_EXCEEDED");
         updateStakingModuleShareLimits.createEVMScript(
@@ -125,7 +119,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    // python: test_reverts_when_priority_exit_threshold_delta_exceeds_cap
     function test_RevertWhen_PriorityExitShareThresholdDeltaExceedsCap() external {
         vm.expectRevert("PRIORITY_EXIT_SHARE_THRESHOLD_DELTA_EXCEEDED");
         updateStakingModuleShareLimits.createEVMScript(
@@ -140,7 +133,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    // python: test_reverts_when_new_stake_share_exceeds_new_priority_exit_threshold
     function test_RevertWhen_NewStakeShareLimitExceedsNewPriorityExitShareThreshold() external {
         vm.expectRevert("INVALID_SHARE_PARAMS");
         updateStakingModuleShareLimits.createEVMScript(
@@ -154,7 +146,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    // python: test_reverts_when_new_priority_exit_threshold_exceeds_max_bp
     function test_RevertWhen_NewPriorityExitShareThresholdExceedsMaxBP() external {
         vm.expectRevert("INVALID_SHARE_PARAMS");
         updateStakingModuleShareLimits.createEVMScript(
@@ -168,7 +159,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    // python: test_reverts_when_no_changes
     function test_RevertWhen_NoChanges() external {
         vm.expectRevert("NO_CHANGES");
         updateStakingModuleShareLimits.createEVMScript(
@@ -182,7 +172,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    // python: test_reverts_if_staking_module_does_not_exist
     function test_RevertWhen_StakingModuleDoesNotExist() external {
         StakingRouterStub emptyStakingRouterStub = new StakingRouterStub();
         UpdateStakingModuleShareLimits factory =
@@ -192,7 +181,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         factory.createEVMScript(owner, _callData(0, 100, 0, 100));
     }
 
-    // python: test_decode_call_data
     function test_DecodesEVMScriptCallData() external view {
         IUpdateStakingModuleShareLimits.ModuleShareParams memory params =
             updateStakingModuleShareLimits.decodeEVMScriptCallData(_callData(1, 2, 3, 4));
@@ -203,7 +191,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         assertEq(params.newPriorityExitShareThreshold, 4, "newPriorityExitShareThreshold");
     }
 
-    // python: test_only_trusted_caller
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         updateStakingModuleShareLimits.createEVMScript(
@@ -217,7 +204,7 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    /// @dev python: _deploy_factory_for_module_id, deployed by the owner
+    /// @dev Deploys a factory for `moduleId` on `stakingRouter`, by the owner
     function _deployFactory(address stakingRouter, uint256 moduleId)
         private
         returns (UpdateStakingModuleShareLimits)
@@ -235,7 +222,6 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    /// @dev python: C, eth_abi.encode of the four uint16 values
     function _callData(
         uint16 currentStakeShareLimit,
         uint16 newStakeShareLimit,
@@ -250,8 +236,9 @@ contract UpdateStakingModuleShareLimitsTest is Test {
         );
     }
 
-    /// @dev python: encode_call_script of validateParams over the raw calldata, then
-    /// router.updateModuleShares. The struct encodes to the same four words as the calldata
+    /// @dev The expected EVM script: `validateParams` over the raw calldata, then
+    /// `updateModuleShares` on the router. The struct encodes to the same four words as the
+    /// calldata
     function _updateModuleSharesScript(
         bytes memory callData,
         uint16 newStakeShareLimit,

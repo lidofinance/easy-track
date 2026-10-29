@@ -47,7 +47,6 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
         evmScriptFactory = address(factory);
     }
 
-    // python: test_allow_consolidation_pair_via_motion_scenario
     function testFork_AllowsConsolidationPair() external {
         (uint256 sourceOperatorId, uint256 targetOperatorId) = _createLinkedConsolidationPair();
 
@@ -63,7 +62,6 @@ contract AllowConsolidationPairTest is EasyTrackScenarioBase {
         );
     }
 
-    // python: test_allow_consolidation_pair_overwrites_submitter_via_second_motion
     function testFork_UpdatesSubmitterOfAllowedPair() external {
         (uint256 sourceOperatorId, uint256 targetOperatorId) = _createLinkedConsolidationPair();
         address newSubmitter = makeAddr("newSubmitter");

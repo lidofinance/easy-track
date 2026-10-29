@@ -40,7 +40,6 @@ abstract contract SettleGeneralDelayedPenaltyTest is EasyTrackScenarioBase {
         creator = factory.trustedCaller();
     }
 
-    // python: test_settle_general_delayed_penalty_scenario
     function testFork_SettlesLockedPenalty() external {
         (uint256 nodeOperatorId, uint256 nonce) = _createOperatorWithLockedPenalty();
         // the reported penalty + the module's fixed additional fine

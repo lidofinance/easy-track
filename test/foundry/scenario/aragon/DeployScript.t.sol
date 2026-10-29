@@ -52,7 +52,6 @@ contract DeployScriptTest is EasyTrackScenarioBase {
         evmScriptExecutor = deployment.evmScriptExecutor;
     }
 
-    // python: test_deploy_script
     function testFork_DeploysEasyTrackWired() external view {
         _assertEasyTrackSettings();
         _assertEasyTrackRoles();

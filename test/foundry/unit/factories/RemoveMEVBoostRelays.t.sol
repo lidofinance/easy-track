@@ -12,7 +12,6 @@ import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
 import {MEVBoostRelays} from "test/foundry/unit/helpers/MEVBoostRelays.sol";
 
 contract RemoveMEVBoostRelaysTest is Test {
-    /// @dev python: range(4) of test_remove_multiple_relays
     uint256 internal constant MULTIPLE_RELAYS_COUNT = 4;
 
     address internal owner = makeAddr("owner");
@@ -33,7 +32,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         vm.label(address(removeMEVBoostRelays), "removeMEVBoostRelays");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(removeMEVBoostRelays.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -43,7 +41,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data_with_single_relay
     function test_DecodesEVMScriptCallDataWithSingleRelay() external view {
         string[] memory uris = MEVBoostRelays.relayURIs(1);
 
@@ -52,7 +49,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(decoded, uris, "relayURIs");
     }
 
-    // python: test_decode_evm_script_call_data_with_multiple_relays
     function test_DecodesEVMScriptCallDataWithMultipleRelays() external view {
         string[] memory uris = MEVBoostRelays.relayURIs(2);
 
@@ -61,7 +57,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(decoded, uris, "relayURIs");
     }
 
-    // python: test_decode_evm_script_call_data_with_max_relays
     function test_DecodesEVMScriptCallDataWithMaxRelays() external view {
         string[] memory uris = MEVBoostRelays.exampleURIs(MEVBoostRelays.MAX_NUM_RELAYS);
 
@@ -70,13 +65,11 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(decoded, uris, "relayURIs");
     }
 
-    // python: test_decode_evm_script_call_data_with_empty_calldata
     function test_RevertWhen_DecodingEmptyCallData() external {
         vm.expectRevert(bytes(""));
         removeMEVBoostRelays.decodeEVMScriptCallData("");
     }
 
-    // python: test_remove_relay
     function test_RemovesRelay() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
         MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
@@ -90,7 +83,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(evmScript, _removeRelaysScript(uris), "evmScript");
     }
 
-    // python: test_remove_multiple_relays
     function test_RemovesMultipleRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MULTIPLE_RELAYS_COUNT);
@@ -109,7 +101,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(evmScript, _removeRelaysScript(uris), "evmScript");
     }
 
-    // python: test_remove_max_num_relays
     function test_RemovesMaxNumRelays() external {
         IMEVBoostRelayAllowedList.Relay[] memory relays =
             MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
@@ -128,7 +119,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(evmScript, _removeRelaysScript(uris), "evmScript");
     }
 
-    // python: test_can_remove_all_relays_in_allow_list
     function test_RemovesAllRelaysInAllowList() external {
         string[] memory uris = MEVBoostRelays.relayURIs(MEVBoostRelays.RELAYS_COUNT);
 
@@ -149,13 +139,11 @@ contract RemoveMEVBoostRelaysTest is Test {
         assertEq(evmScript, _removeRelaysScript(uris), "evmScript");
     }
 
-    // python: test_cannot_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         removeMEVBoostRelays.createEVMScript(stranger, "");
     }
 
-    // python: test_cannot_remove_relay_with_empty_calldata
     function test_RevertWhen_RelayUrisAreEmpty() external {
         string[] memory uris = new string[](0);
 
@@ -163,7 +151,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
     }
 
-    // python: test_cannot_remove_relay_with_empty_relay_uri
     function test_RevertWhen_RelayUriIsEmpty() external {
         string[] memory uris = Arrays.list(string(""));
 
@@ -171,7 +158,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
     }
 
-    // python: test_cannot_edit_multiple_relays_when_last_not_in_allow_list
     function test_RevertWhen_LastRelayIsNotInAllowList() external {
         string[] memory uris =
             MEVBoostRelays.exampleURIs(mevBoostRelayAllowedListStub.get_relays_amount() + 1);
@@ -180,7 +166,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
     }
 
-    // python: test_cannot_remove_more_than_max
     function test_RevertWhen_RemovingMoreThanMaxRelays() external {
         string[] memory uris = MEVBoostRelays.exampleURIs(MEVBoostRelays.MAX_NUM_RELAYS + 1);
 
@@ -188,7 +173,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
     }
 
-    // python: test_cannot_remove_relay_uri_not_in_list
     function test_RevertWhen_RelayUriIsNotInList() external {
         string[] memory uris = MEVBoostRelays.relayURIs(1);
 
@@ -196,7 +180,6 @@ contract RemoveMEVBoostRelaysTest is Test {
         removeMEVBoostRelays.createEVMScript(owner, abi.encode(uris));
     }
 
-    // python: test_cannot_remove_relays_with_duplicate_uri
     function test_RevertWhen_RelaysHaveDuplicateUri() external {
         IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
         MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);

@@ -34,7 +34,6 @@ abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenario
         creator = factory.trustedCaller();
     }
 
-    // python: test_submit_withdrawals_scenario, the single validator case
     function testFork_ReportsSlashedValidatorAsWithdrawn() external {
         uint256 nodeOperatorId = _createSlashedValidator();
         bytes memory callData = _encodeWithdrawn(nodeOperatorId, EXIT_BALANCE, SLASHING_PENALTY);
@@ -48,7 +47,6 @@ abstract contract ReportWithdrawalsForSlashedValidatorsTest is EasyTrackScenario
         _assertValidatorWithdrawnEmitted(vm.getRecordedLogs(), nodeOperatorId);
     }
 
-    // python: test_submit_withdrawals_scenario, the two validators case
     function testFork_ReportsTwoSlashedValidatorsAsWithdrawn() external {
         uint256 firstOperatorId = _createSlashedValidator();
         uint256 secondOperatorId = _createSlashedValidator();

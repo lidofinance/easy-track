@@ -19,7 +19,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
 
     address internal owner = makeAddr("owner");
     address internal stranger = makeAddr("stranger");
-    /// @dev python: operator1 and operator2, accounts[5] and accounts[6]
     address internal nodeOperator = makeAddr("nodeOperator");
     address internal anotherNodeOperator = makeAddr("anotherNodeOperator");
 
@@ -43,7 +42,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(updateGroupsShareLimitInOperatorGrid.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -53,13 +51,11 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(stranger, "");
     }
 
-    // python: test_empty_node_operators_array
     function test_RevertWhen_NodeOperatorsAreEmpty() external {
         address[] memory nodeOperators = new address[](0);
         uint256[] memory shareLimits = new uint256[](0);
@@ -70,7 +66,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_array_length_mismatch
     function test_RevertWhen_ArrayLengthsMismatch() external {
         vm.expectRevert("ARRAY_LENGTH_MISMATCH");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
@@ -78,7 +73,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_zero_node_operator
     function test_RevertWhen_NodeOperatorIsZero() external {
         vm.expectRevert("ZERO_NODE_OPERATOR");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
@@ -86,7 +80,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_group_not_exists
     function test_RevertWhen_GroupDoesNotExist() external {
         vm.expectRevert("GROUP_NOT_EXISTS");
         updateGroupsShareLimitInOperatorGrid.createEVMScript(
@@ -94,7 +87,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_share_limit_too_high
     function test_RevertWhen_ShareLimitIsTooHigh() external {
         _registerGroup(nodeOperator, 5000);
 
@@ -106,7 +98,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external {
         _registerGroup(nodeOperator, 1000);
         _registerGroup(anotherNodeOperator, 1500);
@@ -121,7 +112,6 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         assertEq(evmScript, _updateGroupShareLimitsScript(nodeOperators, shareLimits), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         address[] memory nodeOperators = Arrays.list(nodeOperator, anotherNodeOperator);
         uint256[] memory shareLimits = Arrays.list(2000, 3000);
@@ -134,13 +124,11 @@ contract UpdateGroupsShareLimitInOperatorGridTest is Test {
         assertEq(decodedShareLimits, shareLimits, "shareLimits");
     }
 
-    // python: test_cannot_update_share_limit_with_wrong_calldata_length
     function test_RevertWhen_CallDataLengthIsWrong() external {
         vm.expectRevert(bytes(""));
         updateGroupsShareLimitInOperatorGrid.createEVMScript(owner, hex"00");
     }
 
-    /// @dev python: operatorGrid.registerGroup(operator, shareLimit, {"from": owner})
     function _registerGroup(address operator, uint256 shareLimit) private {
         vm.prank(owner);
         operatorGrid.registerGroup(operator, shareLimit);

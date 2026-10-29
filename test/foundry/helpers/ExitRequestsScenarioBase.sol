@@ -55,8 +55,9 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         vm.label(address(registry), string.concat("StakingModule", vm.toString(id)));
     }
 
-    /// @dev python: the factory fixtures. The factory targets the module's registry and is
-    ///      registered with the oracle's `submitExitRequestsHash`, unless it already is
+    /// @dev Binds `factory` as the one under test, asserts it targets the module's registry and
+    ///      registers it in Easy Track with the oracle's `submitExitRequestsHash`, unless it
+    ///      already is
     function _bindFactory(address factory, string memory key) internal {
         evmScriptFactory = factory;
 
@@ -74,16 +75,15 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         );
     }
 
-    /// @dev python: grant_submit_report_hash_role. The executor may submit hashes
+    /// @dev Grants the executor `SUBMIT_REPORT_HASH_ROLE` on the oracle
     function _grantSubmitReportHashRole() internal {
         _grantRole(address(oracle), oracle.SUBMIT_REPORT_HASH_ROLE(), evmScriptExecutor);
     }
 
     // --- operators and keys ---
 
-    /// @dev python: ensure_single_operator_with_keys, by deposited keys: the factories accept
-    ///      only those, and the keys the Python tops an operator up with are never deposited.
-    ///      The first operator holding at least `minDeposited`
+    /// @dev The first operator holding at least `minDeposited` deposited keys, the only keys the
+    ///      factories accept
     function _operatorWithDepositedKeys(uint256 minDeposited)
         internal
         view
@@ -104,8 +104,7 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         );
     }
 
-    /// @dev python: get_operator_keys. The operator's first `count` keys, each at its index and
-    ///      each deposited
+    /// @dev The operator's first `count` keys, each at its index and each deposited
     function _operatorKeys(uint256 nodeOperatorId, uint256 count)
         internal
         view
@@ -143,8 +142,7 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
 
     // --- requests ---
 
-    /// @dev python: build_exit_requests. One request per key, the key's index as both the
-    ///      validator index and the pubkey index
+    /// @dev One request per key, the key's index as both the validator index and the pubkey index
     function _buildExitRequests(uint256 nodeOperatorId, bytes[] memory keys)
         internal
         view
@@ -156,7 +154,7 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         }
     }
 
-    /// @dev python: exit_request_input_factory, for the module under test
+    /// @dev One exit request for the module under test
     function _request(
         uint256 nodeOpId,
         uint64 valIndex,
@@ -166,8 +164,8 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         return ExitRequestInput(moduleId, nodeOpId, valIndex, valPubkey, valPubKeyIndex);
     }
 
-    /// @dev python: create_exit_request_data. 64 bytes per request: the module id as 3 bytes,
-    ///      the operator id as 5, the validator index as 8, then the 48-byte pubkey
+    /// @dev Packs the requests, 64 bytes each: the module id as 3 bytes, the operator id as 5, the
+    ///      validator index as 8, then the 48-byte pubkey
     function _packExitRequests(ExitRequestInput[] memory requests)
         internal
         pure
@@ -185,16 +183,17 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         }
     }
 
-    /// @dev python: create_exit_requests_hashes. `abi.encode`, not `encodePacked`
+    /// @dev The hash the oracle expects, `keccak256(abi.encode(packed, DATA_FORMAT_LIST))`, with
+    ///      `abi.encode` and not `encodePacked`
     function _exitRequestsHash(bytes memory packed) internal pure returns (bytes32) {
         return keccak256(abi.encode(packed, DATA_FORMAT_LIST));
     }
 
     // --- motion ---
 
-    /// @dev python: run_motion_and_check_events. `motionCreator` creates the motion, the batch
-    ///      cannot be delivered before it is enacted, the enactment submits the batch's hash,
-    ///      then `submitter` delivers the batch and the oracle requests every exit
+    /// @dev `motionCreator` creates the motion, the batch cannot be delivered before it is enacted,
+    ///      the enactment submits the batch's hash, then `submitter` delivers the batch and the
+    ///      oracle requests every exit
     function _runMotionAndCheckEvents(
         address motionCreator,
         address submitter,
@@ -227,8 +226,8 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
         _assertExitsRequested(vm.getRecordedLogs(), requests);
     }
 
-    /// @dev python: validate_exit_events. One `ValidatorExitRequest` per request, in order, for
-    ///      its module, operator, validator index and pubkey
+    /// @dev Asserts one `ValidatorExitRequest` log per request, in order, for its module, operator,
+    ///      validator index and pubkey
     function _assertExitsRequested(Vm.Log[] memory logs, ExitRequestInput[] memory requests)
         private
         view
@@ -261,7 +260,7 @@ abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
 
     // --- bytes ---
 
-    /// @dev python: make_test_bytes. `i` as 3 big-endian bytes, then `length - 3` copies of
+    /// @dev Deterministic test bytes: `i` as 3 big-endian bytes, then `length - 3` copies of
     ///      `i % 256`
     function _makeTestBytes(uint256 i, uint256 length) internal pure returns (bytes memory result) {
         require(length >= 3, "Length must be at least 3 bytes");

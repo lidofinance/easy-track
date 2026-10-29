@@ -16,7 +16,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
     uint256 internal constant NODE_OPERATOR_ID = 0;
     uint256 internal constant NEW_STAKING_LIMIT = 1;
     uint256 internal constant TOO_HIGH_STAKING_LIMIT = 100000;
-    /// @dev python: the three signing keys `addSigningKeysOperatorBH` adds before the limit is raised
     uint64 internal constant SIGNING_KEYS_COUNT = 3;
 
     address internal owner = makeAddr("owner");
@@ -38,7 +37,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         vm.label(address(increaseVettedValidatorsLimit), "increaseVettedValidatorsLimit");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(
             address(increaseVettedValidatorsLimit.nodeOperatorsRegistry()),
@@ -47,7 +45,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_NOT_NODE_OPERATOR_OR_MANAGER");
         increaseVettedValidatorsLimit.createEVMScript(
@@ -55,7 +52,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         );
     }
 
-    // python: test_create_evm_script_called_when_operator_disabled
     function test_RevertWhen_NodeOperatorIsDisabled() external {
         nodeOperatorsRegistryStub.setActive(NODE_OPERATOR_ID, false);
 
@@ -65,7 +61,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         );
     }
 
-    // python: test_revert_on_not_enough_signing_keys
     function test_RevertWhen_NotEnoughSigningKeys() external {
         vm.expectRevert("NOT_ENOUGH_SIGNING_KEYS");
         increaseVettedValidatorsLimit.createEVMScript(
@@ -73,7 +68,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         );
     }
 
-    // python: test_revert_on_new_value_is_too_low
     function test_RevertWhen_StakingLimitIsTooLow() external {
         vm.expectRevert("STAKING_LIMIT_TOO_LOW");
         increaseVettedValidatorsLimit.createEVMScript(
@@ -81,7 +75,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         );
     }
 
-    // python: test_create_evm_script_from_reward_address
     function test_CreatesEVMScriptFromRewardAddress() external {
         uint256 newStakingLimit = _addSigningKeys();
 
@@ -92,7 +85,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         assertEq(evmScript, _expectedEVMScript(newStakingLimit), "evmScript");
     }
 
-    // python: test_create_evm_script_from_manager
     function test_CreatesEVMScriptFromManager() external {
         nodeOperatorsRegistryStub.setCanPerform(
             nodeOperatorManager, Roles.MANAGE_SIGNING_KEYS_ROLE, NODE_OPERATOR_ID, true
@@ -106,7 +98,6 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         assertEq(evmScript, _expectedEVMScript(newStakingLimit), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         IncreaseVettedValidatorsLimit.VettedValidatorsLimitInput memory input =
             increaseVettedValidatorsLimit.decodeEVMScriptCallData(
@@ -117,8 +108,7 @@ contract IncreaseVettedValidatorsLimitTest is Test {
         assertEq(input.stakingLimit, NEW_STAKING_LIMIT, "stakingLimit");
     }
 
-    /// @dev python: addSigningKeysOperatorBH(0, 3, pubkeys, signatures). Returns the staking limit
-    /// that vets the added keys
+    /// @dev Adds signing keys to the operator and returns the staking limit that vets them
     function _addSigningKeys() private returns (uint256) {
         nodeOperatorsRegistryStub.setTotalSigningKeys(
             NODE_OPERATOR_ID, nodeOperatorsRegistryStub.totalSigningKeys() + SIGNING_KEYS_COUNT

@@ -31,7 +31,6 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         vm.label(address(increaseNodeOperatorStakingLimit), "increaseNodeOperatorStakingLimit");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(
             address(increaseNodeOperatorStakingLimit.nodeOperatorsRegistry()),
@@ -40,13 +39,11 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         );
     }
 
-    // python: test_create_evm_script_different_reward_address
     function test_RevertWhen_CreatorIsNotNodeOperator() external {
         vm.expectRevert("CALLER_IS_NOT_NODE_OPERATOR");
         increaseNodeOperatorStakingLimit.createEVMScript(stranger, _encodeCallData());
     }
 
-    // python: test_create_evm_script_node_operator_disabled
     function test_RevertWhen_NodeOperatorIsDisabled() external {
         nodeOperatorsRegistryStub.setActive(NODE_OPERATOR_ID, false);
 
@@ -54,7 +51,6 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         increaseNodeOperatorStakingLimit.createEVMScript(nodeOperator, _encodeCallData());
     }
 
-    // python: test_create_evm_script_new_staking_limit_too_low
     function test_RevertWhen_StakingLimitIsTooLow() external {
         nodeOperatorsRegistryStub.setStakingLimit(NODE_OPERATOR_ID, STAKING_LIMIT_ABOVE_NEW);
         assertEq(nodeOperatorsRegistryStub.stakingLimit(), STAKING_LIMIT_ABOVE_NEW, "stakingLimit");
@@ -63,7 +59,6 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         increaseNodeOperatorStakingLimit.createEVMScript(nodeOperator, _encodeCallData());
     }
 
-    // python: test_create_evm_script_new_staking_limit_less_than_total_signing_keys
     function test_RevertWhen_NotEnoughSigningKeys() external {
         nodeOperatorsRegistryStub.setTotalSigningKeys(
             NODE_OPERATOR_ID, TOTAL_SIGNING_KEYS_BELOW_NEW
@@ -78,7 +73,6 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         increaseNodeOperatorStakingLimit.createEVMScript(nodeOperator, _encodeCallData());
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         bytes memory evmScript =
             increaseNodeOperatorStakingLimit.createEVMScript(nodeOperator, _encodeCallData());
@@ -97,7 +91,6 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         );
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         (uint256 nodeOperatorId, uint256 stakingLimit) =
             increaseNodeOperatorStakingLimit.decodeEVMScriptCallData(_encodeCallData());
@@ -106,7 +99,6 @@ contract IncreaseNodeOperatorStakingLimitTest is Test {
         assertEq(stakingLimit, STAKING_LIMIT, "stakingLimit");
     }
 
-    /// @dev python: CALLDATA
     function _encodeCallData() private pure returns (bytes memory) {
         return abi.encode(NODE_OPERATOR_ID, STAKING_LIMIT);
     }

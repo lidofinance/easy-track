@@ -49,13 +49,12 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         uint256 recipientsSharesBefore;
     }
 
-    /// @dev python: MAX_SECONDS_IN_MONTH, how far the Brownie suite sleeps for "a month"
+    /// @dev The longest month, how far the tests warp for a month
     uint256 internal constant MAX_SECONDS_IN_MONTH = 31 days;
 
-    /// @dev python: STETH_ERROR_MARGIN_WEI, the rounding a stETH transfer may lose
+    /// @dev The rounding a stETH transfer may lose
     uint256 internal constant STETH_ERROR_MARGIN_WEI = 2;
 
-    /// @dev python: allowed_recipients_default_params
     uint256 internal constant LIMIT = 100e18;
     uint256 internal constant PERIOD_DURATION_MONTHS = 1;
     uint256 internal constant SPENT_AMOUNT = 0;
@@ -68,11 +67,9 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
 
     address internal trustedCaller = makeAddr("trustedCaller");
 
-    /// @dev python: recipients, the three `Recipient(address, title)` of the suite
     address[] internal recipients;
     string[] internal titles;
 
-    /// @dev python: the `instances` of the suite, the `deployed_contracts` parameters
     IntegrationTestAddresses.Instance[] internal instances;
 
     IAllowedRecipientsRegistry internal allowedRecipientsRegistry;
@@ -115,15 +112,10 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
     /// @dev The suite's key in the addresses file
     function _suiteKey() internal pure virtual returns (string memory);
 
-    /// @dev python: allowed_recipients_factory and allowed_recipients_builder, the suite's or fresh
     function _bindBuilder(IntegrationTestAddresses.Suite memory suite) internal virtual;
 
-    /// @dev python: the registry fixture's deployment branch, a fresh registry with the default
-    ///      params, the multi-token flavor with a fresh tokens registry
     function _deployRegistry() internal virtual;
 
-    /// @dev python: the factory fixtures' deployment branches, through the flavor's builder with
-    ///      `trustedCaller` over the instance's registry
     function _deployAddFactory() internal virtual returns (address);
 
     function _deployRemoveFactory() internal virtual returns (address);
@@ -142,8 +134,8 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
 
     // --- the suite's and the instance's contracts, bound or deployed as the fixtures do ---
 
-    /// @dev python: easy_track. The suite's deployed Easy Track, or a fresh one with Voting as
-    ///      admin. Either way its executor gets `CREATE_PAYMENTS_ROLE` on Finance, the deployed one
+    /// @dev Binds the suite's deployed Easy Track, or deploys a fresh one with Voting as admin.
+    ///      Either way its executor gets `CREATE_PAYMENTS_ROLE` on Finance, the deployed one
     ///      replacing the parameterized grant it holds on-chain with a plain one.
     function _bindEasyTrack(address deployed) private {
         if (deployed == address(0)) {
@@ -156,8 +148,8 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         _grantPermission(evmScriptExecutor, address(finance), finance.CREATE_PAYMENTS_ROLE());
     }
 
-    /// @dev python: the registry and factory fixtures of `deployed_contracts[name]`. Skips the
-    ///      suite when the chain's addresses file lists no such instance, as pytest collects none.
+    /// @dev Binds the instance's registry and factories and deploys the ones it lacks. Skips the
+    ///      suite when the chain's addresses file lists no such instance.
     function _bindInstance(string memory name) internal {
         (bool found, IntegrationTestAddresses.Instance memory instance) = _instance(name);
         vm.skip(!found, string.concat('no "', name, '" instance in ', config.addresses));
@@ -252,7 +244,6 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
 
     // --- motion drivers ---
 
-    /// @dev python: add_allowed_recipient_by_motion
     function _addRecipientByMotion(address recipient, string memory title) internal {
         _enact(
             addAllowedRecipient, _trustedCaller(addAllowedRecipient), abi.encode(recipient, title)
@@ -261,7 +252,6 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         assertTrue(allowedRecipientsRegistry.isRecipientAllowed(recipient), "recipient allowed");
     }
 
-    /// @dev python: remove_allowed_recipient_by_motion
     function _removeRecipientByMotion(address recipient) internal {
         _enact(
             removeAllowedRecipient, _trustedCaller(removeAllowedRecipient), abi.encode(recipient)
@@ -270,20 +260,17 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         assertFalse(allowedRecipientsRegistry.isRecipientAllowed(recipient), "recipient removed");
     }
 
-    /// @dev python: create_top_up_allowed_recipients_motion
     function _createTopUpMotion(address factory, bytes memory callData) internal returns (uint256) {
         return _createMotion(factory, _trustedCaller(factory), callData);
     }
 
-    /// @dev python: top_up_allowed_recipient_by_motion
     function _topUpByMotion(address factory, bytes memory callData, uint256 spentAmount) internal {
         _enactTopUpMotion(_createTopUpMotion(factory, callData), callData, spentAmount);
     }
 
-    /// @dev python: enact_top_up_allowed_recipient_motion_by_creation_tx with
-    ///      check_top_up_motion_enactment. Enacts the motion once it has ended and asserts the
-    ///      limits state, the balances and the `SpendableAmountChanged` event of the period the
-    ///      enactment falls in. `spentAmount` is what the period already carried.
+    /// @dev Enacts the motion once it has ended and asserts the limits state, the balances and the
+    ///      `SpendableAmountChanged` event of the period the enactment falls in. `spentAmount` is
+    ///      what the period already carried.
     function _enactTopUpMotion(uint256 motionId, bytes memory callData, uint256 spentAmount)
         internal
     {
@@ -329,9 +316,8 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         }
     }
 
-    /// @dev python: check_top_up_motion_enactment, the limits state and the balances after
-    ///      enactment. A stETH balance may lose `STETH_ERROR_MARGIN_WEI` to rounding, so stETH
-    ///      payouts are checked in shares as well.
+    /// @dev Asserts the limits state and the balances after the enactment. A stETH balance may lose
+    ///      `STETH_ERROR_MARGIN_WEI` to rounding, so stETH payouts are checked in shares as well.
     function _assertTopUp(TopUp memory topUp) private view {
         assertTrue(
             allowedRecipientsRegistry.isUnderSpendableBalance(topUp.spendable, 0),
@@ -392,7 +378,7 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
 
     // --- calendar periods, through the date-time contract the registry computes them with ---
 
-    /// @dev python: calc_period_range. The period of `periodDuration` months `timestamp` falls in
+    /// @dev The period of `periodDuration` months `timestamp` falls in
     function _periodRange(uint256 periodDuration, uint256 timestamp)
         internal
         view
@@ -405,14 +391,12 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         periodEnd = dateTime.addMonths(periodStart, periodDuration);
     }
 
-    /// @dev python: advance_chain_time_to_beginning_of_the_next_period
     function _advanceToNextPeriod(uint256 periodDuration) internal {
         (, uint256 periodEnd) = _periodRange(periodDuration, vm.getBlockTimestamp());
 
         vm.warp(periodEnd);
     }
 
-    /// @dev python: advance_chain_time_to_middle_of_the_next_period
     function _advanceToMiddleOfNextPeriod(uint256 periodDuration) internal {
         _advanceToNextPeriod(periodDuration);
 
@@ -422,7 +406,6 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         vm.warp(periodStart + (periodEnd - periodStart) / 2);
     }
 
-    /// @dev python: advance_chain_time_to_n_seconds_before_current_period_end
     function _advanceToBeforePeriodEnd(uint256 periodDuration, uint256 secondsBefore) internal {
         (, uint256 periodEnd) = _periodRange(periodDuration, vm.getBlockTimestamp());
 
@@ -446,7 +429,6 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         }
     }
 
-    /// @dev python: get_balances
     function _balances(address token, address[] memory accounts)
         internal
         view
@@ -465,8 +447,8 @@ abstract contract PayoutsScenarioBase is EasyTrackScenarioBase {
         }
     }
 
-    /// @dev python: access_revert_message. The OpenZeppelin v4 AccessControl reason, the account
-    ///      lowercased as `Strings.toHexString` prints it
+    /// @dev The OpenZeppelin v4 AccessControl reason, the account lowercased as
+    ///      `Strings.toHexString` prints it
     function _accessRevertMessage(address account, bytes32 role)
         internal
         pure
@@ -581,7 +563,7 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
         return abi.encode(token, to, amounts);
     }
 
-    /// @dev python: add_allowed_token, a no-op when the token is already allowed
+    /// @dev Allows `token` in the tokens registry, a no-op when it already is
     function _allowToken(address token) internal {
         _grantTokenRole(allowedTokensRegistry.ADD_TOKEN_TO_ALLOWED_LIST_ROLE());
 
@@ -595,7 +577,7 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
         assertTrue(allowedTokensRegistry.isTokenAllowed(token), "token allowed");
     }
 
-    /// @dev python: remove_allowed_token, a no-op when the token is not allowed
+    /// @dev Removes `token` from the tokens registry, a no-op when it is not allowed
     function _disallowToken(address token) internal {
         _grantTokenRole(allowedTokensRegistry.REMOVE_TOKEN_FROM_ALLOWED_LIST_ROLE());
 
@@ -626,7 +608,7 @@ abstract contract MultiTokenPayoutsScenarioBase is PayoutsScenarioBase {
         allowedTokensRegistry.grantRole(role, agent);
     }
 
-    /// @dev python: ensure_agent_dai_balance, with `deal` where the Python mints from the DAI ward
+    /// @dev Ensures the Agent holds at least `amount` DAI, through `deal`
     function _ensureAgentDaiBalance(uint256 amount) internal {
         if (IERC20(dai).balanceOf(agent) >= amount) {
             return;
@@ -721,8 +703,8 @@ abstract contract SingleTokenPayoutsScenarioBase is PayoutsScenarioBase {
         return abi.encode(to, amounts);
     }
 
-    /// @dev python: ensure_agent_token_balance. Stakes the shortfall for stETH from the Agent, any
-    ///      other token the Agent must already hold.
+    /// @dev Stakes the shortfall for stETH from the Agent, any other token the Agent must already
+    ///      hold.
     function _ensureAgentTokenBalance(uint256 requested) internal {
         address token = ITopUpAllowedRecipientsSingleToken(topUpAllowedRecipients).token();
         uint256 balance = IERC20(token).balanceOf(agent);

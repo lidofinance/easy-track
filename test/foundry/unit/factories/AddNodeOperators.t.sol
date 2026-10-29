@@ -43,7 +43,6 @@ contract AddNodeOperatorsTest is Test {
         vm.label(address(addNodeOperators), "addNodeOperators");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(addNodeOperators.trustedCaller(), owner, "trustedCaller");
         assertEq(
@@ -54,13 +53,11 @@ contract AddNodeOperatorsTest is Test {
         assertEq(address(addNodeOperators.acl()), address(acl), "acl");
     }
 
-    // python: test_create_evm_script_called_by_stranger
     function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
         vm.expectRevert("CALLER_IS_FORBIDDEN");
         addNodeOperators.createEVMScript(stranger, "");
     }
 
-    // python: test_node_operators_count
     function test_RevertWhen_NodeOperatorsCountMismatches() external {
         vm.expectRevert("NODE_OPERATORS_COUNT_MISMATCH");
         addNodeOperators.createEVMScript(
@@ -69,7 +66,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_empty_calldata
     function test_RevertWhen_CallDataIsEmpty() external {
         vm.expectRevert("EMPTY_CALLDATA");
         addNodeOperators.createEVMScript(
@@ -77,7 +73,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_manager_has_duplicate
     function test_RevertWhen_ManagerAddressesHaveDuplicate() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -98,7 +93,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_manager_already_has_permission
     function test_RevertWhen_ManagerAlreadyHasPermission() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         acl.grantPermission(
@@ -115,7 +109,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_manager_already_has_permission_for_node_operator
     function test_RevertWhen_ManagerAlreadyHasPermissionForNodeOperator() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
         _grantManagerRole(FIRST_MANAGER, Op.EQ, 0);
@@ -130,7 +123,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_zero_manager
     function test_RevertWhen_ManagerIsZero() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -143,7 +135,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_zero_reward_address
     function test_RevertWhen_RewardAddressIsZero() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -156,7 +147,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_lido_reward_address
     function test_RevertWhen_RewardAddressIsLido() external {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -167,7 +157,6 @@ contract AddNodeOperatorsTest is Test {
         );
     }
 
-    // python: test_create_evm_script
     function test_CreatesEVMScript() external view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -201,7 +190,6 @@ contract AddNodeOperatorsTest is Test {
         assertEq(evmScript, EVMScripts.encodeCallScript(targets, datas), "evmScript");
     }
 
-    // python: test_decode_evm_script_call_data
     function test_DecodesEVMScriptCallData() external view {
         uint256 nodeOperatorsCount = nodeOperatorsRegistry.getNodeOperatorsCount();
 
@@ -229,8 +217,6 @@ contract AddNodeOperatorsTest is Test {
         assertEq(inputs[1].managerAddress, SECOND_MANAGER, "inputs[1].managerAddress");
     }
 
-    /// @dev python: acl.grantPermissionP(manager, registry, MANAGE_SIGNING_KEYS_ROLE,
-    /// encode_permission_params([Param(0, op, value)]))
     function _grantManagerRole(address manager, Op op, uint256 value) private {
         acl.grantPermissionP(
             manager,

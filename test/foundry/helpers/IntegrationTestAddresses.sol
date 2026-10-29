@@ -29,13 +29,11 @@ library IntegrationTestAddresses {
         Instance[] instances;
     }
 
-    /// @dev python: the `{"name": "default"}` instance of a chain without instances
     string internal constant DEFAULT_INSTANCE = "default";
 
     /// @dev The key of the line that opens an instance
     string private constant INSTANCE_KEY = "- name";
 
-    /// @dev python: the value `try_load_deployed_contract` treats as unset, a fresh deployment
     string private constant LOCAL = "local";
 
     Vm private constant vm = Vm(address(uint160(uint256(keccak256("hevm cheat code")))));

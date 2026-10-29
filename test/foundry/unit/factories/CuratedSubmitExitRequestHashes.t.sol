@@ -47,7 +47,6 @@ contract CuratedSubmitExitRequestHashesTest is Test {
         vm.label(address(curatedSubmitExitRequestHashes), "curatedSubmitExitRequestHashes");
     }
 
-    // python: test_deploy
     function test_SetsInitialState() external view {
         assertEq(
             address(curatedSubmitExitRequestHashes.stakingRouter()),
@@ -66,7 +65,6 @@ contract CuratedSubmitExitRequestHashesTest is Test {
         );
     }
 
-    // python: test_deploy_zero_staking_router
     function test_DeploysWithZeroStakingRouter() external {
         vm.prank(nodeOperator);
         CuratedSubmitExitRequestHashes curated = new CuratedSubmitExitRequestHashes(
@@ -76,7 +74,6 @@ contract CuratedSubmitExitRequestHashesTest is Test {
         assertEq(address(curated.stakingRouter()), address(0), "stakingRouter");
     }
 
-    // python: test_deploy_zero_validators_exit_bus_oracle_stub
     function test_DeploysWithZeroValidatorsExitBusOracle() external {
         vm.prank(nodeOperator);
         CuratedSubmitExitRequestHashes curated = new CuratedSubmitExitRequestHashes(
@@ -86,7 +83,6 @@ contract CuratedSubmitExitRequestHashesTest is Test {
         assertEq(address(curated.validatorsExitBusOracle()), address(0), "validatorsExitBusOracle");
     }
 
-    // python: test_deploy_zero_node_operators_registry
     function test_DeploysWithZeroNodeOperatorsRegistry() external {
         vm.prank(nodeOperator);
         CuratedSubmitExitRequestHashes curated = new CuratedSubmitExitRequestHashes(
@@ -96,7 +92,6 @@ contract CuratedSubmitExitRequestHashesTest is Test {
         assertEq(address(curated.nodeOperatorsRegistry()), address(0), "nodeOperatorsRegistry");
     }
 
-    // python: test_only_node_operator_can_call_create_evm_script_wrong_caller
     function test_RevertWhen_CreatorIsNotNodeOperator() external {
         SubmitExitRequestHashesUtils.ExitRequestInput[] memory requests =
             new SubmitExitRequestHashesUtils.ExitRequestInput[](1);
