@@ -1,0 +1,232 @@
+// SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity 0.8.6;
+
+import {Test} from "forge-std/Test.sol";
+import {EditMEVBoostRelays} from "contracts/EVMScriptFactories/EditMEVBoostRelays.sol";
+import {IMEVBoostRelayAllowedList} from "contracts/interfaces/IMEVBoostRelayAllowedList.sol";
+import {MEVBoostRelayAllowedListStub} from "contracts/test/MEVBoostRelayAllowedListStub.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
+import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
+import {MEVBoostRelays} from "test/foundry/unit/helpers/MEVBoostRelays.sol";
+
+contract EditMEVBoostRelaysTest is Test {
+    address internal owner = makeAddr("owner");
+    address internal stranger = makeAddr("stranger");
+    address internal agent = makeAddr("agent");
+
+    MEVBoostRelayAllowedListStub internal mevBoostRelayAllowedListStub;
+    EditMEVBoostRelays internal editMEVBoostRelays;
+
+    function setUp() public {
+        mevBoostRelayAllowedListStub = new MEVBoostRelayAllowedListStub(agent, owner);
+
+        vm.prank(owner);
+        editMEVBoostRelays = new EditMEVBoostRelays(owner, address(mevBoostRelayAllowedListStub));
+
+        vm.label(address(mevBoostRelayAllowedListStub), "mevBoostRelayAllowedListStub");
+        vm.label(address(editMEVBoostRelays), "editMEVBoostRelays");
+    }
+
+    function test_SetsInitialState() external view {
+        assertEq(editMEVBoostRelays.trustedCaller(), owner, "trustedCaller");
+        assertEq(
+            address(editMEVBoostRelays.mevBoostRelayAllowedList()),
+            address(mevBoostRelayAllowedListStub),
+            "mevBoostRelayAllowedList"
+        );
+    }
+
+    function test_DecodesEVMScriptCallDataWithSingleRelay() external view {
+        IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
+
+        IMEVBoostRelayAllowedList.Relay[] memory decoded =
+            editMEVBoostRelays.decodeEVMScriptCallData(abi.encode(relays));
+
+        MEVBoostRelays.assertRelaysEq(decoded, relays);
+    }
+
+    function test_DecodesEVMScriptCallDataWithMultipleRelays() external view {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
+
+        IMEVBoostRelayAllowedList.Relay[] memory decoded =
+            editMEVBoostRelays.decodeEVMScriptCallData(abi.encode(relays));
+
+        MEVBoostRelays.assertRelaysEq(decoded, relays);
+    }
+
+    function test_EditsSingleRelay() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
+
+        bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+
+        assertEq(evmScript, _editRelaysScript(relays), "evmScript");
+    }
+
+    function test_EditsMultipleRelays() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
+
+        bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+
+        assertEq(evmScript, _editRelaysScript(relays), "evmScript");
+    }
+
+    function test_EditsMaxNumRelays() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, relays);
+
+        bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+
+        assertEq(evmScript, _editRelaysScript(relays), "evmScript");
+    }
+
+    function test_EditsRelayAndSetsDescriptionToEmpty() external {
+        IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);
+
+        relay.description = "";
+        IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(relay);
+
+        bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+
+        assertEq(evmScript, _editRelaysScript(relays), "evmScript");
+    }
+
+    function test_EditsRelayAndSetsOperatorToEmpty() external {
+        IMEVBoostRelayAllowedList.Relay memory relay = MEVBoostRelays.relayAt(0);
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relay);
+
+        relay.operator = "";
+        IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(relay);
+
+        bytes memory evmScript = editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+
+        assertEq(evmScript, _editRelaysScript(relays), "evmScript");
+    }
+
+    function test_RevertWhen_DecodingEmptyCallData() external {
+        vm.expectRevert(bytes(""));
+        editMEVBoostRelays.decodeEVMScriptCallData("");
+    }
+
+    function test_RevertWhen_CreateEVMScriptCalledByStranger() external {
+        vm.expectRevert("CALLER_IS_FORBIDDEN");
+        editMEVBoostRelays.createEVMScript(stranger, "");
+    }
+
+    function test_RevertWhen_RelaysAreEmpty() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays = new IMEVBoostRelayAllowedList.Relay[](0);
+
+        vm.expectRevert("EMPTY_RELAYS_ARRAY");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_RelayUriIsEmpty() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            Arrays.list(MEVBoostRelays.relay("", "operator", true, "description"));
+
+        vm.expectRevert("EMPTY_RELAY_URI");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_RelaysHaveDuplicateUri() external {
+        string memory uri = MEVBoostRelays.relayAt(0).uri;
+        IMEVBoostRelayAllowedList.Relay[] memory relays = Arrays.list(
+            MEVBoostRelays.relay(uri, "operator 1", true, "description 1"),
+            MEVBoostRelays.relay(uri, "operator 2", false, "description 2")
+        );
+        MEVBoostRelays.addRelay(mevBoostRelayAllowedListStub, owner, relays[0]);
+
+        vm.expectRevert("DUPLICATE_RELAY_URI");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_RelayIsNotInAllowList() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(1);
+
+        vm.expectRevert("RELAY_NOT_FOUND");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_RelayIsNotInAllowListWithMultipleRelays() external {
+        MEVBoostRelays.addRelays(mevBoostRelayAllowedListStub, owner, MEVBoostRelays.relays(1));
+
+        IMEVBoostRelayAllowedList.Relay[] memory relays = MEVBoostRelays.relays(2);
+
+        vm.expectRevert("RELAY_NOT_FOUND");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_LastRelayIsNotInAllowList() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.relays(MEVBoostRelays.RELAYS_COUNT);
+        MEVBoostRelays.addRelays(
+            mevBoostRelayAllowedListStub, owner, MEVBoostRelays.relays(relays.length - 1)
+        );
+
+        assertEq(
+            mevBoostRelayAllowedListStub.get_relays_amount(), relays.length - 1, "get_relays_amount"
+        );
+
+        vm.expectRevert("RELAY_NOT_FOUND");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_UriExceedsMaxStringLength() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
+
+        for (uint256 i; i < relays.length; ++i) {
+            relays[i].uri = MEVBoostRelays.stringOf("u", MEVBoostRelays.MAX_STRING_LENGTH + 1);
+        }
+
+        vm.expectRevert("MAX_STRING_LENGTH_EXCEEDED");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_OperatorExceedsMaxStringLength() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
+
+        for (uint256 i; i < relays.length; ++i) {
+            relays[i].operator = MEVBoostRelays.stringOf("o", MEVBoostRelays.MAX_STRING_LENGTH + 1);
+        }
+
+        vm.expectRevert("MAX_STRING_LENGTH_EXCEEDED");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function test_RevertWhen_DescriptionExceedsMaxStringLength() external {
+        IMEVBoostRelayAllowedList.Relay[] memory relays =
+            MEVBoostRelays.generatedRelays(MEVBoostRelays.MAX_NUM_RELAYS);
+
+        for (uint256 i; i < relays.length; ++i) {
+            relays[i].description =
+                MEVBoostRelays.stringOf("d", MEVBoostRelays.MAX_STRING_LENGTH + 1);
+        }
+
+        vm.expectRevert("MAX_STRING_LENGTH_EXCEEDED");
+        editMEVBoostRelays.createEVMScript(owner, abi.encode(relays));
+    }
+
+    function _editRelaysScript(IMEVBoostRelayAllowedList.Relay[] memory relays)
+        private
+        view
+        returns (bytes memory)
+    {
+        bytes[] memory calls = new bytes[](relays.length * 2);
+
+        for (uint256 i; i < relays.length; ++i) {
+            calls[i * 2] = MEVBoostRelays.removeRelayCallData(relays[i].uri);
+            calls[i * 2 + 1] = MEVBoostRelays.addRelayCallData(relays[i]);
+        }
+
+        return EVMScripts.encodeCallScript(address(mevBoostRelayAllowedListStub), calls);
+    }
+}

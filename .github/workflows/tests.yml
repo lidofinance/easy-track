@@ -9,6 +9,7 @@ on:
 env:
   PYTHON_VERSION: "3.10.6"
   POETRY_VERSION: "1.8.5"
+  FOUNDRY_VERSION: "v1.8.3"
 
 jobs:
   unit-tests-datetime:
@@ -90,6 +91,31 @@ jobs:
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
+  foundry-unit-tests:
+    name: Foundry Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Foundry unit tests
+        run: forge test
+
   foundry-scenario-tests:
     name: Foundry Scenario Tests (Hoodi)
     runs-on: ubuntu-latest
@@ -106,11 +132,33 @@ jobs:
 
       - name: Install Foundry
         uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
 
       - name: Install dependencies
         run: npm ci
 
+      - name: Build the contracts the scenario tests deploy from
+        run: forge build
+
       - name: Run Foundry scenario tests on Hoodi
-        run: CHAIN=hoodi forge test -vv
+        run: CHAIN=hoodi FOUNDRY_PROFILE=scenario forge test -vv
         env:
           HOODI_RPC_URL: ${{ secrets.HOODI_RPC_URL }}
+
+  foundry-fmt:
+    name: Foundry Format
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Check the formatting of the Foundry tests and scripts
+        run: forge fmt --check test/foundry script

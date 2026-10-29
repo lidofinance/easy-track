@@ -19,8 +19,6 @@ tags
 .yarn/
 
 # Foundry
-foundry-out/
-.forge-cache/
 out/
 broadcast/
 localhost.json
