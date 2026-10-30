@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 from brownie import chain, network
 
 from utils.config import (
@@ -26,14 +28,20 @@ A. If you want a new token registry to be created when the script is executed:
 
 B. If you prefer to use an existing token registry when the script is executed:
 - fill in the "tokens_registry" parameter in the deploy_config with the address of the token registry that should be used
-- fill in the "tokens" parameter with a list of tokens that are included in the specified registry - this will be used later during testing 
+- fill in the "tokens" parameter with a list of tokens that are included in the specified registry - this will be used later during testing
+- fill in "tokens_registry_deploy_tx_hash" with the hash of the transaction that deployed the registry - the acceptance test reads it
 
     Example:
     tokens=["0x2EB8E9198e647f80CCF62a5E291BCD4a5a3cA68c", "0x86F6c353A0965eB069cD7f4f91C1aFEf8C725551", "0x9715b2786F1053294FC8952dF923b95caB9Aac42"],
     tokens_registry = "0x091c0ec8b4d54a9fcb36269b5d5e5af43309e666",
 
-The "tokens_registry" parameter of the deploy_config is used primarily to verify the method of contracts deployment. 
+The "tokens_registry" parameter of the deploy_config is used primarily to verify the method of contracts deployment.
 Please make sure you have filled deploy_config correctly.
+
+"grant_rights" is honored in both cases. With grant_rights=False the AddAllowedRecipient and RemoveAllowedRecipient
+factories are still deployed, but the EVMScriptExecutor cannot enact their motions until the DAO grants
+ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE and REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE to it on the recipients registry,
+normally in the vote that registers the factories in Easy Track.
 
 """
 
@@ -49,6 +57,20 @@ deploy_config = deployment.AllowedRecipientsMultiTokenFullSetupDeployConfig(
     grant_rights=False,  # permissions to execute AddAllowedRecipient / RemoveAllowedRecipient methods on behalf of trusted_caller
 )
 tokens_registry_deploy_tx_hash = ""  # If tokens_registry is not empty, this tx hash should be specified
+
+
+@dataclass
+class MultiTokenFullSetupDeployment:
+    allowed_recipients_registry: str
+    allowed_tokens_registry: str
+    top_up_allowed_recipients: str
+    add_allowed_recipient: str
+    remove_allowed_recipient: str
+    allowed_recipients_registry_tx_hash: str
+    allowed_tokens_registry_tx_hash: str
+    top_up_allowed_recipients_tx_hash: str
+    add_allowed_recipient_tx_hash: str
+    remove_allowed_recipient_tx_hash: str
 
 
 def main():
@@ -67,6 +89,12 @@ def main():
         log.nb(
             "Please specify the tokens parameter and optionally specify the tokens_registry parameter in the deploy_config."
         )
+        log.nb("Aborting...")
+        return
+
+    if not new_token_registry_is_required and not tokens_registry_deploy_tx_hash:
+        log.nb("The deploy_config filled in incorrectly.")
+        log.nb("Please specify tokens_registry_deploy_tx_hash for the existing tokens_registry.")
         log.nb("Aborting...")
         return
 
@@ -95,6 +123,13 @@ def main():
     log.ok("Titles", deploy_config.titles)
     log.ok("Recipients", deploy_config.recipients)
     log.ok("Trusted caller", deploy_config.trusted_caller)
+    log.ok("Grant add/remove recipient rights to EVMScriptExecutor", deploy_config.grant_rights)
+    if not deploy_config.grant_rights:
+        log.warning(
+            "AddAllowedRecipient and RemoveAllowedRecipient will be deployed but cannot enact motions until "
+            "ADD_RECIPIENT_TO_ALLOWED_LIST_ROLE and REMOVE_RECIPIENT_FROM_ALLOWED_LIST_ROLE are granted to the "
+            "EVMScriptExecutor on the recipients registry, normally by the DAO vote that registers the factories"
+        )
     log.br()
 
     print("Proceed? [yes/no]: ")
@@ -105,85 +140,17 @@ def main():
 
     tx_params = {"from": deployer, "priority_fee": "2 gwei", "max_fee": "50 gwei"}
 
-    if new_token_registry_is_required:
-        tx = allowed_recipients_builder.deployFullSetup(
-            deploy_config.trusted_caller,
-            deploy_config.limit,
-            deploy_config.period,
-            deploy_config.tokens,
-            deploy_config.recipients,
-            deploy_config.titles,
-            deploy_config.spent_amount,
-            tx_params,
-        )
-
-        allowed_recipients_registry_address = tx.events["AllowedRecipientsRegistryDeployed"][
-            "allowedRecipientsRegistry"
-        ]
-        allowed_tokens_registry_address = tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
-        top_up_allowed_recipients_address = tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-        add_allowed_recipient_address = tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
-        remove_allowed_recipient_address = tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
-
-        allowed_recipients_registry_tx_hash = tx.txid
-        tokens_registry_deploy_tx_hash = tx.txid
-        top_up_allowed_recipients_tx_hash = tx.txid
-        add_allowed_recipient_tx_hash = tx.txid
-        remove_allowed_recipient_tx_hash = tx.txid
-
-    else:
-        allowed_tokens_registry_address = deploy_config.tokens_registry
-
-        allowed_recipients_registry_tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
-            deploy_config.limit,
-            deploy_config.period,
-            deploy_config.recipients,
-            deploy_config.titles,
-            deploy_config.spent_amount,
-            deploy_config.grant_rights,
-            tx_params,
-        )
-        allowed_recipients_registry_tx_hash = allowed_recipients_registry_tx.txid
-        allowed_recipients_registry_address = allowed_recipients_registry_tx.events["AllowedRecipientsRegistryDeployed"][
-            "allowedRecipientsRegistry"
-        ]
-
-        add_allowed_recipient_tx = allowed_recipients_builder.deployAddAllowedRecipient(
-            deploy_config.trusted_caller,
-            allowed_recipients_registry_address,
-            tx_params,
-        )
-        add_allowed_recipient_tx_hash = add_allowed_recipient_tx.txid
-        add_allowed_recipient_address = add_allowed_recipient_tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"]
-
-        remove_allowed_recipient_tx = allowed_recipients_builder.deployRemoveAllowedRecipient(
-            deploy_config.trusted_caller,
-            allowed_recipients_registry_address,
-            tx_params,
-        )
-        remove_allowed_recipient_tx_hash = remove_allowed_recipient_tx.txid
-        remove_allowed_recipient_address = remove_allowed_recipient_tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"]
-
-        top_up_allowed_recipients_tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
-            deploy_config.trusted_caller,
-            allowed_recipients_registry_address,
-            deploy_config.tokens_registry,
-            tx_params,
-        )
-        top_up_allowed_recipients_tx_hash = top_up_allowed_recipients_tx.txid
-        top_up_allowed_recipients_address = top_up_allowed_recipients_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"]
-
-        tokens_registry_deploy_tx_hash = globals()["tokens_registry_deploy_tx_hash"]
+    deployed = deploy_full_setup(allowed_recipients_builder, deploy_config, tx_params, tokens_registry_deploy_tx_hash)
 
     log.ok("Allowed recipients Easy Track contracts have been deployed!")
-    log.nb("Deployed AllowedRecipientsRegistry", allowed_recipients_registry_address)
+    log.nb("Deployed AllowedRecipientsRegistry", deployed.allowed_recipients_registry)
     log.nb(
         "Deployed AllowedTokensRegistry" if new_token_registry_is_required else "Used AllowedTokensRegistry",
-        allowed_tokens_registry_address,
+        deployed.allowed_tokens_registry,
     )
-    log.nb("Deployed AddAllowedRecipient", add_allowed_recipient_address)
-    log.nb("Deployed RemoveAllowedRecipient", remove_allowed_recipient_address)
-    log.nb("Deployed TopUpAllowedRecipients", top_up_allowed_recipients_address)
+    log.nb("Deployed AddAllowedRecipient", deployed.add_allowed_recipient)
+    log.nb("Deployed RemoveAllowedRecipient", deployed.remove_allowed_recipient)
+    log.nb("Deployed TopUpAllowedRecipients", deployed.top_up_allowed_recipients)
 
     log.br()
 
@@ -191,9 +158,59 @@ def main():
 
     run_acceptance_test(
         deploy_config,
-        allowed_recipients_registry_tx_hash,
-        tokens_registry_deploy_tx_hash,
-        top_up_allowed_recipients_tx_hash,
-        add_allowed_recipient_tx_hash,
-        remove_allowed_recipient_tx_hash,
+        deployed.allowed_recipients_registry_tx_hash,
+        deployed.allowed_tokens_registry_tx_hash,
+        deployed.top_up_allowed_recipients_tx_hash,
+        deployed.add_allowed_recipient_tx_hash,
+        deployed.remove_allowed_recipient_tx_hash,
+    )
+
+
+def deploy_full_setup(allowed_recipients_builder, deploy_config, tx_params, tokens_registry_deploy_tx_hash=""):
+    """Deploys the multi-token allowed recipients setup contract by contract so that grant_rights is always honored.
+
+    The builder's deployFullSetup is not used: it hard-codes granting the add/remove recipient roles to the executor.
+    The recipients registry goes first: it is the only call with config checks, so a bad config reverts before
+    anything is deployed."""
+    recipients_registry_tx = allowed_recipients_builder.deployAllowedRecipientsRegistry(
+        deploy_config.limit,
+        deploy_config.period,
+        deploy_config.recipients,
+        deploy_config.titles,
+        deploy_config.spent_amount,
+        deploy_config.grant_rights,
+        tx_params,
+    )
+    allowed_recipients_registry = recipients_registry_tx.events["AllowedRecipientsRegistryDeployed"][
+        "allowedRecipientsRegistry"
+    ]
+
+    if deploy_config.tokens_registry:
+        allowed_tokens_registry = deploy_config.tokens_registry
+    else:
+        tokens_registry_tx = allowed_recipients_builder.deployAllowedTokensRegistry(deploy_config.tokens, tx_params)
+        allowed_tokens_registry = tokens_registry_tx.events["AllowedTokensRegistryDeployed"]["allowedTokensRegistry"]
+        tokens_registry_deploy_tx_hash = tokens_registry_tx.txid
+
+    top_up_tx = allowed_recipients_builder.deployTopUpAllowedRecipients(
+        deploy_config.trusted_caller, allowed_recipients_registry, allowed_tokens_registry, tx_params
+    )
+    add_recipient_tx = allowed_recipients_builder.deployAddAllowedRecipient(
+        deploy_config.trusted_caller, allowed_recipients_registry, tx_params
+    )
+    remove_recipient_tx = allowed_recipients_builder.deployRemoveAllowedRecipient(
+        deploy_config.trusted_caller, allowed_recipients_registry, tx_params
+    )
+
+    return MultiTokenFullSetupDeployment(
+        allowed_recipients_registry=allowed_recipients_registry,
+        allowed_tokens_registry=allowed_tokens_registry,
+        top_up_allowed_recipients=top_up_tx.events["TopUpAllowedRecipientsDeployed"]["topUpAllowedRecipients"],
+        add_allowed_recipient=add_recipient_tx.events["AddAllowedRecipientDeployed"]["addAllowedRecipient"],
+        remove_allowed_recipient=remove_recipient_tx.events["RemoveAllowedRecipientDeployed"]["removeAllowedRecipient"],
+        allowed_recipients_registry_tx_hash=recipients_registry_tx.txid,
+        allowed_tokens_registry_tx_hash=tokens_registry_deploy_tx_hash,
+        top_up_allowed_recipients_tx_hash=top_up_tx.txid,
+        add_allowed_recipient_tx_hash=add_recipient_tx.txid,
+        remove_allowed_recipient_tx_hash=remove_recipient_tx.txid,
     )
