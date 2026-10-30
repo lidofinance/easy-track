@@ -30,6 +30,8 @@ jobs:
           poetry install
 
       - name: Run slither
+        env:
+          FOUNDRY_PROFILE: contracts
         run: >
           poetry run slither . --sarif results.sarif --fail-none --compile-force-framework foundry
 
