@@ -154,8 +154,9 @@ contract NodeOperatorsRegistryStub {
         bytes32 _role,
         uint256[] memory _params
     ) external view returns (bool) {
+        // a parametrized permission needs the operator id, as the ACL would evaluate it
         if (_params.length == 0) {
-            return _canPerform[_sender][_role][0];
+            return false;
         }
         return _canPerform[_sender][_role][_params[0]];
     }

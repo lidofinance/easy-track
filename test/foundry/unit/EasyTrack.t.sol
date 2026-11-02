@@ -454,6 +454,41 @@ contract EasyTrackTest is Test {
         assertEq(vm.getRecordedLogs().length, 1, "events");
     }
 
+    function test_WeighsObjectionAtSnapshotBlock() external {
+        _distributeHolderBalances();
+        _registerFactoryStub();
+
+        vm.prank(owner);
+        easyTrack.createMotion(address(evmScriptFactoryStub), "");
+
+        uint256 snapshotBalance = ldo.balanceOf(ldoHolders[0]);
+        uint256 snapshotSupply = ldo.totalSupply();
+
+        vm.roll(block.number + 1);
+
+        vm.prank(agent);
+        assertTrue(ldo.transfer(ldoHolders[0], HOLDER_BALANCE_AMOUNT), "ldo.transfer holder");
+        ldo.mint(stranger, HOLDER_BALANCE_AMOUNT);
+
+        assertFalse(easyTrack.canObjectToMotion(1, stranger), "canObjectToMotion(stranger)");
+
+        vm.prank(stranger);
+        vm.expectRevert("NOT_ENOUGH_BALANCE");
+        easyTrack.objectToMotion(1);
+
+        vm.expectEmit(address(easyTrack));
+        emit MotionObjected(
+            1,
+            ldoHolders[0],
+            snapshotBalance,
+            snapshotBalance,
+            (HUNDRED_PERCENT * snapshotBalance) / snapshotSupply
+        );
+
+        vm.prank(ldoHolders[0]);
+        easyTrack.objectToMotion(1);
+    }
+
     function test_RejectsMotionWhenObjectionsReachThreshold() external {
         _distributeHolderBalances();
         _registerFactoryStub();

@@ -35,12 +35,12 @@ Brownie runs the whole suite on a mainnet fork, the unit tests included, and tak
 
 The unit suite runs with no network. Stand-ins under `unit/stubs/` replace the fork contracts the core tests depend on:
 
-- `MiniMeTokenStub` for LDO. Its snapshot getters return the live balances, which holds because the unit tests never move tokens after a motion is created.
+- `MiniMeTokenStub` for LDO, with the MiniMe checkpoints, so a snapshot getter returns the balance at the block asked for.
 - `CallsScriptStub` for the aragonOS CallsScript the executor delegatecalls into. It keeps the initialization-block guard, the call loop and the revert forwarding.
 - `ACLStub` for the aragonOS ACL the node operator factories read. It keeps the permission store with its parameters and has no permission manager.
 - `BokkyPooBahsDateTimeContract` for the deployed date-time contract the limits checker reads.
 
-Voting, the Agent and Finance are plain addresses. The stubs under `contracts/test/` are reused as the Python fixtures used them. The EIP-7002 withdrawal request fee of `ForceValidatorExitsInVaultHub` is a `vm.mockCall` on the predeploy address, nothing is etched there. The port added two constants and the `getNodeOperatorIsActive` getter to `NodeOperatorsRegistryStub`, the only change under `contracts/`.
+Voting, the Agent and Finance are plain addresses. The stubs under `contracts/test/` are reused as the Python fixtures used them. The EIP-7002 withdrawal request fee of `ForceValidatorExitsInVaultHub` is a `vm.mockCall` on the predeploy address, nothing is etched there. The port added two constants and the `getNodeOperatorIsActive` getter to `NodeOperatorsRegistryStub` and made its `canPerform` refuse empty parameters, as the ACL does for a parametrized permission, the only changes under `contracts/`.
 
 The scenario suite forks a live network. It defaults to Hoodi, where CI runs it, and supports mainnet. Without an RPC URL it skips every contract where Brownie would fail.
 
