@@ -161,6 +161,18 @@ Script requires next ENV variables to be set:
 
 - `DEPLOYER` - address of the account that renounces roles
 
+### Stablecoin top-up factories
+
+Multi-token `AllowedRecipientsBuilder`, `AllowedRecipientsFactory` and `AllowedTokensRegistry` were audited and deployed to mainnet from the [`feature/top-up-allowed-tokens`](https://github.com/lidofinance/easy-track/tree/feature/top-up-allowed-tokens) branch, which contains the audited commit [`52b1b1d`](https://github.com/lidofinance/easy-track/commit/52b1b1d99531a7aa46d8474bef56b157b83f318a).
+
+The branch is read-only and is not merged into `develop`. To keep the bytecode of these contracts identical to the audited version, deploy them only from the tip of that branch. The copies under `contracts/payouts/multi-token` differ only in import paths and exist for tests.
+
+The single-token `AllowedRecipientsBuilderSingleToken` and `AllowedRecipientsFactorySingleToken` can be deployed from `develop`, provided the optimizer is enabled in the Brownie configuration with 200 runs. This reproduces the bytecode of the existing deployments; the `SingleToken` suffix affects only the metadata hash.
+
+New top-up setups are created through the deployed builders with `create_full_setup.py` or `create_single_recipient_setup.py` under `scripts/payouts/single_token/` and `scripts/payouts/multi_token/`. They require no contract compilation and can be run from `develop`.
+
+## Foundry Scripts
+
 The Foundry scripts live in `script/` and compile with the `scenario` profile. A script runs on the anvil fork `just make-fork` started, else on `<CHAIN>_RPC_URL` of the chain `CHAIN` selects, default `hoodi`, as a dry run unless `--broadcast` is passed. The deployer is the account `forge script` signs with, `--account`, `--ledger` or `--private-key`:
 
 ```bash
@@ -168,30 +180,6 @@ just script DeployEasyTrack --account <keystore> --broadcast
 ```
 
 A new factory gets a script next to `DeployEasyTrack.s.sol` on the same base, and a scenario test under `test/foundry/scenario` that runs it on a fork.
-
-### `DeployEasyTrack.s.sol`
-
-The Foundry counterpart of `deploy.py`: deploys main Easy Track contracts with EVM Script factories and appends them to `deployed-<chain>.json`.
-Script requires next ENV variables to be set:
-
-- `LEGO_PROGRAM_VAULT` - address of Lido's LEGO program
-- `LEGO_COMMITTEE_MULTISIG` - address allowed to create motions to top up LEGO program
-- `REWARD_PROGRAMS_MULTISIG` - address allowed to create motions to add, remove or top up reward program
-- `PAUSE_ADDRESS` - address to grant PAUSE_ROLE
-
-### `GrantExecutorPermissions.s.sol`
-
-The Foundry counterpart of `grant_executor_permissions.py`: creates Aragon's Voting to grant EVMScriptExecutor the permissions it lacks of `CREATE_PAYMENTS_ROLE` on Finance and `SET_NODE_OPERATOR_LIMIT_ROLE` on the curated registry. The signing account must hold LDO.
-Script requires next ENV variables to be set:
-
-- `EVM_SCRIPT_EXECUTOR` - address to grant permissions.
-
-### `RevokeAllPermissions.s.sol`
-
-The Foundry counterpart of `revoke_all_permissions.py`: creates Aragon's Voting to revoke all granted permissions from EVMScriptExecutor. The signing account must hold LDO.
-Script requires next ENV variables to be set:
-
-- `EVM_SCRIPT_EXECUTOR` - address to revoke permissions from.
 
 ## Tests
 
