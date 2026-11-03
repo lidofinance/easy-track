@@ -51,4 +51,4 @@ forge fmt --check test/foundry script
 
 ## CI
 
-`tests.yml` runs the unit suite and the format check on every pull request, and the scenario suite on Hoodi.
+`tests.yml` runs the unit suite and the format check on every pull request, and the scenario suite on mainnet.
