@@ -25,10 +25,10 @@ def _env_flag(name):
 
 
 # Brownie already picks attach over launch on its own when the configured port is busy. What it gets wrong is
-# what happens next, so two internals need patching (opt-in via ATTACH_EXTERNAL_NODE): register the native
+# what happens next, so compatibility patches are opt-in via ATTACH_EXTERNAL_NODE: register the native
 # anvil backend (ATTACH_BACKENDS has no anvil entry, so the backend silently stays ganache, whose impersonation
 # RPC anvil lacks), and stub `_find_rpc_process_pid` (it hangs on macOS; we must not kill an externally-owned
-# node anyway).
+# node anyway), and normalize Anvil's 0x-prefixed trace memory words for Brownie 1.20's decoder.
 if _env_flag("ATTACH_EXTERNAL_NODE"):
     import importlib
 
@@ -37,6 +37,21 @@ if _env_flag("ATTACH_EXTERNAL_NODE"):
 
     _rpc.ATTACH_BACKENDS = {"anvil": _anvil_backend, **_rpc.ATTACH_BACKENDS}
     _rpc.Rpc._find_rpc_process_pid = lambda self, laddr: os.getpid()
+
+    from web3 import HTTPProvider
+    from utils.anvil_trace import normalize_trace_memory
+
+    _original_make_request = HTTPProvider.make_request
+
+    def _make_request(provider, method, params):
+        response = _original_make_request(provider, method, params)
+        # Normalize before either of Brownie's decoders sees the response: both revert data and nested
+        # call data concatenate memory words, and embedded "0x" prefixes crash the confirmation thread.
+        if method == "debug_traceTransaction":
+            return normalize_trace_memory(response)
+        return response
+
+    HTTPProvider.make_request = _make_request
 
 
 # descriptor key -> brownie interface (raw ABI committed under interfaces/).
@@ -518,7 +533,7 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
         for name in ("morphoExitBook", "erc4626ExitBook"):
             if lido_lend.has(name):
                 exit_book = lido_lend.contract(name)
-                assert exit_book.hasRole(exit_book.FEE_MANAGER_ROLE(), executor)
+                assert exit_book.hasRole(exit_book.ALLOWLIST_MANAGER_ROLE(), executor)
         return et
 
     # Local mock: a fresh EasyTrack + EVMScriptExecutor the deployer fully controls. The executor receives
@@ -558,7 +573,6 @@ def easy_track(lido_lend, admin, accounts, EasyTrack, EVMScriptExecutor, lido_co
         if exit_book_addr and getattr(exit_book_addr, "address", exit_book_addr) != _ZERO:
             exit_book = lido_lend.contract(name)
             exit_book.grantRole(exit_book.ALLOWLIST_MANAGER_ROLE(), ex, {"from": admin})
-            exit_book.grantRole(exit_book.FEE_MANAGER_ROLE(), ex, {"from": admin})
 
     adaptive_curve_irm = lido_lend.contract("adaptiveCurveIrm")
     if adaptive_curve_irm.manager() != ex:

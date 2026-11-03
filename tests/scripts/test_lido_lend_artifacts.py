@@ -75,6 +75,34 @@ erc4626 = "0x0000000000000000000000000000000000000011"
         with self.assertRaisesRegex(ValueError, 'belongs to a different deployment'):
             load_lido_lend_artifacts(self.root, require_markets=False)
 
+    def test_resources_from_later_deployment_steps_can_have_different_config_hashes(self):
+        (self.root / 'protocol.toml').write_text(self.protocol.replace(
+            'config_hash = "test-hash"', 'config_hash = "protocol-body-hash"', 1
+        ))
+        (self.root / 'exit-books.toml').write_text(self.exit_books.replace('test-hash', 'replacement-books-hash'))
+        result = load_lido_lend_artifacts(self.root, require_exit_books=True, require_markets=False)
+        self.assertEqual(result['exit_books']['artifact']['config_hash'], 'replacement-books-hash')
+
+    def test_config_hash_is_not_required_to_identify_a_deployment(self):
+        (self.root / 'protocol.toml').write_text(self.protocol.replace('config_hash = "test-hash"\n', ''))
+        load_lido_lend_artifacts(self.root, require_markets=False)
+
+    def test_compatibility_hash_matches_across_resources_when_present(self):
+        (self.root / 'protocol.toml').write_text(self.protocol.replace(
+            '[artifact]', '[artifact]\ncompatibility_hash = "protocol-version"'
+        ))
+        for compatibility in ('protocol-version', 'other-version', None):
+            with self.subTest(compatibility=compatibility):
+                books = self.exit_books.replace('test-hash', 'later-step-hash')
+                if compatibility is not None:
+                    books = books.replace('[artifact]', f'[artifact]\ncompatibility_hash = "{compatibility}"')
+                (self.root / 'exit-books.toml').write_text(books)
+                if compatibility == 'protocol-version':
+                    load_lido_lend_artifacts(self.root, require_exit_books=True, require_markets=False)
+                else:
+                    with self.assertRaisesRegex(ValueError, 'different compatibility_hash'):
+                        load_lido_lend_artifacts(self.root, require_exit_books=True, require_markets=False)
+
     def test_present_malformed_market_is_rejected_in_both_modes(self):
         (self.root / 'markets').mkdir()
         (self.root / 'markets/broken.toml').write_text('[artifact]\nkind = "wrong"\n')

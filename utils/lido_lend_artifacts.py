@@ -12,12 +12,11 @@ except ImportError:
 
 
 MARKET_PARAMS_ABI_TYPE = "(address,address,address,address,uint256)"
-METADATA_FIELDS = ("deployment", "chain_id", "config_hash")
+METADATA_FIELDS = ("deployment", "chain_id")
 PROTOCOL_FIELDS = (
     "deployment",
     "network",
     "chain_id",
-    "config_hash",
     "core",
     "owner_facade",
     "irm_router",
@@ -83,6 +82,10 @@ def _require_metadata(artifact, expected_kind, path, expected=None):
         value = _metadata_value(metadata, field)
         if expected is not None and value != _metadata_value(expected, field):
             raise ValueError(f"{path} belongs to a different {field}")
+    # Config hashes record individual deployment steps; they need not match across resources.
+    # Modern runs carry a separate protocol compatibility hash. Legacy runs may omit it on both sides.
+    if expected is not None and metadata.get("compatibility_hash") != expected.get("compatibility_hash"):
+        raise ValueError(f"{path} belongs to a different compatibility_hash")
     return metadata
 
 

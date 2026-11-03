@@ -37,6 +37,7 @@ Start Anvil in terminal 1:
 anvil \
   --fork-url "$MAINNET_RPC_URL" \
   --chain-id 1 \
+  --steps-tracing \
   --port 8545
 ```
 
@@ -75,6 +76,8 @@ Brownie attaches to the already-listening Anvil because `mainnet-fork` points at
 otherwise Brownie starts the network command configured for `mainnet-fork`, which is a different test setup.
 `ATTACH_EXTERNAL_NODE` accepts `1`, `true`, `yes`, or `on`, case-insensitive. Leave it unset for the local stub
 run, where Brownie owns the node.
+
+Enable `--steps-tracing` on the external Anvil so Brownie can decode revert reasons in transaction tests.
 
 ### Using an existing provisioned fork
 
