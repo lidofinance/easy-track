@@ -1,0 +1,63 @@
+name: Lido Lend fork tests
+
+on:
+  push:
+    branches: [feat/ll-factories-mainnet-deployment]
+  workflow_dispatch:
+    inputs:
+      fork_block:
+        description: Mainnet block to fork
+        default: '26369828'
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lido-lend-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  motions:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 100
+    env:
+      MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+      ETHERSCAN_TOKEN: ${{ secrets.ETHERSCAN_TOKEN }}
+      FORK_BLOCK: ${{ inputs.fork_block || '26369828' }}
+      LENDING_DIR: ${{ github.workspace }}/lending
+    steps:
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          persist-credentials: false
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: lidofinance/lend-markets
+          ref: refactor/solidity-deployment
+          path: lending
+          submodules: recursive
+          persist-credentials: false
+      - uses: actions/setup-python@7f4fc3e22c37d6ff65e88745f38bd3157c663f7c # v4.9.1
+        with:
+          python-version: '3.10'
+      - name: Install Python dependencies
+        run: |
+          python -m pip install poetry==1.8.2
+          poetry install --no-interaction
+      - name: Read lending toolchain
+        id: foundry
+        run: |
+          echo "version=$(head -n 1 lending/.foundryref)" >> "$GITHUB_OUTPUT"
+          git -C lending rev-parse HEAD
+      - uses: foundry-rs/foundry-toolchain@c7450ba673e133f5ee30098b3b54f444d3a2ca2d # v1.8.0
+        with:
+          version: ${{ steps.foundry.outputs.version }}
+      - name: Deploy inert markets and test Easy Track motions
+        run: bash scripts/ci/test_lido_lend.sh
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: lido-lend-test-results
+          path: reports/lido-lend/
+          if-no-files-found: warn

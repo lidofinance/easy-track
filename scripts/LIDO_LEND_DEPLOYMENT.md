@@ -18,7 +18,7 @@ Record these items for every deployment:
 - EasyTrack and Lido Lend git commits;
 - network and chain ID;
 - RPC fork block for a rehearsal, or the production block range;
-- Lido Lend deployment directory containing `protocol.toml`, `markets/`, and optional `exit-books.toml`;
+- Lido Lend deployment directory containing `protocol.toml`, optional `markets/`, and `exit-books.toml` for ExitBookActions;
 - trusted caller address;
 - selected factory names;
 - deployer address;
@@ -31,9 +31,11 @@ that every address has bytecode on the node used for the factory deployment.
 ## Lido Lend artifact input
 
 Set `LIDO_LEND_ARTIFACTS_DIR` to one immutable Lido Lend deployment directory. The script reads protocol
-addresses from `protocol.toml`, the CircuitBreaker from `markets/*.toml`, and exit-book addresses from
-`exit-books.toml`. It rejects mixed artifacts by comparing `deployment`, `chain_id`, and `config_hash`, and
-cross-checks each market with its linked oracle and GuardianSignals artifacts.
+addresses and the CircuitBreaker from `protocol.toml`, and exit-book addresses from `exit-books.toml`.
+Markets may be absent when deploying factories before the markets. Every present market is cross-checked
+with its linked oracle and GuardianSignals artifacts. The loader compares `deployment` and `chain_id`, plus
+`compatibility_hash` when recorded (legacy artifacts may omit it on both sides). It does not validate or compare
+`config_hash`: resources deployed in separate steps can have different config hashes.
 
 `TRUSTED_CALLER` is the committee address allowed to create motions through the deployed factories.
 `LIDO_LEND_PRESEEDER` is required when `ActivateMarket` is selected. Deploy it with the protocol core and
@@ -94,7 +96,7 @@ Grouped factories decode `abi.encode(Action, payload)`. Existing action ordinals
 
 | Selected factories | Required artifacts |
 | --- | --- |
-| All selections | `protocol.toml` and at least one `markets/*.toml` |
+| All selections | `protocol.toml`; market artifacts are optional for factory deployment |
 | ActivateMarket | protocol MarketFactory and RiskStewardDashboard, shared CircuitBreaker, and `LIDO_LEND_PRESEEDER` |
 | CircuitBreakerActions | shared CircuitBreaker |
 | ExitBookActions | `exit-books.toml` |

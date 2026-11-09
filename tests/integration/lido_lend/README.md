@@ -1,117 +1,58 @@
-# Lido Lend EasyTrack scenarios
+# Lido Lend Easy Track scenarios
 
-The suite has two modes:
+Without `LIDO_LEND_ARTIFACTS_DIR`, the suite uses local lending stubs. With it, the suite reads deployment
+artifacts and exercises lending contracts through mainnet Easy Track and its EVMScriptExecutor on Anvil.
+Every recorded market is parameterized through the scenarios; cross-market tests use two market IDs.
 
-- without `LIDO_LEND_ARTIFACTS_DIR`, it deploys strict local stubs and checks the complete EasyTrack motion flow;
-- with `LIDO_LEND_ARTIFACTS_DIR`, it attaches to an existing Anvil mainnet fork, reads the Lido Lend deployment
-  protocol and `markets/*.toml` artifacts, and exercises the deployed contracts
-  through the real mainnet EasyTrack and EVMScriptExecutor.
+## CI and local fork run
 
-The fork loader is fail-closed: it checks the connected chain ID, `[artifact]`/`[protocol]` metadata,
-market parameters, bytecode for every market component, both exit books, each
-controller/CircuitBreaker role binding, and the executor read from the actual EasyTrack. Every market in the
-deployment is parameterized through the scenarios, and the cross-market scenario executes one motion over two
-market IDs. GuardianSignals and CircuitBreaker instances may be shared by multiple markets. Missing acceptance
-artifacts are usage errors in artifact mode, not skips.
+The `Lido Lend fork tests` workflow runs on pushes to `feat/ll-factories-mainnet-deployment` and supports
+manual dispatch with a mainnet block number. It checks out lending at `refactor/solidity-deployment`, installs
+its pinned Foundry version and runs the same command available locally:
 
-The activation scenario deploys and funds a Preseeder automatically. On a mainnet fork it impersonates a
-token funder; override it with `LIDO_LEND_PRESEED_FUNDER` when the default account does not hold a market's loan
-token. `LIDO_LEND_PRESEEDER` may still point to an already funded Preseeder bound to the artifact core and the
-real EasyTrack executor.
+```sh
+LENDING_DIR=/path/to/disposable/lend-markets \
+MAINNET_RPC_URL=<archive-rpc> \
+FORK_BLOCK=26369828 \
+bash scripts/ci/test_lido_lend.sh
+```
+
+Use a clean, disposable lending checkout with initialized submodules. Install this repository's Python
+dependencies with `poetry install` first. Port 8545 must be free.
+
+The runner starts Anvil with step tracing, reuses the recorded mainnet protocol and Exit Books, and deploys
+two inert WETH/wstETH markets through an inherited Solidity recipe and `make deploy-script`. It records
+native lending artifacts after receipt validation. Brownie performs activation, preseed and subsequent
+operations through Easy Track motions. The runner stops its Anvil on exit and writes JUnit results to
+`reports/lido-lend/results.xml`.
+
+After each market's activation and Exit Book allowlist motions, an integration test runs lending's
+`make test-fork` with the same artifact run and Anvil RPC. Lending forks that node, preserves the active market and prepares the remaining
+inert market. Its output is saved under `reports/lido-lend/`. Skipped activation or lending regression cases fail CI.
+
+The loader accepts historical protocol/market artifacts and version-1 typed market artifacts from Solidity
+recipes. It checks deployment identity, chain, core, market parameters and market ID; fork fixtures additionally
+check contract code and governance bindings.
+
+## Attach to a prepared Anvil
+
+```sh
+ATTACH_EXTERNAL_NODE=true \
+LIDO_LEND_ARTIFACTS_DIR=/path/to/lend-markets/deployed/mainnet \
+poetry run brownie test tests/integration/lido_lend --network mainnet-fork -q
+```
+
+The artifacts must describe the contracts on that node. Keep markets inert to exercise activation:
+activation scenarios skip already-active markets. `ATTACH_EXTERNAL_NODE` enables Brownie's Anvil backend
+and trace compatibility. The node must run with `--steps-tracing`.
+
+Activation deploys and funds a Preseeder. `LIDO_LEND_PRESEEDER` selects an existing one;
+`LIDO_LEND_PRESEED_FUNDER` overrides the impersonated token funder. The CI runner clears the Preseeder override.
 
 ## Local stub scenarios
 
-From the EasyTrack repository:
-
-```bash
-poetry run brownie test tests/integration/lido_lend --network mainnet-fork -s
+```sh
+poetry run brownie test tests/integration/lido_lend --network mainnet-fork -q
 ```
 
-Do not set `LIDO_LEND_ARTIFACTS_DIR` for this run.
-
-## Anvil fork scenarios
-
-Start Anvil in terminal 1:
-
-```bash
-anvil \
-  --fork-url "$MAINNET_RPC_URL" \
-  --chain-id 1 \
-  --port 8545
-```
-
-Deploy Lido Lend to that node from its repository in terminal 2. Use a fresh `RUN` directory:
-
-```bash
-cd /path/to/lido-lend-market
-
-make deploy-run \
-  CONFIG=mainnet \
-  RUN=anvil-easy-track \
-  RPC_URL=http://127.0.0.1:8545 \
-  DEPLOYER_PRIVATE_KEY="$ANVIL_DEPLOYER_PRIVATE_KEY" \
-  VERIFY=false
-```
-
-Use a temporary deployment config whose market `pausers` list contains its intended CircuitBreaker; do not
-edit the committed config merely to run a rehearsal.
-
-No separate activation artifact is generated or required. Each `deployed/<RUN>/markets/<market-name>.toml`
-contains the resolved market, curve, role, and CircuitBreaker values. The market steward, pauser committee,
-and settlement flag remain runtime motion choices: the scenarios use deterministic nonzero addresses and
-exercise both settlement values.
-
-Then run the EasyTrack scenarios in terminal 2:
-
-```bash
-cd /path/to/easy-track
-
-ATTACH_EXTERNAL_NODE=true \
-LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-market/deployed/anvil-easy-track \
-poetry run brownie test tests/integration/lido_lend --network mainnet-fork -s
-```
-
-Brownie attaches to the already-listening Anvil because `mainnet-fork` points at port 8545. Keep Anvil running;
-otherwise Brownie starts the network command configured for `mainnet-fork`, which is a different test setup.
-`ATTACH_EXTERNAL_NODE` accepts `1`, `true`, `yes`, or `on`, case-insensitive. Leave it unset for the local stub
-run, where Brownie owns the node.
-
-### Using an existing provisioned fork
-
-If `make provision-fork` in `lido-lend-markets` has completed and its Anvil is still running on
-`http://127.0.0.1:8545`, use the resulting `deployed/fork` directory:
-
-```bash
-cd /path/to/easy-track
-
-env -u LIDO_LEND_PRESEEDER \
-    ATTACH_EXTERNAL_NODE=true \
-    LIDO_LEND_ARTIFACTS_DIR=/path/to/lido-lend-markets/deployed/fork \
-    poetry run brownie test tests/integration/lido_lend \
-    --network mainnet-fork -s -ra
-```
-
-Replace the paths with your checkout locations. The artifacts must belong to the deployment on the running
-node; files retained from a previous Anvil instance are not sufficient.
-
-- `env -u LIDO_LEND_PRESEEDER` removes an existing Preseeder override for this command only, allowing the
-  activation fixture to deploy and fund one when it runs.
-- `ATTACH_EXTERNAL_NODE=true` enables the suite's Brownie compatibility setup for an external Anvil.
-- `LIDO_LEND_ARTIFACTS_DIR` selects the deployed LL contracts instead of local stubs.
-- `--network mainnet-fork` uses the configured local endpoint; in this mode the node is Anvil.
-- `-s` shows test output; `-ra` includes reasons for skipped tests and other non-passing outcomes.
-
-The provisioning script activates its markets. Scenarios that need to activate an already activated market
-verify its activation state and then skip. Inspect the skip reasons: a skipped scenario is not an executed
-activation test. To exercise activation, use the manual deployment flow above without running
-`make activate-markets` before the tests.
-
-## Useful focused run
-
-Activation only:
-
-```bash
-poetry run brownie test \
-  tests/integration/lido_lend/test_activate_market_scenario.py \
-  --network mainnet-fork -s
-```
+Leave `LIDO_LEND_ARTIFACTS_DIR` and `ATTACH_EXTERNAL_NODE` unset for this mode.
