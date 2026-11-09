@@ -7,7 +7,7 @@ on:
     branches: [develop, master]
 
 env:
-  PYTHON_VERSION: "3.10.6"
+  PYTHON_VERSION: "3.10"
   POETRY_VERSION: "1.8.5"
   FOUNDRY_VERSION: "v1.8.3"
 
