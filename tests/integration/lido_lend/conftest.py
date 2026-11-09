@@ -761,7 +761,7 @@ def created_markets(lido_lend, easy_track, accounts):
 def skip_if_already_activated(lido_lend):
     """Skip a scenario that activates a market when the deployment arrived already activated.
 
-    A provisioning run may activate its markets itself (`make activate-markets`), leaving nothing for these
+    An existing deployment may already have active markets, leaving nothing for these
     scenarios to do. That is a legitimate deployment shape, not a misconfiguration, so it skips rather than
     erroring — but only after asserting the activation this scenario would have performed actually landed.
     Otherwise a half-activated deployment would look indistinguishable from a correct one.
@@ -799,7 +799,7 @@ def skip_if_already_activated(lido_lend):
             "IRM routed, steward appointed, pauser registered"
             + (", both exit books allow-listed" if check_exit_books else "")
             + "); "
-            "provision without `make activate-markets` to exercise this scenario"
+            "run this scenario against an inert market deployment"
         )
 
     return _skip_if_already_activated
