@@ -24,11 +24,7 @@ def _env_flag(name):
     return os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
 
 
-# Brownie already picks attach over launch on its own when the configured port is busy. What it gets wrong is
-# what happens next, so compatibility patches are opt-in via ATTACH_EXTERNAL_NODE: register the native
-# anvil backend (ATTACH_BACKENDS has no anvil entry, so the backend silently stays ganache, whose impersonation
-# RPC anvil lacks), and stub `_find_rpc_process_pid` (it hangs on macOS; we must not kill an externally-owned
-# node anyway), and normalize Anvil's 0x-prefixed trace memory words for Brownie 1.20's decoder.
+# Brownie 1.20 lacks Anvil attach support; avoid PID discovery for externally owned nodes.
 if _env_flag("ATTACH_EXTERNAL_NODE"):
     import importlib
 
@@ -45,8 +41,7 @@ if _env_flag("ATTACH_EXTERNAL_NODE"):
 
     def _make_request(provider, method, params):
         response = _original_make_request(provider, method, params)
-        # Normalize before either of Brownie's decoders sees the response: both revert data and nested
-        # call data concatenate memory words, and embedded "0x" prefixes crash the confirmation thread.
+        # Brownie's revert and nested-call decoders require unprefixed memory words.
         if method == "debug_traceTransaction":
             return normalize_trace_memory(response)
         return response
