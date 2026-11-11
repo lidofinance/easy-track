@@ -1,5 +1,9 @@
 from dataclasses import dataclass
 from brownie import (
+    chain,
+    interface,
+    web3,
+    ZERO_ADDRESS,
     EasyTrack,
     TopUpLegoProgram,
     EVMScriptExecutor,
@@ -13,6 +17,12 @@ from brownie import (
     TopUpAllowedRecipientsSingleToken,
     AllowedRecipientsRegistry,
 )
+from brownie.convert import to_address
+from hexbytes import HexBytes
+from utils import log
+
+# Every role EasyTrack grants to `_admin` in its constructor, DEFAULT_ADMIN_ROLE last so it is renounced last
+EASY_TRACK_ROLE_NAMES = ("PAUSE_ROLE", "UNPAUSE_ROLE", "CANCEL_ROLE", "DEFAULT_ADMIN_ROLE")
 
 
 @dataclass
@@ -55,6 +65,26 @@ class AllowedRecipientsMultiTokenFullSetupDeployConfig(AllowedRecipientsMultiTok
     grant_rights: bool
 
 
+def _addr(value):
+    return to_address(str(value))
+
+
+def _role_hash(value):
+    return str(value).lower()
+
+
+def _easy_track_role_hashes(easy_track):
+    return {name: _role_hash(getattr(easy_track, name)()) for name in EASY_TRACK_ROLE_NAMES}
+
+
+def assert_governance_token_supports_snapshots(governance_token):
+    """Fail before deploying anything if the token lacks the MiniMe snapshot views EasyTrack relies on."""
+    token = interface.MiniMeToken(_addr(governance_token))
+    token.balanceOfAt(ZERO_ADDRESS, chain.height)
+    # objectToMotion divides by the total supply snapshot
+    assert token.totalSupplyAt(chain.height) > 0, "governance token has zero total supply"
+
+
 def deploy_easy_track(
     admin,
     governance_token,
@@ -63,6 +93,7 @@ def deploy_easy_track(
     objections_threshold,
     tx_params,
 ):
+    assert_governance_token_supports_snapshots(governance_token)
     return EasyTrack.deploy(
         governance_token,
         admin,
@@ -78,6 +109,106 @@ def deploy_evm_script_executor(owner, easy_track, aragon_calls_script, tx_params
     evm_script_executor.transferOwnership(owner, tx_params)
     easy_track.setEVMScriptExecutor(evm_script_executor, tx_params)
     return evm_script_executor
+
+
+def handoff_easy_track_roles(easy_track, deployer, grants, tx_params):
+    """Grant every (role_name, holder) in `grants` while the deployer is still admin, then renounce all
+    EasyTrack roles from the deployer. Returns the receipts so the resulting role holders can be replayed."""
+    deployer = _addr(deployer)
+    assert _addr(tx_params["from"]) == deployer, "role handoff must be sent by the deployer"
+    assert all(_addr(holder) != deployer for _, holder in grants), "deployer must not keep any EasyTrack role"
+
+    role_hashes = _easy_track_role_hashes(easy_track)
+    receipts = [easy_track.grantRole(role_hashes[name], holder, tx_params) for name, holder in grants]
+    receipts += [easy_track.renounceRole(role_hashes[name], deployer, tx_params) for name in EASY_TRACK_ROLE_NAMES]
+    return receipts
+
+
+def expected_role_holders_from_grants(grants):
+    holders = {name: set() for name in EASY_TRACK_ROLE_NAMES}
+    for name, holder in grants:
+        holders[name].add(_addr(holder))
+    return holders
+
+
+def easy_track_role_holders_from_receipts(easy_track, receipts):
+    """Replay RoleGranted/RoleRevoked emitted by `easy_track` across `receipts` in log order.
+
+    For a freshly deployed EasyTrack, the deployment receipt plus every receipt sent since give the
+    exact holder set of each role, which AccessControl cannot enumerate on-chain."""
+    names_by_hash = {role_hash: name for name, role_hash in _easy_track_role_hashes(easy_track).items()}
+    holders = {name: set() for name in EASY_TRACK_ROLE_NAMES}
+    for receipt in receipts:
+        for event in receipt.events:
+            if event.name not in ("RoleGranted", "RoleRevoked") or _addr(event.address) != _addr(easy_track):
+                continue
+            role_hash = _role_hash(event["role"])
+            assert role_hash in names_by_hash, f"unexpected EasyTrack role {role_hash}"
+            role_holders = holders[names_by_hash[role_hash]]
+            account = _addr(event["account"])
+            if event.name == "RoleGranted":
+                role_holders.add(account)
+            else:
+                role_holders.discard(account)
+    return holders
+
+
+def validate_easy_track_deployment(
+    easy_track,
+    evm_script_executor,
+    *,
+    governance_token,
+    aragon_calls_script,
+    executor_owner,
+    motion_duration,
+    motions_count_limit,
+    objections_threshold,
+    expected_role_holders,
+    deployer,
+    receipts,
+):
+    """Assert the deployed pair is bound to the selected inputs and that each EasyTrack role is held
+    exactly by `expected_role_holders`: replayed from `receipts` (deployment receipt included), then
+    confirmed on-chain. The deployer must hold no role."""
+    deployer = _addr(deployer)
+    aragon_calls_script = _addr(aragon_calls_script)
+
+    assert _addr(easy_track.governanceToken()) == _addr(governance_token), "governanceToken mismatch"
+    assert _addr(easy_track.evmScriptExecutor()) == _addr(evm_script_executor), "evmScriptExecutor mismatch"
+    log.ok("EasyTrack governanceToken", easy_track.governanceToken())
+    log.ok("EasyTrack evmScriptExecutor", easy_track.evmScriptExecutor())
+
+    assert _addr(evm_script_executor.easyTrack()) == _addr(easy_track), "executor easyTrack mismatch"
+    assert _addr(evm_script_executor.owner()) == _addr(executor_owner), "executor owner mismatch"
+    assert _addr(evm_script_executor.callsScript()) == aragon_calls_script, "executor callsScript mismatch"
+    # aragonOS CallsScript identifies itself by this executor type
+    assert HexBytes(interface.CallsScript(aragon_calls_script).executorType()) == web3.keccak(
+        text="CALLS_SCRIPT"
+    ), "callsScript is not an aragonOS CallsScript"
+    log.ok("EVMScriptExecutor easyTrack", evm_script_executor.easyTrack())
+    log.ok("EVMScriptExecutor owner", evm_script_executor.owner())
+    log.ok("EVMScriptExecutor callsScript", evm_script_executor.callsScript())
+
+    assert easy_track.motionDuration() == motion_duration, "motionDuration mismatch"
+    assert easy_track.motionsCountLimit() == motions_count_limit, "motionsCountLimit mismatch"
+    assert easy_track.objectionsThreshold() == objections_threshold, "objectionsThreshold mismatch"
+    log.ok("EasyTrack motionDuration", easy_track.motionDuration())
+    log.ok("EasyTrack motionsCountLimit", easy_track.motionsCountLimit())
+    log.ok("EasyTrack objectionsThreshold", easy_track.objectionsThreshold())
+
+    expected = {name: {_addr(holder) for holder in holders} for name, holders in expected_role_holders.items()}
+    assert set(expected) == set(EASY_TRACK_ROLE_NAMES), "expected_role_holders must cover every EasyTrack role"
+    assert all(deployer not in holders for holders in expected.values()), "deployer must not be an expected holder"
+    replayed = easy_track_role_holders_from_receipts(easy_track, receipts)
+    for name in EASY_TRACK_ROLE_NAMES:
+        assert replayed[name] == expected[name], f"{name} holders {sorted(replayed[name])} != {sorted(expected[name])}"
+        role = getattr(easy_track, name)()
+        assert all(easy_track.hasRole(role, holder) for holder in expected[name]), f"{name} not granted on-chain"
+        assert not easy_track.hasRole(role, deployer), f"deployer still holds {name}"
+        log.ok(f"EasyTrack {name} holders", ", ".join(sorted(expected[name])) or "none")
+
+    assert not easy_track.paused(), "EasyTrack is paused"
+    log.ok("EasyTrack paused", False)
 
 
 def deploy_reward_programs_registry(voting, evm_script_executor, tx_params):
@@ -154,13 +285,6 @@ def deploy_top_up_allowed_recipients(
         easy_track,
         tx_params,
     )
-
-
-def grant_roles(easy_track, admin, pause_address, tx_params):
-    easy_track.grantRole(easy_track.PAUSE_ROLE(), admin, tx_params)
-    easy_track.grantRole(easy_track.UNPAUSE_ROLE(), admin, tx_params)
-    easy_track.grantRole(easy_track.CANCEL_ROLE(), admin, tx_params)
-    easy_track.grantRole(easy_track.PAUSE_ROLE(), pause_address, tx_params)
 
 
 def add_evm_script_factories(
@@ -250,11 +374,6 @@ def attach_evm_script_allowed_recipients_factories(
         create_permission(allowed_recipients_registry, "removeRecipient"),
         tx_params,
     )
-
-
-def transfer_admin_role(deployer, easy_track, new_admin, tx_params):
-    easy_track.grantRole(easy_track.DEFAULT_ADMIN_ROLE(), new_admin, tx_params)
-    easy_track.revokeRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer, tx_params)
 
 
 def create_permission(contract, method):

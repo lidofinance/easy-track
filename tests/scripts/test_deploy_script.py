@@ -37,6 +37,11 @@ def test_deploy_script(accounts):
     assert easy_track.hasRole(easy_track.UNPAUSE_ROLE(), lido_contracts.aragon.voting)
     assert easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), lido_contracts.aragon.voting)
     assert not easy_track.hasRole(easy_track.DEFAULT_ADMIN_ROLE(), deployer)
+    assert not easy_track.hasRole(easy_track.PAUSE_ROLE(), deployer)
+    assert not easy_track.hasRole(easy_track.UNPAUSE_ROLE(), deployer)
+    assert not easy_track.hasRole(easy_track.CANCEL_ROLE(), deployer)
+    assert easy_track.hasRole(easy_track.PAUSE_ROLE(), pause_address)
+    assert not easy_track.hasRole(easy_track.UNPAUSE_ROLE(), pause_address)
 
     assert evm_script_executor.callsScript() == lido_contracts.aragon.calls_script
     assert evm_script_executor.easyTrack() == easy_track
