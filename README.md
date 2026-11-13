@@ -161,6 +161,26 @@ Script requires next ENV variables to be set:
 
 - `DEPLOYER` - address of the account that renounces roles
 
+### Stablecoin top-up factories
+
+Multi-token `AllowedRecipientsBuilder`, `AllowedRecipientsFactory` and `AllowedTokensRegistry` were audited and deployed to mainnet from the [`feature/top-up-allowed-tokens`](https://github.com/lidofinance/easy-track/tree/feature/top-up-allowed-tokens) branch, which contains the audited commit [`52b1b1d`](https://github.com/lidofinance/easy-track/commit/52b1b1d99531a7aa46d8474bef56b157b83f318a).
+
+The branch is read-only and is not merged into `develop`. To keep the bytecode of these contracts identical to the audited version, deploy them only from the tip of that branch. The copies under `contracts/payouts/multi-token` differ only in import paths and exist for tests.
+
+The single-token `AllowedRecipientsBuilderSingleToken` and `AllowedRecipientsFactorySingleToken` can be deployed from `develop`, provided the optimizer is enabled in the Brownie configuration with 200 runs. This reproduces the bytecode of the existing deployments; the `SingleToken` suffix affects only the metadata hash.
+
+New top-up setups are created through the deployed builders with `create_full_setup.py` or `create_single_recipient_setup.py` under `scripts/payouts/single_token/` and `scripts/payouts/multi_token/`. They require no contract compilation and can be run from `develop`.
+
+## Foundry Scripts
+
+The Foundry scripts live in `script/` and compile with the `scenario` profile. A script runs on the anvil fork `just make-fork` started, else on `<CHAIN>_RPC_URL` of the chain `CHAIN` selects, default `hoodi`, as a dry run unless `--broadcast` is passed. The deployer is the account `forge script` signs with, `--account`, `--ledger` or `--private-key`:
+
+```bash
+just script DeployEasyTrack --account <keystore> --broadcast
+```
+
+A new factory gets a script next to `DeployEasyTrack.s.sol` on the same base, and a scenario test under `test/foundry/scenario` that runs it on a fork.
+
 ## Tests
 
 Set rpc url:
@@ -188,6 +208,24 @@ Run tests only for stVaults factories on mainnet fork:
 ```
 
 > Note: Holesky support will be removed in upcoming upgrades.
+
+### Foundry tests
+
+Two Foundry suites live under `test/foundry`, each on its own profile in `foundry.toml`. Both need [Foundry](https://getfoundry.sh) installed. See [test/foundry/README.md](test/foundry/README.md) for details.
+
+The unit suite compiles the contracts at solc 0.8.6 and needs no network:
+
+```bash
+npm test
+```
+
+The scenario suite forks a live network and drives the deployed factories. It reads `HOODI_RPC_URL` or `MAINNET_RPC_URL`, and `CHAIN` selects the network, default `hoodi`. Without the URL every scenario contract is reported as skipped:
+
+```bash
+CHAIN=hoodi npm run test:scenario
+```
+
+Plain `forge test` runs the default profile, which is the unit suite.
 
 ### Integration test addresses
 
