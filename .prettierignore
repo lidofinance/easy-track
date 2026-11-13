@@ -76,3 +76,6 @@ contracts/test/NodeOperatorsRegistryStub.sol
 contracts/test/OperatorGridStub.sol
 contracts/test/StakingVaultStub.sol
 contracts/test/VaultHubStub.sol
+
+# formatted by `forge fmt`, see [fmt] in foundry.toml
+test/foundry/

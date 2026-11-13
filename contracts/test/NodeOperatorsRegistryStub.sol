@@ -6,6 +6,9 @@ pragma solidity ^0.8.4;
 /// @author psirex
 /// @notice Helper contract with stub implementation of NodeOperatorsRegistry
 contract NodeOperatorsRegistryStub {
+    uint256 public constant MAX_NODE_OPERATORS_COUNT = 200;
+    uint256 public constant MAX_NODE_OPERATOR_NAME_LENGTH = 255;
+
     uint256 public id = 1;
     bool public active = true;
     address public rewardAddress;
@@ -128,6 +131,10 @@ contract NodeOperatorsRegistryStub {
         return _nodeOperatorsCount;
     }
 
+    function getNodeOperatorIsActive(uint256 _id) external view returns (bool) {
+        return _nodeOperators[_id].active;
+    }
+
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
         _nodeOperatorsCount = uint40(_desiredCount);
@@ -147,8 +154,9 @@ contract NodeOperatorsRegistryStub {
         bytes32 _role,
         uint256[] memory _params
     ) external view returns (bool) {
+        // a parametrized permission needs the operator id, as the ACL would evaluate it
         if (_params.length == 0) {
-            return _canPerform[_sender][_role][0];
+            return false;
         }
         return _canPerform[_sender][_role][_params[0]];
     }

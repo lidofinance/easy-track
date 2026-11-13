@@ -89,8 +89,8 @@ def main():
 
     tx_params = {"from": deployer}
     if is_live:
-        tx_params["priority_fee"] = "2 gwei"
-        tx_params["max_fee"] = "50 gwei"
+        tx_params["priority_fee"] = "1 gwei"
+        tx_params["max_fee"] = "1 gwei"
 
     log.br()
     log.nb("Deploying UpdateStakingModuleShareLimits...")
@@ -127,6 +127,10 @@ def main():
             "txHash": factory.tx.txid,
         }
     }
+
+    if not is_live:
+        # Do not save artifacts and do verification on non-live networks
+        return
 
     artifacts_path = f"deployed-sr-{network_name}.json"
     if os.path.exists(artifacts_path):
