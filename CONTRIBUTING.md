@@ -1,6 +1,6 @@
 # Easy Track Contribution Guide
 
-Thank you for contributing to Easy Track. This guide explains how to set up the repository, what conventions to follow, and what a pull request must contain before the maintainers merge it. The merge requirements are written as checks, so a human reviewer or an agent can verify each one from the PR and the repository.
+This guide explains how to set up the repository, what conventions to follow, and what a pull request must contain before the maintainers merge it. The merge requirements are written as checks, so a human reviewer or an agent can verify each one from the PR and the repository. The guide assumes that you already know Easy Track and the Lido protocol; the [README](README.md) and [specification.md](specification.md) cover the basics.
 
 ## Ways to Contribute
 
@@ -16,13 +16,35 @@ Thank you for contributing to Easy Track. This guide explains how to set up the 
 - **Contract developers** are responsible for the correctness and security of the contract code they submit. They get it right through internal review and external audits.
 - **Maintainers** check process and repository hygiene: tests, deployments, CI, deploy scripts, shared-module safety and scope. An approval into `develop` does not mean the contract logic has been audited. An approval into `master` does, because maintainers merge only audited contract code (see [R8](#r8-audit-master-only)).
 
+## Contribution Workflow
+
+The repository has two long-lived branches, and each one stands for a network:
+
+- **`develop` is testnet (Hoodi).** A merge means that the change is tested and deployed on testnet.
+- **`master` is Ethereum mainnet.** A merge means that the change is audited, deployed and activated on mainnet.
+
+Open every PR against `develop`. A change reaches `master` only after it has been merged into `develop`, so a factory passes the testnet requirements before the mainnet ones.
+
+A new factory usually goes through the steps below. Each requirement in [Pull Request Requirements](#pull-request-requirements) (R1–R8) is the evidence for one of them.
+
+1. **Write the factory and its tests.** Follow [EVMScript Factories](#evmscript-factories), and cover your test plan with a Foundry unit test and a Foundry scenario test (R1).
+2. **Deploy the factory on Hoodi.** A deploy script does it and records the deployment in an artifact file (R2, R4).
+3. **Open a PR into `develop`.** It merges when R1–R6 are met.
+4. **Get the factory activated on testnet.** The PR does not wait for the activation vote (see R2). Once the vote is enacted, add the scenario test that drives the deployed factory (R1).
+5. **Hand over the off-chain details.** The UI, the notifications and the enactment service each need a few facts about the factory (see [Off-chain](#off-chain)). Start early, because the maintenance team builds the UI from what you tell them.
+6. **Get the contract audited, then deploy it on mainnet.** The audit report and the mainnet deployment record go into a PR as well (R7, R8).
+7. **Open a PR into `master`**, after the mainnet activation vote is enacted. It must meet R1–R8.
+
+A PR that changes no contracts and no deployment artifacts, such as a change to tests, tooling or documentation, is step 3 alone, with a shorter list of requirements.
+
 ## Getting Started
 
 ### Requirements
 
 - Node.js 22 (version pinned in `.nvmrc`)
 - Python 3.10 (version pinned in `.python-version`) and [Poetry](https://python-poetry.org/)
-- [Foundry](https://book.getfoundry.sh/), for the Foundry scenario tests and Slither
+- [Foundry](https://book.getfoundry.sh/), for the Foundry unit and scenario tests, the Foundry scripts and Slither (CI uses v1.8.3)
+- [just](https://github.com/casey/just), optional, for the `justfile` recipes (`just fmt`, `just test-scenario`, `just script`)
 
 ### Setup
 
@@ -35,7 +57,7 @@ poetry install
 poetry run brownie networks import network-config.yaml True
 ```
 
-Copy `.env.sample` to `.env` and set `MAINNET_RPC_URL` and `HOODI_RPC_URL`. Foundry loads `.env` automatically. Brownie does not, so also export them in your shell. A deploy script on a live network also needs `DEPLOYER`, the name of a Brownie account (create one with `poetry run brownie accounts new <name>`):
+The Brownie tests and the Foundry scenario tests fork a live network, so they need RPC URLs. Copy `.env.sample` to `.env` and set `MAINNET_RPC_URL` and `HOODI_RPC_URL`; `CHAIN` (`hoodi` or `mainnet`, default `hoodi`) selects which of the two networks the Foundry scenario tests and scripts fork. Foundry loads `.env` automatically but Brownie does not, so export the same variables in your shell as well. To run a deploy script on a live network, also set `DEPLOYER` to the name of a Brownie account (create one with `poetry run brownie accounts new <name>`):
 
 ```bash
 export MAINNET_RPC_URL=<YOUR_MAINNET_RPC_URL>
@@ -47,7 +69,8 @@ export DEPLOYER=<BROWNIE_ACCOUNT_NAME>
 
 ```bash
 poetry run brownie test --network mainnet-fork   # Brownie unit, integration and scenario tests
-CHAIN=hoodi forge test -vv                       # Foundry scenario tests against deployed factories
+forge test                                       # Foundry unit tests, no network
+CHAIN=hoodi npm run test:scenario                # Foundry scenario tests on a fork (forge build, then the scenario profile)
 ```
 
 See the [Tests](README.md#tests) section of the README and [test/foundry/README.md](test/foundry/README.md) for more options.
@@ -65,15 +88,14 @@ TRUSTED_CALLER=0x... MAX_DEPOSITS_RESERVE_TARGET=... \
 
 ## Repository Structure
 
-| Path                            | Contents                                                                   |
-| ------------------------------- | -------------------------------------------------------------------------- |
-| `contracts/`                    | Core contracts (`EasyTrack.sol`, `EVMScriptExecutor.sol`, ...)             |
-| `contracts/EVMScriptFactories/` | EVMScript factories                                                        |
-| `scripts/`                      | Deploy scripts (Brownie)                                                   |
-| `tests/`                        | Brownie tests: `evm_script_factories/` (unit), `integration/`, `scenario/` |
-| `test/foundry/`                 | Foundry fork scenario tests for deployed factories                         |
-| `utils/`                        | Shared Python helpers and network config                                   |
-| `deployed-*.json`               | Deployment artifacts, one file per network and area                        |
+- `contracts/`: core contracts (`EasyTrack.sol`, `EVMScriptExecutor.sol`, ...)
+- `contracts/EVMScriptFactories/`: EVMScript factories
+- `scripts/`: deploy scripts (Brownie)
+- `script/`: Foundry scripts for the Easy Track deployment and the executor permission votes
+- `tests/`: Brownie tests in `evm_script_factories/` (unit), `integration/` and `scenario/`
+- `test/foundry/`: Foundry tests in `unit/` (no network) and `scenario/` (fork tests)
+- `utils/`: shared Python helpers and network config
+- `deployed-*.json`: deployment artifacts, one file per network and area
 
 ## EVMScript Factories
 
@@ -114,6 +136,8 @@ Existing factories predate parts of this code style. Where they differ from the 
 
 ## Off-chain
 
+Nothing in this section is a merge requirement, and the discussion about the details may happen outside GitHub.
+
 ### UI
 
 Every new factory is added to the [Governance Portal](https://github.com/lidofinance/governance-portal). The UI for a factory has two parts:
@@ -123,7 +147,7 @@ Every new factory is added to the [Governance Portal](https://github.com/lidofin
 
 By default, the UI uses only the factory contract. The form runs the checks from `createEVMScript` that need only the calldata and the factory's public getters, such as bounds, and the view shows what `decodeEVMScriptCallData` returns. The UI does not read any other contract, including the contract the motion changes, so a check against the current state (such as rejecting a no-op motion) needs form data from that contract. If the form or the view needs more than the factory, tell the maintenance team when you hand over the factory.
 
-This is not a merge requirement, and the discussion about those details may happen outside GitHub. Contact the maintenance team early and bring the following, so the UI for your factory is complete and accurate:
+Contact the maintenance team early and bring the following, so the UI for your factory is complete and accurate:
 
 - **Basics.** The display name, the category (`Staking`, `Treasury`, `stVaults`) and subcategory (`CSM0x02`, `Curated v2`, ...), who can create motions, and the testnet and mainnet addresses (R2, R7).
 - **Form fields.** For each calldata parameter: a label, the unit and the input format (ETH or wei, basis points, address, list), and a default value, if any.
@@ -160,32 +184,32 @@ Alert groups are optional. To set one up, contact the maintenance team and tell 
 
 ### Motion enactment
 
-The maintenance team runs an offchain service that automatically enacts passed motions with no objections. It enacts only motions created by factories on its whitelist. To have the service enact your factory's motions, ask for the factory's testnet and mainnet addresses (R2, R7) to be added: mention them in the PR description or contact the maintenance team. This is not a merge requirement.
+The maintenance team runs an offchain service that automatically enacts passed motions with no objections. It enacts only motions created by factories on its whitelist. To have the service enact your factory's motions, ask for the factory's testnet and mainnet addresses (R2, R7) to be added: mention them in the PR description or contact the maintenance team.
 
 ## Conventions
 
-- **Solidity.** See the code style in [EVMScript Factories](#best-practices). Production contracts compile with solc 0.8.6 (EVM `berlin`, optimizer off). Foundry scenarios use modern Solidity interfaces in a separate profile; see [test/foundry/README.md](test/foundry/README.md#notes).
-- **Formatting.** Format new Solidity files like the existing factories. The Prettier setup in the repository does not check them: `npm run lint:check` skips `contracts/EVMScriptFactories/`, and the pinned `prettier-plugin-solidity` formats function signatures differently from most existing factories. Python is formatted with Black, line length 120.
+- **Solidity.** See the code style in [EVMScript Factories](#best-practices). Production contracts compile with solc 0.8.6 (EVM `berlin`, optimizer off). The Foundry unit tests compile them with the same settings. The Foundry scenario tests and scripts use a separate profile (solc 0.8.38) and reach the contracts through interfaces; see [test/foundry/README.md](test/foundry/README.md).
+- **Formatting.** No formatter checks production contracts, so format a new contract by hand, like the existing factories.
+  - **Contracts.** `npm run lint:check` (Prettier) skips `contracts/EVMScriptFactories/`, and the pinned `prettier-plugin-solidity` formats function signatures differently from most existing factories. `forge fmt` ignores `contracts/`, because the deployed sources must stay byte for byte as audited.
+  - **Foundry tests and scripts.** Run `forge fmt test/foundry script` (`just fmt` does the same). Bare `forge fmt` skips the scenario tests. CI fails on unformatted files.
+  - **Python.** Black, line length 120.
 - **Commits.** Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/): `feat:`, `fix:`, `chore:`, and so on.
-
-## Branches
-
-| Branch    | Network          | Meaning of a merge                                        |
-| --------- | ---------------- | --------------------------------------------------------- |
-| `develop` | Testnet (Hoodi)  | The change is tested and deployed on testnet.             |
-| `master`  | Ethereum mainnet | The change is audited, deployed and activated on mainnet. |
-
-Open PRs against `develop`. A change reaches `master` only after it has been merged into `develop`.
 
 ## Pull Request Requirements
 
-A PR into develop must meet R1–R6, and also R7 and R8 if it records a mainnet deployment. A PR into master must meet R1–R8. A PR that adds or changes neither contracts nor deployment artifacts must meet only R3, R5 and R6.
+Which requirements apply depends on the target branch and on what the PR changes:
+
+- **Into `develop`:** R1–R6, and also R7 and R8 if the PR records a mainnet deployment.
+- **Into `master`:** R1–R8.
+- **No contracts and no deployment artifacts added or changed:** only R3, R5 and R6.
+
+Each requirement says why it exists and what the PR must contain, and ends with a **Check** that the reviewer runs. If a check cannot be verified from the PR and the repository, the requirement is not met.
 
 Here, contracts means production contracts. Test-only contracts under `contracts/test/` and `test/foundry/` do not require deployment, deploy scripts or audits.
 
 ### R1. Tests match the test plan
 
-Link a **test plan** in the PR description: a list of the behaviours your tests must cover. It can live anywhere, as long as it's available for reviewers. For a factory it covers at least:
+A reviewer cannot tell from the tests alone what they were meant to cover, so the PR states it first. Link a **test plan** in the PR description: a list of the behaviours your tests must cover. It can live anywhere, as long as it's available for reviewers. For a factory it covers at least:
 
 - the happy path: the EVMScript produced for valid input (target address, function selector, encoded arguments);
 - every `require` / revert path in `createEVMScript` and in the constructor;
@@ -193,22 +217,24 @@ Link a **test plan** in the PR description: a list of the behaviours your tests 
 - access control: a call from a `_creator` that may not create the motion reverts (an address other than the trusted caller, or one that fails the factory's own check on `_creator`);
 - `decodeEVMScriptCallData`: a round trip of valid calldata, and a revert on malformed calldata;
 - a scenario test of the motion lifecycle: create the motion, wait for the motion duration, enact it, then check the on-chain effect;
-- state changes between creation and enactment, including stale expected values where applicable;
-- for a staking-router or staking-module factory whose testnet activation vote (R2) is enacted, a Foundry scenario test in `test/foundry/scenario/` that drives the testnet deployment from R2.
+- state changes between creation and enactment, including stale expected values where applicable.
 
-Use the [encoding helpers](utils/evm_script.py), the fixtures in [tests/conftest.py](tests/conftest.py) and [tests/scenario/conftest.py](tests/scenario/conftest.py), and, for Foundry scenarios, [EasyTrackScenarioBase](test/foundry/helpers/EasyTrackScenarioBase.sol).
+The tests for a new factory are written in Foundry, because the Foundry suite is replacing the Brownie one. The Brownie suite under `tests/` still runs in CI for the existing factories, but it gets no tests for new ones. A new factory needs two tests:
 
-**Check:** every item in the test plan has at least one test. Each test asserts on the result (the EVMScript bytes, the on-chain state or the expected revert). A test that only checks that a call did not revert does not count.
+- **Unit test** in `test/foundry/unit/factories/`, built on the helpers in `test/foundry/unit/helpers/`. It needs no network.
+- **Scenario test** in `test/foundry/scenario/<area>/`, built on [EasyTrackScenarioBase](test/foundry/helpers/EasyTrackScenarioBase.sol), where `<area>` is one of `sr`, `sm`, `sdvt`, `vebo`, `mevboost`, `vaults`, `lido`, `payouts` and `aragon`. It runs the motion lifecycle on a fork, and its form depends on whether the factory is registered yet:
+  - **Before the testnet activation vote (R2) is enacted,** the test deploys a fresh factory and registers it on the fork (see [SetDepositsReserveTargetFreshFactory.t.sol](test/foundry/scenario/lido/SetDepositsReserveTargetFreshFactory.t.sol)).
+  - **Once the vote is enacted,** add a test that drives the testnet deployment from R2 (see [SetDepositsReserveTarget.t.sol](test/foundry/scenario/lido/SetDepositsReserveTarget.t.sol)). It reads the factory address from the artifact file by a fixed key, and it must skip on a chain whose artifact file lacks the key, as the example does. CI forks only mainnet, so run it locally with `CHAIN=hoodi` (see R3 on skipped tests).
+
+**Check:** every item in the test plan has at least one test. Each test asserts on the result (the EVMScript bytes, the on-chain state or the expected revert). A test that only checks that a call did not revert does not count. For a PR into `master`, a scenario test drives the deployed factory, and the Foundry Scenario Tests job ran it without a skip.
 
 ### R2. Testnet deployment, with addresses in the PR
 
-Each new or changed contract is deployed on testnet, and the PR adds its entry to the matching artifact file:
+The artifact files are where everyone else finds a deployment: the tests read factory addresses from them, and the off-chain handover uses the same addresses. Each new or changed contract is therefore deployed on testnet, and the PR adds its entry to the matching artifact file:
 
-| Contracts                               | Artifact file            |
-| --------------------------------------- | ------------------------ |
-| Staking-module factories (CSM, CM, ...) | `deployed-sm-hoodi.json` |
-| Staking-router factories                | `deployed-sr-hoodi.json` |
-| Other contracts                         | `deployed-hoodi.json`    |
+- staking-module factories (CSM, CM, ...): `deployed-sm-hoodi.json`
+- staking-router factories: `deployed-sr-hoodi.json`
+- other contracts: `deployed-hoodi.json`
 
 Older deploy scripts for vault and MEV Boost relay factories write `et-*-deployed-{network}.json` files without `txHash`. New scripts, vault factories included, use the files above.
 
@@ -229,18 +255,11 @@ The activation vote registers the factory in Easy Track and grants `EVMScriptExe
 
 ### R3. CI is green
 
-All GitHub Actions checks on the PR pass. Two workflows run on every PR into `develop` or `master`.
+CI runs every suite from a clean checkout with pinned tool versions, so its result is the one that all reviewers share. All GitHub Actions checks on the PR pass. Two workflows run on every PR into `develop` or `master`.
 
-**`Tests`** ([tests.yml](.github/workflows/tests.yml)) has four jobs:
+**`Tests`** ([tests.yml](.github/workflows/tests.yml)) runs the Brownie suites and the Foundry scenario suite on a mainnet fork, the Foundry unit suite without a network, and the `forge fmt` check.
 
-| Job                            | What it runs                                                                                                                                                                                                                | Network      |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
-| Unit Tests                     | Brownie unit tests under `tests/` (everything except `integration/`, `scenario/` and the DateTime library test). Tests deploy factories and use stubs or live mainnet contracts from the fork.                              | mainnet fork |
-| Unit Tests - DateTime Library  | `tests/test_bokky_poo_bahs_date-time-library.py`, run as a separate job                                                                                                                                                     | mainnet fork |
-| Integration & Scenario Tests   | `tests/integration/` loads factories from deployment artifacts or deploys them locally. `tests/scenario/` deploys fresh factories and runs full motions against the real mainnet Easy Track, with stubs or live targets.    | mainnet fork |
-| Foundry Scenario Tests (Hoodi) | `test/foundry/scenario/`. Each test drives a factory that is already deployed and registered through a full motion: create, wait, enact, then check the effect on-chain. Addresses come from `deployed-{sr,sm}-hoodi.json`. | testnet fork |
-
-The Foundry scenario tests cover registered staking-router and staking-module factories. Each test reads a fixed artifact key. Add a deployment scenario once the activation vote is enacted; until then, use a Brownie scenario for motion lifecycle coverage. Foundry tests skip without an RPC URL or an active fork; a skipped run does not establish coverage.
+A green **Foundry Scenario Tests** job does not prove that your scenario ran. A scenario test skips without an RPC URL, and a test of a deployed factory skips until the factory is recorded on mainnet. `forge` reports each of them as `[SKIP: <reason>]` in the job log, and a skipped run does not establish coverage.
 
 **`Slither Analysis`** ([slither.yml](.github/workflows/slither.yml)) runs static analysis on `contracts/`. It runs with `--fail-none`, so it passes even when Slither reports findings. Check the PR's code-scanning alerts.
 
@@ -251,16 +270,25 @@ poetry run brownie test --ignore=tests/integration --ignore=tests/scenario \
   --ignore=tests/test_bokky_poo_bahs_date-time-library.py -s --network mainnet-fork
 poetry run brownie test tests/integration/ -s --network mainnet-fork
 poetry run brownie test tests/scenario/ -s --network mainnet-fork
-CHAIN=hoodi forge test -vv
+forge test
+forge build && CHAIN=mainnet FOUNDRY_PROFILE=scenario forge test -vv
+forge fmt --check test/foundry script
 ```
 
 **Check:** `gh pr checks <PR>` shows no failed or pending checks. A local test run does not replace CI.
 
-PRs from forks do not get the repository secrets, so the Brownie tests cannot fork mainnet and the Foundry tests are skipped while their job still passes. For a fork PR, a maintainer runs CI from a branch in this repository.
+PRs from forks do not get the repository secrets, so the Brownie tests cannot fork mainnet and every Foundry scenario test is skipped. For a fork PR, a maintainer runs CI from a branch in this repository.
 
 ### R4. Deploy scripts are correct
 
-Each new contract has a deploy script in `scripts/`. Use [deploy_set_deposits_reserve_target_factory.py](scripts/deploy_set_deposits_reserve_target_factory.py) as the reference. It writes a single entry to `deployed-{network}.json`. For a named staking-module or staking-router factory, follow [deploy_update_staking_module_share_limits_factory.py](scripts/deploy_update_staking_module_share_limits_factory.py), which writes `<Contract>:<Instance>` to `deployed-sr-{network}.json` (staking-module factories write `deployed-sm-{network}.json`). The script:
+The deploy script is the reproducible record of a deployment: the constructor arguments in the artifact file must be the ones that the script produces. Each new contract therefore has a Brownie deploy script in `scripts/`. The Foundry scripts in `script/` do not replace it yet, because they record a deployment without `txHash` and only in `deployed-{network}.json`.
+
+Start from one of two reference scripts:
+
+- **A single deployment:** [deploy_set_deposits_reserve_target_factory.py](scripts/deploy_set_deposits_reserve_target_factory.py) writes one entry to `deployed-{network}.json`.
+- **A named instance of a staking-module or staking-router factory:** [deploy_update_staking_module_share_limits_factory.py](scripts/deploy_update_staking_module_share_limits_factory.py) writes `<Contract>:<Instance>` to `deployed-sr-{network}.json`. A staking-module factory writes to `deployed-sm-{network}.json` instead.
+
+The script:
 
 - passes constructor arguments in the same order and with the same types as the contract's constructor;
 - reads network-specific values from `utils/` config or environment variables, with no hard-coded secrets or private keys;
@@ -276,7 +304,8 @@ These files are shared by every factory:
 - `contracts/EasyTrack.sol`, `EVMScriptExecutor.sol`, `EVMScriptFactoriesRegistry.sol`, `MotionSettings.sol`, `LimitsChecker.sol`, `TrustedCaller.sol`
 - `contracts/libraries/`
 - `contracts/interfaces/IEVMScriptFactory.sol`, `contracts/interfaces/IEasyTrack.sol`
-- shared test code: `utils/*.py`, `tests/conftest.py`, `tests/integration/conftest.py`, `tests/scenario/conftest.py`, `test/foundry/helpers/`, `test/foundry/interfaces/`
+- shared test code: `utils/*.py`, `tests/conftest.py`, `tests/integration/conftest.py`, `tests/scenario/conftest.py`, `test/foundry/helpers/`, `test/foundry/interfaces/`, `test/foundry/unit/helpers/`, `test/foundry/unit/stubs/`
+- `script/helpers/`, shared by the Foundry scripts and the scenario tests
 
 Additions (a new fixture, a new network entry) are fine. Changes to the behaviour or signature of existing code can break deployed contracts or other tests without a visible failure.
 
@@ -284,19 +313,25 @@ Additions (a new fixture, a new network entry) are fine. Changes to the behaviou
 
 ### R6. No out-of-scope changes
 
-The PR changes only what its title and description say. Typical out-of-scope changes: edits to factories the PR does not name, dependency files (`package.json`, `pyproject.toml`, lock files, `brownie-config.yaml`), CI (`.github/`), mainnet artifacts outside a PR that records a mainnet deployment of audited code (such a PR into `develop` also meets R7 and R8), and unrelated refactoring or formatting.
+A reviewer checks a PR against what it says it does, so anything else in the diff gets less scrutiny than it needs. The PR therefore changes only what its title and description say. Typical out-of-scope changes:
+
+- edits to factories that the PR does not name;
+- dependency and build files: `package.json`, `pyproject.toml`, lock files, `brownie-config.yaml`, `foundry.toml`, `remappings.txt`;
+- CI (`.github/`);
+- mainnet artifacts, unless the PR records a mainnet deployment of audited code (such a PR into `develop` also meets R7 and R8);
+- unrelated refactoring or formatting.
 
 **Check:** every changed file is needed for the stated change. If a file differs only because the target branch has moved on, rebase the PR. That is not an out-of-scope change.
 
 ### R7. Mainnet deployment, with addresses in the PR (`master` only)
 
-The same as R2, on mainnet: entries in `deployed-sm-mainnet.json`, `deployed-sr-mainnet.json` or `deployed-mainnet.json`. Unlike on testnet, a PR into `master` merges only after the mainnet activation vote is enacted.
+The same as R2, on mainnet: entries in `deployed-sm-mainnet.json`, `deployed-sr-mainnet.json` or `deployed-mainnet.json`. Unlike on testnet, a PR into `master` merges only after the mainnet activation vote is enacted, because a merge into `master` means that the change is live on mainnet.
 
-**Check:** each new contract has a mainnet entry with all four fields, and its `constructorArgs` match the deploy script (R4) for mainnet. For a PR into `master`, each new factory is in `EasyTrack.getEVMScriptFactories()` on mainnet.
+**Check:** each new or changed contract has a mainnet entry with all four fields, and its `constructorArgs` match the deploy script (R4) for mainnet. For a PR into `master`, each new factory is in `EasyTrack.getEVMScriptFactories()` on mainnet.
 
 ### R8. Audit (`master` only)
 
-New and changed contracts are audited. The PR description links to each audit report in the [lidofinance/audits](https://github.com/lidofinance/audits) repository, for example `MixBytes Easy Track for Deposit Reserve Target management Audit Report 09-2026.pdf`. Links to reports hosted anywhere else do not count; add the report to that repository first.
+The script that a factory generates runs on mainnet with the permissions of `EVMScriptExecutor`, so new and changed contracts are audited before they get there. The PR description links to each audit report in the [lidofinance/audits](https://github.com/lidofinance/audits) repository, for example `MixBytes Easy Track for Deposit Reserve Target management Audit Report 09-2026.pdf`. Links to reports hosted anywhere else do not count; add the report to that repository first.
 
 **Check:**
 
@@ -308,8 +343,8 @@ New and changed contracts are audited. The PR description links to each audit re
 
 Into `develop`:
 
-- [ ] R1: test plan linked in the PR description, and every item has a test
-- [ ] R2: deployed on testnet, entries added to the artifact files from the R2 table
+- [ ] R1: test plan linked in the PR description, every item has a test, and a new factory has a Foundry unit test and a Foundry scenario test
+- [ ] R2: deployed on testnet, entries added to the artifact files from the R2 list
 - [ ] R3: all CI checks green
 - [ ] R4: deploy script present, and its arguments match the constructor and the recorded `constructorArgs`
 - [ ] R5: no existing code in shared modules changed, or the change is justified
@@ -317,5 +352,6 @@ Into `develop`:
 
 Into `master`, also:
 
+- [ ] R1: a scenario test drives the deployed factory, and it ran in CI without a skip
 - [ ] R7: deployed on mainnet, entries added to the artifact files from the R7 list, and activated on mainnet before the merge into `master`
 - [ ] R8: audit report in `lidofinance/audits` linked in the PR description, the audited contract code matches the merged code, and the mainnet bytecode matches the audited source

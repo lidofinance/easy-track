@@ -179,7 +179,7 @@ The Foundry scripts live in `script/` and compile with the `scenario` profile. A
 just script DeployEasyTrack --account <keystore> --broadcast
 ```
 
-A new factory gets a script next to `DeployEasyTrack.s.sol` on the same base, and a scenario test under `test/foundry/scenario` that runs it on a fork.
+A new factory is still deployed with a Brownie script in `scripts/`, see [R4](CONTRIBUTING.md#r4-deploy-scripts-are-correct) in the contribution guide.
 
 ## Tests
 
