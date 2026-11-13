@@ -79,3 +79,4 @@ contracts/test/VaultHubStub.sol
 
 # formatted by `forge fmt`, see [fmt] in foundry.toml
 test/foundry/
+script/
