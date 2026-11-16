@@ -1,5 +1,3 @@
-"""Strict reader for immutable Lido Lend deployment artifacts."""
-
 from pathlib import Path
 
 from eth_abi import encode
@@ -12,12 +10,11 @@ except ImportError:
 
 
 MARKET_PARAMS_ABI_TYPE = "(address,address,address,address,uint256)"
-METADATA_FIELDS = ("deployment", "chain_id", "config_hash")
+METADATA_FIELDS = ("deployment", "chain_id")
 PROTOCOL_FIELDS = (
     "deployment",
     "network",
     "chain_id",
-    "config_hash",
     "core",
     "owner_facade",
     "irm_router",
@@ -83,6 +80,9 @@ def _require_metadata(artifact, expected_kind, path, expected=None):
         value = _metadata_value(metadata, field)
         if expected is not None and value != _metadata_value(expected, field):
             raise ValueError(f"{path} belongs to a different {field}")
+    # Historical artifacts may omit compatibility_hash on both sides.
+    if expected is not None and metadata.get("compatibility_hash") != expected.get("compatibility_hash"):
+        raise ValueError(f"{path} belongs to a different compatibility_hash")
     return metadata
 
 
@@ -116,8 +116,70 @@ def _market_id(market):
     return Web3.keccak(encode([MARKET_PARAMS_ABI_TYPE], [params])).hex()
 
 
-def load_lido_lend_artifacts(directory, require_exit_books=False):
-    """Load and cross-check one immutable Lido Lend deployment directory."""
+def _typed_market(artifact, protocol, metadata, path):
+    header = artifact["header"]
+    _require_fields(header, ("version", "kind", "run", "chainId", "name"), f"{path}:header")
+    if _as_int(header["version"]) != 1 or header["kind"] != "market":
+        raise ValueError(f"unsupported typed market artifact: {path}")
+    if header["run"] != metadata["deployment"] or _as_int(header["chainId"]) != _as_int(metadata["chain_id"]):
+        raise ValueError(f"{path} belongs to a different deployment or chain")
+    if artifact.get("core", "").lower() != protocol["core"].lower():
+        raise ValueError(f"{path}: market core does not match protocol artifact")
+
+    plan = artifact.get("plan", {})
+    deployed = artifact.get("addresses", {})
+    params = deployed.get("params", {})
+    spec = plan.get("market", {})
+    _require_fields(plan, ("name", "market", "curve"), f"{path}:plan")
+    _require_fields(
+        deployed, ("id", "params", "controller", "vault", "guardianSignals", "irmConfig"), f"{path}:addresses"
+    )
+    _require_fields(params, ("loanToken", "collateralToken", "oracle", "irm", "lltv"), f"{path}:params")
+    _require_fields(spec, ("loanToken", "collateralToken", "oracle", "guardianSignals", "lltv"), f"{path}:market")
+    if header["name"] != path.stem or plan["name"] != path.stem:
+        raise ValueError(f"{path}: typed market name does not match the file name")
+    if not artifact.get("role"):
+        raise ValueError(f"{path}: market role is missing")
+    for key in ("loanToken", "collateralToken"):
+        if spec[key].lower() != params[key].lower():
+            raise ValueError(f"{path}: market {key} differs from plan")
+    if _as_int(spec["lltv"]) != _as_int(params["lltv"]):
+        raise ValueError(f"{path}: market lltv differs from plan")
+    for key, actual in (("oracle", params["oracle"]), ("guardianSignals", deployed["guardianSignals"])):
+        if int(spec[key], 16) != 0 and spec[key].lower() != actual.lower():
+            raise ValueError(f"{path}: market {key} differs from plan")
+
+    curve_names = {
+        "curve_steepness": "curveSteepness",
+        "adjustment_speed": "adjustmentSpeed",
+        "target_utilization": "targetUtilization",
+        "initial_rate_at_target": "initialRateAtTarget",
+        "min_rate_at_target": "minRateAtTarget",
+        "max_rate_at_target": "maxRateAtTarget",
+        "max_borrow_rate": "maxBorrowRate",
+    }
+    _require_fields(plan["curve"], curve_names.values(), f"{path}:curve")
+    return {
+        "market": {
+            "name": header["name"],
+            "id": deployed["id"],
+            "loan_token": params["loanToken"],
+            "collateral_token": params["collateralToken"],
+            "oracle": params["oracle"],
+            "irm": params["irm"],
+            "lltv": params["lltv"],
+            "guardian_signals": deployed["guardianSignals"],
+            "factory": protocol["factory"],
+            "controller": deployed["controller"],
+            "vault": deployed["vault"],
+            "irm_config": deployed["irmConfig"],
+        },
+        "curve": {key: plan["curve"][value] for key, value in curve_names.items()},
+    }
+
+
+def load_lido_lend_artifacts(directory, require_exit_books=False, *, require_markets=True):
+    """Load and cross-check artifacts; require_markets=False allows a protocol-only deployment."""
     root = Path(directory).expanduser().resolve()
     if not root.is_dir():
         raise ValueError(f"Lido Lend artifacts directory does not exist: {root}")
@@ -140,14 +202,17 @@ def load_lido_lend_artifacts(directory, require_exit_books=False):
 
     markets_dir = root / "markets"
     market_paths = sorted(markets_dir.glob("*.toml")) if markets_dir.is_dir() else []
-    if not market_paths:
+    if require_markets and not market_paths:
         raise ValueError(f"deployment has no market artifacts: {markets_dir}")
 
     markets = {}
     market_ids = set()
     for path in market_paths:
         artifact = _read_toml(path, "market artifact")
-        _require_metadata(artifact, "market-deployment", path, metadata)
+        if "header" in artifact:
+            artifact = _typed_market(artifact, protocol, metadata, path)
+        else:
+            _require_metadata(artifact, "market-deployment", path, metadata)
         market = artifact.get("market", {})
         _require_fields(market, MARKET_FIELDS, f"{path}:market")
         _require_fields(artifact.get("curve", {}), CURVE_FIELDS, f"{path}:curve")

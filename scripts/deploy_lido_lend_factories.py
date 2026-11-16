@@ -2,7 +2,7 @@
 
 Protocol addresses are read from one immutable Lido Lend deployment directory. Set:
 
-  LIDO_LEND_ARTIFACTS_DIR - directory containing protocol.toml, markets/, and optional exit-books.toml
+  LIDO_LEND_ARTIFACTS_DIR - directory containing protocol.toml, optional markets/, and exit-books.toml for ExitBookActions
   TRUSTED_CALLER          - committee address allowed to create motions
   LIDO_LEND_PRESEEDER     - funded Preseeder address, required by ActivateMarket
   LIDO_LEND_FACTORIES     - optional comma-separated factory names; defaults to all
@@ -132,6 +132,7 @@ def _read_addresses(factory_names, artifacts_dir=None):
     deployment = load_lido_lend_artifacts(
         artifacts_dir,
         require_exit_books=bool(set(factory_names) & EXIT_BOOK_FACTORIES),
+        require_markets=False,
     )
     artifact_chain_id = int(deployment["metadata"]["chain_id"])
     if artifact_chain_id != chain.id:
