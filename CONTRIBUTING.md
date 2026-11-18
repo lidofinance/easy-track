@@ -32,7 +32,7 @@ A new factory usually goes through the steps below. Each requirement in [Pull Re
 3. **Open a PR into `develop`.** It merges when R1–R6 are met.
 4. **Get the factory activated on testnet.** The PR does not wait for the activation vote (see R2). Once the vote is enacted, add the scenario test that drives the deployed factory (R1).
 5. **Hand over the off-chain details.** The UI, the notifications and the enactment service each need a few facts about the factory (see [Off-chain](#off-chain)). Start early, because the maintenance team builds the UI from what you tell them.
-6. **Get the contract audited, then deploy it on mainnet.** The audit report and the mainnet deployment record go into a PR as well (R7, R8).
+6. **Get the contract audited, then deploy it on mainnet.** The mainnet deployment record must be included in a PR and a link to the uploaded audit report must be present in the PR description (R7, R8).
 7. **Open a PR into `master`**, after the mainnet activation vote is enacted. It must meet R1–R8.
 
 A PR that changes no contracts and no deployment artifacts, such as a change to tests, tooling or documentation, is step 3 alone, with a shorter list of requirements.
@@ -90,7 +90,7 @@ TRUSTED_CALLER=0x... MAX_DEPOSITS_RESERVE_TARGET=... \
 
 - `contracts/`: core contracts (`EasyTrack.sol`, `EVMScriptExecutor.sol`, ...)
 - `contracts/EVMScriptFactories/`: EVMScript factories
-- `scripts/`: deploy scripts (Brownie)
+- `scripts/`: legacy deploy scripts (Brownie)
 - `script/`: Foundry scripts for the Easy Track deployment and the executor permission votes
 - `tests/`: Brownie tests in `evm_script_factories/` (unit), `integration/` and `scenario/`
 - `test/foundry/`: Foundry tests in `unit/` (no network) and `scenario/` (fork tests)
@@ -219,7 +219,7 @@ A reviewer cannot tell from the tests alone what they were meant to cover, so th
 - a scenario test of the motion lifecycle: create the motion, wait for the motion duration, enact it, then check the on-chain effect;
 - state changes between creation and enactment, including stale expected values where applicable.
 
-The tests for a new factory are written in Foundry, because the Foundry suite is replacing the Brownie one. The Brownie suite under `tests/` still runs in CI for the existing factories, but it gets no tests for new ones. A new factory needs two tests:
+The tests for a new factory are written in Foundry, because the Foundry suite is replacing the Brownie one. The Brownie suite under `tests/` still runs in CI for the existing factories in a legacy mode, it should not be used to test the new ones. A new factory needs two tests:
 
 - **Unit test** in `test/foundry/unit/factories/`, built on the helpers in `test/foundry/unit/helpers/`. It needs no network.
 - **Scenario test** in `test/foundry/scenario/<area>/`, built on [EasyTrackScenarioBase](test/foundry/helpers/EasyTrackScenarioBase.sol), where `<area>` is one of `sr`, `sm`, `sdvt`, `vebo`, `mevboost`, `vaults`, `lido`, `payouts` and `aragon`. It runs the motion lifecycle on a fork, and its form depends on whether the factory is registered yet:
