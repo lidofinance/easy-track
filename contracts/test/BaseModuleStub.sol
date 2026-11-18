@@ -33,11 +33,9 @@ contract BaseModuleStub {
         _nodeOperatorsCount = nodeOperatorsCount;
     }
 
-    function mock_setValidatorSlashed(
-        uint256 nodeOperatorId,
-        uint256 keyIndex,
-        bool isSlashed
-    ) external {
+    function mock_setValidatorSlashed(uint256 nodeOperatorId, uint256 keyIndex, bool isSlashed)
+        external
+    {
         _isValidatorSlashed[nodeOperatorId][keyIndex] = isSlashed;
     }
 

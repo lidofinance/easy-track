@@ -146,8 +146,8 @@ jobs:
         env:
           MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
 
-  foundry-fmt:
-    name: Foundry Format
+  foundry-lint:
+    name: Foundry Format & Lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
@@ -160,5 +160,8 @@ jobs:
         with:
           version: ${{ env.FOUNDRY_VERSION }}
 
-      - name: Check the formatting of the Foundry tests and scripts
-        run: forge fmt --check test/foundry script
+      - name: Check the formatting
+        run: forge fmt --check contracts test/foundry script
+
+      - name: Lint
+        run: forge lint --deny warnings

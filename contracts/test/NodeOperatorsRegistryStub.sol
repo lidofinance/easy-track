@@ -32,16 +32,12 @@ contract NodeOperatorsRegistryStub {
     mapping(address => mapping(bytes32 => mapping(uint256 => bool))) internal _canPerform;
     mapping(uint256 => mapping(uint256 => bool)) internal _signingKeyUsed;
 
-
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
         _addNodeOperator("Test Node Operator", _rewardAddress, stakingLimit, totalSigningKeys);
     }
 
-    function getNodeOperator(
-        uint256 _id,
-        bool _fullInfo
-    )
+    function getNodeOperator(uint256 _id, bool _fullInfo)
         external
         view
         returns (
@@ -140,20 +136,17 @@ contract NodeOperatorsRegistryStub {
         _nodeOperatorsCount = uint40(_desiredCount);
     }
 
-    function setCanPerform(
-        address _sender,
-        bytes32 _role,
-        uint256 _operatorId,
-        bool _allowed
-    ) external {
+    function setCanPerform(address _sender, bytes32 _role, uint256 _operatorId, bool _allowed)
+        external
+    {
         _canPerform[_sender][_role][_operatorId] = _allowed;
     }
 
-    function canPerform(
-        address _sender,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external view returns (bool) {
+    function canPerform(address _sender, bytes32 _role, uint256[] memory _params)
+        external
+        view
+        returns (bool)
+    {
         // a parametrized permission needs the operator id, as the ACL would evaluate it
         if (_params.length == 0) {
             return false;
@@ -162,10 +155,11 @@ contract NodeOperatorsRegistryStub {
     }
 
     /// @notice Returns the signing key for a given node operator and index.
-    function getSigningKey(
-        uint256 _nodeOperatorId,
-        uint256 _index
-    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {
+    function getSigningKey(uint256 _nodeOperatorId, uint256 _index)
+        external
+        view
+        returns (bytes memory key, bytes memory depositSignature, bool used)
+    {
         bytes memory allKeys = _signingKeys[_nodeOperatorId];
 
         key = new bytes(48);

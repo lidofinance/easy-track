@@ -42,13 +42,8 @@ just test-scenario --mc VaultHub             # one suite
 
 ## Formatting
 
-The tests and scripts are formatted with `forge fmt`, never prettier. `contracts/` is excluded from both the formatter and the linter.
-
-```bash
-just fmt                                     # forge fmt test/foundry script
-forge fmt --check test/foundry script
-```
+See [Formatting](../../README.md#formatting) in the root README.
 
 ## CI
 
-`tests.yml` runs the unit suite and the format check on every pull request, and the scenario suite on mainnet.
+`tests.yml` runs the unit suite, the format check and the lint on every pull request, and the scenario suite on mainnet.

@@ -34,9 +34,13 @@ test-scenario *args: build
 script name *args: build
     FOUNDRY_PROFILE=scenario forge script script/{{name}}.s.sol --rpc-url "$(just _rpc-url)" {{args}}
 
-# Format the Foundry tests and scripts. contracts/ is frozen, see [fmt] in foundry.toml.
+# Format the contracts, tests and scripts, see [fmt] in foundry.toml.
 fmt *args:
-    forge fmt test/foundry script {{args}}
+    forge fmt contracts test/foundry script {{args}}
+
+# Lint the contracts, a warning fails the run, see [lint] in foundry.toml.
+lint *args:
+    forge lint --deny warnings {{args}}
 
 # The RPC of the forking recipes: the anvil on the port, else <CHAIN>_RPC_URL.
 _rpc-url:
