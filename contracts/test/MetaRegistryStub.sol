@@ -72,13 +72,21 @@ contract MetaRegistryStub is IMetaRegistry {
         return groupsCount;
     }
 
-    function getNodeOperatorGroupId(uint256 _nodeOperatorId) external view override returns (uint256) {
+    function getNodeOperatorGroupId(uint256 _nodeOperatorId)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return groupIdByOperatorId[_nodeOperatorId];
     }
 
-    function getExternalOperatorGroupId(
-        ExternalOperator calldata _externalOperator
-    ) external view override returns (uint256) {
+    function getExternalOperatorGroupId(ExternalOperator calldata _externalOperator)
+        external
+        view
+        override
+        returns (uint256)
+    {
         return groupIdByExternalKey[keccak256(_externalOperator.data)];
     }
 
@@ -118,8 +126,9 @@ contract MetaRegistryStub is IMetaRegistry {
         _resetGroup(groupId);
 
         if (groupInfo.subNodeOperators.length == 0) {
-            if (groupInfo.externalOperators.length != 0 || bytes(groupInfo.name).length != 0)
+            if (groupInfo.externalOperators.length != 0 || bytes(groupInfo.name).length != 0) {
                 revert InvalidOperatorGroup();
+            }
             emit OperatorGroupCleared(groupId);
         } else {
             _storeGroupData(groupId, groupInfo);

@@ -21,9 +21,12 @@ contract StakingRouterStub is IStakingRouter {
         uint16 newPriorityExitShareThreshold
     );
 
-    function getStakingModule(
-        uint256 _stakingModuleId
-    ) external view override returns (StakingModule memory) {
+    function getStakingModule(uint256 _stakingModuleId)
+        external
+        view
+        override
+        returns (StakingModule memory)
+    {
         if (!_moduleExists[_stakingModuleId]) revert StakingModuleUnregistered();
         return _stakingModules[_stakingModuleId];
     }

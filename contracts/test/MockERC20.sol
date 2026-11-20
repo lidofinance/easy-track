@@ -4,7 +4,6 @@
 pragma solidity ^0.8.4;
 
 contract MockERC20 {
-
     uint8 public decimals;
 
     constructor(uint8 _decimals) {

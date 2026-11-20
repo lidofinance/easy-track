@@ -62,7 +62,10 @@ contract OperatorGridStub is AccessControl {
         );
     }
 
-    function registerGroup(address _nodeOperator, uint256 _shareLimit) external onlyRole(REGISTRY_ROLE) {
+    function registerGroup(address _nodeOperator, uint256 _shareLimit)
+        external
+        onlyRole(REGISTRY_ROLE)
+    {
         require(_nodeOperator != address(0), "Zero node operator address");
         require(groups[_nodeOperator].operator == address(0), "Group already exists");
 
@@ -75,7 +78,10 @@ contract OperatorGridStub is AccessControl {
         nodeOperators.push(_nodeOperator);
     }
 
-    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit) external onlyRole(REGISTRY_ROLE) {
+    function updateGroupShareLimit(address _nodeOperator, uint256 _shareLimit)
+        external
+        onlyRole(REGISTRY_ROLE)
+    {
         require(_nodeOperator != address(0), "Zero node operator address");
         require(groups[_nodeOperator].operator != address(0), "Group does not exist");
 
@@ -86,10 +92,10 @@ contract OperatorGridStub is AccessControl {
         return groups[_nodeOperator];
     }
 
-    function registerTiers(
-        address _nodeOperator,
-        TierParams[] calldata _tiers
-    ) external onlyRole(REGISTRY_ROLE) {
+    function registerTiers(address _nodeOperator, TierParams[] calldata _tiers)
+        external
+        onlyRole(REGISTRY_ROLE)
+    {
         require(_nodeOperator != address(0), "Zero node operator address");
         require(groups[_nodeOperator].operator != address(0), "Group does not exist");
 
@@ -121,7 +127,10 @@ contract OperatorGridStub is AccessControl {
         return tiers.length;
     }
 
-    function alterTiers(uint256[] calldata _tierIds, TierParams[] calldata _tierParams) external onlyRole(REGISTRY_ROLE) {
+    function alterTiers(uint256[] calldata _tierIds, TierParams[] calldata _tierParams)
+        external
+        onlyRole(REGISTRY_ROLE)
+    {
         require(_tierIds.length == _tierParams.length, "Array length mismatch");
 
         uint256 length = _tierIds.length;
@@ -180,9 +189,11 @@ contract OperatorGridStub is AccessControl {
     /// @notice Returns vault information including tier ID
     /// @param _vault address of the vault
     /// @return vault info tuple (simplified version for testing)
-    function vaultTierInfo(address _vault) external view returns (
-        address, uint256, uint256, uint256, uint256, uint256, uint256, uint256
-    ) {
+    function vaultTierInfo(address _vault)
+        external
+        view
+        returns (address, uint256, uint256, uint256, uint256, uint256, uint256, uint256)
+    {
         uint256 tierId = vaultTiers[_vault]; // defaults to 0 (DEFAULT_TIER_ID)
         if (tierId < tiers.length) {
             Tier memory tier = tiers[tierId];

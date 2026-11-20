@@ -92,4 +92,4 @@ A suite skips a chain that cannot host it: the SimpleDVT suites where `IncreaseV
 
 ## Formatting
 
-`test/foundry` and `script` are formatted with `forge fmt` and excluded from prettier. `contracts/` is excluded from `forge fmt` and `forge lint`, since the deployed sources must not change.
+`test/foundry` and `script` are formatted with `forge fmt` and excluded from prettier. The deployed sources listed in `foundry.toml` are excluded from `forge fmt` and `forge lint`, since they must not change post-audit.

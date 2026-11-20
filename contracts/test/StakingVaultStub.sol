@@ -4,7 +4,6 @@
 pragma solidity 0.8.6;
 
 contract StakingVaultStub {
-
     address nodeOperator_storage;
 
     constructor(address _nodeOperator) {

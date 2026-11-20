@@ -55,14 +55,18 @@ Permissions for EVMScript factory must contain only methods used by generated EV
 
 ## Project Setup
 
-To use the tools that this project provides, please pull the repository from GitHub and install its dependencies as follows.
+The project was built with Brownie and its toolchain is being migrated to Foundry. Pull the repository from GitHub, install the shared dependencies, then set up the toolchain you need. Deployments of the pre-existing factories still go through Brownie.
 
 ```bash
 git clone https://github.com/lidofinance/easy-track
 cd easy-track
 nvm install
 npm ci
+```
 
+### Brownie
+
+```bash
 poetry install
 poetry run brownie networks import network-config.yaml True
 poetry shell
@@ -78,6 +82,21 @@ To run scripts that require EVM script decoding, tests with contract name resolu
 
 ```bash
 export ETHERSCAN_TOKEN=<etherscan_api_key>
+```
+
+### Foundry
+
+The Foundry tests and scripts need [Foundry](https://getfoundry.sh) at the version CI pins. forge-std comes from `node_modules`, installed by `npm ci` above.
+
+```bash
+curl -L https://foundry.paradigm.xyz | bash # installs foundryup
+foundryup --install 1.8.3
+```
+
+Compile the Smart Contracts:
+
+```bash
+forge build
 ```
 
 ## Scripts
