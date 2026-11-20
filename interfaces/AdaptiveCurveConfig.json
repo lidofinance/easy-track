@@ -1,0 +1,191 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "curveParams",
+        "type": "tuple",
+        "internalType": "struct AdaptiveCurveParams",
+        "components": [
+          {
+            "name": "curveSteepness",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "adjustmentSpeed",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "targetUtilization",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "initialRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "minRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxBorrowRate",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "ADJUSTMENT_SPEED",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "CURVE_STEEPNESS",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "INITIAL_RATE_AT_TARGET",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_BORROW_RATE",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "uint256",
+        "internalType": "uint256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MAX_RATE_AT_TARGET",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "MIN_RATE_AT_TARGET",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "TARGET_UTILIZATION",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "int256",
+        "internalType": "int256"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getCurveParams",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "tuple",
+        "internalType": "struct AdaptiveCurveParams",
+        "components": [
+          {
+            "name": "curveSteepness",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "adjustmentSpeed",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "targetUtilization",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "initialRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "minRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxBorrowRate",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "stateMutability": "view"
+  }
+]

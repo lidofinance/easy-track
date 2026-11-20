@@ -1,0 +1,234 @@
+[
+  {
+    "type": "function",
+    "name": "getAdaptiveCurveConfig",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct AdaptiveCurveParams",
+        "components": [
+          {
+            "name": "curveSteepness",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "adjustmentSpeed",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "targetUtilization",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "initialRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "minRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxBorrowRate",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "config",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getLinearKinkConfig",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct LinearKinkParams",
+        "components": [
+          {
+            "name": "optimalUtilization",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "baseRate",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "slope1",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "slope2",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "config",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "getOrDeployAdaptiveCurveConfig",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct AdaptiveCurveParams",
+        "components": [
+          {
+            "name": "curveSteepness",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "adjustmentSpeed",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "targetUtilization",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "initialRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "minRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxRateAtTarget",
+            "type": "int256",
+            "internalType": "int256"
+          },
+          {
+            "name": "maxBorrowRate",
+            "type": "uint256",
+            "internalType": "uint256"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "config",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "getOrDeployLinearKinkConfig",
+    "inputs": [
+      {
+        "name": "params",
+        "type": "tuple",
+        "internalType": "struct LinearKinkParams",
+        "components": [
+          {
+            "name": "optimalUtilization",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "baseRate",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "slope1",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "slope2",
+            "type": "uint64",
+            "internalType": "uint64"
+          }
+        ]
+      }
+    ],
+    "outputs": [
+      {
+        "name": "config",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "event",
+    "name": "AdaptiveCurveConfigDeployed",
+    "inputs": [
+      {
+        "name": "paramsHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "config",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  },
+  {
+    "type": "event",
+    "name": "LinearKinkConfigDeployed",
+    "inputs": [
+      {
+        "name": "paramsHash",
+        "type": "bytes32",
+        "indexed": true,
+        "internalType": "bytes32"
+      },
+      {
+        "name": "config",
+        "type": "address",
+        "indexed": true,
+        "internalType": "address"
+      }
+    ],
+    "anonymous": false
+  }
+]
