@@ -131,18 +131,26 @@ def deploy_easy_tracks(
         tx_params=tx_params,
     )
 
-    deployment.grant_roles(
+    voting = lido_contracts.aragon.voting
+    grants = [(name, voting) for name in deployment.EASY_TRACK_ROLE_NAMES] + [("PAUSE_ROLE", pause_address)]
+    receipts = deployment.handoff_easy_track_roles(
         easy_track=easy_track,
-        admin=lido_contracts.aragon.voting,
-        pause_address=pause_address,
+        deployer=tx_params["from"],
+        grants=grants,
         tx_params=tx_params,
     )
-
-    deployment.transfer_admin_role(
+    deployment.validate_easy_track_deployment(
+        easy_track,
+        evm_script_executor,
+        governance_token=lido_contracts.ldo,
+        aragon_calls_script=lido_contracts.aragon.calls_script,
+        executor_owner=voting,
+        motion_duration=INITIAL_MOTION_DURATION,
+        motions_count_limit=INITIAL_MOTIONS_COUNT_LIMIT,
+        objections_threshold=INITIAL_OBJECTIONS_THRESHOLD,
+        expected_role_holders=deployment.expected_role_holders_from_grants(grants),
         deployer=tx_params["from"],
-        easy_track=easy_track,
-        new_admin=lido_contracts.aragon.voting,
-        tx_params=tx_params,
+        receipts=[easy_track.tx, *receipts],
     )
     return (
         easy_track,
