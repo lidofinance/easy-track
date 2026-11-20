@@ -118,5 +118,15 @@
         "0xFdDf38947aFB03C621C71b06C9C70bce73f12999",
         "0x0De4Ea0184c2ad0BacA7183356Aea5B8d5Bf5c6e"
       ]
+    },
+    "SetDepositsReserveTarget": {
+      "contract": "SetDepositsReserveTarget",
+      "address": "0x62E9Dc68BDCBC46362f40e0bb9c154C9a42E62b0",
+      "constructorArgs": [
+        "0x2570e0b22AD904501dfB0d49575991ACB801dD91",
+        9600000000000000000000,
+        "0xae7ab96520de3a18e5e111b5eaab095312d7fe84"
+      ],
+      "txHash": "0xbbfbab914fd30eaf80ddab08474e1934a5fd85de7b5b0743d5f5ea66995080e1"
     }
 }

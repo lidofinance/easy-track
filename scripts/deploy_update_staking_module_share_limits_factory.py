@@ -109,24 +109,25 @@ def main():
 
     log.ok("Deployed UpdateStakingModuleShareLimits", factory.address)
 
-    entry_key = f"UpdateStakingModuleShareLimits:{factory_name}"
-    deployment_artifacts = {
-        entry_key: {
-            "contract": "UpdateStakingModuleShareLimits",
-            "address": factory.address,
-            "constructorArgs": [
-                trusted_caller,
-                factory_name,
-                staking_router,
-                staking_module_id,
-                max_stake_share_increase,
-                max_stake_share_decrease,
-                max_priority_threshold_increase,
-                max_priority_threshold_decrease,
-            ],
-            "txHash": factory.tx.txid,
+    if is_live:
+        entry_key = f"UpdateStakingModuleShareLimits:{factory_name}"
+        deployment_artifacts = {
+            entry_key: {
+                "contract": "UpdateStakingModuleShareLimits",
+                "address": factory.address,
+                "constructorArgs": [
+                    trusted_caller,
+                    factory_name,
+                    staking_router,
+                    staking_module_id,
+                    max_stake_share_increase,
+                    max_stake_share_decrease,
+                    max_priority_threshold_increase,
+                    max_priority_threshold_decrease,
+                ],
+                "txHash": factory.tx.txid,
+            }
         }
-    }
 
     if not is_live:
         # Do not save artifacts and do verification on non-live networks
@@ -139,11 +140,11 @@ def main():
         existing_artifacts.update(deployment_artifacts)
         deployment_artifacts = existing_artifacts
 
-    with open(artifacts_path, "w") as outfile:
-        json.dump(deployment_artifacts, outfile, indent=4)
+        with open(artifacts_path, "w") as outfile:
+            json.dump(deployment_artifacts, outfile, indent=4)
 
-    log.br()
-    log.nb("Artifacts saved to", artifacts_path)
+        log.br()
+        log.nb("Artifacts saved to", artifacts_path)
 
     if is_live and get_env("FORCE_VERIFY", False):
         log.nb("Starting code verification.")

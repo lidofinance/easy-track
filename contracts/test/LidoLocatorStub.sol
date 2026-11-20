@@ -3,7 +3,6 @@
 
 pragma solidity 0.8.6;
 
-
 contract LidoLocatorStub {
     address public operatorGrid;
     address public vaultHub;
@@ -11,7 +10,13 @@ contract LidoLocatorStub {
     address public lazyOracle;
     address public accountingOracle;
 
-    constructor(address _operatorGrid, address _vaultHub, address _vaultFactory, address _lazyOracle, address _accountingOracle) {
+    constructor(
+        address _operatorGrid,
+        address _vaultHub,
+        address _vaultFactory,
+        address _lazyOracle,
+        address _accountingOracle
+    ) {
         require(_operatorGrid != address(0), "Zero operator grid address");
         require(_vaultHub != address(0), "Zero vault hub address");
         require(_vaultFactory != address(0), "Zero vault factory address");

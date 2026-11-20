@@ -53,7 +53,8 @@ contract VaultHubStub is AccessControl {
 
     bytes32 public constant VAULT_MASTER_ROLE = keccak256("vaults.VaultHub.VaultMasterRole");
     bytes32 public constant VALIDATOR_EXIT_ROLE = keccak256("vaults.VaultHub.ValidatorExitRole");
-    bytes32 public constant REDEMPTION_MASTER_ROLE = keccak256("vaults.VaultHub.RedemptionMasterRole");
+    bytes32 public constant REDEMPTION_MASTER_ROLE =
+        keccak256("vaults.VaultHub.RedemptionMasterRole");
     bytes32 public constant BAD_DEBT_MASTER_ROLE = keccak256("vaults.VaultHub.BadDebtMasterRole");
     /// @dev special value for `disconnectTimestamp` storage means the vault is not marked for disconnect
     uint48 internal immutable DISCONNECT_NOT_INITIATED = type(uint48).max;
@@ -82,11 +83,7 @@ contract VaultHubStub is AccessControl {
         );
 
         records[_vault] = VaultRecord(
-            Report(0, 0),
-            0,
-            0,
-            Int112WithRefSlotCache(0, 0, 0),
-            uint64(block.timestamp)
+            Report(0, 0), 0, 0, Int112WithRefSlotCache(0, 0, 0), uint64(block.timestamp)
         );
 
         obligations[_vault] = VaultObligations(0, 0, 0);
@@ -130,12 +127,11 @@ contract VaultHubStub is AccessControl {
         obligationsShortfallValues[_vault] = _shortfallValue;
     }
 
-
-    function forceValidatorExit(
-        address _vault,
-        bytes calldata _pubkeys,
-        address _refundRecipient
-    ) external payable onlyRole(VALIDATOR_EXIT_ROLE) {
+    function forceValidatorExit(address _vault, bytes calldata _pubkeys, address _refundRecipient)
+        external
+        payable
+        onlyRole(VALIDATOR_EXIT_ROLE)
+    {
         // First vault is special and will revert
         if (connections[_vault].vaultIndex == 1) {
             revert("Special vault revert 1");
@@ -155,10 +151,10 @@ contract VaultHubStub is AccessControl {
         emit BadDebtSocialized(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
     }
 
-    function setLiabilitySharesTarget(
-        address _vault,
-        uint256 _liabilitySharesTarget
-    ) external onlyRole(REDEMPTION_MASTER_ROLE) {
+    function setLiabilitySharesTarget(address _vault, uint256 _liabilitySharesTarget)
+        external
+        onlyRole(REDEMPTION_MASTER_ROLE)
+    {
         // Stub implementation - in real implementation this would calculate redemptionShares
         // based on current liabilityShares and the target
         emit VaultRedemptionSharesUpdated(_vault, _liabilitySharesTarget);
@@ -173,7 +169,11 @@ contract VaultHubStub is AccessControl {
         uint256 liquidityFeeBP,
         uint256 reservationFeeBP
     );
-    event ForcedValidatorExitTriggered(address indexed vault, bytes pubkeys, address refundRecipient);
-    event BadDebtSocialized(address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares);
+    event ForcedValidatorExitTriggered(
+        address indexed vault, bytes pubkeys, address refundRecipient
+    );
+    event BadDebtSocialized(
+        address indexed vaultDonor, address indexed vaultAcceptor, uint256 badDebtShares
+    );
     event VaultRedemptionSharesUpdated(address indexed vault, uint256 redemptionShares);
 }

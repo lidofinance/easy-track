@@ -1,0 +1,287 @@
+// SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity ^0.8.25;
+
+import {Vm} from "forge-std/Vm.sol";
+import {EasyTrackScenarioBase} from "test/foundry/helpers/EasyTrackScenarioBase.sol";
+import {
+    ILidoLocator,
+    INodeOperatorsRegistry,
+    IStakingRouter,
+    IValidatorsExitBusOracle
+} from "test/foundry/interfaces/External.sol";
+import {ISubmitExitRequestHashes} from "test/foundry/interfaces/Factories.sol";
+
+/// @notice Harness for the exit request hash scenarios: an operator of a legacy module with
+///         deposited keys has their exit requested through a motion, which submits the batch's
+///         hash to the Validators Exit Bus Oracle, then the batch is delivered against the hash
+///         and the oracle requests every exit. The helpers port
+///         `utils/submit_exit_requests_test_helpers.py`.
+abstract contract ExitRequestsScenarioBase is EasyTrackScenarioBase {
+    /// @dev `SubmitExitRequestHashesUtils.ExitRequestInput`, an entry of the factories' calldata
+    struct ExitRequestInput {
+        uint256 moduleId;
+        uint256 nodeOpId;
+        uint64 valIndex;
+        bytes valPubkey;
+        uint256 valPubKeyIndex;
+    }
+
+    uint256 internal constant MAX_REQUESTS = 200;
+    uint256 internal constant DATA_FORMAT_LIST = 1;
+    uint256 internal constant PUBKEY_SIZE = 48;
+    uint256 internal constant SIG_SIZE = 96;
+
+    IValidatorsExitBusOracle internal oracle;
+    IStakingRouter internal stakingRouter;
+    INodeOperatorsRegistry internal registry;
+
+    /// @dev The staking router id of the module under test, the first field of every request
+    uint256 internal moduleId;
+
+    // --- setup ---
+
+    /// @dev Bind the oracle, the router and the registry of the module `id`
+    function _bindModule(uint256 id) internal {
+        ILidoLocator locator = ILidoLocator(config.locator);
+        moduleId = id;
+        oracle = IValidatorsExitBusOracle(locator.validatorsExitBusOracle());
+        stakingRouter = IStakingRouter(locator.stakingRouter());
+        registry = INodeOperatorsRegistry(stakingRouter.getStakingModule(id).stakingModuleAddress);
+
+        vm.label(address(oracle), "ValidatorsExitBusOracle");
+        vm.label(address(stakingRouter), "StakingRouter");
+        vm.label(address(registry), string.concat("StakingModule", vm.toString(id)));
+    }
+
+    /// @dev Binds `factory` as the one under test, asserts it targets the module's registry and
+    ///      registers it in Easy Track with the oracle's `submitExitRequestsHash`, unless it
+    ///      already is
+    function _bindFactory(address factory, string memory key) internal {
+        evmScriptFactory = factory;
+
+        vm.label(factory, key);
+
+        assertEq(
+            ISubmitExitRequestHashes(factory).nodeOperatorsRegistry(),
+            address(registry),
+            string.concat("setup: ", key, " nodeOperatorsRegistry")
+        );
+
+        _registerFactoryIfMissing(
+            factory,
+            abi.encodePacked(oracle, IValidatorsExitBusOracle.submitExitRequestsHash.selector)
+        );
+    }
+
+    /// @dev Grants the executor `SUBMIT_REPORT_HASH_ROLE` on the oracle
+    function _grantSubmitReportHashRole() internal {
+        _grantRole(address(oracle), oracle.SUBMIT_REPORT_HASH_ROLE(), evmScriptExecutor);
+    }
+
+    // --- operators and keys ---
+
+    /// @dev The first operator holding at least `minDeposited` deposited keys, the only keys the
+    ///      factories accept
+    function _operatorWithDepositedKeys(uint256 minDeposited)
+        internal
+        view
+        returns (uint256 nodeOperatorId, address rewardAddress)
+    {
+        uint256 count = registry.getNodeOperatorsCount();
+        uint64 totalDepositedValidators;
+        for (; nodeOperatorId < count; ++nodeOperatorId) {
+            (,, rewardAddress,,,, totalDepositedValidators) =
+                registry.getNodeOperator(nodeOperatorId, false);
+            if (totalDepositedValidators >= minDeposited) break;
+        }
+
+        assertLt(
+            nodeOperatorId,
+            count,
+            string.concat("setup: an operator with ", vm.toString(minDeposited), " deposited keys")
+        );
+    }
+
+    /// @dev The operator's first `count` keys, each at its index and each deposited
+    function _operatorKeys(uint256 nodeOperatorId, uint256 count)
+        internal
+        view
+        returns (bytes[] memory keys)
+    {
+        (bytes memory pubkeys,, bool[] memory used) =
+            registry.getSigningKeys(nodeOperatorId, 0, count);
+
+        keys = new bytes[](count);
+        for (uint256 i; i < count; ++i) {
+            assertTrue(used[i], string.concat("setup: key ", vm.toString(i), " is deposited"));
+            keys[i] = _slice(pubkeys, i * PUBKEY_SIZE, PUBKEY_SIZE);
+        }
+    }
+
+    /// @dev A key the operator has not deposited, added from its reward address, as the request
+    ///      the factory rejects
+    function _addUnusedKey(uint256 nodeOperatorId, address rewardAddress)
+        internal
+        returns (ExitRequestInput memory)
+    {
+        (,,,,, uint64 totalSigningKeys,) = registry.getNodeOperator(nodeOperatorId, false);
+        bytes memory newKey = _makeTestBytes(totalSigningKeys, PUBKEY_SIZE);
+        bytes memory newSignature = _makeTestBytes(totalSigningKeys, SIG_SIZE);
+
+        vm.prank(rewardAddress);
+        registry.addSigningKeys(nodeOperatorId, 1, newKey, newSignature);
+
+        (,, bool used) = registry.getSigningKey(nodeOperatorId, totalSigningKeys);
+
+        assertFalse(used, "Test setup failure: expected the new key to be unused");
+
+        return _request(nodeOperatorId, totalSigningKeys, newKey, totalSigningKeys);
+    }
+
+    // --- requests ---
+
+    /// @dev One request per key, the key's index as both the validator index and the pubkey index
+    function _buildExitRequests(uint256 nodeOperatorId, bytes[] memory keys)
+        internal
+        view
+        returns (ExitRequestInput[] memory requests)
+    {
+        requests = new ExitRequestInput[](keys.length);
+        for (uint64 i; i < keys.length; ++i) {
+            requests[i] = _request(nodeOperatorId, i, keys[i], i);
+        }
+    }
+
+    /// @dev One exit request for the module under test
+    function _request(
+        uint256 nodeOpId,
+        uint64 valIndex,
+        bytes memory valPubkey,
+        uint256 valPubKeyIndex
+    ) internal view returns (ExitRequestInput memory) {
+        return ExitRequestInput(moduleId, nodeOpId, valIndex, valPubkey, valPubKeyIndex);
+    }
+
+    /// @dev Packs the requests, 64 bytes each: the module id as 3 bytes, the operator id as 5, the
+    ///      validator index as 8, then the 48-byte pubkey
+    function _packExitRequests(ExitRequestInput[] memory requests)
+        internal
+        pure
+        returns (bytes memory data)
+    {
+        for (uint256 i; i < requests.length; ++i) {
+            ExitRequestInput memory request = requests[i];
+            data = bytes.concat(
+                data,
+                _toBytes(request.moduleId, 3),
+                _toBytes(request.nodeOpId, 5),
+                bytes8(request.valIndex),
+                request.valPubkey
+            );
+        }
+    }
+
+    /// @dev The hash the oracle expects, `keccak256(abi.encode(packed, DATA_FORMAT_LIST))`, with
+    ///      `abi.encode` and not `encodePacked`
+    function _exitRequestsHash(bytes memory packed) internal pure returns (bytes32) {
+        return keccak256(abi.encode(packed, DATA_FORMAT_LIST));
+    }
+
+    // --- motion ---
+
+    /// @dev `motionCreator` creates the motion, the batch cannot be delivered before it is enacted,
+    ///      the enactment submits the batch's hash, then `submitter` delivers the batch and the
+    ///      oracle requests every exit
+    function _runMotionAndCheckEvents(
+        address motionCreator,
+        address submitter,
+        ExitRequestInput[] memory requests
+    ) internal {
+        bytes memory callData = abi.encode(requests);
+
+        uint256 motionId = _createMotion(evmScriptFactory, motionCreator, callData);
+
+        IValidatorsExitBusOracle.ExitRequestsData memory batch =
+            IValidatorsExitBusOracle.ExitRequestsData(_packExitRequests(requests), DATA_FORMAT_LIST);
+
+        vm.prank(submitter);
+        vm.expectRevert(IValidatorsExitBusOracle.ExitHashNotSubmitted.selector);
+        oracle.submitExitRequestsData(batch);
+
+        _passMotionDuration();
+
+        vm.expectEmit(address(oracle));
+        emit IValidatorsExitBusOracle.RequestsHashSubmitted(_exitRequestsHash(batch.data));
+
+        vm.prank(stranger);
+        easyTrack.enactMotion(motionId, callData);
+
+        vm.recordLogs();
+
+        vm.prank(submitter);
+        oracle.submitExitRequestsData(batch);
+
+        _assertExitsRequested(vm.getRecordedLogs(), requests);
+    }
+
+    /// @dev Asserts one `ValidatorExitRequest` log per request, in order, for its module, operator,
+    ///      validator index and pubkey
+    function _assertExitsRequested(Vm.Log[] memory logs, ExitRequestInput[] memory requests)
+        private
+        view
+    {
+        uint256 found;
+        for (uint256 i; i < logs.length; ++i) {
+            Vm.Log memory log = logs[i];
+            if (
+                log.emitter != address(oracle)
+                    || log.topics[0] != IValidatorsExitBusOracle.ValidatorExitRequest.selector
+            ) {
+                continue;
+            }
+
+            assertLt(found, requests.length, "ValidatorExitRequest count");
+
+            ExitRequestInput memory request = requests[found];
+            (bytes memory validatorPubkey,) = abi.decode(log.data, (bytes, uint256));
+
+            assertEq(uint256(log.topics[1]), moduleId, "stakingModuleId");
+            assertEq(uint256(log.topics[2]), request.nodeOpId, "nodeOperatorId");
+            assertEq(uint256(log.topics[3]), request.valIndex, "validatorIndex");
+            assertEq(validatorPubkey, request.valPubkey, "validatorPubkey");
+
+            ++found;
+        }
+
+        assertEq(found, requests.length, "ValidatorExitRequest count");
+    }
+
+    // --- bytes ---
+
+    /// @dev Deterministic test bytes: `i` as 3 big-endian bytes, then `length - 3` copies of
+    ///      `i % 256`
+    function _makeTestBytes(uint256 i, uint256 length) internal pure returns (bytes memory result) {
+        require(length >= 3, "Length must be at least 3 bytes");
+
+        bytes memory prefix = _toBytes(i, 3);
+        bytes1 filler = bytes32(i)[31];
+
+        result = new bytes(length);
+        for (uint256 j; j < length; ++j) {
+            result[j] = j < 3 ? prefix[j] : filler;
+        }
+    }
+
+    function _slice(bytes memory data, uint256 start, uint256 length)
+        private
+        pure
+        returns (bytes memory result)
+    {
+        result = new bytes(length);
+        for (uint256 i; i < length; ++i) {
+            result[i] = data[start + i];
+        }
+    }
+}

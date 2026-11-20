@@ -8,19 +8,19 @@ import "../libraries/EVMScriptCreator.sol";
 /// @author psirex
 /// @notice Helper contract to test internal methods of EVMScriptCreator library
 library EVMScriptCreatorWrapper {
-    function createEVMScript(
-        address _to,
-        bytes4 _methodId,
-        bytes memory _evmScriptCallData
-    ) external pure returns (bytes memory _commands) {
+    function createEVMScript(address _to, bytes4 _methodId, bytes memory _evmScriptCallData)
+        external
+        pure
+        returns (bytes memory _commands)
+    {
         return EVMScriptCreator.createEVMScript(_to, _methodId, _evmScriptCallData);
     }
 
-    function createEVMScript(
-        address _to,
-        bytes4 _methodId,
-        bytes[] memory _evmScriptCallData
-    ) external pure returns (bytes memory _evmScript) {
+    function createEVMScript(address _to, bytes4 _methodId, bytes[] memory _evmScriptCallData)
+        external
+        pure
+        returns (bytes memory _evmScript)
+    {
         return EVMScriptCreator.createEVMScript(_to, _methodId, _evmScriptCallData);
     }
 

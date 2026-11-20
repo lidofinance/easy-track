@@ -6,6 +6,9 @@ pragma solidity ^0.8.4;
 /// @author psirex
 /// @notice Helper contract with stub implementation of NodeOperatorsRegistry
 contract NodeOperatorsRegistryStub {
+    uint256 public constant MAX_NODE_OPERATORS_COUNT = 200;
+    uint256 public constant MAX_NODE_OPERATOR_NAME_LENGTH = 255;
+
     uint256 public id = 1;
     bool public active = true;
     address public rewardAddress;
@@ -29,16 +32,12 @@ contract NodeOperatorsRegistryStub {
     mapping(address => mapping(bytes32 => mapping(uint256 => bool))) internal _canPerform;
     mapping(uint256 => mapping(uint256 => bool)) internal _signingKeyUsed;
 
-
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
         _addNodeOperator("Test Node Operator", _rewardAddress, stakingLimit, totalSigningKeys);
     }
 
-    function getNodeOperator(
-        uint256 _id,
-        bool _fullInfo
-    )
+    function getNodeOperator(uint256 _id, bool _fullInfo)
         external
         view
         returns (
@@ -128,36 +127,39 @@ contract NodeOperatorsRegistryStub {
         return _nodeOperatorsCount;
     }
 
+    function getNodeOperatorIsActive(uint256 _id) external view returns (bool) {
+        return _nodeOperators[_id].active;
+    }
+
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
         _nodeOperatorsCount = uint40(_desiredCount);
     }
 
-    function setCanPerform(
-        address _sender,
-        bytes32 _role,
-        uint256 _operatorId,
-        bool _allowed
-    ) external {
+    function setCanPerform(address _sender, bytes32 _role, uint256 _operatorId, bool _allowed)
+        external
+    {
         _canPerform[_sender][_role][_operatorId] = _allowed;
     }
 
-    function canPerform(
-        address _sender,
-        bytes32 _role,
-        uint256[] memory _params
-    ) external view returns (bool) {
+    function canPerform(address _sender, bytes32 _role, uint256[] memory _params)
+        external
+        view
+        returns (bool)
+    {
+        // a parametrized permission needs the operator id, as the ACL would evaluate it
         if (_params.length == 0) {
-            return _canPerform[_sender][_role][0];
+            return false;
         }
         return _canPerform[_sender][_role][_params[0]];
     }
 
     /// @notice Returns the signing key for a given node operator and index.
-    function getSigningKey(
-        uint256 _nodeOperatorId,
-        uint256 _index
-    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {
+    function getSigningKey(uint256 _nodeOperatorId, uint256 _index)
+        external
+        view
+        returns (bytes memory key, bytes memory depositSignature, bool used)
+    {
         bytes memory allKeys = _signingKeys[_nodeOperatorId];
 
         key = new bytes(48);
