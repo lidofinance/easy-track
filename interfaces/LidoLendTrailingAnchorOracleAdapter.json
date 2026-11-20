@@ -1,0 +1,120 @@
+[
+  {
+    "type": "constructor",
+    "inputs": [
+      {
+        "name": "evmScriptExecutor",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "EVM_SCRIPT_EXECUTOR",
+    "inputs": [],
+    "outputs": [
+      {
+        "name": "",
+        "type": "address",
+        "internalType": "address"
+      }
+    ],
+    "stateMutability": "view"
+  },
+  {
+    "type": "function",
+    "name": "setParameters",
+    "inputs": [
+      {
+        "name": "oracle",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "parameters",
+        "type": "tuple",
+        "internalType": "struct TrailingAnchorOracleBase.Parameters",
+        "components": [
+          {
+            "name": "maxPriceAboveAnchor",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxPriceBelowAnchor",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxAnchorContinuousRiseRate",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxAnchorContinuousFallRate",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxAnchorBelowBase",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "maxAnchorAboveBase",
+            "type": "uint64",
+            "internalType": "uint64"
+          },
+          {
+            "name": "reanchorDelay",
+            "type": "uint40",
+            "internalType": "uint40"
+          },
+          {
+            "name": "reanchorWindow",
+            "type": "uint40",
+            "internalType": "uint40"
+          }
+        ]
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "function",
+    "name": "setPricingResumesAt",
+    "inputs": [
+      {
+        "name": "oracle",
+        "type": "address",
+        "internalType": "address"
+      },
+      {
+        "name": "resumesAt",
+        "type": "uint40",
+        "internalType": "uint40"
+      }
+    ],
+    "outputs": [],
+    "stateMutability": "nonpayable"
+  },
+  {
+    "type": "error",
+    "name": "Unauthorized",
+    "inputs": [
+      {
+        "name": "caller",
+        "type": "address",
+        "internalType": "address"
+      }
+    ]
+  },
+  {
+    "type": "error",
+    "name": "ZeroAddress",
+    "inputs": []
+  }
+]

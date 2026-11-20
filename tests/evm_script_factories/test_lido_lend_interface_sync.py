@@ -98,10 +98,31 @@ _EXPECTED_SIGNATURES = {
     "Erc4626ExitBook": [
         "setVaultAllowed(address,bool)",
     ],
+    "TrailingAnchorOracle": [
+        "MANAGER_ROLE()",
+        "hasRole(bytes32,address)",
+        "MIN_REANCHOR_DELAY()",
+        "MIN_REANCHOR_WINDOW()",
+        "MAX_PRICING_SUSPENSION()",
+        "maxPriceAboveAnchor()",
+        "maxPriceBelowAnchor()",
+        "maxAnchorContinuousRiseRate()",
+        "maxAnchorContinuousFallRate()",
+        "maxAnchorBelowBase()",
+        "maxAnchorAboveBase()",
+        "reanchorDelay()",
+        "reanchorWindow()",
+        "setParameters((uint64,uint64,uint64,uint64,uint64,uint64,uint40,uint40))",
+        "setPricingResumesAt(uint40)",
+    ],
+    "LidoLendTrailingAnchorOracleAdapter": [
+        "setParameters(address,(uint64,uint64,uint64,uint64,uint64,uint64,uint40,uint40))",
+        "setPricingResumesAt(address,uint40)",
+    ],
 }
 
 # Struct layouts read by the factories must match ILidoLend.sol field-for-field. Keyed by
-# (file, getter) -> expected component types of the returned struct.
+# (file, getter) -> expected component types of the returned struct, or the types of the returned values.
 _EXPECTED_RETURN_STRUCTS = {
     ("LidoLend", "market"): ["uint128", "uint128", "uint128", "uint128", "uint128", "uint128"],
     ("AdaptiveCurveConfig", "getCurveParams"): [
@@ -125,6 +146,17 @@ _EXPECTED_RETURN_STRUCTS = {
         "uint40",
     ],
     ("LidoLendMarketController", "settlementConfig"): ["uint16", "uint96", "uint96", "uint16"],
+    ("TrailingAnchorOracle", "MIN_REANCHOR_DELAY"): ["uint256"],
+    ("TrailingAnchorOracle", "MIN_REANCHOR_WINDOW"): ["uint256"],
+    ("TrailingAnchorOracle", "MAX_PRICING_SUSPENSION"): ["uint256"],
+    ("TrailingAnchorOracle", "maxPriceAboveAnchor"): ["uint64"],
+    ("TrailingAnchorOracle", "maxPriceBelowAnchor"): ["uint64"],
+    ("TrailingAnchorOracle", "maxAnchorContinuousRiseRate"): ["uint64"],
+    ("TrailingAnchorOracle", "maxAnchorContinuousFallRate"): ["uint64"],
+    ("TrailingAnchorOracle", "maxAnchorBelowBase"): ["uint64"],
+    ("TrailingAnchorOracle", "maxAnchorAboveBase"): ["uint64"],
+    ("TrailingAnchorOracle", "reanchorDelay"): ["uint40"],
+    ("TrailingAnchorOracle", "reanchorWindow"): ["uint40"],
 }
 
 _EXPECTED_RETURN_STRUCT_NAMES = {
@@ -138,6 +170,22 @@ _EXPECTED_RETURN_STRUCT_NAMES = {
         "maxGuardiansQuorumDelay",
         "delayPerStrike",
         "delayPerSuspect",
+    ],
+}
+
+# Struct arguments that the factories encode must match ILidoLend.sol field-for-field. The type signature
+# cannot show a changed order of fields of the same type, so the names are checked. Keyed by
+# (file, method) -> expected component names of the first input.
+_EXPECTED_INPUT_STRUCT_NAMES = {
+    ("TrailingAnchorOracle", "setParameters"): [
+        "maxPriceAboveAnchor",
+        "maxPriceBelowAnchor",
+        "maxAnchorContinuousRiseRate",
+        "maxAnchorContinuousFallRate",
+        "maxAnchorBelowBase",
+        "maxAnchorAboveBase",
+        "reanchorDelay",
+        "reanchorWindow",
     ],
 }
 
@@ -192,3 +240,12 @@ def test_factory_read_struct_layout(abi_name, getter, expected_components):
 def test_factory_read_struct_names(abi_name, getter, expected_names):
     fn = next(e for e in _load_abi(abi_name) if e.get("type") == "function" and e["name"] == getter)
     assert [component["name"] for component in fn["outputs"][0]["components"]] == expected_names
+
+
+@pytest.mark.parametrize(
+    "abi_name,method,expected_names",
+    [(f, m, names) for (f, m), names in _EXPECTED_INPUT_STRUCT_NAMES.items()],
+)
+def test_factory_encoded_struct_names(abi_name, method, expected_names):
+    fn = next(e for e in _load_abi(abi_name) if e.get("type") == "function" and e["name"] == method)
+    assert [component["name"] for component in fn["inputs"][0]["components"]] == expected_names

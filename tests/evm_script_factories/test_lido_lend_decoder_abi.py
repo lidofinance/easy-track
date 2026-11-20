@@ -4,6 +4,7 @@ from brownie import (
     LidoLendGuardianActions,
     LidoLendMarketManagerActions,
     LidoLendCircuitBreakerActions,
+    LidoLendTrailingAnchorOracleActions,
 )
 
 
@@ -28,6 +29,8 @@ from brownie import (
             "decodeSetMorphoExitBookAllowedPayload",
             ["marketParamsList", "allowed"],
         ),
+        (LidoLendTrailingAnchorOracleActions, "decodeSetParametersPayload", ["oracle", "parameters"]),
+        (LidoLendTrailingAnchorOracleActions, "decodeSetPricingResumesAtPayload", ["oracle", "resumesAt"]),
     ],
 )
 def test_frontend_decoder_output_names(factory, function_name, expected_names):
@@ -51,6 +54,22 @@ def test_collateral_activation_decoder_component_names():
         "maxGuardiansQuorumDelay",
         "delayPerStrike",
         "delayPerSuspect",
+    ]
+
+
+def test_trailing_anchor_oracle_parameters_decoder_component_names():
+    decoder = next(
+        entry for entry in LidoLendTrailingAnchorOracleActions.abi if entry.get("name") == "decodeSetParametersPayload"
+    )
+    assert [component["name"] for component in decoder["outputs"][1]["components"]] == [
+        "maxPriceAboveAnchor",
+        "maxPriceBelowAnchor",
+        "maxAnchorContinuousRiseRate",
+        "maxAnchorContinuousFallRate",
+        "maxAnchorBelowBase",
+        "maxAnchorAboveBase",
+        "reanchorDelay",
+        "reanchorWindow",
     ]
 
 
