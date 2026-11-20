@@ -1,0 +1,137 @@
+// SPDX-FileCopyrightText: 2026 Lido <info@lido.fi>
+// SPDX-License-Identifier: GPL-3.0
+
+pragma solidity 0.8.6;
+
+import {Test} from "forge-std/Test.sol";
+import {RemoveAllowedRecipient} from "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol";
+import {AllowedRecipientsRegistry} from "contracts/AllowedRecipientsRegistry.sol";
+import {Arrays} from "test/foundry/unit/helpers/Arrays.sol";
+import {EVMScripts} from "test/foundry/unit/helpers/EVMScripts.sol";
+import {
+    BokkyPooBahsDateTimeContract
+} from "test/foundry/unit/stubs/BokkyPooBahsDateTimeContract.sol";
+
+contract RemoveAllowedRecipientTest is Test {
+    address internal owner = makeAddr("owner");
+    address internal stranger = makeAddr("stranger");
+    address internal addRecipientRoleHolder = makeAddr("addRecipientRoleHolder");
+    address internal removeRecipientRoleHolder = makeAddr("removeRecipientRoleHolder");
+    address internal setLimitRoleHolder = makeAddr("setLimitRoleHolder");
+    address internal updateSpentRoleHolder = makeAddr("updateSpentRoleHolder");
+
+    BokkyPooBahsDateTimeContract internal bokkyPooBahsDateTimeContract;
+    AllowedRecipientsRegistry internal allowedRecipientsRegistry;
+    RemoveAllowedRecipient internal removeAllowedRecipient;
+
+    function setUp() public {
+        bokkyPooBahsDateTimeContract = new BokkyPooBahsDateTimeContract();
+
+        vm.startPrank(owner);
+        allowedRecipientsRegistry = new AllowedRecipientsRegistry(
+            owner,
+            Arrays.list(addRecipientRoleHolder),
+            Arrays.list(removeRecipientRoleHolder),
+            Arrays.list(setLimitRoleHolder),
+            Arrays.list(updateSpentRoleHolder),
+            bokkyPooBahsDateTimeContract
+        );
+        removeAllowedRecipient =
+            new RemoveAllowedRecipient(owner, address(allowedRecipientsRegistry));
+        vm.stopPrank();
+
+        vm.label(address(bokkyPooBahsDateTimeContract), "bokkyPooBahsDateTimeContract");
+        vm.label(address(allowedRecipientsRegistry), "allowedRecipientsRegistry");
+        vm.label(address(removeAllowedRecipient), "removeAllowedRecipient");
+    }
+
+    function test_SetsInitialState() external view {
+        assertEq(removeAllowedRecipient.trustedCaller(), owner, "trustedCaller");
+        assertEq(
+            address(removeAllowedRecipient.allowedRecipientsRegistry()),
+            address(allowedRecipientsRegistry),
+            "allowedRecipientsRegistry"
+        );
+    }
+
+    function test_RevertWhen_TrustedCallerIsZero() external {
+        vm.expectRevert("TRUSTED_CALLER_IS_ZERO_ADDRESS");
+        new RemoveAllowedRecipient(address(0), address(allowedRecipientsRegistry));
+    }
+
+    function test_DeploysWithZeroAllowedRecipientsRegistry() external {
+        vm.prank(owner);
+        RemoveAllowedRecipient factory = new RemoveAllowedRecipient(owner, address(0));
+
+        assertEq(
+            address(factory.allowedRecipientsRegistry()), address(0), "allowedRecipientsRegistry"
+        );
+    }
+
+    function test_CreatesEVMScriptFromAnyCaller() external {
+        _allowStranger();
+
+        vm.prank(stranger);
+        bytes memory evmScript = removeAllowedRecipient.createEVMScript(owner, abi.encode(stranger));
+
+        assertEq(evmScript, _removeRecipientScript(stranger), "evmScript");
+    }
+
+    function test_DecodesEVMScriptCallDataFromAnyCaller() external {
+        vm.prank(stranger);
+        address recipient = removeAllowedRecipient.decodeEVMScriptCallData(abi.encode(stranger));
+
+        assertEq(recipient, stranger, "recipient");
+    }
+
+    function test_RevertWhen_CreatorIsNotTrustedCaller() external {
+        _allowStranger();
+
+        bytes memory callData = abi.encode(stranger);
+
+        vm.prank(owner);
+        vm.expectRevert("CALLER_IS_FORBIDDEN");
+        removeAllowedRecipient.createEVMScript(stranger, callData);
+
+        vm.prank(owner);
+        bytes memory evmScript = removeAllowedRecipient.createEVMScript(owner, callData);
+
+        assertEq(evmScript, _removeRecipientScript(stranger), "evmScript");
+    }
+
+    function test_RevertWhen_CallDataIsEmpty() external {
+        vm.expectRevert(bytes(""));
+        removeAllowedRecipient.createEVMScript(owner, "");
+    }
+
+    function test_RevertWhen_RecipientIsNotFound() external {
+        vm.expectRevert("ALLOWED_RECIPIENT_NOT_FOUND");
+        removeAllowedRecipient.createEVMScript(owner, abi.encode(stranger));
+    }
+
+    function test_CreatesEVMScript() external {
+        _allowStranger();
+
+        bytes memory evmScript = removeAllowedRecipient.createEVMScript(owner, abi.encode(stranger));
+
+        assertEq(evmScript, _removeRecipientScript(stranger), "evmScript");
+    }
+
+    function test_DecodesEVMScriptCallData() external view {
+        address recipient = removeAllowedRecipient.decodeEVMScriptCallData(abi.encode(owner));
+
+        assertEq(recipient, owner, "recipient");
+    }
+
+    function _allowStranger() private {
+        vm.prank(addRecipientRoleHolder);
+        allowedRecipientsRegistry.addRecipient(stranger, "Stranger");
+    }
+
+    function _removeRecipientScript(address recipient) private view returns (bytes memory) {
+        return EVMScripts.encodeCallScript(
+            address(allowedRecipientsRegistry),
+            abi.encodeWithSelector(AllowedRecipientsRegistry.removeRecipient.selector, recipient)
+        );
+    }
+}

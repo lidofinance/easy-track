@@ -1,0 +1,175 @@
+name: Tests
+
+on:
+  push:
+    branches: [develop, master]
+  pull_request:
+    branches: [develop, master]
+
+env:
+  PYTHON_VERSION: "3.10"
+  POETRY_VERSION: "1.8.5"
+  FOUNDRY_VERSION: "v1.8.3"
+
+jobs:
+  unit-tests-datetime:
+    name: Unit Tests - DateTime Library
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run DateTime library unit tests
+        run: >
+          poetry run brownie test
+          tests/test_bokky_poo_bahs_date-time-library.py
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+  unit-tests-core:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run unit tests
+        run: >
+          poetry run brownie test
+          --ignore=tests/integration
+          --ignore=tests/scenario
+          --ignore=tests/test_bokky_poo_bahs_date-time-library.py
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+  integration-and-scenario-tests:
+    name: Integration & Scenario Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Brownie
+        uses: ./.github/actions/setup-brownie
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          poetry-version: ${{ env.POETRY_VERSION }}
+
+      - name: Run integration tests
+        run: >
+          poetry run brownie test
+          tests/integration/
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+      - name: Run scenario tests
+        run: >
+          poetry run brownie test
+          tests/scenario/
+          -s --network mainnet-fork
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+  foundry-unit-tests:
+    name: Foundry Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1.9.2
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Foundry unit tests
+        run: forge test
+
+  foundry-scenario-tests:
+    name: Foundry Scenario Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1.9.2
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the contracts the scenario tests deploy from
+        run: forge build
+
+      - name: Run Foundry scenario tests
+        run: CHAIN=mainnet FOUNDRY_PROFILE=scenario forge test -vv
+        env:
+          MAINNET_RPC_URL: ${{ secrets.MAINNET_RPC_URL }}
+
+  foundry-lint:
+    name: Foundry Format & Lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+
+      - name: Setup Node
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@dba66c27052e63476d886f22216e119ba7e615bf # v1.9.2
+        with:
+          version: ${{ env.FOUNDRY_VERSION }}
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check the formatting
+        run: forge fmt --check contracts test/foundry script
+
+      - name: Lint
+        run: forge lint --deny warnings

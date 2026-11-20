@@ -20,6 +20,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     string private constant ERROR_ZERO_LIDO_LOCATOR = "ZERO_LIDO_LOCATOR";
     string private constant ERROR_EMPTY_TIER_IDS = "EMPTY_TIER_IDS";
     string private constant ERROR_ARRAY_LENGTH_MISMATCH = "ARRAY_LENGTH_MISMATCH";
+    string private constant ERROR_TIER_NOT_EXISTS = "TIER_NOT_EXISTS";
     string private constant ERROR_TIER_SHARE_LIMIT_TOO_HIGH = "TIER_SHARE_LIMIT_TOO_HIGH";
     string private constant ERROR_ZERO_RESERVE_RATIO = "ZERO_RESERVE_RATIO";
     string private constant ERROR_RESERVE_RATIO_TOO_HIGH = "RESERVE_RATIO_TOO_HIGH";
@@ -33,6 +34,7 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
+    uint256 internal constant MAX_SHARE_LIMIT = 10_000_000 * 1e18;
     /// @dev max value for fees in basis points - it's about 650%
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
     uint256 internal constant MAX_RESERVE_RATIO_BP = 9999;
@@ -116,16 +118,16 @@ contract AlterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
         IOperatorGrid operatorGrid = IOperatorGrid(lidoLocator.operatorGrid());
 
+        uint256 tiersCount = operatorGrid.tiersCount();
+
         // Validate tier parameters
         for (uint256 i = 0; i < _tierIds.length; i++) {
-            // reverts if tier does not exist in the operator grid
-            IOperatorGrid.Tier memory tier = operatorGrid.tier(_tierIds[i]);
+            require(_tierIds[i] < tiersCount, ERROR_TIER_NOT_EXISTS);
 
             if (_tierIds[i] == DEFAULT_TIER_ID) {
                 require(_tierParams[i].shareLimit <= defaultTierMaxShareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
             } else {
-                IOperatorGrid.Group memory group = operatorGrid.group(tier.operator);
-                require(_tierParams[i].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
+                require(_tierParams[i].shareLimit <= MAX_SHARE_LIMIT, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
             }
 
             require(_tierParams[i].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);

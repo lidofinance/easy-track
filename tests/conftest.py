@@ -9,6 +9,8 @@ from eth_abi import encode
 import constants
 from utils.lido import contracts as lido_contracts_
 from utils.csm import contracts as csm_contracts_
+from utils.cm import contracts as cm_contracts_
+from utils.csm0x02 import contracts as csm0x02_contracts_
 from utils import deployed_date_time
 from utils.test_helpers import set_account_balance
 from utils.submit_exit_requests_test_helpers import MAX_REQUESTS
@@ -109,6 +111,16 @@ def lido_contracts():
 @pytest.fixture(scope="module")
 def csm_contracts():
     return csm_contracts_(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def cm_contracts():
+    return cm_contracts_(network=brownie.network.show_active())
+
+
+@pytest.fixture(scope="module")
+def csm0x02_contracts():
+    return csm0x02_contracts_(network=brownie.network.show_active())
 
 
 @pytest.fixture(scope="module")
@@ -441,6 +453,29 @@ def cs_module(csm_contracts):
 
 
 @pytest.fixture(scope="module")
+def curated_module(cm_contracts):
+    return cm_contracts.module
+
+
+@pytest.fixture(scope="module")
+def csm0x02_module(csm0x02_contracts):
+    return csm0x02_contracts.module
+
+
+@pytest.fixture(scope="module")
+def module_merkle_gate():
+    """Resolve merkle gate address from MODULE_MERKLE_GATE env var.
+
+    The gate is module-agnostic — any module (CSM, CM, ...) can be wired
+    to a merkle gate, so the env var is not namespaced by module.
+    """
+    addr = os.environ.get("MODULE_MERKLE_GATE", "")
+    if not addr:
+        return None
+    return brownie.interface.IMerkleGate(addr)
+
+
+@pytest.fixture(scope="module")
 def voting(lido_contracts):
     return lido_contracts.aragon.voting
 
@@ -483,6 +518,11 @@ def kernel(lido_contracts):
 @pytest.fixture(scope="module")
 def staking_router(lido_contracts):
     return lido_contracts.staking_router
+
+
+@pytest.fixture(scope="module")
+def sr_consolidation_migrator(lido_contracts):
+    return lido_contracts.consolidation_migrator
 
 
 @pytest.fixture(scope="module")

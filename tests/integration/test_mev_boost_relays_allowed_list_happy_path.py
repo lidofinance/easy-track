@@ -50,15 +50,16 @@ def setup_script_executor(lido_contracts, mev_boost_relay_allowed_list, easy_tra
 
 
 def execute_motion(easy_track, motion_transaction, stranger):
+    motion_id = motion_transaction.events["MotionCreated"]["_motionId"]
+    motions_before = len(easy_track.getMotions())
+
     brownie.chain.sleep(easy_track.motionDuration() + MOTION_BUFFER_TIME)
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
     easy_track.enactMotion(
-        motions[0][0],
+        motion_id,
         motion_transaction.events["MotionCreated"]["_evmScriptCallData"],
         {"from": stranger},
     )
-    assert len(easy_track.getMotions()) == 0
+    assert len(easy_track.getMotions()) == motions_before - 1
 
 
 def create_enact_and_check_add_motion(
@@ -70,13 +71,13 @@ def create_enact_and_check_add_motion(
     add_relays_script_factory,
     relays,
 ):
+    motions_before = len(easy_track.getMotions())
     motion_transaction = easy_track.createMotion(
         add_relays_script_factory.address,
         encode_calldata(["(string,string,bool,string)[]"], [relays]),
         {"from": rmc_factories_multisig},
     )
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
+    assert len(easy_track.getMotions()) == motions_before + 1
 
     relays_before = list(mev_boost_relay_allowed_list.get_relays())
     assert all(relay not in relays_before for relay in relays)
@@ -108,13 +109,13 @@ def create_enact_and_check_remove_motion(
             assert mev_boost_relay_allowed_list.get_relay_by_uri(relay[0]) == relay
             relays_before.append(relay)
 
+    motions_before = len(easy_track.getMotions())
     motion_transaction = easy_track.createMotion(
         remove_relays_script_factory.address,
         encode_calldata(["string[]"], [[relay[0] for relay in relays]]),
         {"from": rmc_factories_multisig},
     )
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
+    assert len(easy_track.getMotions()) == motions_before + 1
 
     relays_before = list(mev_boost_relay_allowed_list.get_relays())
     assert all(relay in relays_before for relay in relays)
@@ -149,13 +150,13 @@ def create_enact_and_check_edit_motion(
             assert mev_boost_relay_allowed_list.get_relay_by_uri(relay[0]) == relay
             relays_before.append(relay)
 
+    motions_before = len(easy_track.getMotions())
     motion_transaction = easy_track.createMotion(
         edit_relays_script_factory.address,
         encode_calldata(["(string,string,bool,string)[]"], [modified_relays]),
         {"from": rmc_factories_multisig},
     )
-    motions = easy_track.getMotions()
-    assert len(motions) == 1
+    assert len(easy_track.getMotions()) == motions_before + 1
 
     execute_motion(easy_track, motion_transaction, stranger)
 

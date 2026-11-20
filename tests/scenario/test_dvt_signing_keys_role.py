@@ -38,7 +38,7 @@ def simple_dvt(
     staking_router.grantRole(web3.keccak(text="STAKING_MODULE_MANAGE_ROLE").hex(), agent, {"from": agent})
 
     staking_router.addStakingModule(
-        "Simple DVT", simple_dvt_contract, 10_000, 10_000, 500, 500, 150, 25, {"from": agent}
+        "Simple DVT", simple_dvt_contract, [10_000, 10_000, 500, 500, 150, 25, 1], {"from": agent}
     )
 
     acl.createPermission(

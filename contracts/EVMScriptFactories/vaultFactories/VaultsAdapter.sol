@@ -146,9 +146,7 @@ contract VaultsAdapter is TrustedCaller {
 
         IVaultHub vaultHub = IVaultHub(lidoLocator.vaultHub());
         if (!vaultHub.isVaultConnected(_badDebtVault) || // vault is not connected to hub
-            !vaultHub.isVaultConnected(_vaultAcceptor) || // vault is not connected to hub
-            vaultHub.isPendingDisconnect(_badDebtVault) || // vault is disconnecting
-            vaultHub.isPendingDisconnect(_vaultAcceptor)) { // vault is disconnecting
+            !vaultHub.isVaultConnected(_vaultAcceptor)) { // vault is not connected to hub
             emit BadDebtSocializationFailed(_badDebtVault, _vaultAcceptor, _maxSharesToSocialize);
             return;
         }

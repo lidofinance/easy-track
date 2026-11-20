@@ -6,6 +6,12 @@ from utils import evm_script
 from utils.dual_governance import submit_proposals, process_pending_proposals
 
 
+@pytest.fixture(scope="module")
+def deployed_contracts():
+    """Override: node operator tests need a fresh EasyTrack."""
+    return {"EasyTrack": ""}
+
+
 @pytest.mark.skip_coverage
 def test_node_operators_easy_track_happy_path(
     IncreaseNodeOperatorStakingLimit,

@@ -1,0 +1,233 @@
+[profile.default]
+src = "contracts"
+test = "test/foundry/unit"
+libs = ["node_modules"]
+solc = "0.8.6"
+evm_version = "berlin"
+auto_detect_remappings = false
+# The Foundry scripts under script/ target the modern-pragma interfaces, the scenario profile
+# compiles them
+skip = ["script/**"]
+
+[profile.scenario]
+src = "test/foundry/scenario"
+test = "test/foundry/scenario"
+out = "out/scenario"
+cache_path = "cache/scenario"
+solc = "0.8.38"
+evm_version = "prague"
+skip = []
+# The scripts append their deployments to the records, nothing else is written
+fs_permissions = [
+    { access = "read", path = "./" },
+    { access = "read-write", path = "./deployed-hoodi.json" },
+    { access = "read-write", path = "./deployed-mainnet.json" },
+]
+
+# The deployed sources listed as "ignore" below were audited prior to the tooling migration, so they must stay exactly as audited.
+# The formatter and the linter skip them to avoid styling modifications and reach only the files that are not listed. 
+# The mocks under contracts/test are formatted but excluded from linting.
+
+[fmt]
+line_length = 100
+tab_width = 4
+style = "space"
+bracket_spacing = false
+int_types = "long"
+multiline_func_header = "attributes_first"
+quote_style = "double"
+number_underscore = "preserve"
+hex_underscore = "remove"
+single_line_statement_blocks = "preserve"
+override_spacing = false
+wrap_comments = false
+docs_style = "preserve"
+contract_new_lines = false
+sort_imports = false
+namespace_import_style = "prefer_plain"
+pow_no_space = false
+prefer_compact = "all"
+single_line_imports = false
+ignore = [
+    "contracts/AllowedRecipientsRegistry.sol",
+    "contracts/EVMScriptExecutor.sol",
+    "contracts/EVMScriptFactories/ActivateNodeOperators.sol",
+    "contracts/EVMScriptFactories/AddAllowedRecipient.sol",
+    "contracts/EVMScriptFactories/AddMEVBoostRelays.sol",
+    "contracts/EVMScriptFactories/AddNodeOperators.sol",
+    "contracts/EVMScriptFactories/AddRewardProgram.sol",
+    "contracts/EVMScriptFactories/AllowConsolidationPair.sol",
+    "contracts/EVMScriptFactories/ChangeNodeOperatorManagers.sol",
+    "contracts/EVMScriptFactories/CreateOrUpdateOperatorGroup.sol",
+    "contracts/EVMScriptFactories/CuratedSubmitExitRequestHashes.sol",
+    "contracts/EVMScriptFactories/DeactivateNodeOperators.sol",
+    "contracts/EVMScriptFactories/EditMEVBoostRelays.sol",
+    "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol",
+    "contracts/EVMScriptFactories/IncreaseVettedValidatorsLimit.sol",
+    "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol",
+    "contracts/EVMScriptFactories/RemoveMEVBoostRelays.sol",
+    "contracts/EVMScriptFactories/RemoveRewardProgram.sol",
+    "contracts/EVMScriptFactories/ReportWithdrawalsForSlashedValidators.sol",
+    "contracts/EVMScriptFactories/SDVTSubmitExitRequestHashes.sol",
+    "contracts/EVMScriptFactories/SetDepositsReserveTarget.sol",
+    "contracts/EVMScriptFactories/SetMerkleGateTree.sol",
+    "contracts/EVMScriptFactories/SetNodeOperatorNames.sol",
+    "contracts/EVMScriptFactories/SetNodeOperatorRewardAddresses.sol",
+    "contracts/EVMScriptFactories/SetVettedValidatorsLimits.sol",
+    "contracts/EVMScriptFactories/SettleGeneralDelayedPenalty.sol",
+    "contracts/EVMScriptFactories/TopUpLegoProgram.sol",
+    "contracts/EVMScriptFactories/TopUpRewardPrograms.sol",
+    "contracts/EVMScriptFactories/UpdateStakingModuleShareLimits.sol",
+    "contracts/EVMScriptFactories/UpdateTargetValidatorLimits.sol",
+    "contracts/EVMScriptFactories/vaultFactories/AlterTiersInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/ForceValidatorExitsInVaultHub.sol",
+    "contracts/EVMScriptFactories/vaultFactories/RegisterGroupsInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/RegisterTiersInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/SetJailStatusInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/SetLiabilitySharesTargetInVaultHub.sol",
+    "contracts/EVMScriptFactories/vaultFactories/SocializeBadDebtInVaultHub.sol",
+    "contracts/EVMScriptFactories/vaultFactories/UpdateGroupsShareLimitInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/UpdateVaultsFeesInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/VaultsAdapter.sol",
+    "contracts/EVMScriptFactoriesRegistry.sol",
+    "contracts/EasyTrack.sol",
+    "contracts/LimitsChecker.sol",
+    "contracts/MotionSettings.sol",
+    "contracts/RewardProgramsRegistry.sol",
+    "contracts/TrustedCaller.sol",
+    "contracts/interfaces/IACL.sol",
+    "contracts/interfaces/IAccounting.sol",
+    "contracts/interfaces/IBaseModule.sol",
+    "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+    "contracts/interfaces/ICSModule.sol",
+    "contracts/interfaces/IConsolidationMigrator.sol",
+    "contracts/interfaces/ICuratedModule.sol",
+    "contracts/interfaces/IEVMScriptExecutor.sol",
+    "contracts/interfaces/IEVMScriptFactory.sol",
+    "contracts/interfaces/IEasyTrack.sol",
+    "contracts/interfaces/IFinance.sol",
+    "contracts/interfaces/ILazyOracle.sol",
+    "contracts/interfaces/ILido.sol",
+    "contracts/interfaces/ILidoLocator.sol",
+    "contracts/interfaces/IMEVBoostRelayAllowedList.sol",
+    "contracts/interfaces/IMerkleGate.sol",
+    "contracts/interfaces/IMetaRegistry.sol",
+    "contracts/interfaces/INodeOperatorsRegistry.sol",
+    "contracts/interfaces/IOperatorGrid.sol",
+    "contracts/interfaces/IOperatorGridStub.sol",
+    "contracts/interfaces/IStakingRouter.sol",
+    "contracts/interfaces/IStakingVault.sol",
+    "contracts/interfaces/IValidatorsExitBusOracle.sol",
+    "contracts/interfaces/IVaultFactory.sol",
+    "contracts/interfaces/IVaultHub.sol",
+    "contracts/interfaces/IVaultHubStub.sol",
+    "contracts/interfaces/IVaultsAdapter.sol",
+    "contracts/libraries/BytesUtils.sol",
+    "contracts/libraries/EVMScriptCreator.sol",
+    "contracts/libraries/EVMScriptPermissions.sol",
+    "contracts/libraries/MEVBoostRelaysInputUtils.sol",
+    "contracts/libraries/SubmitExitRequestHashesUtils.sol",
+    "contracts/payouts/multi-token/AllowedRecipientsBuilder.sol",
+    "contracts/payouts/multi-token/AllowedRecipientsFactory.sol",
+    "contracts/payouts/multi-token/AllowedTokensRegistry.sol",
+    "contracts/payouts/multi-token/TopUpAllowedRecipients.sol",
+    "contracts/payouts/multi-token/interfaces/IAllowedRecipientsRegistry.sol",
+    "contracts/payouts/multi-token/interfaces/IAllowedTokensRegistry.sol",
+    "contracts/payouts/single-token/AllowedRecipientsBuilderSingleToken.sol",
+    "contracts/payouts/single-token/AllowedRecipientsFactorySingleToken.sol",
+    "contracts/payouts/single-token/TopUpAllowedRecipientsSingleToken.sol"
+]
+
+[lint]
+# The excluded lints flag patterns the factories use by design.
+exclude_lints = ["require-revert-in-loop", "calls-loop", "uninitialized-local"]
+ignore = [
+    "contracts/AllowedRecipientsRegistry.sol",
+    "contracts/EVMScriptExecutor.sol",
+    "contracts/EVMScriptFactories/ActivateNodeOperators.sol",
+    "contracts/EVMScriptFactories/AddAllowedRecipient.sol",
+    "contracts/EVMScriptFactories/AddMEVBoostRelays.sol",
+    "contracts/EVMScriptFactories/AddNodeOperators.sol",
+    "contracts/EVMScriptFactories/AddRewardProgram.sol",
+    "contracts/EVMScriptFactories/AllowConsolidationPair.sol",
+    "contracts/EVMScriptFactories/ChangeNodeOperatorManagers.sol",
+    "contracts/EVMScriptFactories/CreateOrUpdateOperatorGroup.sol",
+    "contracts/EVMScriptFactories/CuratedSubmitExitRequestHashes.sol",
+    "contracts/EVMScriptFactories/DeactivateNodeOperators.sol",
+    "contracts/EVMScriptFactories/EditMEVBoostRelays.sol",
+    "contracts/EVMScriptFactories/IncreaseNodeOperatorStakingLimit.sol",
+    "contracts/EVMScriptFactories/IncreaseVettedValidatorsLimit.sol",
+    "contracts/EVMScriptFactories/RemoveAllowedRecipient.sol",
+    "contracts/EVMScriptFactories/RemoveMEVBoostRelays.sol",
+    "contracts/EVMScriptFactories/RemoveRewardProgram.sol",
+    "contracts/EVMScriptFactories/ReportWithdrawalsForSlashedValidators.sol",
+    "contracts/EVMScriptFactories/SDVTSubmitExitRequestHashes.sol",
+    "contracts/EVMScriptFactories/SetDepositsReserveTarget.sol",
+    "contracts/EVMScriptFactories/SetMerkleGateTree.sol",
+    "contracts/EVMScriptFactories/SetNodeOperatorNames.sol",
+    "contracts/EVMScriptFactories/SetNodeOperatorRewardAddresses.sol",
+    "contracts/EVMScriptFactories/SetVettedValidatorsLimits.sol",
+    "contracts/EVMScriptFactories/SettleGeneralDelayedPenalty.sol",
+    "contracts/EVMScriptFactories/TopUpLegoProgram.sol",
+    "contracts/EVMScriptFactories/TopUpRewardPrograms.sol",
+    "contracts/EVMScriptFactories/UpdateStakingModuleShareLimits.sol",
+    "contracts/EVMScriptFactories/UpdateTargetValidatorLimits.sol",
+    "contracts/EVMScriptFactories/vaultFactories/AlterTiersInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/ForceValidatorExitsInVaultHub.sol",
+    "contracts/EVMScriptFactories/vaultFactories/RegisterGroupsInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/RegisterTiersInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/SetJailStatusInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/SetLiabilitySharesTargetInVaultHub.sol",
+    "contracts/EVMScriptFactories/vaultFactories/SocializeBadDebtInVaultHub.sol",
+    "contracts/EVMScriptFactories/vaultFactories/UpdateGroupsShareLimitInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/UpdateVaultsFeesInOperatorGrid.sol",
+    "contracts/EVMScriptFactories/vaultFactories/VaultsAdapter.sol",
+    "contracts/EVMScriptFactoriesRegistry.sol",
+    "contracts/EasyTrack.sol",
+    "contracts/LimitsChecker.sol",
+    "contracts/MotionSettings.sol",
+    "contracts/RewardProgramsRegistry.sol",
+    "contracts/TrustedCaller.sol",
+    "contracts/interfaces/IACL.sol",
+    "contracts/interfaces/IAccounting.sol",
+    "contracts/interfaces/IBaseModule.sol",
+    "contracts/interfaces/IBokkyPooBahsDateTimeContract.sol",
+    "contracts/interfaces/ICSModule.sol",
+    "contracts/interfaces/IConsolidationMigrator.sol",
+    "contracts/interfaces/ICuratedModule.sol",
+    "contracts/interfaces/IEVMScriptExecutor.sol",
+    "contracts/interfaces/IEVMScriptFactory.sol",
+    "contracts/interfaces/IEasyTrack.sol",
+    "contracts/interfaces/IFinance.sol",
+    "contracts/interfaces/ILazyOracle.sol",
+    "contracts/interfaces/ILido.sol",
+    "contracts/interfaces/ILidoLocator.sol",
+    "contracts/interfaces/IMEVBoostRelayAllowedList.sol",
+    "contracts/interfaces/IMerkleGate.sol",
+    "contracts/interfaces/IMetaRegistry.sol",
+    "contracts/interfaces/INodeOperatorsRegistry.sol",
+    "contracts/interfaces/IOperatorGrid.sol",
+    "contracts/interfaces/IOperatorGridStub.sol",
+    "contracts/interfaces/IStakingRouter.sol",
+    "contracts/interfaces/IStakingVault.sol",
+    "contracts/interfaces/IValidatorsExitBusOracle.sol",
+    "contracts/interfaces/IVaultFactory.sol",
+    "contracts/interfaces/IVaultHub.sol",
+    "contracts/interfaces/IVaultHubStub.sol",
+    "contracts/interfaces/IVaultsAdapter.sol",
+    "contracts/libraries/BytesUtils.sol",
+    "contracts/libraries/EVMScriptCreator.sol",
+    "contracts/libraries/EVMScriptPermissions.sol",
+    "contracts/libraries/MEVBoostRelaysInputUtils.sol",
+    "contracts/libraries/SubmitExitRequestHashesUtils.sol",
+    "contracts/payouts/multi-token/AllowedRecipientsBuilder.sol",
+    "contracts/payouts/multi-token/AllowedRecipientsFactory.sol",
+    "contracts/payouts/multi-token/AllowedTokensRegistry.sol",
+    "contracts/payouts/multi-token/TopUpAllowedRecipients.sol",
+    "contracts/payouts/multi-token/interfaces/IAllowedRecipientsRegistry.sol",
+    "contracts/payouts/multi-token/interfaces/IAllowedTokensRegistry.sol",
+    "contracts/payouts/single-token/AllowedRecipientsBuilderSingleToken.sol",
+    "contracts/payouts/single-token/AllowedRecipientsFactorySingleToken.sol",
+    "contracts/payouts/single-token/TopUpAllowedRecipientsSingleToken.sol",
+    "contracts/test/*"
+]

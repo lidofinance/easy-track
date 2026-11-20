@@ -14,6 +14,9 @@ def get_network_name() -> Optional[str]:
         if net_ind != len(cli_args):
             full_network_name = cli_args[net_ind + 1]
 
+    if full_network_name is None:
+        raise RuntimeError("Unable to resolve active Brownie network")
+
     return full_network_name.split("-")[0]
 
 

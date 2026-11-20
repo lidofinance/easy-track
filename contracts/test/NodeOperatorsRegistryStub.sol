@@ -6,6 +6,9 @@ pragma solidity ^0.8.4;
 /// @author psirex
 /// @notice Helper contract with stub implementation of NodeOperatorsRegistry
 contract NodeOperatorsRegistryStub {
+    uint256 public constant MAX_NODE_OPERATORS_COUNT = 200;
+    uint256 public constant MAX_NODE_OPERATOR_NAME_LENGTH = 255;
+
     uint256 public id = 1;
     bool public active = true;
     address public rewardAddress;
@@ -26,16 +29,15 @@ contract NodeOperatorsRegistryStub {
 
     mapping(uint256 => NodeOperator) internal _nodeOperators;
     mapping(uint256 => bytes) internal _signingKeys;
+    mapping(address => mapping(bytes32 => mapping(uint256 => bool))) internal _canPerform;
+    mapping(uint256 => mapping(uint256 => bool)) internal _signingKeyUsed;
 
     constructor(address _rewardAddress) {
         rewardAddress = _rewardAddress;
         _addNodeOperator("Test Node Operator", _rewardAddress, stakingLimit, totalSigningKeys);
     }
 
-    function getNodeOperator(
-        uint256 _id,
-        bool _fullInfo
-    )
+    function getNodeOperator(uint256 _id, bool _fullInfo)
         external
         view
         returns (
@@ -107,6 +109,10 @@ contract NodeOperatorsRegistryStub {
         rewardAddress = _rewardAddress;
     }
 
+    function setNodeOperatorRewardAddress(uint256 _id, address _rewardAddress) external {
+        _nodeOperators[_id].rewardAddress = _rewardAddress;
+    }
+
     function setStakingLimit(uint256 _id, uint64 _stakingLimit) public {
         stakingLimit = _stakingLimit;
         _nodeOperators[_id].stakingLimit = _stakingLimit;
@@ -121,16 +127,39 @@ contract NodeOperatorsRegistryStub {
         return _nodeOperatorsCount;
     }
 
+    function getNodeOperatorIsActive(uint256 _id) external view returns (bool) {
+        return _nodeOperators[_id].active;
+    }
+
     /// @notice Sets the desired number of node operators. This is a stub function for testing purposes.
     function setDesiredNodeOperatorCount(uint256 _desiredCount) external {
         _nodeOperatorsCount = uint40(_desiredCount);
     }
 
+    function setCanPerform(address _sender, bytes32 _role, uint256 _operatorId, bool _allowed)
+        external
+    {
+        _canPerform[_sender][_role][_operatorId] = _allowed;
+    }
+
+    function canPerform(address _sender, bytes32 _role, uint256[] memory _params)
+        external
+        view
+        returns (bool)
+    {
+        // a parametrized permission needs the operator id, as the ACL would evaluate it
+        if (_params.length == 0) {
+            return false;
+        }
+        return _canPerform[_sender][_role][_params[0]];
+    }
+
     /// @notice Returns the signing key for a given node operator and index.
-    function getSigningKey(
-        uint256 _nodeOperatorId,
-        uint256 _index
-    ) external view returns (bytes memory key, bytes memory depositSignature, bool used) {
+    function getSigningKey(uint256 _nodeOperatorId, uint256 _index)
+        external
+        view
+        returns (bytes memory key, bytes memory depositSignature, bool used)
+    {
         bytes memory allKeys = _signingKeys[_nodeOperatorId];
 
         key = new bytes(48);
@@ -142,7 +171,7 @@ contract NodeOperatorsRegistryStub {
             mstore(add(dest, 32), mload(add(src, 32)))
         }
         depositSignature = "";
-        used = false;
+        used = _signingKeyUsed[_nodeOperatorId][_index];
     }
 
     /// @notice Sets the signing keys for a given node operator.
@@ -151,5 +180,16 @@ contract NodeOperatorsRegistryStub {
     function setSigningKeys(uint256 _nodeOperatorId, bytes memory keysConcat) external {
         // Overwrite all keys for this node operator
         _signingKeys[_nodeOperatorId] = keysConcat;
+
+        // Mark all provided keys as used by default to mirror deposited keys in positive-path tests
+        uint256 keyCount = keysConcat.length / 48;
+        for (uint256 i; i < keyCount; ++i) {
+            _signingKeyUsed[_nodeOperatorId][i] = true;
+        }
+    }
+
+    /// @notice Sets the used flag for a specific signing key, to simulate unused keys in tests.
+    function setSigningKeyUsed(uint256 _nodeOperatorId, uint256 _index, bool _used) external {
+        _signingKeyUsed[_nodeOperatorId][_index] = _used;
     }
 }

@@ -24,12 +24,13 @@ DUAL_GOVERNANCE_STATE = {
 }
 
 
-network_name = get_network_name()
+def _contracts():
+    return get_contracts(get_network_name())
 
 
 def submit_proposals(items: Sequence[Tuple[Sequence[Tuple[str, str]], str]]) -> Sequence[Tuple[str, str]]:
     proposal_list = []
-    contracts = get_contracts(network_name)
+    contracts = _contracts()
 
     for call_script, description in items:
         proposal_calldata = []
@@ -49,7 +50,7 @@ def submit_proposals(items: Sequence[Tuple[Sequence[Tuple[str, str]], str]]) -> 
 
 
 def process_proposals(proposal_ids):
-    contracts = get_contracts(network_name)
+    contracts = _contracts()
     proposals_to_be_processed = list(proposal_ids)
     stranger = accounts[0]
 
@@ -98,7 +99,7 @@ def process_proposals(proposal_ids):
 
 
 def process_pending_proposals():
-    contracts = get_contracts(network_name)
+    contracts = _contracts()
     last_proposal_id = contracts.emergency_protected_timelock.getProposalsCount()
 
     if is_proposal_executed(last_proposal_id):
@@ -114,7 +115,7 @@ def process_pending_proposals():
 
 
 def wait_for_normal_state(stranger):
-    contracts = get_contracts(network_name)
+    contracts = _contracts()
     # https://github.com/lidofinance/dual-governance/blob/main/contracts/interfaces/IDualGovernance.sol#L15
     state_details = contracts.dual_governance.getStateDetails()
 
@@ -145,6 +146,6 @@ def wait_for_normal_state(stranger):
 
 
 def is_proposal_executed(proposal_id: int) -> bool:
-    contracts = get_contracts(network_name)
+    contracts = _contracts()
     (_, _, _, _, proposal_status) = contracts.emergency_protected_timelock.getProposalDetails(proposal_id)
     return proposal_status == PROPOSAL_STATUS["executed"]

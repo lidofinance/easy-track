@@ -44,6 +44,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
     // CONSTANTS
     // -------------
 
+    uint256 internal constant MAX_SHARE_LIMIT = 10_000_000 * 1e18;
     uint256 internal constant MAX_RESERVE_RATIO_BP = 9999;
     uint256 internal constant MAX_FEE_BP = type(uint16).max;
     /// @notice Special address to denote that default tier is not linked to any real operator
@@ -132,7 +133,7 @@ contract RegisterTiersInOperatorGrid is TrustedCaller, IEVMScriptFactory {
 
             // Validate tier parameters
             for (uint256 j = 0; j < _tiers[i].length; j++) {
-                require(_tiers[i][j].shareLimit <= group.shareLimit, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
+                require(_tiers[i][j].shareLimit <= MAX_SHARE_LIMIT, ERROR_TIER_SHARE_LIMIT_TOO_HIGH);
 
                 require(_tiers[i][j].reserveRatioBP != 0, ERROR_ZERO_RESERVE_RATIO);
                 require(_tiers[i][j].reserveRatioBP <= MAX_RESERVE_RATIO_BP, ERROR_RESERVE_RATIO_TOO_HIGH);

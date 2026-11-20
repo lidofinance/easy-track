@@ -219,7 +219,10 @@ def test_top_up_single_recipient_several_times_in_period(
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
+    ensure_agent_token_balance,
 ):
+    ensure_agent_token_balance(2 * allowed_recipients_limit_params.limit)
+
     allowed_recipient = recipients[0]
 
     add_allowed_recipient_by_motion(
@@ -229,7 +232,7 @@ def test_top_up_single_recipient_several_times_in_period(
     )
 
     top_up_recipient_addresses = [allowed_recipient.address]
-    top_up_amounts = [int(allowed_recipients_limit_params.limit / 2)]
+    top_up_amounts = [allowed_recipients_limit_params.limit // 2]
 
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
@@ -421,7 +424,10 @@ def test_spendable_balance_is_renewed_in_next_period(
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
+    ensure_agent_token_balance,
 ):
+    ensure_agent_token_balance(2 * allowed_recipients_limit_params.limit)
+
     test_helpers.advance_chain_time_to_beginning_of_the_next_period(allowed_recipients_limit_params.duration)
 
     assert allowed_recipients_registry.spendableBalance() == allowed_recipients_limit_params.limit
@@ -551,7 +557,10 @@ def test_fail_to_create_top_up_motion_which_exceeds_spendable(
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
+    ensure_agent_token_balance,
 ):
+    ensure_agent_token_balance(allowed_recipients_limit_params.limit)
+
     allowed_recipients = recipients[:2]
 
     add_allowed_recipient_by_motion(
@@ -597,7 +606,10 @@ def test_fail_2nd_top_up_motion_enactment_due_limit_but_can_enact_in_next(
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
+    ensure_agent_token_balance,
 ):
+    ensure_agent_token_balance(2 * allowed_recipients_limit_params.limit)
+
     allowed_recipients = recipients[:2]
 
     add_allowed_recipient_by_motion(
@@ -652,8 +664,11 @@ def test_fail_2nd_top_up_motion_creation_in_period_if_it_exceeds_spendable(
     top_up_allowed_recipient_by_motion,
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
+    ensure_agent_token_balance,
 ):
     """Revert 2nd payout which together with 1st payout exceed the current period limit"""
+
+    ensure_agent_token_balance(allowed_recipients_limit_params.limit)
 
     allowed_recipients = recipients[:2]
 
@@ -745,7 +760,9 @@ def test_top_up_if_limit_increased_while_motion_is_in_flight(
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
+    ensure_agent_token_balance,
 ):
+    ensure_agent_token_balance(allowed_recipients_limit_params.limit)
 
     allowed_recipients = recipients[:1]
     add_allowed_recipient_by_motion(
@@ -784,7 +801,10 @@ def test_two_motion_seconds_failed_to_enact_due_limit_but_succeeded_after_limit_
     add_allowed_recipient_evm_script_factory,
     top_up_allowed_recipients_evm_script_factory,
     enact_top_up_allowed_recipient_motion_by_creation_tx,
+    ensure_agent_token_balance,
 ):
+    ensure_agent_token_balance(2 * allowed_recipients_limit_params.limit)
+
     allowed_recipients = recipients[:2]
 
     add_allowed_recipient_by_motion(

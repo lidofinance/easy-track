@@ -36,11 +36,10 @@ contract MockERC20 {
         return true;
     }
 
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external returns (bool) {
+    function transferFrom(address sender, address recipient, uint256 amount)
+        external
+        returns (bool)
+    {
         uint256 allowed = allowance[sender][msg.sender];
         require(allowed >= amount, "INSUFFICIENT_ALLOWANCE");
         allowance[sender][msg.sender] = allowed - amount;
@@ -48,11 +47,7 @@ contract MockERC20 {
         return true;
     }
 
-    function _transfer(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) private {
+    function _transfer(address sender, address recipient, uint256 amount) private {
         require(balanceOf[sender] >= amount, "INSUFFICIENT_BALANCE");
         balanceOf[sender] -= amount;
         balanceOf[recipient] += amount;
