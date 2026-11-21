@@ -259,3 +259,53 @@ interface IMorphoExitBook {
 interface IErc4626ExitBook {
     function setVaultAllowed(address vault, bool allowed) external;
 }
+
+interface ITrailingAnchorOracle {
+    struct Parameters {
+        uint64 maxPriceAboveAnchor;
+        uint64 maxPriceBelowAnchor;
+        uint64 maxAnchorContinuousRiseRate;
+        uint64 maxAnchorContinuousFallRate;
+        uint64 maxAnchorBelowBase;
+        uint64 maxAnchorAboveBase;
+        uint40 reanchorDelay;
+        uint40 reanchorWindow;
+    }
+
+    function MANAGER_ROLE() external view returns (bytes32);
+
+    function hasRole(bytes32 role, address account) external view returns (bool);
+
+    function MIN_REANCHOR_DELAY() external view returns (uint256);
+
+    function MIN_REANCHOR_WINDOW() external view returns (uint256);
+
+    function MAX_PRICING_SUSPENSION() external view returns (uint256);
+
+    function maxPriceAboveAnchor() external view returns (uint64);
+
+    function maxPriceBelowAnchor() external view returns (uint64);
+
+    function maxAnchorContinuousRiseRate() external view returns (uint64);
+
+    function maxAnchorContinuousFallRate() external view returns (uint64);
+
+    function maxAnchorBelowBase() external view returns (uint64);
+
+    function maxAnchorAboveBase() external view returns (uint64);
+
+    function reanchorDelay() external view returns (uint40);
+
+    function reanchorWindow() external view returns (uint40);
+
+    function setParameters(Parameters calldata parameters) external;
+
+    function setPricingResumesAt(uint40 resumesAt) external;
+}
+
+interface ILidoLendTrailingAnchorOracleAdapter {
+    function setParameters(address oracle, ITrailingAnchorOracle.Parameters calldata parameters)
+        external;
+
+    function setPricingResumesAt(address oracle, uint40 resumesAt) external;
+}
